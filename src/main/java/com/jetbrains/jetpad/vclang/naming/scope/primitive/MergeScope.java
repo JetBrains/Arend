@@ -32,7 +32,7 @@ public class MergeScope implements MergingScope {
     return new InvalidScopeException() {
       @Override
       public GeneralError toError() {
-        return new DuplicateNameError(Error.Level.ERROR, ref1, ref2, (Concrete.SourceNode) ref1);
+        return new DuplicateNameError(Error.Level.ERROR, ref1, ref2, (Concrete.SourceNode) ref1); // TODO[abstract]
       }
     };
 
@@ -90,7 +90,7 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
     return StreamSupport.stream(myScopes.spliterator(), false).flatMap(s -> s.getInstances().stream()).collect(Collectors.toSet());
   }
 }

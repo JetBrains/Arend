@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
@@ -43,7 +44,7 @@ public class CachingTestCase extends NameResolverTestCase {
   protected TypecheckerState tcState;
   private OneshotSourceInfoCollector<MemoryStorage.SourceId> srcInfoCollector;
   private PersistenceProvider<MemoryStorage.SourceId> peristenceProvider = new MemoryPersistenceProvider<>();
-  private Typechecking typechecking;
+  private Typechecking<Position> typechecking;
 
   @Before
   public void initialize() {
@@ -52,23 +53,23 @@ public class CachingTestCase extends NameResolverTestCase {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         if (result == null) throw new IllegalStateException("Could not load module");
-        srcInfoCollector.visitModule(module, result.definition);
+        srcInfoCollector.visitModule(module, (Concrete.ClassDefinition) result.definition);
       }
     };
     nameResolver.setModuleResolver(moduleLoader);
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(peristenceProvider, storage, storage, srcInfoCollector.sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking<>(tcState, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter() {
+    typechecking = new Typechecking<>(tcState, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter<Position>() {
       @Override
-      public void typecheckingSucceeded(Abstract.Definition definition) {
+      public void typecheckingSucceeded(Concrete.Definition<Position> definition) {
         typecheckingSucceeded.add(definition);
       }
       @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
+      public void typecheckingFailed(Concrete.Definition<Position> definition) {
         typecheckingFailed.add(definition);
       }
-    }, new DependencyListener() {});
+    }, new DependencyListener<Position>() {});
   }
 
   @Override
@@ -95,27 +96,27 @@ public class CachingTestCase extends NameResolverTestCase {
     storage.add(ModulePath.moduleName("Prelude"), preludeSource);
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
-    prelude = moduleLoader.load(sourceId);
-    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
+    prelude = (Concrete.ClassDefinition<Position>) moduleLoader.load(sourceId);
+    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(cacheManager.getTypecheckerState()), new DependencyListener<Position>() {}).typecheckModules(Collections.singleton(this.prelude));
     storage.setPreludeNamespace(staticNsProvider.forReferable(prelude));
   }
 
-  protected void typecheck(Abstract.ClassDefinition module) {
+  protected void typecheck(Concrete.ClassDefinition<Position> module) {
     typecheck(module, 0);
   }
 
-  protected void typecheck(Abstract.ClassDefinition module, int size) {
+  protected void typecheck(Concrete.ClassDefinition<Position> module, int size) {
     typechecking.typecheckModules(Collections.singleton(module));
     assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
   }
 
-  protected void tryLoad(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition, boolean shouldLoad) throws CacheLoadingException {
+  protected void tryLoad(MemoryStorage.SourceId sourceId, GlobalReferable classDefinition, boolean shouldLoad) throws CacheLoadingException {
     boolean loaded = cacheManager.loadCache(sourceId, classDefinition);
     assertThat(loaded, is(shouldLoad));
     assertThat(errorList, is(empty()));
   }
 
-  protected void load(MemoryStorage.SourceId sourceId, Abstract.ClassDefinition classDefinition) {
+  protected void load(MemoryStorage.SourceId sourceId, GlobalReferable classDefinition) {
     try {
       tryLoad(sourceId, classDefinition, true);
     } catch (CacheLoadingException e) {
@@ -156,8 +157,8 @@ public class CachingTestCase extends NameResolverTestCase {
     }
 
     @Override
-    public Concrete.Definition getFromId(SourceIdT sourceId, String id) {
-      return (Concrete.Definition) recall(id);
+    public GlobalReferable getFromId(SourceIdT sourceId, String id) {
+      return (GlobalReferable) recall(id);
     }
 
     private String remember(Object o) {

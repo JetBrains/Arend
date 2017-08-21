@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.HashMap;
@@ -11,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class SimpleNamespace implements Namespace {
-  private final Map<String, Abstract.Definition> myNames = new HashMap<>();
+  private final Map<String, Concrete.Definition> myNames = new HashMap<>();
 
   public SimpleNamespace() {
   }
@@ -20,29 +19,29 @@ public class SimpleNamespace implements Namespace {
     myNames.putAll(other.myNames);
   }
 
-  public SimpleNamespace(Abstract.Definition def) {
+  public SimpleNamespace(Concrete.Definition def) {
     this();
     addDefinition(def);
   }
 
-  public void addDefinition(Abstract.Definition def) {
+  public void addDefinition(Concrete.Definition def) {
     addDefinition(def.getName(), def);
   }
 
-  public void addDefinition(String name, final Abstract.Definition def) {
-    final Abstract.Definition prev = myNames.put(name, def);
+  public void addDefinition(String name, final Concrete.Definition def) {
+    final Concrete.Definition prev = myNames.put(name, def);
     if (!(prev == null || prev == def)) {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
-          return new DuplicateNameError<>(Error.Level.ERROR, def, prev, (Concrete.SourceNode<?>) def); // TODO[abstract]
+          return new DuplicateNameError(Error.Level.ERROR, def, prev, def); // TODO[abstract]
         }
       };
     }
   }
 
   public void addAll(SimpleNamespace other) {
-    for (Map.Entry<String, Abstract.Definition> entry : other.myNames.entrySet()) {
+    for (Map.Entry<String, Concrete.Definition> entry : other.myNames.entrySet()) {
       addDefinition(entry.getKey(), entry.getValue());
     }
   }
@@ -52,12 +51,12 @@ public class SimpleNamespace implements Namespace {
     return myNames.keySet();
   }
 
-  Set<Map.Entry<String, Abstract.Definition>> getEntrySet() {
+  Set<Map.Entry<String, Concrete.Definition>> getEntrySet() {
     return myNames.entrySet();
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
+  public Concrete.Definition resolveName(String name) {
     return myNames.get(name);
   }
 }

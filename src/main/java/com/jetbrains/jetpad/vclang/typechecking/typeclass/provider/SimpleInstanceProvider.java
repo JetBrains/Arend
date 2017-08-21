@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.provider;
 
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.*;
 
 public class SimpleInstanceProvider implements InstanceProvider {
   private final Scope myScope;
-  private Map<Abstract.ClassView, List<Abstract.ClassViewInstance>> myInstances = null;
+  private Map<Concrete.ClassView, List<Concrete.ClassViewInstance>> myInstances = null;
 
   public SimpleInstanceProvider(Scope scope) {
     myScope = scope;
@@ -18,11 +18,11 @@ public class SimpleInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ClassView classView) {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances(Concrete.ClassView classView) {
     if (myInstances == null) {
       myInstances = new HashMap<>();
-      for (Abstract.ClassViewInstance instance : myScope.getInstances()) {
-        myInstances.computeIfAbsent((Abstract.ClassView) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
+      for (Concrete.ClassViewInstance instance : myScope.getInstances()) {
+        myInstances.computeIfAbsent((Concrete.ClassView) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
       }
     }
     return myInstances.getOrDefault(classView, Collections.emptyList());

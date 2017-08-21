@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -15,10 +15,10 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
  * If you would like to add a new type checking error, please, extend {@link LocalTypeCheckingError} instead.
  */
 public class TypeCheckingError<T> extends GeneralError<T> {
-  public final Abstract.Definition definition;
+  public final GlobalReferable definition;
   public final LocalTypeCheckingError<T> localError;
 
-  public TypeCheckingError(@Nonnull Abstract.Definition definition, LocalTypeCheckingError<T> localError) {
+  public TypeCheckingError(@Nonnull GlobalReferable definition, LocalTypeCheckingError<T> localError) {
     super(localError.level, localError.message);
     this.definition = definition;
     this.localError = localError;

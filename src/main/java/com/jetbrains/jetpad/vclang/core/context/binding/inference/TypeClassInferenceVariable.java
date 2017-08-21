@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -11,16 +10,16 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstance
 import java.util.Set;
 
 public class TypeClassInferenceVariable<T> extends InferenceVariable<T> {
-  private final Abstract.ClassView myClassView;
+  private final Concrete.ClassView myClassView;
   private final boolean isView;
 
-  public TypeClassInferenceVariable(String name, Expression type, Abstract.ClassView classView, boolean isView, Concrete.SourceNode<T> sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassView classView, boolean isView, Concrete.SourceNode<T> sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassView = classView;
     this.isView = isView;
   }
 
-  public Abstract.ClassView getClassView() {
+  public Concrete.ClassView getClassView() {
     return myClassView;
   }
 

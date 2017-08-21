@@ -16,7 +16,7 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Map;
@@ -98,7 +98,7 @@ public class DefinitionStateSerialization {
   private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
 
-    for (Abstract.ClassField abstractField : definition.getConcreteDefinition().getFields()) {
+    for (Concrete.ClassField abstractField : definition.getConcreteDefinition().getFields()) {
       ClassField field = (ClassField) state.getTypechecked(abstractField);
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));

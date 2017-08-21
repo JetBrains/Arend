@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public interface TypecheckedReporter {
-  default void typecheckingSucceeded(Abstract.Definition definition) {}
-  default void typecheckingFailed(Abstract.Definition definition) {}
+public interface TypecheckedReporter<T> {
+  default void typecheckingSucceeded(Concrete.Definition<T> definition) {}
+  default void typecheckingFailed(Concrete.Definition<T> definition) {}
 
-  class Dummy implements TypecheckedReporter {}
+  class Dummy<T> implements TypecheckedReporter<T> {}
 }

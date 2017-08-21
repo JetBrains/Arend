@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,12 +21,12 @@ public class NamespaceScope implements Scope {
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
+  public Referable resolveName(String name) {
     return myNamespace.resolveName(name);
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
     return Collections.emptyList();
   }
 }

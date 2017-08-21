@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 public class EmptyInstancePool implements ClassViewInstancePool {
   public static EmptyInstancePool INSTANCE = new EmptyInstancePool();
@@ -9,7 +9,7 @@ public class EmptyInstancePool implements ClassViewInstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
     return null;
   }
 }

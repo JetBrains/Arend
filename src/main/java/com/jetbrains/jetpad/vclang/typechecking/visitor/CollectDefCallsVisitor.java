@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
@@ -51,7 +50,7 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
             parameters = totalParameters;
           }
           for (Concrete.Parameter<?> parameter : parameters) {
-            Abstract.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
+            Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
             if (classView != null) {
               myDependencies.addAll(myInstanceProvider.getInstances(classView));
             }

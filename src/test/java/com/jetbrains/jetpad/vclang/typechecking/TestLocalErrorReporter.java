@@ -4,39 +4,23 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-import javax.annotation.Nonnull;
-
 public class TestLocalErrorReporter<T> implements LocalErrorReporter<T> {
   private final ErrorReporter<T> errorReporter;
-  private final Abstract.Definition fakeDef = new Abstract.Definition() {
-    @Nonnull
-    @Override
-    public Abstract.Precedence getPrecedence() {
-      return Abstract.Precedence.DEFAULT;
-    }
-
-    @Override
-    public Abstract.Definition getParentDefinition() {
-      return null;
-    }
-
-    @Override
-    public boolean isStatic() {
-      return true;
-    }
-
+  private final Concrete.Definition<T> fakeDef = new Concrete.Definition<T>(null, "testDefinition", Abstract.Precedence.DEFAULT) {
     @Override
     public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return null;
     }
 
     @Override
-    public String getName() {
-      return "testDefinition";
+    public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
+      return null;
     }
   };
 

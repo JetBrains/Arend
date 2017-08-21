@@ -5,29 +5,28 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-public class SimpleInstanceNamespace implements Scope {
-  private final ErrorReporter myErrorReporter;
-  private Map<Pair<GlobalReferable, GlobalReferable>, Abstract.ClassViewInstance> myInstances = Collections.emptyMap();
+public class SimpleInstanceNamespace<T> implements Scope {
+  private final ErrorReporter<T> myErrorReporter;
+  private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.ClassViewInstance<T>> myInstances = Collections.emptyMap();
 
-  public SimpleInstanceNamespace(ErrorReporter errorReporter) {
+  public SimpleInstanceNamespace(ErrorReporter<T> errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  public void addInstance(Abstract.ClassViewInstance instance) {
+  public void addInstance(Concrete.ClassViewInstance<T> instance) {
     if (myInstances.isEmpty()) {
       myInstances = new HashMap<>();
     }
-    Abstract.ClassView classView = (Abstract.ClassView) instance.getClassView().getReferent();
+    Concrete.ClassView classView = (Concrete.ClassView) instance.getClassView().getReferent();
     Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClassReference().getReferent() : classView, instance.getClassifyingDefinition());
-    Abstract.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
+    Concrete.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
-      myErrorReporter.report(new DuplicateInstanceError(Error.Level.ERROR, oldInstance, (Concrete.ClassViewInstance) instance /* TODO[abstract] */));
+      myErrorReporter.report(new DuplicateInstanceError<>(Error.Level.ERROR, oldInstance, instance));
     }
   }
 
@@ -37,12 +36,12 @@ public class SimpleInstanceNamespace implements Scope {
   }
 
   @Override
-  public Abstract.Definition resolveName(String name) {
+  public Concrete.Definition resolveName(String name) {
     return null;
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
     return myInstances.values();
   }
 }

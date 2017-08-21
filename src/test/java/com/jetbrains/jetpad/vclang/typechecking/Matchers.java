@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
@@ -110,7 +110,7 @@ public class Matchers {
     };
   }
 
-  public static Matcher<GeneralError> hasErrors(Abstract.Definition cause) {
+  public static Matcher<GeneralError> hasErrors(GlobalReferable cause) {
     return new TypeCheckingErrorMatcher() {
       @Override
       protected boolean matchesTypeCheckingError(LocalTypeCheckingError error, Description description) {

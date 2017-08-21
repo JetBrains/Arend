@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -91,7 +92,7 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId> implements 
   }
 
   private void reg(Abstract.Definition def, FullName fullName) {
-    myProvider.registerDefinition(def, new FullName(fullName, def.getName()), mySourceId);
+    myProvider.registerDefinition((GlobalReferable) def, new FullName(fullName, ((GlobalReferable) def).getName()), mySourceId);
   }
 
 }

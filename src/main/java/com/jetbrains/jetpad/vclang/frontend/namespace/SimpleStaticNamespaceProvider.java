@@ -15,13 +15,13 @@ import java.util.Map;
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
   private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
 
-  public static SimpleNamespace forClass(Abstract.ClassDefinition def) {
+  public static SimpleNamespace forClass(Concrete.ClassDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
     forClass(def, ns);
     return ns;
   }
 
-  private static void forFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
+  private static void forFunction(Concrete.FunctionDefinition<?> def, SimpleNamespace ns) {
     forDefinitions(def.getGlobalDefinitions(), ns);
   }
 
@@ -33,25 +33,25 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
   }
 
-  private static void forClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
+  private static void forClass(Concrete.ClassDefinition<?> def, SimpleNamespace ns) {
     forDefinitions(def.getGlobalDefinitions(), ns);
   }
 
-  private static void forClassView(Abstract.ClassView def, SimpleNamespace ns) {
-    for (Abstract.ClassViewField field : def.getFields()) {
+  private static void forClassView(Concrete.ClassView<?> def, SimpleNamespace ns) {
+    for (Concrete.ClassViewField field : def.getFields()) {
       ns.addDefinition(field);
     }
   }
 
-  private static void forDefinitions(Collection<? extends Abstract.Definition> definitions, SimpleNamespace ns) {
-    for (Abstract.Definition definition : definitions) {
-      if (definition instanceof Abstract.ClassView) {
+  private static void forDefinitions(Collection<? extends Concrete.Definition<?>> definitions, SimpleNamespace ns) {
+    for (Concrete.Definition definition : definitions) {
+      if (definition instanceof Concrete.ClassView) {
         ns.addDefinition(definition);
-        forClassView((Abstract.ClassView) definition, ns);
+        forClassView((Concrete.ClassView) definition, ns);
       } else {
         ns.addDefinition(definition);
-        if (definition instanceof Abstract.DataDefinition) {
-          forData((Abstract.DataDefinition) definition, ns);  // constructors
+        if (definition instanceof Concrete.DataDefinition) {
+          forData((Concrete.DataDefinition) definition, ns);  // constructors
         }
       }
     }
@@ -75,7 +75,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
     @Override
     public Void visitFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
-      forFunction(def, ns);
+      forFunction((Concrete.FunctionDefinition<?>) def, ns);
       return null;
     }
 
@@ -87,7 +87,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
     @Override
     public Void visitClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
-      forClass(def, ns);
+      forClass((Concrete.ClassDefinition<?>) def, ns);
       return null;
     }
   }

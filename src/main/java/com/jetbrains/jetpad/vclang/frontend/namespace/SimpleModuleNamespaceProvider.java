@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.HashMap;
 
@@ -15,7 +16,7 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
   }
 
   @Override
-  public ModuleNamespace registerModule(ModulePath modulePath, Abstract.ClassDefinition module) {
+  public ModuleNamespace registerModule(ModulePath modulePath, Concrete.ClassDefinition module) {
     SimpleModuleNamespace ns = registerModuleNs(modulePath, module);
     ns.registerClass(module);
     return ns;

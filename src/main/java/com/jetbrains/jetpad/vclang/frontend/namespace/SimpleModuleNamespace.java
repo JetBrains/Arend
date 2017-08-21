@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class SimpleModuleNamespace implements ModuleNamespace {
   private final Map<String, SimpleModuleNamespace> mySubmoduleNamespaces = new HashMap<>();
-  private Abstract.ClassDefinition myRegisteredClass = null;
+  private Concrete.ClassDefinition myRegisteredClass = null;
 
   @Override
   public Set<String> getNames() {
@@ -26,13 +26,13 @@ public class SimpleModuleNamespace implements ModuleNamespace {
     return mySubmoduleNamespaces.computeIfAbsent(submodule, k -> new SimpleModuleNamespace());
   }
 
-  void registerClass(Abstract.ClassDefinition module) {
+  void registerClass(Concrete.ClassDefinition module) {
     if (myRegisteredClass != null) throw new IllegalStateException();
     myRegisteredClass = module;
   }
 
   @Override
-  public Abstract.ClassDefinition getRegisteredClass() {
+  public Concrete.ClassDefinition getRegisteredClass() {
     return myRegisteredClass;
   }
 

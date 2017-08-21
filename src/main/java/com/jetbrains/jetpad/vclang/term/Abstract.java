@@ -45,7 +45,7 @@ public final class Abstract {
     return null;
   }
 
-  public interface Definition extends GlobalReferable {
+  public interface Definition extends SourceNode {
     @Nonnull Precedence getPrecedence();
     @Nullable Definition getParentDefinition();
     boolean isStatic();

@@ -31,7 +31,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final TypecheckedReporter myTypecheckedReporter;
+  private final TypecheckedReporter<T> myTypecheckedReporter;
   private final DependencyListener<T> myDependencyListener;
   private final Map<Concrete.Definition<T>, Suspension<T>> mySuspensions = new HashMap<>();
   private boolean myTypecheckingHeaders = false;
@@ -50,7 +50,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener<T> dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class LocalInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
     if (isView) {
       return getInstance(classifyingExpression, classView);
     } else {

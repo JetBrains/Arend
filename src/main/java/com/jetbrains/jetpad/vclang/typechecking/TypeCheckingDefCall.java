@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -47,11 +46,11 @@ public class TypeCheckingDefCall<T> {
   }
 
   private Definition getTypeCheckedDefinition(GlobalReferable definition, Concrete.Expression<T> expr) {
-    while (definition instanceof Abstract.ClassView) { // TODO[abstract]: eliminate class views and their fields during name resolving
-      definition = (GlobalReferable) ((Abstract.ClassView) definition).getUnderlyingClassReference().getReferent();
+    while (definition instanceof Concrete.ClassView) { // TODO[abstract]: eliminate class views and their fields during name resolving
+      definition = (GlobalReferable) ((Concrete.ClassView) definition).getUnderlyingClassReference().getReferent();
     }
-    if (definition instanceof Abstract.ClassViewField) {
-      definition = ((Abstract.ClassViewField) definition).getUnderlyingField();
+    if (definition instanceof Concrete.ClassViewField) {
+      definition = ((Concrete.ClassViewField) definition).getUnderlyingField();
     }
     Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
@@ -96,9 +95,9 @@ public class TypeCheckingDefCall<T> {
         }
 
         if (thisExpr == null) {
-          if (resolvedDefinition instanceof Abstract.ClassViewField) {
+          if (resolvedDefinition instanceof Concrete.ClassViewField) {
             assert typeCheckedDefinition instanceof ClassField;
-            Abstract.ClassView ownClassView = ((Abstract.ClassViewField) resolvedDefinition).getOwnView();
+            Concrete.ClassView ownClassView = ((Concrete.ClassViewField) resolvedDefinition).getOwnView();
             ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
           } else {
@@ -130,7 +129,7 @@ public class TypeCheckingDefCall<T> {
       ClassDefinition classDefinition = type.cast(ClassCallExpression.class).getDefinition();
 
       if (typeCheckedDefinition == null) {
-        Abstract.Definition member = myVisitor.getDynamicNamespaceProvider().forClass(classDefinition.getConcreteDefinition()).resolveName(name);
+        GlobalReferable member = myVisitor.getDynamicNamespaceProvider().forReferable(classDefinition.getConcreteDefinition()).resolveName(name);
         if (member == null) {
           myVisitor.getErrorReporter().report(new MemberNotFoundError<>(classDefinition, name, false, expr));
           return null;
@@ -235,7 +234,7 @@ public class TypeCheckingDefCall<T> {
         if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
           Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getConcreteDefinition()));
           if (leftDefinition instanceof ClassDefinition) {
-            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forClass(((ClassDefinition) leftDefinition).getConcreteDefinition())));
+            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(((ClassDefinition) leftDefinition).getConcreteDefinition())));
           }
           member = scope.resolveName(name);
         }

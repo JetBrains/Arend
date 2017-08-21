@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.provider;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +15,7 @@ public class EmptyInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances(Abstract.ClassView classView) {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances(Concrete.ClassView classView) {
     return Collections.emptyList();
   }
 }

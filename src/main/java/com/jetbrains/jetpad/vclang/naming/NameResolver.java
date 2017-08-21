@@ -92,7 +92,7 @@ public class NameResolver {
       // TODO: throw MemberNotFoundError
       return ns != null ? ns.resolveName(reference.getName()) : null;
     } else if (reference.getExpression() instanceof Concrete.ModuleCallExpression) {
-      Abstract.Definition module = resolveModuleCall(currentScope, (Concrete.ModuleCallExpression) reference.getExpression());
+      GlobalReferable module = resolveModuleCall(currentScope, (Concrete.ModuleCallExpression) reference.getExpression());
       if (module != null) {
         Namespace moduleNamespace = nsProviders.statics.forReferable(module);
         return moduleNamespace.resolveName(reference.getName());
@@ -103,30 +103,30 @@ public class NameResolver {
     }
   }
 
-  public Abstract.ClassDefinition resolveModuleCall(final Scope currentScope, final Concrete.ModuleCallExpression moduleCall) {
+  public GlobalReferable resolveModuleCall(final Scope currentScope, final Concrete.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
       if (!(moduleCall.getModule() instanceof Abstract.ClassDefinition)) throw new IllegalStateException();
-      return (Abstract.ClassDefinition) moduleCall.getModule();
+      return moduleCall.getModule();
     }
 
     ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
     return ns == null ? null : ns.getRegisteredClass();
   }
 
-  public Abstract.ClassField resolveClassField(Abstract.ClassDefinition classDefinition, String name) {
-    Abstract.Definition resolvedRef = nsProviders.dynamics.forClass(classDefinition).resolveName(name);
+  public Concrete.ClassField resolveClassField(GlobalReferable classDefinition, String name) {
+    GlobalReferable resolvedRef = nsProviders.dynamics.forReferable(classDefinition).resolveName(name);
     if (resolvedRef instanceof Abstract.ClassField) {
-      return (Abstract.ClassField) resolvedRef;
+      return (Concrete.ClassField) resolvedRef;
     } else {
       return null;
     }
   }
 
-  public Abstract.ClassField resolveClassFieldByView(Abstract.ClassView classView, String name) {
+  public Concrete.ClassField resolveClassFieldByView(Concrete.ClassView<?> classView, String name) {
     if (name.equals(classView.getClassifyingFieldName())) {
       return classView.getClassifyingField();
     }
-    for (Abstract.ClassViewField viewField : classView.getFields()) {
+    for (Concrete.ClassViewField viewField : classView.getFields()) {
       if (name.equals(viewField.getName())) {
         return viewField.getUnderlyingField();
       }

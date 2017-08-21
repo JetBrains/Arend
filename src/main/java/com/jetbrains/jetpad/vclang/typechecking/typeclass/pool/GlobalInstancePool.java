@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 
@@ -24,14 +25,14 @@ public class GlobalInstancePool implements ClassViewInstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Abstract.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (classifyingDefCall == null) {
       return null;
     }
 
-    Collection<? extends Abstract.ClassViewInstance> instances = myInstanceProvider.getInstances(classView);
-    for (Abstract.ClassViewInstance instance : instances) {
+    Collection<? extends Concrete.ClassViewInstance> instances = myInstanceProvider.getInstances(classView);
+    for (Concrete.ClassViewInstance instance : instances) {
       if ((isView && instance.getClassView().getReferent() == classView ||
           !isView && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClassReference().getReferent() == classView.getUnderlyingClassReference().getReferent()) &&
         instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getConcreteDefinition()) {

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
@@ -13,12 +12,12 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.visitor.ExpressionResolveN
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
@@ -38,8 +37,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
 
   @SuppressWarnings("StaticNonFinalField")
-  private static Abstract.ClassDefinition LOADED_PRELUDE  = null;
-  protected Abstract.ClassDefinition prelude = null;
+  private static Concrete.ClassDefinition<Position> LOADED_PRELUDE  = null;
+  protected Concrete.ClassDefinition<Position> prelude = null;
   private Scope globalScope = new EmptyScope();
 
   protected void loadPrelude() {
@@ -49,13 +48,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
       ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
-      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).definition;
+      LOADED_PRELUDE = (Concrete.ClassDefinition<Position>) preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).definition;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 
     prelude = LOADED_PRELUDE;
 
-    globalScope = new NamespaceScope(staticNsProvider.forReferable(prelude));
+    globalScope = new NamespaceScope(SimpleStaticNamespaceProvider.forClass(prelude));
   }
 
 
@@ -123,18 +122,14 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  public Abstract.Definition get(Abstract.Definition ref, String path) {
+  public GlobalReferable get(GlobalReferable ref, String path) {
     for (String n : path.split("\\.")) {
-      Abstract.Definition oldref = ref;
+      GlobalReferable oldRef = ref;
 
-      ref = staticNsProvider.forReferable(oldref).resolveName(n);
+      ref = staticNsProvider.forReferable(oldRef).resolveName(n);
       if (ref != null) continue;
 
-      if (oldref instanceof Abstract.ClassDefinition) {
-        ref = dynamicNsProvider.forClass((Abstract.ClassDefinition) oldref).resolveName(n);
-      } else if (oldref instanceof ClassDefinition) {
-        ref = dynamicNsProvider.forClass(((ClassDefinition) oldref).getConcreteDefinition()).resolveName(n);
-      }
+      ref = dynamicNsProvider.forReferable(oldRef).resolveName(n);
       if (ref == null) return null;
     }
     return ref;

@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.module.caching;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -58,7 +58,7 @@ public class CacheManager<SourceIdT extends SourceId> {
    *         <code>false</code> otherwise.
    * @throws CacheLoadingException if an <code>IOException</code> occurs.
    */
-  public boolean loadCache(@Nonnull SourceIdT sourceId, @Nonnull Abstract.ClassDefinition module) throws CacheLoadingException {
+  public boolean loadCache(@Nonnull SourceIdT sourceId, @Nonnull GlobalReferable module) throws CacheLoadingException {
     if (!sourceId.equals(myDefLocator.sourceOf(module))) throw new IllegalArgumentException();
     return loadCache(sourceId);
   }
@@ -124,7 +124,7 @@ public class CacheManager<SourceIdT extends SourceId> {
         } else {
           targetSourceId = sourceId;
         }
-        Abstract.Definition absDef = myPersistenceProvider.getFromId(targetSourceId, proto.getDefinitionId());
+        GlobalReferable absDef = myPersistenceProvider.getFromId(targetSourceId, proto.getDefinitionId());
         Definition typechecked = myTcState.getLocal(targetSourceId).getTypechecked(absDef);
         if (typechecked == null) {
           throw new CacheLoadingException(sourceId, "Referred definition was not in cache");

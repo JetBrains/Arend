@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -43,7 +43,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking<>(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(PRELUDE_TYPECHECKER_STATE), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking<>(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter<>(PRELUDE_TYPECHECKER_STATE), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -51,8 +51,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null);
+  CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression<Position> expression, Expression expectedType, int errors) {
+    CheckTypeVisitor<Position> visitor = new CheckTypeVisitor<>(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null);
     visitor.getFreeBindings().addAll(context.values());
     CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType);
     assertThat(errorList, containsErrors(errors));
@@ -62,15 +62,15 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return result;
   }
 
-  CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType, int errors) {
+  CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression<Position> expression, Expression expectedType, int errors) {
     return typeCheckExpr(new HashMap<>(), expression, expectedType, errors);
   }
 
-  protected CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType) {
+  protected CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression<Position> expression, Expression expectedType) {
     return typeCheckExpr(context, expression, expectedType, 0);
   }
 
-  protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression expression, Expression expectedType) {
+  protected CheckTypeVisitor.Result typeCheckExpr(Concrete.Expression<Position> expression, Expression expectedType) {
     return typeCheckExpr(new HashMap<>(), expression, expectedType, 0);
   }
 
@@ -96,8 +96,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private Definition typeCheckDef(Concrete.Definition definition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckDefinitions(Collections.singletonList(definition));
+  private Definition typeCheckDef(Concrete.Definition<Position> definition, int errors) {
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList(definition));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -111,8 +111,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private TypecheckerState typeCheckClass(Concrete.ClassDefinition classDefinition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy(), new DependencyListener() {}).typecheckModules(Collections.singletonList(classDefinition));
+  private TypecheckerState typeCheckClass(Concrete.ClassDefinition<Position> classDefinition, int errors) {
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(classDefinition));
     assertThat(errorList, containsErrors(errors));
     return state;
   }
@@ -128,18 +128,18 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     }
 
     public Definition getDefinition(String path) {
-      Abstract.Definition ref = get(classDefinition, path);
+      GlobalReferable ref = get(classDefinition, path);
       return ref != null ? typecheckerState.getTypechecked(ref) : null;
     }
   }
 
-  protected TypeCheckClassResult typeCheckClass(Concrete.ClassDefinition classDefinition) {
+  protected TypeCheckClassResult typeCheckClass(Concrete.ClassDefinition<Position> classDefinition) {
     TypecheckerState state = typeCheckClass(classDefinition, 0);
     return new TypeCheckClassResult(state, classDefinition);
   }
 
   protected TypeCheckClassResult typeCheckClass(String text, int errors) {
-    Concrete.ClassDefinition classDefinition = resolveNamesClass(text);
+    Concrete.ClassDefinition<Position> classDefinition = resolveNamesClass(text);
     TypecheckerState state = typeCheckClass(classDefinition, errors);
     return new TypeCheckClassResult(state, classDefinition);
   }
@@ -149,7 +149,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypeCheckClassResult typeCheckClass(String instance, String global, int errors) {
-    Concrete.ClassDefinition def = (Concrete.ClassDefinition) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    Concrete.ClassDefinition<Position> def = (Concrete.ClassDefinition<Position>) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
     return new TypeCheckClassResult(typeCheckClass(def, errors), def);
   }
 

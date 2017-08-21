@@ -3,16 +3,17 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 
 import javax.annotation.Nonnull;
 
 public class ProxyErrorReporter<T> implements LocalErrorReporter<T> {
-  private final Abstract.Definition myDefinition;
+  private final Concrete.Definition<T> myDefinition;
   private final ErrorReporter<T> myErrorReporter;
 
-  public ProxyErrorReporter(@Nonnull Abstract.Definition definition, ErrorReporter<T> errorReporter) {
+  public ProxyErrorReporter(@Nonnull Concrete.Definition<T> definition, ErrorReporter<T> errorReporter) {
     myDefinition = definition;
     myErrorReporter = errorReporter;
   }

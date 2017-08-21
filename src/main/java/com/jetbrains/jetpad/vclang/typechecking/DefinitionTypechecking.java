@@ -30,7 +30,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
@@ -200,7 +199,7 @@ class DefinitionTypechecking {
         }
 
         if (localInstancePool != null) {
-          Abstract.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
+          Concrete.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() != null) {
             ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked(classView.getClassifyingField());
             for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
@@ -724,7 +723,7 @@ class DefinitionTypechecking {
     }
 
     Map<ClassField, Concrete.ClassFieldImpl<T>> classFieldMap = new HashMap<>();
-    List<Abstract.ClassField> alreadyImplementedFields = new ArrayList<>();
+    List<Concrete.ClassField<?>> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
       ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked(classFieldImpl.getImplementedField());
@@ -739,13 +738,13 @@ class DefinitionTypechecking {
       visitor.getErrorReporter().report(new FieldsImplementationError<>(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
-    Abstract.ClassView classView = (Abstract.ClassView) def.getClassView().getReferent();
+    Concrete.ClassView classView = (Concrete.ClassView) def.getClassView().getReferent();
     assert classView != null;
     Map<ClassField, Expression> fieldSet = new HashMap<>();
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClassReference().getReferent());
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
-    List<Abstract.ClassField> notImplementedFields = new ArrayList<>();
+    List<Concrete.ClassField<?>> notImplementedFields = new ArrayList<>();
     for (ClassField field : classDef.getFields()) {
       Concrete.ClassFieldImpl<T> impl = classFieldMap.get(field);
       if (impl != null) {

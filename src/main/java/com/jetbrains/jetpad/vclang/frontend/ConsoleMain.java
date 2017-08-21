@@ -82,7 +82,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   @Override
   protected Abstract.ClassDefinition loadPrelude() {
-    Abstract.ClassDefinition prelude = super.loadPrelude();
+    Concrete.ClassDefinition prelude = (Concrete.ClassDefinition) super.loadPrelude(); // TODO[abstract]
     Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude);
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
@@ -211,8 +211,8 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public Abstract.Definition getFromId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id) {
-      Map<String, Abstract.Definition> sourceMap = definitionIds.get(sourceId);
+    public GlobalReferable getFromId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id) {
+      Map<String, GlobalReferable> sourceMap = definitionIds.get(sourceId);
       if (sourceMap == null) {
         return null;
       } else {

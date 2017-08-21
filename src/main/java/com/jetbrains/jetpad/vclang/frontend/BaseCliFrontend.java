@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -37,7 +38,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
-  protected final Map<SourceIdT, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
+  protected final Map<SourceIdT, Map<String, GlobalReferable>> definitionIds = new HashMap<>();
 
   protected final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>();
 
@@ -79,7 +80,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         definitionIds.put(module, new HashMap<>());
       }
       defIdCollector.visitClass(result.definition, definitionIds.get(module));
-      sourceInfoCollector.visitModule(module, result.definition);
+      sourceInfoCollector.visitModule(module, (Concrete.ClassDefinition) result.definition);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -129,11 +130,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void> {
+  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, GlobalReferable>, Void> {
 
     @Override
-    public Void visitFunction(Abstract.FunctionDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitFunction(Abstract.FunctionDefinition def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
         definition.accept(this, params);
       }
@@ -141,14 +142,14 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitClassField(Abstract.ClassField def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitClassField(Abstract.ClassField def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       return null;
     }
 
     @Override
-    public Void visitData(Abstract.DataDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitData(Abstract.DataDefinition def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
           constructor.accept(this, params);
@@ -158,14 +159,14 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitConstructor(Abstract.Constructor def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitConstructor(Abstract.Constructor def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       return null;
     }
 
     @Override
-    public Void visitClass(Abstract.ClassDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitClass(Abstract.ClassDefinition def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       for (Abstract.Definition definition : def.getGlobalDefinitions()) {
         definition.accept(this, params);
       }
@@ -180,23 +181,23 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitImplement(Abstract.Implementation def, Map<String, Abstract.Definition> params) {
+    public Void visitImplement(Abstract.Implementation def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassView(Abstract.ClassView def, Map<String, Abstract.Definition> params) {
+    public Void visitClassView(Abstract.ClassView def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassViewField(Abstract.ClassViewField def, Map<String, Abstract.Definition> params) {
+    public Void visitClassViewField(Abstract.ClassViewField def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
+    public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), (GlobalReferable) def);
       return null;
     }
 
@@ -214,7 +215,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   protected Abstract.ClassDefinition loadPrelude() {
     SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    Abstract.ClassDefinition prelude = moduleTracker.load(sourceId);
+    Concrete.ClassDefinition prelude = (Concrete.ClassDefinition) moduleTracker.load(sourceId);
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
@@ -259,10 +260,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private void typeCheckSources(Set<SourceIdT> sources) {
     final Set<Concrete.ClassDefinition<Position>> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      final Abstract.ClassDefinition definition;
+      final Concrete.ClassDefinition definition;
       SourceSupplier.LoadResult result = loadedSources.get(source);
       if (result == null){
-        definition = moduleTracker.load(source);
+        definition = (Concrete.ClassDefinition) moduleTracker.load(source);
         if (definition == null) {
           continue;
         }
@@ -277,7 +278,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
         flushErrors();
       } else {
-        definition = result.definition;
+        definition = (Concrete.ClassDefinition) result.definition;
       }
       modulesToTypeCheck.add((Concrete.ClassDefinition<Position>) definition);
     }
@@ -308,11 +309,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       }
 
       @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
+      public void typecheckingFailed(Concrete.Definition definition) {
         flushErrors();
       }
 
-      private Abstract.Definition sourceDefinitionOf(GeneralError error) {
+      private GlobalReferable sourceDefinitionOf(GeneralError error) {
         if (error instanceof TypeCheckingError) {
           return ((TypeCheckingError) error).definition;
         } else if (error instanceof TerminationCheckError) {

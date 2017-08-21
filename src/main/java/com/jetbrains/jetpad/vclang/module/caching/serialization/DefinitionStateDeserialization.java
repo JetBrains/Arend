@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -37,7 +37,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
       final Definition def;
-      final Abstract.Definition abstractDef = getAbstract(id);
+      final GlobalReferable abstractDef = getAbstract(id);
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = new ClassDefinition((Concrete.ClassDefinition<?>) abstractDef);
@@ -253,7 +253,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
 
-  private Abstract.Definition getAbstract(String id) {
+  private GlobalReferable getAbstract(String id) {
     return myPersistenceProvider.getFromId(mySourceId, id);
   }
 

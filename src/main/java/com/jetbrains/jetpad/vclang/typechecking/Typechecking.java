@@ -23,8 +23,8 @@ public class Typechecking<T> {
   private final TypecheckingDependencyListener<T> myDependencyListener;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener<T> dependencyListener) {
-    myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
+    myInstanceNamespaceProvider = new InstanceNamespaceProvider<>(errorReporter);
     myDependencyListener = new TypecheckingDependencyListener<>(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
     myOpens = opens;
   }

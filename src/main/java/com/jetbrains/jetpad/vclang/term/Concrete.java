@@ -157,7 +157,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor<>(builder, SourceInfoProvider.TRIVIAL, 0), Concrete.Expression.PREC);
+      accept(new PrettyPrintVisitor<>(builder, SourceInfoProvider.TRIVIAL, 0), Expression.PREC);
       return builder.toString();
     }
   }
@@ -239,11 +239,11 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression<T> makeBinOp(Concrete.Expression<T> left, Referable binOp, Concrete.ReferenceExpression<T> var, Concrete.Expression<T> right) {
+    public BinOpExpression<T> makeBinOp(Expression<T> left, Referable binOp, ReferenceExpression<T> var, Expression<T> right) {
       return new BinOpExpression<>(var.getData(), left, binOp, right);
     }
 
-    public void replace(Concrete.Expression<T> expression) {
+    public void replace(Expression<T> expression) {
       myLeft = expression;
       mySequence.clear();
     }
@@ -345,7 +345,7 @@ public final class Concrete {
   public static class ModuleCallExpression<T> extends Expression<T> {
     public static final byte PREC = 12;
     private final ModulePath myPath;
-    private Abstract.Definition myModule;
+    private GlobalReferable myModule;
 
     public ModuleCallExpression(T data, List<String> path) {
       super(data);
@@ -357,11 +357,11 @@ public final class Concrete {
       return myPath;
     }
 
-    public Abstract.Definition getModule() {
+    public GlobalReferable getModule() {
       return myModule;
     }
 
-    public void setModule(Abstract.Definition module) {
+    public void setModule(GlobalReferable module) {
       myModule = module;
     }
 
@@ -400,7 +400,7 @@ public final class Concrete {
 
   public static class ClassFieldImpl<T> extends SourceNode<T> {
     private final String myName;
-    private Abstract.ClassField myImplementedField;
+    private ClassField myImplementedField;
     private final Expression<T> myExpression;
 
     public ClassFieldImpl(T data, String identifier, Expression<T> expression) {
@@ -415,11 +415,11 @@ public final class Concrete {
     }
 
     @Nonnull
-    public Abstract.ClassField getImplementedField() {
+    public ClassField getImplementedField() {
       return myImplementedField;
     }
 
-    public void setImplementedField(Abstract.ClassField newImplementedField) {
+    public void setImplementedField(ClassField newImplementedField) {
       myImplementedField = newImplementedField;
     }
 
@@ -920,7 +920,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, Referable {
+  public static abstract class Definition<T> extends SourceNode<T> implements Abstract.Definition, GlobalReferable {
     private final Abstract.Precedence myPrecedence;
     private Definition<T> myParent;
     private boolean myStatic;
@@ -983,6 +983,10 @@ public final class Concrete {
     public Expression<T> getSuperClass() {
       return mySuperClass;
     }
+  }
+
+  public interface DefinitionCollection<T> extends Abstract.DefinitionCollection {
+    @Nonnull Collection<? extends Definition<T>> getGlobalDefinitions();
   }
 
   public static class ClassDefinition<T> extends Definition<T> implements Abstract.ClassDefinition, StatementCollection<T> {
@@ -1086,7 +1090,7 @@ public final class Concrete {
   }
 
   public static class Implementation<T> extends Definition<T> implements Abstract.Implementation {
-    private Abstract.ClassField myImplemented;
+    private ClassField myImplemented;
     private final Expression<T> myExpression;
 
     public Implementation(T data, String name, Expression<T> expression) {
@@ -1097,11 +1101,11 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public Abstract.ClassField getImplementedField() {
+    public ClassField getImplementedField() {
       return myImplemented;
     }
 
-    public void setImplemented(Abstract.ClassField implemented) {
+    public void setImplemented(ClassField implemented) {
       myImplemented = implemented;
     }
 
@@ -1356,7 +1360,7 @@ public final class Concrete {
   public static class ClassView<T> extends Definition<T> implements Abstract.ClassView {
     private final ReferenceExpression<T> myUnderlyingClass;
     private final String myClassifyingFieldName;
-    private Abstract.ClassField myClassifyingField;
+    private ClassField myClassifyingField;
     private final List<ClassViewField<T>> myFields;
 
     public ClassView(T data, String name, ReferenceExpression<T> underlyingClass, String classifyingFieldName, List<ClassViewField<T>> fields) {
@@ -1379,11 +1383,11 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.ClassField getClassifyingField() {
+    public ClassField getClassifyingField() {
       return myClassifyingField;
     }
 
-    public void setClassifyingField(Abstract.ClassField classifyingField) {
+    public void setClassifyingField(ClassField classifyingField) {
       myClassifyingField = classifyingField;
     }
 
@@ -1406,7 +1410,7 @@ public final class Concrete {
 
   public static class ClassViewField<T> extends Definition<T> implements Abstract.ClassViewField {
     private final String myUnderlyingFieldName;
-    private Abstract.ClassField myUnderlyingField;
+    private ClassField myUnderlyingField;
     private final ClassView<T> myOwnView;
 
     public ClassViewField(T data, String name, Abstract.Precedence precedence, String underlyingFieldName, ClassView<T> ownView) {
@@ -1422,7 +1426,7 @@ public final class Concrete {
     }
 
     @Override
-    public Abstract.ClassField getUnderlyingField() {
+    public ClassField getUnderlyingField() {
       return myUnderlyingField;
     }
 
@@ -1432,7 +1436,7 @@ public final class Concrete {
       return myOwnView;
     }
 
-    public void setUnderlyingField(Abstract.ClassField underlyingField) {
+    public void setUnderlyingField(ClassField underlyingField) {
       myUnderlyingField = underlyingField;
     }
 
@@ -1583,7 +1587,7 @@ public final class Concrete {
     }
   }
 
-  interface StatementCollection<T> extends Abstract.DefinitionCollection, HasOpens {
+  interface StatementCollection<T> extends DefinitionCollection<T>, HasOpens {
     List<? extends Statement<T>> getGlobalStatements();
 
     @Nonnull
@@ -1654,7 +1658,7 @@ public final class Concrete {
 
   public static class ConstructorPattern<T> extends Pattern<T> implements PatternContainer<T> {
     private final String myConstructorName;
-    private Abstract.Constructor myConstructor;
+    private Constructor<T> myConstructor;
     private final List<Pattern<T>> myArguments;
 
     public ConstructorPattern(T data, String constructorName, List<Pattern<T>> arguments) {
@@ -1670,16 +1674,8 @@ public final class Concrete {
       myArguments = arguments;
     }
 
-    public ConstructorPattern(T data, Abstract.Constructor constructor, List<Pattern<T>> arguments) {
+    public ConstructorPattern(T data, Constructor<T> constructor, List<Pattern<T>> arguments) {
       super(data);
-      myConstructor = constructor;
-      myConstructorName = constructor.getName();
-      myArguments = arguments;
-    }
-
-    public ConstructorPattern(T data, boolean isExplicit, Abstract.Constructor constructor, List<Pattern<T>> arguments) {
-      super(data);
-      setExplicit(isExplicit);
       myConstructor = constructor;
       myConstructorName = constructor.getName();
       myArguments = arguments;
@@ -1690,11 +1686,11 @@ public final class Concrete {
       return myConstructorName;
     }
 
-    public Abstract.Constructor getConstructor() {
+    public Constructor<T> getConstructor() {
       return myConstructor;
     }
 
-    public void setConstructor(Abstract.Constructor constructor) {
+    public void setConstructor(Constructor<T> constructor) {
       myConstructor = constructor;
     }
 

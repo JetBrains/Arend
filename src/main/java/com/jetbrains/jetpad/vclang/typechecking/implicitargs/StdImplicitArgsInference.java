@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
@@ -34,25 +33,25 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
     super(visitor);
   }
 
-  private static Abstract.ClassView getClassViewFromDefCall(Concrete.Definition<?> definition, int paramIndex) {
-    Collection<? extends Abstract.Parameter> parameters = Concrete.getParameters(definition);
+  private static Concrete.ClassView getClassViewFromDefCall(Concrete.Definition<?> definition, int paramIndex) {
+    Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
     if (parameters == null) {
       return null;
     }
 
     int i = 0;
-    for (Abstract.Parameter parameter : parameters) {
-      if (parameter instanceof Abstract.NameParameter) {
+    for (Concrete.Parameter parameter : parameters) {
+      if (parameter instanceof Concrete.NameParameter) {
         i++;
       } else
-      if (parameter instanceof Abstract.TypeParameter) {
-        if (parameter instanceof Abstract.TelescopeParameter) {
-          i += ((Abstract.TelescopeParameter) parameter).getReferableList().size();
+      if (parameter instanceof Concrete.TypeParameter) {
+        if (parameter instanceof Concrete.TelescopeParameter) {
+          i += ((Concrete.TelescopeParameter) parameter).getReferableList().size();
         } else {
           i++;
         }
         if (i > paramIndex) {
-          return Concrete.getUnderlyingClassView(((Abstract.TypeParameter) parameter).getType());
+          return Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
         }
       } else {
         throw new IllegalStateException();
@@ -69,7 +68,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
       InferenceVariable<T> infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult<T> defCallResult = (CheckTypeVisitor.DefCallResult<T>) result;
-        Abstract.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
+        Concrete.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
         if (classView != null) {
           infVar = new TypeClassInferenceVariable<>(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }

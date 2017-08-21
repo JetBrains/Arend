@@ -88,7 +88,7 @@ public class PreludeCacheGenerator {
     }
 
     @Override
-    public Abstract.Definition getFromId(PreludeStorage.SourceId sourceId, String id) {
+    public GlobalReferable getFromId(PreludeStorage.SourceId sourceId, String id) {
       throw new IllegalStateException();
     }
   }

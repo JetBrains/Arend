@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
@@ -10,30 +10,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
-  private final Map<Abstract.ClassDefinition, SimpleNamespace> classCache = new HashMap<>();
+  private final Map<GlobalReferable, SimpleNamespace> classCache = new HashMap<>();
 
   @Override
-  public SimpleNamespace forClass(final Abstract.ClassDefinition classDefinition) {
-    SimpleNamespace ns = classCache.get(classDefinition);
+  public SimpleNamespace forReferable(final GlobalReferable referable) {
+    SimpleNamespace ns = classCache.get(referable);
     if (ns != null) return ns;
 
+    Concrete.ClassDefinition<?> classDefinition = (Concrete.ClassDefinition) referable;
     ns = forDefinitions(classDefinition.getInstanceDefinitions());
-    for (Abstract.ClassField field : classDefinition.getFields()) {
+    for (Concrete.ClassField field : classDefinition.getFields()) {
       ns.addDefinition(field);
     }
     classCache.put(classDefinition, ns);
 
-    for (final Abstract.SuperClass superClass : classDefinition.getSuperClasses()) {
-      Abstract.ClassDefinition superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
+    for (final Concrete.SuperClass superClass : classDefinition.getSuperClasses()) {
+      Concrete.ClassDefinition superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
       if (superDef != null) {
-        ns.addAll(forClass(superDef));
+        ns.addAll(forReferable(superDef));
       }
     }
 
     return ns;
   }
 
-  private static SimpleNamespace forData(Abstract.DataDefinition def) {
+  private static SimpleNamespace forData(Concrete.DataDefinition<?> def) {
     SimpleNamespace ns = new SimpleNamespace();
     for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
       for (Concrete.Constructor constructor : clause.getConstructors()) {
@@ -43,12 +44,12 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     return ns;
   }
 
-  private static SimpleNamespace forDefinitions(Collection<? extends Abstract.Definition> definitions) {
+  private static SimpleNamespace forDefinitions(Collection<? extends Concrete.Definition> definitions) {
     SimpleNamespace ns = new SimpleNamespace();
-    for (Abstract.Definition definition : definitions) {
+    for (Concrete.Definition definition : definitions) {
       ns.addDefinition(definition);
-      if (definition instanceof Abstract.DataDefinition) {
-        ns.addAll(forData((Abstract.DataDefinition) definition));  // constructors
+      if (definition instanceof Concrete.DataDefinition) {
+        ns.addAll(forData((Concrete.DataDefinition) definition));  // constructors
       }
     }
     return ns;

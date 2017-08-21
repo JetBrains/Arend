@@ -39,7 +39,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   @Override
   public Void visitFunction(Abstract.FunctionDefinition def, SimpleInstanceProvider parentInstanceProvider) {
     Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceProvider.getScope());
-    FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition(def), extraScopes);
+    FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def), extraScopes);
     scope.findIntroducedDuplicateInstances(this::warnDuplicate);
     SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(scope);
     myInstanceProviderSet.setProvider(def, instanceProvider);
@@ -58,7 +58,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
 
   @Override
   public Void visitData(Abstract.DataDefinition def, SimpleInstanceProvider parentInstanceScope) {
-    myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
+    myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def))));
     return null;
   }
 
@@ -71,7 +71,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   public Void visitClass(Abstract.ClassDefinition def, SimpleInstanceProvider parentInstanceScope) {
     try {
       Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
-      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
+      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def), extraScopes);
       staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
       SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(staticScope);
       myInstanceProviderSet.setProvider(def, instanceProvider);
@@ -118,7 +118,7 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   private Stream<Scope> processOpenCommand(OpenCommand cmd) {
-    Scope scope = myScopeProvider.forDefinition((Abstract.Definition) cmd.getResolvedClass());
+    Scope scope = myScopeProvider.forDefinition((Concrete.Definition) cmd.getResolvedClass());
     if (cmd.getNames() != null) {
       scope = new FilteredScope(scope, new HashSet<>(cmd.getNames()), !cmd.isHiding());
     }

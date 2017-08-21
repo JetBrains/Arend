@@ -92,7 +92,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   @Override
   public Void visitModuleCall(Concrete.ModuleCallExpression<T> expr, Void params) {
     if (expr.getModule() == null) {
-      Abstract.Definition ref = myNameResolver.resolveModuleCall(myParentScope, expr);
+      GlobalReferable ref = myNameResolver.resolveModuleCall(myParentScope, expr);
       if (ref != null) {
         expr.setModule(ref);
       } else {
@@ -236,7 +236,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     return null;
   }
 
-  static <T> void replaceWithConstructor(Concrete.PatternContainer<T> container, int index, Abstract.Constructor constructor) {
+  static <T> void replaceWithConstructor(Concrete.PatternContainer<T> container, int index, Concrete.Constructor<T> constructor) {
     Concrete.Pattern<T> old = container.getPatterns().get(index);
     Concrete.Pattern<T> newPattern = new Concrete.ConstructorPattern<>(old.getData(), constructor, Collections.emptyList());
     newPattern.setExplicit(old.isExplicit());
@@ -251,7 +251,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       for (Concrete.FunctionClause<T> clause : clauses) {
         Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
-          Concrete.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);
+          Concrete.Constructor<T> constructor = visitPattern(clause.getPatterns().get(i), usedNames);
           if (constructor != null) {
             replaceWithConstructor(clause, i, constructor);
           }
@@ -273,7 +273,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     return null;
   }
 
-  Concrete.Constructor visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) { // TODO[abstract]: return referable, not a constructor
+  Concrete.Constructor<T> visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) { // TODO[abstract]: return referable, not a constructor
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       String name = namePattern.getName();
@@ -281,7 +281,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       Referable ref = myParentScope.resolveName(name);
       if (ref != null) {
         if (ref instanceof Concrete.Constructor) {
-          return (Concrete.Constructor) ref;
+          return (Concrete.Constructor<T>) ref;
         } else {
           myErrorReporter.report(new WrongReferable<>("Expected a constructor", ref, pattern));
         }
@@ -297,7 +297,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       List<? extends Concrete.Pattern<T>> patterns = ((Concrete.ConstructorPattern<T>) pattern).getPatterns();
       for (int i = 0; i < patterns.size(); i++) {
-        Concrete.Constructor constructor = visitPattern(patterns.get(i), usedNames);
+        Concrete.Constructor<T> constructor = visitPattern(patterns.get(i), usedNames);
         if (constructor != null) {
           replaceWithConstructor((Concrete.ConstructorPattern<T>) pattern, i, constructor);
         }
@@ -306,7 +306,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         String name = ((Concrete.ConstructorPattern) pattern).getConstructorName();
         Referable def = myParentScope.resolveName(name);
         if (def instanceof Concrete.Constructor) {
-          return (Concrete.Constructor) def;
+          return (Concrete.Constructor<T>) def;
         }
         myErrorReporter.report(def == null ? new NotInScopeError<>(name, pattern) : new WrongReferable<>("Expected a constructor", def, pattern));
       }
@@ -348,16 +348,16 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   @Override
   public Void visitClassExt(Concrete.ClassExtExpression<T> expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
-    Abstract.ClassView classView = Concrete.getUnderlyingClassView(expr);
-    Abstract.ClassDefinition classDef = classView == null ? Concrete.getUnderlyingClassDef(expr) : null;
+    Concrete.ClassView classView = Concrete.getUnderlyingClassView(expr);
+    Concrete.ClassDefinition classDef = classView == null ? Concrete.getUnderlyingClassDef(expr) : null;
     visitClassFieldImpls(expr.getStatements(), classView, classDef);
     return null;
   }
 
-  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, Abstract.ClassView classView, Abstract.ClassDefinition classDef) {
+  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, Concrete.ClassView classView, GlobalReferable classDef) {
     for (Concrete.ClassFieldImpl<T> statement : classFieldImpls) {
       String name = statement.getImplementedFieldName();
-      Abstract.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
+      Concrete.ClassField resolvedRef = classView != null ? myNameResolver.resolveClassFieldByView(classView, name) : classDef != null ? myNameResolver.resolveClassField(classDef, name) : null;
       if (resolvedRef != null) {
         statement.setImplementedField(resolvedRef);
       } else {

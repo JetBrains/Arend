@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.module.caching;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -51,7 +50,7 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
   }
 
   @Override
-  public void reset(Abstract.Definition def) {
+  public void reset(GlobalReferable def) {
     getLocal(def).reset(def);
   }
 

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.*;
 
@@ -37,10 +37,10 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    Collection<? extends Abstract.ClassViewInstance> instances = myScope.getInstances();
-    List<Abstract.ClassViewInstance> filteredInstances = new ArrayList<>(instances.size());
-    for (Abstract.ClassViewInstance instance : instances) {
+  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
+    Collection<? extends Concrete.ClassViewInstance> instances = myScope.getInstances();
+    List<Concrete.ClassViewInstance> filteredInstances = new ArrayList<>(instances.size());
+    for (Concrete.ClassViewInstance instance : instances) {
       if (myInclude && myNames.contains(instance.getName()) || !myInclude && !myNames.contains(instance.getName())) {
         filteredInstances.add(instance);
       }

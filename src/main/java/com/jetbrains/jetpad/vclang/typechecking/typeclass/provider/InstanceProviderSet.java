@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 
 import java.util.HashMap;
@@ -43,17 +44,17 @@ public class InstanceProviderSet {
     return definition.accept(new BaseAbstractVisitor<Scope, Scope>() {
       @Override
       public Scope visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-        return new FunctionScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
+        return new FunctionScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
       }
 
       @Override
       public Scope visitData(Abstract.DataDefinition def, Scope parentScope) {
-        return new DataScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
+        return new DataScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
       }
 
       @Override
       public Scope visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-        return new StaticClassScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
+        return new StaticClassScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
       }
     }, getDefinitionScope(definition.getParentDefinition()));
   }

@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Before;
@@ -37,7 +38,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   @Test
   public void trivialResolution() {
     setupSources();
-    Abstract.ClassDefinition moduleB = moduleLoader.load(storage.locateModule(moduleName("B")));
+    Concrete.ClassDefinition moduleB = (Concrete.ClassDefinition) moduleLoader.load(storage.locateModule(moduleName("B")));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleB, "b")).getBody()).getTerm();
 
@@ -48,12 +49,12 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   @Test
   public void trivialResolutionThatLoads() {
     setupSources();
-    Abstract.ClassDefinition moduleA = moduleLoader.load(storage.locateModule(moduleName("A")));
+    Concrete.ClassDefinition moduleA = (Concrete.ClassDefinition) moduleLoader.load(storage.locateModule(moduleName("A")));
 
     ModuleNamespace moduleBNs = nameResolver.resolveModuleNamespace(moduleName("B"));
     assertThat(moduleBNs, is(notNullValue()));
 
-    Abstract.ClassDefinition moduleB = moduleBNs.getRegisteredClass();
+    Concrete.ClassDefinition moduleB = (Concrete.ClassDefinition) moduleBNs.getRegisteredClass();
     assertThat(moduleB, is(notNullValue()));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleA, "a")).getBody()).getTerm();
@@ -65,9 +66,9 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   @Test
   public void resolutionThatLoadsMultipleModules() {
     setupSources();
-    Abstract.ClassDefinition moduleBC = moduleLoader.load(storage.locateModule(moduleName("B", "C")));
-    Abstract.ClassDefinition moduleBCE = nameResolver.resolveModuleNamespace(moduleName("B", "C", "E")).getRegisteredClass();
-    Abstract.ClassDefinition moduleBCF = nameResolver.resolveModuleNamespace(moduleName("B", "C", "F")).getRegisteredClass();
+    Concrete.ClassDefinition moduleBC = (Concrete.ClassDefinition) moduleLoader.load(storage.locateModule(moduleName("B", "C")));
+    Concrete.ClassDefinition moduleBCE = (Concrete.ClassDefinition) nameResolver.resolveModuleNamespace(moduleName("B", "C", "E")).getRegisteredClass();
+    Concrete.ClassDefinition moduleBCF = (Concrete.ClassDefinition) nameResolver.resolveModuleNamespace(moduleName("B", "C", "F")).getRegisteredClass();
 
     Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleBC, "c")).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
@@ -81,8 +82,8 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   @Test
   public void mutuallyRecursiveModules() {
     setupSources();
-    Abstract.ClassDefinition moduleX = moduleLoader.load(storage.locateModule(moduleName("X")));
-    Abstract.ClassDefinition moduleY = nameResolver.resolveModuleNamespace(moduleName("Y")).getRegisteredClass();
+    Concrete.ClassDefinition moduleX = (Concrete.ClassDefinition) moduleLoader.load(storage.locateModule(moduleName("X")));
+    GlobalReferable moduleY = nameResolver.resolveModuleNamespace(moduleName("Y")).getRegisteredClass();
 
     Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Abstract.TermFunctionBody) ((Abstract.FunctionDefinition) get(moduleX, "f")).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));

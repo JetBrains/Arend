@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
@@ -177,7 +176,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     List<? extends Concrete.Pattern<T>> patterns = clause.getPatterns();
     if (patterns != null) {
       for (int i = 0; i < patterns.size(); i++) {
-        Abstract.Constructor constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
+        Concrete.Constructor<T> constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
         if (constructor != null) {
           ExpressionResolveNameVisitor.replaceWithConstructor(clause, i, constructor);
         }
@@ -214,7 +213,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
           }
         }
 
-        DynamicClassScope dynamicScope = new DynamicClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), new NamespaceScope(myNameResolver.nsProviders.dynamics.forClass(def)), extraScopes);
+        DynamicClassScope dynamicScope = new DynamicClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(def)), extraScopes);
         dynamicScope.findIntroducedDuplicateNames(this::warnDuplicate);
 
         for (Concrete.ClassField<T> field : def.getFields()) {
@@ -236,7 +235,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   @Override
   public Void visitImplement(Concrete.Implementation<T> def, Scope parentScope) {
-    Abstract.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName());
+    Concrete.ClassField referable = myNameResolver.resolveClassField(def.getParentDefinition(), def.getName());
     if (referable != null) {
       def.setImplemented(referable);
     } else {
@@ -258,8 +257,8 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       return null;
     }
 
-    Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forClass((Concrete.ClassDefinition) resolvedUnderlyingClass);
-    Abstract.Definition resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
+    Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable((Concrete.ClassDefinition) resolvedUnderlyingClass);
+    GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(def.getClassifyingFieldName());
     if (!(resolvedClassifyingField instanceof Concrete.ClassField)) {
       myErrorReporter.report(resolvedClassifyingField != null ? new WrongReferable<>("Expected a class field", resolvedClassifyingField, def) : new NotInScopeError<>(def.getClassifyingFieldName(), def));
       return null;
@@ -268,7 +267,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     def.setClassifyingField((Concrete.ClassField) resolvedClassifyingField);
 
     for (Concrete.ClassViewField<T> viewField : def.getFields()) {
-      Abstract.ClassField classField = myNameResolver.resolveClassField((Concrete.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
+      Concrete.ClassField classField = myNameResolver.resolveClassField((Concrete.ClassDefinition) resolvedUnderlyingClass, viewField.getUnderlyingFieldName());
       if (classField != null) {
         viewField.setUnderlyingField(classField);
       } else {
@@ -338,7 +337,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         referredClass = myNameResolver.resolveDefinition(currentScope, cmd.getPath());
       } else {
         ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(cmd.getModulePath());
-        Abstract.ClassDefinition moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
+        GlobalReferable moduleClass = moduleNamespace != null ? moduleNamespace.getRegisteredClass() : null;
         if (moduleClass == null) {
           myErrorReporter.report(new NamingError<>("Module not found: " + cmd.getModulePath(), (Concrete.SourceNode<T>) cmd));
           return Stream.empty();

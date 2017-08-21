@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
@@ -18,7 +19,7 @@ public class SimpleCachingTest extends CachingTestCase {
         "\\function a : \\Set0 => \\Prop\n" +
         "\\function b1 : \\Set0 => \\Set0\n" +
         "\\function b2 : \\Set0 => b1");
-    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    Concrete.ClassDefinition aClass = (Concrete.ClassDefinition) moduleLoader.load(a);
 
     typecheck(aClass, 2);
     errorList.clear();
@@ -43,7 +44,7 @@ public class SimpleCachingTest extends CachingTestCase {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\function a (n : Nat) : Nat | zero => zero | suc n => ::B.b n");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function b (n : Nat) : Nat | zero => zero | suc n => ::A.a n");
 
-    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    Concrete.ClassDefinition<Position> aClass = (Concrete.ClassDefinition<Position>) moduleLoader.load(a);
     typecheck(aClass);
     assertThat(errorList, is(empty()));
     persist(a);
@@ -55,7 +56,7 @@ public class SimpleCachingTest extends CachingTestCase {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
         "\\function a : \\Set0 => b\n" +
         "\\function b : \\Set0 => {?}");
-    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    Concrete.ClassDefinition aClass = (Concrete.ClassDefinition) moduleLoader.load(a);
 
     typecheck(aClass, 1);
     assertThatErrorsAre(goal(0));
@@ -80,7 +81,7 @@ public class SimpleCachingTest extends CachingTestCase {
         "\\data D\n" +
         "\\function a (d : D) \\with\n" +
         "\\function b : \\Set0 => (\\lam x y => x) \\Prop a");
-    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    Concrete.ClassDefinition aClass = (Concrete.ClassDefinition) moduleLoader.load(a);
 
     typecheck(aClass, 2);
 
@@ -105,7 +106,7 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void sourceChanged() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
-    Abstract.ClassDefinition aClass = moduleLoader.load(a);
+    Concrete.ClassDefinition<Position> aClass = (Concrete.ClassDefinition<Position>) moduleLoader.load(a);
     typecheck(aClass);
 
     persist(a);
@@ -124,7 +125,7 @@ public class SimpleCachingTest extends CachingTestCase {
   public void dependencySourceChanged() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function f : \\Type0 => ::A.D\n");
-    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    Concrete.ClassDefinition<Position> bClass = (Concrete.ClassDefinition<Position>) moduleLoader.load(b);
     typecheck(bClass);
 
     persist(b);
@@ -144,7 +145,7 @@ public class SimpleCachingTest extends CachingTestCase {
     storage.add(ModulePath.moduleName("A"), "" + "\\function a : \\Set0 => \\Prop");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" + "\\function b : \\Set0 => ::A.a");
 
-    Abstract.ClassDefinition bClass = moduleLoader.load(b);
+    Concrete.ClassDefinition bClass = (Concrete.ClassDefinition) moduleLoader.load(b);
     typecheck(bClass);
     persist(b);
     tcState.reset();
@@ -153,7 +154,7 @@ public class SimpleCachingTest extends CachingTestCase {
     moduleNsProvider.unregisterModule(ModulePath.moduleName("B"));
 
     storage.incVersion(ModulePath.moduleName("A"));
-    bClass = moduleLoader.load(b);
+    bClass = (Concrete.ClassDefinition) moduleLoader.load(b);
     try {
       tryLoad(b, bClass, false);
       fail("Exception expected");

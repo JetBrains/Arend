@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 public interface DynamicNamespaceProvider {
-  Namespace forClass(Abstract.ClassDefinition classDefinition);
+  Namespace forReferable(GlobalReferable referable);
 }

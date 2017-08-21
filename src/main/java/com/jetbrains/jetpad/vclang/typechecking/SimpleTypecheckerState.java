@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class SimpleTypecheckerState implements TypecheckerState {
   }
 
   @Override
-  public void reset(Abstract.Definition def) {
+  public void reset(GlobalReferable def) {
     myTypechecked.remove(def);
   }
 

@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope.primitive;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.*;
 
@@ -28,8 +28,8 @@ public class OverridingScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Abstract.ClassViewInstance> getInstances() {
-    List<Abstract.ClassViewInstance> instances = new ArrayList<>(myParent.getInstances());
+  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
+    List<Concrete.ClassViewInstance> instances = new ArrayList<>(myParent.getInstances());
     instances.addAll(myChild.getInstances());
     return instances;
   }

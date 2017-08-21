@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.frontend.text.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -37,7 +36,7 @@ public class ConcreteExpressionFactory {
     return result;
   }
 
-  public static Concrete.ReferenceExpression<Position> cDefCall(Abstract.Definition definition) {
+  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Definition definition) {
     return cDefCall(null, definition, definition.getName());
   }
 
