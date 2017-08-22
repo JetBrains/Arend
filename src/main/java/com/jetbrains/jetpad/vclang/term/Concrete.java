@@ -43,7 +43,7 @@ public final class Concrete {
 
   // Parameters
 
-  public static class Parameter<T> extends SourceNode<T> implements Abstract.Parameter {
+  public static abstract class Parameter<T> extends SourceNode<T> implements Abstract.Parameter {
     private boolean myExplicit;
 
     public Parameter(T data, boolean explicit) {
