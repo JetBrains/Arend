@@ -60,18 +60,17 @@ public final class Concrete {
     }
   }
 
-  public static class NameParameter<T> extends Parameter<T> implements Referable {
-    private final String myName;
+  public static class NameParameter<T> extends Parameter<T> {
+    private final Referable myReferable;
 
-    public NameParameter(T data, boolean explicit, String name) {
+    public NameParameter(T data, boolean explicit, Referable referable) {
       super(data, explicit);
-      myName = name;
+      myReferable = referable;
     }
 
     @Nullable
-    @Override
-    public String getName() {
-      return myName;
+    public Referable getReferable() {
+      return myReferable;
     }
   }
 
@@ -1500,24 +1499,23 @@ public final class Concrete {
     }
   }
 
-  public static class NamePattern<T> extends Pattern<T> implements Referable {
-    private final @Nullable String myName;
+  public static class NamePattern<T> extends Pattern<T> {
+    private final @Nullable Referable myReferable;
 
-    public NamePattern(T data, @Nullable String name) {
+    public NamePattern(T data, @Nullable Referable referable) {
       super(data);
-      myName = name;
+      myReferable = referable;
     }
 
-    public NamePattern(T data, boolean isExplicit, @Nullable String name) {
+    public NamePattern(T data, boolean isExplicit, @Nullable Referable referable) {
       super(data);
       setExplicit(isExplicit);
-      myName = name;
+      myReferable = referable;
     }
 
     @Nullable
-    @Override
-    public String getName() {
-      return myName;
+    public Referable getReferable() {
+      return myReferable;
     }
   }
 

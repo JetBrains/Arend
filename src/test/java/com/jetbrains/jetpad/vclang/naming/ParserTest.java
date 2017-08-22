@@ -16,11 +16,11 @@ public class ParserTest extends NameResolverTestCase {
   public void parserLetToTheRight() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression<Position> expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
-    Concrete.NameParameter<Position> x = cName("x");
+    LocalReference x = ref("x");
     LocalReference x1 = ref("x");
     Concrete.LetClause<Position> xClause = clet(x1, cargs(), cUniverseStd(0));
-    assertTrue(compareAbstract(cLam(x, cLet(clets(xClause), cApps(cVar(x1), cVar(x1)))), expr));
-    assertTrue(compareAbstract(cLet(clets(xClause), cLam(x, cApps(cVar(x), cVar(x)))), expr1));
+    assertTrue(compareAbstract(cLam(cName(x), cLet(clets(xClause), cApps(cVar(x1), cVar(x1)))), expr));
+    assertTrue(compareAbstract(cLet(clets(xClause), cLam(cName(x), cApps(cVar(x), cVar(x)))), expr1));
   }
 
   @Test
@@ -44,34 +44,34 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parserLam() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x y z => y");
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.NameParameter<Position> y = cName("y");
-    Concrete.NameParameter<Position> z = cName("z");
-    boolean res = compareAbstract(cLam(cargs(x, y, z), cVar(y)), expr);
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
+    boolean res = compareAbstract(cLam(cargs(cName(x), cName(y), cName(z)), cVar(y)), expr);
     assertTrue(res);
   }
 
   @Test
   public void parserLam2() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\lam x y => (\\lam z w => y z) y");
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.NameParameter<Position> y = cName("y");
-    Concrete.NameParameter<Position> z = cName("z");
-    Concrete.NameParameter<Position> w = cName("w");
-    assertTrue(compareAbstract(cLam(cargs(x, y), cApps(cLam(cargs(z, w), cApps(cVar(y), cVar(z))), cVar(y))), expr));
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
+    LocalReference w = ref("w");
+    assertTrue(compareAbstract(cLam(cargs(cName(x), cName(y)), cApps(cLam(cargs(cName(z), cName(w)), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserLamTele() {
     Concrete.Expression<Position> expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
-    Concrete.NameParameter<Position> p = cName("p");
+    LocalReference p = ref("p");
     LocalReference x = ref("x");
     LocalReference t = ref("t");
-    Concrete.NameParameter<Position> y = cName(false, "y");
+    LocalReference y = ref("y");
     LocalReference a = ref("a");
     LocalReference z = ref("z");
     LocalReference w = ref("w");
-    assertTrue(compareAbstract(cLam(cargs(p, cTele(false, cvars(x, t), cUniverseStd(0)), y, cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
+    assertTrue(compareAbstract(cLam(cargs(cName(p), cTele(false, cvars(x, t), cUniverseStd(0)), cName(false, y), cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test

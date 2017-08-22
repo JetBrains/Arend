@@ -118,8 +118,8 @@ public class DataTest extends TypeCheckingTestCase {
 
     Constructor con = def.getConstructor("con");
     LocalReference f = ref("f");
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.Expression<Position> expr = cApps(cVar(f), cApps(cDefCall(con.getConcreteDefinition()), cNat(), cLam(x, cVar(x)), cZero()));
+    LocalReference x = ref("x");
+    Concrete.Expression<Position> expr = cApps(cVar(f), cApps(cDefCall(con.getConcreteDefinition()), cNat(), cLam(cName(x), cVar(x)), cZero()));
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 

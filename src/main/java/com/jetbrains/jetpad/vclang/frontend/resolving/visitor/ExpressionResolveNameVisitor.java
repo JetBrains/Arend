@@ -149,8 +149,8 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         }
       } else
       if (parameter instanceof Concrete.NameParameter) {
-        Referable referable = (Concrete.NameParameter) parameter;
-        if (referable.getName() != null && !referable.getName().equals("_")) {
+        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+        if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
           myContext.add(referable);
         }
       }
@@ -299,7 +299,8 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   GlobalReferable visitPattern(Concrete.Pattern<T> pattern, Map<String, Concrete.NamePattern> usedNames) {
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
-      String name = namePattern.getName();
+      Referable referable = namePattern.getReferable();
+      String name = referable == null ? null : referable.getName();
       if (name == null) return null;
       Referable ref = myParentScope.resolveName(name);
       if (ref instanceof GlobalReferable) {
@@ -308,9 +309,9 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       if (!name.equals("_")) {
         Concrete.NamePattern prev = usedNames.put(name, namePattern);
         if (prev != null) {
-          myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, namePattern, prev, pattern));
+          myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, referable, prev.getReferable(), pattern));
         }
-        myContext.add(namePattern);
+        myContext.add(referable);
       }
       return null;
     } else if (pattern instanceof Concrete.ConstructorPattern) {

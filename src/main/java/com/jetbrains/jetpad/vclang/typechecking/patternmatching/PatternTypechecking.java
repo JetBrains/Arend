@@ -146,7 +146,7 @@ public class PatternTypechecking<T> {
             }
           } else if (parameter instanceof Concrete.NameParameter) {
             if (!elimParams.contains(link)) {
-              myContext.put((Concrete.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put(((Concrete.NameParameter) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -221,8 +221,10 @@ public class PatternTypechecking<T> {
         if (!(pattern == null || pattern instanceof Concrete.NamePattern)) {
           myErrorReporter.report(new LocalTypeCheckingError<>(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
+        Referable referable = null;
         if (pattern instanceof Concrete.NamePattern) {
-          String name = ((Concrete.NamePattern) pattern).getName();
+          referable = ((Concrete.NamePattern) pattern).getReferable();
+          String name = referable == null ? null : referable.getName();
           if (name != null) {
             parameters.setName(name);
           }
@@ -231,7 +233,7 @@ public class PatternTypechecking<T> {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null) {
-            myContext.put((Concrete.NamePattern) pattern, parameters);
+            myContext.put(referable, parameters);
           }
         }
         parameters = parameters.getNext();

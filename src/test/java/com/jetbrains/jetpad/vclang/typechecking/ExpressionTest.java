@@ -71,18 +71,18 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckingAppIndex() {
     // \x y. y (y x) : N -> (N -> N) -> N
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.NameParameter<Position> y = cName("y");
-    Concrete.Expression<Position> expr = cLam(x, cLam(y, cApps(cVar(y), cApps(cVar(y), cVar(x)))));
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    Concrete.Expression<Position> expr = cLam(cName(x), cLam(cName(y), cApps(cVar(y), cApps(cVar(y), cVar(x)))));
     typeCheckExpr(expr, Pi(Nat(), Pi(Pi(Nat(), Nat()), Nat())));
   }
 
   @Test
   public void typeCheckingAppPiIndex() {
     // T : Nat -> Type, Q : (x : Nat) -> T x -> Type |- \f g. g zero (f zero) : (f : (x : Nat) -> T x) -> ((x : Nat) -> T x -> Q x (f x)) -> Q zero (f zero)
-    Concrete.NameParameter<Position> cf = cName("f");
-    Concrete.NameParameter<Position> cg = cName("g");
-    Concrete.Expression<Position> expr = cLam(cf, cLam(cg, cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
+    LocalReference cf = ref("f");
+    LocalReference cg = ref("g");
+    Concrete.Expression<Position> expr = cLam(cName(cf), cLam(cName(cg), cApps(cVar(cg), cZero(), cApps(cVar(cf), cZero()))));
     Map<Referable, Binding> context = new HashMap<>();
     Binding T = new TypedBinding("T", Pi(Nat(), Universe(0)));
     context.put(ref("T"), T);
@@ -151,9 +151,9 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void tooManyLambdasError() {
     // \x y. x : Nat -> Nat
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.NameParameter<Position> y = cName("y");
-    Concrete.Expression<Position> expr = cLam(cargs(x, y), cVar(x));
+    LocalReference x = ref("x");
+    LocalReference y = ref("y");
+    Concrete.Expression<Position> expr = cLam(cargs(cName(x), cName(y)), cVar(x));
     assertThat(typeCheckExpr(expr, Pi(Nat(), Nat()), 1), is(nullValue()));
   }
 
@@ -167,8 +167,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError() {
     // \x. x : (Nat -> Nat) -> Nat
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.Expression<Position> expr = cLam(x, cVar(x));
+    LocalReference x = ref("x");
+    Concrete.Expression<Position> expr = cLam(cName(x), cVar(x));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -176,8 +176,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaOmegaError() {
     // \x. x x : (Nat -> Nat) -> Nat
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.Expression<Position> expr = cLam(x, cApps(cVar(x), cVar(x)));
+    LocalReference x = ref("x");
+    Concrete.Expression<Position> expr = cLam(cName(x), cApps(cVar(x), cVar(x)));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Nat()), 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -185,8 +185,8 @@ public class ExpressionTest extends TypeCheckingTestCase {
   @Test
   public void lambdaExpectedError2() {
     // \x. x 0 : (Nat -> Nat) -> Nat -> Nat
-    Concrete.NameParameter<Position> x = cName("x");
-    Concrete.Expression<Position> expr = cLam(x, cApps(cVar(x), cZero()));
+    LocalReference x = ref("x");
+    Concrete.Expression<Position> expr = cLam(cName(x), cApps(cVar(x), cZero()));
     typeCheckExpr(expr, Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat())), 1);
     assertThatErrorsAre(typeMismatchError());
   }

@@ -481,7 +481,8 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
   }
 
   private TypedSingleDependentLink visitNameParameter(Concrete.NameParameter<T> param, int argIndex, Concrete.SourceNode<T> sourceNode) {
-    String name = param.getName();
+    Referable referable = param.getReferable();
+    String name = referable == null ? null : referable.getName();
 
     InferenceLevelVariable<T> pLvl = new InferenceLevelVariable<>(LevelVariable.LvlType.PLVL, sourceNode);
     InferenceLevelVariable<T> hLvl = new InferenceLevelVariable<>(LevelVariable.LvlType.HLVL, sourceNode);
@@ -492,7 +493,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
     TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
-    myContext.put(param, link);
+    if (referable != null) {
+      myContext.put(referable, link);
+    }
     return link;
   }
 
@@ -510,7 +513,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-        myContext.put(referableList.get(i), link1);
+        if (referableList.get(i) != null) {
+          myContext.put(referableList.get(i), link1);
+        }
       }
       return link;
     } else {
@@ -550,13 +555,17 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         return result;
       } else {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
-        Referable referable = (Concrete.NameParameter<T>) param;
+        Referable referable = ((Concrete.NameParameter<T>) param).getReferable();
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() && !param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError<>(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable.getName(), piParams.getType());
-        myContext.put(referable, link);
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.getName(), piParams.getType());
+        if (referable != null) {
+          myContext.put(referable, link);
+        } else {
+          myFreeBindings.add(link); // TODO[references]
+        }
         Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);
         if (bodyResult == null) return null;
@@ -677,7 +686,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
           list.add(link);
           int i = 0;
           for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-            myContext.put(referableList.get(i), link1);
+            if (referableList.get(i) != null) {
+              myContext.put(referableList.get(i), link1);
+            }
           }
         } else {
           list.add(new TypedSingleDependentLink(arg.getExplicit(), null, result));
@@ -847,7 +858,9 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
           list.append(link);
           int i = 0;
           for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-            myContext.put(referableList.get(i), link1);
+            if (referableList.get(i) != null) {
+              myContext.put(referableList.get(i), link1);
+            }
           }
         } else {
           DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), (String) null, result);
@@ -1164,7 +1177,6 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       }
       letResult = new LetClause(clause.getReferable().getName(), result.expression);
     }
-    myContext.put(clause.getReferable(), letResult);
     return letResult;
   }
 

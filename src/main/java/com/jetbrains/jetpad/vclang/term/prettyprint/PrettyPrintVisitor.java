@@ -176,7 +176,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   public void prettyPrintParameter(Concrete.Parameter<T> parameter, byte prec) {
     if (parameter instanceof Concrete.NameParameter) {
-      String name = ((Concrete.NameParameter) parameter).getName();
+      Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+      String name = referable == null ? null : referable.getName();
       if (name == null) {
         name = "_";
       }
@@ -903,7 +904,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
 
     if (pattern instanceof Concrete.NamePattern) {
-      String name = ((Concrete.NamePattern) pattern).getName();
+      Referable referable = ((Concrete.NamePattern) pattern).getReferable();
+      String name = referable == null ? null : referable.getName();
       if (name == null) {
         name = "_";
       }

@@ -42,7 +42,7 @@ public class PatternTest extends TypeCheckingTestCase {
         return false;
       } else
       if (pattern1 instanceof Concrete.NamePattern) {
-        Referable referable = (Concrete.NamePattern) pattern1;
+        Referable referable = ((Concrete.NamePattern) pattern1).getReferable();
         while (hasImplicit && patterns.get(j) instanceof BindingPattern && expected.get(referable) != ((BindingPattern) patterns.get(j)).getBinding()) {
           j++;
         }

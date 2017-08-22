@@ -23,7 +23,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
 import java.util.*;
-import java.util.function.Function;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
@@ -126,7 +125,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.Pattern<Position> visitPattern(Pattern pattern, boolean isExplicit) {
     if (pattern instanceof BindingPattern) {
-      return cNamePattern(isExplicit, ((BindingPattern) pattern).getBinding().getName());
+      return cNamePattern(isExplicit, ref(((BindingPattern) pattern).getBinding().getName()));
     }
     if (pattern instanceof EmptyPattern) {
       return cEmptyPattern(isExplicit);
@@ -335,17 +334,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression<>(null, expr.getVariable());
   }
 
-  private <T extends Referable> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars, boolean nullable) {
+  private LocalReference makeLocalReference(Binding var, Set<Variable> freeVars, boolean nullable) {
     if (nullable && !freeVars.contains(var)) {
       return null;
     }
-    T referable = fun.apply(getFreshName(var, freeVars));
-    myNames.put(var, referable);
-    return referable;
-  }
-
-  private Referable makeReferable(Binding var, Set<Variable> freeVars) {
-    return makeReferable(var, LocalReference::new, freeVars, true);
+    LocalReference reference = new LocalReference(getFreshName(var, freeVars));
+    myNames.put(var, reference);
+    return reference;
   }
 
   @Override
@@ -359,9 +354,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         SingleDependentLink params = expr.cast(LamExpression.class).getParameters();
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
-          final DependentLink finalLink = link;
-          Concrete.NameParameter<Position> parameter = makeReferable(link, name -> cName(finalLink.isExplicit(), name), freeVars, true);
-          parameters.add(parameter != null ? parameter : cName(link.isExplicit(), null));
+          parameters.add(cName(link.isExplicit(), makeLocalReference(link, freeVars, true)));
         }
       }
     }
@@ -375,10 +368,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       DependentLink link1 = link.getNextTyped(null);
       Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(link1);
       for (; link != link1; link = link.getNext()) {
-        referableList.add(makeReferable(link, freeVars));
+        referableList.add(makeLocalReference(link, freeVars, true));
       }
 
-      Referable referable = makeReferable(link, freeVars);
+      Referable referable = makeLocalReference(link, freeVars, true);
       if (referable == null && !isNamed && referableList.isEmpty()) {
         args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
@@ -506,7 +499,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.LetClause<Position>> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       Concrete.Expression<Position> term = clause.getExpression().accept(this, null);
-      Referable referable = makeReferable(clause, LocalReference::new, myFreeVariablesCollector.getFreeVariables(clause), false);
+      Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
       clauses.add(clet(referable, Collections.emptyList(), null, term));
     }
 
@@ -524,7 +517,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private List<Concrete.FunctionClause<Position>> visitElimTree(ElimTree elimTree) {
     List<Concrete.FunctionClause<Position>> clauses = new ArrayList<>();
-    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
+    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree); // TODO: It seems that bindings in patterns and in the expression differ
     return clauses;
   }
 

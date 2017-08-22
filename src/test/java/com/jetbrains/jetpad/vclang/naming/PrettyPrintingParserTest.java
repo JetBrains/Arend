@@ -105,10 +105,10 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
     LocalReference x = ref("x");
     LocalReference A = ref("A");
-    Concrete.NameParameter<Position> t = cName("t");
-    Concrete.NameParameter<Position> y = cName("y");
-    Concrete.NameParameter<Position> z = cName("z");
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
+    LocalReference t = ref("t");
+    LocalReference y = ref("y");
+    LocalReference z = ref("z");
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }
 
@@ -129,7 +129,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference ca = ref("a");
     LocalReference cA = ref("A");
     LocalReference cD = ref("D");
-    Concrete.Expression<Position> expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName("y"), cVar(ca)))))));
+    Concrete.Expression<Position> expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(ref("y")), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 }

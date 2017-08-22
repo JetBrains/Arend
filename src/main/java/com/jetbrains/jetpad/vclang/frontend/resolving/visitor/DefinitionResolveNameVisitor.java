@@ -101,8 +101,8 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
           }
         }
       } else if (parameter instanceof Concrete.NameParameter) {
-        Referable referable = (Concrete.NameParameter) parameter;
-        if (referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+        if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
       }

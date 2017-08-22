@@ -110,12 +110,12 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(args);
   }
 
-  public static Concrete.NameParameter<Position> cName(String name) {
-    return new Concrete.NameParameter<>(POSITION, true, name);
+  public static Concrete.NameParameter<Position> cName(Referable referable) {
+    return new Concrete.NameParameter<>(POSITION, true, referable);
   }
 
-  public static Concrete.NameParameter<Position> cName(boolean explicit, String name) {
-    return new Concrete.NameParameter<>(POSITION, explicit, name);
+  public static Concrete.NameParameter<Position> cName(boolean explicit, Referable referable) {
+    return new Concrete.NameParameter<>(POSITION, explicit, referable);
   }
 
   public static Concrete.TypeParameter<Position> cTypeArg(boolean explicit, Concrete.Expression<Position> type) {
@@ -198,8 +198,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.ConstructorPattern<>(POSITION, isExplicit, referable, patternArgs);
   }
 
-  public static Concrete.NamePattern<Position> cNamePattern(boolean isExplicit, String name) {
-    return new Concrete.NamePattern<>(POSITION, isExplicit, name);
+  public static Concrete.NamePattern<Position> cNamePattern(boolean isExplicit, Referable referable) {
+    return new Concrete.NamePattern<>(POSITION, isExplicit, referable);
   }
 
   public static Concrete.EmptyPattern<Position> cEmptyPattern(boolean isExplicit) {

@@ -59,7 +59,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
       return ((Concrete.TypeParameter<Position>) arg1).getType().accept(this, ((Concrete.TypeParameter<Position>) arg2).getType());
     }
     if (arg1 instanceof Concrete.NameParameter && arg2 instanceof Concrete.NameParameter) {
-      mySubstitution.put((Concrete.NameParameter) arg1, (Concrete.NameParameter) arg2);
+      mySubstitution.put(((Concrete.NameParameter) arg1).getReferable(), ((Concrete.NameParameter) arg2).getReferable());
       return true;
     }
     return false;
