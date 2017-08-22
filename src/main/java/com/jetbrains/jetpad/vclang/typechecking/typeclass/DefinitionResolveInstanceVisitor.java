@@ -90,11 +90,6 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
   }
 
   @Override
-  public Void visitImplement(Concrete.Implementation def, SimpleInstanceProvider parentInstanceScope) {
-    return null;
-  }
-
-  @Override
   public Void visitClassView(Concrete.ClassView def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }

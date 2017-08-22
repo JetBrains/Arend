@@ -367,18 +367,17 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   }
 
   void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, GlobalReferable classDef) {
-    for (Concrete.ClassFieldImpl<T> statement : classFieldImpls) {
-      Referable field = statement.getImplementedField();
+    for (Concrete.ClassFieldImpl<T> impl : classFieldImpls) {
+      Referable field = impl.getImplementedField();
       if (field instanceof UnresolvedReference) {
         GlobalReferable resolvedRef = myNameResolver.nsProviders.dynamics.forReferable(classDef).resolveName(field.getName());
-
         if (resolvedRef != null) {
-          statement.setImplementedField(resolvedRef);
+          impl.setImplementedField(resolvedRef);
         } else {
-          myErrorReporter.report(new NoSuchFieldError<>(field.getName(), statement));
+          myErrorReporter.report(new NoSuchFieldError<>(field.getName(), impl));
         }
       }
-      statement.getImplementation().accept(this, null);
+      impl.getImplementation().accept(this, null);
     }
   }
 

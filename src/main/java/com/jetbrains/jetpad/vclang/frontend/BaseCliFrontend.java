@@ -179,11 +179,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitImplement(Concrete.Implementation<Position> def, Map<String, GlobalReferable> params) {
-      return null;
-    }
-
-    @Override
     public Void visitClassView(Concrete.ClassView<Position> def, Map<String, GlobalReferable> params) {
       return null;
     }

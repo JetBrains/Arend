@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -951,11 +950,11 @@ public final class Concrete {
     private final List<TypeParameter<T>> myPolyParameters;
     private final List<ReferenceExpression<T>> mySuperClasses;
     private final List<ClassField<T>> myFields;
-    private final List<Implementation<T>> myImplementations;
+    private final List<ClassFieldImpl<T>> myImplementations;
     private final List<Statement<T>> myGlobalStatements;
     private final List<Definition<T>> myInstanceDefinitions;
 
-    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<Implementation<T>> implementations, List<Statement<T>> globalStatements, List<Definition<T>> instanceDefinitions) {
+    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations, List<Statement<T>> globalStatements, List<Definition<T>> instanceDefinitions) {
       super(data, referable, Precedence.DEFAULT);
       myPolyParameters = polyParams;
       mySuperClasses = superClasses;
@@ -985,7 +984,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<Implementation<T>> getImplementations() {
+    public List<ClassFieldImpl<T>> getImplementations() {
       return myImplementations;
     }
 
@@ -1029,42 +1028,6 @@ public final class Concrete {
     @Nonnull
     public Expression<T> getResultType() {
       return myResultType;
-    }
-  }
-
-  public static class Implementation<T> extends Definition<T> {
-    private Referable myImplementedField;
-    private final Expression<T> myExpression;
-
-    public Implementation(T data, Referable implementedField, Expression<T> expression) {
-      super(data, new GlobalReference(implementedField.getName()), Precedence.DEFAULT); // TODO[abstract]
-      myImplementedField = implementedField;
-      myExpression = expression;
-      setNotStatic();
-    }
-
-    @Nonnull
-    public Referable getImplementedField() {
-      return myImplementedField;
-    }
-
-    public void setImplementedField(Referable field) {
-      myImplementedField = field;
-    }
-
-    @Nonnull
-    public Expression<T> getImplementation() {
-      return myExpression;
-    }
-
-    @Override
-    public ClassDefinition<T> getParentDefinition() {
-      return (ClassDefinition<T>) super.getParentDefinition();
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitImplement(this, params);
     }
   }
 

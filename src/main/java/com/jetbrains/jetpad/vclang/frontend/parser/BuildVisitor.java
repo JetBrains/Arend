@@ -10,7 +10,10 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
@@ -471,16 +474,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.FunctionDefinition<Position> result = new Concrete.FunctionDefinition<>(tokenPosition(ctx.getStart()), reference, visitPrecedence(ctx.precedence()), visitFunctionArguments(ctx.tele()), resultType, body, statements);
     reference.setDefinition(result);
 
-    for (Iterator<Concrete.Statement<Position>> iterator = statements.iterator(); iterator.hasNext(); ) {
-      Concrete.Statement<Position> statement = iterator.next();
+    for (Concrete.Statement<Position> statement : statements) {
       if (statement instanceof Concrete.DefineStatement) {
-        Concrete.Definition<Position> definition = ((Concrete.DefineStatement<Position>) statement).getDefinition();
-        if (definition instanceof Concrete.ClassField || definition instanceof Concrete.Implementation) {
-          misplacedDefinitionError(definition.getData());
-          iterator.remove();
-        } else {
-          definition.setParent(result);
-        }
+        ((Concrete.DefineStatement<Position>) statement).getDefinition().setParent(result);
       }
     }
 
@@ -571,7 +567,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
   }
 
-  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField<Position>> fields, List<Concrete.Implementation<Position>> implementations, List<Concrete.Definition<Position>> definitions) {
+  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField<Position>> fields, List<Concrete.ClassFieldImpl<Position>> implementations, List<Concrete.Definition<Position>> definitions) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
         continue;
@@ -588,19 +584,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           if (sourceNode instanceof Concrete.DefineStatement) {
             definition = ((Concrete.DefineStatement<Position>) sourceNode).getDefinition();
           } else {
-            misplacedDefinitionError(sourceNode.getData());
+            if (sourceNode instanceof Concrete.ClassFieldImpl && implementations != null) {
+              implementations.add((Concrete.ClassFieldImpl<Position>) sourceNode);
+            } else {
+              misplacedDefinitionError(sourceNode.getData());
+            }
             continue;
           }
 
           if (definition instanceof Concrete.ClassField) {
             if (fields != null) {
               fields.add((Concrete.ClassField<Position>) definition);
-            } else {
-              misplacedDefinitionError(definition.getData());
-            }
-          } else if (definition instanceof Concrete.Implementation) {
-            if (implementations != null) {
-              implementations.add((Concrete.Implementation<Position>) definition);
             } else {
               misplacedDefinitionError(definition.getData());
             }
@@ -626,7 +620,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.TypeParameter<Position>> polyParameters = visitTeles(ctx.tele());
     List<Concrete.ReferenceExpression<Position>> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
     List<Concrete.ClassField<Position>> fields = new ArrayList<>();
-    List<Concrete.Implementation<Position>> implementations = new ArrayList<>();
+    List<Concrete.ClassFieldImpl<Position>> implementations = new ArrayList<>();
     List<Concrete.Statement<Position>> globalStatements = visitWhere(ctx.where());
     List<Concrete.Definition<Position>> instanceDefinitions;
 
@@ -652,9 +646,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (Concrete.ClassField<Position> field : fields) {
       field.setParent(classDefinition);
     }
-    for (Concrete.Implementation<Position> implementation : implementations) {
-      implementation.setParent(classDefinition);
-    }
     for (Concrete.Definition<Position> definition : instanceDefinitions) {
       definition.setParent(classDefinition);
       definition.setNotStatic();
@@ -668,8 +659,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Implementation<Position> visitClassImplement(ClassImplementContext ctx) {
-    return new Concrete.Implementation<>(tokenPosition(ctx.start), new UnresolvedReference(visitId(ctx.id())), visitExpr(ctx.expr()));
+  public Concrete.ClassFieldImpl<Position> visitClassImplement(ClassImplementContext ctx) {
+    return new Concrete.ClassFieldImpl<>(tokenPosition(ctx.start), new UnresolvedReference(visitId(ctx.id())), visitExpr(ctx.expr()));
   }
 
   @Override

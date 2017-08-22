@@ -135,16 +135,10 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
       visitClassField(field, null);
     }
 
-    for (Concrete.Implementation<T> implementation : def.getImplementations()) {
-      visitImplement(implementation, null);
+    for (Concrete.ClassFieldImpl<T> impl : def.getImplementations()) {
+      impl.getImplementation().accept(visitor, null);
     }
 
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Concrete.Implementation<T> def, Boolean params) {
-    def.getImplementation().accept(new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     return null;
   }
 

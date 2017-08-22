@@ -57,20 +57,12 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
     for (Concrete.ClassField<T> field : def.getFields()) {
       visitClassField(field, fullName);
     }
-    for (Concrete.Implementation<T> implementation : def.getImplementations()) {
-      visitImplement(implementation, fullName);
-    }
     for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
       definition.accept(this, null);
     }
     for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
       definition.accept(this, fullName);
     }
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Concrete.Implementation<T> def, FullName fullName) {
     return null;
   }
 

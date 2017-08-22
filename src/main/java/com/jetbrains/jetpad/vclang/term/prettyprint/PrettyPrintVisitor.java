@@ -969,7 +969,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     prettyPrintClassDefinitionHeader(def);
 
     Collection<? extends Concrete.ClassField<T>> fields = def.getFields();
-    Collection<? extends Concrete.Implementation<T>> implementations = def.getImplementations();
+    Collection<? extends Concrete.ClassFieldImpl<T>> implementations = def.getImplementations();
     Collection<? extends Concrete.Definition<T>> instanceDefinitions = def.getInstanceDefinitions();
 
     if (!fields.isEmpty() || !implementations.isEmpty() || !instanceDefinitions.isEmpty()) {
@@ -983,10 +983,11 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         myBuilder.append('\n');
       }
 
-      for (Concrete.Implementation<T> implementation : implementations) {
+      for (Concrete.ClassFieldImpl<T> impl : implementations) {
         myBuilder.append('\n');
         printIndent();
-        implementation.accept(this, null);
+        myBuilder.append("| ").append(impl.getImplementedField().getName()).append(" => ");
+        impl.getImplementation().accept(this, Concrete.Expression.PREC);
         myBuilder.append('\n');
       }
 
@@ -1002,13 +1003,6 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       myBuilder.append("}");
     }
 
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Concrete.Implementation<T> def, Void params) {
-    myBuilder.append("| ").append(def.getName()).append(" => ");
-    def.getImplementation().accept(this, Concrete.Expression.PREC);
     return null;
   }
 

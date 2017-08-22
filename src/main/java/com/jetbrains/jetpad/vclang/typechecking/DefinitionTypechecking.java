@@ -650,7 +650,7 @@ class DefinitionTypechecking {
 
       if (!def.getImplementations().isEmpty()) {
         typedDef.updateSorts();
-        for (Concrete.Implementation<T> implementation : def.getImplementations()) {
+        for (Concrete.ClassFieldImpl<T> implementation : def.getImplementations()) {
           ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
           if (typedDef.isImplemented(field)) {
             classOk = false;

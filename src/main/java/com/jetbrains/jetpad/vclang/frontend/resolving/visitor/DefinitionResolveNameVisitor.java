@@ -220,8 +220,8 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         for (Concrete.ClassField<T> field : def.getFields()) {
           field.accept(this, dynamicScope);
         }
-        for (Concrete.Implementation<T> implementation : def.getImplementations()) {
-          implementation.accept(this, dynamicScope);
+        if (!def.getImplementations().isEmpty()) {
+          new ExpressionResolveNameVisitor<>(dynamicScope, myContext, myNameResolver, myInfoProvider, myErrorReporter).visitClassFieldImpls(def.getImplementations(), def);
         }
         for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
           definition.accept(this, dynamicScope);
@@ -231,19 +231,6 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       myErrorReporter.report(e.toError());
     }
 
-    return null;
-  }
-
-  @Override
-  public Void visitImplement(Concrete.Implementation<T> def, Scope parentScope) {
-    GlobalReferable referable = myNameResolver.nsProviders.dynamics.forReferable(def.getParentDefinition()).resolveName(def.getName());
-    if (referable != null) {
-      def.setImplementedField(referable);
-    } else {
-      myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
-    }
-
-    def.getImplementation().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
     return null;
   }
 
