@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.term.provider;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 
 public interface ParserInfoProvider {
-  Abstract.Precedence precedenceOf(GlobalReferable referable);
+  Precedence precedenceOf(GlobalReferable referable);
 }

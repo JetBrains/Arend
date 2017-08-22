@@ -12,9 +12,9 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
@@ -245,7 +245,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         if ((ref instanceof UnresolvedReference)) {
           errorCause = elem.binOp.getData();
         } else {
-          parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) ref) : Abstract.Precedence.DEFAULT, elem.binOp, elem.argument == null);
+          parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) ref) : Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         }
       }

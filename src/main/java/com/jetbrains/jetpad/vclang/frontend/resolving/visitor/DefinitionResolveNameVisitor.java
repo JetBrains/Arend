@@ -189,8 +189,8 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   @Override
   public Void visitClass(Concrete.ClassDefinition<T> def, Scope parentScope) {
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
-    for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
-      superClass.getSuperClass().accept(exprVisitor, null);
+    for (Concrete.ReferenceExpression<T> superClass : def.getSuperClasses()) {
+      exprVisitor.visitReference(superClass, null);
     }
 
     try {

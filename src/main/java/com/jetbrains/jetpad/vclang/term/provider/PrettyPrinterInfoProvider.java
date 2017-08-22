@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.term.provider;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 
 public interface PrettyPrinterInfoProvider extends ParserInfoProvider {
   String nameFor(Referable referable);
@@ -14,8 +14,8 @@ public interface PrettyPrinterInfoProvider extends ParserInfoProvider {
     }
 
     @Override
-    public Abstract.Precedence precedenceOf(GlobalReferable referable) {
-      return Abstract.Precedence.DEFAULT;
+    public Precedence precedenceOf(GlobalReferable referable) {
+      return Precedence.DEFAULT;
     }
   };
 }

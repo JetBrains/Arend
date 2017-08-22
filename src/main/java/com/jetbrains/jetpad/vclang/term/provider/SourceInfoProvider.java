@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.term.provider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 
 public interface SourceInfoProvider<SourceIdT extends SourceId> extends DefinitionLocator<SourceIdT>, PrettyPrinterInfoProvider {
   String fullNameFor(GlobalReferable definition);
@@ -21,8 +21,8 @@ public interface SourceInfoProvider<SourceIdT extends SourceId> extends Definiti
     }
 
     @Override
-    public Abstract.Precedence precedenceOf(GlobalReferable referable) {
-      return Abstract.Precedence.DEFAULT;
+    public Precedence precedenceOf(GlobalReferable referable) {
+      return Precedence.DEFAULT;
     }
 
     @Override

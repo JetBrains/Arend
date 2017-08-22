@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThat;
 public class BaseModuleLoaderTest extends VclangTestCase {
   private MemoryStorage storage;
   private BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
-  private final Map<MemoryStorage.SourceId, Abstract.ClassDefinition> loadedModules = new HashMap<>();
+  private final Map<MemoryStorage.SourceId, Concrete.ClassDefinition> loadedModules = new HashMap<>();
   private final Set<MemoryStorage.SourceId> failedModules = new HashSet<>();
 
   @Before
@@ -28,7 +28,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
-        Abstract.ClassDefinition old = loadedModules.put(module, result.definition);
+        Concrete.ClassDefinition old = loadedModules.put(module, result.definition);
         assertThat(old, is(nullValue()));
       }
 
@@ -39,8 +39,8 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     };
   }
 
-  protected Abstract.ClassDefinition load(MemoryStorage.SourceId sourceId) {
-    Abstract.ClassDefinition result = moduleLoader.load(sourceId);
+  protected Concrete.ClassDefinition load(MemoryStorage.SourceId sourceId) {
+    Concrete.ClassDefinition result = moduleLoader.load(sourceId);
     if (result != null) {
       assertThat(loadedModules, hasKey(equalTo(sourceId)));
     } else {
@@ -52,7 +52,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
   @Test
   public void loadSimpleModule() {
     storage.add(moduleName("A"), "\\function f => 0");
-    Abstract.ClassDefinition result = load(storage.locateModule(moduleName("A")));
+    Concrete.ClassDefinition result = load(storage.locateModule(moduleName("A")));
     assertThat(errorList, containsErrors(0));
     assertThat(result, is(notNullValue()));
     assertThat(loadedModules.get(storage.locateModule(moduleName("A"))), is(equalTo(result)));
@@ -64,13 +64,13 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     storage.add(modulePath, "\\function f => 0");
 
     MemoryStorage.SourceId source1 = storage.locateModule(modulePath);
-    Abstract.ClassDefinition result1 = load(source1);
+    Concrete.ClassDefinition result1 = load(source1);
 
     loadedModules.remove(source1);
 
     MemoryStorage.SourceId source2 = storage.locateModule(modulePath);
     assertThat(source2, is(equalTo(source1)));
-    Abstract.ClassDefinition result2 = load(source1);
+    Concrete.ClassDefinition result2 = load(source1);
     // We neither guarantee that result2 == result1 nor the opposite,
     // but loading the same module twice must not be an error.
     assertThat(errorList, containsErrors(0));
@@ -104,14 +104,14 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     storage.remove(moduleName("WillBeRemoved"));
     assertThat(storage.isAvailable(source), is(false));
 
-    Abstract.ClassDefinition result = load(source);
+    Concrete.ClassDefinition result = load(source);
     assertThat(result, is(nullValue()));
   }
 
   @Test
   public void moduleWithErrorsError() {
     storage.add(moduleName("A"), "hello world");
-    Abstract.ClassDefinition result = load(storage.locateModule(moduleName("A")));
+    Concrete.ClassDefinition result = load(storage.locateModule(moduleName("A")));
     assertThat(result, is(nullValue()));
     assertThat(errorList, is(not(empty())));
   }

@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -137,17 +136,17 @@ public class PatternTypechecking<T> {
 
       if (!elimParams.isEmpty()) {
         for (Concrete.Parameter<T> parameter : abstractParameters) {
-          if (parameter instanceof Abstract.TelescopeParameter) {
-            for (Referable referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
+          if (parameter instanceof Concrete.TelescopeParameter) {
+            for (Referable referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
               if (!elimParams.contains(link)) {
                 myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
               }
               link = link.getNext();
               i++;
             }
-          } else if (parameter instanceof Abstract.NameParameter) {
+          } else if (parameter instanceof Concrete.NameParameter) {
             if (!elimParams.contains(link)) {
-              myContext.put((Abstract.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put((Concrete.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -218,12 +217,12 @@ public class PatternTypechecking<T> {
         }
       }
 
-      if (exprs == null || pattern == null || pattern instanceof Abstract.NamePattern) {
-        if (!(pattern == null || pattern instanceof Abstract.NamePattern)) {
+      if (exprs == null || pattern == null || pattern instanceof Concrete.NamePattern) {
+        if (!(pattern == null || pattern instanceof Concrete.NamePattern)) {
           myErrorReporter.report(new LocalTypeCheckingError<>(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
-        if (pattern instanceof Abstract.NamePattern) {
-          String name = ((Abstract.NamePattern) pattern).getName();
+        if (pattern instanceof Concrete.NamePattern) {
+          String name = ((Concrete.NamePattern) pattern).getName();
           if (name != null) {
             parameters.setName(name);
           }
@@ -232,7 +231,7 @@ public class PatternTypechecking<T> {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null) {
-            myContext.put((Abstract.NamePattern) pattern, parameters);
+            myContext.put((Concrete.NamePattern) pattern, parameters);
           }
         }
         parameters = parameters.getNext();
@@ -250,7 +249,7 @@ public class PatternTypechecking<T> {
         return null;
       }
 
-      if (pattern instanceof Abstract.EmptyPattern) {
+      if (pattern instanceof Concrete.EmptyPattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myErrorReporter.report(new LocalTypeCheckingError<>("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));

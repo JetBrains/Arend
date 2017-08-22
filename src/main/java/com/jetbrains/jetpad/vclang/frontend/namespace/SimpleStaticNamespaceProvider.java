@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -25,7 +24,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     forDefinitions(def.getGlobalDefinitions(), ns);
   }
 
-  private static void forData(Abstract.DataDefinition def, SimpleNamespace ns) {
+  private static void forData(Concrete.DataDefinition<?> def, SimpleNamespace ns) {
     for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
       for (Concrete.Constructor constructor : clause.getConstructors()) {
         ns.addDefinition(constructor);

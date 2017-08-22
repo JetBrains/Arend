@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -270,17 +270,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return Concrete.NamespaceCommandStatement.Kind.EXPORT;
   }
 
-  private Abstract.Precedence visitPrecedence(PrecedenceContext ctx) {
-    return (Abstract.Precedence) visit(ctx);
+  private Precedence visitPrecedence(PrecedenceContext ctx) {
+    return (Precedence) visit(ctx);
   }
 
   @Override
-  public Abstract.Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
-    return Abstract.Precedence.DEFAULT;
+  public Precedence visitNoPrecedence(NoPrecedenceContext ctx) {
+    return Precedence.DEFAULT;
   }
 
   @Override
-  public Abstract.Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
+  public Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     int priority = Integer.parseInt(ctx.NUMBER().getText());
     if (priority < 1 || priority > 9) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
@@ -292,22 +292,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    return new Abstract.Precedence((Abstract.Precedence.Associativity) visit(ctx.associativity()), (byte) priority);
+    return new Precedence((Precedence.Associativity) visit(ctx.associativity()), (byte) priority);
   }
 
   @Override
-  public Abstract.Precedence.Associativity visitNonAssoc(NonAssocContext ctx) {
-    return Abstract.Precedence.Associativity.NON_ASSOC;
+  public Precedence.Associativity visitNonAssoc(NonAssocContext ctx) {
+    return Precedence.Associativity.NON_ASSOC;
   }
 
   @Override
-  public Abstract.Precedence.Associativity visitLeftAssoc(LeftAssocContext ctx) {
-    return Abstract.Precedence.Associativity.LEFT_ASSOC;
+  public Precedence.Associativity visitLeftAssoc(LeftAssocContext ctx) {
+    return Precedence.Associativity.LEFT_ASSOC;
   }
 
   @Override
-  public Abstract.Precedence.Associativity visitRightAssoc(RightAssocContext ctx) {
-    return Abstract.Precedence.Associativity.RIGHT_ASSOC;
+  public Precedence.Associativity visitRightAssoc(RightAssocContext ctx) {
+    return Precedence.Associativity.RIGHT_ASSOC;
   }
 
   private Concrete.Pattern<Position> visitPattern(PatternContext ctx) {
@@ -399,7 +399,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private Concrete.ClassViewField<Position> visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView<Position> classView) {
     String underlyingField = visitId(ctx.id(0));
-    return new Concrete.ClassViewField<>(tokenPosition(ctx.id(0).start), ctx.id().size() > 1 ? visitId(ctx.id(1)) : underlyingField, ctx.precedence() == null ? Abstract.Precedence.DEFAULT : visitPrecedence(ctx.precedence()), new UnresolvedReference(underlyingField), classView);
+    return new Concrete.ClassViewField<>(tokenPosition(ctx.id(0).start), ctx.id().size() > 1 ? visitId(ctx.id(1)) : underlyingField, ctx.precedence() == null ? Precedence.DEFAULT : visitPrecedence(ctx.precedence()), new UnresolvedReference(underlyingField), classView);
   }
 
   @Override
@@ -411,7 +411,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (type instanceof Concrete.ClassExtExpression) {
         Concrete.ClassExtExpression<Position> classExt = (Concrete.ClassExtExpression<Position>) type;
         if (classExt.getBaseClassExpression() instanceof Concrete.ReferenceExpression) {
-          return new Concrete.ClassViewInstance<>(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, visitId(ctx.id()), Abstract.Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression<Position>) classExt.getBaseClassExpression(), classExt.getStatements());
+          return new Concrete.ClassViewInstance<>(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, visitId(ctx.id()), Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression<Position>) classExt.getBaseClassExpression(), classExt.getStatements());
         }
       }
     }
@@ -606,7 +606,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.ClassDefinition<Position> visitDefClass(DefClassContext ctx) {
     List<Concrete.TypeParameter<Position>> polyParameters = visitTeles(ctx.tele());
-    List<Concrete.SuperClass<Position>> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
+    List<Concrete.ReferenceExpression<Position>> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
     List<Concrete.ClassField<Position>> fields = new ArrayList<>();
     List<Concrete.Implementation<Position>> implementations = new ArrayList<>();
     List<Concrete.Statement<Position>> globalStatements = visitWhere(ctx.where());
@@ -620,7 +620,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
-      superClasses.add(new Concrete.SuperClass<>(tokenPosition(exprCtx.getStart()), visitAtomFieldsAcc(exprCtx)));
+      Concrete.Expression<Position> superClass = visitAtomFieldsAcc(exprCtx);
+      if (!(superClass instanceof Concrete.ReferenceExpression)) {
+        myErrorReporter.report(new ParserError(superClass.getData(), "Expected a class"));
+        throw new ParseException();
+      }
+      superClasses.add((Concrete.ReferenceExpression<Position>) superClass);
     }
 
     Concrete.ClassDefinition<Position> classDefinition = new Concrete.ClassDefinition<>(tokenPosition(ctx.getStart()), visitId(ctx.id()), polyParameters, superClasses, fields, implementations, globalStatements, instanceDefinitions);

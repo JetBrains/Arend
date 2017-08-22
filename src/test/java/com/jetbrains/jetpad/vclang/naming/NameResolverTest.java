@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -17,8 +17,8 @@ import static org.junit.Assert.assertTrue;
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -31,8 +31,8 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Abstract.Precedence(Abstract.Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Abstract.Precedence(Abstract.Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -147,7 +147,7 @@ public class NameResolverTest extends NameResolverTestCase {
     assertEquals(2, staticNamespace.getMembers().size());
     assertNotNull(staticNamespace.getMember("A"));
     assertEquals(3, staticNamespace.getMember("A").namespace.getMembers().size());
-    assertEquals(3, ((Abstract.ClassDefinition) staticNamespace.getMember("A").abstractDefinition).getStatements().size());
+    assertEquals(3, ((Concrete.ClassDefinition) staticNamespace.getMember("A").abstractDefinition).getStatements().size());
     */
     assertTrue(false);
   }
@@ -178,27 +178,27 @@ public class NameResolverTest extends NameResolverTestCase {
 
     assertEquals(namespace.getMembers().toString(), 2, namespace.getMembers().size());
     assertNotNull(namespace.getMember("A"));
-    Abstract.ClassDefinition classA = (Abstract.ClassDefinition) namespace.getMember("A").abstractDefinition;
+    Concrete.ClassDefinition classA = (Concrete.ClassDefinition) namespace.getMember("A").abstractDefinition;
     assertEquals(classA.getStatements().toString(), 4, classA.getStatements().size());
     assertEquals(namespace.getMember("A").namespace.getMembers().toString(), 4, namespace.getMember("A").namespace.getMembers().size());
-    Abstract.ClassDefinition classB = (Abstract.ClassDefinition) getField(classA, "B");
+    Concrete.ClassDefinition classB = (Concrete.ClassDefinition) getField(classA, "B");
     assertNotNull(classB);
     assertEquals(classB.getStatements().toString(), 3, classB.getStatements().size());
-    Abstract.ClassDefinition classC = (Abstract.ClassDefinition) getField(classB, "C");
+    Concrete.ClassDefinition classC = (Concrete.ClassDefinition) getField(classB, "C");
     assertNotNull(classC);
     assertEquals(classC.getStatements().toString(), 2, classC.getStatements().size());
-    Abstract.ClassDefinition classD = (Abstract.ClassDefinition) getField(classA, "D");
+    Concrete.ClassDefinition classD = (Concrete.ClassDefinition) getField(classA, "D");
     assertNotNull(classD);
     assertEquals(classD.getStatements().toString(), 1, classD.getStatements().size());
     */
     assertTrue(false);
   }
 
-  private Abstract.Definition getField(Abstract.ClassDefinition classDefinition, String name) {
+  private Concrete.Definition getField(Concrete.ClassDefinition classDefinition, String name) {
     /*
-    for (Abstract.Statement statement : classDefinition.getStatements()) {
-      if (statement instanceof Abstract.DefineStatement && ((Abstract.DefineStatement) statement).getDefinition().getName().equals(name)) {
-        return ((Abstract.DefineStatement) statement).getDefinition();
+    for (Concrete.Statement statement : classDefinition.getStatements()) {
+      if (statement instanceof Concrete.DefineStatement && ((Concrete.DefineStatement) statement).getDefinition().getName().equals(name)) {
+        return ((Concrete.DefineStatement) statement).getDefinition();
       }
     }
     */

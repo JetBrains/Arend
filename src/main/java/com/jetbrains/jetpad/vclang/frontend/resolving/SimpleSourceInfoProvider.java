@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import java.util.HashMap;
@@ -32,8 +32,8 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   }
 
   @Override
-  public Abstract.Precedence precedenceOf(GlobalReferable referable) {
-    return referable instanceof Concrete.Definition ? ((Concrete.Definition) referable).getPrecedence() : Abstract.Precedence.DEFAULT;
+  public Precedence precedenceOf(GlobalReferable referable) {
+    return referable instanceof Concrete.Definition ? ((Concrete.Definition) referable).getPrecedence() : Precedence.DEFAULT;
   }
 
   @Override

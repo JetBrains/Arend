@@ -437,12 +437,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   @Override
   public Void visitBinOp(final Concrete.BinOpExpression<T> expr, final Byte prec) {
     Referable referable = expr.getReferent();
-    Abstract.Precedence precedence = referable instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) expr.getReferent()) : Abstract.Precedence.DEFAULT;
+    Precedence precedence = referable instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) expr.getReferent()) : Precedence.DEFAULT;
     if (expr.getRight() == null) {
       if (prec > precedence.priority) {
         myBuilder.append('(');
       }
-      expr.getLeft().accept(this, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+      expr.getLeft().accept(this, (byte) (precedence.priority + (precedence.associativity == Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
       String name = referable.getName();
       myBuilder.append(expr.getRight() == null ? " " + name + "`" : (isPrefix(name) ? " `" : " ") + name);
       if (prec > precedence.priority) {
@@ -453,12 +453,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         @Override
         void printLeft(PrettyPrintVisitor<T> pp) {
           if (prec > precedence.priority) pp.myBuilder.append('(');
-          expr.getLeft().accept(pp, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
+          expr.getLeft().accept(pp, (byte) (precedence.priority + (precedence.associativity == Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
         }
 
         @Override
         void printRight(PrettyPrintVisitor<T> pp) {
-          expr.getRight().accept(pp, (byte) (precedence.priority + (precedence.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
+          expr.getRight().accept(pp, (byte) (precedence.priority + (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
           if (prec > precedence.priority) pp.myBuilder.append(')');
         }
 
@@ -473,7 +473,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
           Concrete.Expression r = expr.getRight();
           if (r instanceof Concrete.BinOpExpression) {
             Referable ref = ((Concrete.BinOpExpression) r).getReferent();
-            Abstract.Precedence refPrec = ref instanceof GlobalReferable ? myInfoProvider.precedenceOf(((GlobalReferable) ref)) : Abstract.Precedence.DEFAULT;
+            Precedence refPrec = ref instanceof GlobalReferable ? myInfoProvider.precedenceOf(((GlobalReferable) ref)) : Precedence.DEFAULT;
             if (prec <= refPrec.priority)
               return false; // no bracket drawn
           }
@@ -697,11 +697,11 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   private void prettyPrintNameWithPrecedence(Concrete.Definition def) {
-    Abstract.Precedence precedence = def.getPrecedence();
-    if (!precedence.equals(Abstract.Precedence.DEFAULT)) {
+    Precedence precedence = def.getPrecedence();
+    if (!precedence.equals(Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
-      if (precedence.associativity == Abstract.Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
-      if (precedence.associativity == Abstract.Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
+      if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
+      if (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC) myBuilder.append('r');
       myBuilder.append(' ');
       myBuilder.append(precedence.priority);
       myBuilder.append(' ');
@@ -952,9 +952,9 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();
-      for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
+      for (Concrete.ReferenceExpression<T> superClass : def.getSuperClasses()) {
         myBuilder.append(" ");
-        superClass.getSuperClass().accept(this, Concrete.Expression.PREC);
+        visitReference(superClass, Concrete.Expression.PREC);
         if (--i == 0) {
           myBuilder.append(",");
         }

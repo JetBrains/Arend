@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -397,7 +396,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     for (; expr.isInstance(PiExpression.class); expr = expr.cast(PiExpression.class).getCodomain()) {
       List<Concrete.TypeParameter<Position>> params = new ArrayList<>();
       visitDependentLink(expr.cast(PiExpression.class).getParameters(), params, false);
-      if (!parameters.isEmpty() && parameters.get(parameters.size() - 1) instanceof Abstract.TelescopeParameter && !params.isEmpty() && params.get(0) instanceof Abstract.TelescopeParameter) {
+      if (!parameters.isEmpty() && parameters.get(parameters.size() - 1) instanceof Concrete.TelescopeParameter && !params.isEmpty() && params.get(0) instanceof Concrete.TelescopeParameter) {
         parameters.get(parameters.size() - 1).addAll(params);
       } else {
         parameters.add(params);

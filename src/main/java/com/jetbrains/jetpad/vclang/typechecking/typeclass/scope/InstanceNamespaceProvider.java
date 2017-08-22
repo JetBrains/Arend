@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
@@ -11,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class InstanceNamespaceProvider<T> {
-  private final Map<Abstract.Definition, Scope> cache = new HashMap<>();
+  private final Map<Concrete.Definition<T>, Scope> cache = new HashMap<>();
   private final ErrorReporter<T> myErrorReporter;
 
   public InstanceNamespaceProvider(ErrorReporter<T> errorReporter) {

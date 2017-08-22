@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import javax.annotation.Nonnull;
 import java.io.*;
@@ -76,7 +76,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      Abstract.ClassDefinition result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(
+      Concrete.ClassDefinition result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(
           errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {

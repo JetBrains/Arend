@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.ModuleResolver;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
   protected final Storage<SourceIdT> myStorage;
@@ -24,7 +24,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   protected void loadingFailed(SourceIdT module) {}
 
   @Override
-  public Abstract.ClassDefinition load(SourceIdT sourceId) {
+  public Concrete.ClassDefinition load(SourceIdT sourceId) {
     final SourceSupplier.LoadResult result;
     result = myStorage.loadSource(sourceId, myErrorReporter);
 
@@ -38,7 +38,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   }
 
   @Override
-  public Abstract.ClassDefinition load(ModulePath modulePath) {
+  public Concrete.ClassDefinition load(ModulePath modulePath) {
     return load(locateModule(modulePath));
   }
 

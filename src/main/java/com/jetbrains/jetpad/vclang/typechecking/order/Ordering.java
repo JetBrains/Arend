@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
@@ -49,7 +48,7 @@ public class Ordering<T> {
   }
 
   public void doOrder(Concrete.Definition<T> definition) {
-    if (definition instanceof Abstract.ClassView || definition instanceof Abstract.ClassViewField) {
+    if (definition instanceof Concrete.ClassView || definition instanceof Concrete.ClassViewField) {
       return;
     }
     if (!myListener.needsOrdering(definition)) {
@@ -122,14 +121,16 @@ public class Ordering<T> {
 
     for (GlobalReferable referable : dependencies) {
       Concrete.Definition<T> dependency = myTypecheckableProvider.forReferable(referable);
+      boolean isField = false;
       if (dependency instanceof Concrete.ClassField) {
         dependency = ((Concrete.ClassField<T>) dependency).getParentDefinition();
+        isField = true;
       } else if (dependency instanceof Concrete.Constructor) {
         dependency = ((Concrete.Constructor<T>) dependency).getDataType();
       }
 
       if (dependency.equals(definition)) {
-        if (!(referable instanceof Abstract.ClassField)) {
+        if (!isField) {
           recursion = DependencyListener.Recursion.IN_BODY;
         }
       } else {

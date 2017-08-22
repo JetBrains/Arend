@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -14,15 +14,15 @@ public interface SourceSupplier<SourceIdT extends SourceId> {
   long getAvailableVersion(@Nonnull SourceIdT sourceId);
 
   class LoadResult {
-    public final @Nonnull Abstract.ClassDefinition definition;
+    public final @Nonnull Concrete.ClassDefinition definition;
     public final long version;
 
-    public LoadResult(@Nonnull Abstract.ClassDefinition definition, long version) {
+    public LoadResult(@Nonnull Concrete.ClassDefinition definition, long version) {
       this.definition = definition;
       this.version = version;
     }
 
-    public static LoadResult make(@Nullable Abstract.ClassDefinition result, long version) {
+    public static LoadResult make(@Nullable Concrete.ClassDefinition result, long version) {
       return result != null ? new LoadResult(result, version) : null;
     }
   }

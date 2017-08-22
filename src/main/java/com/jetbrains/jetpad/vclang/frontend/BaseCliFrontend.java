@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -80,7 +79,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         definitionIds.put(module, new HashMap<>());
       }
       defIdCollector.visitClass((Concrete.ClassDefinition<Position>) result.definition, definitionIds.get(module));
-      sourceInfoCollector.visitModule(module, (Concrete.ClassDefinition) result.definition);
+      sourceInfoCollector.visitModule(module, result.definition);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -92,7 +91,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+    public Concrete.ClassDefinition load(SourceIdT sourceId) {
       assert !loadedSources.containsKey(sourceId);
       ModuleResult moduleResult = moduleResults.get(sourceId);
       if (moduleResult != null) {
@@ -103,7 +102,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Abstract.ClassDefinition load(ModulePath modulePath) {
+    public Concrete.ClassDefinition load(ModulePath modulePath) {
       return load(locateModule(modulePath));
     }
 
@@ -201,20 +200,18 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
 
-    static String getIdFor(Abstract.Definition definition) {
-      if (definition instanceof Concrete.Definition) {
-        Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
-        if (pos != null) {
-          return pos.line + ";" + pos.column;
-        }
+    static String getIdFor(Concrete.Definition<Position> definition) {
+      Position pos = definition.getData();
+      if (pos != null) {
+        return pos.line + ";" + pos.column;
       }
       return null;
     }
   }
 
-  protected Abstract.ClassDefinition loadPrelude() {
+  protected Concrete.ClassDefinition loadPrelude() {
     SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    Concrete.ClassDefinition prelude = (Concrete.ClassDefinition) moduleTracker.load(sourceId);
+    Concrete.ClassDefinition prelude = moduleTracker.load(sourceId);
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
@@ -262,7 +259,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       final Concrete.ClassDefinition definition;
       SourceSupplier.LoadResult result = loadedSources.get(source);
       if (result == null){
-        definition = (Concrete.ClassDefinition) moduleTracker.load(source);
+        definition = moduleTracker.load(source);
         if (definition == null) {
           continue;
         }
@@ -277,7 +274,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
         flushErrors();
       } else {
-        definition = (Concrete.ClassDefinition) result.definition;
+        definition = result.definition;
       }
       modulesToTypeCheck.add((Concrete.ClassDefinition<Position>) definition);
     }

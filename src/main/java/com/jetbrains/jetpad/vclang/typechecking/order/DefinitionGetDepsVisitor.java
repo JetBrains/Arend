@@ -127,8 +127,8 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   public Void visitClass(Concrete.ClassDefinition<T> def, Boolean params) {
     CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
-    for (Concrete.SuperClass<T> superClass : def.getSuperClasses()) {
-      superClass.getSuperClass().accept(visitor, null);
+    for (Concrete.ReferenceExpression<T> superClass : def.getSuperClasses()) {
+      visitor.visitReference(superClass, null);
     }
 
     for (Concrete.ClassField<T> field : def.getFields()) {

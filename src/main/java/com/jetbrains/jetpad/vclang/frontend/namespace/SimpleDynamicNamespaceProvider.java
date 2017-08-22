@@ -26,8 +26,8 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       }
       classCache.put(referable, ns);
 
-      for (final Concrete.SuperClass superClass : classDefinition.getSuperClasses()) {
-        GlobalReferable superDef = Concrete.getUnderlyingClassDef(superClass.getSuperClass());
+      for (final Concrete.ReferenceExpression superClass : classDefinition.getSuperClasses()) {
+        GlobalReferable superDef = Concrete.getUnderlyingClassDef(superClass);
         if (superDef != null) {
           ns.addAll(forReferable(superDef));
         }

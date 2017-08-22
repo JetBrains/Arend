@@ -5,8 +5,8 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.Expression<Position> expectedType = cPi(expectedArguments, expected.getResultType());
     Concrete.Expression<Position> actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
-    assertTrue(result.getBody() instanceof Abstract.TermFunctionBody);
+    assertTrue(result.getBody() instanceof Concrete.TermFunctionBody);
     assertTrue(compareAbstract(
       cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody<Position>) expected.getBody()).getTerm()),
       cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody<Position>) result.getBody()).getTerm())));
@@ -108,7 +108,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     Concrete.NameParameter<Position> t = cName("t");
     Concrete.NameParameter<Position> y = cName("y");
     Concrete.NameParameter<Position> z = cName("z");
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Abstract.Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(t, y, z), cApps(cVar(y), cVar(z)))), Collections.emptyList());
     testDef(def, def);
   }
 

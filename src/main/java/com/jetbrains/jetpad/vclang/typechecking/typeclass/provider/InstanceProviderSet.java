@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
 import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
@@ -14,14 +13,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class InstanceProviderSet<T> {
-  private final Map<Abstract.Definition, InstanceProvider> myProviders = new HashMap<>();
+  private final Map<Concrete.Definition, InstanceProvider> myProviders = new HashMap<>();
   private final InstanceNamespaceProvider<T> myInstanceNamespaceProvider;
 
   public InstanceProviderSet(InstanceNamespaceProvider<T> instanceNamespaceProvider) {
     myInstanceNamespaceProvider = instanceNamespaceProvider;
   }
 
-  public void setProvider(Abstract.Definition definition, InstanceProvider provider) {
+  public void setProvider(Concrete.Definition definition, InstanceProvider provider) {
     myProviders.put(definition, provider);
   }
 

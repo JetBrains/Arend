@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
@@ -32,7 +31,7 @@ public class NameResolver {
   public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
     ModuleNamespace ns = resolveModuleNamespace_(modulePath);
     if (myModuleResolver != null && (ns == null || ns.getRegisteredClass() == null)) {
-      Abstract.ClassDefinition loadedClass = myModuleResolver.load(modulePath);
+      Concrete.ClassDefinition loadedClass = myModuleResolver.load(modulePath);
       if (ns == null && loadedClass != null) {
         ns = resolveModuleNamespace_(modulePath);
       }
@@ -70,7 +69,6 @@ public class NameResolver {
 
   public GlobalReferable resolveModuleCall(final Scope currentScope, final Concrete.ModuleCallExpression moduleCall) {
     if (moduleCall.getModule() != null) {
-      if (!(moduleCall.getModule() instanceof Abstract.ClassDefinition)) throw new IllegalStateException();
       return moduleCall.getModule();
     }
 

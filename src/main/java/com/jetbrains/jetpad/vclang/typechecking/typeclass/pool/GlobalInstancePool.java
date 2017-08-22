@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
@@ -34,7 +33,7 @@ public class GlobalInstancePool implements ClassViewInstancePool {
     Collection<? extends Concrete.ClassViewInstance> instances = myInstanceProvider.getInstances(classView);
     for (Concrete.ClassViewInstance instance : instances) {
       if ((isView && instance.getClassView().getReferent() == classView ||
-          !isView && ((Abstract.ClassView) instance.getClassView().getReferent()).getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) &&
+          !isView && ((Concrete.ClassView) instance.getClassView().getReferent()).getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) &&
         instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getConcreteDefinition()) {
         Definition definition = myTypecheckerState.getTypechecked(instance);
         if (definition.status().headerIsOK()) {

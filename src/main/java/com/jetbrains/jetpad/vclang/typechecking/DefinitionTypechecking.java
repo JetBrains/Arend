@@ -612,8 +612,8 @@ class DefinitionTypechecking {
       List<Concrete.ClassField<?>> alreadyImplementFields = new ArrayList<>();
       Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
 
-      for (Concrete.SuperClass<T> aSuperClass : def.getSuperClasses()) {
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass.getSuperClass(), null);
+      for (Concrete.ReferenceExpression<T> aSuperClass : def.getSuperClasses()) {
+        CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null);
         if (result == null) {
           classOk = false;
           continue;
@@ -621,7 +621,7 @@ class DefinitionTypechecking {
 
         ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (typeCheckedSuperClass == null) {
-          errorReporter.report(new LocalTypeCheckingError<>("Parent must be a class", aSuperClass.getSuperClass()));
+          errorReporter.report(new LocalTypeCheckingError<>("Parent must be a class", aSuperClass));
           classOk = false;
           continue;
         }
@@ -632,14 +632,14 @@ class DefinitionTypechecking {
         for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
           if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
             classOk = false;
-            alreadyImplementedSourceNode = aSuperClass.getSuperClass();
+            alreadyImplementedSourceNode = aSuperClass;
           }
         }
 
         for (Map.Entry<ClassField, Expression> entry : typeCheckedSuperClass.getImplementedHere().entrySet()) {
           if (!implementField(entry.getKey(), new ClassDefinition.Implementation(createThisParam(typedDef), entry.getValue()), typedDef, alreadyImplementFields)) {
             classOk = false;
-            alreadyImplementedSourceNode = aSuperClass.getSuperClass();
+            alreadyImplementedSourceNode = aSuperClass;
           }
         }
       }

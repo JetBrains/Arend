@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -37,8 +36,8 @@ import static org.junit.Assert.fail;
 
 public class CachingTestCase extends NameResolverTestCase {
   protected final MemoryStorage storage = new MemoryStorage(moduleNsProvider, nameResolver);
-  protected final List<Abstract.Definition> typecheckingSucceeded = new ArrayList<>();
-  protected final List<Abstract.Definition> typecheckingFailed = new ArrayList<>();
+  protected final List<Concrete.Definition> typecheckingSucceeded = new ArrayList<>();
+  protected final List<Concrete.Definition> typecheckingFailed = new ArrayList<>();
   protected BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
   protected TypecheckerState tcState;
@@ -53,7 +52,7 @@ public class CachingTestCase extends NameResolverTestCase {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         if (result == null) throw new IllegalStateException("Could not load module");
-        srcInfoCollector.visitModule(module, (Concrete.ClassDefinition) result.definition);
+        srcInfoCollector.visitModule(module, result.definition);
       }
     };
     nameResolver.setModuleResolver(moduleLoader);

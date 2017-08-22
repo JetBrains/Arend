@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -74,12 +73,12 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateInstances(BiConsumer<Abstract.ClassViewInstance, Abstract.ClassViewInstance> reporter) {
-    Multimap<Pair<Referable, Referable>, Abstract.ClassViewInstance> known = HashMultimap.create();
+  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.ClassViewInstance, Concrete.ClassViewInstance> reporter) {
+    Multimap<Pair<Referable, Referable>, Concrete.ClassViewInstance> known = HashMultimap.create();
     for (Scope scope : myScopes) {
-      for (Abstract.ClassViewInstance instance : scope.getInstances()) {
+      for (Concrete.ClassViewInstance instance : scope.getInstances()) {
         Pair<Referable, Referable> pair = new Pair<>(instance.getClassView().getReferent(), instance.getClassifyingDefinition());
-        for (Abstract.ClassViewInstance prev : known.get(pair)) {
+        for (Concrete.ClassViewInstance prev : known.get(pair)) {
           if (prev != instance) {
             reporter.accept(prev, instance);
           }

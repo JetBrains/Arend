@@ -2,16 +2,15 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.HashMap;
 
 public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider implements ModuleRegistry {
-  private final HashMap<Abstract.ClassDefinition, ModuleNamespace> myMap = new HashMap<>();
+  private final HashMap<Concrete.ClassDefinition, ModuleNamespace> myMap = new HashMap<>();
 
   @Override
-  public ModuleNamespace forModule(Abstract.ClassDefinition definition) {
+  public ModuleNamespace forModule(Concrete.ClassDefinition definition) {
     return myMap.get(definition);
   }
 
@@ -28,7 +27,7 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
     ns.unregisterClass();
   }
 
-  private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Abstract.ClassDefinition module) {
+  private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Concrete.ClassDefinition module) {
     if (myMap.get(module) != null) throw new IllegalStateException();
     SimpleModuleNamespace ns = ensureModuleNamespace(root(), modulePath);
     myMap.put(module, ns);

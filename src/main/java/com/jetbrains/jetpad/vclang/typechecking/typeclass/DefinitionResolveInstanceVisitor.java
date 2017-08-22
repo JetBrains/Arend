@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
 import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
@@ -26,10 +25,10 @@ import java.util.stream.StreamSupport;
 public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVisitor<T, SimpleInstanceProvider, Void> {
   private final InstanceProviderSet<T> myInstanceProviderSet;
   private final InstanceNamespaceProvider<T> myScopeProvider;
-  private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
+  private final Function<Concrete.Definition, Iterable<OpenCommand>> myOpens;
   private final ErrorReporter<T> myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(InstanceProviderSet<T> instanceProviderSet, InstanceNamespaceProvider<T> scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter<T> errorReporter) {
+  public DefinitionResolveInstanceVisitor(InstanceProviderSet<T> instanceProviderSet, InstanceNamespaceProvider<T> scopeProvider, Function<Concrete.Definition, Iterable<OpenCommand>> opens, ErrorReporter<T> errorReporter) {
     myInstanceProviderSet = instanceProviderSet;
     myScopeProvider = scopeProvider;
     myOpens = opens;
@@ -125,7 +124,7 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
     return Stream.of(scope);
   }
 
-  private void warnDuplicate(Abstract.ClassViewInstance instance1, Abstract.ClassViewInstance instance2) {
-    myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, (Concrete.ClassViewInstance) instance2 /* TODO[abstract] */));
+  private void warnDuplicate(Concrete.ClassViewInstance instance1, Concrete.ClassViewInstance instance2) {
+    myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, instance2 /* TODO[abstract] */));
   }
 }

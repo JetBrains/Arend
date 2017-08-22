@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.MergingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collections;
 import java.util.function.BiConsumer;
@@ -34,7 +34,7 @@ public class StaticClassScope extends OverridingScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateInstances(BiConsumer<Abstract.ClassViewInstance, Abstract.ClassViewInstance> reporter) {
+  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.ClassViewInstance, Concrete.ClassViewInstance> reporter) {
     myMerging.findIntroducedDuplicateInstances(reporter);
   }
 }

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
@@ -18,7 +17,7 @@ public class ProxyErrorReporter<T> implements LocalErrorReporter<T> {
     myErrorReporter = errorReporter;
   }
 
-  public Abstract.Definition getDefinition() {
+  public Concrete.Definition<T> getDefinition() {
     return myDefinition;
   }
 
