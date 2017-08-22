@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -72,7 +73,9 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   Concrete.ClassDefinition<Position> parseClass(String name, String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    Concrete.ClassDefinition<Position> classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), name, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
+    GlobalReference reference = new GlobalReference(name);
+    Concrete.ClassDefinition<Position> classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), reference, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
+    reference.setDefinition(classDefinition);
     assertThat(errorList, containsErrors(errors));
     // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return classDefinition;

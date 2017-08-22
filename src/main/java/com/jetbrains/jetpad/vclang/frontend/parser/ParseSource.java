@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -55,7 +56,9 @@ public abstract class ParseSource {
 
     List<Concrete.Statement<Position>> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
 
-    Concrete.ClassDefinition<Position> result = new Concrete.ClassDefinition<>(new Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
+    GlobalReference reference = new GlobalReference(mySourceId.getModulePath().getName());
+    Concrete.ClassDefinition<Position> result = new Concrete.ClassDefinition<>(new Position(mySourceId, 0, 0), reference, statements);
+    reference.setDefinition(result);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);

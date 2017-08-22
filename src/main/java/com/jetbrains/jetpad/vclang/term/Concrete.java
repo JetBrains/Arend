@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -890,22 +891,27 @@ public final class Concrete {
   }
 
   public static abstract class Definition<T> extends SourceNode<T> implements GlobalReferable {
-    private final String myName;
+    private final GlobalReferable myReferable;
     private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
     private Definition<T> myParent;
     private boolean myStatic;
 
-    public Definition(T data, String name, Precedence precedence) {
+    public Definition(T data, GlobalReferable referable, Precedence precedence) {
       super(data);
       myStatic = true;
-      myName = name;
+      myReferable = referable;
       myPrecedence = precedence;
     }
 
     @Nullable
     @Override
     public String getName() {
-      return myName;
+      return myReferable.getName();
+    }
+
+    @Nonnull
+    public GlobalReferable getReferable() {
+      return myReferable;
     }
 
     @Nonnull
@@ -949,8 +955,8 @@ public final class Concrete {
     private final List<Statement<T>> myGlobalStatements;
     private final List<Definition<T>> myInstanceDefinitions;
 
-    public ClassDefinition(T data, String name, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<Implementation<T>> implementations, List<Statement<T>> globalStatements, List<Definition<T>> instanceDefinitions) {
-      super(data, name, Precedence.DEFAULT);
+    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<Implementation<T>> implementations, List<Statement<T>> globalStatements, List<Definition<T>> instanceDefinitions) {
+      super(data, referable, Precedence.DEFAULT);
       myPolyParameters = polyParams;
       mySuperClasses = superClasses;
       myFields = fields;
@@ -959,8 +965,8 @@ public final class Concrete {
       myInstanceDefinitions = instanceDefinitions;
     }
 
-    public ClassDefinition(T data, String name, List<Statement<T>> globalStatements) {
-      this(data, name, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), globalStatements, Collections.emptyList());
+    public ClassDefinition(T data, GlobalReferable referable, List<Statement<T>> globalStatements) {
+      this(data, referable, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), globalStatements, Collections.emptyList());
     }
 
     @Nonnull
@@ -1002,8 +1008,8 @@ public final class Concrete {
   public static class ClassField<T> extends Definition<T> {
     private final Expression<T> myResultType;
 
-    public ClassField(T data, String name, Precedence precedence, Expression<T> resultType) {
-      super(data, name, precedence);
+    public ClassField(T data, GlobalReferable referable, Precedence precedence, Expression<T> resultType) {
+      super(data, referable, precedence);
       setNotStatic();
       myResultType = resultType;
     }
@@ -1031,7 +1037,7 @@ public final class Concrete {
     private final Expression<T> myExpression;
 
     public Implementation(T data, Referable implementedField, Expression<T> expression) {
-      super(data, implementedField.getName(), Precedence.DEFAULT);
+      super(data, new GlobalReference(implementedField.getName()), Precedence.DEFAULT); // TODO[abstract]
       myImplementedField = implementedField;
       myExpression = expression;
       setNotStatic();
@@ -1109,8 +1115,8 @@ public final class Concrete {
     private final FunctionBody<T> myBody;
     private final List<Statement<T>> myStatements;
 
-    public FunctionDefinition(T data, String name, Precedence precedence, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body, List<Statement<T>> statements) {
-      super(data, name, precedence);
+    public FunctionDefinition(T data, GlobalReferable referable, Precedence precedence, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body, List<Statement<T>> statements) {
+      super(data, referable, precedence);
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
@@ -1150,8 +1156,8 @@ public final class Concrete {
     private final boolean myIsTruncated;
     private final UniverseExpression<T> myUniverse;
 
-    public DataDefinition(T data, String name, Precedence precedence, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> eliminatedReferences, boolean isTruncated, UniverseExpression<T> universe, List<ConstructorClause<T>> constructorClauses) {
-      super(data, name, precedence);
+    public DataDefinition(T data, GlobalReferable referable, Precedence precedence, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> eliminatedReferences, boolean isTruncated, UniverseExpression<T> universe, List<ConstructorClause<T>> constructorClauses) {
+      super(data, referable, precedence);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myConstructorClauses = constructorClauses;
@@ -1222,8 +1228,8 @@ public final class Concrete {
     private final List<ReferenceExpression<T>> myEliminatedReferences;
     private final List<FunctionClause<T>> myClauses;
 
-    public Constructor(T data, String name, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
-      super(data, name, precedence);
+    public Constructor(T data, GlobalReferable referable, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
+      super(data, referable, precedence);
       myDataType = dataType;
       myArguments = arguments;
       myEliminatedReferences = eliminatedReferences;
@@ -1263,8 +1269,8 @@ public final class Concrete {
     private Referable myClassifyingField;
     private final List<ClassViewField<T>> myFields;
 
-    public ClassView(T data, String name, ReferenceExpression<T> underlyingClass, Referable classifyingField, List<ClassViewField<T>> fields) {
-      super(data, name, Precedence.DEFAULT);
+    public ClassView(T data, GlobalReferable referable, ReferenceExpression<T> underlyingClass, Referable classifyingField, List<ClassViewField<T>> fields) {
+      super(data, referable, Precedence.DEFAULT);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
       myClassifyingField = classifyingField;
@@ -1299,8 +1305,8 @@ public final class Concrete {
     private Referable myUnderlyingField;
     private final ClassView<T> myOwnView;
 
-    public ClassViewField(T data, String name, Precedence precedence, Referable underlyingField, ClassView<T> ownView) {
-      super(data, name, precedence);
+    public ClassViewField(T data, GlobalReferable referable, Precedence precedence, Referable underlyingField, ClassView<T> ownView) {
+      super(data, referable, precedence);
       myUnderlyingField = underlyingField;
       myOwnView = ownView;
     }
@@ -1332,8 +1338,8 @@ public final class Concrete {
     private final List<ClassFieldImpl<T>> myClassFieldImpls;
     private GlobalReferable myClassifyingDefinition;
 
-    public ClassViewInstance(T data, boolean isDefault, String name, Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
-      super(data, name, precedence);
+    public ClassViewInstance(T data, boolean isDefault, GlobalReferable referable, Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
+      super(data, referable, precedence);
       myDefault = isDefault;
       myArguments = arguments;
       myClassView = classView;

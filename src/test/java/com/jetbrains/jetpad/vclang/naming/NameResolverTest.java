@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -17,8 +19,12 @@ import static org.junit.Assert.assertTrue;
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
+    GlobalReference plusRef = new GlobalReference("+");
+    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    plusRef.setDefinition(plus);
+    GlobalReference mulRef = new GlobalReference("*");
+    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
+    mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
@@ -31,8 +37,12 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    Concrete.Definition plus = new Concrete.FunctionDefinition<>(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
-    Concrete.Definition mul = new Concrete.FunctionDefinition<>(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    GlobalReference plusRef = new GlobalReference("+");
+    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    plusRef.setDefinition(plus);
+    GlobalReference mulRef = new GlobalReference("*");
+    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);

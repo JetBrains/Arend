@@ -32,7 +32,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   private TypecheckerState state = new SimpleTypecheckerState();
 
-  protected final LocalErrorReporter<Position> localErrorReporter = new TestLocalErrorReporter<>(errorReporter);
+  protected final LocalErrorReporter<Position> localErrorReporter = new TestLocalErrorReporter(errorReporter);
 
   public TypeCheckingTestCase() {
     typeCheckPrelude();

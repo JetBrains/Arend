@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -67,7 +68,9 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     LocalReference x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, "f", Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
+    GlobalReference reference = new GlobalReference("f");
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
+    reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, 0), null);
   }
 
