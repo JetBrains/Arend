@@ -106,10 +106,11 @@ class DefinitionTypechecking {
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
         for (Concrete.ClassField<T> field : ((Concrete.ClassDefinition<T>) unit.getDefinition()).getFields()) {
-          ClassField typedDef = new ClassField(unit.getDefinition() /* TODO[abstract]: replace with field */, new ErrorExpression(null, null), definition, createThisParam(definition));
+          ClassField typedDef = new ClassField(field.getReferable(), new ErrorExpression(null, null), definition, createThisParam(definition));
           typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           visitor.getTypecheckingState().record(field, typedDef);
           definition.addField(typedDef);
+          definition.addPersonalField(typedDef);
         }
       } else {
         typeCheckClass((Concrete.ClassDefinition<T>) unit.getDefinition(), definition, enclosingClass, visitor);
@@ -654,7 +655,7 @@ class DefinitionTypechecking {
           ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
           if (typedDef.isImplemented(field)) {
             classOk = false;
-            alreadyImplementFields.add(field.getConcreteDefinition());
+            alreadyImplementFields.add(field.getReferable());
             alreadyImplementedSourceNode = implementation;
             continue;
           }
@@ -690,12 +691,13 @@ class DefinitionTypechecking {
     visitor.setThis(enclosingClass, thisParameter);
     Type typeResult = visitor.finalCheckType(def.getResultType());
 
-    ClassField typedDef = new ClassField(enclosingClass.getConcreteDefinition() /* TODO[abstract]: replace with def */, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
+    ClassField typedDef = new ClassField(def.getReferable(), typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
     if (typeResult == null) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     visitor.getTypecheckingState().record(def, typedDef);
     enclosingClass.addField(typedDef);
+    enclosingClass.addPersonalField(typedDef);
   }
 
   private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
@@ -704,7 +706,7 @@ class DefinitionTypechecking {
       classDef.implementField(classField, implementation);
     }
     if (oldImpl != null && !oldImpl.substThisParam(new ReferenceExpression(implementation.thisParam)).equals(implementation.term)) {
-      alreadyImplemented.add(classField.getConcreteDefinition());
+      alreadyImplemented.add(classField.getReferable());
       return false;
     } else {
       return true;
@@ -728,7 +730,7 @@ class DefinitionTypechecking {
     for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
       ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
       if (classFieldMap.containsKey(field)) {
-        alreadyImplementedFields.add(field.getConcreteDefinition());
+        alreadyImplementedFields.add(field.getReferable());
         alreadyImplementedSourceNode = classFieldImpl;
       } else {
         classFieldMap.put(field, classFieldImpl);
@@ -752,7 +754,7 @@ class DefinitionTypechecking {
           classFieldMap.remove(field);
         }
       } else {
-        notImplementedFields.add(field.getConcreteDefinition());
+        notImplementedFields.add(field.getReferable());
       }
     }
     if (!notImplementedFields.isEmpty()) {

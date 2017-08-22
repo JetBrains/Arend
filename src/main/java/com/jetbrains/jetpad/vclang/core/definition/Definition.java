@@ -6,27 +6,28 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
 
 public abstract class Definition implements Variable {
   private ClassDefinition myThisClass;
-  private Concrete.Definition<?> myConcreteDefinition;
+  private GlobalReferable myReferable;
   private TypeCheckingStatus myStatus;
 
-  public Definition(Concrete.Definition<?> abstractDef, TypeCheckingStatus status) {
-    myConcreteDefinition = abstractDef;
+  public Definition(GlobalReferable referable, TypeCheckingStatus status) {
+    myReferable = referable;
     myStatus = status;
   }
 
   @Override
   public String getName() {
-    return myConcreteDefinition.getName();
+    return myReferable.getName();
   }
 
-  public Concrete.Definition<?> getConcreteDefinition() {
-    return myConcreteDefinition;
+  public GlobalReferable getReferable() {
+    return myReferable;
   }
 
   public DependentLink getParameters() {
@@ -71,18 +72,18 @@ public abstract class Definition implements Variable {
 
   @Override
   public String toString() {
-    return myConcreteDefinition.toString();
+    return myReferable.toString();
   }
 
   public static Definition newDefinition(Concrete.Definition<?> definition) {
     if (definition instanceof Concrete.DataDefinition) {
-      return new DataDefinition((Concrete.DataDefinition) definition);
+      return new DataDefinition(definition);
     }
     if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.ClassViewInstance) {
       return new FunctionDefinition(definition);
     }
     if (definition instanceof Concrete.ClassDefinition) {
-      return new ClassDefinition((Concrete.ClassDefinition) definition);
+      return new ClassDefinition(definition);
     }
     return null;
   }

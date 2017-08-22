@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
@@ -68,10 +67,12 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
       InferenceVariable<T> infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult<T> defCallResult = (CheckTypeVisitor.DefCallResult<T>) result;
+        /* TODO[abstract]: Fix class view inference
         Concrete.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
         if (classView != null) {
           infVar = new TypeClassInferenceVariable<>(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
+        */
       }
       if (infVar == null) {
         infVar = new FunctionInferenceVariable<>(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
@@ -153,7 +154,7 @@ public class StdImplicitArgsInference<T> extends BaseImplicitArgsInference<T> {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError<>(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getConcreteDefinition()), fun));
+              myVisitor.getErrorReporter().report(new TypeMismatchError<>(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
               return null;
             }
 

@@ -19,6 +19,6 @@ public class MissingConstructorError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" '" + constructorName + "' is not a constructor of data type '"), refDoc(dataDef.getConcreteDefinition()), text("'"));
+    return hList(super.getHeaderDoc(src), text(" '" + constructorName + "' is not a constructor of data type '"), refDoc(dataDef.getReferable()), text("'"));
   }
 }

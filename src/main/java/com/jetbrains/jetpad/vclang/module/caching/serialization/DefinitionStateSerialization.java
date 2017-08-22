@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Map;
@@ -98,12 +97,11 @@ public class DefinitionStateSerialization {
   private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
 
-    for (Concrete.ClassField abstractField : definition.getConcreteDefinition().getFields()) {
-      ClassField field = (ClassField) state.getTypechecked(abstractField);
+    for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
       fBuilder.setType(defSerializer.writeExpr(field.getBaseType(Sort.STD)));
-      builder.putFields(myPersistenceProvider.getIdFor(abstractField), fBuilder.build());
+      builder.putFields(myPersistenceProvider.getIdFor(field.getReferable()), fBuilder.build());
     }
 
     for (ClassField classField : definition.getFields()) {
@@ -148,7 +146,7 @@ public class DefinitionStateSerialization {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
 
-      builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getConcreteDefinition()), cBuilder.build());
+      builder.putConstructors(myPersistenceProvider.getIdFor(constructor.getReferable()), cBuilder.build());
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());

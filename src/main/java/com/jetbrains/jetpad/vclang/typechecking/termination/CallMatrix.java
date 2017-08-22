@@ -34,6 +34,6 @@ class CallMatrix extends LabeledCallMatrix {
 
   @Override
   public Doc getMatrixLabel() {
-    return hang(hList(refDoc(myEnclosingDefinition.getConcreteDefinition()), text(" ->")), termDoc(myCallExpression));
+    return hang(hList(refDoc(myEnclosingDefinition.getReferable()), text(" ->")), termDoc(myCallExpression));
   }
 }

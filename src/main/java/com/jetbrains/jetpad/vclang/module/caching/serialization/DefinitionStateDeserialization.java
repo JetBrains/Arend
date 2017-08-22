@@ -40,17 +40,17 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       final GlobalReferable abstractDef = getAbstract(id);
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
-          ClassDefinition classDef = new ClassDefinition((Concrete.ClassDefinition<?>) abstractDef);
+          ClassDefinition classDef = new ClassDefinition(abstractDef);
           for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
             Concrete.ClassField<?> absField = (Concrete.ClassField<?>) getAbstract(constructorId);
-            ClassField res = new ClassField(classDef.getConcreteDefinition() /* TODO[abstract]: replace with absField */, classDef);
+            ClassField res = new ClassField(absField.getReferable(), classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absField, res);
           }
           def = classDef;
           break;
         case DATA:
-          DataDefinition dataDef = new DataDefinition((Concrete.DataDefinition<?>) abstractDef);
+          DataDefinition dataDef = new DataDefinition(abstractDef);
           for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
             Concrete.Constructor<?> absConstructor = (Concrete.Constructor<?>) getAbstract(constructorId);
             Constructor res = new Constructor(absConstructor, dataDef);
@@ -60,7 +60,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           def = dataDef;
           break;
         case FUNCTION:
-          def = new FunctionDefinition((Concrete.Definition<?>) getAbstract(id));
+          def = new FunctionDefinition(getAbstract(id));
           break;
         default:
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
@@ -148,9 +148,10 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
     for (Map.Entry<String, DefinitionProtos.Definition.ClassData.Field> entry : classProto.getFieldsMap().entrySet()) {
       DefinitionProtos.Definition.ClassData.Field fieldProto = entry.getValue();
-      ClassField field = getTypechecked(state, entry.getKey());
+      ClassField field = getTypechecked(state, entry.getKey()); // TODO[abstract]: What's going on here?
       field.setThisParameter((TypedDependentLink) defDeserializer.readParameter(fieldProto.getThisParam()));
       field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
+      classDef.addPersonalField(field);
     }
   }
 

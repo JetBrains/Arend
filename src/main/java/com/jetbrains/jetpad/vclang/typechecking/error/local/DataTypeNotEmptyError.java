@@ -23,11 +23,11 @@ public class DataTypeNotEmptyError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" Data type '"), refDoc(dataCall.getDefinition().getConcreteDefinition()), text("' is not empty"));
+    return hList(super.getHeaderDoc(src), text(" Data type '"), refDoc(dataCall.getDefinition().getReferable()), text("' is not empty"));
   }
 
   @Override
   public LineDoc getBodyDoc(PrettyPrinterInfoProvider src) {
-    return hList(text("Available constructors: "), hSep(text(", "), constructors.stream().map(con -> refDoc(con.getConcreteDefinition())).collect(Collectors.toList())));
+    return hList(text("Available constructors: "), hSep(text(", "), constructors.stream().map(con -> refDoc(con.getReferable())).collect(Collectors.toList())));
   }
 }

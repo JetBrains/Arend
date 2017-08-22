@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +18,8 @@ public class FunctionDefinition extends Definition implements Function {
   private Expression myResultType;
   private Body myBody;
 
-  public FunctionDefinition(Concrete.Definition<?> abstractDef) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public FunctionDefinition(GlobalReferable referable) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParameters = EmptyDependentLink.getInstance();
   }
 

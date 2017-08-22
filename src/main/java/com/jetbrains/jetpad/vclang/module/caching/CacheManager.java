@@ -210,7 +210,7 @@ public class CacheManager<SourceIdT extends SourceId> {
       List<ModuleProtos.Module.DefinitionReference> out = new ArrayList<>();
       for (Definition calltarget : myCalltargets.keySet()) {
         ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
-        SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getConcreteDefinition());
+        SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getReferable());
         if (!mySourceId.equals(targetSourceId)) {
           boolean targetPersisted = persistCache(targetSourceId);
           if (!targetPersisted) {
@@ -218,7 +218,7 @@ public class CacheManager<SourceIdT extends SourceId> {
           }
           entry.setSourceUrl(myPersistenceProvider.getUri(targetSourceId).toString());
         }
-        entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getConcreteDefinition()));
+        entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getReferable()));
         out.add(entry.build());
       }
       return out;

@@ -4,8 +4,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
@@ -16,23 +15,22 @@ import java.util.stream.Collectors;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class TerminationCheckError<T> extends GeneralError<T> {
-  public final Concrete.Definition<T> definition;
+  public final GlobalReferable definition;
   public final Set<RecursiveBehavior<Definition>> behaviors;
 
   public TerminationCheckError(Definition def, Set<RecursiveBehavior<Definition>> behaviors) {
     super(Level.ERROR, "");
-    definition = (Concrete.Definition<T>) def.getConcreteDefinition();
+    definition = def.getReferable();
     this.behaviors = behaviors;
   }
 
   @Override
   public T getCause() {
-    return definition.getData();
+    return null; // TODO[abstract]: return definition;
   }
 
-  @Override
-  public PrettyPrintable getCausePP() {
-    return definition;
+  public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
+    return hList(text("In: "), refDoc(definition));
   }
 
   @Override

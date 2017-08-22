@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +25,8 @@ public class Constructor extends Definition implements Function {
   private Body myConditions;
   private List<ClauseBase> myClauses;
 
-  public Constructor(Concrete.Constructor<?> abstractDef, DataDefinition dataType) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public Constructor(GlobalReferable referable, DataDefinition dataType) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;
     myClauses = Collections.emptyList();
@@ -51,11 +51,6 @@ public class Constructor extends Definition implements Function {
 
   public void setClauses(List<? extends ClauseBase> clauses) {
     myClauses = new ArrayList<>(clauses);
-  }
-
-  @Override
-  public Concrete.Constructor<?> getConcreteDefinition() {
-    return (Concrete.Constructor<?>) super.getConcreteDefinition();
   }
 
   @Override

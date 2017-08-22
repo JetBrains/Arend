@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,14 +22,9 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
 
-  public DataDefinition(Concrete.DataDefinition<?> abstractDef) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public DataDefinition(GlobalReferable referable) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myConstructors = new ArrayList<>();
-  }
-
-  @Override
-  public Concrete.DataDefinition<?> getConcreteDefinition() {
-    return (Concrete.DataDefinition<?>) super.getConcreteDefinition();
   }
 
   public Sort getSort() {
@@ -76,7 +70,7 @@ public class DataDefinition extends Definition {
 
   public Constructor getConstructor(GlobalReferable referable) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getConcreteDefinition().equals(referable)) { // TODO[abstract]
+      if (constructor.getReferable().equals(referable)) { // TODO[abstract]
         return constructor;
       }
     }

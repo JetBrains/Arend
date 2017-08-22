@@ -129,7 +129,7 @@ public class TypeCheckingDefCall<T> {
       ClassDefinition classDefinition = type.cast(ClassCallExpression.class).getDefinition();
 
       if (typeCheckedDefinition == null) {
-        GlobalReferable member = myVisitor.getDynamicNamespaceProvider().forReferable(classDefinition.getConcreteDefinition()).resolveName(name);
+        GlobalReferable member = myVisitor.getDynamicNamespaceProvider().forReferable(classDefinition.getReferable()).resolveName(name);
         if (member == null) {
           myVisitor.getErrorReporter().report(new MemberNotFoundError<>(classDefinition, name, false, expr));
           return null;
@@ -181,11 +181,11 @@ public class TypeCheckingDefCall<T> {
           return null;
         }
         if (constructor != null && !constructor.status().headerIsOK()) {
-          myVisitor.getErrorReporter().report(new HasErrors<>(Error.Level.ERROR, constructor.getConcreteDefinition(), expr));
+          myVisitor.getErrorReporter().report(new HasErrors<>(Error.Level.ERROR, constructor.getReferable(), expr));
           return null;
         }
         if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-          myVisitor.getErrorReporter().report(new HasErrors<>(Error.Level.WARNING, constructor.getConcreteDefinition(), expr));
+          myVisitor.getErrorReporter().report(new HasErrors<>(Error.Level.WARNING, constructor.getReferable(), expr));
         }
       } else {
         if (typeCheckedDefinition instanceof Constructor && dataDefinition.getConstructors().contains(typeCheckedDefinition)) {
@@ -213,7 +213,7 @@ public class TypeCheckingDefCall<T> {
         thisExpr = classCall.getImplementation(parentField, null /* it should be OK */);
       }
       if (typeCheckedDefinition == null) {
-        member = myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getConcreteDefinition()).resolveName(name);
+        member = myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getReferable()).resolveName(name);
         if (member == null) {
           myVisitor.getErrorReporter().report(new MemberNotFoundError<>(leftDefinition, name, true, expr));
           return null;
@@ -232,9 +232,9 @@ public class TypeCheckingDefCall<T> {
 
       if (typeCheckedDefinition == null) {
         if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
-          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getConcreteDefinition()));
+          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getReferable()));
           if (leftDefinition instanceof ClassDefinition) {
-            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(((ClassDefinition) leftDefinition).getConcreteDefinition())));
+            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(((ClassDefinition) leftDefinition).getReferable())));
           }
           member = scope.resolveName(name);
         }

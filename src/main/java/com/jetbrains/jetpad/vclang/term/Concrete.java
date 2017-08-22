@@ -1014,6 +1014,12 @@ public final class Concrete {
       myResultType = resultType;
     }
 
+    @Nullable
+    @Override
+    public String getName() {
+      return myReferable.getName();
+    }
+
     public GlobalReferable getReferable() {
       return myReferable;
     }

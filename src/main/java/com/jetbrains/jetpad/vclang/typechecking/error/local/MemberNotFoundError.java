@@ -27,6 +27,6 @@ public class MemberNotFoundError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getBodyDoc(PrettyPrinterInfoProvider src) {
-    return hList(text(name + " of some compiled definition called "), refDoc(targetDefinition.getConcreteDefinition()));
+    return hList(text(name + " of some compiled definition called "), refDoc(targetDefinition.getReferable()));
   }
 }

@@ -1024,7 +1024,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     for (Concrete.ClassFieldImpl<T> statement : expr.getStatements()) {
       ClassField field = (ClassField) myState.getTypechecked((GlobalReferable) statement.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
       if (baseClass.isImplemented(field) || classFieldMap.containsKey(field)) {
-        alreadyImplementedFields.add(field.getConcreteDefinition());
+        alreadyImplementedFields.add(field.getReferable());
         alreadyImplementedSourceNode = statement;
       } else {
         classFieldMap.put(field, statement);
@@ -1054,7 +1054,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
             ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getBaseType(resultClassCall.getSortArgument()), notImplementedFields);
             if (found != null) {
               ok = false;
-              myErrorReporter.report(new FieldsImplementationError<>(false, Collections.singletonList(found.getConcreteDefinition()), impl));
+              myErrorReporter.report(new FieldsImplementationError<>(false, Collections.singletonList(found.getReferable()), impl));
             }
           }
           if (ok) {
@@ -1125,7 +1125,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       List<GlobalReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!classCall.isImplemented(field)) {
-          fields.add(field.getConcreteDefinition());
+          fields.add(field.getReferable());
         }
       }
       myErrorReporter.report(new FieldsImplementationError<>(false, fields, expr));

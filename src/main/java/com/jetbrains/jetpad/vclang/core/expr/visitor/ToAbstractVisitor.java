@@ -131,7 +131,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return cEmptyPattern(isExplicit);
     }
     if (pattern instanceof ConstructorPattern) {
-      return cConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getConcreteDefinition(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
+      return cConPattern(isExplicit, ((ConstructorPattern) pattern).getConstructor().getReferable(), visitPatterns(((ConstructorPattern) pattern).getArguments(), ((ConstructorPattern) pattern).getConstructor().getParameters()));
     }
     throw new IllegalStateException();
   }
@@ -155,7 +155,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getConcreteDefinition(), expr.getDefCallArguments().get(2).accept(this, null));
+        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), expr.getDefCallArguments().get(2).accept(this, null));
       }
     }
     return null;
@@ -211,7 +211,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         visibleArgs[i++] = args.get(j);
       }
     }
-    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getConcreteDefinition() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
+    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getReferable() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
@@ -275,12 +275,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (result != null) {
       return result;
     }
-    return visitParameters(makeReference(null, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(makeReference(null, expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
   public Concrete.Expression<Position> visitFieldCall(FieldCallExpression expr, Void params) {
-    return makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getConcreteDefinition());
+    return makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getReferable());
   }
 
   @Override
@@ -294,7 +294,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
       conParams = expr.getDataTypeExpression().accept(this, null);
     }
-    return visitParameters(makeReference(conParams, expr.getDefinition().getConcreteDefinition()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(makeReference(conParams, expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -312,11 +312,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
         enclExpr = entry.getValue().accept(this, params);
       } else {
-        statements.add(cImplStatement(entry.getKey().getConcreteDefinition(), entry.getValue().accept(this, params)));
+        statements.add(cImplStatement(entry.getKey().getReferable(), entry.getValue().accept(this, params)));
       }
     }
 
-    Concrete.Expression<Position> defCallExpr = makeReference(enclExpr, expr.getDefinition().getConcreteDefinition());
+    Concrete.Expression<Position> defCallExpr = makeReference(enclExpr, expr.getDefinition().getReferable());
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

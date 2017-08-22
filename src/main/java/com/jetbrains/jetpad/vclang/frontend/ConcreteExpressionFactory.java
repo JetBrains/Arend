@@ -35,7 +35,7 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression<>(POSITION, expr, referable);
   }
 
-  public static Concrete.ReferenceExpression<Position> cDefCall(Concrete.Definition definition) {
+  public static Concrete.ReferenceExpression<Position> cDefCall(Referable definition) {
     return new Concrete.ReferenceExpression<>(POSITION, definition);
   }
 
@@ -60,15 +60,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ReferenceExpression<Position> cNat() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.NAT.getConcreteDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.NAT.getReferable());
   }
 
   public static Concrete.ReferenceExpression<Position> cZero() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.ZERO.getConcreteDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.ZERO.getReferable());
   }
 
   public static Concrete.ReferenceExpression<Position> cSuc() {
-    return new Concrete.ReferenceExpression<>(POSITION, Prelude.SUC.getConcreteDefinition());
+    return new Concrete.ReferenceExpression<>(POSITION, Prelude.SUC.getReferable());
   }
 
   public static Concrete.LetExpression<Position> cLet(List<Concrete.LetClause<Position>> clauses, Concrete.Expression<Position> expr) {

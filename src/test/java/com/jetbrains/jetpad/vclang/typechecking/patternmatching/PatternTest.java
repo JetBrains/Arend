@@ -57,7 +57,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
         Concrete.ConstructorPattern<Position> conPattern1 = (Concrete.ConstructorPattern<Position>) pattern1;
         ConstructorPattern conPattern2 = (ConstructorPattern) patterns.get(j);
-        assertEquals(conPattern1.getConstructor(), conPattern2.getConstructor().getConcreteDefinition());
+        assertEquals(conPattern1.getConstructor(), conPattern2.getConstructor().getReferable());
         checkPatterns(conPattern1.getPatterns(), conPattern2.getArguments(), expected, actual, hasImplicit);
       } else {
         throw new IllegalStateException();
