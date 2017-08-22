@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
-  private final Map<Abstract.Definition, Namespace> cache = new HashMap<>();
+  private final Map<Concrete.Definition, Namespace> cache = new HashMap<>();
 
   public static SimpleNamespace forClass(Concrete.ClassDefinition def) {
     SimpleNamespace ns = new SimpleNamespace();
@@ -59,7 +59,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
   @Override
   public Namespace forReferable(GlobalReferable referable) {
-    Abstract.Definition definition = (Abstract.Definition) referable; // TODO[references]
+    Concrete.Definition definition = (Concrete.Definition) referable; // TODO[abstract]
 
     Namespace ns = cache.get(definition);
     if (ns != null) return ns;
@@ -70,24 +70,24 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     return sns;
   }
 
-  private static class DefinitionGetNamespaceVisitor extends BaseAbstractVisitor<SimpleNamespace, Void> {
+  private static class DefinitionGetNamespaceVisitor<T> extends BaseAbstractVisitor<T, SimpleNamespace, Void> {
     public static final DefinitionGetNamespaceVisitor INSTANCE = new DefinitionGetNamespaceVisitor();
 
     @Override
-    public Void visitFunction(Abstract.FunctionDefinition def, SimpleNamespace ns) {
-      forFunction((Concrete.FunctionDefinition<?>) def, ns);
+    public Void visitFunction(Concrete.FunctionDefinition<T> def, SimpleNamespace ns) {
+      forFunction(def, ns);
       return null;
     }
 
     @Override
-    public Void visitData(Abstract.DataDefinition def, SimpleNamespace ns) {
+    public Void visitData(Concrete.DataDefinition<T> def, SimpleNamespace ns) {
       forData(def, ns);
       return null;
     }
 
     @Override
-    public Void visitClass(Abstract.ClassDefinition def, SimpleNamespace ns) {
-      forClass((Concrete.ClassDefinition<?>) def, ns);
+    public Void visitClass(Concrete.ClassDefinition<T> def, SimpleNamespace ns) {
+      forClass(def, ns);
       return null;
     }
   }

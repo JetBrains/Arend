@@ -20,8 +20,8 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -79,7 +79,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       if (!definitionIds.containsKey(module)) {
         definitionIds.put(module, new HashMap<>());
       }
-      defIdCollector.visitClass(result.definition, definitionIds.get(module));
+      defIdCollector.visitClass((Concrete.ClassDefinition<Position>) result.definition, definitionIds.get(module));
       sourceInfoCollector.visitModule(module, (Concrete.ClassDefinition) result.definition);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
@@ -130,28 +130,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, GlobalReferable>, Void> {
-
+  static class DefinitionIdsCollector implements ConcreteDefinitionVisitor<Position, Map<String, GlobalReferable>, Void> {
     @Override
-    public Void visitFunction(Abstract.FunctionDefinition def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+    public Void visitFunction(Concrete.FunctionDefinition<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
+      for (Concrete.Definition<Position> definition : def.getGlobalDefinitions()) {
         definition.accept(this, params);
       }
       return null;
     }
 
     @Override
-    public Void visitClassField(Abstract.ClassField def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
+    public Void visitClassField(Concrete.ClassField<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
       return null;
     }
 
     @Override
-    public Void visitData(Abstract.DataDefinition def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
-      for (Concrete.ConstructorClause<?> clause : def.getConstructorClauses()) {
-        for (Concrete.Constructor constructor : clause.getConstructors()) {
+    public Void visitData(Concrete.DataDefinition<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
+      for (Concrete.ConstructorClause<Position> clause : def.getConstructorClauses()) {
+        for (Concrete.Constructor<Position> constructor : clause.getConstructors()) {
           constructor.accept(this, params);
         }
       }
@@ -159,21 +158,21 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitConstructor(Abstract.Constructor def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
+    public Void visitConstructor(Concrete.Constructor<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
       return null;
     }
 
     @Override
-    public Void visitClass(Abstract.ClassDefinition def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+    public Void visitClass(Concrete.ClassDefinition<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
+      for (Concrete.Definition<Position> definition : def.getGlobalDefinitions()) {
         definition.accept(this, params);
       }
-      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+      for (Concrete.Definition<Position> definition : def.getInstanceDefinitions()) {
         definition.accept(this, params);
       }
-      for (Abstract.ClassField field : def.getFields()) {
+      for (Concrete.ClassField<Position> field : def.getFields()) {
         field.accept(this, params);
       }
 
@@ -181,23 +180,23 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitImplement(Abstract.Implementation def, Map<String, GlobalReferable> params) {
+    public Void visitImplement(Concrete.Implementation<Position> def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassView(Abstract.ClassView def, Map<String, GlobalReferable> params) {
+    public Void visitClassView(Concrete.ClassView<Position> def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassViewField(Abstract.ClassViewField def, Map<String, GlobalReferable> params) {
+    public Void visitClassViewField(Concrete.ClassViewField<Position> def, Map<String, GlobalReferable> params) {
       return null;
     }
 
     @Override
-    public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), (GlobalReferable) def);
+    public Void visitClassViewInstance(Concrete.ClassViewInstance<Position> def, Map<String, GlobalReferable> params) {
+      params.put(getIdFor(def), def);
       return null;
     }
 

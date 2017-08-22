@@ -985,11 +985,6 @@ public final class Concrete {
       this(data, name, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), globalStatements, Collections.emptyList());
     }
 
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClass(this, params);
-    }
-
     @Nonnull
     @Override
     public List<TypeParameter<T>> getPolyParameters() {
@@ -1056,11 +1051,6 @@ public final class Concrete {
     public Expression<T> getResultType() {
       return myResultType;
     }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassField(this, params);
-    }
   }
 
   public static class Implementation<T> extends Definition<T> implements Abstract.Implementation {
@@ -1097,11 +1087,6 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitImplement(this, params);
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitImplement(this, params);
     }
   }
@@ -1188,11 +1173,6 @@ public final class Concrete {
     }
 
     @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitFunction(this, params);
-    }
-
-    @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitFunction(this, params);
     }
@@ -1241,11 +1221,6 @@ public final class Concrete {
     @Override
     public UniverseExpression<T> getUniverse() {
       return myUniverse;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitData(this, params);
     }
 
     @Override
@@ -1320,11 +1295,6 @@ public final class Concrete {
     }
 
     @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitConstructor(this, params);
-    }
-
-    @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitConstructor(this, params);
     }
@@ -1367,11 +1337,6 @@ public final class Concrete {
     }
 
     @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassView(this, params);
-    }
-
-    @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitClassView(this, params);
     }
@@ -1401,11 +1366,6 @@ public final class Concrete {
 
     public void setUnderlyingField(Referable underlyingField) {
       myUnderlyingField = underlyingField;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassViewField(this, params);
     }
 
     @Override
@@ -1460,11 +1420,6 @@ public final class Concrete {
     @Override
     public List<ClassFieldImpl<T>> getClassFieldImpls() {
       return myClassFieldImpls;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassViewInstance(this, params);
     }
 
     @Override

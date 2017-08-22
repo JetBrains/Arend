@@ -1,48 +1,48 @@
 package com.jetbrains.jetpad.vclang.term;
 
-public class BaseAbstractVisitor<P, R> implements AbstractDefinitionVisitor<P, R> {
+public class BaseAbstractVisitor<T, P, R> implements ConcreteDefinitionVisitor<T, P, R> {
   @Override
-  public R visitFunction(Abstract.FunctionDefinition def, P params) {
+  public R visitFunction(Concrete.FunctionDefinition<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitClassField(Abstract.ClassField def, P params) {
+  public R visitClassField(Concrete.ClassField<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitData(Abstract.DataDefinition def, P params) {
+  public R visitData(Concrete.DataDefinition<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitConstructor(Abstract.Constructor def, P params) {
+  public R visitConstructor(Concrete.Constructor<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitClass(Abstract.ClassDefinition def, P params) {
+  public R visitClass(Concrete.ClassDefinition<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitImplement(Abstract.Implementation def, P params) {
+  public R visitImplement(Concrete.Implementation<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitClassView(Abstract.ClassView def, P params) {
+  public R visitClassView(Concrete.ClassView<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitClassViewField(Abstract.ClassViewField def, P params) {
+  public R visitClassViewField(Concrete.ClassViewField<T> def, P params) {
     return null;
   }
 
   @Override
-  public R visitClassViewInstance(Abstract.ClassViewInstance def, P params) {
+  public R visitClassViewInstance(Concrete.ClassViewInstance<T> def, P params) {
     return null;
   }
 }

@@ -32,24 +32,10 @@ public final class Abstract {
 
   // Definitions
 
-  public static Collection<? extends Parameter> getParameters(Abstract.Definition definition) {
-    if (definition instanceof Abstract.FunctionDefinition) {
-      return ((FunctionDefinition) definition).getParameters();
-    }
-    if (definition instanceof Abstract.DataDefinition) {
-      return ((DataDefinition) definition).getParameters();
-    }
-    if (definition instanceof Abstract.Constructor) {
-      return ((Constructor) definition).getParameters();
-    }
-    return null;
-  }
-
   public interface Definition extends SourceNode {
     @Nonnull Precedence getPrecedence();
     @Nullable Definition getParentDefinition();
     boolean isStatic();
-    <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
   public interface ClassField extends Definition {

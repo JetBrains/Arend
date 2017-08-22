@@ -25,12 +25,12 @@ public class Ordering<T> {
   private int myIndex = 0;
   private final Stack<TypecheckingUnit<T>> myStack = new Stack<>();
   private final Map<Typecheckable<T>, DefState> myVertices = new HashMap<>();
-  private final InstanceProviderSet myInstanceProviderSet;
+  private final InstanceProviderSet<T> myInstanceProviderSet;
   private final TypecheckableProvider<T> myTypecheckableProvider;
   private final DependencyListener<T> myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider<T> typecheckableProvider, DependencyListener<T> listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet<T> instanceProviderSet, TypecheckableProvider<T> typecheckableProvider, DependencyListener<T> listener, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckableProvider = typecheckableProvider;
     myListener = listener;

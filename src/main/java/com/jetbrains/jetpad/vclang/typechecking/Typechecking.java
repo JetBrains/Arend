@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.function.Function;
 
 public class Typechecking<T> {
-  private final InstanceNamespaceProvider myInstanceNamespaceProvider;
+  private final InstanceNamespaceProvider<T> myInstanceNamespaceProvider;
   private final TypecheckingDependencyListener<T> myDependencyListener;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
 
@@ -30,8 +30,8 @@ public class Typechecking<T> {
   }
 
   public void typecheckModules(final Collection<? extends Concrete.ClassDefinition<T>> classDefs) {
-    DefinitionResolveInstanceVisitor visitor = new DefinitionResolveInstanceVisitor(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
-    for (Abstract.ClassDefinition classDef : classDefs) {
+    DefinitionResolveInstanceVisitor<T> visitor = new DefinitionResolveInstanceVisitor<>(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
+    for (Concrete.ClassDefinition<T> classDef : classDefs) {
       visitor.visitClass(classDef, new SimpleInstanceProvider(new EmptyScope()));
     }
 
@@ -54,7 +54,7 @@ public class Typechecking<T> {
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  private static class OrderDefinitionVisitor<T> extends BaseAbstractVisitor<Void, Void> { // TODO[abstract]
+  private static class OrderDefinitionVisitor<T> extends BaseAbstractVisitor<T, Void, Void> { // TODO[abstract]
     public final Ordering<T> ordering;
 
     private OrderDefinitionVisitor(Ordering<T> ordering) {
@@ -62,20 +62,20 @@ public class Typechecking<T> {
     }
 
     @Override
-    public Void visitFunction(Abstract.FunctionDefinition def, Void params) {
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        orderDefinition((Concrete.Definition<T>) definition);
+    public Void visitFunction(Concrete.FunctionDefinition<T> def, Void params) {
+      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
+        orderDefinition(definition);
       }
       return null;
     }
 
     @Override
-    public Void visitClass(Abstract.ClassDefinition def, Void params) {
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        orderDefinition((Concrete.Definition<T>) definition);
+    public Void visitClass(Concrete.ClassDefinition<T> def, Void params) {
+      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
+        orderDefinition(definition);
       }
-      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        orderDefinition((Concrete.Definition<T>) definition);
+      for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
+        orderDefinition(definition);
       }
       return null;
     }

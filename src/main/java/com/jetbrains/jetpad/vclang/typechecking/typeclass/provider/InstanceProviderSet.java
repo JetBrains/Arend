@@ -13,11 +13,11 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespac
 import java.util.HashMap;
 import java.util.Map;
 
-public class InstanceProviderSet {
+public class InstanceProviderSet<T> {
   private final Map<Abstract.Definition, InstanceProvider> myProviders = new HashMap<>();
-  private final InstanceNamespaceProvider myInstanceNamespaceProvider;
+  private final InstanceNamespaceProvider<T> myInstanceNamespaceProvider;
 
-  public InstanceProviderSet(InstanceNamespaceProvider instanceNamespaceProvider) {
+  public InstanceProviderSet(InstanceNamespaceProvider<T> instanceNamespaceProvider) {
     myInstanceNamespaceProvider = instanceNamespaceProvider;
   }
 
@@ -25,7 +25,7 @@ public class InstanceProviderSet {
     myProviders.put(definition, provider);
   }
 
-  public InstanceProvider getInstanceProvider(Abstract.Definition definition) {
+  public InstanceProvider getInstanceProvider(Concrete.Definition<T> definition) {
     InstanceProvider provider = myProviders.get(definition);
     if (provider != null) {
       return provider;
@@ -36,25 +36,25 @@ public class InstanceProviderSet {
     return provider;
   }
 
-  private Scope getDefinitionScope(Abstract.Definition definition) {
+  private Scope getDefinitionScope(Concrete.Definition<T> definition) {
     if (definition == null) {
       return new EmptyScope();
     }
 
-    return definition.accept(new BaseAbstractVisitor<Scope, Scope>() {
+    return definition.accept(new BaseAbstractVisitor<T, Scope, Scope>() {
       @Override
-      public Scope visitFunction(Abstract.FunctionDefinition def, Scope parentScope) {
-        return new FunctionScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
+      public Scope visitFunction(Concrete.FunctionDefinition<T> def, Scope parentScope) {
+        return new FunctionScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
 
       @Override
-      public Scope visitData(Abstract.DataDefinition def, Scope parentScope) {
-        return new DataScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
+      public Scope visitData(Concrete.DataDefinition<T> def, Scope parentScope) {
+        return new DataScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
 
       @Override
-      public Scope visitClass(Abstract.ClassDefinition def, Scope parentScope) {
-        return new StaticClassScope(parentScope, myInstanceNamespaceProvider.forDefinition((Concrete.Definition) def));
+      public Scope visitClass(Concrete.ClassDefinition<T> def, Scope parentScope) {
+        return new StaticClassScope(parentScope, myInstanceNamespaceProvider.forDefinition(def));
       }
     }, getDefinitionScope(definition.getParentDefinition()));
   }

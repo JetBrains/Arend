@@ -37,7 +37,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   private boolean myTypecheckingHeaders = false;
 
   final ErrorReporter<T> errorReporter;
-  final InstanceProviderSet instanceProviderSet;
+  final InstanceProviderSet<T> instanceProviderSet;
   final TypecheckableProvider<T> typecheckableProvider;
 
   private static class Suspension<T> {
@@ -50,14 +50,14 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider instanceNamespaceProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, InstanceNamespaceProvider<T> instanceNamespaceProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     this.errorReporter = errorReporter;
     myTypecheckedReporter = typecheckedReporter;
     myDependencyListener = dependencyListener;
-    instanceProviderSet = new InstanceProviderSet(instanceNamespaceProvider);
+    instanceProviderSet = new InstanceProviderSet<>(instanceNamespaceProvider);
     this.typecheckableProvider = typecheckableProvider;
   }
 

@@ -11,8 +11,8 @@ import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
@@ -23,13 +23,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisitor<SimpleInstanceProvider, Void> {
-  private final InstanceProviderSet myInstanceProviderSet;
-  private final InstanceNamespaceProvider myScopeProvider;
+public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVisitor<T, SimpleInstanceProvider, Void> {
+  private final InstanceProviderSet<T> myInstanceProviderSet;
+  private final InstanceNamespaceProvider<T> myScopeProvider;
   private final Function<Abstract.Definition, Iterable<OpenCommand>> myOpens;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter<T> myErrorReporter;
 
-  public DefinitionResolveInstanceVisitor(InstanceProviderSet instanceProviderSet, InstanceNamespaceProvider scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter errorReporter) {
+  public DefinitionResolveInstanceVisitor(InstanceProviderSet<T> instanceProviderSet, InstanceNamespaceProvider<T> scopeProvider, Function<Abstract.Definition, Iterable<OpenCommand>> opens, ErrorReporter<T> errorReporter) {
     myInstanceProviderSet = instanceProviderSet;
     myScopeProvider = scopeProvider;
     myOpens = opens;
@@ -37,14 +37,14 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitFunction(Abstract.FunctionDefinition def, SimpleInstanceProvider parentInstanceProvider) {
+  public Void visitFunction(Concrete.FunctionDefinition<T> def, SimpleInstanceProvider parentInstanceProvider) {
     Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceProvider.getScope());
-    FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def), extraScopes);
+    FunctionScope scope = new FunctionScope(parentInstanceProvider.getScope(), myScopeProvider.forDefinition(def), extraScopes);
     scope.findIntroducedDuplicateInstances(this::warnDuplicate);
     SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(scope);
     myInstanceProviderSet.setProvider(def, instanceProvider);
 
-    for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+    for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
       definition.accept(this, instanceProvider);
     }
 
@@ -52,35 +52,35 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitClassField(Abstract.ClassField def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitClassField(Concrete.ClassField def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitData(Abstract.DataDefinition def, SimpleInstanceProvider parentInstanceScope) {
-    myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def))));
+  public Void visitData(Concrete.DataDefinition<T> def, SimpleInstanceProvider parentInstanceScope) {
+    myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
     return null;
   }
 
   @Override
-  public Void visitConstructor(Abstract.Constructor def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitConstructor(Concrete.Constructor def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClass(Abstract.ClassDefinition def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitClass(Concrete.ClassDefinition<T> def, SimpleInstanceProvider parentInstanceScope) {
     try {
       Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
-      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition((Concrete.Definition) def), extraScopes);
+      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
       staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
       SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(staticScope);
       myInstanceProviderSet.setProvider(def, instanceProvider);
 
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
+      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
         definition.accept(this, instanceProvider);
       }
 
-      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
+      for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
         definition.accept(this, instanceProvider);
       }
     } catch (Namespace.InvalidNamespaceException e) {
@@ -91,27 +91,27 @@ public class DefinitionResolveInstanceVisitor implements AbstractDefinitionVisit
   }
 
   @Override
-  public Void visitImplement(Abstract.Implementation def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitImplement(Concrete.Implementation def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassView(Abstract.ClassView def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitClassView(Concrete.ClassView def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassViewField(Abstract.ClassViewField def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitClassViewField(Concrete.ClassViewField def, SimpleInstanceProvider parentInstanceScope) {
     return null;
   }
 
   @Override
-  public Void visitClassViewInstance(Abstract.ClassViewInstance def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitClassViewInstance(Concrete.ClassViewInstance def, SimpleInstanceProvider parentInstanceScope) {
     myInstanceProviderSet.setProvider(def, parentInstanceScope);
     return null;
   }
 
-  private Iterable<Scope> getExtraScopes(Abstract.Definition def, Scope currentScope) {
+  private Iterable<Scope> getExtraScopes(Concrete.Definition def, Scope currentScope) {
     return StreamSupport.stream(myOpens.apply(def).spliterator(), false)
         .flatMap(this::processOpenCommand)
         .collect(Collectors.toList());
