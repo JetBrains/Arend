@@ -51,11 +51,6 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
   }
 
   @Override
-  public Void visitClassField(Concrete.ClassField def, SimpleInstanceProvider parentInstanceScope) {
-    return null;
-  }
-
-  @Override
   public Void visitData(Concrete.DataDefinition<T> def, SimpleInstanceProvider parentInstanceScope) {
     myInstanceProviderSet.setProvider(def, new SimpleInstanceProvider(new DataScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def))));
     return null;

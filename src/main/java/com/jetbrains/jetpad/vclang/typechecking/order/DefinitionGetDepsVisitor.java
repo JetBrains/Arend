@@ -56,12 +56,6 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   }
 
   @Override
-  public Void visitClassField(Concrete.ClassField<T> def, Boolean params) {
-    def.getResultType().accept(new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
-    return null;
-  }
-
-  @Override
   public Void visitData(Concrete.DataDefinition<T> def, Boolean isHeader) {
     CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
@@ -132,7 +126,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
     }
 
     for (Concrete.ClassField<T> field : def.getFields()) {
-      visitClassField(field, null);
+      field.getResultType().accept(new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies), null);
     }
 
     for (Concrete.ClassFieldImpl<T> impl : def.getImplementations()) {

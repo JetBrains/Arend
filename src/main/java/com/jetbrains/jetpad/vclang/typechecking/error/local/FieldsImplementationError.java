@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
@@ -11,9 +12,9 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class FieldsImplementationError<T> extends LocalTypeCheckingError<T> {
   public boolean alreadyImplemented;
-  public Collection<? extends Concrete.ClassField> fields;
+  public Collection<? extends GlobalReferable> fields;
 
-  public FieldsImplementationError(boolean alreadyImplemented, Collection<? extends Concrete.ClassField> fields, Concrete.SourceNode<T> cause) {
+  public FieldsImplementationError(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields, Concrete.SourceNode<T> cause) {
     super("The following fields are " + (alreadyImplemented ? "already" : "not") + " implemented: ", cause);
     this.alreadyImplemented = alreadyImplemented;
     this.fields = fields;

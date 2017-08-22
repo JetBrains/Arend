@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
 import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 
@@ -22,12 +23,6 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
     for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
       definition.accept(this, fullName);
     }
-    return null;
-  }
-
-  @Override
-  public Void visitClassField(Concrete.ClassField<T> def, FullName fullName) {
-    reg(def, fullName);
     return null;
   }
 
@@ -55,7 +50,7 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
     reg(def, fullName);
 
     for (Concrete.ClassField<T> field : def.getFields()) {
-      visitClassField(field, fullName);
+      reg(field, fullName);
     }
     for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
       definition.accept(this, null);
@@ -81,7 +76,7 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
     return null;
   }
 
-  private void reg(Concrete.Definition<T> def, FullName fullName) {
+  private void reg(GlobalReferable def, FullName fullName) {
     myProvider.registerDefinition(def, new FullName(fullName, def.getName()), mySourceId);
   }
 }

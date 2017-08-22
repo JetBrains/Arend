@@ -1019,7 +1019,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     // Check for already implemented fields
 
     Map<ClassField, Concrete.ClassFieldImpl<T>> classFieldMap = new HashMap<>();
-    List<Concrete.ClassField<?>> alreadyImplementedFields = new ArrayList<>();
+    List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl<T> statement : expr.getStatements()) {
       ClassField field = (ClassField) myState.getTypechecked((GlobalReferable) statement.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
@@ -1122,7 +1122,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     if (notImplemented == 0) {
       return true;
     } else {
-      List<Concrete.ClassField<?>> fields = new ArrayList<>(notImplemented);
+      List<GlobalReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!classCall.isImplemented(field)) {
           fields.add(field.getConcreteDefinition());

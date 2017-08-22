@@ -106,7 +106,7 @@ class DefinitionTypechecking {
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
         for (Concrete.ClassField<T> field : ((Concrete.ClassDefinition<T>) unit.getDefinition()).getFields()) {
-          ClassField typedDef = new ClassField(field, new ErrorExpression(null, null), definition, createThisParam(definition));
+          ClassField typedDef = new ClassField(unit.getDefinition() /* TODO[abstract]: replace with field */, new ErrorExpression(null, null), definition, createThisParam(definition));
           typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           visitor.getTypecheckingState().record(field, typedDef);
           definition.addField(typedDef);
@@ -609,7 +609,7 @@ class DefinitionTypechecking {
         visitor.setThis(enclosingClass, thisParam);
       }
 
-      List<Concrete.ClassField<?>> alreadyImplementFields = new ArrayList<>();
+      List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
       Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
 
       for (Concrete.ReferenceExpression<T> aSuperClass : def.getSuperClasses()) {
@@ -690,7 +690,7 @@ class DefinitionTypechecking {
     visitor.setThis(enclosingClass, thisParameter);
     Type typeResult = visitor.finalCheckType(def.getResultType());
 
-    ClassField typedDef = new ClassField(def, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
+    ClassField typedDef = new ClassField(enclosingClass.getConcreteDefinition() /* TODO[abstract]: replace with def */, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
     if (typeResult == null) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
@@ -698,7 +698,7 @@ class DefinitionTypechecking {
     enclosingClass.addField(typedDef);
   }
 
-  private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<Concrete.ClassField<?>> alreadyImplemented) {
+  private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
     ClassDefinition.Implementation oldImpl = classDef.getImplementation(classField);
     if (oldImpl == null || oldImpl.term.isInstance(ErrorExpression.class)) {
       classDef.implementField(classField, implementation);
@@ -723,7 +723,7 @@ class DefinitionTypechecking {
     }
 
     Map<ClassField, Concrete.ClassFieldImpl<T>> classFieldMap = new HashMap<>();
-    List<Concrete.ClassField<?>> alreadyImplementedFields = new ArrayList<>();
+    List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
       ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
@@ -743,7 +743,7 @@ class DefinitionTypechecking {
     ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClass().getReferent()); // TODO[abstract]: check that it is a class, also check that referable is global and there is no left part in underlying class or whatever
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
-    List<Concrete.ClassField<?>> notImplementedFields = new ArrayList<>();
+    List<GlobalReferable> notImplementedFields = new ArrayList<>();
     for (ClassField field : classDef.getFields()) {
       Concrete.ClassFieldImpl<T> impl = classFieldMap.get(field);
       if (impl != null) {

@@ -7,11 +7,6 @@ public class BaseAbstractVisitor<T, P, R> implements ConcreteDefinitionVisitor<T
   }
 
   @Override
-  public R visitClassField(Concrete.ClassField<T> def, P params) {
-    return null;
-  }
-
-  @Override
   public R visitData(Concrete.DataDefinition<T> def, P params) {
     return null;
   }

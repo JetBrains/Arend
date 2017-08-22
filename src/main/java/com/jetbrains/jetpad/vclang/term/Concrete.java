@@ -1004,25 +1004,18 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField<T> extends Definition<T> {
+  public static class ClassField<T> extends SourceNode<T> implements GlobalReferable {
+    private final GlobalReferable myReferable;
     private final Expression<T> myResultType;
 
     public ClassField(T data, GlobalReferable referable, Precedence precedence, Expression<T> resultType) {
-      super(data, referable, precedence);
-      setNotStatic();
+      super(data);
+      myReferable = referable;
       myResultType = resultType;
     }
 
-    @Nonnull
-    @Override
-    public ClassDefinition<T> getParentDefinition() {
-      //noinspection ConstantConditions
-      return (ClassDefinition<T>) super.getParentDefinition();
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassField(this, params);
+    public GlobalReferable getReferable() {
+      return myReferable;
     }
 
     @Nonnull

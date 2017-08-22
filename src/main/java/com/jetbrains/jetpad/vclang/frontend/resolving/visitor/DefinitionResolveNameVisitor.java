@@ -110,14 +110,6 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   }
 
   @Override
-  public Void visitClassField(Concrete.ClassField<T> def, Scope parentScope) {
-    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      def.getResultType().accept(new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter), null);
-    }
-    return null;
-  }
-
-  @Override
   public Void visitData(Concrete.DataDefinition<T> def, Scope parentScope) {
     Scope scope = new DataScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)));
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
@@ -217,8 +209,13 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         DynamicClassScope dynamicScope = new DynamicClassScope(parentScope, new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(def)), new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(def)), extraScopes);
         dynamicScope.findIntroducedDuplicateNames(this::warnDuplicate);
 
-        for (Concrete.ClassField<T> field : def.getFields()) {
-          field.accept(this, dynamicScope);
+        if (!def.getFields().isEmpty()) {
+          ExpressionResolveNameVisitor<T> visitor = new ExpressionResolveNameVisitor<>(dynamicScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
+          for (Concrete.ClassField<T> field : def.getFields()) {
+            try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
+              field.getResultType().accept(visitor, null);
+            }
+          }
         }
         if (!def.getImplementations().isEmpty()) {
           new ExpressionResolveNameVisitor<>(dynamicScope, myContext, myNameResolver, myInfoProvider, myErrorReporter).visitClassFieldImpls(def.getImplementations(), def);

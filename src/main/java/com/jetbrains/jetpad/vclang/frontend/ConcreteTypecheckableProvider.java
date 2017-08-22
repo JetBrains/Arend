@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -19,6 +20,9 @@ public class ConcreteTypecheckableProvider implements TypecheckableProvider<Posi
     }
     if (referable instanceof Concrete.ClassView) {
       referable = ((Concrete.ClassView) referable).getUnderlyingClass().getReferent();
+    }
+    if (referable instanceof Concrete.ClassField) {
+      return ((GlobalReference) ((Concrete.ClassField) referable).getReferable()).getDefinition();
     }
     return (Concrete.Definition<Position>) referable; // TODO[abstract]
   }

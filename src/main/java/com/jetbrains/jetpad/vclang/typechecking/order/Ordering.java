@@ -112,7 +112,7 @@ public class Ordering<T> {
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
-    definition.accept(new DefinitionGetDepsVisitor(myInstanceProviderSet.getInstanceProvider(definition), myTypecheckableProvider, dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDepsVisitor<>(myInstanceProviderSet.getInstanceProvider(definition), myTypecheckableProvider, dependencies), typecheckable.isHeader());
     if (typecheckable.isHeader() && dependencies.contains(definition)) {
       myStack.pop();
       currentState.onStack = false;
@@ -121,11 +121,8 @@ public class Ordering<T> {
 
     for (GlobalReferable referable : dependencies) {
       Concrete.Definition<T> dependency = myTypecheckableProvider.forReferable(referable);
-      boolean isField = false;
-      if (dependency instanceof Concrete.ClassField) {
-        dependency = ((Concrete.ClassField<T>) dependency).getParentDefinition();
-        isField = true;
-      } else if (dependency instanceof Concrete.Constructor) {
+      boolean isField = referable instanceof Concrete.ClassField; // TODO[abstract]: I don't know how to handle this properly. Maybe check this later, during typechecking?
+      if (dependency instanceof Concrete.Constructor) {
         dependency = ((Concrete.Constructor<T>) dependency).getDataType();
       }
 

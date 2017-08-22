@@ -697,8 +697,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  private void prettyPrintNameWithPrecedence(Concrete.Definition def) {
-    Precedence precedence = def.getPrecedence();
+  private void prettyPrintNameWithPrecedence(GlobalReferable def) {
+    Precedence precedence = myInfoProvider.precedenceOf(def);
     if (!precedence.equals(Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
       if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');
@@ -708,7 +708,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       myBuilder.append(' ');
     }
 
-    myBuilder.append(def.getName());
+    myBuilder.append(myInfoProvider.nameFor(def));
   }
 
   private void prettyPrintBody(Concrete.FunctionBody<T> body) {
@@ -790,15 +790,6 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
     r.doPrettyPrint(this, noIndent);
 
-    return null;
-  }
-
-  @Override
-  public Void visitClassField(Concrete.ClassField<T> def, Void params) {
-    myBuilder.append("| ");
-    prettyPrintNameWithPrecedence(def);
-    myBuilder.append(" : ");
-    def.getResultType().accept(this, Concrete.Expression.PREC);
     return null;
   }
 
@@ -979,7 +970,10 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       for (Concrete.ClassField<T> field : fields) {
         myBuilder.append('\n');
         printIndent();
-        field.accept(this, null);
+        myBuilder.append("| ");
+        prettyPrintNameWithPrecedence(field);
+        myBuilder.append(" : ");
+        field.getResultType().accept(this, Concrete.Expression.PREC);
         myBuilder.append('\n');
       }
 

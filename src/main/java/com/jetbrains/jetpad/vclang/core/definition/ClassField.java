@@ -16,12 +16,12 @@ public class ClassField extends Definition {
   private TypedDependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(Concrete.ClassField<?> classField, ClassDefinition thisClass) {
+  public ClassField(Concrete.Definition<?> classField /* TODO[abstract]: replace with referable */, ClassDefinition thisClass) {
     super(classField, TypeCheckingStatus.HEADER_HAS_ERRORS);
     setThisClass(thisClass);
   }
 
-  public ClassField(Concrete.ClassField<?> classField, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
+  public ClassField(Concrete.Definition<?> classField /* TODO[abstract]: replace with referable */, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
     super(classField, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;
@@ -31,11 +31,6 @@ public class ClassField extends Definition {
   @Override
   public String getName() {
     return getConcreteDefinition() != null ? super.getName() : getThisClass().getName() + "::\\parent";
-  }
-
-  @Override
-  public Concrete.ClassField<?> getConcreteDefinition() {
-    return (Concrete.ClassField<?>) super.getConcreteDefinition();
   }
 
   @Override

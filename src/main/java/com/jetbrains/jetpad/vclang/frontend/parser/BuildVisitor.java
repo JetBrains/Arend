@@ -384,12 +384,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return new Concrete.NamePattern<>(position, new LocalReference(null));
   }
 
-  @Override
-  public Concrete.ClassField<Position> visitClassField(ClassFieldContext ctx) {
+  private Concrete.ClassField<Position> visitClassField(ClassFieldContext ctx, Concrete.ClassDefinition<Position> parentClass) {
     GlobalReference reference = new GlobalReference(visitId(ctx.id()));
-    Concrete.ClassField<Position> result = new Concrete.ClassField<>(tokenPosition(ctx.getStart()), reference, visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
-    reference.setDefinition(result);
-    return result;
+    reference.setDefinition(parentClass);
+    return new Concrete.ClassField<>(tokenPosition(ctx.getStart()), reference, visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
   }
 
   @Override
@@ -567,43 +565,36 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
   }
 
-  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField<Position>> fields, List<Concrete.ClassFieldImpl<Position>> implementations, List<Concrete.Definition<Position>> definitions) {
+  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField<Position>> fields, List<Concrete.ClassFieldImpl<Position>> implementations, List<Concrete.Definition<Position>> definitions, Concrete.ClassDefinition<Position> parentClass) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
         continue;
       }
 
       try {
+        if (statementCtx instanceof ClassFieldContext) {
+          fields.add(visitClassField((ClassFieldContext) statementCtx, parentClass));
+          continue;
+        }
+
         //noinspection unchecked
         Concrete.SourceNode<Position> sourceNode = (Concrete.SourceNode<Position>) visit(statementCtx);
-        if (sourceNode != null) {
-          Concrete.Definition<Position> definition;
-          if (sourceNode instanceof Concrete.Definition) {
-            definition = (Concrete.Definition<Position>) sourceNode;
-          } else
-          if (sourceNode instanceof Concrete.DefineStatement) {
-            definition = ((Concrete.DefineStatement<Position>) sourceNode).getDefinition();
-          } else {
-            if (sourceNode instanceof Concrete.ClassFieldImpl && implementations != null) {
-              implementations.add((Concrete.ClassFieldImpl<Position>) sourceNode);
-            } else {
-              misplacedDefinitionError(sourceNode.getData());
-            }
+        if (sourceNode == null) {
+          continue;
+        }
+
+        if (sourceNode instanceof Concrete.DefineStatement) {
+          Concrete.Definition<Position> definition = ((Concrete.DefineStatement<Position>) sourceNode).getDefinition();
+          if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition || definition instanceof Concrete.ClassDefinition) {
+            definitions.add(definition);
             continue;
           }
-
-          if (definition instanceof Concrete.ClassField) {
-            if (fields != null) {
-              fields.add((Concrete.ClassField<Position>) definition);
-            } else {
-              misplacedDefinitionError(definition.getData());
-            }
-          } else if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition || definition instanceof Concrete.ClassDefinition) {
-            definitions.add(definition);
-          } else {
-            misplacedDefinitionError(definition.getData());
-          }
+        } else if (sourceNode instanceof Concrete.ClassFieldImpl) {
+          implementations.add((Concrete.ClassFieldImpl<Position>) sourceNode);
+          continue;
         }
+
+        misplacedDefinitionError(sourceNode.getData());
       } catch (ParseException ignored) {
 
       }
@@ -618,18 +609,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.ClassDefinition<Position> visitDefClass(DefClassContext ctx) {
     List<Concrete.TypeParameter<Position>> polyParameters = visitTeles(ctx.tele());
-    List<Concrete.ReferenceExpression<Position>> superClasses = new ArrayList<>(ctx.atomFieldsAcc().size());
-    List<Concrete.ClassField<Position>> fields = new ArrayList<>();
-    List<Concrete.ClassFieldImpl<Position>> implementations = new ArrayList<>();
+    List<Concrete.ReferenceExpression<Position>> superClasses = ctx.atomFieldsAcc().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.atomFieldsAcc().size());
+    List<Concrete.ClassField<Position>> fields = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
+    List<Concrete.ClassFieldImpl<Position>> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Concrete.Statement<Position>> globalStatements = visitWhere(ctx.where());
-    List<Concrete.Definition<Position>> instanceDefinitions;
-
-    if (ctx.classStat().isEmpty()) {
-      instanceDefinitions = Collections.emptyList();
-    } else {
-      instanceDefinitions = new ArrayList<>(ctx.classStat().size());
-      visitInstanceStatements(ctx.classStat(), fields, implementations, instanceDefinitions);
-    }
+    List<Concrete.Definition<Position>> instanceDefinitions = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
 
     for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
       Concrete.Expression<Position> superClass = visitAtomFieldsAcc(exprCtx);
@@ -643,9 +627,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     GlobalReference reference = new GlobalReference(visitId(ctx.id()));
     Concrete.ClassDefinition<Position> classDefinition = new Concrete.ClassDefinition<>(tokenPosition(ctx.getStart()), reference, polyParameters, superClasses, fields, implementations, globalStatements, instanceDefinitions);
     reference.setDefinition(classDefinition);
-    for (Concrete.ClassField<Position> field : fields) {
-      field.setParent(classDefinition);
+    if (!ctx.classStat().isEmpty()) {
+      visitInstanceStatements(ctx.classStat(), fields, implementations, instanceDefinitions, classDefinition);
     }
+
     for (Concrete.Definition<Position> definition : instanceDefinitions) {
       definition.setParent(classDefinition);
       definition.setNotStatic();

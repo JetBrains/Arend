@@ -140,12 +140,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitClassField(Concrete.ClassField<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
-      return null;
-    }
-
-    @Override
     public Void visitData(Concrete.DataDefinition<Position> def, Map<String, GlobalReferable> params) {
       params.put(getIdFor(def), def);
       for (Concrete.ConstructorClause<Position> clause : def.getConstructorClauses()) {
@@ -172,7 +166,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         definition.accept(this, params);
       }
       for (Concrete.ClassField<Position> field : def.getFields()) {
-        field.accept(this, params);
+        params.put(getIdFor(field), field);
       }
 
       return null;
@@ -195,7 +189,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
 
-    static String getIdFor(Concrete.Definition<Position> definition) {
+    static String getIdFor(Concrete.SourceNode<Position> definition) {
       Position pos = definition.getData();
       if (pos != null) {
         return pos.line + ";" + pos.column;
