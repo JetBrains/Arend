@@ -1041,7 +1041,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Void params) {
+  public Void visitInstance(Concrete.Instance<T> def, Void params) {
     myBuilder.append("\\instance ");
     prettyPrintNameWithPrecedence(def);
     prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);

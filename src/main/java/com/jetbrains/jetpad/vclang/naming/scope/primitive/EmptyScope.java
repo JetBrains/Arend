@@ -19,7 +19,7 @@ public class EmptyScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.Instance> getInstances() {
     return Collections.emptyList();
   }
 }

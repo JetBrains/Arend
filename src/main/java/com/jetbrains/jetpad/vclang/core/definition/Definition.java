@@ -79,7 +79,7 @@ public abstract class Definition implements Variable {
     if (definition instanceof Concrete.DataDefinition) {
       return new DataDefinition(definition);
     }
-    if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.ClassViewInstance) {
+    if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
       return new FunctionDefinition(definition);
     }
     if (definition instanceof Concrete.ClassDefinition) {

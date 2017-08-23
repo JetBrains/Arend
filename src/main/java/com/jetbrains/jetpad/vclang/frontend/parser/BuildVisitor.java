@@ -417,7 +417,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.ClassViewInstance<Position> visitDefInstance(DefInstanceContext ctx) {
+  public Concrete.Instance<Position> visitDefInstance(DefInstanceContext ctx) {
     List<Concrete.Parameter<Position>> arguments = visitFunctionArguments(ctx.tele());
     Concrete.Expression<Position> term = visitExpr(ctx.expr());
     if (term instanceof Concrete.NewExpression) {
@@ -426,7 +426,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         Concrete.ClassExtExpression<Position> classExt = (Concrete.ClassExtExpression<Position>) type;
         if (classExt.getBaseClassExpression() instanceof Concrete.ReferenceExpression) {
           GlobalReference reference = new GlobalReference(visitId(ctx.id()));
-          Concrete.ClassViewInstance<Position> result = new Concrete.ClassViewInstance<>(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, reference, Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression<Position>) classExt.getBaseClassExpression(), classExt.getStatements());
+          Concrete.Instance<Position> result = new Concrete.Instance<>(tokenPosition(ctx.getStart()), ctx.defaultInst() instanceof WithDefaultContext, reference, Precedence.DEFAULT, arguments, (Concrete.ReferenceExpression<Position>) classExt.getBaseClassExpression(), classExt.getStatements());
           reference.setDefinition(result);
           return result;
         }

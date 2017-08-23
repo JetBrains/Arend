@@ -177,7 +177,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Void visitClassViewInstance(Concrete.ClassViewInstance<Position> def, Map<String, GlobalReferable> params) {
+    public Void visitInstance(Concrete.Instance<Position> def, Map<String, GlobalReferable> params) {
       params.put(getIdFor(def), def);
       return null;
     }

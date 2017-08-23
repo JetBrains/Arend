@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvi
 import java.util.Collection;
 import java.util.Collections;
 
-public class GlobalInstancePool implements ClassViewInstancePool {
+public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
   private final InstanceProvider myInstanceProvider;
 
@@ -30,8 +30,8 @@ public class GlobalInstancePool implements ClassViewInstancePool {
       return null;
     }
 
-    Collection<? extends Concrete.ClassViewInstance> instances = myInstanceProvider.getInstances(classView);
-    for (Concrete.ClassViewInstance instance : instances) {
+    Collection<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(classView);
+    for (Concrete.Instance instance : instances) {
       if ((isView && instance.getClassView().getReferent() == classView ||
           !isView && ((Concrete.ClassView) instance.getClassView().getReferent()).getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) &&
         instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getReferable()) {

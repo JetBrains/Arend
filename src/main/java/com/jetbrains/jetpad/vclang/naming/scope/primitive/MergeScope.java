@@ -73,12 +73,12 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.ClassViewInstance, Concrete.ClassViewInstance> reporter) {
-    Multimap<Pair<Referable, Referable>, Concrete.ClassViewInstance> known = HashMultimap.create();
+  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.Instance, Concrete.Instance> reporter) {
+    Multimap<Pair<Referable, Referable>, Concrete.Instance> known = HashMultimap.create();
     for (Scope scope : myScopes) {
-      for (Concrete.ClassViewInstance instance : scope.getInstances()) {
+      for (Concrete.Instance instance : scope.getInstances()) {
         Pair<Referable, Referable> pair = new Pair<>(instance.getClassView().getReferent(), instance.getClassifyingDefinition());
-        for (Concrete.ClassViewInstance prev : known.get(pair)) {
+        for (Concrete.Instance prev : known.get(pair)) {
           if (prev != instance) {
             reporter.accept(prev, instance);
           }
@@ -89,7 +89,7 @@ public class MergeScope implements MergingScope {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.Instance> getInstances() {
     return StreamSupport.stream(myScopes.spliterator(), false).flatMap(s -> s.getInstances().stream()).collect(Collectors.toSet());
   }
 }

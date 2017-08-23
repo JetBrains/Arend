@@ -28,8 +28,8 @@ public class OverridingScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
-    List<Concrete.ClassViewInstance> instances = new ArrayList<>(myParent.getInstances());
+  public Collection<? extends Concrete.Instance> getInstances() {
+    List<Concrete.Instance> instances = new ArrayList<>(myParent.getInstances());
     instances.addAll(myChild.getInstances());
     return instances;
   }

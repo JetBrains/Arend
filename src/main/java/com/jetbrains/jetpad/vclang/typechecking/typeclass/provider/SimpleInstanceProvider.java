@@ -7,7 +7,7 @@ import java.util.*;
 
 public class SimpleInstanceProvider implements InstanceProvider {
   private final Scope myScope;
-  private Map<Concrete.ClassView, List<Concrete.ClassViewInstance>> myInstances = null;
+  private Map<Concrete.ClassView, List<Concrete.Instance>> myInstances = null;
 
   public SimpleInstanceProvider(Scope scope) {
     myScope = scope;
@@ -18,10 +18,10 @@ public class SimpleInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances(Concrete.ClassView classView) {
+  public Collection<? extends Concrete.Instance> getInstances(Concrete.ClassView classView) {
     if (myInstances == null) {
       myInstances = new HashMap<>();
-      for (Concrete.ClassViewInstance instance : myScope.getInstances()) {
+      for (Concrete.Instance instance : myScope.getInstances()) {
         myInstances.computeIfAbsent((Concrete.ClassView) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
       }
     }

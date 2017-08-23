@@ -19,8 +19,8 @@ public class InstanceNamespaceProvider<T> {
 
   private static <T> void forDefinitions(Collection<? extends Concrete.Definition<T>> definitions, SimpleInstanceNamespace<T> ns) {
     for (Concrete.Definition<T> definition : definitions) {
-      if (definition instanceof Concrete.ClassViewInstance) {
-        ns.addInstance((Concrete.ClassViewInstance<T>) definition);
+      if (definition instanceof Concrete.Instance) {
+        ns.addInstance((Concrete.Instance<T>) definition);
       }
     }
   }

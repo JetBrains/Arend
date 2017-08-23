@@ -90,7 +90,7 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
   }
 
   @Override
-  public Void visitClassViewInstance(Concrete.ClassViewInstance def, SimpleInstanceProvider parentInstanceScope) {
+  public Void visitInstance(Concrete.Instance def, SimpleInstanceProvider parentInstanceScope) {
     myInstanceProviderSet.setProvider(def, parentInstanceScope);
     return null;
   }
@@ -109,7 +109,7 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
     return Stream.of(scope);
   }
 
-  private void warnDuplicate(Concrete.ClassViewInstance instance1, Concrete.ClassViewInstance instance2) {
+  private void warnDuplicate(Concrete.Instance instance1, Concrete.Instance instance2) {
     myErrorReporter.report(new DuplicateInstanceError(Error.Level.WARNING, instance1, instance2 /* TODO[abstract] */));
   }
 }

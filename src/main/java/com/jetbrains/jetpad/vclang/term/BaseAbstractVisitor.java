@@ -27,7 +27,7 @@ public class BaseAbstractVisitor<T, P, R> implements ConcreteDefinitionVisitor<T
   }
 
   @Override
-  public R visitClassViewInstance(Concrete.ClassViewInstance<T> def, P params) {
+  public R visitInstance(Concrete.Instance<T> def, P params) {
     return null;
   }
 }

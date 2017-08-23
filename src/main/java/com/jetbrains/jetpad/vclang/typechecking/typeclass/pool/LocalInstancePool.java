@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalInstancePool implements ClassViewInstancePool {
+public class LocalInstancePool implements InstancePool {
   static private class Pair {
     final Expression key;
     final Concrete.ClassView classView;

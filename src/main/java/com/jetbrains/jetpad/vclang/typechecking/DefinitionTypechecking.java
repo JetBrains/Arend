@@ -51,7 +51,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 class DefinitionTypechecking {
   static <T> Definition typecheckHeader(CheckTypeVisitor<T> visitor, GlobalInstancePool instancePool, Concrete.Definition<T> definition, Concrete.ClassDefinition<T> enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
+    visitor.setInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
     ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) visitor.getTypecheckingState().getTypechecked(enclosingClass);
     Definition typechecked = visitor.getTypecheckingState().getTypechecked(definition);
 
@@ -117,7 +117,7 @@ class DefinitionTypechecking {
       }
       return null;
     } else
-    if (unit.getDefinition() instanceof Concrete.ClassViewInstance) {
+    if (unit.getDefinition() instanceof Concrete.Instance) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
       if (typechecked == null) {
         state.record(unit.getDefinition(), definition);
@@ -126,13 +126,13 @@ class DefinitionTypechecking {
         visitor.getErrorReporter().report(new LocalTypeCheckingError<>("An instance cannot be recursive", unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       } else {
-        typeCheckClassViewInstance((Concrete.ClassViewInstance<T>) unit.getDefinition(), definition, visitor);
+        typeCheckInstance((Concrete.Instance<T>) unit.getDefinition(), definition, visitor);
       }
       return null;
     }
 
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    visitor.setClassViewInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
+    visitor.setInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
 
     if (unit.getDefinition() instanceof Concrete.FunctionDefinition) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
@@ -713,7 +713,7 @@ class DefinitionTypechecking {
     }
   }
 
-  private static <T> void typeCheckClassViewInstance(Concrete.ClassViewInstance<T> def, FunctionDefinition typedDef, CheckTypeVisitor<T> visitor) {
+  private static <T> void typeCheckInstance(Concrete.Instance<T> def, FunctionDefinition typedDef, CheckTypeVisitor<T> visitor) {
     LocalErrorReporter<T> errorReporter = visitor.getErrorReporter();
 
     LinkList list = new LinkList();

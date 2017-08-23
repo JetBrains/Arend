@@ -37,10 +37,10 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
-    Collection<? extends Concrete.ClassViewInstance> instances = myScope.getInstances();
-    List<Concrete.ClassViewInstance> filteredInstances = new ArrayList<>(instances.size());
-    for (Concrete.ClassViewInstance instance : instances) {
+  public Collection<? extends Concrete.Instance> getInstances() {
+    Collection<? extends Concrete.Instance> instances = myScope.getInstances();
+    List<Concrete.Instance> filteredInstances = new ArrayList<>(instances.size());
+    for (Concrete.Instance instance : instances) {
       if (myInclude && myNames.contains(instance.getName()) || !myInclude && !myNames.contains(instance.getName())) {
         filteredInstances.add(instance);
       }

@@ -1318,14 +1318,14 @@ public final class Concrete {
     }
   }
 
-  public static class ClassViewInstance<T> extends Definition<T> {
+  public static class Instance<T> extends Definition<T> {
     private final boolean myDefault;
     private final List<Parameter<T>> myArguments;
     private final ReferenceExpression<T> myClassView;
     private final List<ClassFieldImpl<T>> myClassFieldImpls;
     private GlobalReferable myClassifyingDefinition;
 
-    public ClassViewInstance(T data, boolean isDefault, GlobalReferable referable, Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
+    public Instance(T data, boolean isDefault, GlobalReferable referable, Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
       super(data, referable, precedence);
       myDefault = isDefault;
       myArguments = arguments;
@@ -1363,7 +1363,7 @@ public final class Concrete {
 
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassViewInstance(this, params);
+      return visitor.visitInstance(this, params);
     }
   }
 

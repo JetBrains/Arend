@@ -271,7 +271,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   }
 
   @Override
-  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Scope parentScope) {
+  public Void visitInstance(Concrete.Instance<T> def, Scope parentScope) {
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());

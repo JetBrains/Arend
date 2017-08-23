@@ -12,19 +12,19 @@ import java.util.*;
 
 public class SimpleInstanceNamespace<T> implements Scope {
   private final ErrorReporter<T> myErrorReporter;
-  private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.ClassViewInstance<T>> myInstances = Collections.emptyMap();
+  private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.Instance<T>> myInstances = Collections.emptyMap();
 
   public SimpleInstanceNamespace(ErrorReporter<T> errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  public void addInstance(Concrete.ClassViewInstance<T> instance) {
+  public void addInstance(Concrete.Instance<T> instance) {
     if (myInstances.isEmpty()) {
       myInstances = new HashMap<>();
     }
     Concrete.ClassView classView = (Concrete.ClassView) instance.getClassView().getReferent();
     Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClass().getReferent() : classView, instance.getClassifyingDefinition());
-    Concrete.ClassViewInstance oldInstance = myInstances.putIfAbsent(pair, instance);
+    Concrete.Instance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError<>(Error.Level.ERROR, oldInstance, instance));
     }
@@ -41,7 +41,7 @@ public class SimpleInstanceNamespace<T> implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.ClassViewInstance> getInstances() {
+  public Collection<? extends Concrete.Instance> getInstances() {
     return myInstances.values();
   }
 }

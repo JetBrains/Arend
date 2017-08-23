@@ -44,7 +44,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageE
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 
 import java.util.*;
 
@@ -62,7 +62,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
   private final TypeCheckingDefCall<T> myTypeCheckingDefCall;
   private final ImplicitArgsInference<T> myArgsInference;
   private final Equations<T> myEquations;
-  private ClassViewInstancePool myClassViewInstancePool;
+  private InstancePool myInstancePool;
 
   public interface TResult<T> {
     Result toResult(Equations<T> equations);
@@ -243,7 +243,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Referable, Binding> localContext, LocalErrorReporter<T> errorReporter, ClassViewInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Referable, Binding> localContext, LocalErrorReporter<T> errorReporter, InstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -253,7 +253,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     myTypeCheckingDefCall = new TypeCheckingDefCall<>(this);
     myArgsInference = new StdImplicitArgsInference<>(this);
     myEquations = new TwoStageEquations<>(this);
-    myClassViewInstancePool = pool;
+    myInstancePool = pool;
   }
 
   public void setThis(ClassDefinition thisClass, Binding thisBinding) {
@@ -276,12 +276,12 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
     return myTypeCheckingDefCall;
   }
 
-  public ClassViewInstancePool getClassViewInstancePool() {
-    return myClassViewInstancePool;
+  public InstancePool getInstancePool() {
+    return myInstancePool;
   }
 
-  public void setClassViewInstancePool(ClassViewInstancePool pool) {
-    myClassViewInstancePool = pool;
+  public void setInstancePool(InstancePool pool) {
+    myInstancePool = pool;
   }
 
   public Map<Referable, Binding> getContext() {

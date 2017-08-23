@@ -11,7 +11,7 @@ public interface Scope {
   Set<String> getNames();
   Referable resolveName(String name);
 
-  Collection<? extends Concrete.ClassViewInstance> getInstances(); // TODO[abstract]: Replace Concrete.ClassViewInstance with something else, idk
+  Collection<? extends Concrete.Instance> getInstances(); // TODO[abstract]: Replace Concrete.Instance with something else, idk
 
   abstract class InvalidScopeException extends ReportableRuntimeException {}
 }

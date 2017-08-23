@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.ClassViewInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 
 import java.util.Set;
 
@@ -33,7 +33,7 @@ public class TypeClassInferenceVariable<T> extends InferenceVariable<T> {
     return new ArgInferenceError<>(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
   }
 
-  public Expression getInstance(ClassViewInstancePool pool, Expression classifyingExpression) {
+  public Expression getInstance(InstancePool pool, Expression classifyingExpression) {
     return pool.getInstance(classifyingExpression, myClassView, isView);
   }
 }

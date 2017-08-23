@@ -6,16 +6,16 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import java.util.Arrays;
 import java.util.List;
 
-public class CompositeInstancePool implements ClassViewInstancePool {
-  private final List<ClassViewInstancePool> myPools;
+public class CompositeInstancePool implements InstancePool {
+  private final List<InstancePool> myPools;
 
-  public CompositeInstancePool(ClassViewInstancePool... pools) {
+  public CompositeInstancePool(InstancePool... pools) {
     myPools = Arrays.asList(pools);
   }
 
   @Override
   public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
-    for (ClassViewInstancePool pool : myPools) {
+    for (InstancePool pool : myPools) {
       Expression expr = pool.getInstance(classifyingExpression, classView, isView);
       if (expr != null) {
         return expr;

@@ -144,7 +144,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   }
 
   @Override
-  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, Boolean params) {
+  public Void visitInstance(Concrete.Instance<T> def, Boolean params) {
     CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.Parameter<T> param : def.getParameters()) {

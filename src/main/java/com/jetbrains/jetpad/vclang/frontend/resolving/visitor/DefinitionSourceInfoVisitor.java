@@ -66,7 +66,7 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
   }
 
   @Override
-  public Void visitClassViewInstance(Concrete.ClassViewInstance<T> def, FullName fullName) {
+  public Void visitInstance(Concrete.Instance<T> def, FullName fullName) {
     return null;
   }
 

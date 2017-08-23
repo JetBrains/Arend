@@ -6,5 +6,5 @@ public interface ConcreteDefinitionVisitor<T, P, R> {
   R visitClass(Concrete.ClassDefinition<T> def, P params);
   R visitClassView(Concrete.ClassView<T> def, P params);
   R visitClassViewField(Concrete.ClassViewField<T> def, P params);
-  R visitClassViewInstance(Concrete.ClassViewInstance<T> def, P params);
+  R visitInstance(Concrete.Instance<T> def, P params);
 }

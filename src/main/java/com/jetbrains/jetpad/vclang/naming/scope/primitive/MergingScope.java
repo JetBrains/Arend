@@ -7,5 +7,5 @@ import java.util.function.BiConsumer;
 
 public interface MergingScope extends Scope {
   void findIntroducedDuplicateNames(BiConsumer<Referable, Referable> reporter);
-  void findIntroducedDuplicateInstances(BiConsumer<Concrete.ClassViewInstance, Concrete.ClassViewInstance> reporter);
+  void findIntroducedDuplicateInstances(BiConsumer<Concrete.Instance, Concrete.Instance> reporter);
 }

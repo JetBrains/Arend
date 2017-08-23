@@ -34,7 +34,7 @@ public class StaticClassScope extends OverridingScope implements MergingScope {
   }
 
   @Override
-  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.ClassViewInstance, Concrete.ClassViewInstance> reporter) {
+  public void findIntroducedDuplicateInstances(BiConsumer<Concrete.Instance, Concrete.Instance> reporter) {
     myMerging.findIntroducedDuplicateInstances(reporter);
   }
 }
