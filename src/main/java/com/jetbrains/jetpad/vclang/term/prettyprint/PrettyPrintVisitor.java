@@ -819,7 +819,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
           myBuilder.append('\n');
           printIndent();
           myBuilder.append("| ");
-          constructor.accept(this, null);
+          visitConstructor(constructor);
         }
       } else {
         myBuilder.append('\n');
@@ -867,7 +867,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       } else {
         myBuilder.append(" | ");
       }
-      constructor.accept(this, null);
+      visitConstructor(constructor);
     }
     if (clause.getConstructors().size() > 1) {
       myBuilder.append(" }");
@@ -924,8 +924,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  @Override
-  public Void visitConstructor(Concrete.Constructor<T> def, Void ignored) {
+  private void visitConstructor(Concrete.Constructor<T> def) {
     prettyPrintNameWithPrecedence(def);
     for (Concrete.TypeParameter<T> parameter : def.getParameters()) {
       myBuilder.append(' ');
@@ -936,7 +935,6 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       prettyPrintEliminatedReferences(def.getEliminatedReferences());
       prettyPrintClauses(Collections.emptyList(), def.getClauses());
     }
-    return null;
   }
 
   private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition<T> def) {

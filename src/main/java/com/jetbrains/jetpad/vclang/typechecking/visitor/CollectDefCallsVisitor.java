@@ -35,20 +35,13 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
       return;
     }
 
-    Concrete.Definition<?> definition = myTypecheckableProvider.forReferable((GlobalReferable) referable);
+    Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.forReferable((GlobalReferable) referable); // TODO[abstract]: Move this to Ordering
     if (myInstanceProvider != null) {
       if (definition instanceof Concrete.ClassViewField) {
         myDependencies.addAll(myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView()));
       } else {
-        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition);
+        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition.getRelatedDefinition());
         if (parameters != null) {
-          if (definition instanceof Concrete.Constructor) {
-            List<? extends Concrete.TypeParameter<?>> dataTypeParameters = ((Concrete.Constructor<?>) definition).getDataType().getParameters();
-            List<Concrete.Parameter<?>> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
-            totalParameters.addAll(dataTypeParameters);
-            totalParameters.addAll(parameters);
-            parameters = totalParameters;
-          }
           for (Concrete.Parameter<?> parameter : parameters) {
             Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
             if (classView != null) {
@@ -58,7 +51,7 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
         }
       }
     }
-    myDependencies.add(definition);
+    myDependencies.add((GlobalReferable) referable);
   }
 
   @Override

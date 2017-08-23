@@ -28,7 +28,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 
 public class ConditionsChecking {
-  public static <T> boolean check(Body body, List<Clause<T>> clauses, Definition definition, Concrete.Definition<T> def, LocalErrorReporter<T> errorReporter) {
+  public static <T> boolean check(Body body, List<Clause<T>> clauses, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
     boolean ok;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, def, errorReporter);
@@ -50,7 +50,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.Definition<T> def, LocalErrorReporter<T> errorReporter) {
+  private static <T> boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
@@ -68,7 +68,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.Definition<T> def, LocalErrorReporter<T> errorReporter) {
+  private static <T> boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {

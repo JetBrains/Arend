@@ -43,7 +43,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           ClassDefinition classDef = new ClassDefinition(abstractDef);
           for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
             Concrete.ClassField<?> absField = (Concrete.ClassField<?>) getAbstract(constructorId);
-            ClassField res = new ClassField(absField.getReferable(), classDef);
+            ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absField, res);
           }

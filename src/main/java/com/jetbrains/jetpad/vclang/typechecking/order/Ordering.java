@@ -120,19 +120,16 @@ public class Ordering<T> {
     }
 
     for (GlobalReferable referable : dependencies) {
-      Concrete.Definition<T> dependency = myTypecheckableProvider.forReferable(referable);
-      boolean isField = referable instanceof Concrete.ClassField; // TODO[abstract]: I don't know how to handle this properly. Maybe check this later, during typechecking?
-      if (dependency instanceof Concrete.Constructor) {
-        dependency = ((Concrete.Constructor<T>) dependency).getDataType();
-      }
+      Concrete.ReferableDefinition<T> dependency = myTypecheckableProvider.forReferable(referable);
+      Concrete.Definition<T> dependencyDef = dependency.getRelatedDefinition();
 
-      if (dependency.equals(definition)) {
-        if (!isField) {
+      if (dependencyDef.equals(definition)) {
+        if (!(dependency instanceof Concrete.ClassField)) {
           recursion = DependencyListener.Recursion.IN_BODY;
         }
       } else {
-        myListener.dependsOn(typecheckable, dependency);
-        updateState(currentState, new Typecheckable<>(dependency, myRefToHeaders));
+        myListener.dependsOn(typecheckable, dependencyDef);
+        updateState(currentState, new Typecheckable<>(dependencyDef, myRefToHeaders));
       }
     }
 

@@ -144,15 +144,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       params.put(getIdFor(def), def);
       for (Concrete.ConstructorClause<Position> clause : def.getConstructorClauses()) {
         for (Concrete.Constructor<Position> constructor : clause.getConstructors()) {
-          constructor.accept(this, params);
+          params.put(getIdFor(constructor), constructor);
         }
       }
-      return null;
-    }
-
-    @Override
-    public Void visitConstructor(Concrete.Constructor<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
       return null;
     }
 

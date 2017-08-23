@@ -76,7 +76,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
           }
         }
         for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
-          visitConstructor(constructor, null);
+          visitConstructor(constructor);
         }
       }
     }
@@ -96,8 +96,7 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
     }
   }
 
-  @Override
-  public Void visitConstructor(Concrete.Constructor<T> def, Boolean params) {
+  private void visitConstructor(Concrete.Constructor<T> def) {
     CollectDefCallsVisitor<T> visitor = new CollectDefCallsVisitor<>(myInstanceProvider, myTypecheckableProvider, myDependencies);
 
     for (Concrete.TypeParameter<T> param : def.getParameters()) {
@@ -113,8 +112,6 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
         }
       }
     }
-
-    return null;
   }
 
   @Override

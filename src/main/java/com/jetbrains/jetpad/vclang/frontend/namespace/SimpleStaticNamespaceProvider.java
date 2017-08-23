@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -59,11 +60,14 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
   @Override
   public Namespace forReferable(GlobalReferable referable) {
-    if (referable instanceof Concrete.ClassField) {
-      referable = ((Concrete.ClassField) referable).getReferable();
+    if (referable instanceof GlobalReference) {
+      referable = ((GlobalReference) referable).getDefinition();
     }
-    Concrete.Definition definition = referable instanceof GlobalReference ? ((GlobalReference) referable).getDefinition() : (Concrete.Definition) referable; // TODO[abstract]
+    if (!(referable instanceof Concrete.Definition)) {
+      return new EmptyNamespace();
+    }
 
+    Concrete.Definition definition = (Concrete.Definition) referable; // TODO[abstract]
     Namespace ns = cache.get(definition);
     if (ns != null) return ns;
 

@@ -57,11 +57,6 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
   }
 
   @Override
-  public Void visitConstructor(Concrete.Constructor def, SimpleInstanceProvider parentInstanceScope) {
-    return null;
-  }
-
-  @Override
   public Void visitClass(Concrete.ClassDefinition<T> def, SimpleInstanceProvider parentInstanceScope) {
     try {
       Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());

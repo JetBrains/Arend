@@ -65,7 +65,7 @@ class DefinitionTypechecking {
       return functionDef;
     } else
     if (definition instanceof Concrete.DataDefinition) {
-      DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Concrete.DataDefinition<T>) definition);
+      DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(definition);
       typeCheckDataHeader(dataDef, (Concrete.DataDefinition<T>) definition, typedEnclosingClass, visitor, localInstancePool);
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Cannot infer the sort of a recursive data type", definition));
@@ -97,7 +97,7 @@ class DefinitionTypechecking {
     Definition typechecked = state.getTypechecked(unit.getDefinition());
 
     if (unit.getDefinition() instanceof Concrete.ClassDefinition) {
-      ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition((Concrete.ClassDefinition<T>) unit.getDefinition());
+      ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(unit.getDefinition());
       if (typechecked == null) {
         state.record(unit.getDefinition(), definition);
       }
@@ -106,7 +106,7 @@ class DefinitionTypechecking {
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
         for (Concrete.ClassField<T> field : ((Concrete.ClassDefinition<T>) unit.getDefinition()).getFields()) {
-          ClassField typedDef = new ClassField(field.getReferable(), new ErrorExpression(null, null), definition, createThisParam(definition));
+          ClassField typedDef = new ClassField(field, new ErrorExpression(null, null), definition, createThisParam(definition));
           typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           visitor.getTypecheckingState().record(field, typedDef);
           definition.addField(typedDef);
@@ -149,7 +149,7 @@ class DefinitionTypechecking {
       return typeCheckFunctionBody(definition, (Concrete.FunctionDefinition<T>) unit.getDefinition(), visitor);
     } else
     if (unit.getDefinition() instanceof Concrete.DataDefinition) {
-      DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Concrete.DataDefinition<T>) unit.getDefinition());
+      DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(unit.getDefinition());
       typeCheckDataHeader(definition, (Concrete.DataDefinition<T>) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
       if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         typeCheckDataBody(definition, (Concrete.DataDefinition<T>) unit.getDefinition(), visitor, true, Collections.singleton(definition));
@@ -691,7 +691,7 @@ class DefinitionTypechecking {
     visitor.setThis(enclosingClass, thisParameter);
     Type typeResult = visitor.finalCheckType(def.getResultType());
 
-    ClassField typedDef = new ClassField(def.getReferable(), typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
+    ClassField typedDef = new ClassField(def, typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
     if (typeResult == null) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }

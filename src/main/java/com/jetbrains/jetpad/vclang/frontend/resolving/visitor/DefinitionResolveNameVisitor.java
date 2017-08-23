@@ -148,8 +148,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     return null;
   }
 
-  @Override
-  public Void visitConstructor(Concrete.Constructor<T> def, Scope parentScope) {
+  private void visitConstructor(Concrete.Constructor<T> def, Scope parentScope) {
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, myContext, myNameResolver, myInfoProvider, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       exprVisitor.visitParameters(def.getParameters());
@@ -162,7 +161,6 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences());
       exprVisitor.visitClauses(def.getClauses());
     }
-    return null;
   }
 
   private void visitConstructorClause(Concrete.ConstructorClause<T> clause, ExpressionResolveNameVisitor<T> exprVisitor) {

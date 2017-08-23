@@ -32,17 +32,11 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
 
     for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
       for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
-        visitConstructor(constructor, fullName);
+        reg(constructor, fullName);
       }
     }
     return null;
 
-  }
-
-  @Override
-  public Void visitConstructor(Concrete.Constructor<T> def, FullName fullName) {
-    reg(def, fullName);
-    return null;
   }
 
   @Override

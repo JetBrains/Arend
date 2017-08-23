@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -876,7 +877,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static <T> Collection<? extends Parameter<T>> getParameters(Definition<T> definition) {
+  public static <T> Collection<? extends Parameter<T>> getParameters(ReferableDefinition<T> definition) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition<T>) definition).getParameters();
     }
@@ -884,12 +885,25 @@ public final class Concrete {
       return ((DataDefinition<T>) definition).getParameters();
     }
     if (definition instanceof Constructor) {
-      return ((Constructor<T>) definition).getParameters();
+      List<TypeParameter<T>> dataTypeParameters = ((Concrete.Constructor<T>) definition).getRelatedDefinition().getParameters();
+      List<TypeParameter<T>> parameters = ((Constructor<T>) definition).getParameters();
+      List<TypeParameter<T>> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
+      totalParameters.addAll(dataTypeParameters);
+      totalParameters.addAll(parameters);
+      return totalParameters;
     }
     return null;
   }
 
-  public static abstract class Definition<T> extends SourceNode<T> implements GlobalReferable {
+  public static abstract class ReferableDefinition<T> extends SourceNode<T> implements GlobalReferable {
+    public ReferableDefinition(T data) {
+      super(data);
+    }
+
+    public abstract Definition<T> getRelatedDefinition();
+  }
+
+  public static abstract class Definition<T> extends ReferableDefinition<T> {
     private final GlobalReferable myReferable;
     private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
     private Definition<T> myParent;
@@ -932,6 +946,11 @@ public final class Concrete {
 
     public void setNotStatic() {
       myStatic = false;
+    }
+
+    @Override
+    public Definition<T> getRelatedDefinition() {
+      return this;
     }
 
     @Override
@@ -1004,29 +1023,32 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField<T> extends SourceNode<T> implements GlobalReferable {
-    private final GlobalReferable myReferable;
+  public static class ClassField<T> extends ReferableDefinition<T> {
+    private final String myName;
+    private final ClassDefinition<T> myParentClass;
     private final Expression<T> myResultType;
 
-    public ClassField(T data, GlobalReferable referable, Precedence precedence, Expression<T> resultType) {
+    public ClassField(T data, String name, ClassDefinition<T> parentClass, Precedence precedence, Expression<T> resultType) {
       super(data);
-      myReferable = referable;
+      myName = name;
+      myParentClass = parentClass;
       myResultType = resultType;
     }
 
     @Nullable
     @Override
     public String getName() {
-      return myReferable.getName();
-    }
-
-    public GlobalReferable getReferable() {
-      return myReferable;
+      return myName;
     }
 
     @Nonnull
     public Expression<T> getResultType() {
       return myResultType;
+    }
+
+    @Override
+    public ClassDefinition<T> getRelatedDefinition() {
+      return myParentClass;
     }
   }
 
@@ -1184,18 +1206,26 @@ public final class Concrete {
     }
   }
 
-  public static class Constructor<T> extends Definition<T> {
+  public static class Constructor<T> extends ReferableDefinition<T> {
+    private final String myName;
     private final DataDefinition<T> myDataType;
     private final List<TypeParameter<T>> myArguments;
     private final List<ReferenceExpression<T>> myEliminatedReferences;
     private final List<FunctionClause<T>> myClauses;
 
-    public Constructor(T data, GlobalReferable referable, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
-      super(data, referable, precedence);
+    public Constructor(T data, String name, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
+      super(data);
+      myName = name;
       myDataType = dataType;
       myArguments = arguments;
       myEliminatedReferences = eliminatedReferences;
       myClauses = clauses;
+    }
+
+    @Nullable
+    @Override
+    public String getName() {
+      return myName;
     }
 
     @Nonnull
@@ -1213,14 +1243,9 @@ public final class Concrete {
       return myClauses;
     }
 
-    @Nonnull
-    public DataDefinition<T> getDataType() {
-      return myDataType;
-    }
-
     @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitConstructor(this, params);
+    public DataDefinition<T> getRelatedDefinition() {
+      return myDataType;
     }
   }
 

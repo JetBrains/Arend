@@ -385,9 +385,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.ClassField<Position> visitClassField(ClassFieldContext ctx, Concrete.ClassDefinition<Position> parentClass) {
-    GlobalReference reference = new GlobalReference(visitId(ctx.id()));
-    reference.setDefinition(parentClass);
-    return new Concrete.ClassField<>(tokenPosition(ctx.getStart()), reference, visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
+    return new Concrete.ClassField<>(tokenPosition(ctx.getStart()), visitId(ctx.id()), parentClass, visitPrecedence(ctx.precedence()), visitExpr(ctx.expr()));
   }
 
   @Override
@@ -550,10 +548,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           clauses = Collections.emptyList();
         }
 
-        GlobalReference reference = new GlobalReference(visitId(conCtx.id()));
-        Concrete.Constructor<Position> constructor = new Concrete.Constructor<>(tokenPosition(conCtx.start), reference, visitPrecedence(conCtx.precedence()), def, visitTeles(conCtx.tele()), visitElim(conCtx.elim()), clauses);
-        reference.setDefinition(constructor);
-        result.add(constructor);
+        result.add(new Concrete.Constructor<>(tokenPosition(conCtx.start), visitId(conCtx.id()), visitPrecedence(conCtx.precedence()), def, visitTeles(conCtx.tele()), visitElim(conCtx.elim()), clauses));
       } catch (ParseException ignored) {
 
       }
