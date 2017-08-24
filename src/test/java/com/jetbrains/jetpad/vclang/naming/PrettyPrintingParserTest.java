@@ -1,28 +1,41 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.CaseExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.Concrete.LocalVariable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Zero;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class PrettyPrintingParserTest extends NameResolverTestCase {
+public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
@@ -131,45 +144,23 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
-
-  private void testDefinition(String s) {
-    loadPrelude();
-    Concrete.Definition def = resolveNamesDef(s);
-    StringBuilder sb = new StringBuilder();
-    PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, 0);
-    def.accept(visitor, null);
-    String s2 = sb.toString();
-    Concrete.Definition def2 = resolveNamesDef(s2);
-    //TODO: Current implementation only ensures that output of PrettyPrinter parses back but does not ensure that the parse result has not changed along the way
-    //TODO: Implement some comparator for definitions to fix this
-  }
-
   @Test
-  public void prettyPrintData1() {
-    String s1 =
-        "\\data S1 \n" +
-        "| base\n" +
-        "| loop Nat \\with {\n" +
-        "  | left => base\n" +
-        "  | right => base\n" +
-        "}";
-    testDefinition(s1);
-  }
+  public void prettyPrintCase() throws UnsupportedEncodingException {
+    TypedSingleDependentLink x = singleParam("x", Nat());
+    HashMap<Constructor, ElimTree> myMap = new HashMap<>();
+    myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));
+    TypedSingleDependentLink y = singleParam("y", Nat());
+    myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));
+    ElimTree etree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
+    CaseExpression cExpr = new CaseExpression(x, Nat(), etree, Collections.singletonList(Ref(x)));
 
-  @Test
-  public void prettyPrintClass1(){
-    String s1 = "\\class C0 {\n" +
-                "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
-                "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
-                "}";
-    testDefinition(s1);
-  }
+    Concrete.LocalVariable cx = ref("x");
+    Concrete.NamePattern cy = cNamePattern(true, "y");
+    List<Concrete.FunctionClause> cfc = new ArrayList<>();
+    cfc.add(cClause(Collections.singletonList(cConPattern(true, "suc", Collections.singletonList(cy))), cVar(cy)));
+    cfc.add(cClause(Collections.singletonList(cConPattern(true, "zero", Collections.emptyList())), cZero()));
+    Concrete.CaseExpression ccExpr = cCase(Collections.singletonList(cVar(cx)), cfc);
 
-  @Test
-  public void prettyPrintData2(){
-    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) => \\elim x\n" +
-                "    | suc x' => c0 (y = x')\n" +
-                "    | suc x' => c1 (p : D2 y x')";
-    testDefinition(s1);
+    testExpr(ccExpr, cExpr);
   }
 }
