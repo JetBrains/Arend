@@ -482,7 +482,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
 
   private TypedSingleDependentLink visitNameParameter(Concrete.NameParameter<T> param, int argIndex, Concrete.SourceNode<T> sourceNode) {
     Referable referable = param.getReferable();
-    String name = referable == null ? null : referable.getName();
+    String name = referable == null ? null : referable.textRepresentation();
 
     InferenceLevelVariable<T> pLvl = new InferenceLevelVariable<>(LevelVariable.LvlType.PLVL, sourceNode);
     InferenceLevelVariable<T> hLvl = new InferenceLevelVariable<>(LevelVariable.LvlType.HLVL, sourceNode);
@@ -508,7 +508,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) param).getReferableList();
       List<String> names = new ArrayList<>(referableList.size());
       for (Referable referable : referableList) {
-        names.add(referable == null ? null : referable.getName());
+        names.add(referable == null ? null : referable.textRepresentation());
       }
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
@@ -560,7 +560,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
         if (piParams.isExplicit() && !param.getExplicit()) {
           myErrorReporter.report(new LocalTypeCheckingError<>(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.getName(), piParams.getType());
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.textRepresentation(), piParams.getType());
         if (referable != null) {
           myContext.put(referable, link);
         } else {
@@ -680,7 +680,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
           for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.getName());
+            names.add(referable == null ? null : referable.textRepresentation());
           }
           SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
           list.add(link);
@@ -852,7 +852,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) arg).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
           for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.getName());
+            names.add(referable == null ? null : referable.textRepresentation());
           }
           DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
           list.append(link);
@@ -1175,7 +1175,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
       if (result == null) {
         return null;
       }
-      letResult = new LetClause(clause.getReferable().getName(), result.expression);
+      letResult = new LetClause(clause.getReferable().textRepresentation(), result.expression);
     }
     return letResult;
   }

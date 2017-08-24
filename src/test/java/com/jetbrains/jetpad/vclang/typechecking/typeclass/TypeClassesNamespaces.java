@@ -6,7 +6,7 @@ import org.junit.Test;
 public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -19,7 +19,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInsideRenamed() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -32,7 +32,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameOutside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -45,7 +45,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameOutsideRenamed() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -58,7 +58,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceInside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -73,7 +73,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceII() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -88,7 +88,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceIO() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -102,7 +102,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceOO() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -116,7 +116,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassOpen() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -130,7 +130,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceIIOpen() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +

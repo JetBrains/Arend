@@ -44,7 +44,7 @@ public class DocStringBuilder extends LineDocVisitor {
 
   @Override
   public Void visitReference(ReferenceDoc doc, Boolean newLine) {
-    myBuilder.append(doc.getReference().getName());
+    myBuilder.append(doc.getReference().textRepresentation());
     if (newLine) {
       myBuilder.append('\n');
     }

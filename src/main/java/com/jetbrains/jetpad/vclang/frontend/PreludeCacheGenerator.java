@@ -114,7 +114,7 @@ public class PreludeCacheGenerator {
     CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])),
         new PreludeVersionTracker(), new PreludeDefLocator(storage.preludeSourceId));
 
-    Concrete.ClassDefinition prelude = storage.loadSource(storage.preludeSourceId, errorReporter).definition;
+    Concrete.ClassDefinition prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
     new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 

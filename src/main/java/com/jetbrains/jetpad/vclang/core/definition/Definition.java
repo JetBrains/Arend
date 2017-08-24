@@ -23,7 +23,7 @@ public abstract class Definition implements Variable {
 
   @Override
   public String getName() {
-    return myReferable.getName();
+    return myReferable.textRepresentation();
   }
 
   public GlobalReferable getReferable() {

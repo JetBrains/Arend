@@ -5,18 +5,16 @@ import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
 
 public abstract class ParseSource {
   private final SourceId mySourceId;
@@ -27,7 +25,8 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  public @Nullable Concrete.ClassDefinition load(ErrorReporter<Position> errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+  public @Nullable
+  Group load(ErrorReporter<Position> errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
     CountingErrorReporter<Position> countingErrorReporter = new CountingErrorReporter<>();
     final CompositeErrorReporter<Position> compositeErrorReporter = new CompositeErrorReporter<>(errorReporter, countingErrorReporter);
 
@@ -54,11 +53,7 @@ public abstract class ParseSource {
       return null;
     }
 
-    List<Concrete.Statement<Position>> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
-
-    GlobalReference reference = new GlobalReference(mySourceId.getModulePath().getName());
-    Concrete.ClassDefinition<Position> result = new Concrete.ClassDefinition<>(new Position(mySourceId, 0, 0), reference, statements);
-    reference.setDefinition(result);
+    Group result = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);

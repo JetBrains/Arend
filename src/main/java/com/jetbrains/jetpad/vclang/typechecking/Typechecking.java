@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
@@ -28,17 +29,17 @@ public class Typechecking<T> {
     myOpens = opens;
   }
 
-  public void typecheckModules(final Collection<? extends Concrete.ClassDefinition<T>> classDefs) {
+  public void typecheckModules(final Collection<? extends Group> modules) {
     DefinitionResolveInstanceVisitor<T> visitor = new DefinitionResolveInstanceVisitor<>(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
-    for (Concrete.ClassDefinition<T> classDef : classDefs) {
-      visitor.visitClass(classDef, new SimpleInstanceProvider(new EmptyScope()));
+    for (Group group : modules) {
+      visitor.visitClass(group, new SimpleInstanceProvider(new EmptyScope()));
     }
 
     Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
-      for (Concrete.ClassDefinition<T> classDef : classDefs) {
-        new OrderDefinitionVisitor<>(ordering).orderDefinition(classDef);
+      for (Group group : modules) {
+        new OrderDefinitionVisitor<>(ordering).orderDefinition(group);
       }
     } catch (ComputationInterruptedException ignored) { }
   }

@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.instanceOf;
 public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void classViewFieldNotInScope() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "}\n" +
@@ -18,7 +18,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void classifyingFieldNotInScope() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "}\n" +
@@ -27,7 +27,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void classViewExt() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -40,7 +40,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void notImplementedField() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -51,7 +51,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void mutuallyRecursiveInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\view X' \\on X \\by A { B }\n" +
       "\\default \\instance Nat-X => \\new X' { A => Nat | B => \\lam _ => Nat }\n" +
       "\\data D | c\n" +
@@ -66,7 +66,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void mutuallyRecursiveInstanceError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\view X' \\on X \\by A { B }\n" +
       "\\instance Nat-X => \\new X' { A => Nat | B => \\lam _ => Nat }\n" +
       "\\data D | c\n" +
@@ -82,7 +82,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void duplicateInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
@@ -95,7 +95,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void duplicateDefaultInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +

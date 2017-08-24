@@ -15,10 +15,10 @@ import static org.junit.Assert.assertTrue;
 public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
@@ -26,10 +26,10 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void classesGe() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
@@ -37,10 +37,10 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void classesLe() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.typecheckerState.getTypechecked(result.classDefinition));
+    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
@@ -73,63 +73,63 @@ public class EtaEquivalence extends TypeCheckingTestCase {
 
   @Test
   public void emptyClass() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class Unit\n" +
       "\\function f (x : Unit) : x = \\new Unit => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class Unit\n" +
       "\\function f (x y : Unit) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass3() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat }\n" +
       "\\function f (x y : C { n => 0 }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass4a() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat }\n" +
       "\\function f (x : C { n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void emptyClass4b() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat }\n" +
       "\\function f (x : C) (y : C { n => 0 }) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void unitClass() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat }\n" +
       "\\function f (x : C) (y : C { n => x.n }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void unitClass2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat | m : Nat }\n" +
       "\\function f (x : C { n => 3 }) (y : C { n => 3 | m => x.m }) : x = y => path (\\lam _ => y)");
   }
 
   @Test
   public void unitClass3() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C {| m : Nat | n : Nat  }\n" +
       "\\function f (x : C) (y : C { m => x.m }) : x = y => path (\\lam _ => y)", 1);
   }
 
   @Test
   public void unitClass4() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class C { | n : Nat | m : Nat }\n" +
       "\\function f (x : C { n => 3 }) (y : C { n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
   }

@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
@@ -112,49 +113,53 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private TypecheckerState typeCheckClass(Concrete.ClassDefinition<Position> classDefinition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(classDefinition));
+  private TypecheckerState typeCheckModule(Group group, int errors) {
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
     return state;
   }
 
 
-  protected class TypeCheckClassResult {
+  protected class TypeCheckModuleResult {
     public final TypecheckerState typecheckerState;
-    public final Concrete.ClassDefinition classDefinition;
+    public final GlobalReferable referable;
 
-    public TypeCheckClassResult(TypecheckerState typecheckerState, Concrete.ClassDefinition classDefinition) {
+    public TypeCheckModuleResult(TypecheckerState typecheckerState, GlobalReferable referable) {
       this.typecheckerState = typecheckerState;
-      this.classDefinition = classDefinition;
+      this.referable = referable;
     }
 
     public Definition getDefinition(String path) {
-      GlobalReferable ref = get(classDefinition, path);
+      GlobalReferable ref = get(referable, path);
       return ref != null ? typecheckerState.getTypechecked(ref) : null;
+    }
+
+    public Definition getDefinition() {
+      return typecheckerState.getTypechecked(referable);
     }
   }
 
-  protected TypeCheckClassResult typeCheckClass(Concrete.ClassDefinition<Position> classDefinition) {
-    TypecheckerState state = typeCheckClass(classDefinition, 0);
-    return new TypeCheckClassResult(state, classDefinition);
+  protected TypeCheckModuleResult typeCheckModule(Group group) {
+    TypecheckerState state = typeCheckModule(group, 0);
+    return new TypeCheckModuleResult(state, group.getReferable());
   }
 
-  protected TypeCheckClassResult typeCheckClass(String text, int errors) {
-    Concrete.ClassDefinition<Position> classDefinition = resolveNamesClass(text);
-    TypecheckerState state = typeCheckClass(classDefinition, errors);
-    return new TypeCheckClassResult(state, classDefinition);
+  protected TypeCheckModuleResult typeCheckModule(String text, int errors) {
+    Concrete.ClassDefinition<Position> classDefinition = resolveNamesModule(text);
+    TypecheckerState state = typeCheckModule(classDefinition, errors);
+    return new TypeCheckModuleResult(state, classDefinition);
   }
 
-  protected TypeCheckClassResult typeCheckClass(String text) {
-    return typeCheckClass(text, 0);
+  protected TypeCheckModuleResult typeCheckModule(String text) {
+    return typeCheckModule(text, 0);
   }
 
-  protected TypeCheckClassResult typeCheckClass(String instance, String global, int errors) {
+  protected TypeCheckModuleResult typeCheckModule(String instance, String global, int errors) {
     Concrete.ClassDefinition<Position> def = (Concrete.ClassDefinition<Position>) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
-    return new TypeCheckClassResult(typeCheckClass(def, errors), def);
+    return new TypeCheckModuleResult(typeCheckModule(def, errors), def);
   }
 
-  protected TypeCheckClassResult typeCheckClass(String instance, String global) {
-    return typeCheckClass(instance, global, 0);
+  protected TypeCheckModuleResult typeCheckModule(String instance, String global) {
+    return typeCheckModule(instance, global, 0);
   }
 }

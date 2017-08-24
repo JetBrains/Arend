@@ -185,7 +185,7 @@ class DefinitionTypechecking {
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
           for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.getName());
+            names.add(referable == null ? null : referable.textRepresentation());
           }
           param = parameter(parameter.getExplicit(), names, paramResult);
           index += names.size();

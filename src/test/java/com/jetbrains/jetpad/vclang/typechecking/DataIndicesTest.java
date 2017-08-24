@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void vectorTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
@@ -41,7 +41,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void vectorTest2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
@@ -51,7 +51,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTypeTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data NatVec Nat \\with\n" +
         "  | zero  => nil\n" +
         "  | suc n => cons Nat (NatVec n)");
@@ -65,7 +65,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void toAbstractTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +

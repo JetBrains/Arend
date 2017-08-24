@@ -15,28 +15,28 @@ import static org.junit.Assert.assertNotNull;
 public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckDefinition() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function x : Nat => zero\n" +
         "\\function y : Nat => x");
   }
 
   @Test
   public void typeCheckDefType() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function x : \\Set0 => Nat\n" +
         "\\function y : x => zero");
   }
 
   @Test
   public void typeCheckInfixDef() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function + : Nat -> Nat -> Nat => \\lam x y => x\n" +
         "\\function * : Nat -> Nat => \\lam x => x + zero");
   }
 
   @Test
   public void typeCheckConstructor1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
@@ -44,7 +44,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void typeCheckConstructor1d() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
@@ -52,7 +52,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void typeCheckConstructor2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
@@ -60,7 +60,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void typeCheckConstructor2d() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
@@ -68,7 +68,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testEither() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Either (A B : \\Type0) | inl A | inr B\n" +
         "\\function fun {A B : \\Type0} (e : Either A B) : \\Set0 => \\elim e\n" +
         "  | inl _ => Nat\n" +
@@ -106,7 +106,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void universeInference() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function\n" +
         "transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
         "  => coe (\\lam i => B (p @ i)) b right\n" +
@@ -117,7 +117,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void definitionsWithErrors() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class C {\n" +
         "  | A : X\n" +
         "  | a : (\\lam (x : Nat) => Nat) A\n" +
@@ -126,7 +126,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void interruptThreadTest() throws InterruptedException {
-    Thread thread = new Thread(() -> typeCheckClass(
+    Thread thread = new Thread(() -> typeCheckModule(
       "\\function ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
       "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)"));
     thread.start();
@@ -142,7 +142,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorExpectedTypeMismatch() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Foo\n" +
         "\\data Bar Nat \\with | suc n => bar (n = n)\n" +
         "\\function foo : Foo => bar (path (\\lam _ => zero))", 1);
@@ -150,7 +150,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void postfixTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function \\infix 6 # (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
       "  | suc n => suc (suc (n #`))\n" +
@@ -162,7 +162,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void postfixTest2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function \\infix 4 d (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
       "  | suc n => suc (suc (n d`))\n" +

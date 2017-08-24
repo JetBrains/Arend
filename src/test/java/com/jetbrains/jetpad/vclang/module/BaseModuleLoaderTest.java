@@ -28,7 +28,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
     moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
-        Concrete.ClassDefinition old = loadedModules.put(module, result.definition);
+        Concrete.ClassDefinition old = loadedModules.put(module, result.group);
         assertThat(old, is(nullValue()));
       }
 

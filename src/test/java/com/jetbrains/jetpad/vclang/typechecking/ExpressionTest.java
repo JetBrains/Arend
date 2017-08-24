@@ -136,7 +136,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     LocalReference f = ref("f");
     Concrete.Expression<Position> expr = cApps(cVar(f), cSuc(), cApps(cVar(f), cZero(), cSuc()));
     Map<Referable, Binding> defs = new HashMap<>();
-    defs.put(f, new TypedBinding(f.getName(), Pi(Nat(), Pi(Nat(), Nat()))));
+    defs.put(f, new TypedBinding(f.textRepresentation(), Pi(Nat(), Pi(Nat(), Nat()))));
     assertThat(typeCheckExpr(defs, expr, null, 2), is(nullValue()));
   }
 

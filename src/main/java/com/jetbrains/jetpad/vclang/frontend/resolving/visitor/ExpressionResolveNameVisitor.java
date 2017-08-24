@@ -43,7 +43,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
 
   private Referable resolveLocal(String name) {
     for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (Objects.equals(myContext.get(i).getName(), name)) {
+      if (Objects.equals(myContext.get(i).textRepresentation(), name)) {
         return myContext.get(i);
       }
     }
@@ -68,12 +68,12 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         }
 
         if (globalRef != null) {
-          Referable newRef = myNameResolver.nsProviders.statics.forReferable(globalRef).resolveName(referable.getName());
+          Referable newRef = myNameResolver.nsProviders.statics.forReferable(globalRef).resolveName(referable.textRepresentation());
           if (newRef != null) {
             expr.setExpression(null);
             expr.setReferent(newRef);
           } else {
-            myErrorReporter.report(new NotInScopeError<>(referable.getName(), expr)); // TODO[abstract]: report another error
+            myErrorReporter.report(new NotInScopeError<>(referable.textRepresentation(), expr)); // TODO[abstract]: report another error
           }
         }
       }
@@ -91,7 +91,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       return null;
     }
 
-    String name = referable.getName();
+    String name = referable.textRepresentation();
     referable = resolveLocal(name);
     if (referable == null) {
       try {
@@ -137,10 +137,10 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
         for (int i = 0; i < referableList.size(); i++) {
           Referable referable = referableList.get(i);
-          if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+          if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_")) {
             for (int j = 0; j < i; j++) {
               Referable referable1 = referableList.get(j);
-              if (referable1 != null && referable.getName().equals(referable1.getName())) {
+              if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
                 myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, referable1, referable, parameter));
               }
             }
@@ -150,7 +150,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       } else
       if (parameter instanceof Concrete.NameParameter) {
         Referable referable = ((Concrete.NameParameter) parameter).getReferable();
-        if (referable != null && referable.getName() != null && !referable.getName().equals("_")) {
+        if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_")) {
           myContext.add(referable);
         }
       }
@@ -300,7 +300,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       Referable referable = namePattern.getReferable();
-      String name = referable == null ? null : referable.getName();
+      String name = referable == null ? null : referable.textRepresentation();
       if (name == null) return null;
       Referable ref = myParentScope.resolveName(name);
       if (ref instanceof GlobalReferable) {
@@ -337,11 +337,11 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
 
     Referable referable = ((Concrete.ConstructorPattern<T>) pattern).getConstructor();
     if (referable instanceof UnresolvedReference) {
-      Referable newRef = myParentScope.resolveName(referable.getName());
+      Referable newRef = myParentScope.resolveName(referable.textRepresentation());
       if (newRef != null) {
         ((Concrete.ConstructorPattern<T>) pattern).setConstructor(newRef);
       } else {
-        myErrorReporter.report(new NotInScopeError<>(referable.getName(), pattern));
+        myErrorReporter.report(new NotInScopeError<>(referable.textRepresentation(), pattern));
       }
     }
 
@@ -370,11 +370,11 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     for (Concrete.ClassFieldImpl<T> impl : classFieldImpls) {
       Referable field = impl.getImplementedField();
       if (field instanceof UnresolvedReference) {
-        GlobalReferable resolvedRef = myNameResolver.nsProviders.dynamics.forReferable(classDef).resolveName(field.getName());
+        GlobalReferable resolvedRef = myNameResolver.nsProviders.dynamics.forReferable(classDef).resolveName(field.textRepresentation());
         if (resolvedRef != null) {
           impl.setImplementedField(resolvedRef);
         } else {
-          myErrorReporter.report(new NoSuchFieldError<>(field.getName(), impl));
+          myErrorReporter.report(new NoSuchFieldError<>(field.textRepresentation(), impl));
         }
       }
       impl.getImplementation().accept(this, null);

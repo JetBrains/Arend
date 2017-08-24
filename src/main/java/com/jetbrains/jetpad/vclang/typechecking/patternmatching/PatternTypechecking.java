@@ -224,7 +224,7 @@ public class PatternTypechecking<T> {
         Referable referable = null;
         if (pattern instanceof Concrete.NamePattern) {
           referable = ((Concrete.NamePattern) pattern).getReferable();
-          String name = referable == null ? null : referable.getName();
+          String name = referable == null ? null : referable.textRepresentation();
           if (name != null) {
             parameters.setName(name);
           }

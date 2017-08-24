@@ -12,7 +12,7 @@ public class DuplicateNameError<T> extends NamingError<T> {
   public final Referable previous;
 
   public DuplicateNameError(Level level, Referable referable, Referable previous, Concrete.SourceNode<T> cause) {
-    super(level, "Duplicate name: " + referable.getName(), cause);
+    super(level, "Duplicate name: " + referable.textRepresentation(), cause);
     this.referable = referable;
     this.previous = previous;
   }

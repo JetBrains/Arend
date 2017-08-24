@@ -121,7 +121,7 @@ public class DataTest extends TypeCheckingTestCase {
     LocalReference x = ref("x");
     Concrete.Expression<Position> expr = cApps(cVar(f), cApps(cDefCall(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
     Map<Referable, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
+    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Nat());
@@ -135,7 +135,7 @@ public class DataTest extends TypeCheckingTestCase {
     LocalReference f = ref("f");
     Concrete.Expression<Position> expr = cApps(cVar(f), cDefCall(con.getReferable()));
     Map<Referable, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
+    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));
@@ -143,7 +143,7 @@ public class DataTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
       "\\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
       "\\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
@@ -151,14 +151,14 @@ public class DataTest extends TypeCheckingTestCase {
 
   @Test
   public void truncatedDataElimOk() {
-    typeCheckClass(
+    typeCheckModule(
       "\\truncated \\data S : \\Set | base | loop I { | left => base | right => base }\n"+
       "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
   }
 
   @Test
   public void truncatedDataElimError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
       "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
   }

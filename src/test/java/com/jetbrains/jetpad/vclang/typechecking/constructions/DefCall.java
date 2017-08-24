@@ -29,32 +29,32 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class DefCall extends TypeCheckingTestCase {
-  private void test(Expression expected, TypeCheckClassResult result) {
+  private void test(Expression expected, TypeCheckModuleResult result) {
     assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getBody()).getExpression());
   }
 
-  private void testFI(Expression expected, TypeCheckClassResult result) {
+  private void testFI(Expression expected, TypeCheckModuleResult result) {
     assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("Test.test")).getBody()).getExpression());
   }
 
-  private void testType(Expression expected, TypeCheckClassResult result) {
+  private void testType(Expression expected, TypeCheckModuleResult result) {
     assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
     assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getBody()).getExpression().getType());
   }
 
-  private DependentLink getThis(TypeCheckClassResult result) {
+  private DependentLink getThis(TypeCheckModuleResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("test");
     return function.getParameters();
   }
 
-  private Expression getThisFI(TypeCheckClassResult result) {
+  private Expression getThisFI(TypeCheckModuleResult result) {
     FunctionDefinition function = (FunctionDefinition) result.getDefinition("Test.test");
     return FieldCall(((ClassDefinition) result.getDefinition("Test")).getEnclosingThisField(), Ref(function.getParameters()));
   }
 
   @Test
   public void funStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\function f => 0\n" +
         "\\function test => f");
     test(FunCall((FunctionDefinition) result.getDefinition("f"), Sort.SET0), result);
@@ -62,7 +62,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\function f => 0\n" +
         "\\function test => f", "");
     test(FunCall((FunctionDefinition) result.getDefinition("f"), Sort.SET0, Ref(getThis(result))), result);
@@ -70,7 +70,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funDynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\function f => 0\n" +
         "\\class Test {\n" +
         "  \\function test => f\n" +
@@ -80,7 +80,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funDynamicError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class Test {\n" +
         "  \\function f => 0\n" +
         "} \\where {\n" +
@@ -90,7 +90,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funStaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\function f => 0\n" +
@@ -102,7 +102,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funDynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\function f => 0\n" +
@@ -114,7 +114,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\function f => 0\n" +
         "}\n" +
@@ -124,7 +124,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E \\where {\n" +
         "  \\function f => 0\n" +
         "}\n" +
@@ -133,7 +133,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\function f => 0\n" +
         "}\n" +
@@ -143,7 +143,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -157,7 +157,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldInside2() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B {\n" +
@@ -171,7 +171,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldInsideError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B {\n" +
@@ -184,7 +184,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funFieldInsideError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A {\n" +
         "    \\class B \\where {\n" +
@@ -197,7 +197,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\function test => c");
     test(ConCall((Constructor) result.getDefinition("c"), Sort.SET0, Collections.emptyList()), result);
@@ -206,7 +206,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\function test => D.c");
     test(ConCall((Constructor) result.getDefinition("c"), Sort.SET0, Collections.emptyList()), result);
@@ -215,7 +215,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0Static() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0 (\\lam _ => 1)).c");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -226,7 +226,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1Static() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0).c {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -237,7 +237,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2Static() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => D.c {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -248,7 +248,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\function test => c", "");
     test(ConCall((Constructor) result.getDefinition("c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
@@ -257,7 +257,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conDynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\class Test {\n" +
         "  \\function test => c\n" +
@@ -267,7 +267,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\function test => D.c", "");
     test(ConCall((Constructor) result.getDefinition("c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
@@ -276,7 +276,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataDynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | c\n" +
         "\\class Test {\n" +
         "  \\function test => D.c\n" +
@@ -286,7 +286,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0Dynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0 (\\lam _ => 1)).c", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -297,7 +297,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0DynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\class Test {\n" +
         "  \\function test => (D 0 (\\lam _ => 1)).c\n" +
@@ -308,7 +308,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1Dynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => (D 0).c {\\lam _ => 1}", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -319,7 +319,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1DynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\class Test {\n" +
         "  \\function test => (D 0).c {\\lam _ => 1}\n" +
@@ -330,7 +330,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2Dynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\function test => D.c {0} {\\lam _ => 1}", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
@@ -341,7 +341,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2DynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "\\class Test {\n" +
         "  \\function test => D.c {0} {\\lam _ => 1}\n" +
@@ -352,7 +352,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conDynamicError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class Test {\n" +
         "  \\data D | c\n" +
         "} \\where {\n" +
@@ -362,7 +362,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataDynamicError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class Test {\n" +
         "  \\data D | c\n" +
         "} \\where {" +
@@ -372,7 +372,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conStaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D | c\n" +
@@ -385,7 +385,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataStaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D | c\n" +
@@ -398,7 +398,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0StaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -413,7 +413,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1StaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -428,7 +428,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2StaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -443,7 +443,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conDynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D | c\n" +
@@ -456,7 +456,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataDynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D | c\n" +
@@ -469,7 +469,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0DynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -484,7 +484,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1DynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -499,7 +499,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2DynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -514,7 +514,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -525,7 +525,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -536,7 +536,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0FieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -549,7 +549,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1FieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -562,7 +562,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2FieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -575,7 +575,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E \\where {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -584,7 +584,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E \\where {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -593,7 +593,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -604,7 +604,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
@@ -615,7 +615,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0FieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -628,7 +628,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1FieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -641,7 +641,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2FieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
@@ -654,7 +654,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -669,7 +669,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -684,7 +684,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data0FieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -701,7 +701,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data1FieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -718,7 +718,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void data2FieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -735,7 +735,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldInsideError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B {\n" +
@@ -748,7 +748,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldInsideError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B {\n" +
@@ -761,7 +761,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conFieldInsideError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A {\n" +
         "    \\class B \\where {\n" +
@@ -774,7 +774,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void dataFieldInsideError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A {\n" +
         "    \\class B \\where {\n" +
@@ -787,7 +787,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class C\n" +
         "\\function test => C");
     test(new ClassCallExpression((ClassDefinition) result.getDefinition("C"), Sort.SET0), result);
@@ -795,7 +795,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class C\n" +
         "\\function test => C", "");
     test(result.getDefinition("C").getDefCall(Sort.SET0, Ref(getThis(result)), Collections.emptyList()), result);
@@ -803,7 +803,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classDynamicFromInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class C\n" +
         "\\class Test {\n" +
         "  \\function test => C\n" +
@@ -813,7 +813,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classDynamicError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class Test {\n" +
         "  \\class C\n" +
         "} \\where {\n" +
@@ -823,7 +823,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classStaticInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\class C\n" +
@@ -835,7 +835,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classDynamicInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\class C\n" +
@@ -847,7 +847,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldStatic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class C\n" +
         "}\n" +
@@ -857,7 +857,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E \\where {\n" +
         "  \\class C\n" +
         "}\n" +
@@ -866,7 +866,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldDynamic() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class C\n" +
         "}\n" +
@@ -876,7 +876,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldInside() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B \\where {\n" +
@@ -890,7 +890,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldInsideError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A \\where {\n" +
         "    \\class B {\n" +
@@ -903,7 +903,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void classFieldInsideError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class E {\n" +
         "  \\class A {\n" +
         "    \\class B \\where {\n" +
@@ -925,41 +925,41 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void nonStaticTestError() {
-    resolveNamesClass("\\class A { \\function x => 0 } \\function y => A.x", 1);
+    resolveNamesModule("\\class A { \\function x => 0 } \\function y => A.x", 1);
   }
 
   @Test
   public void staticTestError() {
-    typeCheckClass("\\class A \\where { \\function x => 0 } \\function y (a : A) => a.x", 1);
+    typeCheckModule("\\class A \\where { \\function x => 0 } \\function y (a : A) => a.x", 1);
   }
 
   @Test
   public void innerNonStaticTestError() {
-    typeCheckClass("\\class A { \\class B { \\function x => 0 } } \\function y (a : A) => a.B.x", 1);
+    typeCheckModule("\\class A { \\class B { \\function x => 0 } } \\function y (a : A) => a.B.x", 1);
   }
 
   @Test
   public void innerNonStaticTestAcc() {
-    typeCheckClass("\\class A { \\class B { \\function x => 0 } } \\function y (a : A) (b : a.B) => b.x");
+    typeCheckModule("\\class A { \\class B { \\function x => 0 } } \\function y (a : A) (b : a.B) => b.x");
   }
 
   @Test
   public void innerNonStaticTest() {
-    typeCheckClass("\\class A { \\class B \\where { \\function x => 0 } } \\function y (a : A) => a.B.x");
+    typeCheckModule("\\class A { \\class B \\where { \\function x => 0 } } \\function y (a : A) => a.B.x");
   }
 
   @Test
   public void staticTest() {
-    typeCheckClass("\\class A \\where { \\function x => 0 } \\function y : Nat => A.x");
+    typeCheckModule("\\class A \\where { \\function x => 0 } \\function y : Nat => A.x");
   }
 
   @Test
   public void resolvedConstructorTest() {
-    Concrete.ClassDefinition<Position> cd = resolveNamesClass(
+    Concrete.ClassDefinition<Position> cd = resolveNamesModule(
         "\\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((Concrete.DefineStatement) cd.getGlobalStatements().get(1)).getDefinition();
     ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
-    typeCheckClass(cd);
+    typeCheckModule(cd);
   }
 }

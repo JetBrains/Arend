@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,8 +38,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
 
   @SuppressWarnings("StaticNonFinalField")
-  private static Concrete.ClassDefinition<Position> LOADED_PRELUDE  = null;
-  protected Concrete.ClassDefinition<Position> prelude = null;
+  private static Group LOADED_PRELUDE  = null;
+  protected Group prelude = null;
   private Scope globalScope = new EmptyScope();
 
   protected void loadPrelude() {
@@ -48,7 +49,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
       PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
       ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
-      LOADED_PRELUDE = (Concrete.ClassDefinition<Position>) preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).definition;
+      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).group;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
 
@@ -106,19 +107,19 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private void resolveNamesClass(Concrete.ClassDefinition<Position> classDefinition, int errors) {
-    resolveNamesDef(classDefinition, errors);
+  private void resolveNamesModule(Group group, int errors) {
+    resolveNamesDef(group, errors);
   }
 
   // FIXME[tests] should be package-private
-  protected Concrete.ClassDefinition<Position> resolveNamesClass(String text, int errors) {
-    Concrete.ClassDefinition<Position> classDefinition = parseClass("$testClass$", text);
-    resolveNamesClass(classDefinition, errors);
-    return classDefinition;
+  protected Group resolveNamesModule(String text, int errors) {
+    Group group = parseModule("$testClass$", text);
+    resolveNamesModule(group, errors);
+    return group;
   }
 
-  protected Concrete.ClassDefinition<Position> resolveNamesClass(String text) {
-    return resolveNamesClass(text, 0);
+  protected Group resolveNamesModule(String text) {
+    return resolveNamesModule(text, 0);
   }
 
 

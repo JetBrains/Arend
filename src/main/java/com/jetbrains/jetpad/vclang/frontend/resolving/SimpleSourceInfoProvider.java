@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
@@ -20,10 +21,21 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
     names.put(def, name);
   }
 
+  // TODO[abstract]: What's the point of FullName here?
+  public void registerModule(Group group, FullName name, SourceIdT source) {
+    registerDefinition(group.getReferable(), name, source);
+    for (Group subGroup : group.getStaticSubgroups()) {
+      registerModule(subGroup, new FullName(subGroup.getReferable().textRepresentation()), source);
+    }
+    for (Group subGroup : group.getDynamicSubgroups()) {
+      registerModule(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
+    }
+  }
+
   @Override
   public String fullNameFor(GlobalReferable definition) {
     FullName name = names.get(definition);
-    return name != null ? name.toString() : definition.getName();
+    return name != null ? name.toString() : definition.textRepresentation();
   }
 
   @Override
@@ -38,6 +50,6 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
 
   @Override
   public String nameFor(Referable referable) {
-    return referable.getName();
+    return referable.textRepresentation();
   }
 }

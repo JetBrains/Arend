@@ -8,24 +8,24 @@ import javax.annotation.Nonnull;
 
 public class GlobalReference implements GlobalReferable {
   private final String myName;
-  private Concrete.Definition<Position> myDefinition;
+  private Concrete.ReferableDefinition<Position> myDefinition;
 
   public GlobalReference(@Nonnull String name) {
     myName = name;
   }
 
-  public Concrete.Definition<Position> getDefinition() {
+  public Concrete.ReferableDefinition<Position> getDefinition() {
     return myDefinition;
   }
 
-  public void setDefinition(Concrete.Definition<Position> definition) {
+  public void setDefinition(Concrete.ReferableDefinition<Position> definition) {
     assert myDefinition == null;
     myDefinition = definition;
   }
 
   @Nonnull
   @Override
-  public String getName() {
+  public String textRepresentation() {
     return myName;
   }
 }

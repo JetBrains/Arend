@@ -13,7 +13,7 @@ public class ConcretePrettyPrinterInfoProvider implements PrettyPrinterInfoProvi
 
   @Override
   public String nameFor(Referable referable) {
-    return referable.getName();
+    return referable.textRepresentation();
   }
 
   @Override

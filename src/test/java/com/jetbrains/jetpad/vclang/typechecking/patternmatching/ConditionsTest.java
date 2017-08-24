@@ -6,39 +6,39 @@ import org.junit.Test;
 public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void dataTypeWithConditions() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | zneg Nat | zpos Nat { zero => zneg zero }");
   }
 
   @Test
   public void dataTypeWithConditionsWrongType() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | zneg Nat | zpos Nat { zero => zero }", 1);
   }
 
   @Test
   public void dataTypeWithConditionsTCFailed1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | zneg Nat | zpos Nat { zero => zpos 1 }", 1);
   }
 
   @Test
   public void dataTypeWithConditionsTCFailed2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Unit | unit\n" +
         "\\data Z | zneg | zpos Unit { _ => zpos }", 1);
   }
 
   @Test
   public void dataTypeWithConditionsMutualDep() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Unit | unit\n" +
         "\\data Z | zpos Unit { _ => zneg unit } | zneg Unit { _ => zpos unit }", 1);
   }
 
   @Test
   public void simpleTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | zpos Nat | zneg Nat { zero => zpos zero }\n" +
         "\\function test (x : Z) : Nat\n" +
         "  | zneg (suc (suc _)) => 0\n" +
@@ -49,7 +49,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void simpleTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | zpos Nat | zneg Nat { zero => zpos zero }\n" +
         "\\function test (x : Z) : Nat\n" +
         "  | zneg (suc (suc _)) => 0\n" +
@@ -60,7 +60,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleArgTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | negative Nat | positive Nat { zero => negative zero }\n" +
         "\\function test (x : Z) (y : Nat) : Nat\n" +
         "  | positive (suc n), m => n\n" +
@@ -71,7 +71,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleArgTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | negative Nat | positive Nat { zero => negative zero }\n" +
         "\\function test (x : Z) (y : Nat) : Nat\n" +
         "  | positive (suc n), m => n\n" +
@@ -82,7 +82,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void bidirectionalList() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A) => \\elim xs\n" +
         "  { | cons x xs => cons x (snoc xs y) | nil => cons y nil }\n" +
         "\\function length {A : \\Type0} (x : BD-list A) : Nat => \\elim x\n" +
@@ -93,7 +93,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataTypeWithIndices() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data S | base | loop I \n" +
         "  { left => base\n" +
         "  | right => base\n" +
@@ -108,7 +108,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void testSelfConditionsError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Unit | unit\n" +
       "\\data D\n" +
       "  | nil0\n" +
@@ -120,7 +120,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void testSelfConditions() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Unit | unit\n" +
       "\\data D\n" +
       "  | nil0\n" +
@@ -132,7 +132,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nestedCheck() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\function test (x y z : Z) : Nat\n" +
       "  | pos zero, pos zero, neg zero => 0\n" +
@@ -141,7 +141,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nonStatic() {
-    typeCheckClass(
+    typeCheckModule(
       "| S' : \\Type0\n" +
       "| base' : S'\n" +
       "| loop' : I -> S'\n" +
@@ -156,14 +156,14 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorArgumentWithCondition() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data S | base | loop Nat { zero => base }\n" +
         "\\data D | cons' | cons S { loop zero => cons' }", 1);
   }
 
   @Test
   public void cc() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\function test (z : Z) : Nat\n" +
       "  | pos n => 0\n" +
@@ -172,7 +172,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void ccOtherDirectionError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\function test (z : Z) : Nat\n" +
       "  | pos (suc n) => 0\n" +
@@ -181,7 +181,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void ccComplexBranch() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D | snd | fst Nat { | zero => snd | suc _ => snd }\n" +
       "\\function test (d : D) : Nat\n" +
       "  | snd => zero", 1);
@@ -189,7 +189,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void whatIfNormalizeError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
         "\\function test (x : Z) : Nat\n" +
         " | neg x => 1\n" +
@@ -198,7 +198,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void whatIfDontNormalizeConditionRHS() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Unit | unit\n" +
         "\\data D | d2 | d1 Unit { _ => d2 }\n"+
         "\\data E | e1 D | e2 D { _ => e1 (d1 unit) }\n"+
@@ -210,12 +210,12 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataIntervalCondition() {
-    typeCheckClass("\\data D I \\with | left => c", 1);
+    typeCheckModule("\\data D I \\with | left => c", 1);
   }
 
   @Test
   public void dataCondition() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D | c | c' | l I\n" +
       "  { left => c\n" +
       "  | right => c'\n" +
@@ -226,7 +226,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataConditionError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D | c | c' | l I\n" +
       "  { left => c\n" +
       "  | right => c'\n" +
@@ -237,7 +237,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dataConditionEmptyPatternError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D | c | c' | l I\n" +
       "  { left => c\n" +
       "  | right => c'\n" +

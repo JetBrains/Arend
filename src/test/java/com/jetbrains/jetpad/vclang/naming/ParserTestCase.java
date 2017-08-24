@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import org.antlr.v4.runtime.*;
 
@@ -71,18 +72,18 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseDef(text, 0);
   }
 
-  Concrete.ClassDefinition<Position> parseClass(String name, String text, int errors) {
+  Group parseModule(String name, String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
     GlobalReference reference = new GlobalReference(name);
-    Concrete.ClassDefinition<Position> classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), reference, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
-    reference.setDefinition(classDefinition);
+    Group group = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), reference, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
+    reference.setDefinition(group);
     assertThat(errorList, containsErrors(errors));
-    // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
-    return classDefinition;
+    // module.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
+    return group;
   }
 
-  protected Concrete.ClassDefinition<Position> parseClass(String name, String text) {
-    return parseClass(name, text, 0);
+  protected Group parseModule(String name, String text) {
+    return parseModule(name, text, 0);
   }
 
 

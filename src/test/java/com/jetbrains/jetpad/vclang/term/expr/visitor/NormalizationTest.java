@@ -266,7 +266,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | d Nat\n" +
         "\\function test (x : D) : Nat => \\elim x | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
@@ -281,7 +281,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConditionNormalization() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
         "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
@@ -418,7 +418,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConCallEta() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +

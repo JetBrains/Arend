@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +11,7 @@ import java.util.Set;
 
 public class SimpleModuleNamespace implements ModuleNamespace {
   private final Map<String, SimpleModuleNamespace> mySubmoduleNamespaces = new HashMap<>();
-  private Concrete.ClassDefinition myRegisteredClass = null;
+  private Group myRegisteredClass = null;
 
   @Override
   public Set<String> getNames() {
@@ -26,14 +27,14 @@ public class SimpleModuleNamespace implements ModuleNamespace {
     return mySubmoduleNamespaces.computeIfAbsent(submodule, k -> new SimpleModuleNamespace());
   }
 
-  void registerClass(Concrete.ClassDefinition module) {
+  void registerClass(Group group) {
     if (myRegisteredClass != null) throw new IllegalStateException();
-    myRegisteredClass = module;
+    myRegisteredClass = group;
   }
 
   @Override
-  public Concrete.ClassDefinition getRegisteredClass() {
-    return myRegisteredClass;
+  public GlobalReferable getRegisteredClass() {
+    return myRegisteredClass.getReferable();
   }
 
   void unregisterClass() {

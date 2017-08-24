@@ -12,7 +12,7 @@ public interface SourceInfoProvider<SourceIdT extends SourceId> extends Definiti
   class Trivial implements SourceInfoProvider {
     @Override
     public String fullNameFor(GlobalReferable definition) {
-      return definition.getName();
+      return definition.textRepresentation();
     }
 
     @Override
@@ -27,7 +27,7 @@ public interface SourceInfoProvider<SourceIdT extends SourceId> extends Definiti
 
     @Override
     public String nameFor(Referable referable) {
-      return referable.getName();
+      return referable.textRepresentation();
     }
   }
   SourceInfoProvider TRIVIAL = new Trivial();

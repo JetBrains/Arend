@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -80,9 +81,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   }
 
   @Override
-  protected Concrete.ClassDefinition loadPrelude() {
-    Concrete.ClassDefinition prelude = super.loadPrelude(); // TODO[abstract]
-    Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude);
+  protected Group loadPrelude() {
+    Group prelude = super.loadPrelude(); // TODO[abstract]
+    Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude.getReferable());
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
     storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);

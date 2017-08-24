@@ -7,8 +7,9 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
+import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -16,11 +17,12 @@ import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -59,15 +61,28 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     useCache = !recompile;
 
     moduleTracker = new ModuleTracker(storage);
-    srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
+    srcInfoProvider = moduleTracker.sourceInfoProvider;
 
     cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
   }
 
+  private static void collectIds(Group group, Map<String, GlobalReferable> map) {
+    Position pos = ((GlobalReference) group.getReferable()).getDefinition().getData();
+    if (pos != null) {
+      map.put(pos.line + ";" + pos.column, group.getReferable());
+    }
+
+    for (Group subGroup : group.getStaticSubgroups()) {
+      collectIds(subGroup, map);
+    }
+    for (Group subGroup : group.getDynamicSubgroups()) {
+      collectIds(subGroup, map);
+    }
+  }
+
   class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
-    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
-    private final OneshotSourceInfoCollector<SourceIdT> sourceInfoCollector = new OneshotSourceInfoCollector<>();
+    private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
     ModuleTracker(Storage<SourceIdT> storage) {
       super(storage, errorReporter);
@@ -78,8 +93,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       if (!definitionIds.containsKey(module)) {
         definitionIds.put(module, new HashMap<>());
       }
-      defIdCollector.visitClass((Concrete.ClassDefinition<Position>) result.definition, definitionIds.get(module));
-      sourceInfoCollector.visitModule(module, result.definition);
+      collectIds(result.group, definitionIds.get(module));
+      sourceInfoProvider.registerModule(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -91,7 +106,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Concrete.ClassDefinition load(SourceIdT sourceId) {
+    public Group load(SourceIdT sourceId) {
       assert !loadedSources.containsKey(sourceId);
       ModuleResult moduleResult = moduleResults.get(sourceId);
       if (moduleResult != null) {
@@ -102,7 +117,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Concrete.ClassDefinition load(ModulePath modulePath) {
+    public Group load(ModulePath modulePath) {
       return load(locateModule(modulePath));
     }
 
@@ -129,83 +144,20 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
-  static class DefinitionIdsCollector implements ConcreteDefinitionVisitor<Position, Map<String, GlobalReferable>, Void> {
-    @Override
-    public Void visitFunction(Concrete.FunctionDefinition<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
-      for (Concrete.Definition<Position> definition : def.getGlobalDefinitions()) {
-        definition.accept(this, params);
-      }
-      return null;
-    }
-
-    @Override
-    public Void visitData(Concrete.DataDefinition<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
-      for (Concrete.ConstructorClause<Position> clause : def.getConstructorClauses()) {
-        for (Concrete.Constructor<Position> constructor : clause.getConstructors()) {
-          params.put(getIdFor(constructor), constructor);
-        }
-      }
-      return null;
-    }
-
-    @Override
-    public Void visitClass(Concrete.ClassDefinition<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
-      for (Concrete.Definition<Position> definition : def.getGlobalDefinitions()) {
-        definition.accept(this, params);
-      }
-      for (Concrete.Definition<Position> definition : def.getInstanceDefinitions()) {
-        definition.accept(this, params);
-      }
-      for (Concrete.ClassField<Position> field : def.getFields()) {
-        params.put(getIdFor(field), field);
-      }
-
-      return null;
-    }
-
-    @Override
-    public Void visitClassView(Concrete.ClassView<Position> def, Map<String, GlobalReferable> params) {
-      return null;
-    }
-
-    @Override
-    public Void visitClassViewField(Concrete.ClassViewField<Position> def, Map<String, GlobalReferable> params) {
-      return null;
-    }
-
-    @Override
-    public Void visitInstance(Concrete.Instance<Position> def, Map<String, GlobalReferable> params) {
-      params.put(getIdFor(def), def);
-      return null;
-    }
-
-
-    static String getIdFor(Concrete.SourceNode<Position> definition) {
-      Position pos = definition.getData();
-      if (pos != null) {
-        return pos.line + ";" + pos.column;
-      }
-      return null;
-    }
-  }
-
-  protected Concrete.ClassDefinition loadPrelude() {
+  protected Group loadPrelude() {
     SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    Concrete.ClassDefinition prelude = moduleTracker.load(sourceId);
+    Group prelude = moduleTracker.load(sourceId);
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
-      cacheLoaded = cacheManager.loadCache(sourceId, prelude);
+      cacheLoaded = cacheManager.loadCache(sourceId, prelude.getReferable());
     } catch (CacheLoadingException e) {
       cacheLoaded = false;
     }
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList((Concrete.ClassDefinition<Position>) prelude));
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -237,19 +189,19 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
   private void typeCheckSources(Set<SourceIdT> sources) {
-    final Set<Concrete.ClassDefinition<Position>> modulesToTypeCheck = new LinkedHashSet<>();
+    final Set<Group> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      final Concrete.ClassDefinition definition;
+      final Group group;
       SourceSupplier.LoadResult result = loadedSources.get(source);
       if (result == null){
-        definition = moduleTracker.load(source);
-        if (definition == null) {
+        group = moduleTracker.load(source);
+        if (group == null) {
           continue;
         }
 
         if (useCache) {
           try {
-            cacheManager.loadCache(source, definition);
+            cacheManager.loadCache(source, group.getReferable());
           } catch (CacheLoadingException e) {
             //e.printStackTrace();
           }
@@ -257,14 +209,14 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
         flushErrors();
       } else {
-        definition = result.definition;
+        group = result.group;
       }
-      modulesToTypeCheck.add((Concrete.ClassDefinition<Position>) definition);
+      modulesToTypeCheck.add(group);
     }
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener<Position>, TypecheckedReporter {
+    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener<Position>, TypecheckedReporter<Position> {
       ResultTracker() {
         super(errorReporter);
       }

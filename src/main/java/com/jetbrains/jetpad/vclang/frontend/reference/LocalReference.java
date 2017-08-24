@@ -13,7 +13,7 @@ public class LocalReference implements Referable {
 
   @Nullable
   @Override
-  public String getName() {
+  public String textRepresentation() {
     return myName;
   }
 }

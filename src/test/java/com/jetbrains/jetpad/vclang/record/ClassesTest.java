@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
 public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void dynamicStaticCallError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A \\where {\n" +
         "  \\function f => 0\n" +
         "}\n" +
@@ -31,7 +31,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicStaticCallError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A \\where {\n" +
         "  \\function f => 0\n" +
         "}\n" +
@@ -41,7 +41,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicInnerFunctionCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\function f => 0\n" +
@@ -52,7 +52,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticInnerFunctionCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\function g => B.f\n" +
         "} \\where {\n" +
@@ -64,14 +64,14 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticFromDynamicCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function h : Nat => f",
         "\\function f => 0");
   }
 
   @Test
   public void staticFromDynamicCallInside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B {\n" +
         "    \\function h : Nat => f\n" +
@@ -83,21 +83,21 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicFromAbstractCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function f => 0\n" +
         "| h : f = 0\n", "", 1);
   }
 
   @Test
   public void dynamicFromDynamicCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function f => 0\n" +
         "\\function h (_ : f = 0) => 0", "");
   }
 
   @Test
   public void dynamicConstructorFromDynamicCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\data D | con\n" +
         "  \\function x (_ : con = con) => 0\n" +
@@ -107,7 +107,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall111() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "  \\class B {\n" +
@@ -120,7 +120,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall011() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "} \\where {\n" +
@@ -134,7 +134,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall101() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "  \\class B \\where {\n" +
@@ -147,7 +147,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall001() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "} \\where {\n" +
@@ -161,7 +161,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall110() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "  \\class B {\n" +
@@ -174,7 +174,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall010() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "} \\where {\n" +
@@ -188,7 +188,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall100() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "  \\class B \\where {\n" +
@@ -201,7 +201,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicDoubleInnerFunctionCall000() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  \\function g => 0\n" +
         "} \\where {\n" +
@@ -215,7 +215,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void recordTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class B {\n" +
         "  | f : Nat -> \\Type0\n" +
         "  | g : f 0\n" +
@@ -225,7 +225,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void innerRecordTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class B {\n" +
         "  | f : Nat -> \\Type0\n" +
         "  \\class A {\n" +
@@ -237,7 +237,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
@@ -248,7 +248,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorWithParamsTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
@@ -261,7 +261,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorThisTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
@@ -276,7 +276,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorWithParamsThisTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
@@ -291,7 +291,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorIndicesThisTest() {
-    typeCheckClass(
+    typeCheckModule(
         "| + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  | x : Nat\n" +
@@ -311,7 +311,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A {\n" +
         "  | x : \\Type0\n" +
         "}\n" +
@@ -327,7 +327,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void funCallsTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\function + (x y : Nat) => x\n" +
         "\\class A {\n" +
         "  \\function q => p\n" +
@@ -389,7 +389,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallInClass() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -401,7 +401,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallInClass2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -414,7 +414,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallInClass3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -426,7 +426,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallWithArg0() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -438,7 +438,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallWithArg1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -450,7 +450,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallWithArg2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -462,7 +462,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallWithArg3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -474,7 +474,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\function f => 0\n" +
@@ -485,7 +485,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
@@ -499,7 +499,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
@@ -513,7 +513,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall31() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
@@ -526,7 +526,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall4() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
@@ -540,7 +540,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall5() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class D {\n" +
         "  \\class E \\where {\n" +
         "    \\function f => 0\n" +
@@ -558,7 +558,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall6() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
@@ -572,7 +572,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticDynamicCall7() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class D {\n" +
         "  \\class E \\where {\n" +
         "    \\function f => 0\n" +
@@ -592,7 +592,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void classPolyParams() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "   | X : \\0-Type \\lp\n" +
         "   \\function f (x : \\0-Type \\lp) => x\n" +
@@ -606,19 +606,19 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void recursiveExtendsError() {
-    typeCheckClass("\\class A \\extends A", 1);
+    typeCheckModule("\\class A \\extends A", 1);
     assertThatErrorsAre(error());
   }
 
   @Test
   public void recursiveFieldError() {
-    typeCheckClass("\\class A { | a : A }", 1);
+    typeCheckModule("\\class A { | a : A }", 1);
     assertThatErrorsAre(error());
   }
 
   @Test
   public void mutualRecursiveExtendsError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class A \\extends B\n" +
       "\\class B \\extends A", 1);
     assertThatErrorsAre(error());

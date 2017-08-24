@@ -73,7 +73,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         if (variable instanceof Binding) {
           Referable referable = myNames.get(variable);
           if (referable != null) {
-            otherName = referable.getName();
+            otherName = referable.textRepresentation();
           }
         } else {
           otherName = variable.getName();

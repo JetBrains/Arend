@@ -5,6 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 
 public class HasErrors<T> extends LocalTypeCheckingError<T> {
   public HasErrors(Level level, GlobalReferable definition, Concrete.SourceNode<T> expression) {
-    super(level, definition.getName() + " has errors", expression);
+    super(level, definition.textRepresentation() + " has errors", expression);
   }
 }

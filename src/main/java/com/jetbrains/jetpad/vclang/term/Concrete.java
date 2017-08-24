@@ -918,8 +918,8 @@ public final class Concrete {
 
     @Nullable
     @Override
-    public String getName() {
-      return myReferable.getName();
+    public String textRepresentation() {
+      return myReferable.textRepresentation();
     }
 
     @Nonnull
@@ -955,7 +955,7 @@ public final class Concrete {
 
     @Override
     public String toString() {
-      return getName();
+      return textRepresentation();
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params);
@@ -1037,7 +1037,7 @@ public final class Concrete {
 
     @Nullable
     @Override
-    public String getName() {
+    public String textRepresentation() {
       return myName;
     }
 
@@ -1224,7 +1224,7 @@ public final class Concrete {
 
     @Nullable
     @Override
-    public String getName() {
+    public String textRepresentation() {
       return myName;
     }
 

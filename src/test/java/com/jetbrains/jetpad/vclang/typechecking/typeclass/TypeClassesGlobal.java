@@ -6,7 +6,7 @@ import org.junit.Test;
 public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
   public void inferInstance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -18,7 +18,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void inferInstanceRenamed() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -30,7 +30,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void incorrectInstance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -42,7 +42,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void differentViews() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -55,7 +55,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void differentInstances() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -69,7 +69,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void localInstance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Set0\n" +
@@ -82,7 +82,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveInferInstance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -95,7 +95,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveInferInstance2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -108,7 +108,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveNoDefault() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -123,7 +123,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveDefault() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -138,7 +138,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void twoDefaults() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X1 {\n" +
         "  | A : \\Type0\n" +
         "  | B1 : A -> Nat\n" +

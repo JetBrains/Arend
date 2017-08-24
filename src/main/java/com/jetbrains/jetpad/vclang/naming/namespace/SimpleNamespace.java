@@ -26,7 +26,7 @@ public class SimpleNamespace implements Namespace {
   }
 
   public void addDefinition(GlobalReferable def) {
-    addDefinition(def.getName(), def);
+    addDefinition(def.textRepresentation(), def);
   }
 
   public void addDefinition(String name, final GlobalReferable def) {

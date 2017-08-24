@@ -10,7 +10,7 @@ public interface PrettyPrinterInfoProvider extends ParserInfoProvider {
   PrettyPrinterInfoProvider TRIVIAL = new PrettyPrinterInfoProvider() {
     @Override
     public String nameFor(Referable referable) {
-      return referable.getName();
+      return referable.textRepresentation();
     }
 
     @Override

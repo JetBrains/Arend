@@ -302,14 +302,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferUnderPi() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
@@ -366,7 +366,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void orderTest1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
         "  => idpOver (\\lam (j : I) => P (q @ j)) pa @ i\n");
@@ -374,7 +374,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void orderTest2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
@@ -382,7 +382,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void differentLevels() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
         "\\function g (X : \\Type \\lp) => F X (\\lam _ => `= X X)");
   }
@@ -394,7 +394,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void etaExpansionTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
@@ -408,7 +408,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void freeVars() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
       "\\function h => f (path (\\lam _ x => x))", 1);
   }

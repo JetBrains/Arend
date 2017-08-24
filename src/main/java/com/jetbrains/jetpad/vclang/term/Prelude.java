@@ -54,7 +54,7 @@ public class Prelude {
   }
 
   public static void update(Concrete.Definition abstractDef, Definition definition) {
-    switch (abstractDef.getName()) {
+    switch (abstractDef.textRepresentation()) {
       case "Nat":
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");

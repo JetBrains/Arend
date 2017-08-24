@@ -2,22 +2,23 @@ package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import java.util.HashMap;
 
 public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider implements ModuleRegistry {
-  private final HashMap<Concrete.ClassDefinition, ModuleNamespace> myMap = new HashMap<>();
+  private final HashMap<GlobalReferable, ModuleNamespace> myMap = new HashMap<>();
 
   @Override
-  public ModuleNamespace forModule(Concrete.ClassDefinition definition) {
-    return myMap.get(definition);
+  public ModuleNamespace forReferable(GlobalReferable referable) {
+    return myMap.get(referable);
   }
 
   @Override
-  public ModuleNamespace registerModule(ModulePath modulePath, Concrete.ClassDefinition module) {
-    SimpleModuleNamespace ns = registerModuleNs(modulePath, module);
-    ns.registerClass(module);
+  public ModuleNamespace registerModule(ModulePath modulePath, Group group) {
+    SimpleModuleNamespace ns = registerModuleNs(modulePath, group);
+    ns.registerClass(group);
     return ns;
   }
 
@@ -27,10 +28,10 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
     ns.unregisterClass();
   }
 
-  private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Concrete.ClassDefinition module) {
-    if (myMap.get(module) != null) throw new IllegalStateException();
+  private SimpleModuleNamespace registerModuleNs(ModulePath modulePath, Group group) {
+    if (myMap.get(group.getReferable()) != null) throw new IllegalStateException();
     SimpleModuleNamespace ns = ensureModuleNamespace(root(), modulePath);
-    myMap.put(module, ns);
+    myMap.put(group.getReferable(), ns);
     return ns;
   }
 }

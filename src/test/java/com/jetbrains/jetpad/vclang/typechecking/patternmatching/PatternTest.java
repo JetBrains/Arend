@@ -137,7 +137,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void incorrectDataType() {
-    Concrete.ClassDefinition<Position> classDef = resolveNamesClass(
+    Concrete.ClassDefinition<Position> classDef = resolveNamesModule(
       "\\data D | con\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, zero, suc k => k");
@@ -190,7 +190,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void emptyDataType() {
-    Concrete.ClassDefinition<Position> classDef = resolveNamesClass(
+    Concrete.ClassDefinition<Position> classDef = resolveNamesModule(
       "\\data D\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), k => k");
@@ -210,7 +210,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void emptyDataTypeWarning() {
-    Concrete.ClassDefinition<Position> classDef = resolveNamesClass(
+    Concrete.ClassDefinition<Position> classDef = resolveNamesModule(
       "\\data D\n" +
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), suc k => k");
@@ -246,7 +246,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void dependentElim() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function if {A : \\Type} (n : Nat) (a a' : A) : A => \\elim n\n" +
       "  | zero => a\n" +
       "  | suc _ => a'\n" +
@@ -257,7 +257,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void elimLess() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D Nat \\with | suc n => dsuc\n" +
       "\\function tests (n : Nat) (d : D n) : Nat => \\elim n, d\n" +
       "  | suc n => 0\n" +
@@ -266,7 +266,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withoutElimLess() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D Nat \\with | suc n => dsuc\n" +
       "\\function tests (n : Nat) (d : D n) : Nat\n" +
       "  | suc n => 0\n" +
@@ -275,7 +275,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void elimMore() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests (n m : Nat) : Nat => \\elim n\n" +
       "  | suc n, zero => 0\n" +
       "  | zero, suc m => 0", 1);
@@ -283,7 +283,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void elimEvenMore() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests (n m : Nat) : Nat => \\elim n\n" +
       "  | suc n, zero => 0\n" +
       "  | zero, zero => 0\n" +
@@ -293,7 +293,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withoutElimMore() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests (n : Nat) : Nat\n" +
         "  | suc n, zero => 0\n" +
         "  | zero, suc m => 0", 2);
@@ -301,7 +301,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void implicitParameter() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests {n : Nat} (m : Nat) : Nat\n" +
       "  | {suc n}, zero => 0\n" +
       "  | {zero}, suc m => 0\n" +
@@ -311,7 +311,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void skipImplicitParameter() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests {n : Nat} (m : Nat) : Nat\n" +
       "  | suc m => 0\n" +
       "  | zero => 0");
@@ -319,7 +319,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void implicitParameterError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests {n : Nat} : Nat\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", 2);
@@ -327,7 +327,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withThis() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests (n : Nat) : Nat\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", "");
@@ -335,7 +335,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withThisAndElim() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests (n : Nat) : Nat => \\elim n\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", "");
@@ -343,7 +343,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void nonEliminatedAvailable() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests {n : Nat} (m : Nat) : Nat => \\elim m\n" +
       "  | suc m => m\n" +
       "  | zero => n");
@@ -351,7 +351,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void explicitAvailable() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function tests {n : Nat} (m : Nat) : Nat\n" +
       "  | {n}, suc m => n\n" +
       "  | {k}, zero => k");
@@ -359,7 +359,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void eliminateOverridden() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (n : Nat) : Nat => \\elim n\n" +
       "  | suc _ => 2\n" +
       "  | zero => n\n" +

@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
   public void fields() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -25,7 +25,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -39,7 +39,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void badFieldTypeError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -53,7 +53,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -66,7 +66,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldEval() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -81,7 +81,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void coercion() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
@@ -96,7 +96,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nameClashError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -107,7 +107,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nameClashError2() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
@@ -121,7 +121,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nameClashError3() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "}\n" +
@@ -136,7 +136,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multiple() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "}\n" +
@@ -155,14 +155,14 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void superClassExpression() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A\n" +
         "\\class B \\extends ((\\lam x => x) A)");
   }
 
   @Test
   public void dynamicInheritance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
@@ -173,7 +173,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   @Ignore
   @Test
   public void dynamicInheritanceFieldAccess() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
         "    \\function n : Nat => 0\n" +
@@ -187,7 +187,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicInheritanceFieldAccessQualified() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
         "    \\function n : Nat => 0\n" +
@@ -201,7 +201,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleInheritanceSingleImplementation() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -213,7 +213,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleInheritanceEqualImplementations() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -224,7 +224,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleDynamicInheritanceSameParent() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
@@ -235,7 +235,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleDynamicInheritanceDifferentParentsError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | n : Nat" +
         "  \\class A\n" +
@@ -247,12 +247,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void internalInheritance() {
-    typeCheckClass("\\class A { \\class B \\extends A }");
+    typeCheckModule("\\class A { \\class B \\extends A }");
   }
 
   @Test
   public void universe() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +

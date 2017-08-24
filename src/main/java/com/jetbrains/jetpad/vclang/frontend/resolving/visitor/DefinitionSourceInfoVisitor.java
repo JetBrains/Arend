@@ -71,6 +71,6 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
   }
 
   private void reg(GlobalReferable def, FullName fullName) {
-    myProvider.registerDefinition(def, new FullName(fullName, def.getName()), mySourceId);
+    myProvider.registerDefinition(def, new FullName(fullName, def.textRepresentation()), mySourceId);
   }
 }

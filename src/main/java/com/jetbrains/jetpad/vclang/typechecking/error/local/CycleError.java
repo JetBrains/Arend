@@ -33,7 +33,7 @@ public class CycleError<T> extends GeneralError<T> {
     builder.append(cycle.get(cycle.size() - 1));
     for (Concrete.Definition<T> definition : cycle) {
       builder.append(" - ");
-      builder.append(definition.getName());
+      builder.append(definition.textRepresentation());
     }
     return DocFactory.text(builder.toString());
   }

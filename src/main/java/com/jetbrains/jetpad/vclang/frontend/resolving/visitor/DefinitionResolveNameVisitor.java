@@ -96,13 +96,13 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     for (Concrete.Parameter<T> parameter : parameters) {
       if (parameter instanceof Concrete.TelescopeParameter) {
         for (Referable referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
-          if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+          if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
             myContext.add(referable);
           }
         }
       } else if (parameter instanceof Concrete.NameParameter) {
         Referable referable = ((Concrete.NameParameter) parameter).getReferable();
-        if (referable != null && referable.getName() != null && !referable.getName().equals("_") && !referables.contains(referable)) {
+        if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
           myContext.add(referable);
         }
       }
@@ -197,7 +197,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
           polyParam.getType().accept(exprVisitor, null);
           if (polyParam instanceof Concrete.TelescopeParameter) {
             for (Referable referable : ((Concrete.TelescopeParameter<T>) polyParam).getReferableList()) {
-              if (referable != null && referable.getName() != null && referable.getName().equals("_")) {
+              if (referable != null && referable.textRepresentation() != null && referable.textRepresentation().equals("_")) {
                 myContext.add(referable);
               }
             }
@@ -243,9 +243,9 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     Referable classifyingField = def.getClassifyingField();
     if (classifyingField instanceof UnresolvedReference) {
       Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
-      GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.getName());
+      GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
       if (resolvedClassifyingField == null) {
-        myErrorReporter.report(new NotInScopeError<>(classifyingField.getName(), def));
+        myErrorReporter.report(new NotInScopeError<>(classifyingField.textRepresentation(), def));
         return null;
       }
       def.setClassifyingField(resolvedClassifyingField);
@@ -254,11 +254,11 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     for (Concrete.ClassViewField<T> viewField : def.getFields()) {
       Referable underlyingField = viewField.getUnderlyingField();
       if (underlyingField instanceof UnresolvedReference) {
-        GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.getName());
+        GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.textRepresentation());
         if (classField != null) {
           viewField.setUnderlyingField(classField);
         } else {
-          myErrorReporter.report(new NoSuchFieldError<>(def.getName(), def));
+          myErrorReporter.report(new NoSuchFieldError<>(def.textRepresentation(), def));
         }
       }
     }

@@ -121,7 +121,7 @@ public class TypeCheckingDefCall<T> {
       throw new IllegalStateException();
     }
 
-    String name = expr.getReferent().getName();
+    String name = expr.getReferent().textRepresentation();
 
     // Field call
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);

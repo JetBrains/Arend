@@ -11,7 +11,7 @@ public class UnresolvedReference implements Referable {
 
   @Nonnull
   @Override
-  public String getName() {
+  public String textRepresentation() {
     return myName;
   }
 
