@@ -17,6 +17,7 @@ public interface Group {
     enum Kind { OPEN, EXPORT }
     @Nonnull Kind getKind();
     @Nonnull Referable getGroupReference();
+    boolean isHiding();
     @Nullable Collection<? extends Referable> getSubgroupReferences();
   }
 }

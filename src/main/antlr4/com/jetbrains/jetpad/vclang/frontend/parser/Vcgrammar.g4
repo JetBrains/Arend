@@ -14,7 +14,7 @@ nsCmdRoot : MODULE_PATH | id;
 
 classStat : '|' precedence id ':' expr  # classField
           | '|' id '=>' expr            # classImplement
-          | statement                   # classStatement
+          | definition                  # classDefinition
           ;
 
 definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                  # defFunction

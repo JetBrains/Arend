@@ -1,19 +1,19 @@
 package com.jetbrains.jetpad.vclang.frontend.term;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.ModuleReference;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 public class SimpleGroup implements Group {
-  private final ModuleReference myReference;
+  private final GlobalReferable myReferable;
   private final List<Group> myStaticGroups;
   private final List<Group> myDynamicGroups;
   private final List<SimpleNamespaceCommand> myNamespaceCommands;
 
-  public SimpleGroup(ModuleReference reference, List<Group> staticGroups, List<Group> dynamicGroups, List<SimpleNamespaceCommand> namespaceCommands) {
-    myReference = reference;
+  public SimpleGroup(GlobalReferable referable, List<Group> staticGroups, List<Group> dynamicGroups, List<SimpleNamespaceCommand> namespaceCommands) {
+    myReferable = referable;
     myStaticGroups = staticGroups;
     myDynamicGroups = dynamicGroups;
     myNamespaceCommands = namespaceCommands;
@@ -21,8 +21,8 @@ public class SimpleGroup implements Group {
 
   @Nonnull
   @Override
-  public ModuleReference getReferable() {
-    return myReference;
+  public GlobalReferable getReferable() {
+    return myReferable;
   }
 
   @Nonnull
@@ -42,5 +42,4 @@ public class SimpleGroup implements Group {
   public List<SimpleNamespaceCommand> getNamespaceCommands() {
     return myNamespaceCommands;
   }
-
 }

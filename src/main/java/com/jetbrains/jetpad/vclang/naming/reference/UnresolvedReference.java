@@ -9,6 +9,10 @@ public class UnresolvedReference implements Referable {
     myName = name;
   }
 
+  public String getName() {
+    return myName;
+  }
+
   @Nonnull
   @Override
   public String textRepresentation() {

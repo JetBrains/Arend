@@ -906,17 +906,15 @@ public final class Concrete {
   public static abstract class Definition<T> extends ReferableDefinition<T> {
     private final GlobalReferable myReferable;
     private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
-    private Definition<T> myParent;
-    private boolean myStatic;
+    private Definition<T> myParent; // TODO[abstract]: Get rid of parents
 
     public Definition(T data, GlobalReferable referable, Precedence precedence) {
       super(data);
-      myStatic = true;
       myReferable = referable;
       myPrecedence = precedence;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public String textRepresentation() {
       return myReferable.textRepresentation();
@@ -940,14 +938,6 @@ public final class Concrete {
       myParent = parent;
     }
 
-    public boolean isStatic() {
-      return myStatic;
-    }
-
-    public void setNotStatic() {
-      myStatic = false;
-    }
-
     @Override
     public Definition<T> getRelatedDefinition() {
       return this;
@@ -965,26 +955,22 @@ public final class Concrete {
     @Nonnull Collection<? extends Definition<T>> getGlobalDefinitions();
   }
 
-  public static class ClassDefinition<T> extends Definition<T> implements StatementCollection<T> {
+  public static class ClassDefinition<T> extends Definition<T> {
     private final List<TypeParameter<T>> myPolyParameters;
     private final List<ReferenceExpression<T>> mySuperClasses;
     private final List<ClassField<T>> myFields;
     private final List<ClassFieldImpl<T>> myImplementations;
-    private final List<Statement<T>> myGlobalStatements;
-    private final List<Definition<T>> myInstanceDefinitions;
 
-    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations, List<Statement<T>> globalStatements, List<Definition<T>> instanceDefinitions) {
+    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations) {
       super(data, referable, Precedence.DEFAULT);
       myPolyParameters = polyParams;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
-      myGlobalStatements = globalStatements;
-      myInstanceDefinitions = instanceDefinitions;
     }
 
-    public ClassDefinition(T data, GlobalReferable referable, List<Statement<T>> globalStatements) {
-      this(data, referable, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), globalStatements, Collections.emptyList());
+    public ClassDefinition(T data, GlobalReferable referable) {
+      this(data, referable, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
 
     @Nonnull
@@ -1007,16 +993,6 @@ public final class Concrete {
       return myImplementations;
     }
 
-    @Nonnull
-    public List<Definition<T>> getInstanceDefinitions() {
-      return myInstanceDefinitions;
-    }
-
-    @Override
-    public List<Statement<T>> getGlobalStatements() {
-      return myGlobalStatements;
-    }
-
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitClass(this, params);
@@ -1035,7 +1011,7 @@ public final class Concrete {
       myResultType = resultType;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public String textRepresentation() {
       return myName;
@@ -1093,18 +1069,16 @@ public final class Concrete {
     }
   }
 
-  public static class FunctionDefinition<T> extends Definition<T> implements StatementCollection<T> {
+  public static class FunctionDefinition<T> extends Definition<T> {
     private final List<Parameter<T>> myParameters;
     private final Expression<T> myResultType;
     private final FunctionBody<T> myBody;
-    private final List<Statement<T>> myStatements;
 
-    public FunctionDefinition(T data, GlobalReferable referable, Precedence precedence, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body, List<Statement<T>> statements) {
+    public FunctionDefinition(T data, GlobalReferable referable, Precedence precedence, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body) {
       super(data, referable, precedence);
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
-      myStatements = statements;
     }
 
     @Nonnull
@@ -1120,11 +1094,6 @@ public final class Concrete {
     @Nonnull
     public FunctionBody<T> getBody() {
       return myBody;
-    }
-
-    @Override
-    public List<? extends Statement<T>> getGlobalStatements() {
-      return myStatements;
     }
 
     @Override
@@ -1441,34 +1410,6 @@ public final class Concrete {
     @Override
     public @Nullable List<String> getNames() {
       return myNames;
-    }
-  }
-
-  interface StatementCollection<T> extends DefinitionCollection<T>, HasOpens {
-    List<? extends Statement<T>> getGlobalStatements();
-
-    @Nonnull
-    @Override
-    default Collection<? extends Definition<T>> getGlobalDefinitions() {
-      return getGlobalStatements().stream().flatMap(s -> {
-        if (s instanceof DefineStatement) {
-          return Stream.of(((DefineStatement<T>) s).getDefinition());
-        } else {
-          return Stream.empty();
-        }
-      }).collect(Collectors.toList());
-    }
-
-    @Nonnull
-    @Override
-    default Iterable<OpenCommand> getOpens() {
-      return getGlobalStatements().stream().flatMap(s -> {
-        if (s instanceof NamespaceCommandStatement) {
-          return Stream.of((NamespaceCommandStatement) s);
-        } else {
-          return Stream.empty();
-        }
-      }).collect(Collectors.toList());
     }
   }
 
