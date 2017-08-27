@@ -4,21 +4,22 @@ import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
-public class DuplicateNameError<T> extends NamingError<T> {
-  public final Referable referable;
-  public final Referable previous;
+public class ReferableDuplicateNameError<T> extends ReferableError<T> {
+  private final Referable previous;
 
-  public DuplicateNameError(Level level, Referable referable, Referable previous, Concrete.SourceNode<T> cause) {
-    super(level, "Duplicate name: " + referable.textRepresentation(), cause);
-    this.referable = referable;
+  public ReferableDuplicateNameError(Level level, Referable referable, Referable previous) {
+    super(level, "Duplicate name: " + referable.textRepresentation(), referable);
     this.previous = previous;
   }
 
   @Override
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+    return getBodyDoc(referable, previous);
+  }
+
+  static Doc getBodyDoc(Referable referable, Referable previous) {
     String text = "Previous occurrence";
     if (!(previous instanceof SourceInfo)) {
       return DocFactory.hList(DocFactory.text(text + ": "), DocFactory.refDoc(previous));

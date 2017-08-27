@@ -7,10 +7,10 @@ import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import java.io.*;
@@ -76,8 +76,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      Concrete.ClassDefinition result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(
-          errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+      Group result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);

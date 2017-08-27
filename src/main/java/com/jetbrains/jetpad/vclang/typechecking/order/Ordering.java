@@ -2,9 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.Typecheckable;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 
 import java.util.*;
@@ -120,7 +120,7 @@ public class Ordering<T> {
     }
 
     for (GlobalReferable referable : dependencies) {
-      Concrete.ReferableDefinition<T> dependency = myTypecheckableProvider.forReferable(referable);
+      Concrete.ReferableDefinition<T> dependency = myTypecheckableProvider.getTypecheckable(referable);
       Concrete.Definition<T> dependencyDef = dependency.getRelatedDefinition();
 
       if (dependencyDef.equals(definition)) {

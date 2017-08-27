@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckingUnit;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 
 import java.util.Collection;
 import java.util.List;

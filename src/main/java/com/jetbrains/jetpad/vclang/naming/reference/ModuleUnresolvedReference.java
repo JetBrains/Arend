@@ -7,19 +7,19 @@ import java.util.List;
 
 public class ModuleUnresolvedReference implements Referable {
   private final ModulePath myModulePath;
-  private final List<String> myNames;
+  private final List<String> myPath;
 
-  public ModuleUnresolvedReference(ModulePath modulePath, List<String> names) {
+  public ModuleUnresolvedReference(ModulePath modulePath, List<String> path) {
     myModulePath = modulePath;
-    myNames = names;
+    myPath = path;
   }
 
   public ModulePath getModulePath() {
     return myModulePath;
   }
 
-  public List<String> getNames() {
-    return myNames;
+  public List<String> getPath() {
+    return myPath;
   }
 
   @Nonnull
@@ -27,7 +27,7 @@ public class ModuleUnresolvedReference implements Referable {
   public String textRepresentation() {
     StringBuilder builder = new StringBuilder();
     builder.append(myModulePath);
-    for (String name : myNames) {
+    for (String name : myPath) {
       builder.append('.').append(name);
     }
     return builder.toString();
@@ -40,13 +40,13 @@ public class ModuleUnresolvedReference implements Referable {
 
     ModuleUnresolvedReference that = (ModuleUnresolvedReference) o;
 
-    return myModulePath.equals(that.myModulePath) && myNames.equals(that.myNames);
+    return myModulePath.equals(that.myModulePath) && myPath.equals(that.myPath);
   }
 
   @Override
   public int hashCode() {
     int result = myModulePath.hashCode();
-    result = 31 * result + myNames.hashCode();
+    result = 31 * result + myPath.hashCode();
     return result;
   }
 }

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.resolving;
+package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
 

@@ -1,13 +1,9 @@
-package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
+package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
-import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.FullName;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 
-public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implements ConcreteDefinitionVisitor<T, FullName, Void> {
+// TODO[abstract]: Delete this?
+public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> { /* implements ConcreteDefinitionVisitor<T, FullName, Void> {
   private final SimpleSourceInfoProvider<SourceIdT> myProvider;
   private final SourceIdT mySourceId;
 
@@ -73,4 +69,5 @@ public class DefinitionSourceInfoVisitor<SourceIdT extends SourceId, T> implemen
   private void reg(GlobalReferable def, FullName fullName) {
     myProvider.registerDefinition(def, new FullName(fullName, def.textRepresentation()), mySourceId);
   }
+  */
 }

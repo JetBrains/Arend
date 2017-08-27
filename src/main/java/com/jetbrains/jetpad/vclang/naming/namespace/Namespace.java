@@ -9,5 +9,5 @@ public interface Namespace {
   Set<String> getNames();
   GlobalReferable resolveName(String name);
 
-  abstract class InvalidNamespaceException extends ReportableRuntimeException {}
+  abstract class InvalidNamespaceException extends ReportableRuntimeException {} // TODO[abstract]: Get rid of this
 }

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.provider;
 
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.*;

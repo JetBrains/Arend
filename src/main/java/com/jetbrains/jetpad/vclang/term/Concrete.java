@@ -2,8 +2,7 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
+import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -18,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class Concrete {
   private Concrete() {}
@@ -956,14 +953,14 @@ public final class Concrete {
   }
 
   public static class ClassDefinition<T> extends Definition<T> {
-    private final List<TypeParameter<T>> myPolyParameters;
+    private final List<TypeParameter<T>> myParameters;
     private final List<ReferenceExpression<T>> mySuperClasses;
     private final List<ClassField<T>> myFields;
     private final List<ClassFieldImpl<T>> myImplementations;
 
-    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> polyParams, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations) {
+    public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations) {
       super(data, referable, Precedence.DEFAULT);
-      myPolyParameters = polyParams;
+      myParameters = parameters;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
@@ -974,8 +971,8 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<TypeParameter<T>> getPolyParameters() {
-      return myPolyParameters;
+    public List<TypeParameter<T>> getParameters() {
+      return myParameters;
     }
 
     @Nonnull

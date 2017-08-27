@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ModuleReference;
 import com.jetbrains.jetpad.vclang.frontend.term.EmptyGroup;
 import com.jetbrains.jetpad.vclang.frontend.term.SimpleGroup;
 import com.jetbrains.jetpad.vclang.frontend.term.SimpleNamespaceCommand;
+import com.jetbrains.jetpad.vclang.frontend.term.StaticGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
@@ -239,7 +240,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     visitStatementList(ctx.statement(), subgroups, namespaceCommands);
-    return new SimpleGroup(new ModuleReference(myModule.getModulePath()), subgroups, Collections.emptyList(), namespaceCommands);
+    return new StaticGroup(new ModuleReference(myModule.getModulePath()), subgroups, namespaceCommands);
   }
 
   public Group visitDefinition(DefinitionContext ctx) {
@@ -278,7 +279,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       names = null;
     }
-    return new SimpleNamespaceCommand(kind, modulePath != null ? new ModuleUnresolvedReference(new ModulePath(modulePath), path) : new LongUnresolvedReference(name, path), ctx.hidingOpt() instanceof WithHidingContext, names);
+    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, modulePath != null ? new ModuleUnresolvedReference(new ModulePath(modulePath), path) : new LongUnresolvedReference(name, path), ctx.hidingOpt() instanceof WithHidingContext, names);
   }
 
   @Override
@@ -490,7 +491,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    return new SimpleGroup(reference, subgroups, Collections.emptyList(), namespaceCommands);
+    return new StaticGroup(reference, subgroups, namespaceCommands);
   }
 
   private List<Concrete.Parameter<Position>> visitFunctionArguments(List<TeleContext> teleCtx) {

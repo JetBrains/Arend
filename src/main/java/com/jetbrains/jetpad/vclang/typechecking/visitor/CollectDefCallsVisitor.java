@@ -4,10 +4,9 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +34,7 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
       return;
     }
 
-    Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.forReferable((GlobalReferable) referable); // TODO[abstract]: Move this to Ordering
+    Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.getTypecheckable((GlobalReferable) referable); // TODO[abstract]: Move this to Ordering
     if (myInstanceProvider != null) {
       if (definition instanceof Concrete.ClassViewField) {
         myDependencies.addAll(myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView()));

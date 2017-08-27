@@ -9,10 +9,10 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -115,7 +115,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
         long mtime = getLastModifiedTime(file);
 
         FileSource fileSource = new FileSource(sourceId, file);
-        Concrete.ClassDefinition result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+        Group result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
 
         // Make sure file did not change
         if (getLastModifiedTime(file) != mtime) return null;

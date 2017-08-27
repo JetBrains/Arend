@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking;
+package com.jetbrains.jetpad.vclang.typechecking.typecheckable;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
 

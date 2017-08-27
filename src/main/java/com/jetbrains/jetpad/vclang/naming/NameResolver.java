@@ -1,16 +1,18 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
+import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import java.util.List;
 
+// TODO[abstract]: Get rid of this class
 public class NameResolver {
   public final NamespaceProviders nsProviders;
   private ModuleResolver myModuleResolver;
@@ -31,8 +33,8 @@ public class NameResolver {
   public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
     ModuleNamespace ns = resolveModuleNamespace_(modulePath);
     if (myModuleResolver != null && (ns == null || ns.getRegisteredClass() == null)) {
-      Concrete.ClassDefinition loadedClass = myModuleResolver.load(modulePath);
-      if (ns == null && loadedClass != null) {
+      Group loadedGroup = myModuleResolver.load(modulePath);
+      if (ns == null && loadedGroup != null) {
         ns = resolveModuleNamespace_(modulePath);
       }
     }

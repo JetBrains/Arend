@@ -25,6 +25,7 @@ public abstract class Error<T> {
     return null;
   }
 
+  // TODO[abstract]: Replace PrettyPrintable with Doc
   public PrettyPrintable getCausePP() {
     return null;
   }

@@ -2,14 +2,14 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
+import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
 import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
 import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.FilteredScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;

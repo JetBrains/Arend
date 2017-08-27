@@ -4,15 +4,15 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 public class LongUnresolvedReference extends UnresolvedReference {
-  private final List<String> myNames;
+  private final List<String> myPath;
 
-  public LongUnresolvedReference(@Nonnull String name, @Nonnull List<String> names) {
+  public LongUnresolvedReference(@Nonnull String name, @Nonnull List<String> path) {
     super(name);
-    myNames = names;
+    myPath = path;
   }
 
-  public List<String> getNames() {
-    return myNames;
+  public List<String> getPath() {
+    return myPath;
   }
 
   @Nonnull
@@ -20,7 +20,7 @@ public class LongUnresolvedReference extends UnresolvedReference {
   public String textRepresentation() {
     StringBuilder builder = new StringBuilder();
     builder.append(getName());
-    for (String name : myNames) {
+    for (String name : myPath) {
       builder.append('.').append(name);
     }
     return builder.toString();
@@ -33,13 +33,13 @@ public class LongUnresolvedReference extends UnresolvedReference {
 
     LongUnresolvedReference that = (LongUnresolvedReference) o;
 
-    return getName().equals(that.getName()) && myNames.equals(that.myNames);
+    return getName().equals(that.getName()) && myPath.equals(that.myPath);
   }
 
   @Override
   public int hashCode() {
     int result = getName().hashCode();
-    result = 31 * result + myNames.hashCode();
+    result = 31 * result + myPath.hashCode();
     return result;
   }
 }

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.term;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
@@ -8,15 +8,15 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class EmptyGroup implements Group {
-  private final GlobalReference myReferable;
+  private final GlobalReferable myReferable;
 
-  public EmptyGroup(GlobalReference referable) {
+  public EmptyGroup(GlobalReferable referable) {
     myReferable = referable;
   }
 
   @Nonnull
   @Override
-  public GlobalReference getReferable() {
+  public GlobalReferable getReferable() {
     return myReferable;
   }
 

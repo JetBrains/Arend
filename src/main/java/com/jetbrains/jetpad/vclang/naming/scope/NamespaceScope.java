@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.naming.scope.primitive;
+package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;

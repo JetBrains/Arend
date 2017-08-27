@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.resolving;
+package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;

@@ -46,7 +46,7 @@ public class BinOpParser<T> {
       }
 
       if (!(topElem.prec.priority > prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Precedence.Associativity.LEFT_ASSOC && (ignoreAssoc || prec.associativity == Precedence.Associativity.LEFT_ASSOC)))) {
-        String msg = "Precedence parsing error: cannot mix (" + topElem.binOp.textRepresentation() + ") [" + topElem.prec + "] and (" + binOp.textRepresentation() + ") [" + prec + "] in the same infix expression";
+        String msg = "Precedence parsing error: cannot mix " + topElem.binOp.textRepresentation() + " [" + topElem.prec + "] and " + binOp.textRepresentation() + " [" + prec + "] in the same infix expression";
         myErrorReporter.report(new NamingError<>(msg, var));
       }
     }

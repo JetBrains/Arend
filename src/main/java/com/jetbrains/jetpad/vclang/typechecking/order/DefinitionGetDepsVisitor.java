@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 

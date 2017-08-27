@@ -939,7 +939,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition<T> def) {
     myBuilder.append("\\class ").append(def.textRepresentation());
-    prettyPrintParameters(def.getPolyParameters(), Concrete.ReferenceExpression.PREC);
+    prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
     if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();

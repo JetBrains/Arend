@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.NamespaceDuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -35,7 +35,7 @@ public class SimpleNamespace implements Namespace {
       throw new InvalidNamespaceException() {
         @Override
         public GeneralError toError() {
-          return new DuplicateNameError(Error.Level.ERROR, def, prev, (Concrete.SourceNode) def); // TODO[abstract]
+          return new NamespaceDuplicateNameError(Error.Level.ERROR, def, prev, (Concrete.SourceNode) def); // TODO[abstract]
         }
       };
     }

@@ -1,17 +1,17 @@
-package com.jetbrains.jetpad.vclang.frontend.resolving.visitor;
+package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.ReferableDuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -137,11 +137,11 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
         for (int i = 0; i < referableList.size(); i++) {
           Referable referable = referableList.get(i);
-          if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_")) {
+          if (referable != null && !referable.textRepresentation().equals("_")) {
             for (int j = 0; j < i; j++) {
               Referable referable1 = referableList.get(j);
               if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
-                myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, referable1, referable, parameter));
+                myErrorReporter.report(new ReferableDuplicateNameError<>(Error.Level.WARNING, referable1, referable));
               }
             }
             myContext.add(referable);
@@ -150,7 +150,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       } else
       if (parameter instanceof Concrete.NameParameter) {
         Referable referable = ((Concrete.NameParameter) parameter).getReferable();
-        if (referable != null && referable.textRepresentation() != null && !referable.textRepresentation().equals("_")) {
+        if (referable != null && !referable.textRepresentation().equals("_")) {
           myContext.add(referable);
         }
       }
@@ -309,7 +309,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       if (!name.equals("_")) {
         Concrete.NamePattern prev = usedNames.put(name, namePattern);
         if (prev != null) {
-          myErrorReporter.report(new DuplicateNameError<>(Error.Level.WARNING, referable, prev.getReferable(), pattern));
+          myErrorReporter.report(new ReferableDuplicateNameError<>(Error.Level.WARNING, referable, prev.getReferable()));
         }
         myContext.add(referable);
       }

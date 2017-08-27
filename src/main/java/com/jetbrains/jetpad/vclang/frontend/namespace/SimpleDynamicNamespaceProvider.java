@@ -5,7 +5,9 @@ import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.Map;
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
   private final Map<GlobalReferable, SimpleNamespace> classCache = new HashMap<>();
 
+  @Nonnull
   @Override
   public SimpleNamespace forReferable(final GlobalReferable referable) {
     SimpleNamespace ns = classCache.get(referable);
@@ -66,5 +69,9 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       }
     }
     return ns;
+  }
+
+  public void collect(Group group) {
+
   }
 }

@@ -6,9 +6,10 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     }
   }
 
+  @Nonnull
   @Override
   public Namespace forReferable(GlobalReferable referable) {
     if (referable instanceof GlobalReference) {
@@ -77,25 +79,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     return sns;
   }
 
-  private static class DefinitionGetNamespaceVisitor<T> extends BaseAbstractVisitor<T, SimpleNamespace, Void> {
-    public static final DefinitionGetNamespaceVisitor INSTANCE = new DefinitionGetNamespaceVisitor();
+  public void collect(Group group) {
 
-    @Override
-    public Void visitFunction(Concrete.FunctionDefinition<T> def, SimpleNamespace ns) {
-      forFunction(def, ns);
-      return null;
-    }
-
-    @Override
-    public Void visitData(Concrete.DataDefinition<T> def, SimpleNamespace ns) {
-      forData(def, ns);
-      return null;
-    }
-
-    @Override
-    public Void visitClass(Concrete.ClassDefinition<T> def, SimpleNamespace ns) {
-      forClass(def, ns);
-      return null;
-    }
   }
 }
