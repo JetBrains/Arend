@@ -1,35 +1,10 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+
 import javax.annotation.Nonnull;
 
-public class UnresolvedReference implements Referable {
-  private final String myName;
-
-  public UnresolvedReference(@Nonnull String name) {
-    myName = name;
-  }
-
-  public String getName() {
-    return myName;
-  }
-
-  @Nonnull
-  @Override
-  public String textRepresentation() {
-    return myName;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    UnresolvedReference that = (UnresolvedReference) o;
-    return myName.equals(that.myName);
-  }
-
-  @Override
-  public int hashCode() {
-    return myName.hashCode();
-  }
+public interface UnresolvedReference extends Referable {
+  @Nonnull Referable resolve(Scope scope, NameResolver nameResolver);
 }

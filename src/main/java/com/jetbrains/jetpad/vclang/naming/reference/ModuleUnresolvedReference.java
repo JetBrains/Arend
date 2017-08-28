@@ -1,25 +1,21 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-public class ModuleUnresolvedReference implements Referable {
+public class ModuleUnresolvedReference implements UnresolvedReference {
   private final ModulePath myModulePath;
   private final List<String> myPath;
+  private Referable myResolved;
 
   public ModuleUnresolvedReference(ModulePath modulePath, List<String> path) {
     myModulePath = modulePath;
     myPath = path;
-  }
-
-  public ModulePath getModulePath() {
-    return myModulePath;
-  }
-
-  public List<String> getPath() {
-    return myPath;
   }
 
   @Nonnull
@@ -48,5 +44,25 @@ public class ModuleUnresolvedReference implements Referable {
     int result = myModulePath.hashCode();
     result = 31 * result + myPath.hashCode();
     return result;
+  }
+
+  @Nonnull
+  @Override
+  public Referable resolve(Scope scope, NameResolver nameResolver) {
+    if (myResolved != null) {
+      return myResolved;
+    }
+
+    ModuleNamespace moduleNamespace = nameResolver.resolveModuleNamespace(myModulePath);
+    if (moduleNamespace == null) {
+      myResolved = this;
+      return this;
+    }
+
+    myResolved = moduleNamespace.getRegisteredClass();
+    for (String name : myPath) {
+      myResolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) myResolved).resolveName(name);
+    }
+    return myResolved;
   }
 }

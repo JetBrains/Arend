@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
@@ -79,7 +80,7 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
     return sns;
   }
 
-  public void collect(Group group) {
+  public void collect(Group group, ErrorReporter errorReporter) {
 
   }
 }

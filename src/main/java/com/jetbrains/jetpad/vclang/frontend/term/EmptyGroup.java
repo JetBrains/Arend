@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend.term;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -1188,7 +1187,7 @@ public final class Concrete {
       myClauses = clauses;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public String textRepresentation() {
       return myName;
@@ -1352,61 +1351,6 @@ public final class Concrete {
     @Nonnull
     public Definition<T> getDefinition() {
       return myDefinition;
-    }
-  }
-
-  public static class NamespaceCommandStatement<T> extends Statement<T> implements OpenCommand {
-    private GlobalReferable myDefinition;
-    private final ModulePath myModulePath;
-    private final List<String> myPath;
-    private final boolean myHiding;
-    private final List<String> myNames;
-    private final Kind myKind;
-
-    public enum Kind { OPEN, EXPORT }
-
-    public NamespaceCommandStatement(T data, Kind kind, List<String> modulePath, List<String> path, boolean isHiding, List<String> names) {
-      super(data);
-      myDefinition = null;
-      myModulePath = modulePath != null ? new ModulePath(modulePath) : null;
-      myPath = path;
-      myHiding = isHiding;
-      myNames = names;
-      myKind = kind;
-    }
-
-    @Nonnull
-    public Kind getKind() {
-      return myKind;
-    }
-
-    @Override
-    public @Nullable ModulePath getModulePath() {
-      return myModulePath;
-    }
-
-    @Override
-    public @Nonnull List<String> getPath() {
-      return myPath;
-    }
-
-    public void setResolvedClass(GlobalReferable resolvedClass) {
-      myDefinition = resolvedClass;
-    }
-
-    @Override
-    public GlobalReferable getResolvedClass() {
-      return myDefinition;
-    }
-
-    @Override
-    public boolean isHiding() {
-      return myHiding;
-    }
-
-    @Override
-    public @Nullable List<String> getNames() {
-      return myNames;
     }
   }
 

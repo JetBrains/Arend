@@ -26,7 +26,6 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -600,90 +599,85 @@ class DefinitionTypechecking {
     LocalErrorReporter<T> errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
-    try {
-      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-      typedDef.setThisClass(enclosingClass);
+    typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    typedDef.setThisClass(enclosingClass);
 
-      if (enclosingClass != null) {
-        // TODO[classes]: This looks suspicious
-        DependentLink thisParam = createThisParam(enclosingClass);
-        visitor.getFreeBindings().add(thisParam);
-        visitor.setThis(enclosingClass, thisParam);
-      }
-
-      List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
-      Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
-
-      for (Concrete.ReferenceExpression<T> aSuperClass : def.getSuperClasses()) {
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null);
-        if (result == null) {
-          classOk = false;
-          continue;
-        }
-
-        ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
-        if (typeCheckedSuperClass == null) {
-          errorReporter.report(new LocalTypeCheckingError<>("Parent must be a class", aSuperClass));
-          classOk = false;
-          continue;
-        }
-
-        typedDef.addFields(typeCheckedSuperClass.getDefinition().getFields());
-        typedDef.addSuperClass(typeCheckedSuperClass.getDefinition());
-
-        for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
-          if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
-            classOk = false;
-            alreadyImplementedSourceNode = aSuperClass;
-          }
-        }
-
-        for (Map.Entry<ClassField, Expression> entry : typeCheckedSuperClass.getImplementedHere().entrySet()) {
-          if (!implementField(entry.getKey(), new ClassDefinition.Implementation(createThisParam(typedDef), entry.getValue()), typedDef, alreadyImplementFields)) {
-            classOk = false;
-            alreadyImplementedSourceNode = aSuperClass;
-          }
-        }
-      }
-
-      for (Concrete.ClassField<T> field : def.getFields()) {
-        typeCheckClassField(field, typedDef, visitor);
-      }
-
-      if (!def.getImplementations().isEmpty()) {
-        typedDef.updateSorts();
-        for (Concrete.ClassFieldImpl<T> implementation : def.getImplementations()) {
-          ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
-          if (typedDef.isImplemented(field)) {
-            classOk = false;
-            alreadyImplementFields.add(field.getReferable());
-            alreadyImplementedSourceNode = implementation;
-            continue;
-          }
-
-          TypedDependentLink thisParameter = createThisParam(typedDef);
-          visitor.getFreeBindings().add(thisParameter);
-          visitor.setThis(typedDef, thisParameter);
-          CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
-          typedDef.implementField(field, new ClassDefinition.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
-          if (result == null || result.expression.isInstance(ErrorExpression.class)) {
-            classOk = false;
-          }
-        }
-      }
-
-      if (!alreadyImplementFields.isEmpty()) {
-        errorReporter.report(new FieldsImplementationError<>(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
-      }
-
-      if (classOk) {
-        typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      }
-    } catch (Namespace.InvalidNamespaceException e) {
-      errorReporter.report(e.toError());
-    } finally {
-      typedDef.updateSorts();
+    if (enclosingClass != null) {
+      // TODO[classes]: This looks suspicious
+      DependentLink thisParam = createThisParam(enclosingClass);
+      visitor.getFreeBindings().add(thisParam);
+      visitor.setThis(enclosingClass, thisParam);
     }
+
+    List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
+    Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
+
+    for (Concrete.ReferenceExpression<T> aSuperClass : def.getSuperClasses()) {
+      CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null);
+      if (result == null) {
+        classOk = false;
+        continue;
+      }
+
+      ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+      if (typeCheckedSuperClass == null) {
+        errorReporter.report(new LocalTypeCheckingError<>("Parent must be a class", aSuperClass));
+        classOk = false;
+        continue;
+      }
+
+      typedDef.addFields(typeCheckedSuperClass.getDefinition().getFields());
+      typedDef.addSuperClass(typeCheckedSuperClass.getDefinition());
+
+      for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
+        if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
+          classOk = false;
+          alreadyImplementedSourceNode = aSuperClass;
+        }
+      }
+
+      for (Map.Entry<ClassField, Expression> entry : typeCheckedSuperClass.getImplementedHere().entrySet()) {
+        if (!implementField(entry.getKey(), new ClassDefinition.Implementation(createThisParam(typedDef), entry.getValue()), typedDef, alreadyImplementFields)) {
+          classOk = false;
+          alreadyImplementedSourceNode = aSuperClass;
+        }
+      }
+    }
+
+    for (Concrete.ClassField<T> field : def.getFields()) {
+      typeCheckClassField(field, typedDef, visitor);
+    }
+
+    if (!def.getImplementations().isEmpty()) {
+      typedDef.updateSorts();
+      for (Concrete.ClassFieldImpl<T> implementation : def.getImplementations()) {
+        ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
+        if (typedDef.isImplemented(field)) {
+          classOk = false;
+          alreadyImplementFields.add(field.getReferable());
+          alreadyImplementedSourceNode = implementation;
+          continue;
+        }
+
+        TypedDependentLink thisParameter = createThisParam(typedDef);
+        visitor.getFreeBindings().add(thisParameter);
+        visitor.setThis(typedDef, thisParameter);
+        CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
+        typedDef.implementField(field, new ClassDefinition.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
+        if (result == null || result.expression.isInstance(ErrorExpression.class)) {
+          classOk = false;
+        }
+      }
+    }
+
+    if (!alreadyImplementFields.isEmpty()) {
+      errorReporter.report(new FieldsImplementationError<>(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
+    }
+
+    if (classOk) {
+      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    }
+    typedDef.updateSorts();
   }
 
   private static <T> void typeCheckClassField(Concrete.ClassField<T> def, ClassDefinition enclosingClass, CheckTypeVisitor<T> visitor) {

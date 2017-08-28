@@ -8,9 +8,9 @@ import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.antlr.v4.runtime.*;
@@ -62,8 +62,8 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result);
-      ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result);
+      ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, compositeErrorReporter);
+      ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter);
       new GroupNameResolver<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {

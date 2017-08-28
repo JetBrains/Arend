@@ -2,14 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.DataScope;
-import com.jetbrains.jetpad.vclang.naming.scope.FunctionScope;
-import com.jetbrains.jetpad.vclang.naming.scope.StaticClassScope;
-import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
+import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
@@ -58,22 +53,18 @@ public class DefinitionResolveInstanceVisitor<T> implements ConcreteDefinitionVi
 
   @Override
   public Void visitClass(Concrete.ClassDefinition<T> def, SimpleInstanceProvider parentInstanceScope) {
-    try {
-      Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
-      StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
-      staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
-      SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(staticScope);
-      myInstanceProviderSet.setProvider(def, instanceProvider);
+    Iterable<Scope> extraScopes = getExtraScopes(def, parentInstanceScope.getScope());
+    StaticClassScope staticScope = new StaticClassScope(parentInstanceScope.getScope(), myScopeProvider.forDefinition(def), extraScopes);
+    staticScope.findIntroducedDuplicateInstances(this::warnDuplicate);
+    SimpleInstanceProvider instanceProvider = new SimpleInstanceProvider(staticScope);
+    myInstanceProviderSet.setProvider(def, instanceProvider);
 
-      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
-        definition.accept(this, instanceProvider);
-      }
+    for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
+      definition.accept(this, instanceProvider);
+    }
 
-      for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
-        definition.accept(this, instanceProvider);
-      }
-    } catch (Namespace.InvalidNamespaceException e) {
-      myErrorReporter.report(e.toError());
+    for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
+      definition.accept(this, instanceProvider);
     }
 
     return null;

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -71,7 +72,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     return ns;
   }
 
-  public void collect(Group group) {
+  public void collect(Group group, ErrorReporter errorReporter) {
 
   }
 }

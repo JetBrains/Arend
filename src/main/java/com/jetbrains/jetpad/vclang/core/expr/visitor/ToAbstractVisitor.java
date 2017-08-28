@@ -14,8 +14,8 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -266,7 +266,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Referable referable) {
-    return cDefCall(expr, referable == null ? new UnresolvedReference("\\this") : referable);
+    return cDefCall(expr, referable == null ? new NamedUnresolvedReference("\\this") : referable);
   }
 
   @Override

@@ -3,16 +3,16 @@ package com.jetbrains.jetpad.vclang.frontend.term;
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class SimpleNamespaceCommand implements Group.NamespaceCommand, SourceInfo {
+public class SimpleNamespaceCommand implements NamespaceCommand, SourceInfo {
   private final Position myPosition;
   private final Kind myKind;
-  private final Referable myReferable;
+  private Referable myReferable;
   private final boolean myHiding;
   private final List<Referable> myReferences;
 

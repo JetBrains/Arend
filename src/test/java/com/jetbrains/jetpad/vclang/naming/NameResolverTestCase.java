@@ -7,16 +7,16 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProv
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
-import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
-import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -68,7 +68,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return expression;
   }
 
-  Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
+  Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, String text, int errors) {
     return resolveNamesExpr(parentScope, new ArrayList<>(), text, errors);
   }
 
@@ -76,7 +76,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(globalScope, new ArrayList<>(), text, errors);
   }
 
-  Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
+  Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, String text) {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
@@ -92,7 +92,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   private void resolveNamesDef(Concrete.Definition<Position> definition, int errors) {
     DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, errorReporter);
-    definition.accept(visitor, new OverridingScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
+    definition.accept(visitor, new MergeScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }
 

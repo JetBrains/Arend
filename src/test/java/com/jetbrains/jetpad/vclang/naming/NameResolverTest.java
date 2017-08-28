@@ -20,17 +20,17 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     GlobalReference plusRef = new GlobalReference("+");
-    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
     GlobalReference mulRef = new GlobalReference("*");
-    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7), Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus);
     namespace.addDefinition(mul);
 
-    Concrete.Expression result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
+    Concrete.Expression<Position> result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
     assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
   }
@@ -38,10 +38,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfixError() {
     GlobalReference plusRef = new GlobalReference("+");
-    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6), Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
     GlobalReference mulRef = new GlobalReference("*");
-    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null, Collections.emptyList());
+    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6), Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();

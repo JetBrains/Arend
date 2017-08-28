@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.naming.error.NamespaceDuplicateNameError;
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.ReferableDuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,34 +15,24 @@ public class SimpleNamespace implements Namespace {
   public SimpleNamespace() {
   }
 
-  public SimpleNamespace(SimpleNamespace other) {
-    myNames.putAll(other.myNames);
-  }
-
   public SimpleNamespace(GlobalReferable def) {
-    this();
-    addDefinition(def);
+    addDefinition(def, null);
   }
 
-  public void addDefinition(GlobalReferable def) {
-    addDefinition(def.textRepresentation(), def);
+  public void addDefinition(GlobalReferable def, ErrorReporter errorReporter) {
+    addDefinition(def.textRepresentation(), def, errorReporter);
   }
 
-  public void addDefinition(String name, final GlobalReferable def) {
-    final GlobalReferable prev = myNames.put(name, def);
+  private void addDefinition(String name, final GlobalReferable def, ErrorReporter errorReporter) {
+    final GlobalReferable prev = myNames.putIfAbsent(name, def);
     if (!(prev == null || prev == def)) {
-      throw new InvalidNamespaceException() {
-        @Override
-        public GeneralError toError() {
-          return new NamespaceDuplicateNameError(Error.Level.ERROR, def, prev, (Concrete.SourceNode) def); // TODO[abstract]
-        }
-      };
+      errorReporter.report(new ReferableDuplicateNameError(Error.Level.ERROR, def, prev));
     }
   }
 
-  public void addAll(SimpleNamespace other) {
+  public void addAll(SimpleNamespace other, ErrorReporter errorReporter) {
     for (Map.Entry<String, GlobalReferable> entry : other.myNames.entrySet()) {
-      addDefinition(entry.getKey(), entry.getValue());
+      addDefinition(entry.getKey(), entry.getValue(), errorReporter);
     }
   }
 
