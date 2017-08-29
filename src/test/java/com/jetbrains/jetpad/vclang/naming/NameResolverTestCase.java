@@ -96,13 +96,13 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(errorList, containsErrors(errors));
   }
 
-  Concrete.Definition<Position> resolveNamesDef(String text, int errors) {
-    Concrete.Definition<Position> result = parseDef(text);
+  Group resolveNamesDef(String text, int errors) {
+    Group result = parseDef(text);
     resolveNamesDef(result, errors);
     return result;
   }
 
-  protected Concrete.Definition<Position> resolveNamesDef(String text) {
+  protected Group resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
@@ -113,7 +113,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   // FIXME[tests] should be package-private
   protected Group resolveNamesModule(String text, int errors) {
-    Group group = parseModule("$testClass$", text);
+    Group group = parseModule(text);
     resolveNamesModule(group, errors);
     return group;
   }

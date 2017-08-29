@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 
 import java.util.*;
@@ -24,18 +24,19 @@ public class Ordering<T> {
   private int myIndex = 0;
   private final Stack<TypecheckingUnit<T>> myStack = new Stack<>();
   private final Map<Typecheckable<T>, DefState> myVertices = new HashMap<>();
-  private final InstanceProviderSet<T> myInstanceProviderSet;
+  private final InstanceProviderSet myInstanceProviderSet;
   private final TypecheckableProvider<T> myTypecheckableProvider;
   private final DependencyListener<T> myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet<T> instanceProviderSet, TypecheckableProvider<T> typecheckableProvider, DependencyListener<T> listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider<T> typecheckableProvider, DependencyListener<T> listener, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckableProvider = typecheckableProvider;
     myListener = listener;
     myRefToHeaders = refToHeaders;
   }
 
+  /* TODO[abstract]
   private Concrete.ClassDefinition<T> getEnclosingClass(Concrete.Definition<T> definition) {
     Concrete.Definition<T> parent = definition.getParentDefinition();
     if (parent == null) {
@@ -46,6 +47,7 @@ public class Ordering<T> {
     }
     return getEnclosingClass(parent);
   }
+  */
 
   public void doOrder(Concrete.Definition<T> definition) {
     if (definition instanceof Concrete.ClassView || definition instanceof Concrete.ClassViewField) {
@@ -82,7 +84,7 @@ public class Ordering<T> {
 
   private OrderResult doOrderRecursively(Typecheckable<T> typecheckable) {
     Concrete.Definition<T> definition = typecheckable.getDefinition();
-    Concrete.ClassDefinition<T> enclosingClass = getEnclosingClass(definition);
+    Concrete.ClassDefinition<T> enclosingClass = null; // getEnclosingClass(definition); // TODO[abstract]
     TypecheckingUnit<T> unit = new TypecheckingUnit<>(typecheckable, enclosingClass);
     DefState currentState = new DefState(myIndex);
     myVertices.put(typecheckable, currentState);
@@ -112,7 +114,7 @@ public class Ordering<T> {
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
-    definition.accept(new DefinitionGetDepsVisitor<>(myInstanceProviderSet.getInstanceProvider(definition), myTypecheckableProvider, dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDepsVisitor<>(myInstanceProviderSet.getInstanceProvider(definition.getReferable()), myTypecheckableProvider, dependencies), typecheckable.isHeader());
     if (typecheckable.isHeader() && dependencies.contains(definition)) {
       myStack.pop();
       currentState.onStack = false;

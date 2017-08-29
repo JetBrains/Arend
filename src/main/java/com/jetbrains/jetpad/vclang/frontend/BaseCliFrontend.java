@@ -8,9 +8,6 @@ import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -19,8 +16,10 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.FullName;
+import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -73,7 +72,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       map.put(pos.line + ";" + pos.column, group.getReferable());
     }
 
-    for (Group subGroup : group.getStaticSubgroups()) {
+    for (Group subGroup : group.getSubgroups()) {
       collectIds(subGroup, map);
     }
     for (Group subGroup : group.getDynamicSubgroups()) {
@@ -94,7 +93,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         definitionIds.put(module, new HashMap<>());
       }
       collectIds(result.group, definitionIds.get(module));
-      sourceInfoProvider.registerModule(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
+      sourceInfoProvider.registerGroup(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -157,7 +156,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -263,7 +262,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
 

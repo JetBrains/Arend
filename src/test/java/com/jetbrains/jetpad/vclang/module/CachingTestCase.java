@@ -2,10 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
+import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
-import com.jetbrains.jetpad.vclang.naming.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
@@ -16,6 +14,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
@@ -53,14 +52,14 @@ public class CachingTestCase extends NameResolverTestCase {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         if (result == null) throw new IllegalStateException("Could not load module");
-        sourceInfoProvider.registerModule(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
+        sourceInfoProvider.registerGroup(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
       }
     };
     nameResolver.setModuleResolver(moduleLoader);
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(peristenceProvider, storage, storage, sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking<>(tcState, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter<Position>() {
+    typechecking = new Typechecking<>(tcState, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter<Position>() {
       @Override
       public void typecheckingSucceeded(Concrete.Definition<Position> definition) {
         typecheckingSucceeded.add(definition);
@@ -97,7 +96,7 @@ public class CachingTestCase extends NameResolverTestCase {
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
     prelude = moduleLoader.load(sourceId);
-    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(cacheManager.getTypecheckerState()), new DependencyListener<Position>() {}).typecheckModules(Collections.singleton(this.prelude));
+    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(cacheManager.getTypecheckerState()), new DependencyListener<Position>() {}).typecheckModules(Collections.singleton(this.prelude));
     storage.setPreludeNamespace(staticNsProvider.forReferable(prelude));
   }
 

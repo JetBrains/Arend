@@ -1,41 +1,42 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.resolving.GroupResolver;
+import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.DefinitionResolveInstanceVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.GroupInstanceResolver;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.Collection;
-import java.util.function.Function;
 
 public class Typechecking<T> {
   private final InstanceNamespaceProvider<T> myInstanceNamespaceProvider;
   private final TypecheckingDependencyListener<T> myDependencyListener;
-  private final Function<Concrete.Definition, Iterable<OpenCommand>> myOpens;
+  private final NameResolver myNameResolver;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Function<Concrete.Definition, Iterable<OpenCommand>> opens, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
     myInstanceNamespaceProvider = new InstanceNamespaceProvider<>(errorReporter);
-    myDependencyListener = new TypecheckingDependencyListener<>(state, staticNsProvider, dynamicNsProvider, myInstanceNamespaceProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
-    myOpens = opens;
+    myDependencyListener = new TypecheckingDependencyListener<>(state, staticNsProvider, dynamicNsProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
+    myNameResolver = new NameResolver(new NamespaceProviders(null, staticNsProvider, dynamicNsProvider));
   }
 
   public void typecheckModules(final Collection<? extends Group> modules) {
-    DefinitionResolveInstanceVisitor<T> visitor = new DefinitionResolveInstanceVisitor<>(myDependencyListener.instanceProviderSet, myInstanceNamespaceProvider, myOpens, myDependencyListener.errorReporter);
+    GroupResolver<T> resolver = new GroupInstanceResolver<>(myNameResolver, myDependencyListener.errorReporter, myDependencyListener.instanceProviderSet);
+    Scope emptyScope = new EmptyScope();
     for (Group group : modules) {
-      visitor.visitClass(group, new SimpleInstanceProvider(new EmptyScope()));
+      resolver.resolveGroup(group, emptyScope);
     }
-
     Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {

@@ -891,47 +891,38 @@ public final class Concrete {
     return null;
   }
 
-  public static abstract class ReferableDefinition<T> extends SourceNode<T> implements GlobalReferable {
-    public ReferableDefinition(T data) {
+  public static abstract class ReferableDefinition<T> extends SourceNode<T> /* TODO[abstract]: Do not implement SourceNode */ implements GlobalReferable {
+    private final GlobalReferable myReferable;
+
+    public ReferableDefinition(T data, GlobalReferable referable) {
       super(data);
+      myReferable = referable;
+    }
+
+    public GlobalReferable getReferable() {
+      return myReferable;
     }
 
     public abstract Definition<T> getRelatedDefinition();
-  }
-
-  public static abstract class Definition<T> extends ReferableDefinition<T> {
-    private final GlobalReferable myReferable;
-    private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
-    private Definition<T> myParent; // TODO[abstract]: Get rid of parents
-
-    public Definition(T data, GlobalReferable referable, Precedence precedence) {
-      super(data);
-      myReferable = referable;
-      myPrecedence = precedence;
-    }
 
     @Nonnull
     @Override
     public String textRepresentation() {
       return myReferable.textRepresentation();
     }
+  }
 
-    @Nonnull
-    public GlobalReferable getReferable() {
-      return myReferable;
+  public static abstract class Definition<T> extends ReferableDefinition<T> {
+    private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
+
+    public Definition(T data, GlobalReferable referable, Precedence precedence) {
+      super(data, referable);
+      myPrecedence = precedence;
     }
 
     @Nonnull
     public Precedence getPrecedence() {
       return myPrecedence;
-    }
-
-    public Definition<T> getParentDefinition() {
-      return myParent;
-    }
-
-    public void setParent(Definition<T> parent) {
-      myParent = parent;
     }
 
     @Override
@@ -996,21 +987,13 @@ public final class Concrete {
   }
 
   public static class ClassField<T> extends ReferableDefinition<T> {
-    private final String myName;
     private final ClassDefinition<T> myParentClass;
     private final Expression<T> myResultType;
 
-    public ClassField(T data, String name, ClassDefinition<T> parentClass, Precedence precedence, Expression<T> resultType) {
-      super(data);
-      myName = name;
+    public ClassField(T data, GlobalReferable referable, ClassDefinition<T> parentClass, Precedence precedence, Expression<T> resultType) {
+      super(data, referable);
       myParentClass = parentClass;
       myResultType = resultType;
-    }
-
-    @Nonnull
-    @Override
-    public String textRepresentation() {
-      return myName;
     }
 
     @Nonnull
@@ -1172,25 +1155,17 @@ public final class Concrete {
   }
 
   public static class Constructor<T> extends ReferableDefinition<T> {
-    private final String myName;
     private final DataDefinition<T> myDataType;
     private final List<TypeParameter<T>> myArguments;
     private final List<ReferenceExpression<T>> myEliminatedReferences;
     private final List<FunctionClause<T>> myClauses;
 
-    public Constructor(T data, String name, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
-      super(data);
-      myName = name;
+    public Constructor(T data, GlobalReferable referable, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
+      super(data, referable);
       myDataType = dataType;
       myArguments = arguments;
       myEliminatedReferences = eliminatedReferences;
       myClauses = clauses;
-    }
-
-    @Nonnull
-    @Override
-    public String textRepresentation() {
-      return myName;
     }
 
     @Nonnull

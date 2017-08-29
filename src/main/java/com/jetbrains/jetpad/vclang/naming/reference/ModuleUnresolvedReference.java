@@ -52,6 +52,10 @@ public class ModuleUnresolvedReference implements UnresolvedReference {
     if (myResolved != null) {
       return myResolved;
     }
+    if (nameResolver == null) {
+      myResolved = this;
+      return this;
+    }
 
     ModuleNamespace moduleNamespace = nameResolver.resolveModuleNamespace(myModulePath);
     if (moduleNamespace == null) {

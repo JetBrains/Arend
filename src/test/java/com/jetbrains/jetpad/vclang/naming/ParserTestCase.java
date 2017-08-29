@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -61,29 +60,26 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseExpr(text, 0);
   }
 
-  Concrete.Definition<Position> parseDef(String text, int errors) {
+  Group parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    Concrete.Definition<Position> definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
+    Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
 
-  protected Concrete.Definition<Position> parseDef(String text) {
+  protected Group parseDef(String text) {
     return parseDef(text, 0);
   }
 
-  Group parseModule(String name, String text, int errors) {
+  Group parseModule(String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    GlobalReference reference = new GlobalReference(name);
-    Group group = errorList.isEmpty() ? new Concrete.ClassDefinition<>(new Position(SOURCE_ID, 0, 0), reference, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
-    reference.setDefinition(group);
+    Group group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
     assertThat(errorList, containsErrors(errors));
-    // module.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
     return group;
   }
 
-  protected Group parseModule(String name, String text) {
-    return parseModule(name, text, 0);
+  protected Group parseModule(String text) {
+    return parseModule(text, 0);
   }
 
 

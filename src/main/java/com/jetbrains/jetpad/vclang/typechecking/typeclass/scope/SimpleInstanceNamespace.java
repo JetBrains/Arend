@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
+// TODO[abstract]: Maybe delete this, replace with ordinary scopes
 public class SimpleInstanceNamespace<T> implements Scope {
   private final ErrorReporter<T> myErrorReporter;
   private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.Instance<T>> myInstances = Collections.emptyMap();

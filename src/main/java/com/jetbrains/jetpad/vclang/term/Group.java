@@ -7,8 +7,7 @@ import java.util.Collection;
 
 public interface Group {
   @Nonnull GlobalReferable getReferable();
-  @Nonnull Collection<? extends Group> getStaticSubgroups();
+  @Nonnull Collection<? extends Group> getSubgroups();
   @Nonnull Collection<? extends Group> getDynamicSubgroups();
   @Nonnull Collection<? extends NamespaceCommand> getNamespaceCommands();
-
 }

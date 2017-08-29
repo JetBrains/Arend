@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.error.ReportableRuntimeException;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -12,6 +11,4 @@ public interface Scope {
   Referable resolveName(String name);
 
   Collection<? extends Concrete.Instance> getInstances(); // TODO[abstract]: Replace Concrete.Instance with something else, idk
-
-  abstract class InvalidScopeException extends ReportableRuntimeException {}
 }

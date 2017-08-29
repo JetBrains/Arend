@@ -3,8 +3,10 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.*;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -14,7 +16,10 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisitor<T, Scope, Void> {
@@ -193,7 +198,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
     GlobalReferable underlyingClass = (GlobalReferable) def.getUnderlyingClass().getReferent();
     Referable classifyingField = def.getClassifyingField();
-    if (classifyingField instanceof UnresolvedReference) {
+    if (classifyingField instanceof UnresolvedReference) { // TODO[abstract]: Rewrite this using resolve method of UnresolvedReference
       Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
       GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
       if (resolvedClassifyingField == null) {
@@ -205,7 +210,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
     for (Concrete.ClassViewField<T> viewField : def.getFields()) {
       Referable underlyingField = viewField.getUnderlyingField();
-      if (underlyingField instanceof UnresolvedReference) {
+      if (underlyingField instanceof UnresolvedReference) { // TODO[abstract]: Rewrite this using resolve method of UnresolvedReference
         GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.textRepresentation());
         if (classField != null) {
           viewField.setUnderlyingField(classField);

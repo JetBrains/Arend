@@ -49,6 +49,10 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
     if (resolved != null) {
       return resolved;
     }
+    if (nameResolver == null) {
+      resolved = this;
+      return this;
+    }
     super.resolve(scope, nameResolver);
 
     for (String name : myPath) {

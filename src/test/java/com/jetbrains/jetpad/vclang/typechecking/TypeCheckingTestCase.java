@@ -4,10 +4,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteTypecheckableProvider;
+import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
-import com.jetbrains.jetpad.vclang.naming.resolving.HasOpens;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -45,7 +44,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking<>(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter<>(PRELUDE_TYPECHECKER_STATE), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking<>(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter<>(PRELUDE_TYPECHECKER_STATE), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -99,7 +98,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(Concrete.Definition<Position> definition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList(definition));
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList(definition));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -114,7 +113,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckModule(Group group, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, HasOpens.GET, ConcreteTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(group));
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, localErrorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
     return state;
   }
@@ -145,9 +144,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypeCheckModuleResult typeCheckModule(String text, int errors) {
-    Concrete.ClassDefinition<Position> classDefinition = resolveNamesModule(text);
-    TypecheckerState state = typeCheckModule(classDefinition, errors);
-    return new TypeCheckModuleResult(state, classDefinition);
+    Group module = resolveNamesModule(text);
+    TypecheckerState state = typeCheckModule(module, errors);
+    return new TypeCheckModuleResult(state, module.getReferable());
   }
 
   protected TypeCheckModuleResult typeCheckModule(String text) {
@@ -155,8 +154,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypeCheckModuleResult typeCheckModule(String instance, String global, int errors) {
-    Concrete.ClassDefinition<Position> def = (Concrete.ClassDefinition<Position>) resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
-    return new TypeCheckModuleResult(typeCheckModule(def, errors), def);
+    Group group = resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    return new TypeCheckModuleResult(typeCheckModule(group, errors), group.getReferable());
   }
 
   protected TypeCheckModuleResult typeCheckModule(String instance, String global) {

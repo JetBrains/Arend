@@ -22,13 +22,13 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   }
 
   // TODO[abstract]: What's the point of FullName here?
-  public void registerModule(Group group, FullName name, SourceIdT source) {
+  public void registerGroup(Group group, FullName name, SourceIdT source) {
     registerDefinition(group.getReferable(), name, source);
-    for (Group subGroup : group.getStaticSubgroups()) {
-      registerModule(subGroup, new FullName(subGroup.getReferable().textRepresentation()), source);
+    for (Group subGroup : group.getSubgroups()) {
+      registerGroup(subGroup, new FullName(subGroup.getReferable().textRepresentation()), source);
     }
     for (Group subGroup : group.getDynamicSubgroups()) {
-      registerModule(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
+      registerGroup(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
     }
   }
 

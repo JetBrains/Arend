@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -158,14 +159,14 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parseCase() {
-    parseModule("test",
+    parseModule(
       "\\data Nat | zero | suc Nat\n" +
       "\\function f => \\case 2 \\with { zero => zero | suc x' => x' }");
   }
 
   @Test
   public void parseCaseFail() {
-    parseModule("test",
+    parseModule(
       "\\data Nat | zero | suc Nat\n" +
       "\\function f => \\case 2 | zero => zero | suc x' => x'", -1);
   }
@@ -177,12 +178,12 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void whereFieldError() {
-    parseModule("test", "\\function f => 0 \\where | x : \\Type0", 1);
+    parseModule("\\function f => 0 \\where | x : \\Type0", 1);
   }
 
   @Test
   public void implementInFunctionError() {
-    parseModule("test",
+    parseModule(
         "\\class X {\n" +
         "  | x : Nat\n" +
         "} \\where {\n" +
@@ -224,17 +225,17 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void insideBody() {
-    parseModule("test",
+    parseModule(
       "\\function test (n : Nat)\n" +
       "  | zero => \\lam _ -> zero", 1);
   }
 
   private void postfixTest(String name) {
-    Concrete.ClassDefinition classDef = resolveNamesModule(
+    Group group = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -266,11 +267,11 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest2(String name) {
-    Concrete.ClassDefinition classDef = resolveNamesModule(
+    Group group = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -292,11 +293,11 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest3(String name) {
-    Concrete.ClassDefinition classDef = resolveNamesModule(
+    Group group = resolveNamesModule(
       "\\function \\infix 6 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -314,11 +315,11 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest4(String name) {
-    Concrete.ClassDefinition classDef = resolveNamesModule(
+    Group group = resolveNamesModule(
       "\\function \\infix 4 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -334,11 +335,11 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest5(String name1, String name2, String pr1, String pr2) {
-    Concrete.ClassDefinition classDef = resolveNamesModule(
+    Group group = resolveNamesModule(
       "\\function " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
       "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
       "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) classDef.getGlobalStatements().get(2)).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());

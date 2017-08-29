@@ -23,7 +23,7 @@ public class EmptyGroup implements Group {
 
   @Nonnull
   @Override
-  public Collection<? extends Group> getStaticSubgroups() {
+  public Collection<? extends Group> getSubgroups() {
     return Collections.emptyList();
   }
 

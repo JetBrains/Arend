@@ -18,7 +18,7 @@ public class StaticGroup extends EmptyGroup {
 
   @Nonnull
   @Override
-  public List<Group> getStaticSubgroups() {
+  public List<Group> getSubgroups() {
     return myStaticGroups;
   }
 

@@ -14,12 +14,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
-  private final Map<GlobalReferable, SimpleNamespace> classCache = new HashMap<>();
+  private final Map<GlobalReferable, SimpleNamespace> myNamespaces = new HashMap<>();
 
   @Nonnull
   @Override
   public SimpleNamespace forReferable(final GlobalReferable referable) {
-    SimpleNamespace ns = classCache.get(referable);
+    SimpleNamespace ns = myNamespaces.get(referable);
     if (ns != null) return ns;
 
     if (referable instanceof Concrete.ClassDefinition) {
@@ -28,7 +28,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       for (Concrete.ClassField field : classDefinition.getFields()) {
         ns.addDefinition(field);
       }
-      classCache.put(referable, ns);
+      myNamespaces.put(referable, ns);
 
       for (final Concrete.ReferenceExpression superClass : classDefinition.getSuperClasses()) {
         GlobalReferable superDef = Concrete.getUnderlyingClassDef(superClass);
@@ -45,7 +45,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       for (GlobalReferable viewField : ((Concrete.ClassView<?>) referable).getFields()) {
         ns.addDefinition(viewField);
       }
-      classCache.put(referable, ns);
+      myNamespaces.put(referable, ns);
     }
 
     return ns;
