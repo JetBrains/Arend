@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
@@ -30,8 +29,8 @@ public class TypeCheckingError<T> extends GeneralError<T> {
   }
 
   @Override
-  public PrettyPrintable getCausePP() {
-    return localError.getCausePP();
+  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+    return localError.getCauseDoc(src);
   }
 
   @Override

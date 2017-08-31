@@ -6,16 +6,25 @@ import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ModuleUnresolvedReference implements UnresolvedReference {
+  private final Object myData;
   private final ModulePath myModulePath;
   private final List<String> myPath;
   private Referable myResolved;
 
-  public ModuleUnresolvedReference(ModulePath modulePath, List<String> path) {
+  public ModuleUnresolvedReference(Object data, ModulePath modulePath, List<String> path) {
+    myData = data;
     myModulePath = modulePath;
     myPath = path;
+  }
+
+  @Nullable
+  @Override
+  public Object getData() {
+    return myData;
   }
 
   @Nonnull

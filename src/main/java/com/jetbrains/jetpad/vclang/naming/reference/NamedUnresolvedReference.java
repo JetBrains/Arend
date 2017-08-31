@@ -4,13 +4,22 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class NamedUnresolvedReference implements UnresolvedReference {
+  private final Object myData;
   private final String myName;
   protected Referable resolved;
 
-  public NamedUnresolvedReference(@Nonnull String name) {
+  public NamedUnresolvedReference(Object data, @Nonnull String name) {
+    myData = data;
     myName = name;
+  }
+
+  @Nullable
+  @Override
+  public Object getData() {
+    return myData;
   }
 
   @Nonnull

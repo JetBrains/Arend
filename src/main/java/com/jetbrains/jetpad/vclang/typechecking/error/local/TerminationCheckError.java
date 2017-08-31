@@ -30,7 +30,7 @@ public class TerminationCheckError<T> extends GeneralError<T> {
   }
 
   public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
-    return hList(text("In: "), refDoc(definition));
+    return refDoc(definition);
   }
 
   @Override

@@ -266,7 +266,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private static Concrete.Expression<Position> makeReference(Concrete.Expression<Position> expr, Referable referable) {
-    return cDefCall(expr, referable == null ? new NamedUnresolvedReference("\\this") : referable);
+    return cDefCall(expr, referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
   @Override

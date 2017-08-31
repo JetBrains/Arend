@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.NamespaceDuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import java.util.*;
 
@@ -20,13 +19,13 @@ public class MergeScope implements Scope {
     myScopes = Arrays.asList(scopes);
   }
 
-  public <T> void addScope(Scope scope, ErrorReporter<T> errorReporter, NamespaceCommand cmd) {
+  public <T> void addScope(Scope scope, ErrorReporter<T> errorReporter) {
     for (String name : scope.getNames()) {
       Referable ref1 = resolveName(name);
       if (ref1 != null) {
         Referable ref2 = scope.resolveName(name);
         if (ref2 != null && ref1 != ref2) {
-          errorReporter.report(new NamespaceDuplicateNameError<>(Error.Level.WARNING, ref2, ref1, cmd));
+          errorReporter.report(new NamespaceDuplicateNameError<>(Error.Level.WARNING, ref2, ref1));
         }
       }
     }

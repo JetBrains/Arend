@@ -66,17 +66,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     state = cacheManager.getTypecheckerState();
   }
 
-  private static void collectIds(Group group, Map<String, GlobalReferable> map) {
-    Position pos = ((GlobalReference) group.getReferable()).getDefinition().getData();
+  private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
+    Position pos = ((GlobalReference) reference).getDefinition().getData();
     if (pos != null) {
-      map.put(pos.line + ";" + pos.column, group.getReferable());
+      map.put(pos.line + ";" + pos.column, reference);
     }
+  }
+
+  private static void collectIds(Group group, Map<String, GlobalReferable> map) {
+    collectIds(group.getReferable(), map);
 
     for (Group subGroup : group.getSubgroups()) {
       collectIds(subGroup, map);
     }
+    for (GlobalReferable constructor : group.getConstructors()) {
+      collectIds(constructor, map);
+    }
     for (Group subGroup : group.getDynamicSubgroups()) {
       collectIds(subGroup, map);
+    }
+    for (GlobalReferable field : group.getFields()) {
+      collectIds(field, map);
     }
   }
 

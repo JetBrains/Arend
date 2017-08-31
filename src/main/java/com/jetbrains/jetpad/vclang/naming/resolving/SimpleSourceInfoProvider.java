@@ -27,8 +27,14 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
     for (Group subGroup : group.getSubgroups()) {
       registerGroup(subGroup, new FullName(subGroup.getReferable().textRepresentation()), source);
     }
+    for (GlobalReferable constructor : group.getConstructors()) {
+      registerDefinition(constructor, new FullName(constructor.textRepresentation()), source);
+    }
     for (Group subGroup : group.getDynamicSubgroups()) {
       registerGroup(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
+    }
+    for (GlobalReferable field : group.getFields()) {
+      registerDefinition(field, new FullName(name, field.textRepresentation()), source);
     }
   }
 

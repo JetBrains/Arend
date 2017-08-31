@@ -9,8 +9,8 @@ import java.util.List;
 public class LongUnresolvedReference extends NamedUnresolvedReference {
   private final List<String> myPath;
 
-  public LongUnresolvedReference(@Nonnull String name, @Nonnull List<String> path) {
-    super(name);
+  public LongUnresolvedReference(Object data, @Nonnull String name, @Nonnull List<String> path) {
+    super(data, name);
     myPath = path;
   }
 

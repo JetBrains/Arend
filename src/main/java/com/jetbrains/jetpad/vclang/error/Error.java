@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import javax.annotation.Nonnull;
@@ -25,11 +24,6 @@ public abstract class Error<T> {
     return null;
   }
 
-  // TODO[abstract]: Replace PrettyPrintable with Doc
-  public PrettyPrintable getCausePP() {
-    return null;
-  }
-
   public final Level getLevel() {
     return level;
   }
@@ -48,8 +42,7 @@ public abstract class Error<T> {
   }
 
   public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
-    PrettyPrintable causePP = getCausePP();
-    return causePP == null ? nullDoc() : hang(text("In:"), ppDoc(causePP, infoProvider));
+    return null;
   }
 
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
@@ -57,7 +50,8 @@ public abstract class Error<T> {
   }
 
   public Doc getDoc(PrettyPrinterInfoProvider src) {
-    return vHang(getHeaderDoc(src), vList(getBodyDoc(src), getCauseDoc(src)));
+    Doc cause = getCauseDoc(src);
+    return vHang(getHeaderDoc(src), vList(getBodyDoc(src), cause == null ? nullDoc() : hang(text("In:"), cause)));
   }
 
   @Override

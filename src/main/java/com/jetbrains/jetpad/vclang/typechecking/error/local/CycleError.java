@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.List;
@@ -23,8 +22,8 @@ public class CycleError<T> extends GeneralError<T> {
   }
 
   @Override
-  public PrettyPrintable getCausePP() {
-    return cycle.get(0);
+  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+    return DocFactory.ppDoc(cycle.get(0), src);
   }
 
   @Override

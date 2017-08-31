@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.NamespaceError;
+import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -27,54 +27,67 @@ public abstract class GroupResolver<T> {
     myErrorReporter = errorReporter;
   }
 
-  protected abstract void processGroup(Group group, Scope scope);
+  protected abstract void processReferable(GlobalReferable referable, Scope scope);
 
   public void resolveGroup(Group group, Scope parentScope) {
     Scope staticScope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(group.getReferable()));
     Scope dynamicScope = new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(group.getReferable()));
     MergeScope cmdScope = new MergeScope(new ArrayList<>());
     for (NamespaceCommand cmd : group.getNamespaceCommands()) {
-      Scope scope = getOpenedScope(cmd, parentScope, myNameResolver, myErrorReporter);
+      Scope scope = getOpenedScope(cmd, parentScope);
       if (scope != null) {
-        cmdScope.addScope(scope, myErrorReporter, cmd);
+        cmdScope.addScope(scope, myErrorReporter);
       }
     }
 
-    Scope scope = new MergeScope(staticScope, dynamicScope, cmdScope, parentScope);
-    processGroup(group, scope);
+    Scope scope = new MergeScope(staticScope, dynamicScope, cmdScope, parentScope); // TODO[classes]: Write tests on resolving and typechecking of classes, fields, and dynamic subgroups
+    processReferable(group.getReferable(), scope);
     for (Group subgroup : group.getSubgroups()) {
       resolveGroup(subgroup, scope);
+    }
+    for (GlobalReferable referable : group.getConstructors()) {
+      processReferable(referable, scope);
+    }
+    for (Referable reference : group.getSuperClassReferences()) {
+      resolveGlobal(reference, new MergeScope(staticScope, cmdScope, parentScope));
+    }
+    for (GlobalReferable referable : group.getFields()) {
+      processReferable(referable, scope);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       resolveGroup(subgroup, scope);
     }
   }
 
-  private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope, NameResolver nameResolver, ErrorReporter<T> errorReporter) {
-    Referable referable = cmd.getGroupReference();
+  private GlobalReferable resolveGlobal(Referable referable, Scope parentScope) {
     String refText = referable.textRepresentation();
     if (referable instanceof UnresolvedReference) {
-      referable = ((UnresolvedReference) referable).resolve(parentScope, nameResolver);
+      referable = ((UnresolvedReference) referable).resolve(parentScope, myNameResolver);
     }
 
     if (!(referable instanceof GlobalReferable)) {
-      errorReporter.report(new NamespaceError<>("'" + refText + "' is not a reference to a definition", cmd));
+      myErrorReporter.report(new ReferenceError<>("'" + refText + "' is not a reference to a definition", referable));
       return null;
     }
 
-    Scope scope = new NamespaceScope(nameResolver.nsProviders.statics.forReferable((GlobalReferable) referable));
+    return (GlobalReferable) referable;
+  }
+
+  private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope) {
+    GlobalReferable globalRef = resolveGlobal(cmd.getGroupReference(), parentScope);
+    if (globalRef == null) {
+      return null;
+    }
+
+    Scope scope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(globalRef));
     Collection<? extends Referable> refs = cmd.getSubgroupReferences();
     if (refs != null) {
       Set<String> names = new HashSet<>();
       for (Referable ref : refs) {
-        refText = ref.textRepresentation();
-        if (ref instanceof UnresolvedReference) {
-          if (!(((UnresolvedReference) ref).resolve(scope, nameResolver) instanceof GlobalReferable)) {
-            errorReporter.report(new NamespaceError<>("'" + refText + "' is not a reference to a definition", cmd));
-            continue;
-          }
+        globalRef = resolveGlobal(ref, scope);
+        if (globalRef != null) {
+          names.add(globalRef.textRepresentation());
         }
-        names.add(refText);
       }
       scope = new FilteredScope(scope, names, !cmd.isHiding());
     }
