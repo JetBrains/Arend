@@ -166,7 +166,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 

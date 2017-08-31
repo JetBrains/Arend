@@ -107,7 +107,7 @@ public class PreludeCacheGenerator {
   public static void main(String[] args) throws CachePersistenceException {
     final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>();
     final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceTypecheckableProvider.INSTANCE);
     final NameResolver nameResolver = new NameResolver(new NamespaceProviders(new SimpleModuleNamespaceProvider(), staticNsProvider, dynamicNsProvider));
 
     PreludeStorage storage = new PreludeStorage(nameResolver);

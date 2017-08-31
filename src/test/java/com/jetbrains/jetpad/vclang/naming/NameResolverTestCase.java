@@ -38,7 +38,7 @@ import static org.junit.Assert.assertThat;
 public abstract class NameResolverTestCase extends ParserTestCase {
   protected final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
   protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
-  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
+  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceTypecheckableProvider.INSTANCE);
   private   final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider);
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
 
@@ -60,7 +60,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     prelude = LOADED_PRELUDE;
 
-    staticNsProvider.collect(prelude, new DummyErrorReporter());
+    staticNsProvider.collect(prelude, DummyErrorReporter.INSTANCE);
     globalScope = new NamespaceScope(staticNsProvider.forReferable(prelude.getReferable()));
   }
 

@@ -31,7 +31,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
 
   public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
     myParentScope = parentScope;
-    myScope = new MergeScope(new LocalScope(context), parentScope);
+    myScope = context == null ? parentScope : new MergeScope(new LocalScope(context), parentScope);
     myContext = context;
     myNameResolver = nameResolver;
     myInfoProvider = infoProvider;

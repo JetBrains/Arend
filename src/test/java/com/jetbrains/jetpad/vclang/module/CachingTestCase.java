@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -96,15 +97,15 @@ public class CachingTestCase extends NameResolverTestCase {
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
     prelude = moduleLoader.load(sourceId);
-    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, new DummyErrorReporter<>(), new Prelude.UpdatePreludeReporter<>(cacheManager.getTypecheckerState()), new DependencyListener<Position>() {}).typecheckModules(Collections.singleton(this.prelude));
-    storage.setPreludeNamespace(staticNsProvider.forReferable(prelude));
+    new Typechecking<>(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter<>(cacheManager.getTypecheckerState()), new DependencyListener<Position>() {}).typecheckModules(Collections.singleton(this.prelude));
+    storage.setPreludeNamespace(staticNsProvider.forReferable(prelude.getReferable()));
   }
 
-  protected void typecheck(Concrete.ClassDefinition<Position> module) {
+  protected void typecheck(Group module) {
     typecheck(module, 0);
   }
 
-  protected void typecheck(Concrete.ClassDefinition<Position> module, int size) {
+  protected void typecheck(Group module, int size) {
     typechecking.typecheckModules(Collections.singleton(module));
     assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
   }

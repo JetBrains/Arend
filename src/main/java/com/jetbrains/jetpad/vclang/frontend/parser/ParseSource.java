@@ -63,7 +63,7 @@ public abstract class ParseSource {
     }
     if (nameResolver != null) {
       ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, compositeErrorReporter);
-      ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter);
+      ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
       new GroupNameResolver<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {

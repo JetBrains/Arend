@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.resolving;
 
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
@@ -18,7 +19,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class GroupResolver<T> {
+public class GroupResolver<T> {
   private final NameResolver myNameResolver;
   private final ErrorReporter<T> myErrorReporter;
 
@@ -27,20 +28,27 @@ public abstract class GroupResolver<T> {
     myErrorReporter = errorReporter;
   }
 
-  protected abstract void processReferable(GlobalReferable referable, Scope scope);
+  protected void processReferable(GlobalReferable referable, Scope scope) { }
 
-  public void resolveGroup(Group group, Scope parentScope) {
+  private Scope getGroupScope(Group group, Scope parentScope, boolean reportErrors) {
     Scope staticScope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(group.getReferable()));
     Scope dynamicScope = new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(group.getReferable()));
     MergeScope cmdScope = new MergeScope(new ArrayList<>());
     for (NamespaceCommand cmd : group.getNamespaceCommands()) {
       Scope scope = getOpenedScope(cmd, parentScope);
       if (scope != null) {
-        cmdScope.addScope(scope, myErrorReporter);
+        cmdScope.addScope(scope, reportErrors ? myErrorReporter : DummyErrorReporter.INSTANCE);
       }
     }
+    return new MergeScope(staticScope, dynamicScope, cmdScope, parentScope);
+  }
 
-    Scope scope = new MergeScope(staticScope, dynamicScope, cmdScope, parentScope); // TODO[classes]: Write tests on resolving and typechecking of classes, fields, and dynamic subgroups
+  public Scope getGroupScope(Group group, Scope parentScope) {
+    return getGroupScope(group, parentScope, false);
+  }
+
+  public void resolveGroup(Group group, Scope parentScope) {
+    Scope scope = getGroupScope(group, parentScope, true);
     processReferable(group.getReferable(), scope);
     for (Group subgroup : group.getSubgroups()) {
       resolveGroup(subgroup, scope);

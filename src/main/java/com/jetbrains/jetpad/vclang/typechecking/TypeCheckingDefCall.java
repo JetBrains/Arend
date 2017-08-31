@@ -14,8 +14,8 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.OverridingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
@@ -234,7 +234,7 @@ public class TypeCheckingDefCall<T> {
         if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
           Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getReferable()));
           if (leftDefinition instanceof ClassDefinition) {
-            scope = new OverridingScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(((ClassDefinition) leftDefinition).getReferable())));
+            scope = new MergeScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(leftDefinition.getReferable())));
           }
           member = scope.resolveName(name);
         }
