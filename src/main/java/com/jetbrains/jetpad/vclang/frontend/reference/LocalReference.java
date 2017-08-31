@@ -1,19 +1,37 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
+import com.jetbrains.jetpad.vclang.error.SourceInfo;
+import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
 
-public class LocalReference implements Referable {
+public class LocalReference implements Referable, SourceInfo {
+  private final Position myPosition;
   private final String myName;
 
-  public LocalReference(String name) {
+  public LocalReference(Position position, String name) {
+    myPosition = position;
     myName = name;
+  }
+
+  public Position getPosition() {
+    return myPosition;
   }
 
   @Nonnull
   @Override
   public String textRepresentation() {
     return myName;
+  }
+
+  @Override
+  public String moduleTextRepresentation() {
+    return myPosition.moduleTextRepresentation();
+  }
+
+  @Override
+  public String positionTextRepresentation() {
+    return myPosition.positionTextRepresentation();
   }
 }

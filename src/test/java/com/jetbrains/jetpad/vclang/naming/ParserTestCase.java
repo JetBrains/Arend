@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -60,14 +61,14 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseExpr(text, 0);
   }
 
-  Group parseDef(String text, int errors) {
+  GlobalReference parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
     Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
     assertThat(errorList, containsErrors(errors));
-    return definition;
+    return definition == null ? null : (GlobalReference) definition.getReferable();
   }
 
-  protected Group parseDef(String text) {
+  protected GlobalReference parseDef(String text) {
     return parseDef(text, 0);
   }
 

@@ -16,6 +16,6 @@ public class NamespaceDuplicateNameError<T> extends ReferenceError<T> {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
-    return ReferableDuplicateNameError.getBodyDoc(referable, previous);
+    return DuplicateNameError.getBodyDoc(referable, previous);
   }
 }

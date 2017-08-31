@@ -49,7 +49,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     ToAbstractVisitor visitor = new ToAbstractVisitor(flags, collector, names);
     for (Variable variable : variables) {
       if (variable instanceof Binding) {
-        names.put((Binding) variable, new LocalReference(visitor.getFreshName((Binding) variable, variables)));
+        names.put((Binding) variable, ref(visitor.getFreshName((Binding) variable, variables)));
       }
     }
     return expression.accept(visitor, null);
@@ -338,7 +338,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (nullable && !freeVars.contains(var)) {
       return null;
     }
-    LocalReference reference = new LocalReference(getFreshName(var, freeVars));
+    LocalReference reference = ref(getFreshName(var, freeVars));
     myNames.put(var, reference);
     return reference;
   }

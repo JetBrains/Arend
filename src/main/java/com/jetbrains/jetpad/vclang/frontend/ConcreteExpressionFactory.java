@@ -93,7 +93,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static LocalReference ref(String name) {
-    return new LocalReference(name);
+    return new LocalReference(POSITION, name);
   }
 
   public static List<Referable> cvars(Referable... vars) {

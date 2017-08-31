@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.ReferableDuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.HashMap;
@@ -26,7 +26,7 @@ public class SimpleNamespace implements Namespace {
   private void addDefinition(String name, final GlobalReferable def, ErrorReporter errorReporter) {
     final GlobalReferable prev = myNames.putIfAbsent(name, def);
     if (!(prev == null || prev == def)) {
-      errorReporter.report(new ReferableDuplicateNameError(Error.Level.ERROR, def, prev));
+      errorReporter.report(new DuplicateNameError(Error.Level.ERROR, def, prev));
     }
   }
 

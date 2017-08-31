@@ -1,16 +1,20 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
@@ -20,6 +24,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +60,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
     prelude = LOADED_PRELUDE;
 
-    globalScope = new NamespaceScope(SimpleStaticNamespaceProvider.forClass(prelude));
+    staticNsProvider.collect(prelude, new DummyErrorReporter());
+    globalScope = new NamespaceScope(staticNsProvider.forReferable(prelude.getReferable()));
   }
 
 
@@ -96,19 +102,21 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(errorList, containsErrors(errors));
   }
 
-  Group resolveNamesDef(String text, int errors) {
-    Group result = parseDef(text);
-    resolveNamesDef(result, errors);
+  GlobalReference resolveNamesDef(String text, int errors) {
+    GlobalReference result = parseDef(text);
+    resolveNamesDef((Concrete.Definition<Position>) result.getDefinition(), errors);
     return result;
   }
 
-  protected Group resolveNamesDef(String text) {
+  protected GlobalReference resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 
 
   private void resolveNamesModule(Group group, int errors) {
-    resolveNamesDef(group, errors);
+    GroupNameResolver<Position> groupNameResolver = new GroupNameResolver<>(nameResolver, SourceInfoProvider.TRIVIAL, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    groupNameResolver.resolveGroup(group, new EmptyScope());
+    assertThat(errorList, containsErrors(errors));
   }
 
   // FIXME[tests] should be package-private

@@ -48,9 +48,6 @@ public abstract class GroupResolver<T> {
     for (GlobalReferable referable : group.getConstructors()) {
       processReferable(referable, scope);
     }
-    for (Referable reference : group.getSuperClassReferences()) {
-      resolveGlobal(reference, new MergeScope(staticScope, cmdScope, parentScope));
-    }
     for (GlobalReferable referable : group.getFields()) {
       processReferable(referable, scope);
     }

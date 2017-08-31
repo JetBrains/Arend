@@ -4,9 +4,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -79,7 +80,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   protected CheckTypeVisitor.Result typeCheckExpr(List<Binding> context, String text, Expression expectedType, int errors) {
     Map<Referable, Binding> mapContext = new HashMap<>();
     for (Binding binding : context) {
-      mapContext.put(new LocalReference(binding.getName()), binding);
+      mapContext.put(ConcreteExpressionFactory.ref(binding.getName()), binding);
     }
     return typeCheckExpr(mapContext, resolveNamesExpr(mapContext, text), expectedType, errors);
   }
@@ -97,8 +98,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private Definition typeCheckDef(Concrete.Definition<Position> definition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList(definition));
+  private Definition typeCheckDef(GlobalReference definition, int errors) {
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition<Position>) definition.getDefinition()));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(definition);
   }
@@ -154,7 +155,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypeCheckModuleResult typeCheckModule(String instance, String global, int errors) {
-    Group group = resolveNamesDef("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    Group group = resolveNamesModule("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
     return new TypeCheckModuleResult(typeCheckModule(group, errors), group.getReferable());
   }
 

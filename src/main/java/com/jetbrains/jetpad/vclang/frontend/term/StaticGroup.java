@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.term;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
@@ -41,12 +40,6 @@ public class StaticGroup implements Group {
   @Nonnull
   @Override
   public Collection<? extends GlobalReferable> getConstructors() {
-    return Collections.emptyList();
-  }
-
-  @Nonnull
-  @Override
-  public Collection<? extends Referable> getSuperClassReferences() {
     return Collections.emptyList();
   }
 

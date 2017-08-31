@@ -48,7 +48,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return null;
   }
 
-  private boolean getVars(BinOpArgumentContext expr, List<LocalReference> vars, List<Concrete.Parameter<Position>> args, boolean isExplicit) {
+  private boolean getVars(BinOpArgumentContext expr, List<LocalReference> vars) {
     String firstArg = getVar(expr.atomFieldsAcc());
     if (firstArg == null) {
       return false;
@@ -57,13 +57,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       firstArg = null;
     }
 
-    LocalReference firstVar = new LocalReference(firstArg);
-    if (vars != null) {
-      vars.add(firstVar);
-    }
-    if (args != null) {
-      args.add(new Concrete.NameParameter<>(tokenPosition(expr.atomFieldsAcc().start), isExplicit, firstVar));
-    }
+    vars.add(new LocalReference(tokenPosition(expr.atomFieldsAcc().start), firstArg));
     for (ArgumentContext argument : expr.argument()) {
       if (!(argument instanceof ArgumentExplicitContext)) {
         return false;
@@ -77,18 +71,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         arg = null;
       }
 
-      LocalReference var = new LocalReference(arg);
-      if (vars != null) {
-        vars.add(var);
-      }
-      if (args != null) {
-        args.add(new Concrete.NameParameter<>(tokenPosition(((ArgumentExplicitContext) argument).atomFieldsAcc().start), isExplicit, var));
-      }
+      vars.add(new LocalReference(tokenPosition(((ArgumentExplicitContext) argument).atomFieldsAcc().start), arg));
     }
     return true;
   }
 
-  private boolean getVars(ExprContext expr, List<LocalReference> vars, List<Concrete.Parameter<Position>> args, boolean isExplicit) {
+  private boolean getVars(ExprContext expr, List<LocalReference> vars) {
     if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).maybeNew() instanceof NoNewContext && ((BinOpContext) expr).implementStatements() == null && ((BinOpContext) expr).postfix().isEmpty())) {
       return false;
     }
@@ -97,32 +85,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (!(leftCtx.maybeNew() instanceof NoNewContext && leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.implementStatements() == null && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null)) {
         return false;
       }
-      if (!getVars((BinOpArgumentContext) leftCtx.binOpArg(), vars, args, isExplicit)) {
+      if (!getVars((BinOpArgumentContext) leftCtx.binOpArg(), vars)) {
         return false;
       }
 
-      LocalReference var = new LocalReference(leftCtx.infix().INFIX().getText());
-      if (vars != null) {
-        vars.add(var);
-      }
-      if (args != null) {
-        args.add(new Concrete.NameParameter<>(tokenPosition(leftCtx.infix().start), isExplicit, var));
-      }
+      vars.add(new LocalReference(tokenPosition(leftCtx.infix().start), leftCtx.infix().INFIX().getText()));
     }
 
-    return getVars((BinOpArgumentContext) ((BinOpContext) expr).binOpArg(), vars, args, isExplicit);
+    return getVars((BinOpArgumentContext) ((BinOpContext) expr).binOpArg(), vars);
   }
 
-  private void getVarList(ExprContext expr, List<TerminalNode> infixList, List<LocalReference> vars, List<Concrete.Parameter<Position>> args, boolean isExplicit) {
-    if (getVars(expr, vars, args, isExplicit)) {
+  private void getVarList(ExprContext expr, List<TerminalNode> infixList, List<LocalReference> vars) {
+    if (getVars(expr, vars)) {
       for (TerminalNode infix : infixList) {
-        LocalReference var = new LocalReference(infix.getText());
-        if (vars != null) {
-          vars.add(var);
-        }
-        if (args != null) {
-          args.add(new Concrete.NameParameter<>(tokenPosition(infix.getSymbol()), isExplicit, var));
-        }
+        vars.add(new LocalReference(tokenPosition(infix.getSymbol()), infix.getText()));
       }
     } else {
       myErrorReporter.report(new ParserError(tokenPosition(expr.getStart()), "Expected a list of variables"));
@@ -132,9 +108,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private List<LocalReference> getVars(TypedVarsContext ctx) {
     List<LocalReference> result = new ArrayList<>(ctx.id().size() + 1);
-    result.add(new LocalReference(ctx.INFIX().getText()));
+    result.add(new LocalReference(tokenPosition(ctx.INFIX().getSymbol()), ctx.INFIX().getText()));
     for (IdContext idCtx : ctx.id()) {
-      result.add(new LocalReference(idCtx.getText()));
+      result.add(new LocalReference(tokenPosition(idCtx.start), idCtx.getText()));
     }
     return result;
   }
@@ -343,7 +319,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     if (ctx.atomPatternOrID().size() == 0) {
-      return new Concrete.NamePattern<>(tokenPosition(ctx.start), new LocalReference(visitPrefix(ctx.prefix())));
+      return new Concrete.NamePattern<>(tokenPosition(ctx.start), new LocalReference(tokenPosition(ctx.prefix().start), visitPrefix(ctx.prefix())));
     } else {
       List<Concrete.Pattern<Position>> patterns = new ArrayList<>(ctx.atomPatternOrID().size());
       for (AtomPatternOrIDContext atomCtx : ctx.atomPatternOrID()) {
@@ -385,13 +361,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.getStart());
-    return new Concrete.NamePattern<>(position, new LocalReference(visitPrefix(ctx.prefix())));
+    return new Concrete.NamePattern<>(position, new LocalReference(tokenPosition(ctx.prefix().start), visitPrefix(ctx.prefix())));
   }
 
   @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     Position position = tokenPosition(ctx.getStart());
-    return new Concrete.NamePattern<>(position, new LocalReference(null));
+    return new Concrete.NamePattern<>(position, new LocalReference(position, null));
   }
 
   @Override
@@ -413,7 +389,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       fieldReferences.add(visitClassViewField(classViewFieldContext, classView));
     }
 
-    return new ClassViewGroup(reference, Collections.emptyList(), fieldReferences);
+    return new ClassViewGroup(reference, fieldReferences);
   }
 
   private GlobalReference visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView<Position> classView) {
@@ -611,7 +587,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public ClassGroup visitDefClass(DefClassContext ctx) {
     List<Concrete.TypeParameter<Position>> polyParameters = visitTeles(ctx.tele());
     List<Concrete.ReferenceExpression<Position>> superClasses = ctx.atomFieldsAcc().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.atomFieldsAcc().size());
-    List<Referable> superClassReferences = ctx.atomFieldsAcc().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.atomFieldsAcc().size());
     List<Concrete.ClassField<Position>> fields = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Concrete.ClassFieldImpl<Position>> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Group> staticSubgroups = new ArrayList<>();
@@ -643,7 +618,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       fieldReferences = Collections.emptyList();
     }
 
-    return new ClassGroup(reference, superClassReferences, dynamicSubgroups, fieldReferences, staticSubgroups, namespaceCommands);
+    return new ClassGroup(reference, dynamicSubgroups, fieldReferences, staticSubgroups, namespaceCommands);
   }
 
   @Override
@@ -698,17 +673,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (typedExpr instanceof TypedVarsContext) {
         vars = getVars((TypedVarsContext) typedExpr);
         typeExpr = visitExpr(((TypedVarsContext) typedExpr).expr());
-      } else
-      if (typedExpr instanceof TypedContext) {
-        vars = new ArrayList<>();
-        getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX(), vars, null, explicit);
-        typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
-      } else if (typedExpr instanceof NotTypedContext) {
-        vars = null;
-        getVarList(((NotTypedContext) typedExpr).expr(), Collections.emptyList(), null, arguments, explicit);
-        typeExpr = null;
       } else {
-        throw new IllegalStateException();
+        vars = new ArrayList<>();
+        if (typedExpr instanceof TypedContext) {
+          getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX(), vars);
+          typeExpr = visitExpr(((TypedContext) typedExpr).expr(1));
+        } else if (typedExpr instanceof NotTypedContext) {
+          getVarList(((NotTypedContext) typedExpr).expr(), Collections.emptyList(), vars);
+          for (LocalReference var : vars) {
+            arguments.add(new Concrete.NameParameter<>(var.getPosition(), explicit, var));
+          }
+          typeExpr = null;
+        } else {
+          throw new IllegalStateException();
+        }
       }
       if (typeExpr != null) {
         arguments.add(new Concrete.TelescopeParameter<>(tokenPosition(tele.getStart()), explicit, vars, typeExpr));
@@ -719,7 +697,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
         if (literalContext instanceof NameContext && ((NameContext) literalContext).prefix().PREFIX() != null) {
           TerminalNode id = ((NameContext) literalContext).prefix().PREFIX();
-          arguments.add(new Concrete.NameParameter<>(tokenPosition(id.getSymbol()), true, new LocalReference(id.getText())));
+          arguments.add(new Concrete.NameParameter<>(tokenPosition(id.getSymbol()), true, new LocalReference(tokenPosition(id.getSymbol()), id.getText())));
         } else if (literalContext instanceof UnknownContext) {
           arguments.add(new Concrete.NameParameter<>(tokenPosition(literalContext.getStart()), true, null));
         } else {
@@ -938,7 +916,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
       if (typedExpr instanceof TypedContext) {
         List<LocalReference> vars = new ArrayList<>();
-        getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX(), vars, null, explicit);
+        getVarList(((TypedContext) typedExpr).expr(0), ((TypedContext) typedExpr).INFIX(), vars);
         arguments.add(new Concrete.TelescopeParameter<>(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
       } else
       if (typedExpr instanceof TypedVarsContext) {
@@ -1109,7 +1087,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.LetClause<Position> visitLetClause(LetClauseContext ctx) {
     List<Concrete.Parameter<Position>> arguments = visitLamTeles(ctx.tele());
     Concrete.Expression<Position> resultType = ctx.typeAnnotation() == null ? null : visitExpr(ctx.typeAnnotation().expr());
-    return new Concrete.LetClause<>(tokenPosition(ctx.getStart()), new LocalReference(visitId(ctx.id())), arguments, resultType, visitExpr(ctx.expr()));
+    return new Concrete.LetClause<>(tokenPosition(ctx.getStart()), new LocalReference(tokenPosition(ctx.id().start), visitId(ctx.id())), arguments, resultType, visitExpr(ctx.expr()));
   }
 
   @Override
