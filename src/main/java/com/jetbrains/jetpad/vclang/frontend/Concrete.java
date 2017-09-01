@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.frontend.resolving.OpenCommand;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract.Precedence;
 import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.AbstractLevelExpressionVisitor;
@@ -140,7 +141,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, 0), new Precedence(Abstract.Expression.PREC));
       return builder.toString();
     }
 

@@ -418,6 +418,11 @@ public final class Abstract {
       this.priority = priority;
     }
 
+    public Precedence(byte prec) {
+      this.associativity = Associativity.NON_ASSOC;
+      this.priority = prec;
+    }
+
     @Override
     public String toString() {
       String result = "infix";
