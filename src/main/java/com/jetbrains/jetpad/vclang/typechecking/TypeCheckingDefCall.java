@@ -154,10 +154,12 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-        LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left);
-        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
-        myVisitor.getErrorReporter().report(error);
+        if (!type.isInstance(ErrorExpression.class)) {
+          ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
+          LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left);
+          expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));
+          myVisitor.getErrorReporter().report(error);
+        }
         return null;
       }
 

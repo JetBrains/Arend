@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.Concrete.LocalVariable;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -20,17 +19,10 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Zero;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(Abstract.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    ToAbstractVisitor.convert(expr, new ConcreteExpressionFactory(), flags).accept(new PrettyPrintVisitor(builder, 0), Abstract.Precedence.DEFAULT);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertEquals(expected, result);
   }

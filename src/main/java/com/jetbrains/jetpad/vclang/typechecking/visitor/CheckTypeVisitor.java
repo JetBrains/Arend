@@ -299,6 +299,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return myErrorReporter;
   }
 
+  public void setErrorReporter(LocalErrorReporter errorReporter) {
+    myErrorReporter = errorReporter;
+  }
+
   public Equations getEquations() {
     return myEquations;
   }
@@ -335,9 +339,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return true;
     }
 
-    LocalTypeCheckingError error = new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr);
-    expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
-    myErrorReporter.report(error);
+    if (!result.type.isInstance(ErrorExpression.class)) {
+      LocalTypeCheckingError error = new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr);
+      expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+      myErrorReporter.report(error);
+    }
     return false;
   }
 
@@ -366,20 +372,20 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       result.type = result.type.subst(new ExprSubstitution(), substitution);
     }
 
-    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(myErrorReporter);
+    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(Error.Level.ERROR, myErrorReporter);
     result.expression = result.expression.strip(counter);
     result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
     return result;
   }
 
-  public Type checkType(Abstract.Expression expr) {
+  private Type checkType(Abstract.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
       myErrorReporter.report(error);
       return null;
     }
 
-    Result result = expr.accept(this, ExpectedType.OMEGA);
+    Result result = expr.accept(this, expectedType);
     if (result == null) {
       return null;
     }
@@ -392,9 +398,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (universe == null) {
       Expression stuck = type.getStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isInstance(ErrorExpression.class)) {
-        LocalTypeCheckingError error = new TypeMismatchError(text("a universe"), termDoc(result.type), expr);
-        expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
-        myErrorReporter.report(error);
+        if (!result.type.isInstance(ErrorExpression.class)) {
+          LocalTypeCheckingError error = new TypeMismatchError(text("a universe"), termDoc(result.type), expr);
+          expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+          myErrorReporter.report(error);
+        }
         return null;
       }
 
@@ -408,8 +416,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return new TypeExpression(result.expression, universe.getSort());
   }
 
-  public Type finalCheckType(Abstract.Expression expr) {
-    Type result = checkType(expr);
+  public Type finalCheckType(Abstract.Expression expr, ExpectedType expectedType) {
+    Type result = checkType(expr, expectedType);
     if (result == null) return null;
     return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(myErrorReporter);
   }
@@ -512,7 +520,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   private SingleDependentLink visitTypeParameter(Abstract.TypeParameter param) {
     Abstract.Expression paramType = param.getType();
-    Type argResult = checkType(paramType);
+    Type argResult = checkType(paramType, ExpectedType.OMEGA);
     if (argResult == null) return null;
 
     if (param instanceof Abstract.TelescopeParameter) {
@@ -613,8 +621,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
-            LocalTypeCheckingError error = new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType);
-            myErrorReporter.report(error);
+            if (!argType.isInstance(ErrorExpression.class)) {
+              myErrorReporter.report(new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType));
+            }
             return null;
           }
 
@@ -667,8 +676,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       if (result != null) {
         expr.setWellTyped(myContext, result.expression);
         if (expectedType != null && !(expectedType instanceof Expression)) {
-          LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr);
-          myErrorReporter.report(error);
+          if (!result.type.isInstance(ErrorExpression.class)) {
+            myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
+          }
           return null;
         }
       }
@@ -683,7 +693,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       for (Abstract.TypeParameter arg : expr.getParameters()) {
-        Type result = checkType(arg.getType());
+        Type result = checkType(arg.getType(), ExpectedType.OMEGA);
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeParameter) {
@@ -705,7 +715,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
         sorts.add(result.getSortOfType());
       }
 
-      Type result = checkType(expr.getCodomain());
+      Type result = checkType(expr.getCodomain(), ExpectedType.OMEGA);
       if (result == null) return null;
       Sort codSort = result.getSortOfType();
 
@@ -858,7 +868,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       for (Abstract.TypeParameter arg : parameters) {
-        Type result = checkType(arg.getType());
+        Type result = checkType(arg.getType(), ExpectedType.OMEGA);
         if (result == null) return null;
 
         if (arg instanceof Abstract.TelescopeParameter) {
@@ -994,9 +1004,11 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (exprResult == null) return null;
     exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!exprResult.type.isInstance(SigmaExpression.class)) {
-      LocalTypeCheckingError error = new TypeMismatchError(text("A sigma type"), termDoc(exprResult.type), expr1);
-      expr.setWellTyped(myContext, new ErrorExpression(null, error));
-      myErrorReporter.report(error);
+      if (!exprResult.type.isInstance(ErrorExpression.class)) {
+        LocalTypeCheckingError error = new TypeMismatchError(text("A sigma type"), termDoc(exprResult.type), expr1);
+        expr.setWellTyped(myContext, new ErrorExpression(null, error));
+        myErrorReporter.report(error);
+      }
       return null;
     }
 
@@ -1141,7 +1153,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  public boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
+  private boolean checkAllImplemented(ClassCallExpression classCall, Abstract.Expression expr) {
     int notImplemented = classCall.getDefinition().getFields().size() - classCall.getDefinition().getImplemented().size() - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
@@ -1163,7 +1175,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (parameters.isEmpty()) {
       Abstract.Expression letResult = letClause.getResultType();
       if (letResult != null) {
-        Type type = checkType(letResult);
+        Type type = checkType(letResult, ExpectedType.OMEGA);
         if (type == null) return null;
         return checkExpr(letClause.getTerm(), type.getExpr());
       } else {

@@ -13,7 +13,7 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataWithoutTypeOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (n : Nat) | con1 (n = n) | con2 Nat");
-    assertEquals(Sort.SET0, dataDefinition.getSort());
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1, 1)), dataDefinition.getSort());
   }
 
   @Test
@@ -30,6 +30,12 @@ public class DataPolyTest extends TypeCheckingTestCase {
   @Test
   public void dataWithTypeOmega() {
     DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) | con1 (n = n) | con2 Nat | con3 (D A n)");
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1, 1)), dataDefinition.getSort());
+  }
+
+  @Test
+  public void dataWithTypeOmega2() {
+    DataDefinition dataDefinition = (DataDefinition) typeCheckDef("\\data D (A : \\Type) (n : Nat) : \\Set0 | con1 (n = n) | con2 Nat | con3 (D A n)");
     assertEquals(Sort.SET0, dataDefinition.getSort());
   }
 
