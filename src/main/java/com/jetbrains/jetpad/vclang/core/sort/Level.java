@@ -110,6 +110,9 @@ public class Level {
     if (level == null) {
       return this;
     }
+    if (level == INFINITY) {
+      return INFINITY;
+    }
 
     if (level.myVar != null) {
       int constant = level.myConstant + myConstant;

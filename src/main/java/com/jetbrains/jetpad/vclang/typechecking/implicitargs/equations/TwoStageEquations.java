@@ -349,6 +349,10 @@ public class TwoStageEquations implements Equations {
   }
 
   private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {
+    if (myConstantUpperBounds.isEmpty()) {
+      return;
+    }
+
     LevelVariable errorLowerBound = null;
     InferenceLevelVariable errorVar = null;
 
@@ -415,13 +419,15 @@ public class TwoStageEquations implements Equations {
       reportCycle(cycle, unBased);
     }
 
-    for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
-      if (unBased.contains(vars.proj2)) {
-        Integer sol = solution.get(vars.proj2);
-        if (sol != null && sol == 0) {
-          myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
-          myBasedPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
-          myConstantUpperBounds.remove(vars.proj1);
+    if (!unBased.isEmpty()) {
+      for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
+        if (unBased.contains(vars.proj2)) {
+          Integer sol = solution.get(vars.proj2);
+          if (sol != null && sol == 0) {
+            myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
+            myBasedPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
+            myConstantUpperBounds.remove(vars.proj1);
+          }
         }
       }
     }
@@ -460,7 +466,7 @@ public class TwoStageEquations implements Equations {
       Level level = result.get(entry.getKey());
       if (!Level.compare(level, new Level(entry.getValue().getVariable2(), constant, maxConstant <= constant ? 0 : maxConstant - constant), CMP.LE, DummyEquations.getInstance(), null)) {
         List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);
-        equations.add(level.getMaxAddedConstant() <= entry.getValue().getConstant() || level.getMaxAddedConstant() <= entry.getValue().getMaxConstant() ? new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()) : new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));
+        equations.add(level.isInfinity() ? new LevelEquation<>(entry.getKey()) : level.getMaxAddedConstant() <= entry.getValue().getConstant() || level.getMaxAddedConstant() <= entry.getValue().getMaxConstant() ? new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()) : new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));
         equations.add(entry.getValue());
         myVisitor.getErrorReporter().report(new SolveLevelEquationsError(equations, entry.getKey().getSourceNode()));
       }
