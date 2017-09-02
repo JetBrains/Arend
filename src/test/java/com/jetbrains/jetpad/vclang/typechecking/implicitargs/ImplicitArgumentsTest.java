@@ -1,11 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
@@ -262,8 +264,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", type));
 
     CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam x1 x2 x3 => f x1 x2 x3", null);
-    A.setType(Universe(0, 0));
-    B.setType(Pi(Ref(A), Universe(0, 0)));
+    A.setType(Universe(new Level(0), new Level(LevelVariable.HVAR)));
+    B.setType(Pi(Ref(A), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     assertEquals(type, result.type);
   }
 

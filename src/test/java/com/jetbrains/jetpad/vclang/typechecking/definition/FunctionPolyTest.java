@@ -30,6 +30,12 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
   @Test
   public void funWithTypeOmega() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) => n = n");
+    assertEquals(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1)), funDefinition.getResultType().toSort());
+  }
+
+  @Test
+  public void funWithTypeOmega2() {
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\function f (A : \\Type) (n : Nat) : \\Prop => n = n");
     assertEquals(Sort.PROP, funDefinition.getResultType().toSort());
   }
 
