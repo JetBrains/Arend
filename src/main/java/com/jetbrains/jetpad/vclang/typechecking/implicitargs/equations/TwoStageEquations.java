@@ -456,7 +456,7 @@ public class TwoStageEquations implements Equations {
 
     for (Map.Entry<InferenceLevelVariable, LevelEquation<LevelVariable>> entry : myConstantUpperBounds.entrySet()) {
       int constant = entry.getValue().getConstant();
-      int maxConstant = entry.getValue().getMaxConstant();
+      int maxConstant = entry.getValue().getMaxConstant() == null ? 0 : entry.getValue().getMaxConstant();
       Level level = result.get(entry.getKey());
       if (!Level.compare(level, new Level(entry.getValue().getVariable2(), constant, maxConstant <= constant ? 0 : maxConstant - constant), CMP.LE, DummyEquations.getInstance(), null)) {
         List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);

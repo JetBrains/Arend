@@ -83,7 +83,7 @@ public class PatternTypechecking {
     // Typecheck the RHS
     CheckTypeVisitor.Result tcResult;
     if (abstractParameters != null) {
-      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType);
+      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
     } else {
       tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
     }

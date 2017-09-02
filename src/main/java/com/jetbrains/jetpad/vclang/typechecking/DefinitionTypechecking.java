@@ -246,7 +246,7 @@ class DefinitionTypechecking {
     Expression expectedType = null;
     Abstract.Expression resultType = def.getResultType();
     if (resultType != null) {
-      Type expectedTypeResult = visitor.finalCheckType(resultType, ExpectedType.OMEGA);
+      Type expectedTypeResult = def.getBody() instanceof Abstract.ElimFunctionBody ? visitor.finalCheckType(resultType, ExpectedType.OMEGA) : visitor.checkType(resultType, ExpectedType.OMEGA);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -289,13 +289,13 @@ class DefinitionTypechecking {
         }
       }
     } else {
-      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType);
+      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Abstract.TermFunctionBody) body).getTerm(), expectedType, true);
       if (termResult != null) {
-        typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
-        if (expectedType == null) {
-          typedDef.setResultType(termResult.type);
+        if (termResult.expression != null) {
+          typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+          clauses = Collections.emptyList();
         }
-        clauses = Collections.emptyList();
+        typedDef.setResultType(termResult.type);
       }
     }
 
@@ -620,7 +620,7 @@ class DefinitionTypechecking {
       Abstract.SourceNode alreadyImplementedSourceNode = null;
 
       for (Abstract.SuperClass aSuperClass : def.getSuperClasses()) {
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass.getSuperClass(), null);
+        CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass.getSuperClass(), null, false);
         if (result == null) {
           classOk = false;
           continue;
@@ -669,7 +669,7 @@ class DefinitionTypechecking {
           TypedDependentLink thisParameter = createThisParam(typedDef);
           visitor.getFreeBindings().add(thisParameter);
           visitor.setThis(typedDef, thisParameter);
-          CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
+          CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)), false);
           typedDef.implementField(field, new ClassDefinition.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
           if (result == null || result.expression.isInstance(ErrorExpression.class)) {
             classOk = false;

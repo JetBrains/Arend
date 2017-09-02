@@ -363,22 +363,36 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     return expr.accept(this, expectedType);
   }
 
-  public Result finalCheckExpr(Abstract.Expression expr, ExpectedType expectedType) {
+  public Result finalCheckExpr(Abstract.Expression expr, ExpectedType expectedType, boolean returnExpectedType) {
+    if (!(expectedType instanceof Expression)) {
+      returnExpectedType = false;
+    }
+
     Result result = checkExpr(expr, expectedType);
-    if (result == null) return null;
+    if (result == null && !returnExpectedType) return null;
     LevelSubstitution substitution = myEquations.solve(expr);
+    if (returnExpectedType) {
+      if (result == null) {
+        result = new Result(null, null);
+      }
+      result.type = (Expression) expectedType;
+    }
     if (!substitution.isEmpty()) {
-      result.expression = result.expression.subst(substitution);
+      if (result.expression != null) {
+        result.expression = result.expression.subst(substitution);
+      }
       result.type = result.type.subst(new ExprSubstitution(), substitution);
     }
 
     LocalErrorReporterCounter counter = new LocalErrorReporterCounter(Error.Level.ERROR, myErrorReporter);
-    result.expression = result.expression.strip(counter);
+    if (result.expression != null) {
+      result.expression = result.expression.strip(counter);
+    }
     result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
     return result;
   }
 
-  private Type checkType(Abstract.Expression expr, ExpectedType expectedType) {
+  public Type checkType(Abstract.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
       myErrorReporter.report(error);
