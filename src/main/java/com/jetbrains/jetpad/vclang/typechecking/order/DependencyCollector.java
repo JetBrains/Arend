@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 
 import java.util.*;
 
@@ -22,6 +22,10 @@ public class DependencyCollector<T> implements DependencyListener<T> {
   }
 
   public void update(Concrete.Definition<T> definition) {
+    if (myState.getTypechecked(definition.getReferable()) != null) {
+      return;
+    }
+
     Set<Concrete.Definition<T>> updated = new HashSet<>();
     Stack<Concrete.Definition<T>> stack = new Stack<>();
     stack.push(definition);

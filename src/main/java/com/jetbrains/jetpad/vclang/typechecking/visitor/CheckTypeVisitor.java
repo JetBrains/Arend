@@ -362,7 +362,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
 
     LocalErrorReporterCounter<T> counter = new LocalErrorReporterCounter<>(myErrorReporter);
     result.expression = result.expression.strip(counter);
-    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : new DummyLocalErrorReporter());
+    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : DummyLocalErrorReporter.INSTANCE);
     return result;
   }
 

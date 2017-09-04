@@ -11,17 +11,15 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -955,10 +953,12 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void resolvedConstructorTest() {
-    Concrete.ClassDefinition<Position> cd = resolveNamesModule(
+    Group cd = resolveNamesModule(
         "\\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
-    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((Concrete.DefineStatement) cd.getGlobalStatements().get(1)).getDefinition();
+    Iterator<? extends Group> it = cd.getSubgroups().iterator();
+    it.next();
+    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition();
     ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
     typeCheckModule(cd);
   }

@@ -98,10 +98,10 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private Definition typeCheckDef(GlobalReference definition, int errors) {
-    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition<Position>) definition.getDefinition()));
+  private Definition typeCheckDef(GlobalReference reference, int errors) {
+    new Typechecking<>(state, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter.Dummy<>(), new DependencyListener<Position>() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition<Position>) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
-    return state.getTypechecked(definition);
+    return state.getTypechecked(reference);
   }
 
   protected Definition typeCheckDef(String text, int errors) {

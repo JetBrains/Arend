@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     StringBuilder builder = new StringBuilder();
     def.accept(new PrettyPrintVisitor<>(builder, sourceInfoProvider, 0), null);
 
-    Concrete.FunctionDefinition<Position> result = (Concrete.FunctionDefinition<Position>) resolveNamesDef(builder.toString());
+    Concrete.FunctionDefinition<Position> result = (Concrete.FunctionDefinition<Position>) resolveNamesDef(builder.toString()).getDefinition();
     List<Concrete.TypeParameter<Position>> expectedArguments = new ArrayList<>();
     for (Concrete.Parameter<Position> argument : expected.getParameters()) {
       expectedArguments.add((Concrete.TypeParameter<Position>) argument);
@@ -109,8 +108,8 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference t = ref("t");
     LocalReference y = ref("y");
     LocalReference z = ref("z");
-    GlobalReference reference = new GlobalReference("f");
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, Precedence.DEFAULT, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))), Collections.emptyList());
+    GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }

@@ -891,7 +891,7 @@ public final class Concrete {
     return null;
   }
 
-  public static abstract class ReferableDefinition<T> extends SourceNode<T> /* TODO[abstract]: Do not implement SourceNode */ implements GlobalReferable {
+  public static abstract class ReferableDefinition<T> extends SourceNode<T> /* TODO[abstract]: Do not implement SourceNode, we can put Position to GlobalReference */ implements GlobalReferable {
     private final GlobalReferable myReferable;
 
     public ReferableDefinition(T data, GlobalReferable referable) {
@@ -913,16 +913,8 @@ public final class Concrete {
   }
 
   public static abstract class Definition<T> extends ReferableDefinition<T> {
-    private final Precedence myPrecedence; // TODO[abstract]: Get rid of precedence
-
-    public Definition(T data, GlobalReferable referable, Precedence precedence) {
+    public Definition(T data, GlobalReferable referable) {
       super(data, referable);
-      myPrecedence = precedence;
-    }
-
-    @Nonnull
-    public Precedence getPrecedence() {
-      return myPrecedence;
     }
 
     @Override
@@ -949,7 +941,7 @@ public final class Concrete {
     private final List<ClassFieldImpl<T>> myImplementations;
 
     public ClassDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> superClasses, List<ClassField<T>> fields, List<ClassFieldImpl<T>> implementations) {
-      super(data, referable, Precedence.DEFAULT);
+      super(data, referable);
       myParameters = parameters;
       mySuperClasses = superClasses;
       myFields = fields;
@@ -990,7 +982,7 @@ public final class Concrete {
     private final ClassDefinition<T> myParentClass;
     private final Expression<T> myResultType;
 
-    public ClassField(T data, GlobalReferable referable, ClassDefinition<T> parentClass, Precedence precedence, Expression<T> resultType) {
+    public ClassField(T data, GlobalReferable referable, ClassDefinition<T> parentClass, Expression<T> resultType) {
       super(data, referable);
       myParentClass = parentClass;
       myResultType = resultType;
@@ -1053,8 +1045,8 @@ public final class Concrete {
     private final Expression<T> myResultType;
     private final FunctionBody<T> myBody;
 
-    public FunctionDefinition(T data, GlobalReferable referable, Precedence precedence, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body) {
-      super(data, referable, precedence);
+    public FunctionDefinition(T data, GlobalReferable referable, List<Parameter<T>> parameters, Expression<T> resultType, FunctionBody<T> body) {
+      super(data, referable);
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
@@ -1088,8 +1080,8 @@ public final class Concrete {
     private final boolean myIsTruncated;
     private final UniverseExpression<T> myUniverse;
 
-    public DataDefinition(T data, GlobalReferable referable, Precedence precedence, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> eliminatedReferences, boolean isTruncated, UniverseExpression<T> universe, List<ConstructorClause<T>> constructorClauses) {
-      super(data, referable, precedence);
+    public DataDefinition(T data, GlobalReferable referable, List<TypeParameter<T>> parameters, List<ReferenceExpression<T>> eliminatedReferences, boolean isTruncated, UniverseExpression<T> universe, List<ConstructorClause<T>> constructorClauses) {
+      super(data, referable);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myConstructorClauses = constructorClauses;
@@ -1160,7 +1152,7 @@ public final class Concrete {
     private final List<ReferenceExpression<T>> myEliminatedReferences;
     private final List<FunctionClause<T>> myClauses;
 
-    public Constructor(T data, GlobalReferable referable, Precedence precedence, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
+    public Constructor(T data, GlobalReferable referable, DataDefinition<T> dataType, List<TypeParameter<T>> arguments, List<ReferenceExpression<T>> eliminatedReferences, List<FunctionClause<T>> clauses) {
       super(data, referable);
       myDataType = dataType;
       myArguments = arguments;
@@ -1191,13 +1183,13 @@ public final class Concrete {
 
   // ClassViews
 
-  public static class ClassView<T> extends Definition<T> {
+  public static class ClassView<T> extends Definition<T> { // TODO[abstract]: Class view is not a definition
     private final ReferenceExpression<T> myUnderlyingClass;
     private Referable myClassifyingField;
     private final List<ClassViewField<T>> myFields;
 
     public ClassView(T data, GlobalReferable referable, ReferenceExpression<T> underlyingClass, Referable classifyingField, List<ClassViewField<T>> fields) {
-      super(data, referable, Precedence.DEFAULT);
+      super(data, referable);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
       myClassifyingField = classifyingField;
@@ -1228,12 +1220,12 @@ public final class Concrete {
     }
   }
 
-  public static class ClassViewField<T> extends Definition<T> {
+  public static class ClassViewField<T> extends Definition<T> { // TODO[abstract]: Class view is not a definition
     private Referable myUnderlyingField;
     private final ClassView<T> myOwnView;
 
-    public ClassViewField(T data, GlobalReferable referable, Precedence precedence, Referable underlyingField, ClassView<T> ownView) {
-      super(data, referable, precedence);
+    public ClassViewField(T data, GlobalReferable referable, Referable underlyingField, ClassView<T> ownView) {
+      super(data, referable);
       myUnderlyingField = underlyingField;
       myOwnView = ownView;
     }
@@ -1265,8 +1257,8 @@ public final class Concrete {
     private final List<ClassFieldImpl<T>> myClassFieldImpls;
     private GlobalReferable myClassifyingDefinition;
 
-    public Instance(T data, boolean isDefault, GlobalReferable referable, Precedence precedence, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
-      super(data, referable, precedence);
+    public Instance(T data, boolean isDefault, GlobalReferable referable, List<Parameter<T>> arguments, ReferenceExpression<T> classView, List<ClassFieldImpl<T>> classFieldImpls) {
+      super(data, referable);
       myDefault = isDefault;
       myArguments = arguments;
       myClassView = classView;
@@ -1304,28 +1296,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
       return visitor.visitInstance(this, params);
-    }
-  }
-
-  // Statements
-
-  public static abstract class Statement<T> extends SourceNode<T> {
-    public Statement(T data) {
-      super(data);
-    }
-  }
-
-  public static class DefineStatement<T> extends Statement<T> {
-    private final Definition<T> myDefinition;
-
-    public DefineStatement(T data, Definition<T> definition) {
-      super(data);
-      myDefinition = definition;
-    }
-
-    @Nonnull
-    public Definition<T> getDefinition() {
-      return myDefinition;
     }
   }
 

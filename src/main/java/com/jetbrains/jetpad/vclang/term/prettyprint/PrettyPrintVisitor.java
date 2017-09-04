@@ -959,9 +959,9 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
     Collection<? extends Concrete.ClassField<T>> fields = def.getFields();
     Collection<? extends Concrete.ClassFieldImpl<T>> implementations = def.getImplementations();
-    Collection<? extends Concrete.Definition<T>> instanceDefinitions = def.getInstanceDefinitions();
+    // Collection<? extends Concrete.Definition<T>> instanceDefinitions = def.getInstanceDefinitions(); // TODO[abstract]
 
-    if (!fields.isEmpty() || !implementations.isEmpty() || !instanceDefinitions.isEmpty()) {
+    if (!fields.isEmpty() || !implementations.isEmpty() /* || !instanceDefinitions.isEmpty() */) {
       myBuilder.append(" {");
       myIndent += INDENT;
 
@@ -983,12 +983,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         myBuilder.append('\n');
       }
 
+      /*
       for (Concrete.Definition<T> definition : instanceDefinitions) {
         myBuilder.append('\n');
         printIndent();
         definition.accept(this, null);
         myBuilder.append('\n');
       }
+      */
 
       myIndent -= INDENT;
       printIndent();

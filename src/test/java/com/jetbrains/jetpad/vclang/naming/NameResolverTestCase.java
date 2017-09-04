@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.frontend.TextPrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
@@ -69,7 +69,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression<Position> expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -97,7 +97,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition<Position> definition, int errors) {
-    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, errorReporter);
+    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, errorReporter);
     definition.accept(visitor, new MergeScope(globalScope, new NamespaceScope(new SimpleNamespace(definition))));
     assertThat(errorList, containsErrors(errors));
   }

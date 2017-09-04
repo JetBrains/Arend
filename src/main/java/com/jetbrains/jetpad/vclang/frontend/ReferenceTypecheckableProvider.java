@@ -13,6 +13,6 @@ public class ReferenceTypecheckableProvider implements TypecheckableProvider<Pos
 
   @Override
   public Concrete.ReferableDefinition<Position> getTypecheckable(GlobalReferable referable) {
-    return ((GlobalReference) referable).getDefinition();
+    return referable instanceof GlobalReference ? ((GlobalReference) referable).getDefinition() : null;
   }
 }

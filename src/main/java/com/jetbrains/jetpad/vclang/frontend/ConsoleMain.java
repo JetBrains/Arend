@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProv
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -200,9 +201,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public String getIdFor(GlobalReferable definition) {
-      if (definition instanceof Concrete.Definition) { // TODO[references]
-        Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
+    public String getIdFor(GlobalReferable referable) {
+      if (referable instanceof GlobalReference) {
+        Position pos = ((GlobalReference) referable).getDefinition().getData();
         if (pos != null) {
           return pos.line + ";" + pos.column;
         }

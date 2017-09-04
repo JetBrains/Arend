@@ -1,12 +1,14 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
@@ -110,7 +112,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit() {
-    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }")).getFields().get(0);
+    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi (x y : \\Type1) {z w : \\Type1} (t : \\Type1) {r : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) -> A x y z w t r }").getDefinition()).getFields().get(0);
     Concrete.PiExpression<Position> pi = (Concrete.PiExpression<Position>) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertTrue(pi.getParameters().get(0).getExplicit());
@@ -136,7 +138,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void parserImplicit2() {
-    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }")).getFields().get(0);
+    Concrete.ClassField<Position> def = ((Concrete.ClassDefinition<Position>) resolveNamesDef("\\class X { | f : \\Pi {x : \\Type1} (_ : \\Type1) {y z : \\Type1} (A : \\Type1 -> \\Type1 -> \\Type1 -> \\Type0) (_ : A x y z) -> \\Type1 }").getDefinition()).getFields().get(0);
     Concrete.PiExpression<Position> pi = (Concrete.PiExpression<Position>) def.getResultType();
     assertEquals(5, pi.getParameters().size());
     assertFalse(pi.getParameters().get(0).getExplicit());
@@ -231,11 +233,13 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest(String name) {
-    Group group = resolveNamesModule(
+    Group module = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    it.next(); it.next();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -267,11 +271,13 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest2(String name) {
-    Group group = resolveNamesModule(
+    Group module = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    it.next(); it.next();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -293,11 +299,13 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest3(String name) {
-    Group group = resolveNamesModule(
+    Group module = resolveNamesModule(
       "\\function \\infix 6 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    it.next(); it.next();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -315,11 +323,13 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest4(String name) {
-    Group group = resolveNamesModule(
+    Group module = resolveNamesModule(
       "\\function \\infix 4 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    it.next(); it.next();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -335,11 +345,13 @@ public class ParserTest extends NameResolverTestCase {
   }
 
   private void postfixTest5(String name1, String name2, String pr1, String pr2) {
-    Group group = resolveNamesModule(
+    Group module = resolveNamesModule(
       "\\function " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
       "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
       "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((Concrete.DefineStatement) group.getSubgroups().get(2)).getDefinition()).getBody()).getTerm();
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    it.next(); it.next();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());

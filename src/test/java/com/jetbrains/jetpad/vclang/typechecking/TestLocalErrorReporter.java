@@ -17,8 +17,8 @@ public class TestLocalErrorReporter implements LocalErrorReporter<Position> {
 
   public TestLocalErrorReporter(ErrorReporter<Position> errorReporter) {
     this.errorReporter = errorReporter;
-    GlobalReference reference = new GlobalReference("testDefinition");
-    fakeDef = new Concrete.Definition<Position>(null, reference, Precedence.DEFAULT) {
+    GlobalReference reference = new GlobalReference("testDefinition", Precedence.DEFAULT);
+    fakeDef = new Concrete.Definition<Position>(null, reference) {
       @Override
       public <P, R> R accept(ConcreteDefinitionVisitor<Position, ? super P, ? extends R> visitor, P params) {
         return null;

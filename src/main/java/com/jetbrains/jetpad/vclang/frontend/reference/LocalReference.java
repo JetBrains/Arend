@@ -22,7 +22,7 @@ public class LocalReference implements Referable, SourceInfo {
   @Nonnull
   @Override
   public String textRepresentation() {
-    return myName;
+    return myName == null ? "_" : myName;
   }
 
   @Override

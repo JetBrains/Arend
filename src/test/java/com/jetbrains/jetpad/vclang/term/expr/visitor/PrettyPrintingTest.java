@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
@@ -68,8 +67,8 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     LocalReference x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    GlobalReference reference = new GlobalReference("f");
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, Precedence.DEFAULT, arguments, cVar(X), body(cVar(x)), Collections.emptyList());
+    GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
+    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, arguments, cVar(X), body(cVar(x)));
     reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, 0), null);
   }
@@ -86,14 +85,14 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition<Position> def = parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)");
+    Concrete.Definition<Position> def = (Concrete.Definition<Position>) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition<Position> def = parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }");
+    Concrete.Definition<Position> def = (Concrete.Definition<Position>) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }

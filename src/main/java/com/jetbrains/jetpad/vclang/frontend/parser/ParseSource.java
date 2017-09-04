@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ConcretePrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.frontend.TextPrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
@@ -62,9 +62,13 @@ public abstract class ParseSource {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
-      ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, compositeErrorReporter);
-      ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
-      new GroupNameResolver<>(nameResolver, ConcretePrettyPrinterInfoProvider.INSTANCE, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
+      if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever
+        ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, compositeErrorReporter);
+      }
+      if (nameResolver.nsProviders.dynamics instanceof SimpleDynamicNamespaceProvider) {
+        ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
+      }
+      new GroupNameResolver<>(nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {

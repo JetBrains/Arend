@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
@@ -35,7 +36,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private final TypecheckedReporter<T> myTypecheckedReporter;
   private final DependencyListener<T> myDependencyListener;
-  private final Map<Concrete.Definition<T>, Suspension<T>> mySuspensions = new HashMap<>();
+  private final Map<GlobalReferable, Suspension<T>> mySuspensions = new HashMap<>();
   private boolean myTypecheckingHeaders = false;
 
   final ErrorReporter<T> errorReporter;
@@ -73,7 +74,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
           cycle.add(definition);
           if (!unit1.isHeader()) {
             if (Typecheckable.hasHeader(definition)) {
-              mySuspensions.remove(definition);
+              mySuspensions.remove(definition.getRelatedDefinition());
             }
             myTypecheckedReporter.typecheckingFailed(definition);
           }
@@ -119,7 +120,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
       return false;
     }
 
-    Definition typechecked = myState.getTypechecked(definition);
+    Definition typechecked = myState.getTypechecked(definition.getReferable());
     return typechecked == null || typechecked.status().needsTypeChecking();
   }
 
@@ -155,7 +156,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
       CheckTypeVisitor<T> visitor = new CheckTypeVisitor<>(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition().getReferable())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        mySuspensions.put(unit.getDefinition(), new Suspension<>(visitor, countingErrorReporter));
+        mySuspensions.put(unit.getDefinition().getReferable(), new Suspension<>(visitor, countingErrorReporter));
       }
       return typechecked.status().headerIsOK();
     }
@@ -202,7 +203,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
 
     List<Pair<Concrete.Definition<T>, Boolean>> results = new ArrayList<>(definitions.size());
     for (Concrete.Definition<T> definition : definitions) {
-      Suspension<T> suspension = mySuspensions.remove(definition);
+      Suspension<T> suspension = mySuspensions.remove(definition.getReferable());
       if (headersAreOK && suspension != null) {
         Definition def = myState.getTypechecked(definition);
         List<Clause<T>> clauses = DefinitionTypechecking.typecheckBody(def, definition, suspension.visitor, dataDefinitions);

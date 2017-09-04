@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.naming.resolving.GroupResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.BaseAbstractVisitor;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
@@ -41,7 +40,7 @@ public class Typechecking<T> {
 
     try {
       for (Group group : modules) {
-        new OrderDefinitionVisitor<>(ordering).orderDefinition(group);
+        orderGroup(group, ordering);
       }
     } catch (ComputationInterruptedException ignored) { }
   }
@@ -56,35 +55,16 @@ public class Typechecking<T> {
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  private static class OrderDefinitionVisitor<T> extends BaseAbstractVisitor<T, Void, Void> { // TODO[abstract]
-    public final Ordering<T> ordering;
-
-    private OrderDefinitionVisitor(Ordering<T> ordering) {
-      this.ordering = ordering;
+  private void orderGroup(Group group, Ordering<T> ordering) {
+    Concrete.ReferableDefinition<T> def = myDependencyListener.typecheckableProvider.getTypecheckable(group.getReferable());
+    if (def instanceof Concrete.Definition) {
+      ordering.doOrder((Concrete.Definition<T>) def);
     }
-
-    @Override
-    public Void visitFunction(Concrete.FunctionDefinition<T> def, Void params) {
-      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
-        orderDefinition(definition);
-      }
-      return null;
+    for (Group subgroup : group.getSubgroups()) {
+      orderGroup(subgroup, ordering);
     }
-
-    @Override
-    public Void visitClass(Concrete.ClassDefinition<T> def, Void params) {
-      for (Concrete.Definition<T> definition : def.getGlobalDefinitions()) {
-        orderDefinition(definition);
-      }
-      for (Concrete.Definition<T> definition : def.getInstanceDefinitions()) {
-        orderDefinition(definition);
-      }
-      return null;
-    }
-
-    public void orderDefinition(Concrete.Definition<T> definition) {
-      ordering.doOrder(definition);
-      definition.accept(this, null);
+    for (Group subgroup : group.getDynamicSubgroups()) {
+      orderGroup(subgroup, ordering);
     }
   }
 }

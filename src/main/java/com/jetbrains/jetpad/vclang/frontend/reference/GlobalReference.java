@@ -4,15 +4,22 @@ import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 
 public class GlobalReference implements GlobalReferable, SourceInfo {
   private final String myName;
   private Concrete.ReferableDefinition<Position> myDefinition;
+  private final Precedence myPrecedence;
 
-  public GlobalReference(@Nonnull String name) {
+  public GlobalReference(@Nonnull String name, Precedence precedence) {
     myName = name;
+    myPrecedence = precedence;
+  }
+
+  public Precedence getPrecedence() {
+    return myPrecedence;
   }
 
   public Concrete.ReferableDefinition<Position> getDefinition() {

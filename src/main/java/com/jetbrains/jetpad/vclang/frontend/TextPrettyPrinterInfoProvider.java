@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
-public class ConcretePrettyPrinterInfoProvider implements PrettyPrinterInfoProvider {
-  public static final ConcretePrettyPrinterInfoProvider INSTANCE = new ConcretePrettyPrinterInfoProvider();
+public class TextPrettyPrinterInfoProvider implements PrettyPrinterInfoProvider {
+  public static final TextPrettyPrinterInfoProvider INSTANCE = new TextPrettyPrinterInfoProvider();
 
-  private ConcretePrettyPrinterInfoProvider() { }
+  private TextPrettyPrinterInfoProvider() { }
 
   @Override
   public String nameFor(Referable referable) {
@@ -18,6 +18,6 @@ public class ConcretePrettyPrinterInfoProvider implements PrettyPrinterInfoProvi
 
   @Override
   public Precedence precedenceOf(GlobalReferable referable) {
-    return referable instanceof Concrete.Definition ? ((Concrete.Definition) referable).getPrecedence() : Precedence.DEFAULT; // TODO[references]
+    return referable instanceof GlobalReference ? ((GlobalReference) referable).getPrecedence() : Precedence.DEFAULT;
   }
 }

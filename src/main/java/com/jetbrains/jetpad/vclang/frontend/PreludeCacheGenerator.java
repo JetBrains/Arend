@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProv
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -80,8 +81,8 @@ public class PreludeCacheGenerator {
 
     @Override
     public String getIdFor(GlobalReferable definition) {
-      if (!(definition instanceof Concrete.Definition)) throw new IllegalStateException(); // TODO[references]
-      Position pos = ((Concrete.Definition<Position>) definition).getData(); // TODO[abstract]
+      if (!(definition instanceof GlobalReference)) throw new IllegalStateException();
+      Position pos = ((GlobalReference) definition).getDefinition().getData();
       if (pos == null) throw new IllegalStateException();
       return pos.line + ";" + pos.column;
     }
