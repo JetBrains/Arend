@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.EmptyNamespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.GroupResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
@@ -17,8 +18,9 @@ import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.Typecheck
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
   private final Map<GlobalReferable, SimpleNamespace> myNamespaces = new HashMap<>();
@@ -43,13 +45,14 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     myErrorReporter = errorReporter;
     myHasSuperClasses = false;
 
-    collect1(group);
+    collectWithoutSuperClasses(group);
     if (myHasSuperClasses) {
-      collect2(group, new EmptyScope());
+      Set<GlobalReferable> updated = new HashSet<>();
+      collectWithSupperClasses(group, new EmptyScope(), updated);
     }
   }
 
-  private void collect1(Group group) {
+  private void collectWithoutSuperClasses(Group group) {
     SimpleNamespace ns = new SimpleNamespace();
     for (Group subgroup : group.getDynamicSubgroups()) {
       ns.addDefinition(subgroup.getReferable(), myErrorReporter);
@@ -60,10 +63,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     myNamespaces.put(group.getReferable(), ns);
 
     for (Group subgroup : group.getSubgroups()) {
-      collect1(subgroup);
+      collectWithoutSuperClasses(subgroup);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      collect1(subgroup);
+      collectWithoutSuperClasses(subgroup);
     }
 
     Concrete.ReferableDefinition definition = myTypecheckableProvider.getTypecheckable(group.getReferable());
@@ -74,46 +77,60 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     }
   }
 
-  private void collect2(Group group, Scope parentScope) {
-    SimpleNamespace ns = new SimpleNamespace();
-    for (Group subgroup : group.getDynamicSubgroups()) {
-      ns.addDefinition(subgroup.getReferable(), myErrorReporter);
-    }
-    for (GlobalReferable field : group.getFields()) {
-      ns.addDefinition(field, myErrorReporter);
-    }
-    myNamespaces.put(group.getReferable(), ns);
-
+  private void collectWithSupperClasses(Group group, Scope parentScope, Set<GlobalReferable> updated) {
     Scope scope = new GroupResolver(myNameResolver, myErrorReporter).getGroupScope(group, parentScope);
-    Concrete.ReferableDefinition definition = myTypecheckableProvider.getTypecheckable(group.getReferable());
-    if (definition instanceof Concrete.ClassDefinition) {
-      List<? extends Concrete.ReferenceExpression<?>> superClasses = ((Concrete.ClassDefinition<?>) definition).getSuperClasses();
-      if (!superClasses.isEmpty()) {
-        SimpleNamespace newNs = new SimpleNamespace();
-        ExpressionResolveNameVisitor exprResolver = new ExpressionResolveNameVisitor(scope, null, myNameResolver, null, myErrorReporter);
-        for (Concrete.ReferenceExpression<?> superClassRef : ((Concrete.ClassDefinition<?>) definition).getSuperClasses()) {
-          exprResolver.visitReference(superClassRef, null);
-          if (superClassRef.getReferent() instanceof GlobalReferable) {
-            Concrete.ReferableDefinition superClass = myTypecheckableProvider.getTypecheckable((GlobalReferable) superClassRef.getReferent());
-            if (superClass instanceof Concrete.ClassDefinition) {
-              for (Concrete.ClassField<?> field : ((Concrete.ClassDefinition<?>) superClass).getFields()) {
-                newNs.addDefinition(field.getReferable(), myErrorReporter);
-              }
-            }
-          }
-        }
-
-        SimpleNamespace oldNs = myNamespaces.get(group.getReferable());
-        newNs.addAll(oldNs, myErrorReporter);
-        myNamespaces.put(group.getReferable(), newNs);
-      }
+    SimpleNamespace ns = new SimpleNamespace();
+    if (!updateClass(group.getReferable(), new ExpressionResolveNameVisitor(scope, null, myNameResolver, null, myErrorReporter), new HashSet<>(), updated, ns)) {
+      updated.add(group.getReferable());
+      updateClassNamespace(group.getReferable(), ns);
     }
 
     for (Group subgroup : group.getSubgroups()) {
-      collect2(subgroup, scope);
+      collectWithSupperClasses(subgroup, scope, updated);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      collect2(subgroup, scope);
+      collectWithSupperClasses(subgroup, scope, updated);
     }
+  }
+
+  private boolean updateClass(GlobalReferable classRef, ExpressionResolveNameVisitor visitor, Set<GlobalReferable> current, Set<GlobalReferable> updated, SimpleNamespace result) {
+    Concrete.ReferableDefinition def = myTypecheckableProvider.getTypecheckable(classRef);
+    if (!(def instanceof Concrete.ClassDefinition)) {
+      return true;
+    }
+
+    Concrete.ClassDefinition<?> classDef = (Concrete.ClassDefinition) def;
+    boolean ok = true;
+    current.add(classRef);
+    for (Concrete.ReferenceExpression<?> superClassRefExpr : classDef.getSuperClasses()) {
+      visitor.visitReference(superClassRefExpr, null);
+      Referable superClassRef = superClassRefExpr.getReferent();
+      if (superClassRef instanceof GlobalReferable) {
+        if (updated.contains(superClassRef)) {
+          result.addAll(myNamespaces.get(superClassRef), myErrorReporter);
+        } else if (current.contains(superClassRef)) {
+          ok = false;
+        } else {
+          SimpleNamespace superClassNs = new SimpleNamespace();
+          if (!updateClass((GlobalReferable) superClassRef, visitor, current, updated, superClassNs)) {
+            ok = false;
+          }
+          result.addAll(superClassNs, myErrorReporter);
+        }
+      }
+    }
+
+    current.remove(classRef);
+    if (ok) {
+      updated.add(classRef);
+      updateClassNamespace(classRef, result);
+    }
+    return ok;
+  }
+
+  private void updateClassNamespace(GlobalReferable classRef, SimpleNamespace newNs) {
+    SimpleNamespace oldNs = myNamespaces.get(classRef);
+    newNs.addAll(oldNs, myErrorReporter);
+    myNamespaces.put(classRef, newNs);
   }
 }
