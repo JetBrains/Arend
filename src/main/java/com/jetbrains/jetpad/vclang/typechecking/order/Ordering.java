@@ -110,7 +110,7 @@ public class Ordering<T> {
 
     Set<GlobalReferable> dependencies = new LinkedHashSet<>();
     if (enclosingClass != null) {
-      dependencies.add(enclosingClass);
+      dependencies.add(enclosingClass.getReferable());
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;

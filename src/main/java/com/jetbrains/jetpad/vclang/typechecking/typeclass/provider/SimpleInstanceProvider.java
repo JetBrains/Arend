@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.provider;
 
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -7,7 +8,7 @@ import java.util.*;
 
 public class SimpleInstanceProvider implements InstanceProvider {
   private final Scope myScope;
-  private Map<Concrete.ClassView, List<Concrete.Instance>> myInstances = null;
+  private Map<GlobalReferable, List<Concrete.Instance>> myInstances = null;
 
   public SimpleInstanceProvider(Scope scope) {
     myScope = scope;
@@ -22,9 +23,11 @@ public class SimpleInstanceProvider implements InstanceProvider {
     if (myInstances == null) {
       myInstances = new HashMap<>();
       for (Concrete.Instance instance : myScope.getInstances()) {
-        myInstances.computeIfAbsent((Concrete.ClassView) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
+        if (instance.getClassView().getReferent() instanceof GlobalReferable) {
+          myInstances.computeIfAbsent((GlobalReferable) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
+        }
       }
     }
-    return myInstances.getOrDefault(classView, Collections.emptyList());
+    return myInstances.getOrDefault(classView.getReferable(), Collections.emptyList());
   }
 }

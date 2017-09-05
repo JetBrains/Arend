@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -144,7 +145,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, zero, suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    Concrete.DataDefinition<Position> dataDef = (Concrete.DataDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
+    GlobalReferable dataDef = it.next().getReferable();
     Concrete.FunctionDefinition<Position> funDef = (Concrete.FunctionDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
@@ -198,7 +199,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    Concrete.DataDefinition<Position> dataDef = (Concrete.DataDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
+    GlobalReferable dataDef = it.next().getReferable();
     Concrete.FunctionDefinition<Position> funDef = (Concrete.FunctionDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
@@ -219,7 +220,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\function f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
       "  | suc n, (), suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    Concrete.DataDefinition<Position> dataDef = (Concrete.DataDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
+    GlobalReferable dataDef = it.next().getReferable();
     Concrete.FunctionDefinition<Position> funDef = (Concrete.FunctionDefinition<Position>) ((GlobalReference) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());

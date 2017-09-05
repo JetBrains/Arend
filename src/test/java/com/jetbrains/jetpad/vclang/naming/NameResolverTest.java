@@ -33,7 +33,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
     Concrete.Expression<Position> result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
-    assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plus, cBinOp(cNum(1), mul, cNum(2))), plus, cBinOp(cBinOp(cNum(3), mul, cBinOp(cNum(4), mul, cNum(5))), mul, cBinOp(cNum(6), plus, cNum(7)))), result));
+    assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plusRef, cBinOp(cNum(1), mulRef, cNum(2))), plusRef, cBinOp(cBinOp(cNum(3), mulRef, cBinOp(cNum(4), mulRef, cNum(5))), mulRef, cBinOp(cNum(6), plusRef, cNum(7)))), result));
   }
 
   @Test

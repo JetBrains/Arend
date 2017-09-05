@@ -726,7 +726,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   public Void visitFunction(final Concrete.FunctionDefinition<T> def, Void ignored) {
     myBuilder.append("\\function\n");
     printIndent();
-    prettyPrintNameWithPrecedence(def);
+    prettyPrintNameWithPrecedence(def.getReferable());
     myBuilder.append(" ");
 
     final BinOpLayout<T> l = new BinOpLayout<T>(){
@@ -796,7 +796,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   @Override
   public Void visitData(Concrete.DataDefinition<T> def, Void ignored) {
     myBuilder.append("\\data ");
-    prettyPrintNameWithPrecedence(def);
+    prettyPrintNameWithPrecedence(def.getReferable());
 
     List<? extends Concrete.TypeParameter<T>> parameters = def.getParameters();
     for (Concrete.TypeParameter<T> parameter : parameters) {
@@ -925,7 +925,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   private void visitConstructor(Concrete.Constructor<T> def) {
-    prettyPrintNameWithPrecedence(def);
+    prettyPrintNameWithPrecedence(def.getReferable());
     for (Concrete.TypeParameter<T> parameter : def.getParameters()) {
       myBuilder.append(' ');
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
@@ -938,7 +938,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition<T> def) {
-    myBuilder.append("\\class ").append(def.textRepresentation());
+    myBuilder.append("\\class ").append(def.getReferable().textRepresentation());
     prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
     if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
@@ -969,7 +969,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         myBuilder.append('\n');
         printIndent();
         myBuilder.append("| ");
-        prettyPrintNameWithPrecedence(field);
+        prettyPrintNameWithPrecedence(field.getReferable());
         myBuilder.append(" : ");
         field.getResultType().accept(this, Concrete.Expression.PREC);
         myBuilder.append('\n');
@@ -1002,14 +1002,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   @Override
   public Void visitClassView(Concrete.ClassView<T> def, Void params) {
-    myBuilder.append("\\view ").append(def.textRepresentation()).append(" \\on ");
+    myBuilder.append("\\view ").append(def.getReferable().textRepresentation()).append(" \\on ");
     def.getUnderlyingClass().accept(this, Concrete.Expression.PREC);
     myBuilder.append(" \\by ").append(def.getClassifyingField().textRepresentation()).append(" {");
 
     if (!def.getFields().isEmpty()) {
       boolean hasImplemented = false;
       for (Concrete.ClassViewField<T> field : def.getFields()) {
-        if (!Objects.equals(field.textRepresentation(), field.getUnderlyingField().textRepresentation())) {
+        if (!Objects.equals(field.getReferable().textRepresentation(), field.getUnderlyingField().textRepresentation())) {
           hasImplemented = true;
           break;
         }
@@ -1038,14 +1038,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
   @Override
   public Void visitClassViewField(Concrete.ClassViewField def, Void params) {
-    myBuilder.append(def.getUnderlyingField().textRepresentation()).append(" => ").append(def.textRepresentation());
+    myBuilder.append(def.getUnderlyingField().textRepresentation()).append(" => ").append(def.getReferable().textRepresentation());
     return null;
   }
 
   @Override
   public Void visitInstance(Concrete.Instance<T> def, Void params) {
     myBuilder.append("\\instance ");
-    prettyPrintNameWithPrecedence(def);
+    prettyPrintNameWithPrecedence(def.getReferable());
     prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
 
     myBuilder.append(" => \\new ");

@@ -1,14 +1,15 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 
-import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateInstanceError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 // TODO[abstract]: Maybe delete this, replace with ordinary scopes
 public class SimpleInstanceNamespace<T> implements Scope {
@@ -20,15 +21,17 @@ public class SimpleInstanceNamespace<T> implements Scope {
   }
 
   public void addInstance(Concrete.Instance<T> instance) {
+    /*
     if (myInstances.isEmpty()) {
       myInstances = new HashMap<>();
     }
-    Concrete.ClassView classView = (Concrete.ClassView) instance.getClassView().getReferent();
+    Referable classView = instance.getClassView().getReferent();
     Pair<GlobalReferable, GlobalReferable> pair = new Pair<>(instance.isDefault() ? (GlobalReferable) classView.getUnderlyingClass().getReferent() : classView, instance.getClassifyingDefinition());
     Concrete.Instance oldInstance = myInstances.putIfAbsent(pair, instance);
     if (oldInstance != null) {
       myErrorReporter.report(new DuplicateInstanceError<>(Error.Level.ERROR, oldInstance, instance));
     }
+    */
   }
 
   @Override
@@ -37,7 +40,7 @@ public class SimpleInstanceNamespace<T> implements Scope {
   }
 
   @Override
-  public Concrete.Definition resolveName(String name) {
+  public GlobalReferable resolveName(String name) {
     return null;
   }
 

@@ -37,14 +37,18 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
     Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.getTypecheckable((GlobalReferable) referable); // TODO[abstract]: Move this to Ordering
     if (myInstanceProvider != null) {
       if (definition instanceof Concrete.ClassViewField) {
-        myDependencies.addAll(myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView()));
+        for (Concrete.Instance instance : myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
+          myDependencies.add(instance.getReferable());
+        }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition.getRelatedDefinition());
         if (parameters != null) {
           for (Concrete.Parameter<?> parameter : parameters) {
             Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
             if (classView != null) {
-              myDependencies.addAll(myInstanceProvider.getInstances(classView));
+              for (Concrete.Instance instance : myInstanceProvider.getInstances(classView)) {
+                myDependencies.add(instance.getReferable());
+              }
             }
           }
         }

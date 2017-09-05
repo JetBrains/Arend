@@ -21,6 +21,6 @@ public class ConstructorUniverseError<T> extends LocalTypeCheckingError<T> {
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
-    return hList(super.getHeaderDoc(src), text(" The universe " + conSort + " of constructor '"), refDoc(constructor), text("' is not compatible with expected universe " + userSort));
+    return hList(super.getHeaderDoc(src), text(" The universe " + conSort + " of constructor '"), refDoc(constructor.getReferable()), text("' is not compatible with expected universe " + userSort));
   }
 }

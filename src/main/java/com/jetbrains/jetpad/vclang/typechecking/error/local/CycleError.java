@@ -3,10 +3,14 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class CycleError<T> extends GeneralError<T> {
   public final List<Concrete.Definition<T>> cycle;
@@ -28,12 +32,11 @@ public class CycleError<T> extends GeneralError<T> {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
-    StringBuilder builder = new StringBuilder();
-    builder.append(cycle.get(cycle.size() - 1));
+    List<LineDoc> docs = new ArrayList<>(cycle.size() + 1);
+    docs.add(refDoc(cycle.get(cycle.size() - 1).getReferable()));
     for (Concrete.Definition<T> definition : cycle) {
-      builder.append(" - ");
-      builder.append(definition.textRepresentation());
+      docs.add(refDoc(definition.getReferable()));
     }
-    return DocFactory.text(builder.toString());
+    return hSep(text(" - "), docs);
   }
 }

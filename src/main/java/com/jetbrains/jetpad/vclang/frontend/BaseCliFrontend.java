@@ -242,9 +242,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
       @Override
       public void alreadyTypechecked(Concrete.Definition<Position> definition) {
-        Definition.TypeCheckingStatus status = state.getTypechecked(definition).status();
+        Definition.TypeCheckingStatus status = state.getTypechecked(definition.getReferable()).status();
         if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
-          updateSourceResult(srcInfoProvider.sourceOf(definition), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
+          updateSourceResult(srcInfoProvider.sourceOf(definition.getReferable()), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
         }
       }
 

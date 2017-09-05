@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -97,12 +96,13 @@ public class TypeCheckingDefCall<T> {
         }
 
         if (thisExpr == null) {
+          /* TODO[abstract]
           if (resolvedDefinition instanceof Concrete.ClassViewField) {
             assert typeCheckedDefinition instanceof ClassField;
             Concrete.ClassView ownClassView = ((Concrete.ClassViewField) resolvedDefinition).getOwnView();
             ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
-          } else {
+          } else { */
             LocalTypeCheckingError<T> error;
             if (myThisClass != null) {
               error = new NotAvailableDefinitionError<>(typeCheckedDefinition, expr);
@@ -111,7 +111,7 @@ public class TypeCheckingDefCall<T> {
             }
             myVisitor.getErrorReporter().report(error);
             return null;
-          }
+          // }
         }
       }
 

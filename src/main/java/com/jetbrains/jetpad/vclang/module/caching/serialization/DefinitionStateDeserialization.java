@@ -15,7 +15,6 @@ import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case CLASS:
           ClassDefinition classDef = new ClassDefinition(abstractDef);
           for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
-            Concrete.ClassField<?> absField = (Concrete.ClassField<?>) getAbstract(constructorId);
+            GlobalReferable absField = getAbstract(constructorId);
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absField, res);
@@ -52,7 +51,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case DATA:
           DataDefinition dataDef = new DataDefinition(abstractDef);
           for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
-            Concrete.Constructor<?> absConstructor = (Concrete.Constructor<?>) getAbstract(constructorId);
+            GlobalReferable absConstructor = getAbstract(constructorId);
             Constructor res = new Constructor(absConstructor, dataDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absConstructor, res);

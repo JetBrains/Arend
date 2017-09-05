@@ -1,18 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
-import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
@@ -25,6 +16,7 @@ public class GlobalInstancePool implements InstancePool {
 
   @Override
   public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+    /* TODO[abstract]
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (classifyingDefCall == null) {
       return null;
@@ -35,12 +27,13 @@ public class GlobalInstancePool implements InstancePool {
       if ((isView && instance.getClassView().getReferent() == classView ||
           !isView && ((Concrete.ClassView) instance.getClassView().getReferent()).getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) &&
         instance.getClassifyingDefinition() == classifyingDefCall.getDefinition().getReferable()) {
-        Definition definition = myTypecheckerState.getTypechecked(instance);
+        Definition definition = myTypecheckerState.getTypechecked(instance.getReferable());
         if (definition.status().headerIsOK()) {
-          return new FunCallExpression((FunctionDefinition) definition, Sort.PROP /* TODO[classes] */, Collections.emptyList());
+          return new FunCallExpression((FunctionDefinition) definition, Sort.PROP TODO[classes], Collections.emptyList());
         }
       }
     }
+    */
     return null;
   }
 }

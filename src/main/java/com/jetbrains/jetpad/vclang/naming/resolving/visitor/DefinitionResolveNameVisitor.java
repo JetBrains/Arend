@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
@@ -181,7 +180,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         field.getResultType().accept(exprVisitor, null);
       }
     }
-    exprVisitor.visitClassFieldImpls(def.getImplementations(), def);
+    exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getReferable());
 
     return null;
   }
@@ -215,7 +214,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
         if (classField != null) {
           viewField.setUnderlyingField(classField);
         } else {
-          myErrorReporter.report(new NoSuchFieldError<>(def.textRepresentation(), def));
+          myErrorReporter.report(new NoSuchFieldError<>(underlyingField.textRepresentation(), def));
         }
       }
     }
@@ -232,11 +231,12 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myInfoProvider, myErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
-    if (def.getClassView().getReferent() instanceof Concrete.ClassView) {
-      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (Concrete.ClassView) def.getClassView().getReferent());
+    if (def.getClassView().getReferent() instanceof GlobalReferable) {
+      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (GlobalReferable) def.getClassView().getReferent());
+      /* TODO[abstract]
       boolean ok = false;
       for (Concrete.ClassFieldImpl<T> impl : def.getClassFieldImpls()) {
-        if (impl.getImplementedField() == ((Concrete.ClassView) def.getClassView().getReferent()).getClassifyingField()) {
+        if (impl.getImplementedField() == ((GlobalReferable) def.getClassView().getReferent()).getClassifyingField()) {
           ok = true;
           Concrete.Expression expr = impl.getImplementation();
           while (expr instanceof Concrete.AppExpression) {
@@ -252,6 +252,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       if (!ok) {
         myErrorReporter.report(new NamingError<>("Classifying field is not implemented", def));
       }
+      */
     } else {
       myErrorReporter.report(new WrongReferable<>("Expected a class view", def.getClassView().getReferent(), def));
     }

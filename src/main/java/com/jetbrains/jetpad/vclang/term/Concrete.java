@@ -121,6 +121,8 @@ public final class Concrete {
   }
 
   public static ClassView getUnderlyingClassView(Expression expr) {
+    return null;
+    /* TODO[abstract]
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassView) {
@@ -133,6 +135,7 @@ public final class Concrete {
     } else {
       return null;
     }
+    */
   }
 
   public static abstract class Expression<T> extends SourceNode<T> {
@@ -891,7 +894,7 @@ public final class Concrete {
     return null;
   }
 
-  public static abstract class ReferableDefinition<T> extends SourceNode<T> /* TODO[abstract]: Do not implement SourceNode, we can put Position to GlobalReference */ implements GlobalReferable {
+  public static abstract class ReferableDefinition<T> extends SourceNode<T> /* TODO[abstract]: Do not implement SourceNode, we can put Position to GlobalReference */ {
     private final GlobalReferable myReferable;
 
     public ReferableDefinition(T data, GlobalReferable referable) {
@@ -905,9 +908,8 @@ public final class Concrete {
 
     public abstract Definition<T> getRelatedDefinition();
 
-    @Nonnull
     @Override
-    public String textRepresentation() {
+    public String toString() {
       return myReferable.textRepresentation();
     }
   }
@@ -920,11 +922,6 @@ public final class Concrete {
     @Override
     public Definition<T> getRelatedDefinition() {
       return this;
-    }
-
-    @Override
-    public String toString() {
-      return textRepresentation();
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params);

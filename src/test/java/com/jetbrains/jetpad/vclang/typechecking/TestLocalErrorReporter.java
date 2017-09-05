@@ -29,7 +29,7 @@ public class TestLocalErrorReporter implements LocalErrorReporter<Position> {
 
   @Override
   public void report(LocalTypeCheckingError<Position> localError) {
-    errorReporter.report(new TypeCheckingError<>(fakeDef, localError));
+    errorReporter.report(new TypeCheckingError<>(fakeDef.getReferable(), localError));
   }
 
   @Override
