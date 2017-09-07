@@ -542,10 +542,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return result;
   }
 
-  private void misplacedDefinitionError(Position position) {
-    myErrorReporter.report(new ParserError(position, "This definition is not allowed here"));
-  }
-
   private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField<Position>> fields, List<Concrete.ClassFieldImpl<Position>> implementations, List<Group> subgroups, Concrete.ClassDefinition<Position> parentClass) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
@@ -563,20 +559,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         }
 
         //noinspection unchecked
-        Concrete.SourceNode<Position> sourceNode = (Concrete.SourceNode<Position>) visit(statementCtx);
+        Object sourceNode = visit(statementCtx);
         if (sourceNode == null) {
           continue;
         }
 
         if (sourceNode instanceof Group) {
           subgroups.add((Group) sourceNode);
-          continue;
         } else if (sourceNode instanceof Concrete.ClassFieldImpl) {
           implementations.add((Concrete.ClassFieldImpl<Position>) sourceNode);
-          continue;
         }
-
-        misplacedDefinitionError(sourceNode.getData());
       } catch (ParseException ignored) {
 
       }

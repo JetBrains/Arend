@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
-import com.jetbrains.jetpad.vclang.frontend.TextPrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
@@ -69,7 +68,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression<Position> expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -97,13 +96,16 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesDef(Concrete.Definition<Position> definition, int errors) {
-    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, errorReporter);
+    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, errorReporter);
     definition.accept(visitor, new MergeScope(globalScope, new NamespaceScope(new SimpleNamespace(definition.getReferable()))));
     assertThat(errorList, containsErrors(errors));
   }
 
   GlobalReference resolveNamesDef(String text, int errors) {
-    GlobalReference result = parseDef(text);
+    Group group = parseDef(text);
+    staticNsProvider.collect(group, errorReporter);
+    dynamicNsProvider.collect(group, errorReporter, nameResolver);
+    GlobalReference result = (GlobalReference) group.getReferable();
     resolveNamesDef((Concrete.Definition<Position>) result.getDefinition(), errors);
     return result;
   }
@@ -114,14 +116,16 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(Group group, int errors) {
-    GroupNameResolver<Position> groupNameResolver = new GroupNameResolver<>(nameResolver, SourceInfoProvider.TRIVIAL, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
-    groupNameResolver.resolveGroup(group, new EmptyScope());
+    GroupNameResolver<Position> groupNameResolver = new GroupNameResolver<>(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    groupNameResolver.resolveGroup(group, globalScope);
     assertThat(errorList, containsErrors(errors));
   }
 
   // FIXME[tests] should be package-private
   protected Group resolveNamesModule(String text, int errors) {
     Group group = parseModule(text);
+    staticNsProvider.collect(group, errorReporter);
+    dynamicNsProvider.collect(group, errorReporter, nameResolver);
     resolveNamesModule(group, errors);
     return group;
   }

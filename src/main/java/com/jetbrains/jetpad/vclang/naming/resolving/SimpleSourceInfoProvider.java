@@ -1,13 +1,10 @@
 package com.jetbrains.jetpad.vclang.naming.resolving;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import java.util.HashMap;
@@ -48,11 +45,6 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   @Override
   public SourceIdT sourceOf(GlobalReferable definition) {
     return modules.get(definition);
-  }
-
-  @Override
-  public Precedence precedenceOf(GlobalReferable referable) {
-    return referable instanceof GlobalReference ? ((GlobalReference) referable).getPrecedence() : Precedence.DEFAULT;
   }
 
   @Override

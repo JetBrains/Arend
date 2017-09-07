@@ -6,17 +6,16 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 
 public class GroupNameResolver<T> extends GroupResolver<T> {
   private final TypecheckableProvider<T> myTypecheckableProvider;
   private final DefinitionResolveNameVisitor<T> myVisitor;
 
-  public GroupNameResolver(NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter, TypecheckableProvider<T> provider) {
+  public GroupNameResolver(NameResolver nameResolver, ErrorReporter<T> errorReporter, TypecheckableProvider<T> provider) {
     super(nameResolver, errorReporter);
     myTypecheckableProvider = provider;
-    myVisitor = new DefinitionResolveNameVisitor<>(nameResolver, infoProvider, errorReporter);
+    myVisitor = new DefinitionResolveNameVisitor<>(nameResolver, errorReporter);
   }
 
   @Override

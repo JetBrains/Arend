@@ -438,7 +438,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   @Override
   public Void visitBinOp(final Concrete.BinOpExpression<T> expr, final Byte prec) {
     Referable referable = expr.getReferent();
-    Precedence precedence = referable instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) expr.getReferent()) : Precedence.DEFAULT;
+    Precedence precedence = referable instanceof GlobalReferable ? ((GlobalReferable) expr.getReferent()).getPrecedence() : Precedence.DEFAULT;
     if (expr.getRight() == null) {
       if (prec > precedence.priority) {
         myBuilder.append('(');
@@ -474,7 +474,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
           Concrete.Expression r = expr.getRight();
           if (r instanceof Concrete.BinOpExpression) {
             Referable ref = ((Concrete.BinOpExpression) r).getReferent();
-            Precedence refPrec = ref instanceof GlobalReferable ? myInfoProvider.precedenceOf(((GlobalReferable) ref)) : Precedence.DEFAULT;
+            Precedence refPrec = ref instanceof GlobalReferable ? ((GlobalReferable) ref).getPrecedence() : Precedence.DEFAULT;
             if (prec <= refPrec.priority)
               return false; // no bracket drawn
           }
@@ -698,7 +698,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   private void prettyPrintNameWithPrecedence(GlobalReferable def) {
-    Precedence precedence = myInfoProvider.precedenceOf(def);
+    Precedence precedence = def.getPrecedence();
     if (!precedence.equals(Precedence.DEFAULT)) {
       myBuilder.append("\\infix");
       if (precedence.associativity == Precedence.Associativity.LEFT_ASSOC) myBuilder.append('l');

@@ -33,13 +33,23 @@ public class ScopeTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void openAbstractTestError() {
-    resolveNamesModule("\\class Test { \\function y => x } \\where { \\class A { | x : Nat } \\open A }", 1);
+  public void fieldsAreOpen() {
+    resolveNamesModule("\\class Test { \\function y => x } \\where { \\class A { | x : Nat } }");
   }
 
   @Test
-  public void openAbstractTestError2() {
-    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } \\open A }", 1);
+  public void dynamicsAreOpen() {
+    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } }");
+  }
+
+  @Test
+  public void staticsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat } \\where { \\function y => 0 } }", 1);
+  }
+
+  @Test
+  public void openStatics() {
+    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat } \\where { \\function y => 0 } \\open A }");
   }
 
   @Test
@@ -64,7 +74,7 @@ public class ScopeTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void notInScopeTest() {
-    resolveNamesModule("\\class A { \\function x => 0 } \\function y : Nat => x", 1);
+  public void dynamicFunctionTest() {
+    resolveNamesModule("\\class A { \\function x => 0 } \\function y : Nat => x");
   }
 }

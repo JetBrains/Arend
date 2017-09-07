@@ -239,7 +239,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -277,7 +277,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -305,7 +305,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -329,7 +329,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -351,7 +351,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());

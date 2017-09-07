@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.TextPrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
@@ -68,7 +67,7 @@ public abstract class ParseSource {
       if (nameResolver.nsProviders.dynamics instanceof SimpleDynamicNamespaceProvider) {
         ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
       }
-      new GroupNameResolver<>(nameResolver, TextPrettyPrinterInfoProvider.INSTANCE, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
+      new GroupNameResolver<>(nameResolver, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {

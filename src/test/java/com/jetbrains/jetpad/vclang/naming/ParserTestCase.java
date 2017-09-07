@@ -61,14 +61,14 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseExpr(text, 0);
   }
 
-  GlobalReference parseDef(String text, int errors) {
+  Group parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
     Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
     assertThat(errorList, containsErrors(errors));
-    return definition == null ? null : (GlobalReference) definition.getReferable();
+    return definition;
   }
 
-  protected GlobalReference parseDef(String text) {
+  protected Group parseDef(String text) {
     return parseDef(text, 0);
   }
 

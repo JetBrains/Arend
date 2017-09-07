@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -33,11 +34,16 @@ public class GroupResolver<T> {
   private Scope getGroupScope(Group group, Scope parentScope, boolean reportErrors) {
     Scope staticScope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(group.getReferable()));
     Scope dynamicScope = new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(group.getReferable()));
+    Scope scope = new MergeScope(staticScope, dynamicScope, parentScope);
+    if (group.getNamespaceCommands().isEmpty()) {
+      return scope;
+    }
+
     MergeScope cmdScope = new MergeScope(new ArrayList<>());
     for (NamespaceCommand cmd : group.getNamespaceCommands()) {
-      Scope scope = getOpenedScope(cmd, parentScope);
-      if (scope != null) {
-        cmdScope.addScope(scope, reportErrors ? myErrorReporter : DummyErrorReporter.INSTANCE);
+      Scope openedScope = getOpenedScope(cmd, scope);
+      if (openedScope != null) {
+        cmdScope.addScope(openedScope, reportErrors ? myErrorReporter : DummyErrorReporter.INSTANCE);
       }
     }
     return new MergeScope(staticScope, dynamicScope, cmdScope, parentScope);
@@ -71,7 +77,7 @@ public class GroupResolver<T> {
     }
 
     if (!(referable instanceof GlobalReferable)) {
-      myErrorReporter.report(new ReferenceError<>("'" + refText + "' is not a reference to a definition", referable));
+      myErrorReporter.report(referable instanceof UnresolvedReference ? new ReferenceError<>("Not in scope: " + refText, referable) : new ReferenceError<>("'" + refText + "' is not a reference to a definition", referable));
       return null;
     }
 

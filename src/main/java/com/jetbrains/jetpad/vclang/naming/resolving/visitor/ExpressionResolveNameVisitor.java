@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
 
 import java.util.*;
 
@@ -26,15 +25,13 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   private final Scope myScope;
   private final List<Referable> myContext;
   private final NameResolver myNameResolver;
-  private final ParserInfoProvider myInfoProvider;
   private final ErrorReporter<T> myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
+  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, ErrorReporter<T> errorReporter) {
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new LocalScope(context), parentScope);
     myContext = context;
     myNameResolver = nameResolver;
-    myInfoProvider = infoProvider;
     myErrorReporter = errorReporter;
   }
 
@@ -231,7 +228,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
         if (ref instanceof UnresolvedReference) {
           errorCause = elem.binOp.getData();
         } else {
-          parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? myInfoProvider.precedenceOf((GlobalReferable) ref) : Precedence.DEFAULT, elem.binOp, elem.argument == null);
+          parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? ((GlobalReferable) ref).getPrecedence() : Precedence.DEFAULT, elem.binOp, elem.argument == null);
           expression = elem.argument;
         }
       }

@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.ParserInfoProvider;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,12 +23,10 @@ import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisitor<T, Scope, Void> {
   private final NameResolver myNameResolver;
-  private final ParserInfoProvider myInfoProvider;
   private final ErrorReporter<T> myErrorReporter;
 
-  public DefinitionResolveNameVisitor(NameResolver nameResolver, ParserInfoProvider infoProvider, ErrorReporter<T> errorReporter) {
+  public DefinitionResolveNameVisitor(NameResolver nameResolver, ErrorReporter<T> errorReporter) {
     myNameResolver = nameResolver;
-    myInfoProvider = infoProvider;
     myErrorReporter = errorReporter;
   }
 
@@ -44,7 +42,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   public Void visitFunction(Concrete.FunctionDefinition<T> def, Scope scope) {
     Concrete.FunctionBody<T> body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myInfoProvider, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
 
     Concrete.Expression<T> resultType = def.getResultType();
@@ -95,7 +93,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   @Override
   public Void visitData(Concrete.DataDefinition<T> def, Scope scope) {
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myInfoProvider, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
     if (def.getUniverse() != null) {
       def.getUniverse().accept(exprVisitor, null);
@@ -129,7 +127,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   }
 
   private void visitConstructor(Concrete.Constructor<T> def, Scope parentScope, List<Referable> context) {
-    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, context, myNameResolver, myInfoProvider, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, context, myNameResolver, myErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters());
       for (Concrete.ReferenceExpression<T> ref : def.getEliminatedReferences()) {
@@ -159,7 +157,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   @Override
   public Void visitClass(Concrete.ClassDefinition<T> def, Scope scope) {
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myInfoProvider, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(scope, context, myNameResolver, myErrorReporter);
     for (Concrete.ReferenceExpression<T> superClass : def.getSuperClasses()) {
       exprVisitor.visitReference(superClass, null);
     }
@@ -187,7 +185,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   @Override
   public Void visitClassView(Concrete.ClassView<T> def, Scope parentScope) {
-    new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myInfoProvider, myErrorReporter).visitReference(def.getUnderlyingClass(), null);
+    new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myErrorReporter).visitReference(def.getUnderlyingClass(), null);
     if (def.getUnderlyingClass().getExpression() != null || !(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
       if (!(def.getUnderlyingClass().getReferent() instanceof UnresolvedReference)) {
         myErrorReporter.report(new WrongReferable<>("Expected a class", def.getUnderlyingClass().getReferent(), def));
@@ -228,7 +226,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
 
   @Override
   public Void visitInstance(Concrete.Instance<T> def, Scope parentScope) {
-    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myInfoProvider, myErrorReporter);
+    ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
     if (def.getClassView().getReferent() instanceof GlobalReferable) {

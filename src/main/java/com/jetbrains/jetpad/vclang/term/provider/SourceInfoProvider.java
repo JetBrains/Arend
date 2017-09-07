@@ -21,14 +21,10 @@ public interface SourceInfoProvider<SourceIdT extends SourceId> extends Definiti
     }
 
     @Override
-    public Precedence precedenceOf(GlobalReferable referable) {
-      return Precedence.DEFAULT;
-    }
-
-    @Override
     public String nameFor(Referable referable) {
       return referable.textRepresentation();
     }
   }
+
   SourceInfoProvider TRIVIAL = new Trivial();
 }

@@ -218,7 +218,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void useExistingTestError() {
-    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 2);
+    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 1);
   }
 
   @Test
@@ -300,7 +300,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\function f => \\Type0\n" +
         "\\class X \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
-        "\\function g => f", 2);
+        "\\function g => f");
   }
 
   @Test
@@ -310,7 +310,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\class Y \\where { \\function f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y\n" +
-        "\\function g => f", 2);
+        "\\function g => f", 1);
   }
 
   @Test

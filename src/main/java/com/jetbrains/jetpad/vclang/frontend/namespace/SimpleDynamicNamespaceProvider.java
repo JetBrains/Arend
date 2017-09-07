@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -55,10 +56,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   private void collectWithoutSuperClasses(Group group) {
     SimpleNamespace ns = new SimpleNamespace();
     for (Group subgroup : group.getDynamicSubgroups()) {
-      ns.addDefinition(subgroup.getReferable(), myErrorReporter);
+      ns.addDefinition(subgroup.getReferable(), DummyErrorReporter.INSTANCE);
     }
     for (GlobalReferable field : group.getFields()) {
-      ns.addDefinition(field, myErrorReporter);
+      ns.addDefinition(field, DummyErrorReporter.INSTANCE);
     }
     myNamespaces.put(group.getReferable(), ns);
 
@@ -80,7 +81,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   private void collectWithSupperClasses(Group group, Scope parentScope, Set<GlobalReferable> updated) {
     Scope scope = new GroupResolver(myNameResolver, myErrorReporter).getGroupScope(group, parentScope);
     SimpleNamespace ns = new SimpleNamespace();
-    if (!updateClass(group.getReferable(), new ExpressionResolveNameVisitor(scope, null, myNameResolver, null, myErrorReporter), new HashSet<>(), updated, ns)) {
+    if (!updateClass(group.getReferable(), new ExpressionResolveNameVisitor(scope, null, myNameResolver, myErrorReporter), new HashSet<>(), updated, ns)) {
       updated.add(group.getReferable());
       updateClassNamespace(group.getReferable(), ns);
     }

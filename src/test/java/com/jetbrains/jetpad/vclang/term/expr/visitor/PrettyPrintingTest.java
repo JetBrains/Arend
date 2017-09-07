@@ -85,14 +85,14 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition<Position> def = (Concrete.Definition<Position>) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getDefinition();
+    Concrete.Definition<Position> def = (Concrete.Definition<Position>) ((GlobalReference) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getReferable()).getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition<Position> def = (Concrete.Definition<Position>) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getDefinition();
+    Concrete.Definition<Position> def = (Concrete.Definition<Position>) ((GlobalReference) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
