@@ -71,13 +71,17 @@ public class GroupResolver<T> {
   }
 
   private GlobalReferable resolveGlobal(Referable referable, Scope parentScope) {
-    String refText = referable.textRepresentation();
+    Referable origRef = referable;
     if (referable instanceof UnresolvedReference) {
       referable = ((UnresolvedReference) referable).resolve(parentScope, myNameResolver);
     }
 
     if (!(referable instanceof GlobalReferable)) {
-      myErrorReporter.report(referable instanceof UnresolvedReference ? new ReferenceError<>("Not in scope: " + refText, referable) : new ReferenceError<>("'" + refText + "' is not a reference to a definition", referable));
+      if (referable == null) {
+        myErrorReporter.report(new NotInScopeError<>(origRef));
+      } else if (!(referable instanceof UnresolvedReference)) {
+        myErrorReporter.report(new ReferenceError<>("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef));
+      }
       return null;
     }
 

@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -199,7 +198,7 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
       Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
       GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
       if (resolvedClassifyingField == null) {
-        myErrorReporter.report(new NotInScopeError<>(classifyingField.textRepresentation(), def));
+        myErrorReporter.report(new NotInScopeError<>(classifyingField));
         return null;
       }
       def.setClassifyingField(resolvedClassifyingField);

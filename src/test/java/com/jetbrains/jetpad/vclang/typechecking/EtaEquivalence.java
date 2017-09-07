@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class EtaEquivalence extends TypeCheckingTestCase {
@@ -18,7 +17,6 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
@@ -29,7 +27,6 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
@@ -40,11 +37,11 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     TypeCheckModuleResult result = typeCheckModule(
         "\\class Foo { | foo : Nat | bar : Nat }\n" +
         "\\function f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertNotNull(result.getDefinition());
     assertTrue(result.getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
   }
+
   @Test
   public void pathEtaLeftTest() {
     typeCheckDef("\\function test (p : 0 = 0) => (\\lam (x : path (\\lam i => p @ i) = p) => x) (path (\\lam _ => p))");

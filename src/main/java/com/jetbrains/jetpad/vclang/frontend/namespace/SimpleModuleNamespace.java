@@ -34,7 +34,7 @@ public class SimpleModuleNamespace implements ModuleNamespace {
 
   @Override
   public GlobalReferable getRegisteredClass() {
-    return myRegisteredClass.getReferable();
+    return myRegisteredClass == null ? null : myRegisteredClass.getReferable();
   }
 
   void unregisterClass() {

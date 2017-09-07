@@ -55,7 +55,7 @@ public class ModuleUnresolvedReference implements UnresolvedReference {
     return result;
   }
 
-  @Nonnull
+  @Nullable
   @Override
   public Referable resolve(Scope scope, NameResolver nameResolver) {
     if (myResolved != null) {
@@ -69,13 +69,31 @@ public class ModuleUnresolvedReference implements UnresolvedReference {
     ModuleNamespace moduleNamespace = nameResolver.resolveModuleNamespace(myModulePath);
     if (moduleNamespace == null) {
       myResolved = this;
-      return this;
+      return null;
     }
 
     myResolved = moduleNamespace.getRegisteredClass();
+    if (myResolved == null) {
+      myResolved = this;
+      return null;
+    }
     for (String name : myPath) {
       myResolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) myResolved).resolveName(name);
+      if (myResolved == null) {
+        myResolved = this;
+        return null;
+      }
     }
     return myResolved;
+  }
+
+  @Nonnull
+  @Override
+  public Referable resolve(GlobalReferable enclosingClass, NameResolver nameResolver) {
+    if (myResolved != null) {
+      return myResolved;
+    }
+    myResolved = this;
+    return this;
   }
 }

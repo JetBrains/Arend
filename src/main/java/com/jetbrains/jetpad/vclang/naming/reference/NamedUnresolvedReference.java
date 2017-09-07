@@ -42,7 +42,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     return myName.hashCode();
   }
 
-  @Nonnull
+  @Nullable
   @Override
   public Referable resolve(Scope scope, NameResolver nameResolver) {
     if (resolved != null) {
@@ -51,8 +51,30 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
     if (scope != null) {
       resolved = scope.resolveName(myName);
+      if (resolved == null) {
+        resolved = this;
+        return null;
+      }
+    } else {
+      resolved = this;
     }
-    if (resolved == null) {
+    return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Referable resolve(GlobalReferable enclosingClass, NameResolver nameResolver) {
+    if (resolved != null) {
+      return resolved;
+    }
+
+    if (enclosingClass != null && nameResolver != null) {
+      resolved = nameResolver.nsProviders.statics.forReferable(enclosingClass).resolveName(myName);
+      if (resolved == null) {
+        resolved = this;
+        return null;
+      }
+    } else {
       resolved = this;
     }
     return resolved;

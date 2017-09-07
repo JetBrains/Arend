@@ -10,20 +10,14 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvi
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
-import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,19 +89,14 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private void resolveNamesDef(Concrete.Definition<Position> definition, int errors) {
-    DefinitionResolveNameVisitor<Position> visitor = new DefinitionResolveNameVisitor<>(nameResolver, errorReporter);
-    definition.accept(visitor, new MergeScope(globalScope, new NamespaceScope(new SimpleNamespace(definition.getReferable()))));
-    assertThat(errorList, containsErrors(errors));
-  }
-
   GlobalReference resolveNamesDef(String text, int errors) {
     Group group = parseDef(text);
     staticNsProvider.collect(group, errorReporter);
     dynamicNsProvider.collect(group, errorReporter, nameResolver);
-    GlobalReference result = (GlobalReference) group.getReferable();
-    resolveNamesDef((Concrete.Definition<Position>) result.getDefinition(), errors);
-    return result;
+    GroupNameResolver<Position> groupResolver = new GroupNameResolver<>(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    groupResolver.resolveGroup(group, new MergeScope(new SingletonScope(group.getReferable()), globalScope));
+    assertThat(errorList, containsErrors(errors));
+    return (GlobalReference) group.getReferable();
   }
 
   protected GlobalReference resolveNamesDef(String text) {

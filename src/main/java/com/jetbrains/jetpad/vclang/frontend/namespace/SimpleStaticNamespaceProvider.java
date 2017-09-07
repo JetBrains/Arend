@@ -24,31 +24,29 @@ public class SimpleStaticNamespaceProvider implements StaticNamespaceProvider {
 
   public void collect(Group group, ErrorReporter errorReporter) {
     SimpleNamespace ns = new SimpleNamespace();
-
     for (Group subgroup : group.getSubgroups()) {
-      ns.addDefinition(subgroup.getReferable(), errorReporter);
-      for (GlobalReferable constructor : subgroup.getConstructors()) {
-        ns.addDefinition(constructor, errorReporter);
-      }
-      for (Group subgroup1 : subgroup.getDynamicSubgroups()) {
-        ns.addDefinition(subgroup1.getReferable(), errorReporter);
-      }
-      for (GlobalReferable field : subgroup.getFields()) {
-        ns.addDefinition(field, errorReporter);
-      }
-      collect(subgroup, errorReporter);
-    }
-
-    for (GlobalReferable constructor : group.getConstructors()) {
-      ns.addDefinition(constructor, errorReporter);
+      collectSubgroup(subgroup, ns, errorReporter);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      ns.addDefinition(subgroup.getReferable(), errorReporter);
-      collect(subgroup, errorReporter);
+      collectSubgroup(subgroup, ns, errorReporter);
+    }
+    for (GlobalReferable constructor : group.getConstructors()) {
+      ns.addDefinition(constructor, errorReporter);
     }
     for (GlobalReferable field : group.getFields()) {
       ns.addDefinition(field, errorReporter);
     }
     myNamespaces.put(group.getReferable(), ns);
+  }
+
+  private void collectSubgroup(Group subgroup, SimpleNamespace ns, ErrorReporter errorReporter) {
+    ns.addDefinition(subgroup.getReferable(), errorReporter);
+    for (GlobalReferable constructor : subgroup.getConstructors()) {
+      ns.addDefinition(constructor, errorReporter);
+    }
+    for (GlobalReferable field : subgroup.getFields()) {
+      ns.addDefinition(field, errorReporter);
+    }
+    collect(subgroup, errorReporter);
   }
 }

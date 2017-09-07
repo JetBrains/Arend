@@ -37,6 +37,20 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void parentCallTest() {
     resolveNamesModule(
+        "\\class M {" +
+        "  \\class A {\n" +
+        "    | c : Nat -> Nat -> Nat\n" +
+        "    | f : Nat -> Nat\n" +
+        "  }\n" +
+        "}\n" +
+        "\\function B => M.A {\n" +
+        "  f => \\lam n => c n n\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void parentCallTypecheckingTest() {
+    typeCheckModule(
         "\\class A {\n" +
         "  | c : Nat -> Nat -> Nat\n" +
         "  | f : Nat -> Nat\n" +
@@ -124,6 +138,21 @@ public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void mutualRecursionTestError() {
     resolveNamesModule(
+        "\\class M {" +
+        "  \\class Point {\n" +
+        "    | x : Nat\n" +
+        "    | y : Nat\n" +
+        "  }\n" +
+        "}\n" +
+        "\\function test => M.Point {\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
+        "}", 2);
+  }
+
+  @Test
+  public void mutualRecursionTypecheckingError() {
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +

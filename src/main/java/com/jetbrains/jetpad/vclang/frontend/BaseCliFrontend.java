@@ -67,9 +67,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
-    Position pos = ((GlobalReference) reference).getDefinition().getData();
-    if (pos != null) {
-      map.put(pos.line + ";" + pos.column, reference);
+    if (reference instanceof GlobalReference) {
+      Position pos = ((GlobalReference) reference).getDefinition().getData();
+      if (pos != null) {
+        map.put(pos.line + ";" + pos.column, reference);
+      }
     }
   }
 

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -55,42 +56,28 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
           globalRef = ((Concrete.ModuleCallExpression) left).getModule();
         } else if (left instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) left).getExpression() == null && ((Concrete.ReferenceExpression) left).getReferent() instanceof GlobalReferable) {
           globalRef = (GlobalReferable) ((Concrete.ReferenceExpression) left).getReferent();
-        } else {
-          // myErrorReporter.report(new NotInScopeError<>(name, expr));
         }
 
-        if (globalRef != null) {
-          Referable newRef = myNameResolver.nsProviders.statics.forReferable(globalRef).resolveName(referable.textRepresentation()); // TODO[abstract]: Resolve correctly
-          if (newRef != null) {
-            expr.setExpression(null);
-            expr.setReferent(newRef);
-          } else {
-            myErrorReporter.report(new NotInScopeError<>(referable.textRepresentation(), expr)); // TODO[abstract]: report another error
-          }
+        Referable newRef = ((UnresolvedReference) referable).resolve(globalRef, myNameResolver);
+        if (newRef == null) {
+          myErrorReporter.report(new NotInScopeError<>(referable));
+        } else if (!(newRef instanceof UnresolvedReference)) {
+          expr.setExpression(null); // TODO[abstract]: Remove this (after removing module calls)
+          expr.setReferent(newRef);
         }
       }
     } else {
-      Referable referable = resolveReferable(expr.getReferent(), expr);
-      if (referable != null) {
-        expr.setReferent(referable);
+      Referable referable = expr.getReferent();
+      if (referable instanceof UnresolvedReference) {
+        Referable newRef = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
+        if (newRef == null) {
+          myErrorReporter.report(new NotInScopeError<>(referable));
+        } else if (!(newRef instanceof UnresolvedReference)) {
+          expr.setReferent(newRef);
+        }
       }
     }
     return null;
-  }
-
-  private Referable resolveReferable(Referable referable, Concrete.SourceNode<T> sourceNode) {
-    if (!(referable instanceof UnresolvedReference)) {
-      return null;
-    }
-
-    referable = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
-
-    if (referable instanceof UnresolvedReference) {
-      myErrorReporter.report(new NotInScopeError<>(referable.textRepresentation(), sourceNode));
-      return null;
-    } else {
-      return referable;
-    }
   }
 
   @Override
@@ -105,7 +92,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       if (ref != null) {
         expr.setModule(ref);
       } else {
-        myErrorReporter.report(new NotInScopeError<>(expr.getPath().toString(), expr));
+        myErrorReporter.report(new NamingError<>("Not in scope: " + expr.getPath().toString(), expr));
       }
     }
     return null;
@@ -321,8 +308,8 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
     Referable referable = ((Concrete.ConstructorPattern<T>) pattern).getConstructor();
     if (referable instanceof UnresolvedReference) {
       Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope, myNameResolver);
-      if (newRef instanceof UnresolvedReference) {
-        myErrorReporter.report(new NotInScopeError<>(referable.textRepresentation(), pattern));
+      if (newRef == null) {
+        myErrorReporter.report(new NotInScopeError<>(referable));
       } else {
         ((Concrete.ConstructorPattern<T>) pattern).setConstructor(newRef);
       }

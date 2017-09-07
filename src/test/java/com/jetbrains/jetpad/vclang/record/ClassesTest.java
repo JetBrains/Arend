@@ -129,7 +129,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
-        "}", 1);
+        "}");
   }
 
   @Test
@@ -156,7 +156,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
-        "}", 1);
+        "}");
   }
 
   @Test
@@ -183,7 +183,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
-        "}", 1);
+        "}");
   }
 
   @Test
@@ -210,7 +210,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "      \\function f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
-        "}", 1);
+        "}");
   }
 
   @Test
@@ -220,7 +220,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | f : Nat -> \\Type0\n" +
         "  | g : f 0\n" +
         "}\n" +
-        "\\function f (b : B) : b.f 0 => b.g");
+        "\\function h (b : B) : b.f 0 => b.g");
   }
 
   @Test
@@ -232,7 +232,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    | g : f 0\n" +
         "  }\n" +
         "}\n" +
-        "\\function f (b : B) (a : b.A) : b.f 0 => a.g");
+        "\\function h (b : B) (a : b.A) : b.f 0 => a.g");
   }
 
   @Test

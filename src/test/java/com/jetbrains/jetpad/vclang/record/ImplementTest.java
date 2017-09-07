@@ -55,11 +55,11 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implement2() {
     typeCheckModule(
-        "\\class A {\n" +
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "  | a => 0\n" +
         "}\n" +
@@ -107,14 +107,14 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implementNew() {
     typeCheckModule(
-        "\\class A {\n" +
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}\n" +
-        "\\function f (x : A) => x.a\n" +
+        "\\function f (x : C) => x.a\n" +
         "\\function g : f (\\new B { a => 0 }) = 0 => path (\\lam _ => 0)");
   }
 
@@ -148,7 +148,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | p : b = c\n" +
         "  | f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
-        "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
+        "\\function g => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
 
   @Test
@@ -189,14 +189,14 @@ public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void universe() {
     TypeCheckModuleResult result = typeCheckModule(
-        "\\class A {\n" +
+        "\\class C {\n" +
         "  | A : \\Set1\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}");
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
+    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("B")).getSort());
   }
 

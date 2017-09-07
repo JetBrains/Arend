@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class LongUnresolvedReference extends NamedUnresolvedReference {
@@ -49,18 +50,39 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
     if (resolved != null) {
       return resolved;
     }
-    if (nameResolver == null) {
-      resolved = this;
-      return this;
+    if (scope != null) {
+      resolved = scope.resolveName(super.textRepresentation());
     }
-    super.resolve(scope, nameResolver);
+
+    resolvePath(nameResolver);
+    return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Referable resolve(GlobalReferable enclosingClass, NameResolver nameResolver) {
+    if (resolved != null) {
+      return resolved;
+    }
+    if (enclosingClass != null && nameResolver != null) {
+      resolved = nameResolver.nsProviders.statics.forReferable(enclosingClass).resolveName(super.textRepresentation());
+    }
+
+    return resolvePath(nameResolver);
+  }
+
+  private Referable resolvePath(NameResolver nameResolver) {
+    if (!(resolved instanceof GlobalReferable) || !myPath.isEmpty() && nameResolver == null) {
+      resolved = this;
+      return null;
+    }
 
     for (String name : myPath) {
-      if (!(resolved instanceof GlobalReferable)) {
-        resolved = this;
-        return this;
-      }
       resolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) resolved).resolveName(name);
+      if (resolved == null) {
+        resolved = this;
+        return null;
+      }
     }
 
     return resolved;

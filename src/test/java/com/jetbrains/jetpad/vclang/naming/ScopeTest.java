@@ -38,8 +38,8 @@ public class ScopeTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dynamicsAreOpen() {
-    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } }");
+  public void dynamicsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } }", 1);
   }
 
   @Test
@@ -50,6 +50,11 @@ public class ScopeTest extends TypeCheckingTestCase {
   @Test
   public void openStatics() {
     resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat } \\where { \\function y => 0 } \\open A }");
+  }
+
+  @Test
+  public void openDynamics() {
+    resolveNamesModule("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } \\open A }");
   }
 
   @Test
@@ -75,6 +80,20 @@ public class ScopeTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicFunctionTest() {
-    resolveNamesModule("\\class A { \\function x => 0 } \\function y : Nat => x");
+    resolveNamesModule("\\class A { \\function x => 0 } \\function y : Nat => x", 1);
+  }
+
+  @Test
+  public void dynamicFunctionOpenTest() {
+    resolveNamesModule("\\class A { \\function x => 0 } \\function y : Nat => x \\open A");
+  }
+
+  @Test
+  public void duplicateInternalName() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\data D | x Nat", 1);
   }
 }

@@ -64,12 +64,10 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(a);
 
     tcState.reset();
-    assertThat(tcState.getTypechecked(aClass.getReferable()), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(nullValue()));
 
     load(a, aClass.getReferable());
-    assertThat(tcState.getTypechecked(aClass.getReferable()), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(notNullValue()));
   }
@@ -90,13 +88,11 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(a);
 
     tcState.reset();
-    assertThat(tcState.getTypechecked(aClass.getReferable()), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "D")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(nullValue()));
 
     load(a, aClass.getReferable());
-    assertThat(tcState.getTypechecked(aClass.getReferable()), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "D")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(notNullValue()));

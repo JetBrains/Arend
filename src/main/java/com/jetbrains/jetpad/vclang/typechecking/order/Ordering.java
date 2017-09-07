@@ -115,7 +115,7 @@ public class Ordering<T> {
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
     definition.accept(new DefinitionGetDepsVisitor<>(myInstanceProviderSet.getInstanceProvider(definition.getReferable()), myTypecheckableProvider, dependencies), typecheckable.isHeader());
-    if (typecheckable.isHeader() && dependencies.contains(definition)) {
+    if (typecheckable.isHeader() && dependencies.contains(definition.getReferable())) {
       myStack.pop();
       currentState.onStack = false;
       return OrderResult.RECURSION_ERROR;
