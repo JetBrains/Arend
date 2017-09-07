@@ -50,7 +50,7 @@ public class Ordering<T> {
   */
 
   public void doOrder(Concrete.Definition<T> definition) {
-    if (definition instanceof Concrete.ClassView || definition instanceof Concrete.ClassViewField) {
+    if (definition instanceof Concrete.ClassView) { // TODO[abstract]: Typecheck class views
       return;
     }
     if (!myListener.needsOrdering(definition)) {
@@ -125,7 +125,7 @@ public class Ordering<T> {
       Concrete.ReferableDefinition<T> dependency = myTypecheckableProvider.getTypecheckable(referable);
       Concrete.Definition<T> dependencyDef = dependency.getRelatedDefinition();
 
-      if (dependencyDef.equals(definition)) {
+      if (dependencyDef.getReferable().equals(definition.getReferable())) {
         if (!(dependency instanceof Concrete.ClassField)) {
           recursion = DependencyListener.Recursion.IN_BODY;
         }

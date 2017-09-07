@@ -219,11 +219,6 @@ public class DefinitionResolveNameVisitor<T> implements ConcreteDefinitionVisito
   }
 
   @Override
-  public Void visitClassViewField(Concrete.ClassViewField def, Scope parentScope) {
-    throw new IllegalStateException();
-  }
-
-  @Override
   public Void visitInstance(Concrete.Instance<T> def, Scope parentScope) {
     ExpressionResolveNameVisitor<T> exprVisitor = new ExpressionResolveNameVisitor<>(parentScope, new ArrayList<>(), myNameResolver, myErrorReporter);
     exprVisitor.visitParameters(def.getParameters());

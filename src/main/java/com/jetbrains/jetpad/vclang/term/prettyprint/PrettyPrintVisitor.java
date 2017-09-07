@@ -1020,7 +1020,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         for (Concrete.ClassViewField field : def.getFields()) {
           myBuilder.append("\n");
           printIndent();
-          visitClassViewField(field, null);
+          visitClassViewField(field);
         }
         myIndent -= INDENT;
         myBuilder.append("\n");
@@ -1036,10 +1036,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  @Override
-  public Void visitClassViewField(Concrete.ClassViewField def, Void params) {
+  private void visitClassViewField(Concrete.ClassViewField def) {
     myBuilder.append(def.getUnderlyingField().textRepresentation()).append(" => ").append(def.getReferable().textRepresentation());
-    return null;
   }
 
   @Override

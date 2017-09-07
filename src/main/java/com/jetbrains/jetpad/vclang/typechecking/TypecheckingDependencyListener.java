@@ -74,7 +74,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
           cycle.add(definition);
           if (!unit1.isHeader()) {
             if (Typecheckable.hasHeader(definition)) {
-              mySuspensions.remove(definition.getRelatedDefinition().getReferable());
+              mySuspensions.remove(definition.getReferable());
             }
             myTypecheckedReporter.typecheckingFailed(definition);
           }

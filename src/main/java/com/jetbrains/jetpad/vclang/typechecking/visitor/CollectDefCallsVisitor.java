@@ -41,7 +41,7 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
           myDependencies.add(instance.getReferable());
         }
       } else if (definition != null) {
-        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition.getRelatedDefinition());
+        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter<?> parameter : parameters) {
             Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());

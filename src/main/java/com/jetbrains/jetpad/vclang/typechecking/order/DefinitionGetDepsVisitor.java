@@ -134,12 +134,8 @@ public class DefinitionGetDepsVisitor<T> implements ConcreteDefinitionVisitor<T,
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView def, Boolean params) {
-    return null;
-  }
-
-  @Override
-  public Void visitClassViewField(Concrete.ClassViewField def, Boolean params) {
+  public Void visitClassView(Concrete.ClassView<T> def, Boolean params) {
+    new CollectDefCallsVisitor<T>(myInstanceProvider, myTypecheckableProvider, myDependencies).visitReference(def.getUnderlyingClass(), null);
     return null;
   }
 

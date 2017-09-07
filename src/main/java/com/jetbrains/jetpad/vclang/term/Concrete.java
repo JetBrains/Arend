@@ -1180,7 +1180,7 @@ public final class Concrete {
 
   // ClassViews
 
-  public static class ClassView<T> extends Definition<T> { // TODO[abstract]: Class view is not a definition
+  public static class ClassView<T> extends Definition<T> {
     private final ReferenceExpression<T> myUnderlyingClass;
     private Referable myClassifyingField;
     private final List<ClassViewField<T>> myFields;
@@ -1217,7 +1217,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassViewField<T> extends Definition<T> { // TODO[abstract]: Class view is not a definition
+  public static class ClassViewField<T> extends ReferableDefinition<T> {
     private Referable myUnderlyingField;
     private final ClassView<T> myOwnView;
 
@@ -1242,8 +1242,8 @@ public final class Concrete {
     }
 
     @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<T, ? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassViewField(this, params);
+    public Definition<T> getRelatedDefinition() {
+      return myOwnView;
     }
   }
 
