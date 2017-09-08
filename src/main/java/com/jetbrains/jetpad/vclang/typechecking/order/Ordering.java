@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 
 import java.util.*;
@@ -82,6 +83,35 @@ public class Ordering<T> {
     return ok;
   }
 
+  private void collectInstances(InstanceProvider instanceProvider, Stack<GlobalReferable> referables, Set<GlobalReferable> result) {
+    while (!referables.isEmpty()) {
+      GlobalReferable referable = referables.pop();
+      if (result.contains(referable)) {
+        continue;
+      }
+      result.add(referable);
+
+      Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.getTypecheckable(referable);
+      if (definition instanceof Concrete.ClassViewField) {
+        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
+          referables.push(instance.getReferable());
+        }
+      } else if (definition != null) {
+        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition);
+        if (parameters != null) {
+          for (Concrete.Parameter<?> parameter : parameters) {
+            Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
+            if (classView != null) {
+              for (Concrete.Instance instance : instanceProvider.getInstances(classView)) {
+                referables.push(instance.getReferable());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   private OrderResult doOrderRecursively(Typecheckable<T> typecheckable) {
     Concrete.Definition<T> definition = typecheckable.getDefinition();
     Concrete.ClassDefinition<T> enclosingClass = null; // getEnclosingClass(definition); // TODO[abstract]
@@ -108,13 +138,21 @@ public class Ordering<T> {
       }
     }
 
-    Set<GlobalReferable> dependencies = new LinkedHashSet<>();
+    Stack<GlobalReferable> dependenciesWithoutInstances = new Stack<>();
     if (enclosingClass != null) {
-      dependencies.add(enclosingClass.getReferable());
+      dependenciesWithoutInstances.add(enclosingClass.getReferable());
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
-    definition.accept(new DefinitionGetDepsVisitor<>(myInstanceProviderSet.getInstanceProvider(definition.getReferable()), myTypecheckableProvider, dependencies), typecheckable.isHeader());
+    definition.accept(new DefinitionGetDependenciesVisitor<>(dependenciesWithoutInstances), typecheckable.isHeader());
+    Collection<GlobalReferable> dependencies;
+    InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getReferable());
+    if (instanceProvider == null) {
+      dependencies = dependenciesWithoutInstances;
+    } else {
+      dependencies = new LinkedHashSet<>();
+      collectInstances(instanceProvider, dependenciesWithoutInstances, (Set<GlobalReferable>) dependencies);
+    }
     if (typecheckable.isHeader() && dependencies.contains(definition.getReferable())) {
       myStack.pop();
       currentState.onStack = false;

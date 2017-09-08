@@ -26,7 +26,7 @@ public class TerminationCheckError<T> extends GeneralError<T> {
 
   @Override
   public T getCause() {
-    return null; // TODO[abstract]: return definition;
+    return (T) definition;
   }
 
   public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {

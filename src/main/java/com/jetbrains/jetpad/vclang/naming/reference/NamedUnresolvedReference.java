@@ -63,7 +63,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @Nullable
   @Override
-  public Referable resolve(GlobalReferable enclosingClass, NameResolver nameResolver) {
+  public Referable resolveStatic(GlobalReferable enclosingClass, NameResolver nameResolver) {
     if (resolved != null) {
       return resolved;
     }
@@ -77,6 +77,26 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     } else {
       resolved = this;
     }
+    return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveDynamic(GlobalReferable enclosingClass, NameResolver nameResolver) {
+    if (resolved != null) {
+      return resolved;
+    }
+
+    if (enclosingClass != null && nameResolver != null) {
+      resolved = nameResolver.nsProviders.dynamics.forReferable(enclosingClass).resolveName(myName);
+      if (resolved == null) {
+        resolved = this;
+        return null;
+      }
+    } else {
+      resolved = this;
+    }
+
     return resolved;
   }
 }

@@ -70,7 +70,7 @@ public class DataDefinition extends Definition {
 
   public Constructor getConstructor(GlobalReferable referable) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getReferable().equals(referable)) { // TODO[abstract]
+      if (constructor.getReferable().equals(referable)) {
         return constructor;
       }
     }

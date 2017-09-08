@@ -99,13 +99,14 @@ public class DefinitionStateSerialization {
 
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
+      fBuilder.setName(myPersistenceProvider.getIdFor(field.getReferable()));
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
       fBuilder.setType(defSerializer.writeExpr(field.getBaseType(Sort.STD)));
-      builder.putFields(myPersistenceProvider.getIdFor(field.getReferable()), fBuilder.build());
+      builder.addPersonalField(fBuilder.build());
     }
 
     for (ClassField classField : definition.getFields()) {
-      builder.addClassFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
+      builder.addFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
     }
     for (Map.Entry<ClassField, ClassDefinition.Implementation> impl : definition.getImplemented()) {
       DefinitionProtos.Definition.ClassData.Implementation.Builder iBuilder = DefinitionProtos.Definition.ClassData.Implementation.newBuilder();

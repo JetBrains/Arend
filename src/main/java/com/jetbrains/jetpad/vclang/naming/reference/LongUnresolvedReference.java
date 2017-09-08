@@ -60,12 +60,25 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
 
   @Nullable
   @Override
-  public Referable resolve(GlobalReferable enclosingClass, NameResolver nameResolver) {
+  public Referable resolveStatic(GlobalReferable enclosingClass, NameResolver nameResolver) {
     if (resolved != null) {
       return resolved;
     }
     if (enclosingClass != null && nameResolver != null) {
       resolved = nameResolver.nsProviders.statics.forReferable(enclosingClass).resolveName(super.textRepresentation());
+    }
+
+    return resolvePath(nameResolver);
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveDynamic(GlobalReferable enclosingClass, NameResolver nameResolver) {
+    if (resolved != null) {
+      return resolved;
+    }
+    if (enclosingClass != null && nameResolver != null) {
+      resolved = nameResolver.nsProviders.dynamics.forReferable(enclosingClass).resolveName(super.textRepresentation());
     }
 
     return resolvePath(nameResolver);

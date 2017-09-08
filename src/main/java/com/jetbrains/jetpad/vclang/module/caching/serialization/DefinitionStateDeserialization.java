@@ -40,8 +40,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = new ClassDefinition(abstractDef);
-          for (String constructorId : defProto.getClass_().getFieldsMap().keySet()) {
-            GlobalReferable absField = getAbstract(constructorId);
+          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+            GlobalReferable absField = getAbstract(fieldProto.getName());
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
             state.record(absField, res);
@@ -127,7 +127,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
   }
 
   private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
-    for (int classFieldRef : classProto.getClassFieldRefList()) {
+    for (int classFieldRef : classProto.getFieldRefList()) {
       classDef.addField(calltargetProvider.getCalltarget(classFieldRef, ClassField.class));
     }
     for (Map.Entry<Integer, DefinitionProtos.Definition.ClassData.Implementation> entry : classProto.getImplementationsMap().entrySet()) {
@@ -145,9 +145,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       classDef.setEnclosingThisField(calltargetProvider.getCalltarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
     }
 
-    for (Map.Entry<String, DefinitionProtos.Definition.ClassData.Field> entry : classProto.getFieldsMap().entrySet()) {
-      DefinitionProtos.Definition.ClassData.Field fieldProto = entry.getValue();
-      ClassField field = getTypechecked(state, entry.getKey()); // TODO[abstract]: What's going on here?
+    for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
+      ClassField field = getTypechecked(state, fieldProto.getName());
       field.setThisParameter((TypedDependentLink) defDeserializer.readParameter(fieldProto.getThisParam()));
       field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
       classDef.addPersonalField(field);

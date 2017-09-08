@@ -7,5 +7,5 @@ import java.util.Set;
 public interface ModuleNamespace {
   Set<String> getNames();
   ModuleNamespace getSubmoduleNamespace(String submodule);
-  GlobalReferable getRegisteredClass(); // TODO[abstract]: return Namespace instead
+  GlobalReferable getRegisteredClass();
 }

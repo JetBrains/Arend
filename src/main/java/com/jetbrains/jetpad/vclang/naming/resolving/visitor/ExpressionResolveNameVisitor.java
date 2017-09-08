@@ -58,7 +58,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
           globalRef = (GlobalReferable) ((Concrete.ReferenceExpression) left).getReferent();
         }
 
-        Referable newRef = ((UnresolvedReference) referable).resolve(globalRef, myNameResolver);
+        Referable newRef = ((UnresolvedReference) referable).resolveStatic(globalRef, myNameResolver);
         if (newRef == null) {
           myErrorReporter.report(new NotInScopeError<>(referable));
         } else if (!(newRef instanceof UnresolvedReference)) {
@@ -310,7 +310,7 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
       Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope, myNameResolver);
       if (newRef == null) {
         myErrorReporter.report(new NotInScopeError<>(referable));
-      } else {
+      } else if (!(newRef instanceof UnresolvedReference)) {
         ((Concrete.ConstructorPattern<T>) pattern).setConstructor(newRef);
       }
     }
@@ -339,12 +339,12 @@ public class ExpressionResolveNameVisitor<T> implements ConcreteExpressionVisito
   void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls, GlobalReferable classDef) {
     for (Concrete.ClassFieldImpl<T> impl : classFieldImpls) {
       Referable field = impl.getImplementedField();
-      if (field instanceof UnresolvedReference) { // TODO[abstract]: Rewrite this using resolve method of UnresolvedReference
-        GlobalReferable resolvedRef = myNameResolver.nsProviders.dynamics.forReferable(classDef).resolveName(field.textRepresentation());
-        if (resolvedRef != null) {
-          impl.setImplementedField(resolvedRef);
-        } else {
+      if (field instanceof UnresolvedReference) {
+        Referable resolvedRef = ((UnresolvedReference) field).resolveDynamic(classDef, myNameResolver);
+        if (resolvedRef == null) {
           myErrorReporter.report(new NoSuchFieldError<>(field.textRepresentation(), impl));
+        } else if (!(resolvedRef instanceof UnresolvedReference)) {
+          impl.setImplementedField(resolvedRef);
         }
       }
       impl.getImplementation().accept(this, null);

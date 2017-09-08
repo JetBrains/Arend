@@ -1,25 +1,21 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, Void, Void> {
-  private final InstanceProvider myInstanceProvider;
-  private final TypecheckableProvider myTypecheckableProvider;
-  private final Set<GlobalReferable> myDependencies;
+  private final Collection<GlobalReferable> myDependencies;
 
-  public CollectDefCallsVisitor(InstanceProvider instanceProvider, TypecheckableProvider typecheckableProvider, Set<GlobalReferable> dependencies) {
-    myInstanceProvider = instanceProvider;
-    myTypecheckableProvider = typecheckableProvider;
+  public CollectDefCallsVisitor(Collection<GlobalReferable> dependencies) {
     myDependencies = dependencies;
+  }
+
+  public Collection<GlobalReferable> getDependencies() {
+    return myDependencies;
   }
 
   @Override
@@ -29,37 +25,11 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
     return null;
   }
 
-  private void addDependencies(Referable referable) {
-    if (!(referable instanceof GlobalReferable)) {
-      return;
-    }
-
-    Concrete.ReferableDefinition<?> definition = myTypecheckableProvider.getTypecheckable((GlobalReferable) referable); // TODO[abstract]: Move this to Ordering
-    if (myInstanceProvider != null) {
-      if (definition instanceof Concrete.ClassViewField) {
-        for (Concrete.Instance instance : myInstanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
-          myDependencies.add(instance.getReferable());
-        }
-      } else if (definition != null) {
-        Collection<? extends Concrete.Parameter<?>> parameters = Concrete.getParameters(definition);
-        if (parameters != null) {
-          for (Concrete.Parameter<?> parameter : parameters) {
-            Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter<?>) parameter).getType());
-            if (classView != null) {
-              for (Concrete.Instance instance : myInstanceProvider.getInstances(classView)) {
-                myDependencies.add(instance.getReferable());
-              }
-            }
-          }
-        }
-      }
-    }
-    myDependencies.add((GlobalReferable) referable);
-  }
-
   @Override
   public Void visitReference(Concrete.ReferenceExpression<T> expr, Void ignore) {
-    addDependencies(expr.getReferent());
+    if (expr.getReferent() instanceof GlobalReferable) {
+      myDependencies.add((GlobalReferable) expr.getReferent());
+    }
     if (expr.getExpression() != null) {
       expr.getExpression().accept(this, null);
     }
@@ -131,7 +101,9 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
 
   @Override
   public Void visitBinOp(Concrete.BinOpExpression<T> expr, Void ignore) {
-    addDependencies(expr.getReferent());
+    if (expr.getReferent() instanceof GlobalReferable) {
+      myDependencies.add((GlobalReferable) expr.getReferent());
+    }
     expr.getLeft().accept(this, null);
     if (expr.getRight() != null) {
       expr.getRight().accept(this, null);

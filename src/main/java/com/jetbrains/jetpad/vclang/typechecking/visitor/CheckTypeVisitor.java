@@ -462,7 +462,7 @@ public class CheckTypeVisitor<T> implements ConcreteExpressionVisitor<T, Expecte
 
   @Override
   public Result visitInferenceReference(Concrete.InferenceReferenceExpression<T> expr, ExpectedType params) {
-    throw new IllegalStateException(); // TODO[abstract]
+    return new Result(new InferenceReferenceExpression(expr.getVariable(), myEquations), expr.getVariable().getType());
   }
 
   @Override

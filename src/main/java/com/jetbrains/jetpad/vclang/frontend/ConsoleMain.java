@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
-import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.apache.commons.cli.*;
 
@@ -83,7 +82,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   @Override
   protected Group loadPrelude() {
-    Group prelude = super.loadPrelude(); // TODO[abstract]
+    Group prelude = super.loadPrelude();
     Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude.getReferable());
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
