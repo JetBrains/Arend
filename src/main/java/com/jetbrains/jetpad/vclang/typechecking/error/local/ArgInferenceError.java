@@ -84,7 +84,7 @@ public class ArgInferenceError extends LocalTypeCheckingError {
             vList(Arrays.stream(candidates).map(DocFactory::termDoc).collect(Collectors.toList()))),
       expected == null && actual == null
         ? nullDoc()
-        : vList(text("Since types of the candidates are not less or equal to the expected type"),
+        : vList(text("Since types of the candidates are not less than or equal to the expected type"),
                 expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected)),
                 actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual))));
   }
