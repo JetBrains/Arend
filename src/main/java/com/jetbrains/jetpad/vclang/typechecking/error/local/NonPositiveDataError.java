@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class NonPositiveDataError<T> extends LocalTypeCheckingError<T> {
+public class NonPositiveDataError extends LocalTypeCheckingError {
   public final DataDefinition dataDefinition;
   public final Concrete.Constructor constructor;
 
-  public NonPositiveDataError(DataDefinition dataDefinition, Concrete.Constructor constructor, Concrete.SourceNode<T> cause) {
+  public NonPositiveDataError(DataDefinition dataDefinition, Concrete.Constructor constructor, Concrete.SourceNode cause) {
     super("", cause);
     this.dataDefinition = dataDefinition;
     this.constructor = constructor;

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteDefinitionVisitor;
@@ -11,16 +10,16 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
 
-public class TestLocalErrorReporter implements LocalErrorReporter<Position> {
-  private final ErrorReporter<Position> errorReporter;
-  private final Concrete.Definition<Position> fakeDef;
+public class TestLocalErrorReporter implements LocalErrorReporter {
+  private final ErrorReporter errorReporter;
+  private final Concrete.Definition fakeDef;
 
-  public TestLocalErrorReporter(ErrorReporter<Position> errorReporter) {
+  public TestLocalErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
     GlobalReference reference = new GlobalReference("testDefinition", Precedence.DEFAULT);
-    fakeDef = new Concrete.Definition<Position>(null, reference) {
+    fakeDef = new Concrete.Definition(null, reference) {
       @Override
-      public <P, R> R accept(ConcreteDefinitionVisitor<Position, ? super P, ? extends R> visitor, P params) {
+      public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
         return null;
       }
     };
@@ -28,12 +27,12 @@ public class TestLocalErrorReporter implements LocalErrorReporter<Position> {
   }
 
   @Override
-  public void report(LocalTypeCheckingError<Position> localError) {
-    errorReporter.report(new TypeCheckingError<>(fakeDef.getReferable(), localError));
+  public void report(LocalTypeCheckingError localError) {
+    errorReporter.report(new TypeCheckingError(fakeDef.getReferable(), localError));
   }
 
   @Override
-  public void report(GeneralError<Position> error) {
+  public void report(GeneralError error) {
     errorReporter.report(error);
   }
 }

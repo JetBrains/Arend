@@ -19,24 +19,24 @@ import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.Collection;
 
-public class Typechecking<T> {
-  private final InstanceNamespaceProvider<T> myInstanceNamespaceProvider;
-  private final TypecheckingDependencyListener<T> myDependencyListener;
+public class Typechecking {
+  private final InstanceNamespaceProvider myInstanceNamespaceProvider; // TODO[classes]
+  private final TypecheckingDependencyListener myDependencyListener;
   private final NameResolver myNameResolver;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
-    myInstanceNamespaceProvider = new InstanceNamespaceProvider<>(errorReporter);
-    myDependencyListener = new TypecheckingDependencyListener<>(state, staticNsProvider, dynamicNsProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+    myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
+    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
     myNameResolver = new NameResolver(new NamespaceProviders(null, staticNsProvider, dynamicNsProvider));
   }
 
   public void typecheckModules(final Collection<? extends Group> modules) {
-    GroupResolver<T> resolver = new GroupInstanceResolver<>(myNameResolver, myDependencyListener.errorReporter, myDependencyListener.instanceProviderSet);
+    GroupResolver resolver = new GroupInstanceResolver(myNameResolver, myDependencyListener.errorReporter, myDependencyListener.instanceProviderSet);
     Scope emptyScope = new EmptyScope();
     for (Group group : modules) {
       resolver.resolveGroup(group, emptyScope);
     }
-    Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
       for (Group group : modules) {
@@ -45,20 +45,20 @@ public class Typechecking<T> {
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  public void typecheckDefinitions(final Collection<? extends Concrete.Definition<T>> definitions) {
-    Ordering<T> ordering = new Ordering<>(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+  public void typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
 
     try {
-      for (Concrete.Definition<T> definition : definitions) {
+      for (Concrete.Definition definition : definitions) {
         ordering.doOrder(definition);
       }
     } catch (ComputationInterruptedException ignored) { }
   }
 
-  private void orderGroup(Group group, Ordering<T> ordering) {
-    Concrete.ReferableDefinition<T> def = myDependencyListener.typecheckableProvider.getTypecheckable(group.getReferable());
+  private void orderGroup(Group group, Ordering ordering) {
+    Concrete.ReferableDefinition def = myDependencyListener.typecheckableProvider.getTypecheckable(group.getReferable());
     if (def instanceof Concrete.Definition) {
-      ordering.doOrder((Concrete.Definition<T>) def);
+      ordering.doOrder((Concrete.Definition) def);
     }
     for (Group subgroup : group.getSubgroups()) {
       orderGroup(subgroup, ordering);

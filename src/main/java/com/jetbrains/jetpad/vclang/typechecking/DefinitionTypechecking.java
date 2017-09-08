@@ -47,7 +47,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 
 // TODO[abstract]: Make this class into a visitor
 class DefinitionTypechecking {
-  static <T> Definition typecheckHeader(CheckTypeVisitor<T> visitor, GlobalInstancePool instancePool, Concrete.Definition<T> definition, Concrete.ClassDefinition<T> enclosingClass) {
+  static Definition typecheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Concrete.Definition definition, Concrete.ClassDefinition enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
     visitor.setInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
     ClassDefinition typedEnclosingClass = enclosingClass == null ? null : (ClassDefinition) visitor.getTypecheckingState().getTypechecked(enclosingClass.getReferable());
@@ -55,18 +55,18 @@ class DefinitionTypechecking {
 
     if (definition instanceof Concrete.FunctionDefinition) {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition.getReferable());
-      typeCheckFunctionHeader(functionDef, (Concrete.FunctionDefinition<T>) definition, typedEnclosingClass, visitor, localInstancePool);
+      typeCheckFunctionHeader(functionDef, (Concrete.FunctionDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
       if (functionDef.getResultType() == null) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Cannot infer the result type of a recursive function", definition));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", definition));
         functionDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return functionDef;
     } else
     if (definition instanceof Concrete.DataDefinition) {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(definition.getReferable());
-      typeCheckDataHeader(dataDef, (Concrete.DataDefinition<T>) definition, typedEnclosingClass, visitor, localInstancePool);
+      typeCheckDataHeader(dataDef, (Concrete.DataDefinition) definition, typedEnclosingClass, visitor, localInstancePool);
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Cannot infer the sort of a recursive data type", definition));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", definition));
         dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
       return dataDef;
@@ -75,12 +75,12 @@ class DefinitionTypechecking {
     }
   }
 
-  static <T> List<Clause<T>> typecheckBody(Definition definition, Concrete.Definition<T> def, CheckTypeVisitor<T> exprVisitor, Set<DataDefinition> dataDefinitions) {
+  static List<Clause> typecheckBody(Definition definition, Concrete.Definition def, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
-      return typeCheckFunctionBody((FunctionDefinition) definition, (Concrete.FunctionDefinition<T>) def, exprVisitor);
+      return typeCheckFunctionBody((FunctionDefinition) definition, (Concrete.FunctionDefinition) def, exprVisitor);
     } else
     if (definition instanceof DataDefinition) {
-      if (!typeCheckDataBody((DataDefinition) definition, (Concrete.DataDefinition<T>) def, exprVisitor, false, dataDefinitions)) {
+      if (!typeCheckDataBody((DataDefinition) definition, (Concrete.DataDefinition) def, exprVisitor, false, dataDefinitions)) {
         definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       }
     } else {
@@ -89,8 +89,8 @@ class DefinitionTypechecking {
     return null;
   }
 
-  static <T> List<Clause<T>> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit<T> unit, boolean recursive, LocalErrorReporter<T> errorReporter) {
-    CheckTypeVisitor<T> visitor = new CheckTypeVisitor<>(state, staticNsProvider, dynamicNsProvider, new LinkedHashMap<>(), errorReporter, instancePool);
+  static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new LinkedHashMap<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass().getReferable());
     Definition typechecked = state.getTypechecked(unit.getDefinition().getReferable());
 
@@ -100,10 +100,10 @@ class DefinitionTypechecking {
         state.record(unit.getDefinition().getReferable(), definition);
       }
       if (recursive) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError<>("A class cannot be recursive", unit.getDefinition()));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("A class cannot be recursive", unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
-        for (Concrete.ClassField<T> field : ((Concrete.ClassDefinition<T>) unit.getDefinition()).getFields()) {
+        for (Concrete.ClassField field : ((Concrete.ClassDefinition) unit.getDefinition()).getFields()) {
           ClassField typedDef = new ClassField(field.getReferable(), new ErrorExpression(null, null), definition, createThisParam(definition));
           typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           visitor.getTypecheckingState().record(field.getReferable(), typedDef);
@@ -111,7 +111,7 @@ class DefinitionTypechecking {
           definition.addPersonalField(typedDef);
         }
       } else {
-        typeCheckClass((Concrete.ClassDefinition<T>) unit.getDefinition(), definition, enclosingClass, visitor);
+        typeCheckClass((Concrete.ClassDefinition) unit.getDefinition(), definition, enclosingClass, visitor);
       }
       return null;
     } else
@@ -121,10 +121,10 @@ class DefinitionTypechecking {
         state.record(unit.getDefinition().getReferable(), definition);
       }
       if (recursive) {
-        visitor.getErrorReporter().report(new LocalTypeCheckingError<>("An instance cannot be recursive", unit.getDefinition()));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError("An instance cannot be recursive", unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       } else {
-        typeCheckInstance((Concrete.Instance<T>) unit.getDefinition(), definition, visitor);
+        typeCheckInstance((Concrete.Instance) unit.getDefinition(), definition, visitor);
       }
       return null;
     }
@@ -134,23 +134,23 @@ class DefinitionTypechecking {
 
     if (unit.getDefinition() instanceof Concrete.FunctionDefinition) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition().getReferable());
-      typeCheckFunctionHeader(definition, (Concrete.FunctionDefinition<T>) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
+      typeCheckFunctionHeader(definition, (Concrete.FunctionDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
       if (definition.getResultType() == null) {
         definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
         if (recursive) {
           if (((Concrete.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
-            errorReporter.report(new LocalTypeCheckingError<>("Cannot infer the result type of a recursive function", unit.getDefinition()));
+            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
           }
           return null;
         }
       }
-      return typeCheckFunctionBody(definition, (Concrete.FunctionDefinition<T>) unit.getDefinition(), visitor);
+      return typeCheckFunctionBody(definition, (Concrete.FunctionDefinition) unit.getDefinition(), visitor);
     } else
     if (unit.getDefinition() instanceof Concrete.DataDefinition) {
       DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(unit.getDefinition().getReferable());
-      typeCheckDataHeader(definition, (Concrete.DataDefinition<T>) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
+      typeCheckDataHeader(definition, (Concrete.DataDefinition) unit.getDefinition(), enclosingClass, visitor, localInstancePool);
       if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        typeCheckDataBody(definition, (Concrete.DataDefinition<T>) unit.getDefinition(), visitor, true, Collections.singleton(definition));
+        typeCheckDataBody(definition, (Concrete.DataDefinition) unit.getDefinition(), visitor, true, Collections.singleton(definition));
       }
       return null;
     } else {
@@ -163,13 +163,13 @@ class DefinitionTypechecking {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static <T> Sort typeCheckParameters(List<? extends Concrete.Parameter<T>> parameters, LinkList list, CheckTypeVisitor<T> visitor, LocalInstancePool localInstancePool) {
+  private static Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     Sort sort = Sort.PROP;
     int index = 0;
 
-    for (Concrete.Parameter<T> parameter : parameters) {
+    for (Concrete.Parameter parameter : parameters) {
       if (parameter instanceof Concrete.TypeParameter) {
-        Concrete.TypeParameter<T> typeParameter = (Concrete.TypeParameter<T>) parameter;
+        Concrete.TypeParameter typeParameter = (Concrete.TypeParameter) parameter;
         Type paramResult = visitor.finalCheckType(typeParameter.getType());
         if (paramResult == null) {
           sort = null;
@@ -180,7 +180,7 @@ class DefinitionTypechecking {
 
         DependentLink param;
         if (parameter instanceof Concrete.TelescopeParameter) {
-          List<? extends Referable> referableList = ((Concrete.TelescopeParameter<T>) parameter).getReferableList();
+          List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
           for (Referable referable : referableList) {
             names.add(referable == null ? null : referable.textRepresentation());
@@ -205,7 +205,7 @@ class DefinitionTypechecking {
               ReferenceExpression reference = new ReferenceExpression(link);
               Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
               if (oldInstance != null) {
-                visitor.getErrorReporter().report(new DuplicateInstanceError<>(oldInstance, reference, parameter));
+                visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
               }
             }
           }
@@ -216,7 +216,7 @@ class DefinitionTypechecking {
           visitor.getFreeBindings().add(param);
         }
       } else {
-        visitor.getErrorReporter().report(new ArgInferenceError<>(typeOfFunctionArg(++index), parameter, new Expression[0]));
+        visitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(++index), parameter, new Expression[0]));
         sort = null;
       }
     }
@@ -224,7 +224,7 @@ class DefinitionTypechecking {
     return sort;
   }
 
-  private static <T> LinkList initializeThisParam(CheckTypeVisitor<T> visitor, ClassDefinition enclosingClass) {
+  private static LinkList initializeThisParam(CheckTypeVisitor visitor, ClassDefinition enclosingClass) {
     LinkList list = new LinkList();
     if (enclosingClass != null) {
       DependentLink thisParam = createThisParam(enclosingClass);
@@ -235,12 +235,12 @@ class DefinitionTypechecking {
     return list;
   }
 
-  private static <T> void typeCheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition<T> def, ClassDefinition enclosingClass, CheckTypeVisitor<T> visitor, LocalInstancePool localInstancePool) {
+  private static void typeCheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool) != null;
     Expression expectedType = null;
-    Concrete.Expression<T> resultType = def.getResultType();
+    Concrete.Expression resultType = def.getResultType();
     if (resultType != null) {
       Type expectedTypeResult = visitor.finalCheckType(resultType);
       if (expectedTypeResult != null) {
@@ -255,17 +255,17 @@ class DefinitionTypechecking {
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
   }
 
-  private static <T> List<Clause<T>> typeCheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition<T> def, CheckTypeVisitor<T> visitor) {
-    List<Clause<T>> clauses = null;
-    Concrete.FunctionBody<T> body = def.getBody();
+  private static List<Clause> typeCheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, CheckTypeVisitor visitor) {
+    List<Clause> clauses = null;
+    Concrete.FunctionBody body = def.getBody();
     Expression expectedType = typedDef.getResultType();
 
     if (body instanceof Concrete.ElimFunctionBody) {
       if (expectedType != null) {
-        Concrete.ElimFunctionBody<T> elimBody = (Concrete.ElimFunctionBody<T>) body;
+        Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
         List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), visitor);
         clauses = new ArrayList<>();
-        Body typedBody = elimParams == null ? null : new ElimTypechecking<>(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+        Body typedBody = elimParams == null ? null : new ElimTypechecking(visitor, expectedType, EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
         if (typedBody != null) {
           typedDef.setBody(typedBody);
           typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -279,11 +279,11 @@ class DefinitionTypechecking {
         }
       } else {
         if (def.getResultType() == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Cannot infer type of the expression", body));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer type of the expression", body));
         }
       }
     } else {
-      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Concrete.TermFunctionBody<T>) body).getTerm(), expectedType);
+      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType);
       if (termResult != null) {
         typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
         if (expectedType == null) {
@@ -297,7 +297,7 @@ class DefinitionTypechecking {
     return clauses;
   }
 
-  private static <T> void typeCheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition<T> def, ClassDefinition enclosingClass, CheckTypeVisitor<T> visitor, LocalInstancePool localInstancePool) {
+  private static void typeCheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Sort userSort = null;
@@ -308,7 +308,7 @@ class DefinitionTypechecking {
       if (userTypeResult != null) {
         userSort = userTypeResult.getExpr().toSort();
         if (userSort == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Expected a universe", def.getUniverse()));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a universe", def.getUniverse()));
         }
       }
     }
@@ -320,8 +320,8 @@ class DefinitionTypechecking {
 
     if (!paramsOk) {
       dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-      for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
-        for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
+      for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+        for (Concrete.Constructor constructor : clause.getConstructors()) {
           visitor.getTypecheckingState().record(constructor.getReferable(), new Constructor(constructor.getReferable(), dataDefinition));
         }
       }
@@ -330,7 +330,7 @@ class DefinitionTypechecking {
     }
   }
 
-  private static <T> boolean typeCheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition<T> def, CheckTypeVisitor<T> visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
+  private static boolean typeCheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, CheckTypeVisitor visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
     Sort userSort = dataDefinition.getSort();
     Sort inferredSort = Sort.PROP;
     if (userSort != null) {
@@ -355,26 +355,26 @@ class DefinitionTypechecking {
       }
     }
 
-    for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
-      for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
         visitor.getTypecheckingState().record(constructor.getReferable(), new Constructor(constructor.getReferable(), dataDefinition));
       }
     }
 
     boolean universeOk = true;
-    PatternTypechecking<T> dataPatternTypechecking = new PatternTypechecking<>(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
-    for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
+    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
       if (clause.getPatterns() != null) {
         if (def.getEliminatedReferences() == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Expected a constructor without patterns", clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
           dataOk = false;
         }
         if (elimParams != null) {
           result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
           if (result != null && result.proj2 == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError<>("This clause is redundant", clause));
+            visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", clause));
             result = null;
           }
         }
@@ -383,13 +383,13 @@ class DefinitionTypechecking {
         }
       } else {
         if (def.getEliminatedReferences() != null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError<>("Expected constructors with patterns", clause));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
           dataOk = false;
         }
       }
 
       // Typecheck constructors
-      for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
         Patterns patterns = result == null ? null : new Patterns(result.proj1);
         Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions);
         if (conSort == null) {
@@ -400,7 +400,7 @@ class DefinitionTypechecking {
         inferredSort = inferredSort.max(conSort);
         if (userSort != null) {
           if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-            visitor.getErrorReporter().report(new ConstructorUniverseError<>(conSort, constructor, userSort));
+            visitor.getErrorReporter().report(new ConstructorUniverseError(conSort, constructor, userSort));
             universeOk = false;
           }
         }
@@ -446,18 +446,18 @@ class DefinitionTypechecking {
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
-        visitor.getErrorReporter().report(new LocalTypeCheckingError<>(Error.Level.WARNING, msg, def));
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
-          visitor.getErrorReporter().report(new LocalTypeCheckingError<>(Error.Level.WARNING, msg, def.getUniverse()));
+          visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
         } else {
           dataDefinition.setIsTruncated(true);
         }
       }
     } else if (universeOk && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
       String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
-      visitor.getErrorReporter().report(new LocalTypeCheckingError<>(msg, def.getUniverse()));
+      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
       universeOk = false;
     }
 
@@ -465,7 +465,7 @@ class DefinitionTypechecking {
     return universeOk;
   }
 
-  private static <T> Sort typeCheckConstructor(Concrete.Constructor<T> def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor<T> visitor, Set<DataDefinition> dataDefinitions) {
+  private static Sort typeCheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
     Constructor constructor = new Constructor(def.getReferable(), dataDefinition);
     List<DependentLink> elimParams = null;
     Sort sort;
@@ -499,8 +499,8 @@ class DefinitionTypechecking {
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(visitor.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
-          List<Clause<T>> clauses = new ArrayList<>();
-          Body body = new ElimTypechecking<>(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), constructor.getParameters(), elimParams, clauses);
+          List<Clause> clauses = new ArrayList<>();
+          Body body = new ElimTypechecking(visitor, constructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), constructor.getParameters(), elimParams, clauses);
           constructor.setBody(body);
           constructor.setClauses(clauses);
           constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
@@ -513,7 +513,7 @@ class DefinitionTypechecking {
     return sort;
   }
 
-  private static <T> boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter<T>> parameters, Concrete.Constructor<T> constructor, LocalErrorReporter<T> errorReporter, Set<? extends Variable> variables) {
+  private static boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     List<SingleDependentLink> piParams = new ArrayList<>();
     type = type.getPiParameters(piParams, false);
     for (DependentLink piParam : piParams) {
@@ -565,7 +565,7 @@ class DefinitionTypechecking {
     return true;
   }
 
-  private static <T> boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter<T>> parameters, Concrete.Constructor<T> constructor, LocalErrorReporter<T> errorReporter, Set<? extends Variable> variables) {
+  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     Variable def = expr.findBinding(variables);
     if (def == null) {
       return true;
@@ -576,10 +576,10 @@ class DefinitionTypechecking {
     }
 
     int i = 0;
-    Concrete.Parameter<T> parameter = null;
-    for (Concrete.Parameter<T> parameter1 : parameters) {
+    Concrete.Parameter parameter = null;
+    for (Concrete.Parameter parameter1 : parameters) {
       if (parameter1 instanceof Concrete.TelescopeParameter) {
-        i += ((Concrete.TelescopeParameter<T>) parameter1).getReferableList().size();
+        i += ((Concrete.TelescopeParameter) parameter1).getReferableList().size();
       } else {
         i++;
       }
@@ -589,12 +589,12 @@ class DefinitionTypechecking {
       }
     }
 
-    errorReporter.report(new NonPositiveDataError<>((DataDefinition) def, constructor, parameter == null ? constructor : parameter));
+    errorReporter.report(new NonPositiveDataError((DataDefinition) def, constructor, parameter == null ? constructor : parameter));
     return false;
   }
 
-  private static <T> void typeCheckClass(Concrete.ClassDefinition<T> def, ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor<T> visitor) {
-    LocalErrorReporter<T> errorReporter = visitor.getErrorReporter();
+  private static void typeCheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+    LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
     typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
@@ -608,9 +608,9 @@ class DefinitionTypechecking {
     }
 
     List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
-    Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
+    Concrete.SourceNode alreadyImplementedSourceNode = null;
 
-    for (Concrete.ReferenceExpression<T> aSuperClass : def.getSuperClasses()) {
+    for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null);
       if (result == null) {
         classOk = false;
@@ -619,7 +619,7 @@ class DefinitionTypechecking {
 
       ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
       if (typeCheckedSuperClass == null) {
-        errorReporter.report(new LocalTypeCheckingError<>("Parent must be a class", aSuperClass));
+        errorReporter.report(new LocalTypeCheckingError("Parent must be a class", aSuperClass));
         classOk = false;
         continue;
       }
@@ -642,13 +642,13 @@ class DefinitionTypechecking {
       }
     }
 
-    for (Concrete.ClassField<T> field : def.getFields()) {
+    for (Concrete.ClassField field : def.getFields()) {
       typeCheckClassField(field, typedDef, visitor);
     }
 
     if (!def.getImplementations().isEmpty()) {
       typedDef.updateSorts();
-      for (Concrete.ClassFieldImpl<T> implementation : def.getImplementations()) {
+      for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
         ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
         if (typedDef.isImplemented(field)) {
           classOk = false;
@@ -669,7 +669,7 @@ class DefinitionTypechecking {
     }
 
     if (!alreadyImplementFields.isEmpty()) {
-      errorReporter.report(new FieldsImplementationError<>(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
+      errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
     if (classOk) {
@@ -678,7 +678,7 @@ class DefinitionTypechecking {
     typedDef.updateSorts();
   }
 
-  private static <T> void typeCheckClassField(Concrete.ClassField<T> def, ClassDefinition enclosingClass, CheckTypeVisitor<T> visitor) {
+  private static void typeCheckClassField(Concrete.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
     visitor.setThis(enclosingClass, thisParameter);
@@ -706,10 +706,10 @@ class DefinitionTypechecking {
     }
   }
 
-  private static <T> void typeCheckInstance(Concrete.Instance<T> def, FunctionDefinition typedDef, CheckTypeVisitor<T> visitor) {
+  private static void typeCheckInstance(Concrete.Instance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     throw new NotImplementedException(); // TODO[abstract]
     /*
-    LocalErrorReporter<T> errorReporter = visitor.getErrorReporter();
+    LocalErrorReporter errorReporter = visitor.getErrorReporter();
 
     LinkList list = new LinkList();
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null) != null;
@@ -719,10 +719,10 @@ class DefinitionTypechecking {
       return;
     }
 
-    Map<ClassField, Concrete.ClassFieldImpl<T>> classFieldMap = new HashMap<>();
+    Map<ClassField, Concrete.ClassFieldImpl> classFieldMap = new HashMap<>();
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
-    Concrete.SourceNode<T> alreadyImplementedSourceNode = null;
-    for (Concrete.ClassFieldImpl<T> classFieldImpl : def.getClassFieldImpls()) {
+    Concrete.SourceNode alreadyImplementedSourceNode = null;
+    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
       ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
       if (classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getReferable());
@@ -742,7 +742,7 @@ class DefinitionTypechecking {
 
     List<GlobalReferable> notImplementedFields = new ArrayList<>();
     for (ClassField field : classDef.getFields()) {
-      Concrete.ClassFieldImpl<T> impl = classFieldMap.get(field);
+      Concrete.ClassFieldImpl impl = classFieldMap.get(field);
       if (impl != null) {
         if (notImplementedFields.isEmpty()) {
           fieldSet.put(field, visitor.typecheckImplementation(field, impl.getImplementation(), term));

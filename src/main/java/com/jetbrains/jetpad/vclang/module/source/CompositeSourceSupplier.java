@@ -104,6 +104,7 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
+      //noinspection unchecked
       SourceId sourceId = (SourceId) o;
 
       return Objects.equals(getSourceSupplier(), (sourceId.getSourceSupplier())) &&

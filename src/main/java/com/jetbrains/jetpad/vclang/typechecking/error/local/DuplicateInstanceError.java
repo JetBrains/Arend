@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class DuplicateInstanceError<T> extends LocalTypeCheckingError<T> {
+public class DuplicateInstanceError extends LocalTypeCheckingError {
   public final Expression oldInstance;
   public final Expression newInstance;
 
-  public DuplicateInstanceError(Expression oldInstance, Expression newInstance, Concrete.SourceNode<T> cause) {
+  public DuplicateInstanceError(Expression oldInstance, Expression newInstance, Concrete.SourceNode cause) {
     super(Level.WARNING, "Duplicate instance", cause);
     this.oldInstance = oldInstance;
     this.newInstance = newInstance;

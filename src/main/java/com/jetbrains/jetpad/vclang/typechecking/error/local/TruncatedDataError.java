@@ -9,11 +9,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TruncatedDataError<T> extends LocalTypeCheckingError<T> {
+public class TruncatedDataError extends LocalTypeCheckingError {
   public final DataDefinition dataDef;
   public final Expression expectedType;
 
-  public TruncatedDataError(DataDefinition dataDef, Expression expectedType, Concrete.SourceNode<T> cause) {
+  public TruncatedDataError(DataDefinition dataDef, Expression expectedType, Concrete.SourceNode cause) {
     super("", cause);
     this.dataDef = dataDef;
     this.expectedType = expectedType;

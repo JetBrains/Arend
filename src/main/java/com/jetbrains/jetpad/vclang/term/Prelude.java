@@ -117,7 +117,7 @@ public class Prelude {
     }
   }
 
-  public static class UpdatePreludeReporter<T> implements TypecheckedReporter<T> {
+  public static class UpdatePreludeReporter implements TypecheckedReporter {
     private final TypecheckerState state;
 
     public UpdatePreludeReporter(TypecheckerState state) {

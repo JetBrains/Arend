@@ -2,17 +2,17 @@ package com.jetbrains.jetpad.vclang.typechecking.typecheckable;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class Typecheckable<T> {
-  private final Concrete.Definition<T> myDefinition;
+public class Typecheckable {
+  private final Concrete.Definition myDefinition;
   private final boolean myHeader;
 
-  public Typecheckable(Concrete.Definition<T> definition, boolean isHeader) {
+  public Typecheckable(Concrete.Definition definition, boolean isHeader) {
     assert !isHeader || hasHeader(definition);
     this.myDefinition = definition;
     this.myHeader = isHeader;
   }
 
-  public Concrete.Definition<T> getDefinition() {
+  public Concrete.Definition getDefinition() {
     return myDefinition;
   }
 

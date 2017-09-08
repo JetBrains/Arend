@@ -8,21 +8,21 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
 
-public class GroupNameResolver<T> extends GroupResolver<T> {
-  private final TypecheckableProvider<T> myTypecheckableProvider;
-  private final DefinitionResolveNameVisitor<T> myVisitor;
+public class GroupNameResolver extends GroupResolver {
+  private final TypecheckableProvider myTypecheckableProvider;
+  private final DefinitionResolveNameVisitor myVisitor;
 
-  public GroupNameResolver(NameResolver nameResolver, ErrorReporter<T> errorReporter, TypecheckableProvider<T> provider) {
+  public GroupNameResolver(NameResolver nameResolver, ErrorReporter errorReporter, TypecheckableProvider provider) {
     super(nameResolver, errorReporter);
     myTypecheckableProvider = provider;
-    myVisitor = new DefinitionResolveNameVisitor<>(nameResolver, errorReporter);
+    myVisitor = new DefinitionResolveNameVisitor(nameResolver, errorReporter);
   }
 
   @Override
   protected void processReferable(GlobalReferable referable, Scope scope) {
-    Concrete.ReferableDefinition<T> def = myTypecheckableProvider.getTypecheckable(referable);
+    Concrete.ReferableDefinition def = myTypecheckableProvider.getTypecheckable(referable);
     if (def instanceof Concrete.Definition) {
-      ((Concrete.Definition<T>) def).accept(myVisitor, scope);
+      ((Concrete.Definition) def).accept(myVisitor, scope);
     }
   }
 }

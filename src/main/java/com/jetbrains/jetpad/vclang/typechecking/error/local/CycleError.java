@@ -12,16 +12,16 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class CycleError<T> extends GeneralError<T> {
-  public final List<Concrete.Definition<T>> cycle;
+public class CycleError extends GeneralError {
+  public final List<Concrete.Definition> cycle;
 
-  public CycleError(List<Concrete.Definition<T>> cycle) {
+  public CycleError(List<Concrete.Definition> cycle) {
     super(Level.ERROR, "Dependency cycle");
     this.cycle = cycle;
   }
 
   @Override
-  public T getCause() {
+  public Object getCause() {
     return cycle.get(0).getData();
   }
 
@@ -34,7 +34,7 @@ public class CycleError<T> extends GeneralError<T> {
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     List<LineDoc> docs = new ArrayList<>(cycle.size() + 1);
     docs.add(refDoc(cycle.get(cycle.size() - 1).getReferable()));
-    for (Concrete.Definition<T> definition : cycle) {
+    for (Concrete.Definition definition : cycle) {
       docs.add(refDoc(definition.getReferable()));
     }
     return hSep(text(" - "), docs);

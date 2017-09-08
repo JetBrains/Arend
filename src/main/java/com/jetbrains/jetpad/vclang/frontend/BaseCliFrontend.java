@@ -1,12 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorClassifier;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
+import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -40,7 +36,7 @@ import java.util.*;
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Map<SourceIdT, Map<String, GlobalReferable>> definitionIds = new HashMap<>();
 
-  protected final ListErrorReporter<Position> errorReporter = new ListErrorReporter<>();
+  protected final ListErrorReporter errorReporter = new ListErrorReporter();
 
   // Modules
   protected final ModuleTracker moduleTracker;
@@ -68,9 +64,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
     if (reference instanceof GlobalReference) {
-      Position pos = ((GlobalReference) reference).getDefinition().getData();
-      if (pos != null) {
-        map.put(pos.line + ";" + pos.column, reference);
+      Object pos = ((GlobalReference) reference).getDefinition().getData();
+      if (pos instanceof SourceInfo) {
+        map.put(((SourceInfo) pos).positionTextRepresentation(), reference);
       }
     }
   }
@@ -168,7 +164,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter<>(state), new DependencyListener<Position>() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -227,23 +223,23 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier<Position> implements DependencyListener<Position>, TypecheckedReporter<Position> {
+    class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
       ResultTracker() {
         super(errorReporter);
       }
 
       @Override
-      protected void reportedError(GeneralError<Position> error) {
+      protected void reportedError(GeneralError error) {
         updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.ERRORS);
       }
 
       @Override
-      protected void reportedGoal(GeneralError<Position> error) {
+      protected void reportedGoal(GeneralError error) {
         updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.GOALS);
       }
 
       @Override
-      public void alreadyTypechecked(Concrete.Definition<Position> definition) {
+      public void alreadyTypechecked(Concrete.Definition definition) {
         Definition.TypeCheckingStatus status = state.getTypechecked(definition.getReferable()).status();
         if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
           updateSourceResult(srcInfoProvider.sourceOf(definition.getReferable()), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
@@ -274,7 +270,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking<>(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceTypecheckableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
 

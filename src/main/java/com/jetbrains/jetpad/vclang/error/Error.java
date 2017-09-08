@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public abstract class Error<T> {
+public abstract class Error {
   public final String message;
   public final Level level;
 
@@ -20,7 +20,7 @@ public abstract class Error<T> {
     this.message = message;
   }
 
-  public T getCause() {
+  public Object getCause() {
     return null;
   }
 
@@ -33,7 +33,7 @@ public abstract class Error<T> {
   }
 
   public LineDoc getPositionDoc(PrettyPrinterInfoProvider src) {
-    T cause = getCause();
+    Object cause = getCause();
     return cause instanceof SourceInfo ? hSep(text(":"), text(((SourceInfo) cause).moduleTextRepresentation()), text(((SourceInfo) cause).positionTextRepresentation())) : empty();
   }
 

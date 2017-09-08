@@ -14,15 +14,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class InferenceVariable<T> implements Variable {
+public abstract class InferenceVariable implements Variable {
   private final String myName;
-  private final Concrete.SourceNode<T> mySourceNode;
+  private final Concrete.SourceNode mySourceNode;
   private Expression myType;
   private InferenceReferenceExpression myReference;
-  private List<InferenceVariableListener<T>> myListeners;
+  private List<InferenceVariableListener> myListeners;
   private final Set<Binding> myBounds;
 
-  public InferenceVariable(String name, Expression type, Concrete.SourceNode<T> sourceNode, Set<Binding> bounds) {
+  public InferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     myName = name;
     mySourceNode = sourceNode;
     myType = type;
@@ -34,23 +34,23 @@ public abstract class InferenceVariable<T> implements Variable {
     return myBounds;
   }
 
-  public void addListener(InferenceVariableListener<T> listener) {
+  public void addListener(InferenceVariableListener listener) {
     if (myListeners.isEmpty()) {
       myListeners = new ArrayList<>(3);
     }
     myListeners.add(listener);
   }
 
-  public void removeListener(InferenceVariableListener<T> listener) {
+  public void removeListener(InferenceVariableListener listener) {
     if (!myListeners.isEmpty()) {
       myListeners.remove(listener);
     }
   }
 
-  public void solve(Equations<T> equations, Expression solution) {
+  public void solve(Equations equations, Expression solution) {
     if (myReference != null) {
       myReference.setSubstExpression(solution);
-      for (InferenceVariableListener<T> listener : myListeners) {
+      for (InferenceVariableListener listener : myListeners) {
         listener.solved(equations, myReference);
       }
       myReference = null;
@@ -66,7 +66,7 @@ public abstract class InferenceVariable<T> implements Variable {
     return myName;
   }
 
-  public Concrete.SourceNode<T> getSourceNode() {
+  public Concrete.SourceNode getSourceNode() {
     return mySourceNode;
   }
 
@@ -86,9 +86,9 @@ public abstract class InferenceVariable<T> implements Variable {
     }
   }
 
-  public abstract LocalTypeCheckingError<T> getErrorInfer(Expression... candidates);
+  public abstract LocalTypeCheckingError getErrorInfer(Expression... candidates);
 
-  public abstract LocalTypeCheckingError<T> getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
+  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
 
   @Override
   public String toString() {

@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
@@ -21,17 +20,17 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     GlobalReference plusRef = new GlobalReference("+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
-    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, Collections.emptyList(), null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(null, plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
     GlobalReference mulRef = new GlobalReference("*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7));
-    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, Collections.emptyList(), null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(null, mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();
     namespace.addDefinition(plus.getReferable(), DummyErrorReporter.INSTANCE);
     namespace.addDefinition(mul.getReferable(), DummyErrorReporter.INSTANCE);
 
-    Concrete.Expression<Position> result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
+    Concrete.Expression result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
     assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plusRef, cBinOp(cNum(1), mulRef, cNum(2))), plusRef, cBinOp(cBinOp(cNum(3), mulRef, cBinOp(cNum(4), mulRef, cNum(5))), mulRef, cBinOp(cNum(6), plusRef, cNum(7)))), result));
   }
@@ -39,10 +38,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfixError() {
     GlobalReference plusRef = new GlobalReference("+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
-    Concrete.Definition<Position> plus = new Concrete.FunctionDefinition<>(null, plusRef, Collections.emptyList(), null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(null, plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
     GlobalReference mulRef = new GlobalReference("*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6));
-    Concrete.Definition<Position> mul = new Concrete.FunctionDefinition<>(null, mulRef, Collections.emptyList(), null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(null, mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
     SimpleNamespace namespace = new SimpleNamespace();

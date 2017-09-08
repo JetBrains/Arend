@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 
 import java.util.*;
 
-public class DependencyCollector<T> implements DependencyListener<T> {
+public class DependencyCollector implements DependencyListener {
   private final Map<GlobalReferable, Set<GlobalReferable>> myDependencies = new HashMap<>();
   private final Map<GlobalReferable, Set<GlobalReferable>> myReverseDependencies = new HashMap<>();
   private final TypecheckerState myState;
@@ -17,7 +17,7 @@ public class DependencyCollector<T> implements DependencyListener<T> {
   }
 
   @Override
-  public void dependsOn(Typecheckable<T> unit, Concrete.Definition<T> def) {
+  public void dependsOn(Typecheckable unit, Concrete.Definition def) {
     myDependencies.computeIfAbsent(unit.getDefinition().getReferable(), k -> new HashSet<>()).add(def.getReferable());
     myReverseDependencies.computeIfAbsent(def.getReferable(), k -> new HashSet<>()).add(unit.getDefinition().getReferable());
   }

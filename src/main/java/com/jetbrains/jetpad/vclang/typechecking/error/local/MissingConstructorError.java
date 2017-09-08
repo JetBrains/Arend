@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class MissingConstructorError<T> extends LocalTypeCheckingError<T> {
+public class MissingConstructorError extends LocalTypeCheckingError {
   public final String constructorName;
   public final DataDefinition dataDef;
 
-  public MissingConstructorError(String constructorName, DataDefinition dataDef, Concrete.SourceNode<T> cause) {
+  public MissingConstructorError(String constructorName, DataDefinition dataDef, Concrete.SourceNode cause) {
     super("", cause);
     this.constructorName = constructorName;
     this.dataDef = dataDef;

@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -46,7 +45,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     if (LOADED_PRELUDE == null) {
       PreludeStorage preludeStorage = new PreludeStorage(nameResolver);
 
-      ListErrorReporter<Position> internalErrorReporter = new ListErrorReporter<>();
+      ListErrorReporter internalErrorReporter = new ListErrorReporter();
       LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).group;
       assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
     }
@@ -58,16 +57,16 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  private Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
-    Concrete.Expression<Position> expression = parseExpr(text);
+  private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
+    Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor<>(parentScope, context, nameResolver, errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
 
-  Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, String text, int errors) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text, int errors) {
     return resolveNamesExpr(parentScope, new ArrayList<>(), text, errors);
   }
 
@@ -75,16 +74,16 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(globalScope, new ArrayList<>(), text, errors);
   }
 
-  Concrete.Expression<Position> resolveNamesExpr(Scope parentScope, String text) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
-  protected Concrete.Expression<Position> resolveNamesExpr(Map<Referable, Binding> context, String text) {
+  protected Concrete.Expression resolveNamesExpr(Map<Referable, Binding> context, String text) {
     List<Referable> names = new ArrayList<>(context.keySet());
     return resolveNamesExpr(globalScope, names, text, 0);
   }
 
-  protected Concrete.Expression<Position> resolveNamesExpr(String text) {
+  protected Concrete.Expression resolveNamesExpr(String text) {
     return resolveNamesExpr(new HashMap<>(), text);
   }
 
@@ -93,7 +92,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Group group = parseDef(text);
     staticNsProvider.collect(group, errorReporter);
     dynamicNsProvider.collect(group, errorReporter, nameResolver);
-    GroupNameResolver<Position> groupResolver = new GroupNameResolver<>(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    GroupNameResolver groupResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
     groupResolver.resolveGroup(group, new MergeScope(new SingletonScope(group.getReferable()), globalScope));
     assertThat(errorList, containsErrors(errors));
     return (GlobalReference) group.getReferable();
@@ -105,7 +104,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(Group group, int errors) {
-    GroupNameResolver<Position> groupNameResolver = new GroupNameResolver<>(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    GroupNameResolver groupNameResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
     groupNameResolver.resolveGroup(group, globalScope);
     assertThat(errorList, containsErrors(errors));
   }

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -50,14 +49,14 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
 
-  Concrete.Expression<Position> parseExpr(String text, int errors) {
+  Concrete.Expression parseExpr(String text, int errors) {
     VcgrammarParser.ExprContext ctx = _parse(text).expr();
-    Concrete.Expression<Position> expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
+    Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return expr;
   }
 
-  protected Concrete.Expression<Position> parseExpr(String text) {
+  protected Concrete.Expression parseExpr(String text) {
     return parseExpr(text, 0);
   }
 
@@ -84,7 +83,7 @@ public abstract class ParserTestCase extends VclangTestCase {
   }
 
 
-  protected static boolean compareAbstract(Concrete.Expression<Position> expr1, Concrete.Expression<Position> expr2) {
+  protected static boolean compareAbstract(Concrete.Expression expr1, Concrete.Expression expr2) {
     return expr1.accept(new ConcreteCompareVisitor(), expr2);
   }
 }

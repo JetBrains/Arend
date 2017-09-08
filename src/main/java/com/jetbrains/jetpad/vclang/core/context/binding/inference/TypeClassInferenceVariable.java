@@ -9,11 +9,11 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 
 import java.util.Set;
 
-public class TypeClassInferenceVariable<T> extends InferenceVariable<T> {
+public class TypeClassInferenceVariable extends InferenceVariable {
   private final Concrete.ClassView myClassView;
   private final boolean isView;
 
-  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassView classView, boolean isView, Concrete.SourceNode<T> sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassView classView, boolean isView, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassView = classView;
     this.isView = isView;
@@ -24,13 +24,13 @@ public class TypeClassInferenceVariable<T> extends InferenceVariable<T> {
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError<>(ArgInferenceError.typeClass(), getSourceNode(), candidates);
+  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
+    return new ArgInferenceError(ArgInferenceError.typeClass(), getSourceNode(), candidates);
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError<>(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
+    return new ArgInferenceError(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression) {

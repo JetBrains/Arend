@@ -20,11 +20,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GroupResolver<T> {
+public class GroupResolver {
   private final NameResolver myNameResolver;
-  private final ErrorReporter<T> myErrorReporter;
+  private final ErrorReporter myErrorReporter;
 
-  public GroupResolver(NameResolver nameResolver, ErrorReporter<T> errorReporter) {
+  public GroupResolver(NameResolver nameResolver, ErrorReporter errorReporter) {
     myNameResolver = nameResolver;
     myErrorReporter = errorReporter;
   }
@@ -78,9 +78,9 @@ public class GroupResolver<T> {
 
     if (!(referable instanceof GlobalReferable)) {
       if (referable == null) {
-        myErrorReporter.report(new NotInScopeError<>(origRef));
+        myErrorReporter.report(new NotInScopeError(origRef));
       } else if (!(referable instanceof UnresolvedReference)) {
-        myErrorReporter.report(new ReferenceError<>("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef));
+        myErrorReporter.report(new ReferenceError("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef));
       }
       return null;
     }

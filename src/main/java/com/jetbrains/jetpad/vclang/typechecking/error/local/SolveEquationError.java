@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveEquationError<T> extends LocalTypeCheckingError<T> {
+public class SolveEquationError extends LocalTypeCheckingError {
   public final Expression expr1;
   public final Expression expr2;
 
-  public SolveEquationError(Expression expr1, Expression expr2, Concrete.SourceNode<T> expression) {
+  public SolveEquationError(Expression expr1, Expression expr2, Concrete.SourceNode expression) {
     super("Cannot solve equation", expression);
     this.expr1 = expr1;
     this.expr2 = expr2;

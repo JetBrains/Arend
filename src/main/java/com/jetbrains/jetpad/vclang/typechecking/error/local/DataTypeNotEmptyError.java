@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class DataTypeNotEmptyError<T> extends LocalTypeCheckingError<T> {
+public class DataTypeNotEmptyError extends LocalTypeCheckingError {
   public final DataCallExpression dataCall;
   public final Collection<? extends Constructor> constructors;
 
-  public DataTypeNotEmptyError(DataCallExpression dataCall, Collection<? extends Constructor> constructors, Concrete.SourceNode<T> cause) {
+  public DataTypeNotEmptyError(DataCallExpression dataCall, Collection<? extends Constructor> constructors, Concrete.SourceNode cause) {
     super("", cause);
     this.dataCall = dataCall;
     this.constructors = constructors;

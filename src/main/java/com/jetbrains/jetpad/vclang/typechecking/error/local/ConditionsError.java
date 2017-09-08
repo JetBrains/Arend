@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ConditionsError<T> extends LocalTypeCheckingError<T> {
+public class ConditionsError extends LocalTypeCheckingError {
   public final Expression expr1;
   public final Expression expr2;
   public final ExprSubstitution substitution1;
@@ -22,7 +22,7 @@ public class ConditionsError<T> extends LocalTypeCheckingError<T> {
   public final Expression evaluatedExpr1;
   public final Expression evaluatedExpr2;
 
-  public ConditionsError(Expression expr1, Expression expr2, ExprSubstitution substitution1, ExprSubstitution substitution2, Expression evaluatedExpr1, Expression evaluatedExpr2, Concrete.SourceNode<T> sourceNode) {
+  public ConditionsError(Expression expr1, Expression expr2, ExprSubstitution substitution1, ExprSubstitution substitution2, Expression evaluatedExpr1, Expression evaluatedExpr2, Concrete.SourceNode sourceNode) {
     super("Conditions check failed:", sourceNode);
     this.expr1 = expr1;
     this.expr2 = expr2;

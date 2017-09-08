@@ -26,18 +26,18 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-public class TwoStageEquations<T> implements Equations<T> {
-  private final List<Equation<T>> myEquations;
-  private final LevelEquations<InferenceLevelVariable<T>> myPLevelEquations;
-  private final LevelEquations<InferenceLevelVariable<T>> myBasedPLevelEquations;
-  private final LevelEquations<InferenceLevelVariable<T>> myHLevelEquations;
-  private final LevelEquations<InferenceLevelVariable<T>> myBasedHLevelEquations;
-  private final CheckTypeVisitor<T> myVisitor;
-  private final List<InferenceVariable<T>> myProps;
-  private final List<Pair<InferenceLevelVariable<T>, InferenceLevelVariable<T>>> myBoundVariables;
-  private final Map<LevelVariable, Set<InferenceLevelVariable<T>>> myDependencyGraph;
+public class TwoStageEquations implements Equations {
+  private final List<Equation> myEquations;
+  private final LevelEquations<InferenceLevelVariable> myPLevelEquations;
+  private final LevelEquations<InferenceLevelVariable> myBasedPLevelEquations;
+  private final LevelEquations<InferenceLevelVariable> myHLevelEquations;
+  private final LevelEquations<InferenceLevelVariable> myBasedHLevelEquations;
+  private final CheckTypeVisitor myVisitor;
+  private final List<InferenceVariable> myProps;
+  private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
+  private final Map<LevelVariable, Set<InferenceLevelVariable>> myDependencyGraph;
 
-  public TwoStageEquations(CheckTypeVisitor<T> visitor) {
+  public TwoStageEquations(CheckTypeVisitor visitor) {
     myEquations = new ArrayList<>();
     myPLevelEquations = new LevelEquations<>();
     myBasedPLevelEquations = new LevelEquations<>();
@@ -49,9 +49,9 @@ public class TwoStageEquations<T> implements Equations<T> {
     myVisitor = visitor;
   }
 
-  private void addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode<T> sourceNode, InferenceVariable<T> stuckVar) {
-    InferenceVariable<T> inf1 = expr1.isInstance(InferenceReferenceExpression.class) ? expr1.cast(InferenceReferenceExpression.class).getVariable() : null;
-    InferenceVariable<T> inf2 = expr2.isInstance(InferenceReferenceExpression.class) ? expr2.cast(InferenceReferenceExpression.class).getVariable() : null;
+  private void addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
+    InferenceVariable inf1 = expr1.isInstance(InferenceReferenceExpression.class) ? expr1.cast(InferenceReferenceExpression.class).getVariable() : null;
+    InferenceVariable inf2 = expr2.isInstance(InferenceReferenceExpression.class) ? expr2.cast(InferenceReferenceExpression.class).getVariable() : null;
 
     // expr1 == expr2 == ?x
     if (inf1 == inf2 && inf1 != null) {
@@ -59,7 +59,7 @@ public class TwoStageEquations<T> implements Equations<T> {
     }
 
     if (inf1 == null && inf2 == null) {
-      InferenceVariable<T> variable = null;
+      InferenceVariable variable = null;
       Expression result = null;
 
       // expr1 == field call
@@ -96,7 +96,7 @@ public class TwoStageEquations<T> implements Equations<T> {
 
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
-      InferenceVariable<T> cInf = inf1 != null ? inf1 : inf2;
+      InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = inf1 != null ? expr2 : expr1;
       cType = cType.normalize(NormalizeVisitor.Mode.WHNF);
 
@@ -138,7 +138,7 @@ public class TwoStageEquations<T> implements Equations<T> {
         for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
           bounds.add(link);
         }
-        InferenceVariable<T> infVar = new DerivedInferenceVariable<>(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
+        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
         Expression newRef = new InferenceReferenceExpression(infVar, this);
         solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
         addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
@@ -164,26 +164,26 @@ public class TwoStageEquations<T> implements Equations<T> {
       }
     }
 
-    Equation<T> equation = new Equation<>(expr1, expr2, cmp, sourceNode);
+    Equation equation = new Equation(expr1, expr2, cmp, sourceNode);
     myEquations.add(equation);
     if (expr1.isInstance(InferenceReferenceExpression.class) && expr2.isInstance(InferenceReferenceExpression.class)) {
-      expr1.cast(InferenceReferenceExpression.class).<T>getVariable().addListener(equation);
-      expr2.cast(InferenceReferenceExpression.class).<T>getVariable().addListener(equation);
+      expr1.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
+      expr2.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
     } else {
       stuckVar.addListener(equation);
     }
   }
 
   @Override
-  public void bindVariables(InferenceLevelVariable<T> pVar, InferenceLevelVariable<T> hVar) {
+  public void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar) {
     assert pVar.getType() == LevelVariable.LvlType.PLVL;
     assert hVar.getType() == LevelVariable.LvlType.HLVL;
     myBoundVariables.add(new Pair<>(pVar, hVar));
   }
 
-  private void addEquation(LevelEquation<InferenceLevelVariable<T>> equation, boolean based) {
-    InferenceLevelVariable<T> var1 = equation.isInfinity() ? equation.getVariable() : equation.getVariable1();
-    InferenceLevelVariable<T> var2 = equation.isInfinity() ? equation.getVariable() : equation.getVariable2();
+  private void addEquation(LevelEquation<InferenceLevelVariable> equation, boolean based) {
+    InferenceLevelVariable var1 = equation.isInfinity() ? equation.getVariable() : equation.getVariable1();
+    InferenceLevelVariable var2 = equation.isInfinity() ? equation.getVariable() : equation.getVariable2();
     assert var1 == null || var2 == null || var1.getType() == var2.getType();
 
     if (var1 != null && var1.getType() == LevelVariable.LvlType.PLVL || var2 != null && var2.getType() == LevelVariable.LvlType.PLVL) {
@@ -205,10 +205,10 @@ public class TwoStageEquations<T> implements Equations<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode<T> sourceNode) {
+  private void addLevelEquation(LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
     if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable)) {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError<>(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
       return;
     }
 
@@ -216,27 +216,27 @@ public class TwoStageEquations<T> implements Equations<T> {
     if (var1 == null) {
       // 0 <= max(?y - c, -d) // 1
       if (constant < 0 && maxConstant < 0) {
-        addEquation(new LevelEquation<>(null, (InferenceLevelVariable<T>) var2, constant, maxConstant), false);
+        addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant, maxConstant), false);
       }
       return;
     }
 
     if (var2 instanceof InferenceLevelVariable && var1 != var2) {
-      myDependencyGraph.computeIfAbsent(var1, k -> new HashSet<>()).add((InferenceLevelVariable<T>) var2);
+      myDependencyGraph.computeIfAbsent(var1, k -> new HashSet<>()).add((InferenceLevelVariable) var2);
     }
 
     // ?x <= max(_ +- c, +-d) // 10
     if (var1 instanceof InferenceLevelVariable) {
       if (var2 instanceof InferenceLevelVariable) {
         // ?x <= max(?y +- c, +-d) // 4
-        LevelEquation<InferenceLevelVariable<T>> equation = new LevelEquation<>((InferenceLevelVariable<T>) var1, (InferenceLevelVariable<T>) var2, constant, maxConstant < 0 ? null : maxConstant);
+        LevelEquation<InferenceLevelVariable> equation = new LevelEquation<>((InferenceLevelVariable) var1, (InferenceLevelVariable) var2, constant, maxConstant < 0 ? null : maxConstant);
         addEquation(equation, false);
         addEquation(equation, true);
       } else {
         // ?x <= max(+-c, +-d), ?x <= max(l +- c, +-d) // 6
-        addEquation(new LevelEquation<>((InferenceLevelVariable<T>) var1, null, Math.max(constant, maxConstant)), false);
+        addEquation(new LevelEquation<>((InferenceLevelVariable) var1, null, Math.max(constant, maxConstant)), false);
         if (var2 != null) {
-          addEquation(new LevelEquation<>((InferenceLevelVariable<T>) var1, null, constant), true);
+          addEquation(new LevelEquation<>((InferenceLevelVariable) var1, null, constant), true);
         }
       }
       return;
@@ -252,35 +252,35 @@ public class TwoStageEquations<T> implements Equations<T> {
       // l <= max(?y +- c, +-d) // 4
       if (var2 instanceof InferenceLevelVariable) {
         if (constant < 0) {
-          addEquation(new LevelEquation<>(null, (InferenceLevelVariable<T>) var2, constant), true);
+          addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant), true);
         }
         return;
       }
 
       // l <= max(l - c, +d), l <= max(+-c, +-d) // 4
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError<>(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
     }
   }
 
-  private void addLevelEquation(LevelVariable var, Concrete.SourceNode<T> sourceNode) {
+  private void addLevelEquation(LevelVariable var, Concrete.SourceNode sourceNode) {
     if (var instanceof InferenceLevelVariable) {
       //noinspection unchecked
-      addEquation(new LevelEquation<>((InferenceLevelVariable<T>) var), false);
+      addEquation(new LevelEquation<>((InferenceLevelVariable) var), false);
     } else {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError<>(Collections.singletonList(new LevelEquation<>(var)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var)), sourceNode));
     }
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode<T> sourceNode, InferenceVariable<T> stuckVar) {
+  public boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
     addEquation(expr1, expr2, cmp, sourceNode, stuckVar);
     return true;
   }
 
   @Override
-  public boolean solve(Expression type, Expression expr, CMP cmp, Concrete.SourceNode<T> sourceNode) {
+  public boolean solve(Expression type, Expression expr, CMP cmp, Concrete.SourceNode sourceNode) {
     if (!CompareVisitor.compare(this, cmp, type, expr, sourceNode)) {
-      myVisitor.getErrorReporter().report(new SolveEquationError<>(type, expr, sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationError(type, expr, sourceNode));
       return false;
     } else {
       return true;
@@ -288,7 +288,7 @@ public class TwoStageEquations<T> implements Equations<T> {
   }
 
   @Override
-  public boolean add(Level level1, Level level2, CMP cmp, Concrete.SourceNode<T> sourceNode) {
+  public boolean add(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode) {
     if (level1.isInfinity() && level2.isInfinity() || level1.isInfinity() && cmp == CMP.GE || level2.isInfinity() && cmp == CMP.LE) {
       return true;
     }
@@ -313,7 +313,7 @@ public class TwoStageEquations<T> implements Equations<T> {
   }
 
   @Override
-  public boolean addVariable(InferenceLevelVariable<T> var) {
+  public boolean addVariable(InferenceLevelVariable var) {
     if (var.getType() == LevelVariable.LvlType.PLVL) {
       myPLevelEquations.addVariable(var);
       myBasedPLevelEquations.addVariable(var);
@@ -329,40 +329,40 @@ public class TwoStageEquations<T> implements Equations<T> {
     myEquations.remove(equation);
   }
 
-  private void reportCycle(List<LevelEquation<InferenceLevelVariable<T>>> cycle, Set<InferenceLevelVariable<T>> based) {
+  private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle, Set<InferenceLevelVariable> based) {
     List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
-    for (LevelEquation<InferenceLevelVariable<T>> equation : cycle) {
+    for (LevelEquation<InferenceLevelVariable> equation : cycle) {
       if (equation.isInfinity() || equation.getVariable1() != null) {
         basedCycle.add(new LevelEquation<>(equation));
       } else {
         basedCycle.add(new LevelEquation<>(equation.getVariable2() != null && based.contains(equation.getVariable2()) ? equation.getVariable2().getStd() : null, equation.getVariable2(), equation.getConstant()));
       }
     }
-    LevelEquation<InferenceLevelVariable<T>> lastEquation = cycle.get(cycle.size() - 1);
-    InferenceLevelVariable<T> var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-    myVisitor.getErrorReporter().report(new SolveLevelEquationsError<>(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
+    LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
+    InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
+    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
   }
 
   @Override
-  public LevelSubstitution solve(Concrete.SourceNode<T> sourceNode) {
+  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
     solveClassCalls();
 
-    for (InferenceVariable<T> var : myProps) {
+    for (InferenceVariable var : myProps) {
       if (!var.isSolved()) {
         var.solve(this, new UniverseExpression(Sort.PROP));
       }
     }
 
-    Set<InferenceLevelVariable<T>> based = new HashSet<>();
+    Set<InferenceLevelVariable> based = new HashSet<>();
     {
       Stack<LevelVariable> stack = new Stack<>();
       stack.push(LevelVariable.PVAR);
       stack.push(LevelVariable.HVAR);
 
       while (!stack.isEmpty()) {
-        Set<InferenceLevelVariable<T>> dependencies = myDependencyGraph.get(stack.pop());
+        Set<InferenceLevelVariable> dependencies = myDependencyGraph.get(stack.pop());
         if (dependencies != null) {
-          for (InferenceLevelVariable<T> dependency : dependencies) {
+          for (InferenceLevelVariable dependency : dependencies) {
             if (based.add(dependency)) {
               stack.push(dependency);
             }
@@ -371,9 +371,9 @@ public class TwoStageEquations<T> implements Equations<T> {
       }
     }
 
-    Map<InferenceLevelVariable<T>, Integer> solution = new HashMap<>();
-    Map<InferenceLevelVariable<T>, Integer> basedSolution = new HashMap<>();
-    List<LevelEquation<InferenceLevelVariable<T>>> cycle = myHLevelEquations.solve(solution);
+    Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
+    Map<InferenceLevelVariable, Integer> basedSolution = new HashMap<>();
+    List<LevelEquation<InferenceLevelVariable>> cycle = myHLevelEquations.solve(solution);
     boolean ok = cycle == null;
     if (!ok) {
       reportCycle(cycle, based);
@@ -383,7 +383,7 @@ public class TwoStageEquations<T> implements Equations<T> {
       reportCycle(cycle, based);
     }
 
-    for (Pair<InferenceLevelVariable<T>, InferenceLevelVariable<T>> vars : myBoundVariables) {
+    for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
       Integer sol = solution.get(vars.proj2);
       if (sol != null && sol == 0) {
         myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
@@ -402,7 +402,7 @@ public class TwoStageEquations<T> implements Equations<T> {
     }
 
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
-    for (Map.Entry<InferenceLevelVariable<T>, Integer> entry : solution.entrySet()) {
+    for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
       Integer constant = entry.getValue();
       assert constant != null || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
       Integer basedConstant = basedSolution.get(entry.getKey());
@@ -410,8 +410,8 @@ public class TwoStageEquations<T> implements Equations<T> {
       result.add(entry.getKey(), constant == null || basedConstant == null ? Level.INFINITY : new Level(based.contains(entry.getKey()) ? entry.getKey().getStd() : null, -basedConstant, -constant));
     }
 
-    for (Iterator<Equation<T>> iterator = myEquations.iterator(); iterator.hasNext(); ) {
-      Equation<T> equation = iterator.next();
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
       if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
         iterator.remove();
@@ -423,7 +423,7 @@ public class TwoStageEquations<T> implements Equations<T> {
       }
     }
     if (!myEquations.isEmpty()) {
-      myVisitor.getErrorReporter().report(new SolveEquationsError<>(new ArrayList<>(myEquations), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveEquationsError(new ArrayList<>(myEquations), sourceNode));
     }
 
     myEquations.clear();
@@ -438,19 +438,19 @@ public class TwoStageEquations<T> implements Equations<T> {
   }
 
   private void solveClassCalls() {
-    List<Equation<T>> lowerBounds = new ArrayList<>(myEquations.size());
-    for (Iterator<Equation<T>> iterator = myEquations.iterator(); iterator.hasNext(); ) {
-      Equation<T> equation = iterator.next();
+    List<Equation> lowerBounds = new ArrayList<>(myEquations.size());
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
       if (equation.expr.isInstance(InferenceReferenceExpression.class) && equation.expr.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
         Expression type = equation.type;
         if (type.isInstance(InferenceReferenceExpression.class) && type.cast(InferenceReferenceExpression.class).getSubstExpression() == null || type.isInstance(ClassCallExpression.class) && equation.cmp != CMP.GE) {
           if (equation.cmp == CMP.LE) {
             lowerBounds.add(equation);
           } else if (equation.cmp == CMP.GE) {
-            lowerBounds.add(new Equation<>(equation.expr, type, CMP.LE, equation.sourceNode));
+            lowerBounds.add(new Equation(equation.expr, type, CMP.LE, equation.sourceNode));
           } else {
-            lowerBounds.add(new Equation<>(equation.type, equation.expr, CMP.LE, equation.sourceNode));
-            lowerBounds.add(new Equation<>(equation.expr, type, CMP.LE, equation.sourceNode));
+            lowerBounds.add(new Equation(equation.type, equation.expr, CMP.LE, equation.sourceNode));
+            lowerBounds.add(new Equation(equation.expr, type, CMP.LE, equation.sourceNode));
           }
           iterator.remove();
         }
@@ -459,44 +459,44 @@ public class TwoStageEquations<T> implements Equations<T> {
 
     solveClassCallLowerBounds(lowerBounds);
 
-    Map<InferenceVariable<T>, Expression> result = new HashMap<>();
-    for (Iterator<Equation<T>> iterator = myEquations.iterator(); iterator.hasNext(); ) {
-      Equation<T> equation = iterator.next();
+    Map<InferenceVariable, Expression> result = new HashMap<>();
+    for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
+      Equation equation = iterator.next();
       if (equation.expr.isInstance(InferenceReferenceExpression.class) && equation.expr.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
         Expression newResult = equation.type;
         if (newResult.isInstance(InferenceReferenceExpression.class) && newResult.cast(InferenceReferenceExpression.class).getSubstExpression() == null || newResult.isInstance(ClassCallExpression.class) && equation.cmp == CMP.GE) {
-          InferenceVariable<T> var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
+          InferenceVariable var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
           Expression oldResult = result.get(var);
           if (oldResult == null || newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
             result.put(var, newResult);
           } else
           if (!oldResult.isLessOrEquals(newResult, DummyEquations.getInstance(), var.getSourceNode())) {
-            List<Equation<T>> eqs = new ArrayList<>(2);
-            eqs.add(new Equation<>(equation.expr, oldResult, CMP.LE, var.getSourceNode()));
-            eqs.add(new Equation<>(equation.expr, newResult, CMP.LE, var.getSourceNode()));
-            myVisitor.getErrorReporter().report(new SolveEquationsError<>(eqs, var.getSourceNode()));
+            List<Equation> eqs = new ArrayList<>(2);
+            eqs.add(new Equation(equation.expr, oldResult, CMP.LE, var.getSourceNode()));
+            eqs.add(new Equation(equation.expr, newResult, CMP.LE, var.getSourceNode()));
+            myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, var.getSourceNode()));
           }
           iterator.remove();
         }
       }
     }
 
-    for (Map.Entry<InferenceVariable<T>, Expression> entry : result.entrySet()) {
+    for (Map.Entry<InferenceVariable, Expression> entry : result.entrySet()) {
       solve(entry.getKey(), entry.getValue());
     }
   }
 
-  private void solveClassCallLowerBounds(List<Equation<T>> lowerBounds) {
-    Map<InferenceVariable<T>, Expression> solutions = new HashMap<>();
+  private void solveClassCallLowerBounds(List<Equation> lowerBounds) {
+    Map<InferenceVariable, Expression> solutions = new HashMap<>();
     while (true) {
       boolean updated = false;
-      for (Equation<T> equation : lowerBounds) {
+      for (Equation equation : lowerBounds) {
         Expression newSolution = equation.type;
         if (newSolution.isInstance(InferenceReferenceExpression.class) && newSolution.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
-          newSolution = solutions.get(newSolution.cast(InferenceReferenceExpression.class).<T>getVariable());
+          newSolution = solutions.get(newSolution.cast(InferenceReferenceExpression.class).getVariable());
         }
         if (newSolution != null) {
-          InferenceVariable<T> var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
+          InferenceVariable var = equation.expr.cast(InferenceReferenceExpression.class).getVariable();
           Expression oldSolution = solutions.get(var);
           if (oldSolution == null) {
             solutions.put(var, newSolution);
@@ -507,10 +507,10 @@ public class TwoStageEquations<T> implements Equations<T> {
                 solutions.put(var, newSolution);
                 updated = true;
               } else {
-                List<Equation<T>> eqs = new ArrayList<>(2);
-                eqs.add(new Equation<>(oldSolution, equation.expr, CMP.LE, var.getSourceNode()));
-                eqs.add(new Equation<>(newSolution, equation.expr, CMP.LE, var.getSourceNode()));
-                myVisitor.getErrorReporter().report(new SolveEquationsError<>(eqs, var.getSourceNode()));
+                List<Equation> eqs = new ArrayList<>(2);
+                eqs.add(new Equation(oldSolution, equation.expr, CMP.LE, var.getSourceNode()));
+                eqs.add(new Equation(newSolution, equation.expr, CMP.LE, var.getSourceNode()));
+                myVisitor.getErrorReporter().report(new SolveEquationsError(eqs, var.getSourceNode()));
               }
             }
           }
@@ -521,19 +521,19 @@ public class TwoStageEquations<T> implements Equations<T> {
       }
     }
 
-    for (Map.Entry<InferenceVariable<T>, Expression> entry : solutions.entrySet()) {
+    for (Map.Entry<InferenceVariable, Expression> entry : solutions.entrySet()) {
       solve(entry.getKey(), entry.getValue());
     }
   }
 
   @SuppressWarnings("UnusedReturnValue")
-  private boolean solve(InferenceVariable<T> var, Expression expr) {
+  private boolean solve(InferenceVariable var, Expression expr) {
     expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
     if (expr.isInstance(InferenceReferenceExpression.class) && expr.cast(InferenceReferenceExpression.class).getVariable() == var) {
       return true;
     }
     if (expr.findBinding(var)) {
-      LocalTypeCheckingError<T> error = var.getErrorInfer(expr);
+      LocalTypeCheckingError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(null, error));
       return false;
@@ -547,13 +547,13 @@ public class TwoStageEquations<T> implements Equations<T> {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return true;
       } else {
-        LocalTypeCheckingError<T> error = var.getErrorInfer(expr);
+        LocalTypeCheckingError error = var.getErrorInfer(expr);
         myVisitor.getErrorReporter().report(error);
         var.solve(this, new ErrorExpression(null, error));
         return false;
       }
     } else {
-      LocalTypeCheckingError<T> error = var.getErrorMismatch(expectedType, actualType, expr);
+      LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

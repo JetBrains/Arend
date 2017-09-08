@@ -75,7 +75,7 @@ public abstract class Definition implements Variable {
     return myReferable.toString();
   }
 
-  public static Definition newDefinition(Concrete.Definition<?> definition) {
+  public static Definition newDefinition(Concrete.Definition definition) {
     if (definition instanceof Concrete.DataDefinition) {
       return new DataDefinition(definition.getReferable());
     }

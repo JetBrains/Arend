@@ -6,20 +6,20 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 import java.util.List;
 
-public class ListLocalErrorReporter<T> implements LocalErrorReporter<T> {
-  private final List<Error<T>> myErrors;
+public class ListLocalErrorReporter implements LocalErrorReporter {
+  private final List<Error> myErrors;
 
-  public ListLocalErrorReporter(List<Error<T>> errors) {
+  public ListLocalErrorReporter(List<Error> errors) {
     myErrors = errors;
   }
 
   @Override
-  public void report(GeneralError<T> error) {
+  public void report(GeneralError error) {
     myErrors.add(error);
   }
 
   @Override
-  public void report(LocalTypeCheckingError<T> localError) {
+  public void report(LocalTypeCheckingError localError) {
     myErrors.add(localError);
   }
 }

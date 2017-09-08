@@ -100,10 +100,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       return true;
     }
 
-    Concrete.ClassDefinition<?> classDef = (Concrete.ClassDefinition) def;
+    Concrete.ClassDefinition classDef = (Concrete.ClassDefinition) def;
     boolean ok = true;
     current.add(classRef);
-    for (Concrete.ReferenceExpression<?> superClassRefExpr : classDef.getSuperClasses()) {
+    for (Concrete.ReferenceExpression superClassRefExpr : classDef.getSuperClasses()) {
       visitor.visitReference(superClassRefExpr, null);
       Referable superClassRef = superClassRefExpr.getReferent();
       if (superClassRef instanceof GlobalReferable) {

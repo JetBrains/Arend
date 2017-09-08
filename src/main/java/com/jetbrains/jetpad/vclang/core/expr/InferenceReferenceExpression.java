@@ -10,7 +10,7 @@ public class InferenceReferenceExpression extends Expression {
   private final InferenceVariable myVar;
   private Expression mySubstExpression;
 
-  public <T> InferenceReferenceExpression(InferenceVariable<T> binding, Equations<T> equations) {
+  public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
     myVar = binding;
     binding.setReference(this);
 
@@ -35,7 +35,7 @@ public class InferenceReferenceExpression extends Expression {
     mySubstExpression = substExpression;
   }
 
-  public <T> InferenceVariable<T> getVariable() {
+  public InferenceVariable getVariable() {
     return mySubstExpression == null ? myVar : null;
   }
 

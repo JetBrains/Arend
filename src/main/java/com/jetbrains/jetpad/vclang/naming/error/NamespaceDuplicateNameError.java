@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
-public class NamespaceDuplicateNameError<T> extends ReferenceError<T> {
+public class NamespaceDuplicateNameError extends ReferenceError {
   public final Referable referable;
   public final Referable previous;
 

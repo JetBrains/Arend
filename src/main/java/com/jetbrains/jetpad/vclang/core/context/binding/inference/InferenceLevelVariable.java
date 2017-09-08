@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class InferenceLevelVariable<T> implements LevelVariable {
+public class InferenceLevelVariable implements LevelVariable {
   private final LvlType myType;
-  private final Concrete.SourceNode<T> mySourceNode;
+  private final Concrete.SourceNode mySourceNode;
 
-  public InferenceLevelVariable(LvlType type, Concrete.SourceNode<T> sourceNode) {
+  public InferenceLevelVariable(LvlType type, Concrete.SourceNode sourceNode) {
     myType = type;
     mySourceNode = sourceNode;
   }
@@ -17,7 +17,7 @@ public class InferenceLevelVariable<T> implements LevelVariable {
     return myType;
   }
 
-  public Concrete.SourceNode<T> getSourceNode() {
+  public Concrete.SourceNode getSourceNode() {
     return mySourceNode;
   }
 

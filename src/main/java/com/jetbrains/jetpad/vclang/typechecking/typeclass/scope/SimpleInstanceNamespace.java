@@ -12,15 +12,15 @@ import java.util.Map;
 import java.util.Set;
 
 // TODO[abstract]: Maybe delete this, replace with ordinary scopes
-public class SimpleInstanceNamespace<T> implements Scope {
-  private final ErrorReporter<T> myErrorReporter;
-  private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.Instance<T>> myInstances = Collections.emptyMap();
+public class SimpleInstanceNamespace implements Scope {
+  private final ErrorReporter myErrorReporter;
+  private Map<Pair<GlobalReferable, GlobalReferable>, Concrete.Instance> myInstances = Collections.emptyMap();
 
-  public SimpleInstanceNamespace(ErrorReporter<T> errorReporter) {
+  public SimpleInstanceNamespace(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  public void addInstance(Concrete.Instance<T> instance) {
+  public void addInstance(Concrete.Instance instance) {
     /*
     if (myInstances.isEmpty()) {
       myInstances = new HashMap<>();

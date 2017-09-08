@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -62,15 +61,15 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
-    List<Concrete.Parameter<Position>> arguments = new ArrayList<>(2);
+    List<Concrete.Parameter> arguments = new ArrayList<>(2);
     LocalReference X = ref("X");
     LocalReference x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
     GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, arguments, cVar(X), body(cVar(x)));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(null, reference, arguments, cVar(X), body(cVar(x)));
     reference.setDefinition(def);
-    def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, 0), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, 0), null);
   }
 
   @Test
@@ -85,15 +84,15 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition<Position> def = (Concrete.Definition<Position>) ((GlobalReference) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getReferable()).getDefinition();
+    Concrete.Definition def = (Concrete.Definition) ((GlobalReference) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getReferable()).getDefinition();
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition<Position> def = (Concrete.Definition<Position>) ((GlobalReference) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
+    Concrete.Definition def = (Concrete.Definition) ((GlobalReference) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
     assertNotNull(def);
-    def.accept(new PrettyPrintVisitor<>(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
+    def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 }

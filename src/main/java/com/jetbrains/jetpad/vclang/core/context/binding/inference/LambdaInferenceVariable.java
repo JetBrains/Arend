@@ -8,23 +8,23 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 import java.util.Set;
 
-public class LambdaInferenceVariable<T> extends InferenceVariable<T> {
+public class LambdaInferenceVariable extends InferenceVariable {
   private final int myIndex;
   private final boolean myLevel;
 
-  public LambdaInferenceVariable(String name, Expression type, int index, Concrete.SourceNode<T> sourceNode, boolean level, Set<Binding> bounds) {
+  public LambdaInferenceVariable(String name, Expression type, int index, Concrete.SourceNode sourceNode, boolean level, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myIndex = index;
     myLevel = level;
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError<>(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), getSourceNode(), candidates);
+  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
+    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), getSourceNode(), candidates);
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError<>(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
+    return new ArgInferenceError(myLevel ? ArgInferenceError.levelOfLambdaArg(myIndex) : ArgInferenceError.lambdaArg(myIndex), expectedType, actualType, getSourceNode(), candidate);
   }
 }

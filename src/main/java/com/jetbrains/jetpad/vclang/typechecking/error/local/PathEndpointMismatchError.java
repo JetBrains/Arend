@@ -7,12 +7,12 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class PathEndpointMismatchError<T> extends LocalTypeCheckingError<T> {
+public class PathEndpointMismatchError extends LocalTypeCheckingError {
   public final boolean isLeft;
   public final Expression expected;
   public final Expression actual;
 
-  public PathEndpointMismatchError(boolean isLeft, Expression expected, Expression actual, Concrete.SourceNode<T> cause) {
+  public PathEndpointMismatchError(boolean isLeft, Expression expected, Expression actual, Concrete.SourceNode cause) {
     super("The " + (isLeft ? "left" : "right") + " path endpoint mismatch", cause);
     this.isLeft = isLeft;
     this.expected = expected;

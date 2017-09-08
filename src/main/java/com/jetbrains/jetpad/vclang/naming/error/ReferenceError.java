@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
-public class ReferenceError<T> extends GeneralError<T> {
+public class ReferenceError extends GeneralError {
   public final Referable referable;
 
   public ReferenceError(String message, Referable referable) {
@@ -21,14 +21,14 @@ public class ReferenceError<T> extends GeneralError<T> {
   }
 
   @Override
-  public T getCause() {
+  public Object getCause() {
     if (referable instanceof UnresolvedReference) {
       Object data = ((UnresolvedReference) referable).getData();
       if (data != null) {
-        return (T) data;
+        return data;
       }
     }
-    return (T) referable;
+    return referable;
   }
 
   @Override

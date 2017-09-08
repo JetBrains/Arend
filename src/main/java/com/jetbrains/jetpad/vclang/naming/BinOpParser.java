@@ -8,22 +8,22 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import java.util.List;
 
-public class BinOpParser<T> {
-  private final Concrete.BinOpSequenceExpression<T> myBinOpExpression;
-  private final ErrorReporter<T> myErrorReporter;
+public class BinOpParser {
+  private final Concrete.BinOpSequenceExpression myBinOpExpression;
+  private final ErrorReporter myErrorReporter;
 
-  public BinOpParser(Concrete.BinOpSequenceExpression<T> binOpExpression, ErrorReporter<T> errorReporter) {
+  public BinOpParser(Concrete.BinOpSequenceExpression binOpExpression, ErrorReporter errorReporter) {
     myBinOpExpression = binOpExpression;
     myErrorReporter = errorReporter;
   }
 
-  public static class StackElem<T> {
-    public final Concrete.Expression<T> argument;
+  public static class StackElem {
+    public final Concrete.Expression argument;
     public final Referable binOp;
     public final Precedence prec;
-    public final Concrete.ReferenceExpression<T> var;
+    public final Concrete.ReferenceExpression var;
 
-    public StackElem(Concrete.Expression<T> argument, Referable binOp, Precedence prec, Concrete.ReferenceExpression<T> var) {
+    public StackElem(Concrete.Expression argument, Referable binOp, Precedence prec, Concrete.ReferenceExpression var) {
       this.argument = argument;
       this.binOp = binOp;
       this.prec = prec;
@@ -31,23 +31,23 @@ public class BinOpParser<T> {
     }
   }
 
-  public void pushOnStack(List<StackElem<T>> stack, Concrete.Expression<T> argument, Referable binOp, Precedence prec, Concrete.ReferenceExpression<T> var, boolean ignoreAssoc) {
+  public void pushOnStack(List<StackElem> stack, Concrete.Expression argument, Referable binOp, Precedence prec, Concrete.ReferenceExpression var, boolean ignoreAssoc) {
     if (stack.isEmpty()) {
-      stack.add(new StackElem<>(argument, binOp, prec, var));
+      stack.add(new StackElem(argument, binOp, prec, var));
       return;
     }
 
-    StackElem<T> topElem = stack.get(stack.size() - 1);
+    StackElem topElem = stack.get(stack.size() - 1);
 
     if (argument != null) {
       if (topElem.prec.priority < prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Precedence.Associativity.RIGHT_ASSOC && (ignoreAssoc || prec.associativity == Precedence.Associativity.RIGHT_ASSOC))) {
-        stack.add(new StackElem<>(argument, binOp, prec, var));
+        stack.add(new StackElem(argument, binOp, prec, var));
         return;
       }
 
       if (!(topElem.prec.priority > prec.priority || (topElem.prec.priority == prec.priority && topElem.prec.associativity == Precedence.Associativity.LEFT_ASSOC && (ignoreAssoc || prec.associativity == Precedence.Associativity.LEFT_ASSOC)))) {
         String msg = "Precedence parsing error: cannot mix " + topElem.binOp.textRepresentation() + " [" + topElem.prec + "] and " + binOp.textRepresentation() + " [" + prec + "] in the same infix expression";
-        myErrorReporter.report(new NamingError<>(msg, var));
+        myErrorReporter.report(new NamingError(msg, var));
       }
     }
 
@@ -55,7 +55,7 @@ public class BinOpParser<T> {
     pushOnStack(stack, myBinOpExpression.makeBinOp(topElem.argument, topElem.binOp, topElem.var, argument), binOp, prec, var, ignoreAssoc);
   }
 
-  public Concrete.Expression<T> rollUpStack(List<StackElem<T>> stack, Concrete.Expression<T> expr) {
+  public Concrete.Expression rollUpStack(List<StackElem> stack, Concrete.Expression expr) {
     for (int i = stack.size() - 1; i >= 0; --i) {
       expr = myBinOpExpression.makeBinOp(stack.get(i).argument, stack.get(i).binOp, stack.get(i).var, expr);
     }

@@ -6,11 +6,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TypeMismatchError<T> extends LocalTypeCheckingError<T> {
+public class TypeMismatchError extends LocalTypeCheckingError {
   public final Doc expected;
   public final Doc actual;
 
-  public TypeMismatchError(Doc expected, Doc actual, Concrete.SourceNode<T> sourceNode) {
+  public TypeMismatchError(Doc expected, Doc actual, Concrete.SourceNode sourceNode) {
     super("Type mismatch", sourceNode);
     this.expected = expected;
     this.actual = actual;

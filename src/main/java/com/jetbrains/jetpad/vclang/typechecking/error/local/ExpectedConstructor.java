@@ -8,11 +8,11 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ExpectedConstructor<T> extends LocalTypeCheckingError<T> {
+public class ExpectedConstructor extends LocalTypeCheckingError {
   public final Referable referable;
   public final DataCallExpression dataCall;
 
-  public ExpectedConstructor(Referable referable, DataCallExpression dataCall, Concrete.SourceNode<T> cause) {
+  public ExpectedConstructor(Referable referable, DataCallExpression dataCall, Concrete.SourceNode cause) {
     super("", cause);
     this.referable = referable;
     this.dataCall = dataCall;

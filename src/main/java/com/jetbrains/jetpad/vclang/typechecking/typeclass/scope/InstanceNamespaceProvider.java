@@ -9,23 +9,23 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class InstanceNamespaceProvider<T> {
-  private final Map<Concrete.Definition<T>, Scope> cache = new HashMap<>();
-  private final ErrorReporter<T> myErrorReporter;
+public class InstanceNamespaceProvider {
+  private final Map<Concrete.Definition, Scope> cache = new HashMap<>();
+  private final ErrorReporter myErrorReporter;
 
-  public InstanceNamespaceProvider(ErrorReporter<T> errorReporter) {
+  public InstanceNamespaceProvider(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  private static <T> void forDefinitions(Collection<? extends Concrete.Definition<T>> definitions, SimpleInstanceNamespace<T> ns) {
-    for (Concrete.Definition<T> definition : definitions) {
+  private static  void forDefinitions(Collection<? extends Concrete.Definition> definitions, SimpleInstanceNamespace ns) {
+    for (Concrete.Definition definition : definitions) {
       if (definition instanceof Concrete.Instance) {
-        ns.addInstance((Concrete.Instance<T>) definition);
+        ns.addInstance((Concrete.Instance) definition);
       }
     }
   }
 
-  public Scope forDefinition(Concrete.Definition<T> definition) {
+  public Scope forDefinition(Concrete.Definition definition) {
     if (!(definition instanceof Concrete.DefinitionCollection)) {
       return new EmptyScope();
     }
@@ -33,8 +33,8 @@ public class InstanceNamespaceProvider<T> {
     Scope ns = cache.get(definition);
     if (ns != null) return ns;
 
-    SimpleInstanceNamespace<T> sns = new SimpleInstanceNamespace<>(myErrorReporter);
-    forDefinitions(((Concrete.DefinitionCollection<T>) definition).getGlobalDefinitions(), sns);
+    SimpleInstanceNamespace sns = new SimpleInstanceNamespace(myErrorReporter);
+    forDefinitions(((Concrete.DefinitionCollection) definition).getGlobalDefinitions(), sns);
     cache.put(definition, sns);
     return sns;
   }

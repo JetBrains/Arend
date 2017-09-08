@@ -16,14 +16,14 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class GoalError<T> extends LocalTypeCheckingError<T> {
+public class GoalError extends LocalTypeCheckingError {
   public final String name;
   public final Map<Referable, Binding> context;
   public final ExpectedType expectedType;
   public final Expression actualType;
-  public final List<Error<T>> errors;
+  public final List<Error> errors;
 
-  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<Error<T>> errors, Concrete.Expression<T> expression) {
+  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Concrete.Expression expression) {
     super(Level.GOAL, "", expression);
     this.name = name;
     this.context = new HashMap<>(context);
@@ -52,7 +52,7 @@ public class GoalError<T> extends LocalTypeCheckingError<T> {
     Doc errorsDoc;
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
-      for (Error<T> error : errors) {
+      for (Error error : errors) {
         errorsDocs.add(hang(error.getHeaderDoc(src), error.getBodyDoc(src)));
       }
       errorsDoc = hang(text("Errors:"), vList(errorsDocs));

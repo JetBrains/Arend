@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class FieldsImplementationError<T> extends LocalTypeCheckingError<T> {
+public class FieldsImplementationError extends LocalTypeCheckingError {
   public boolean alreadyImplemented;
   public Collection<? extends GlobalReferable> fields;
 
-  public FieldsImplementationError(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields, Concrete.SourceNode<T> cause) {
+  public FieldsImplementationError(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields, Concrete.SourceNode cause) {
     super("The following fields are " + (alreadyImplemented ? "already" : "not") + " implemented: ", cause);
     this.alreadyImplemented = alreadyImplemented;
     this.fields = fields;

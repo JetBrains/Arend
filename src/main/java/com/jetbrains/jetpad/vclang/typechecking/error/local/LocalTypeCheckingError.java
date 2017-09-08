@@ -8,21 +8,21 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import javax.annotation.Nonnull;
 
-public class LocalTypeCheckingError<T> extends Error<T> {
-  public final Concrete.SourceNode<T> cause;
+public class LocalTypeCheckingError extends Error {
+  public final Concrete.SourceNode cause;
 
-  public LocalTypeCheckingError(@Nonnull Level level, String message, Concrete.SourceNode<T> cause) {
+  public LocalTypeCheckingError(@Nonnull Level level, String message, Concrete.SourceNode cause) {
     super(level, message);
     this.cause = cause;
   }
 
-  public LocalTypeCheckingError(String message, Concrete.SourceNode<T> cause) {
+  public LocalTypeCheckingError(String message, Concrete.SourceNode cause) {
     super(Level.ERROR, message);
     this.cause = cause;
   }
 
   @Override
-  public T getCause() {
+  public Object getCause() {
     return cause.getData();
   }
 

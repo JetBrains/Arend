@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -10,7 +9,7 @@ import javax.annotation.Nonnull;
 
 public class GlobalReference implements GlobalReferable, SourceInfo {
   private final String myName;
-  private Concrete.ReferableDefinition<Position> myDefinition;
+  private Concrete.ReferableDefinition myDefinition;
   private final Precedence myPrecedence;
 
   public GlobalReference(@Nonnull String name, Precedence precedence) {
@@ -23,11 +22,11 @@ public class GlobalReference implements GlobalReferable, SourceInfo {
     return myPrecedence;
   }
 
-  public Concrete.ReferableDefinition<Position> getDefinition() {
+  public Concrete.ReferableDefinition getDefinition() {
     return myDefinition;
   }
 
-  public void setDefinition(Concrete.ReferableDefinition<Position> definition) {
+  public void setDefinition(Concrete.ReferableDefinition definition) {
     assert myDefinition == null;
     myDefinition = definition;
   }
@@ -40,13 +39,13 @@ public class GlobalReference implements GlobalReferable, SourceInfo {
 
   @Override
   public String moduleTextRepresentation() {
-    //noinspection ConstantConditions
-    return myDefinition.getData().moduleTextRepresentation();
+    Object data = myDefinition.getData();
+    return data instanceof SourceInfo ? ((SourceInfo) data).moduleTextRepresentation() : null;
   }
 
   @Override
   public String positionTextRepresentation() {
-    //noinspection ConstantConditions
-    return myDefinition.getData().positionTextRepresentation();
+    Object data = myDefinition.getData();
+    return data instanceof SourceInfo ? ((SourceInfo) data).positionTextRepresentation() : null;
   }
 }

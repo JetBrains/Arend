@@ -4,13 +4,13 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 
-public interface DependencyListener<T> {
-  default void sccFound(SCC<T> scc) {}
-  default void unitFound(TypecheckingUnit<T> unit, Recursion recursion) {}
-  default boolean needsOrdering(Concrete.Definition<T> definition) { return true; }
+public interface DependencyListener {
+  default void sccFound(SCC scc) {}
+  default void unitFound(TypecheckingUnit unit, Recursion recursion) {}
+  default boolean needsOrdering(Concrete.Definition definition) { return true; }
 
-  default void alreadyTypechecked(Concrete.Definition<T> definition) {}
-  default void dependsOn(Typecheckable<T> unit, Concrete.Definition<T> def) {}
+  default void alreadyTypechecked(Concrete.Definition definition) {}
+  default void dependsOn(Typecheckable unit, Concrete.Definition def) {}
 
   enum Recursion { NO, IN_HEADER, IN_BODY }
 }

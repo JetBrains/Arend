@@ -13,18 +13,18 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 /**
  * If you would like to add a new type checking error, please, extend {@link LocalTypeCheckingError} instead.
  */
-public class TypeCheckingError<T> extends GeneralError<T> {
+public class TypeCheckingError extends GeneralError {
   public final GlobalReferable definition;
-  public final LocalTypeCheckingError<T> localError;
+  public final LocalTypeCheckingError localError;
 
-  public TypeCheckingError(@Nonnull GlobalReferable definition, LocalTypeCheckingError<T> localError) {
+  public TypeCheckingError(@Nonnull GlobalReferable definition, LocalTypeCheckingError localError) {
     super(localError.level, localError.message);
     this.definition = definition;
     this.localError = localError;
   }
 
   @Override
-  public T getCause() {
+  public Object getCause() {
     return localError.getCause();
   }
 

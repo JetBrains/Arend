@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class MissingClausesError<T> extends LocalTypeCheckingError<T> {
+public class MissingClausesError extends LocalTypeCheckingError {
   private final List<List<Expression>> myMissingClauses;
 
-  public MissingClausesError(List<List<Expression>> missingClauses, Concrete.SourceNode<T> cause) {
+  public MissingClausesError(List<List<Expression>> missingClauses, Concrete.SourceNode cause) {
     super("Some clauses are missing", cause);
     myMissingClauses = missingClauses;
   }

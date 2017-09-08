@@ -8,18 +8,18 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingErr
 
 import java.util.Set;
 
-public class ExpressionInferenceVariable<T> extends InferenceVariable<T> {
-  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode<T> sourceNode, Set<Binding> bounds) {
+public class ExpressionInferenceVariable extends InferenceVariable {
+  public ExpressionInferenceVariable(Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super("H", type, sourceNode, bounds);
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError<>(ArgInferenceError.expression(), getSourceNode(), candidates);
+  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
+    return new ArgInferenceError(ArgInferenceError.expression(), getSourceNode(), candidates);
   }
 
   @Override
-  public LocalTypeCheckingError<T> getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError<>(ArgInferenceError.expression(), expectedType, actualType, getSourceNode(), candidate);
+  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
+    return new ArgInferenceError(ArgInferenceError.expression(), expectedType, actualType, getSourceNode(), candidate);
   }
 }

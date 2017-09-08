@@ -30,30 +30,30 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-class TypecheckingDependencyListener<T> implements DependencyListener<T> {
+class TypecheckingDependencyListener implements DependencyListener {
   private final TypecheckerState myState;
   private final StaticNamespaceProvider myStaticNsProvider;
   private final DynamicNamespaceProvider myDynamicNsProvider;
-  private final TypecheckedReporter<T> myTypecheckedReporter;
-  private final DependencyListener<T> myDependencyListener;
-  private final Map<GlobalReferable, Suspension<T>> mySuspensions = new HashMap<>();
+  private final TypecheckedReporter myTypecheckedReporter;
+  private final DependencyListener myDependencyListener;
+  private final Map<GlobalReferable, Suspension> mySuspensions = new HashMap<>();
   private boolean myTypecheckingHeaders = false;
 
-  final ErrorReporter<T> errorReporter;
+  final ErrorReporter errorReporter;
   final InstanceProviderSet instanceProviderSet;
-  final TypecheckableProvider<T> typecheckableProvider;
+  final TypecheckableProvider typecheckableProvider;
 
-  private static class Suspension<T> {
-    public final CheckTypeVisitor<T> visitor;
-    public final CountingErrorReporter<T> countingErrorReporter;
+  private static class Suspension {
+    public final CheckTypeVisitor visitor;
+    public final CountingErrorReporter countingErrorReporter;
 
-    public Suspension(CheckTypeVisitor<T> visitor, CountingErrorReporter<T> countingErrorReporter) {
+    public Suspension(CheckTypeVisitor visitor, CountingErrorReporter countingErrorReporter) {
       this.visitor = visitor;
       this.countingErrorReporter = countingErrorReporter;
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider<T> typecheckableProvider, ErrorReporter<T> errorReporter, TypecheckedReporter<T> typecheckedReporter, DependencyListener<T> dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -65,12 +65,12 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   }
 
   @Override
-  public void sccFound(SCC<T> scc) {
-    for (TypecheckingUnit<T> unit : scc.getUnits()) {
+  public void sccFound(SCC scc) {
+    for (TypecheckingUnit unit : scc.getUnits()) {
       if (!Typecheckable.hasHeader(unit.getDefinition())) {
-        List<Concrete.Definition<T>> cycle = new ArrayList<>();
-        for (TypecheckingUnit<T> unit1 : scc.getUnits()) {
-          Concrete.Definition<T> definition = unit1.getDefinition();
+        List<Concrete.Definition> cycle = new ArrayList<>();
+        for (TypecheckingUnit unit1 : scc.getUnits()) {
+          Concrete.Definition definition = unit1.getDefinition();
           cycle.add(definition);
           if (!unit1.isHeader()) {
             if (Typecheckable.hasHeader(definition)) {
@@ -82,14 +82,14 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
             myState.record(definition.getReferable(), Definition.newDefinition(definition));
           }
         }
-        errorReporter.report(new CycleError<>(cycle));
+        errorReporter.report(new CycleError(cycle));
         return;
       }
     }
 
     boolean ok = typecheckHeaders(scc);
-    List<Concrete.Definition<T>> definitions = new ArrayList<>(scc.getUnits().size());
-    for (TypecheckingUnit<T> unit : scc.getUnits()) {
+    List<Concrete.Definition> definitions = new ArrayList<>(scc.getUnits().size());
+    for (TypecheckingUnit unit : scc.getUnits()) {
       if (!unit.isHeader()) {
         definitions.add(unit.getDefinition());
       }
@@ -102,10 +102,10 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   }
 
   @Override
-  public void unitFound(TypecheckingUnit<T> unit, Recursion recursion) {
+  public void unitFound(TypecheckingUnit unit, Recursion recursion) {
     if (recursion == Recursion.IN_HEADER) {
       myState.record(unit.getDefinition().getReferable(), Definition.newDefinition(unit.getDefinition()));
-      errorReporter.report(new CycleError<>(Collections.singletonList(unit.getDefinition())));
+      errorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
       myTypecheckedReporter.typecheckingFailed(unit.getDefinition());
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
@@ -115,7 +115,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   }
 
   @Override
-  public boolean needsOrdering(Concrete.Definition<T> definition) {
+  public boolean needsOrdering(Concrete.Definition definition) {
     if (!myDependencyListener.needsOrdering(definition)) {
       return false;
     }
@@ -125,21 +125,21 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
   }
 
   @Override
-  public void alreadyTypechecked(Concrete.Definition<T> definition) {
+  public void alreadyTypechecked(Concrete.Definition definition) {
     myTypecheckedReporter.typecheckingSucceeded(definition);
     myDependencyListener.alreadyTypechecked(definition);
   }
 
   @Override
-  public void dependsOn(Typecheckable<T> unit, Concrete.Definition<T> def) {
+  public void dependsOn(Typecheckable unit, Concrete.Definition def) {
     myDependencyListener.dependsOn(unit, def);
   }
 
 
-  private boolean typecheckHeaders(SCC<T> scc) {
+  private boolean typecheckHeaders(SCC scc) {
     int numberOfHeaders = 0;
-    TypecheckingUnit<T> unit = null;
-    for (TypecheckingUnit<T> unit1 : scc.getUnits()) {
+    TypecheckingUnit unit = null;
+    for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {
         unit = unit1;
         numberOfHeaders++;
@@ -151,35 +151,35 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
     }
 
     if (numberOfHeaders == 1) {
-      CountingErrorReporter<T> countingErrorReporter = new CountingErrorReporter<>();
-      LocalErrorReporter<T> localErrorReporter = new ProxyErrorReporter<>(unit.getDefinition(), new CompositeErrorReporter<>(errorReporter, countingErrorReporter));
-      CheckTypeVisitor<T> visitor = new CheckTypeVisitor<>(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
+      CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(errorReporter, countingErrorReporter));
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition().getReferable())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        mySuspensions.put(unit.getDefinition().getReferable(), new Suspension<>(visitor, countingErrorReporter));
+        mySuspensions.put(unit.getDefinition().getReferable(), new Suspension(visitor, countingErrorReporter));
       }
       return typechecked.status().headerIsOK();
     }
 
     if (myTypecheckingHeaders) {
-      List<Concrete.Definition<T>> cycle = new ArrayList<>(scc.getUnits().size());
-      for (TypecheckingUnit<T> unit1 : scc.getUnits()) {
+      List<Concrete.Definition> cycle = new ArrayList<>(scc.getUnits().size());
+      for (TypecheckingUnit unit1 : scc.getUnits()) {
         cycle.add(unit1.getDefinition());
       }
 
-      errorReporter.report(new CycleError<>(cycle));
-      for (Concrete.Definition<T> definition : cycle) {
+      errorReporter.report(new CycleError(cycle));
+      for (Concrete.Definition definition : cycle) {
         myState.record(definition.getReferable(), Definition.newDefinition(definition));
       }
       return false;
     }
 
     myTypecheckingHeaders = true;
-    Ordering<T> ordering = new Ordering<>(instanceProviderSet, typecheckableProvider, this, true);
+    Ordering ordering = new Ordering(instanceProviderSet, typecheckableProvider, this, true);
     boolean ok = true;
-    for (TypecheckingUnit<T> unit1 : scc.getUnits()) {
+    for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {
-        Concrete.Definition<T> definition = unit1.getDefinition();
+        Concrete.Definition definition = unit1.getDefinition();
         ordering.doOrder(definition);
         if (ok && !myState.getTypechecked(definition.getReferable()).status().headerIsOK()) {
           ok = false;
@@ -190,23 +190,23 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
     return ok;
   }
 
-  private void typecheckBodies(List<Concrete.Definition<T>> definitions, boolean headersAreOK) {
+  private void typecheckBodies(List<Concrete.Definition> definitions, boolean headersAreOK) {
     Set<FunctionDefinition> functionDefinitions = new HashSet<>();
-    Map<FunctionDefinition, List<Clause<T>>> clausesMap = new HashMap<>();
+    Map<FunctionDefinition, List<Clause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
-    for (Concrete.Definition<T> definition : definitions) {
+    for (Concrete.Definition definition : definitions) {
       Definition typechecked = myState.getTypechecked(definition.getReferable());
       if (typechecked instanceof DataDefinition) {
         dataDefinitions.add((DataDefinition) typechecked);
       }
     }
 
-    List<Pair<Concrete.Definition<T>, Boolean>> results = new ArrayList<>(definitions.size());
-    for (Concrete.Definition<T> definition : definitions) {
-      Suspension<T> suspension = mySuspensions.remove(definition.getReferable());
+    List<Pair<Concrete.Definition, Boolean>> results = new ArrayList<>(definitions.size());
+    for (Concrete.Definition definition : definitions) {
+      Suspension suspension = mySuspensions.remove(definition.getReferable());
       if (headersAreOK && suspension != null) {
         Definition def = myState.getTypechecked(definition.getReferable());
-        List<Clause<T>> clauses = DefinitionTypechecking.typecheckBody(def, definition, suspension.visitor, dataDefinitions);
+        List<Clause> clauses = DefinitionTypechecking.typecheckBody(def, definition, suspension.visitor, dataDefinitions);
         if (clauses != null) {
           functionDefinitions.add((FunctionDefinition) def);
           clausesMap.put((FunctionDefinition) def, clauses);
@@ -229,12 +229,12 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          errorReporter.report(new TerminationCheckError<>(entry.getKey(), entry.getValue()));
+          errorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }
       }
     }
 
-    for (Pair<Concrete.Definition<T>, Boolean> result : results) {
+    for (Pair<Concrete.Definition, Boolean> result : results) {
       if (ok && result.proj2) {
         myTypecheckedReporter.typecheckingSucceeded(result.proj1);
       } else {
@@ -247,11 +247,11 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
     }
   }
 
-  private void typecheck(TypecheckingUnit<T> unit, boolean recursive) {
-    CountingErrorReporter<T> countingErrorReporter = new CountingErrorReporter<>();
-    CompositeErrorReporter<T> compositeErrorReporter = new CompositeErrorReporter<>(errorReporter, countingErrorReporter);
-    LocalErrorReporter<T> localErrorReporter = new ProxyErrorReporter<>(unit.getDefinition(), compositeErrorReporter);
-    List<Clause<T>> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition().getReferable())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
+  private void typecheck(TypecheckingUnit unit, boolean recursive) {
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
+    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), compositeErrorReporter);
+    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, instanceProviderSet.getInstanceProvider(unit.getDefinition().getReferable())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getReferable());
 
     if (recursive && clauses != null) {
@@ -261,7 +261,7 @@ class TypecheckingDependencyListener<T> implements DependencyListener<T> {
       if (!callCategory.checkTermination()) {
         typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          compositeErrorReporter.report(new TerminationCheckError<>(entry.getKey(), entry.getValue()));
+          compositeErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
         }
       }
     }

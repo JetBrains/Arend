@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
@@ -23,37 +22,37 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends NameResolverTestCase {
-  private void testExpr(Concrete.Expression<Position> expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor<>(builder, sourceInfoProvider, 0), Concrete.Expression.PREC);
-    Concrete.Expression<Position> result = resolveNamesExpr(builder.toString());
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Concrete.Expression.PREC);
+    Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
 
-  private void testExpr(Concrete.Expression<Position> expected, Expression expr) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr) throws UnsupportedEncodingException {
     testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
-  private void testDef(Concrete.FunctionDefinition<Position> expected, Concrete.FunctionDefinition<Position> def) throws UnsupportedEncodingException {
+  private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.accept(new PrettyPrintVisitor<>(builder, sourceInfoProvider, 0), null);
+    def.accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), null);
 
-    Concrete.FunctionDefinition<Position> result = (Concrete.FunctionDefinition<Position>) resolveNamesDef(builder.toString()).getDefinition();
-    List<Concrete.TypeParameter<Position>> expectedArguments = new ArrayList<>();
-    for (Concrete.Parameter<Position> argument : expected.getParameters()) {
-      expectedArguments.add((Concrete.TypeParameter<Position>) argument);
+    Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString()).getDefinition();
+    List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();
+    for (Concrete.Parameter argument : expected.getParameters()) {
+      expectedArguments.add((Concrete.TypeParameter) argument);
     }
-    List<Concrete.TypeParameter<Position>> actualArguments = new ArrayList<>();
-    for (Concrete.Parameter<Position> argument : result.getParameters()) {
-      actualArguments.add((Concrete.TypeParameter<Position>) argument);
+    List<Concrete.TypeParameter> actualArguments = new ArrayList<>();
+    for (Concrete.Parameter argument : result.getParameters()) {
+      actualArguments.add((Concrete.TypeParameter) argument);
     }
-    Concrete.Expression<Position> expectedType = cPi(expectedArguments, expected.getResultType());
-    Concrete.Expression<Position> actualType = cPi(actualArguments, result.getResultType());
+    Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
+    Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
     assertTrue(result.getBody() instanceof Concrete.TermFunctionBody);
     assertTrue(compareAbstract(
-      cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody<Position>) expected.getBody()).getTerm()),
-      cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody<Position>) result.getBody()).getTerm())));
+      cLam(new ArrayList<>(expected.getParameters()), ((Concrete.TermFunctionBody) expected.getBody()).getTerm()),
+      cLam(new ArrayList<>(result.getParameters()), ((Concrete.TermFunctionBody) result.getBody()).getTerm())));
   }
 
   @Test
@@ -61,7 +60,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
     LocalReference cx = ref("x");
     LocalReference cy = ref("y");
-    Concrete.Expression<Position> expected = cApps(cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx))));
+    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
     Expression expr = Apps(Lam(xy, Apps(Ref(xy), Apps(Ref(xy), Ref(xy.getNext())))), Lam(xy, Ref(xy)), Apps(Lam(x, Ref(x)), Lam(x, Ref(x))));
@@ -74,7 +73,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference x = ref("x");
     LocalReference y = ref("y");
     LocalReference z = ref("z");
-    Concrete.Expression<Position> expected = cPi(ctypeArgs(cTele(cvars(x, y, z), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar(x), cVar(y)), cApps(cVar(y), cVar(x))), cApps(cVar(z), cVar(x), cVar(y))))));
+    Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars(x, y, z), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar(x), cVar(y)), cApps(cVar(y), cVar(x))), cApps(cVar(z), cVar(x), cVar(y))))));
     SingleDependentLink xyz = singleParams(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
     Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Ref(xyz), Ref(xyz.getNext())), Apps(Ref(xyz.getNext()), Ref(xyz))), Apps(Ref(xyz.getNext().getNext()), Ref(xyz), Ref(xyz.getNext()))))));
     testExpr(expected, expr);
@@ -90,7 +89,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference cx_ = ref("x'");
     LocalReference cz_ = ref("z'");
     LocalReference cw = ref("w");
-    Concrete.Expression<Position> expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cx, cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
+    Concrete.Expression expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cx, cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
     SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
     SingleDependentLink x = singleParam("x", Universe(1));
     SingleDependentLink yz = singleParam(false, vars("y", "z"), Universe(1));
@@ -109,7 +108,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference y = ref("y");
     LocalReference z = ref("z");
     GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
-    Concrete.FunctionDefinition<Position> def = new Concrete.FunctionDefinition<>(null, reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(null, reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }
@@ -131,7 +130,7 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference ca = ref("a");
     LocalReference cA = ref("A");
     LocalReference cD = ref("D");
-    Concrete.Expression<Position> expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(ref("y")), cVar(ca)))))));
+    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(ref("y")), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 }

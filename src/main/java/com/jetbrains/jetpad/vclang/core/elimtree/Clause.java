@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.List;
 
-public class Clause<T> extends ClauseBase {
-  public final Concrete.FunctionClause<T> clause;
+public class Clause extends ClauseBase {
+  public final Concrete.FunctionClause clause;
 
-  public Clause(List<Pattern> patterns, Expression expression, Concrete.FunctionClause<T> clause) {
+  public Clause(List<Pattern> patterns, Expression expression, Concrete.FunctionClause clause) {
     super(patterns, expression);
     this.clause = clause;
   }

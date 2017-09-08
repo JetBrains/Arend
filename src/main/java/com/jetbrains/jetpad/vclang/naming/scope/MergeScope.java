@@ -19,13 +19,13 @@ public class MergeScope implements Scope {
     myScopes = Arrays.asList(scopes);
   }
 
-  public <T> void addScope(Scope scope, ErrorReporter<T> errorReporter) {
+  public void addScope(Scope scope, ErrorReporter errorReporter) {
     for (String name : scope.getNames()) {
       Referable ref1 = resolveName(name);
       if (ref1 != null) {
         Referable ref2 = scope.resolveName(name);
         if (ref2 != null && ref1 != ref2) {
-          errorReporter.report(new NamespaceDuplicateNameError<>(Error.Level.WARNING, ref2, ref1));
+          errorReporter.report(new NamespaceDuplicateNameError(Error.Level.WARNING, ref2, ref1));
         }
       }
     }

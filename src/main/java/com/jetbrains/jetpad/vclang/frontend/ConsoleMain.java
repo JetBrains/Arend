@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
@@ -202,9 +202,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     @Override
     public String getIdFor(GlobalReferable referable) {
       if (referable instanceof GlobalReference) {
-        Position pos = ((GlobalReference) referable).getDefinition().getData();
-        if (pos != null) {
-          return pos.line + ";" + pos.column;
+        Object pos = ((GlobalReference) referable).getDefinition().getData();
+        if (pos instanceof SourceInfo) {
+          return ((SourceInfo) pos).positionTextRepresentation();
         }
       }
       return null;

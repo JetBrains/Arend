@@ -11,10 +11,10 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveEquationsError<T> extends LocalTypeCheckingError<T> {
+public class SolveEquationsError extends LocalTypeCheckingError {
   public final List<? extends Equation> equations;
 
-  public SolveEquationsError(List<? extends Equation> equations, Concrete.SourceNode<T> cause) {
+  public SolveEquationsError(List<? extends Equation> equations, Concrete.SourceNode cause) {
     super("Cannot solve equations", cause);
     this.equations = equations;
   }

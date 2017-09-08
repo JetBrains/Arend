@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
 import com.google.common.base.Objects;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
@@ -11,16 +10,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Position, Concrete.Expression<Position>, Boolean> {
+public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean> {
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
 
   @Override
-  public Boolean visitApp(Concrete.AppExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.AppExpression && expr1.getFunction().accept(this, ((Concrete.AppExpression<Position>) expr2).getFunction()) && expr1.getArgument().getExpression().accept(this, ((Concrete.AppExpression<Position>) expr2).getArgument().getExpression());
+  public Boolean visitApp(Concrete.AppExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.AppExpression && expr1.getFunction().accept(this, ((Concrete.AppExpression) expr2).getFunction()) && expr1.getArgument().getExpression().accept(this, ((Concrete.AppExpression) expr2).getArgument().getExpression());
   }
 
   @Override
-  public Boolean visitReference(Concrete.ReferenceExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitReference(Concrete.ReferenceExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.ReferenceExpression)) return false;
     Concrete.ReferenceExpression defCallExpr2 = (Concrete.ReferenceExpression) expr2;
     Referable ref1 = mySubstitution.get(expr1.getReferent());
@@ -31,32 +30,32 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitInferenceReference(Concrete.InferenceReferenceExpression<Position> expr, Concrete.Expression<Position> expr2) {
+  public Boolean visitInferenceReference(Concrete.InferenceReferenceExpression expr, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.InferenceReferenceExpression && expr.getVariable() == ((Concrete.InferenceReferenceExpression) expr2).getVariable();
   }
 
   @Override
-  public Boolean visitModuleCall(Concrete.ModuleCallExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitModuleCall(Concrete.ModuleCallExpression expr1, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.ModuleCallExpression && expr1.getPath().equals(((Concrete.ModuleCallExpression) expr2).getPath());
   }
 
-  private boolean compareArg(Concrete.Parameter<Position> arg1, Concrete.Parameter<Position> arg2) {
+  private boolean compareArg(Concrete.Parameter arg1, Concrete.Parameter arg2) {
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
     }
     if (arg1 instanceof Concrete.TelescopeParameter && arg2 instanceof Concrete.TelescopeParameter) {
-      List<? extends Referable> list1 = ((Concrete.TelescopeParameter<Position>) arg1).getReferableList();
-      List<? extends Referable> list2 = ((Concrete.TelescopeParameter<Position>) arg2).getReferableList();
+      List<? extends Referable> list1 = ((Concrete.TelescopeParameter) arg1).getReferableList();
+      List<? extends Referable> list2 = ((Concrete.TelescopeParameter) arg2).getReferableList();
       if (list1.size() != list2.size()) {
         return false;
       }
       for (int i = 0; i < list1.size(); i++) {
         mySubstitution.put(list1.get(i), list2.get(i));
       }
-      return ((Concrete.TelescopeParameter<Position>) arg1).getType().accept(this, ((Concrete.TelescopeParameter<Position>) arg2).getType());
+      return ((Concrete.TelescopeParameter) arg1).getType().accept(this, ((Concrete.TelescopeParameter) arg2).getType());
     }
     if (arg1 instanceof Concrete.TypeParameter && arg2 instanceof Concrete.TypeParameter) {
-      return ((Concrete.TypeParameter<Position>) arg1).getType().accept(this, ((Concrete.TypeParameter<Position>) arg2).getType());
+      return ((Concrete.TypeParameter) arg1).getType().accept(this, ((Concrete.TypeParameter) arg2).getType());
     }
     if (arg1 instanceof Concrete.NameParameter && arg2 instanceof Concrete.NameParameter) {
       mySubstitution.put(((Concrete.NameParameter) arg1).getReferable(), ((Concrete.NameParameter) arg2).getReferable());
@@ -65,7 +64,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     return false;
   }
 
-  private boolean compareArgs(List<? extends Concrete.Parameter<Position>> args1, List<? extends Concrete.Parameter<Position>> args2) {
+  private boolean compareArgs(List<? extends Concrete.Parameter> args1, List<? extends Concrete.Parameter> args2) {
     if (args1.size() != args2.size()) return false;
     for (int i = 0; i < args1.size(); i++) {
       if (!compareArg(args1.get(i), args2.get(i))) {
@@ -76,21 +75,21 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitLam(Concrete.LamExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.LamExpression && compareArgs(expr1.getParameters(), ((Concrete.LamExpression<Position>) expr2).getParameters()) && expr1.getBody().accept(this, ((Concrete.LamExpression<Position>) expr2).getBody());
+  public Boolean visitLam(Concrete.LamExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.LamExpression && compareArgs(expr1.getParameters(), ((Concrete.LamExpression) expr2).getParameters()) && expr1.getBody().accept(this, ((Concrete.LamExpression) expr2).getBody());
   }
 
   @Override
-  public Boolean visitPi(Concrete.PiExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.PiExpression && compareArgs(expr1.getParameters(), ((Concrete.PiExpression<Position>) expr2).getParameters()) && expr1.getCodomain().accept(this, ((Concrete.PiExpression<Position>) expr2).getCodomain());
+  public Boolean visitPi(Concrete.PiExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.PiExpression && compareArgs(expr1.getParameters(), ((Concrete.PiExpression) expr2).getParameters()) && expr1.getCodomain().accept(this, ((Concrete.PiExpression) expr2).getCodomain());
   }
 
   @Override
-  public Boolean visitUniverse(Concrete.UniverseExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitUniverse(Concrete.UniverseExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.UniverseExpression)) {
       return false;
     }
-    Concrete.UniverseExpression<Position> uni2 = (Concrete.UniverseExpression<Position>) expr2;
+    Concrete.UniverseExpression uni2 = (Concrete.UniverseExpression) expr2;
     return compareLevel(expr1.getPLevel(), uni2.getPLevel()) && compareLevel(expr1.getHLevel(), uni2.getHLevel());
   }
 
@@ -125,19 +124,19 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitInferHole(Concrete.InferHoleExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitInferHole(Concrete.InferHoleExpression expr1, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.InferHoleExpression;
   }
 
   @Override
-  public Boolean visitGoal(Concrete.GoalExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitGoal(Concrete.GoalExpression expr1, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.GoalExpression;
   }
 
   @Override
-  public Boolean visitTuple(Concrete.TupleExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitTuple(Concrete.TupleExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.TupleExpression)) return false;
-    Concrete.TupleExpression<Position> tupleExpr2 = (Concrete.TupleExpression<Position>) expr2;
+    Concrete.TupleExpression tupleExpr2 = (Concrete.TupleExpression) expr2;
     if (expr1.getFields().size() != tupleExpr2.getFields().size()) return false;
     for (int i = 0; i < expr1.getFields().size(); i++) {
       if (expr1.getFields().get(i).accept(this, tupleExpr2.getFields().get(i))) {
@@ -148,32 +147,32 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitSigma(Concrete.SigmaExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.SigmaExpression && compareArgs(expr1.getParameters(), ((Concrete.SigmaExpression<Position>) expr2).getParameters());
+  public Boolean visitSigma(Concrete.SigmaExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.SigmaExpression && compareArgs(expr1.getParameters(), ((Concrete.SigmaExpression) expr2).getParameters());
   }
 
   @Override
-  public Boolean visitBinOp(Concrete.BinOpExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    if (expr2 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression<Position>) expr2).getSequence().isEmpty()) {
-      return visitBinOp(expr1, ((Concrete.BinOpSequenceExpression<Position>) expr2).getLeft());
+  public Boolean visitBinOp(Concrete.BinOpExpression expr1, Concrete.Expression expr2) {
+    if (expr2 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr2).getSequence().isEmpty()) {
+      return visitBinOp(expr1, ((Concrete.BinOpSequenceExpression) expr2).getLeft());
     }
     if (!(expr2 instanceof Concrete.BinOpExpression)) return false;
-    Concrete.BinOpExpression<Position> binOpExpr2 = (Concrete.BinOpExpression<Position>) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent().equals(((Concrete.BinOpExpression<Position>) expr2).getReferent());
+    Concrete.BinOpExpression binOpExpr2 = (Concrete.BinOpExpression) expr2;
+    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent().equals(((Concrete.BinOpExpression) expr2).getReferent());
   }
 
   @Override
-  public Boolean visitBinOpSequence(Concrete.BinOpSequenceExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitBinOpSequence(Concrete.BinOpSequenceExpression expr1, Concrete.Expression expr2) {
     if (expr1.getSequence().isEmpty()) {
       return expr1.getLeft().accept(this, expr2);
     }
     if (!(expr2 instanceof Concrete.BinOpSequenceExpression)) return false;
-    Concrete.BinOpSequenceExpression<Position> binOpExpr2 = (Concrete.BinOpSequenceExpression<Position>) expr2;
+    Concrete.BinOpSequenceExpression binOpExpr2 = (Concrete.BinOpSequenceExpression) expr2;
     if (!expr1.getLeft().accept(this, binOpExpr2.getLeft())) return false;
     if (expr1.getSequence().size() != binOpExpr2.getSequence().size()) return false;
     for (int i = 0; i < expr1.getSequence().size(); i++) {
-      Concrete.Expression<Position> arg1 = expr1.getSequence().get(i).argument;
-      Concrete.Expression<Position> arg2 = ((Concrete.BinOpSequenceExpression<Position>) expr2).getSequence().get(i).argument;
+      Concrete.Expression arg1 = expr1.getSequence().get(i).argument;
+      Concrete.Expression arg2 = ((Concrete.BinOpSequenceExpression) expr2).getSequence().get(i).argument;
       if (!(expr1.getSequence().get(i).binOp == binOpExpr2.getSequence().get(i).binOp && (arg1 == null && arg2 == null || arg1 != null && arg2 != null && arg1.accept(this, arg2)))) {
         return false;
       }
@@ -191,7 +190,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     return pattern1 instanceof Concrete.EmptyPattern && pattern2 instanceof Concrete.EmptyPattern;
   }
 
-  private boolean compareClause(Concrete.FunctionClause<Position> clause1, Concrete.FunctionClause<Position> clause2) {
+  private boolean compareClause(Concrete.FunctionClause clause1, Concrete.FunctionClause clause2) {
     if (!((clause1.getExpression() == null ? clause2.getExpression() == null : clause1.getExpression().accept(this, clause2.getExpression())) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {
@@ -201,7 +200,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
     return true;
   }
 
-  private boolean compareElimCase(Concrete.CaseExpression<Position> expr1, Concrete.CaseExpression<Position> expr2) {
+  private boolean compareElimCase(Concrete.CaseExpression expr1, Concrete.CaseExpression expr2) {
     if (!(expr1.getExpressions().size() == expr2.getExpressions().size() && expr1.getClauses().size() == expr2.getClauses().size())) return false;
     for (int i = 0; i < expr1.getExpressions().size(); i++) {
       if (!expr1.getExpressions().get(i).accept(this, expr2.getExpressions().get(i))) {
@@ -217,25 +216,25 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitCase(Concrete.CaseExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.CaseExpression && compareElimCase(expr1, (Concrete.CaseExpression<Position>) expr2);
+  public Boolean visitCase(Concrete.CaseExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.CaseExpression && compareElimCase(expr1, (Concrete.CaseExpression) expr2);
   }
 
   @Override
-  public Boolean visitProj(Concrete.ProjExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.ProjExpression && expr1.getField() == ((Concrete.ProjExpression<Position>) expr2).getField() && expr1.getExpression().accept(this, ((Concrete.ProjExpression<Position>) expr2).getExpression());
+  public Boolean visitProj(Concrete.ProjExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.ProjExpression && expr1.getField() == ((Concrete.ProjExpression) expr2).getField() && expr1.getExpression().accept(this, ((Concrete.ProjExpression) expr2).getExpression());
   }
 
-  private boolean compareImplementStatement(Concrete.ClassFieldImpl<Position> implStat1, Concrete.ClassFieldImpl<Position> implStat2) {
+  private boolean compareImplementStatement(Concrete.ClassFieldImpl implStat1, Concrete.ClassFieldImpl implStat2) {
     return implStat1.getImplementation().accept(this, implStat2.getImplementation()) && implStat1.getImplementedField().equals(implStat2.getImplementedField());
   }
 
   @Override
-  public Boolean visitClassExt(Concrete.ClassExtExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitClassExt(Concrete.ClassExtExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.ClassExtExpression)) return false;
-    Concrete.ClassExtExpression<Position> classExtExpr2 = (Concrete.ClassExtExpression<Position>) expr2;
+    Concrete.ClassExtExpression classExtExpr2 = (Concrete.ClassExtExpression) expr2;
     if (!(expr1.getBaseClassExpression().accept(this, classExtExpr2.getBaseClassExpression()) && expr1.getStatements().size() == classExtExpr2.getStatements().size())) return false;
-    for (Iterator<? extends Concrete.ClassFieldImpl<Position>> it1 = expr1.getStatements().iterator(), it2 = classExtExpr2.getStatements().iterator(); it1.hasNext(); ) {
+    for (Iterator<? extends Concrete.ClassFieldImpl> it1 = expr1.getStatements().iterator(), it2 = classExtExpr2.getStatements().iterator(); it1.hasNext(); ) {
       if (!compareImplementStatement(it1.next(), it2.next())) {
         return false;
       }
@@ -244,18 +243,18 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Positio
   }
 
   @Override
-  public Boolean visitNew(Concrete.NewExpression<Position> expr1, Concrete.Expression<Position> expr2) {
-    return expr2 instanceof Concrete.NewExpression && expr1.getExpression().accept(this, ((Concrete.NewExpression<Position>) expr2).getExpression());
+  public Boolean visitNew(Concrete.NewExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.NewExpression && expr1.getExpression().accept(this, ((Concrete.NewExpression) expr2).getExpression());
   }
 
-  private boolean compareLetClause(Concrete.LetClause<Position> clause1, Concrete.LetClause<Position> clause2) {
+  private boolean compareLetClause(Concrete.LetClause clause1, Concrete.LetClause clause2) {
     return compareArgs(clause1.getParameters(), clause2.getParameters()) && clause1.getTerm().accept(this, clause2.getTerm()) && (clause1.getResultType() == null && clause2.getResultType() == null || clause1.getResultType() != null && clause2.getResultType() != null && clause1.getResultType().accept(this, clause2.getResultType()));
   }
 
   @Override
-  public Boolean visitLet(Concrete.LetExpression<Position> expr1, Concrete.Expression<Position> expr2) {
+  public Boolean visitLet(Concrete.LetExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.LetExpression)) return false;
-    Concrete.LetExpression<Position> letExpr2 = (Concrete.LetExpression<Position>) expr2;
+    Concrete.LetExpression letExpr2 = (Concrete.LetExpression) expr2;
     if (expr1.getClauses().size() != letExpr2.getClauses().size()) {
       return false;
     }

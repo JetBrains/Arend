@@ -7,12 +7,12 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ConstructorUniverseError<T> extends LocalTypeCheckingError<T> {
+public class ConstructorUniverseError extends LocalTypeCheckingError {
   public final Sort conSort;
-  public final Concrete.Constructor<T> constructor;
+  public final Concrete.Constructor constructor;
   public final Sort userSort;
 
-  public ConstructorUniverseError(Sort conSort, Concrete.Constructor<T> constructor, Sort userSort) {
+  public ConstructorUniverseError(Sort conSort, Concrete.Constructor constructor, Sort userSort) {
     super("", constructor);
     this.conSort = conSort;
     this.constructor = constructor;

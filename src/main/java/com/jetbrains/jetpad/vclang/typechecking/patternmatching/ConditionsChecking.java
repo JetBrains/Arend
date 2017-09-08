@@ -28,11 +28,11 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 
 public class ConditionsChecking {
-  public static <T> boolean check(Body body, List<Clause<T>> clauses, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
+  public static boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     boolean ok;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, def, errorReporter);
-      for (Clause<T> clause : clauses) {
+      for (Clause clause : clauses) {
         if (clause.expression != null && !checkIntervalClause((IntervalElim) body, clause, definition, errorReporter)) {
           ok = false;
         }
@@ -41,7 +41,7 @@ public class ConditionsChecking {
       ok = true;
     }
 
-    for (Clause<T> clause : clauses) {
+    for (Clause clause : clauses) {
       if (clause.expression != null && !checkClause(clause, null, definition, errorReporter)) {
         ok = false;
       }
@@ -50,7 +50,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
+  private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
@@ -68,7 +68,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode<T> def, LocalErrorReporter<T> errorReporter) {
+  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {
@@ -88,14 +88,14 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError<>(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
       return false;
     } else {
       return true;
     }
   }
 
-  private static <T> boolean checkIntervalClause(IntervalElim elim, Clause<T> clause, Definition definition, LocalErrorReporter<T> errorReporter) {
+  private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, LocalErrorReporter errorReporter) {
     boolean ok = true;
     List<Pair<Expression, Expression>> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size();
@@ -106,7 +106,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, Clause<T> clause, Definition definition, LocalErrorReporter<T> errorReporter) {
+  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, Clause clause, Definition definition, LocalErrorReporter errorReporter) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null) {
       return true;
@@ -162,7 +162,7 @@ public class ConditionsChecking {
         }
       }
 
-      errorReporter.report(new ConditionsError<>(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
       return true;
@@ -187,9 +187,9 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("UnusedReturnValue")
-  public static <T> boolean check(List<Clause<T>> clauses, ElimTree elimTree, LocalErrorReporter<T> errorReporter) {
+  public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
     boolean ok = true;
-    for (Clause<T> clause : clauses) {
+    for (Clause clause : clauses) {
       if (clause.expression != null && !checkClause(clause, elimTree, null, errorReporter)) {
         ok = false;
       }
@@ -197,7 +197,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static <T> boolean checkClause(Clause<T> clause, ElimTree elimTree, Definition definition, LocalErrorReporter<T> errorReporter) {
+  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;
@@ -213,7 +213,7 @@ public class ConditionsChecking {
           args.add(pattern.toExpression());
         }
         Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
-        errorReporter.report(new ConditionsError<>(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+        errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }
     }

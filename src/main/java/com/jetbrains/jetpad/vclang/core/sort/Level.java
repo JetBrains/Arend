@@ -124,11 +124,11 @@ public class Level {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor<>(builder, SourceInfoProvider.TRIVIAL, 0), Concrete.Expression.PREC);
+    ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), Concrete.Expression.PREC);
     return builder.toString();
   }
 
-  public static <T> boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
+  public static boolean compare(Level level1, Level level2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
     if (cmp == Equations.CMP.GE) {
       return compare(level2, level1, Equations.CMP.LE, equations, sourceNode);
     }

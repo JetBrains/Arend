@@ -5,14 +5,14 @@ import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import java.util.Collection;
 import java.util.List;
 
-public class SCC<T> {
-  private final List<TypecheckingUnit<T>> myUnits;
+public class SCC {
+  private final List<TypecheckingUnit> myUnits;
 
-  public SCC(List<TypecheckingUnit<T>> units) {
+  public SCC(List<TypecheckingUnit> units) {
     myUnits = units;
   }
 
-  public Collection<? extends TypecheckingUnit<T>> getUnits() {
+  public Collection<? extends TypecheckingUnit> getUnits() {
     return myUnits;
   }
 }

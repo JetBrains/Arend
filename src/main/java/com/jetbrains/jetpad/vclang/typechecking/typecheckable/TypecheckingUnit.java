@@ -2,20 +2,20 @@ package com.jetbrains.jetpad.vclang.typechecking.typecheckable;
 
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
-public class TypecheckingUnit<T> {
-  private final Typecheckable<T> myTypecheckable;
-  private final Concrete.ClassDefinition<T> myEnclosingClass;
+public class TypecheckingUnit {
+  private final Typecheckable myTypecheckable;
+  private final Concrete.ClassDefinition myEnclosingClass;
 
-  public TypecheckingUnit(Typecheckable<T> typecheckable, Concrete.ClassDefinition<T> enclosingClass) {
+  public TypecheckingUnit(Typecheckable typecheckable, Concrete.ClassDefinition enclosingClass) {
     this.myTypecheckable = typecheckable;
     this.myEnclosingClass = enclosingClass;
   }
 
-  public Typecheckable<T> getTypecheckable() {
+  public Typecheckable getTypecheckable() {
     return myTypecheckable;
   }
 
-  public Concrete.Definition<T> getDefinition() {
+  public Concrete.Definition getDefinition() {
     return myTypecheckable.getDefinition();
   }
 
@@ -23,7 +23,7 @@ public class TypecheckingUnit<T> {
     return myTypecheckable.isHeader();
   }
 
-  public Concrete.ClassDefinition<T> getEnclosingClass() {
+  public Concrete.ClassDefinition getEnclosingClass() {
     return myEnclosingClass;
   }
 }

@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
@@ -29,11 +28,11 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    Concrete.Expression<Position> expr = ToAbstractVisitor.convert(this, EnumSet.of(
+    Concrete.Expression expr = ToAbstractVisitor.convert(this, EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
       ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
-    expr.accept(new PrettyPrintVisitor<>(builder, SourceInfoProvider.TRIVIAL, 0), Concrete.Expression.PREC);
+    expr.accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), Concrete.Expression.PREC);
     return builder.toString();
   }
 
@@ -43,13 +42,13 @@ public abstract class Expression implements ExpectedType {
   }
 
   public void prettyPrint(StringBuilder builder, boolean doIndent) {
-    Concrete.Expression<Position> expr = ToAbstractVisitor.convert(normalize(NormalizeVisitor.Mode.RNF), EnumSet.of(
+    Concrete.Expression expr = ToAbstractVisitor.convert(normalize(NormalizeVisitor.Mode.RNF), EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
-    expr.accept(new PrettyPrintVisitor<>(builder, SourceInfoProvider.TRIVIAL, 0, doIndent), Concrete.Expression.PREC);
+    expr.accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0, doIndent), Concrete.Expression.PREC);
   }
 
-  public <T> boolean isLessOrEquals(Expression type, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
+  public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {
     return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
   }
 

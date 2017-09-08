@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.*;
 
-public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte, Void>, ConcreteLevelExpressionVisitor<T, Byte, Void>, ConcreteDefinitionVisitor<T, Void, Void> {
+public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Byte, Void>, ConcreteLevelExpressionVisitor<Byte, Void>, ConcreteDefinitionVisitor<Void, Void> {
   public static final int INDENT = 4;
   public static final int MAX_LEN = 120;
   public static final float SMALL_RATIO = (float) 0.1;
@@ -32,67 +32,67 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     this(builder, infoProvider, indent, true);
   }
 
-  public static <T> String prettyPrint(Concrete.SourceNode<T> node, PrettyPrinterInfoProvider infoProvider) {
+  public static String prettyPrint(Concrete.SourceNode node, PrettyPrinterInfoProvider infoProvider) {
     StringBuilder builder = new StringBuilder();
-    return new PrettyPrintVisitor<T>(builder, infoProvider, 0).prettyPrint(node, Concrete.Expression.PREC) ? builder.toString() : null;
+    return new PrettyPrintVisitor(builder, infoProvider, 0).prettyPrint(node, Concrete.Expression.PREC) ? builder.toString() : null;
   }
 
-  public boolean prettyPrint(Concrete.SourceNode<T> node, byte prec) {
+  public boolean prettyPrint(Concrete.SourceNode node, byte prec) {
     if (node instanceof Concrete.Expression) {
-      ((Concrete.Expression<T>) node).accept(this, prec);
+      ((Concrete.Expression) node).accept(this, prec);
       return true;
     }
     if (node instanceof Concrete.Parameter) {
-      prettyPrintParameter((Concrete.Parameter<T>) node, prec);
+      prettyPrintParameter((Concrete.Parameter) node, prec);
       return true;
     }
     if (node instanceof Concrete.Definition) {
-      ((Concrete.Definition<T>) node).accept(this, null);
+      ((Concrete.Definition) node).accept(this, null);
       return true;
     }
     if (node instanceof Concrete.ClassFieldImpl) {
-      visitClassFieldImpl((Concrete.ClassFieldImpl<T>) node);
+      visitClassFieldImpl((Concrete.ClassFieldImpl) node);
       return true;
     }
     if (node instanceof Concrete.FunctionClause) {
-      prettyPrintFunctionClause((Concrete.FunctionClause<T>) node);
+      prettyPrintFunctionClause((Concrete.FunctionClause) node);
       return true;
     }
     if (node instanceof Concrete.ConstructorClause) {
-      prettyPrintConstructorClause((Concrete.ConstructorClause<T>) node);
+      prettyPrintConstructorClause((Concrete.ConstructorClause) node);
       return true;
     }
     if (node instanceof Concrete.Clause) {
-      prettyPrintClause((Concrete.Clause<T>) node);
+      prettyPrintClause((Concrete.Clause) node);
       return true;
     }
     if (node instanceof Concrete.LetClause) {
-      prettyPrintLetClause((Concrete.LetClause<T>) node, false);
+      prettyPrintLetClause((Concrete.LetClause) node, false);
       return true;
     }
     if (node instanceof Concrete.Pattern) {
-      prettyPrintPattern((Concrete.Pattern<T>) node, prec);
+      prettyPrintPattern((Concrete.Pattern) node, prec);
       return true;
     }
     if (node instanceof Concrete.LevelExpression) {
-      ((Concrete.LevelExpression<T>) node).accept(this, Concrete.Expression.PREC);
+      ((Concrete.LevelExpression) node).accept(this, Concrete.Expression.PREC);
       return true;
     }
     return false;
   }
 
   @Override
-  public Void visitApp(final Concrete.AppExpression<T> expr, Byte prec) {
+  public Void visitApp(final Concrete.AppExpression expr, Byte prec) {
     if (prec > Concrete.AppExpression.PREC) myBuilder.append('(');
 
-    new BinOpLayout<T>(){
+    new BinOpLayout(){
       @Override
-      void printLeft(PrettyPrintVisitor<T> pp) {
+      void printLeft(PrettyPrintVisitor pp) {
         expr.getFunction().accept(pp, Concrete.AppExpression.PREC);
       }
 
       @Override
-      void printRight(PrettyPrintVisitor<T> pp) {
+      void printRight(PrettyPrintVisitor pp) {
         if (expr.getArgument().isExplicit()) {
           expr.getArgument().getExpression().accept(pp, (byte) (Concrete.AppExpression.PREC + 1));
         } else {
@@ -131,7 +131,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitReference(Concrete.ReferenceExpression<T> expr, Byte prec) {
+  public Void visitReference(Concrete.ReferenceExpression expr, Byte prec) {
     if (expr.getExpression() != null) {
       expr.getExpression().accept(this, Concrete.ReferenceExpression.PREC);
       myBuilder.append('.').append(expr.getReferent().textRepresentation());
@@ -156,11 +156,11 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  public void prettyPrintParameters(List<? extends Concrete.Parameter<T>> parameters, final byte prec) {
+  public void prettyPrintParameters(List<? extends Concrete.Parameter> parameters, final byte prec) {
     if (parameters != null) {
-      new ListLayout<T, Concrete.Parameter<T>>(){
+      new ListLayout<Concrete.Parameter>(){
         @Override
-        void printListElement(PrettyPrintVisitor<T> ppv, Concrete.Parameter<T> parameter) {
+        void printListElement(PrettyPrintVisitor ppv, Concrete.Parameter parameter) {
           ppv.prettyPrintParameter(parameter, prec);
         }
 
@@ -174,7 +174,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  public void prettyPrintParameter(Concrete.Parameter<T> parameter, byte prec) {
+  public void prettyPrintParameter(Concrete.Parameter parameter, byte prec) {
     if (parameter instanceof Concrete.NameParameter) {
       Referable referable = ((Concrete.NameParameter) parameter).getReferable();
       String name = referable == null ? null : referable.textRepresentation();
@@ -185,16 +185,16 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     } else
     if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.getExplicit() ? '(' : '{');
-      for (Referable referable : ((Concrete.TelescopeParameter<T>) parameter).getReferableList()) {
+      for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
       }
 
       myBuilder.append(": ");
-      ((Concrete.TypeParameter<T>) parameter).getType().accept(this, Concrete.Expression.PREC);
+      ((Concrete.TypeParameter) parameter).getType().accept(this, Concrete.Expression.PREC);
       myBuilder.append(parameter.getExplicit() ? ')' : '}');
     } else
     if (parameter instanceof Concrete.TypeParameter) {
-      Concrete.Expression<T> type = ((Concrete.TypeParameter<T>) parameter).getType();
+      Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
       if (parameter.getExplicit()) {
         type.accept(this, prec);
       } else {
@@ -206,18 +206,18 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitLam(final Concrete.LamExpression<T> expr, Byte prec) {
+  public Void visitLam(final Concrete.LamExpression expr, Byte prec) {
     if (prec > Concrete.LamExpression.PREC) myBuilder.append("(");
     myBuilder.append("\\lam ");
 
-    new BinOpLayout<T>(){
+    new BinOpLayout(){
       @Override
-      void printLeft(PrettyPrintVisitor<T> pp) {
+      void printLeft(PrettyPrintVisitor pp) {
         pp.prettyPrintParameters(expr.getParameters(), Concrete.Expression.PREC);
       }
 
       @Override
-      void printRight(PrettyPrintVisitor<T> pp) {
+      void printRight(PrettyPrintVisitor pp) {
         expr.getBody().accept(pp, Concrete.LamExpression.PREC);
       }
 
@@ -232,19 +232,19 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitPi(final Concrete.PiExpression<T> expr, Byte prec) {
+  public Void visitPi(final Concrete.PiExpression expr, Byte prec) {
     if (prec > Concrete.PiExpression.PREC) myBuilder.append('(');
 
-    new BinOpLayout<T>(){
+    new BinOpLayout(){
       @Override
-      void printLeft(PrettyPrintVisitor<T> pp) {
+      void printLeft(PrettyPrintVisitor pp) {
         byte domPrec = (byte) (expr.getParameters().size() > 1 ? Concrete.AppExpression.PREC + 1 : Concrete.PiExpression.PREC + 1);
         if (expr.getParameters().size() == 1 && !(expr.getParameters().get(0) instanceof Concrete.TelescopeParameter)) {
           expr.getParameters().get(0).getType().accept(pp, (byte) (Concrete.PiExpression.PREC + 1));
           pp.myBuilder.append(' ');
         } else {
           pp.myBuilder.append("\\Pi ");
-          for (Concrete.Parameter<T> parameter : expr.getParameters()) {
+          for (Concrete.Parameter parameter : expr.getParameters()) {
             pp.prettyPrintParameter(parameter, domPrec);
             pp.myBuilder.append(' ');
           }
@@ -252,7 +252,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       }
 
       @Override
-      void printRight(PrettyPrintVisitor<T> ppv_right) {
+      void printRight(PrettyPrintVisitor ppv_right) {
         expr.getCodomain().accept(ppv_right, Concrete.PiExpression.PREC);
       }
 
@@ -317,7 +317,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitSuc(Concrete.SucLevelExpression<T> expr, Byte prec) {
+  public Void visitSuc(Concrete.SucLevelExpression expr, Byte prec) {
     if (prec > Concrete.AppExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\suc ");
     expr.getExpression().accept(this, (byte) (Concrete.AppExpression.PREC + 1));
@@ -326,7 +326,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitMax(Concrete.MaxLevelExpression<T> expr, Byte prec) {
+  public Void visitMax(Concrete.MaxLevelExpression expr, Byte prec) {
     if (prec > Concrete.AppExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\max ");
     expr.getLeft().accept(this, (byte) (Concrete.AppExpression.PREC + 1));
@@ -348,7 +348,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitUniverse(Concrete.UniverseExpression<T> expr, Byte prec) {
+  public Void visitUniverse(Concrete.UniverseExpression expr, Byte prec) {
     if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
       myBuilder.append("\\Prop");
       return null;
@@ -405,12 +405,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitTuple(Concrete.TupleExpression<T> expr, Byte prec) {
+  public Void visitTuple(Concrete.TupleExpression expr, Byte prec) {
     myBuilder.append('(');
 
-    new ListLayout<T, Concrete.Expression<T>>(){
+    new ListLayout<Concrete.Expression>(){
       @Override
-      void printListElement(PrettyPrintVisitor<T> ppv, Concrete.Expression<T> o) {
+      void printListElement(PrettyPrintVisitor ppv, Concrete.Expression o) {
         o.accept(ppv, Concrete.Expression.PREC);
       }
 
@@ -425,7 +425,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitSigma(Concrete.SigmaExpression<T> expr, Byte prec) {
+  public Void visitSigma(Concrete.SigmaExpression expr, Byte prec) {
     if (prec > Concrete.SigmaExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\Sigma ");
 
@@ -436,7 +436,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitBinOp(final Concrete.BinOpExpression<T> expr, final Byte prec) {
+  public Void visitBinOp(final Concrete.BinOpExpression expr, final Byte prec) {
     Referable referable = expr.getReferent();
     Precedence precedence = referable instanceof GlobalReferable ? ((GlobalReferable) expr.getReferent()).getPrecedence() : Precedence.DEFAULT;
     if (expr.getRight() == null) {
@@ -450,15 +450,15 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         myBuilder.append(')');
       }
     } else {
-      new BinOpLayout<T>() {
+      new BinOpLayout() {
         @Override
-        void printLeft(PrettyPrintVisitor<T> pp) {
+        void printLeft(PrettyPrintVisitor pp) {
           if (prec > precedence.priority) pp.myBuilder.append('(');
           expr.getLeft().accept(pp, (byte) (precedence.priority + (precedence.associativity == Precedence.Associativity.LEFT_ASSOC ? 0 : 1)));
         }
 
         @Override
-        void printRight(PrettyPrintVisitor<T> pp) {
+        void printRight(PrettyPrintVisitor pp) {
           expr.getRight().accept(pp, (byte) (precedence.priority + (precedence.associativity == Precedence.Associativity.RIGHT_ASSOC ? 0 : 1)));
           if (prec > precedence.priority) pp.myBuilder.append(')');
         }
@@ -487,14 +487,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression<T> expr, Byte prec) {
+  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Byte prec) {
     if (expr.getSequence().isEmpty()) {
       expr.getLeft().accept(this, prec);
       return null;
     }
     if (prec > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');
     expr.getLeft().accept(this, (byte) 10);
-    for (Concrete.BinOpSequenceElem<T> elem : expr.getSequence()) {
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
       myBuilder.append(isPrefix(elem.binOp.getReferent().textRepresentation()) ? " `" : " ").append(elem.binOp.getReferent().textRepresentation()).append(elem.argument == null ? "` " : " ");
       if (elem.argument != null) {
         elem.argument.accept(this, (byte) 10);
@@ -504,21 +504,21 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  public void prettyPrintFunctionClause(final Concrete.FunctionClause<T> clause) {
+  public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {
     if (clause == null) return;
 
     printIndent();
     myBuilder.append("| ");
 
     if (clause.getExpression() != null) {
-      new BinOpLayout<T>(){
+      new BinOpLayout(){
         @Override
-        void printLeft(PrettyPrintVisitor<T> pp) {
+        void printLeft(PrettyPrintVisitor pp) {
           pp.prettyPrintClause(clause);
         }
 
         @Override
-        void printRight(PrettyPrintVisitor<T> pp) {
+        void printRight(PrettyPrintVisitor pp) {
           clause.getExpression().accept(pp, Concrete.Expression.PREC);
         }
 
@@ -539,7 +539,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     myBuilder.append('\n');
   }
 
-  private void prettyPrintClauses(List<? extends Concrete.Expression<T>> expressions, List<? extends Concrete.FunctionClause<T>> clauses) {
+  private void prettyPrintClauses(List<? extends Concrete.Expression> expressions, List<? extends Concrete.FunctionClause> clauses) {
     if (!expressions.isEmpty()) {
       myBuilder.append(" ");
       for (int i = 0; i < expressions.size(); i++) {
@@ -553,7 +553,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     if (!clauses.isEmpty()) {
       myBuilder.append(" {\n");
       myIndent += INDENT;
-      for (Concrete.FunctionClause<T> clause : clauses) {
+      for (Concrete.FunctionClause clause : clauses) {
         prettyPrintFunctionClause(clause);
       }
 
@@ -563,7 +563,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitCase(Concrete.CaseExpression<T> expr, Byte prec) {
+  public Void visitCase(Concrete.CaseExpression expr, Byte prec) {
     if (prec > Concrete.CaseExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\case");
     prettyPrintClauses(expr.getExpressions(), expr.getClauses());
@@ -573,7 +573,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitProj(Concrete.ProjExpression<T> expr, Byte prec) {
+  public Void visitProj(Concrete.ProjExpression expr, Byte prec) {
     if (prec > Concrete.ProjExpression.PREC) myBuilder.append('(');
     expr.getExpression().accept(this, Concrete.ProjExpression.PREC);
     myBuilder.append('.').append(expr.getField() + 1);
@@ -582,7 +582,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitClassExt(Concrete.ClassExtExpression<T> expr, Byte prec) {
+  public Void visitClassExt(Concrete.ClassExtExpression expr, Byte prec) {
     if (prec > Concrete.ClassExtExpression.PREC) myBuilder.append('(');
     expr.getBaseClassExpression().accept(this, (byte) -Concrete.ClassExtExpression.PREC);
     myBuilder.append(" ");
@@ -591,10 +591,10 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  private void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl<T>> classFieldImpls) {
+  private void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls) {
     myBuilder.append("{\n");
     myIndent += INDENT;
-    for (Concrete.ClassFieldImpl<T> classFieldImpl : classFieldImpls) {
+    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
       printIndent();
       myBuilder.append("| ");
       visitClassFieldImpl(classFieldImpl);
@@ -605,13 +605,13 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     myBuilder.append("}");
   }
 
-  private void visitClassFieldImpl(Concrete.ClassFieldImpl<T> classFieldImpl) {
+  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
     myBuilder.append(classFieldImpl.getImplementedField().textRepresentation()).append(" => ");
     classFieldImpl.getImplementation().accept(this, Concrete.Expression.PREC);
   }
 
   @Override
-  public Void visitNew(Concrete.NewExpression<T> expr, Byte prec) {
+  public Void visitNew(Concrete.NewExpression expr, Byte prec) {
     if (prec > Concrete.NewExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\new ");
     expr.getExpression().accept(this, Concrete.NewExpression.PREC);
@@ -619,26 +619,26 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  public void prettyPrintLetClause(final Concrete.LetClause<T> letClause, boolean printPipe) {
+  public void prettyPrintLetClause(final Concrete.LetClause letClause, boolean printPipe) {
     if (printPipe) {
       myBuilder.append("| ");
     }
     myBuilder.append(letClause.getReferable().textRepresentation());
-    for (Concrete.Parameter<T> arg : letClause.getParameters()) {
+    for (Concrete.Parameter arg : letClause.getParameters()) {
       myBuilder.append(" ");
       prettyPrintParameter(arg, Concrete.LetExpression.PREC);
     }
 
     if (letClause.getResultType()!=null) {
-      new BinOpLayout<T>() {
+      new BinOpLayout() {
         @Override
-        void printLeft(PrettyPrintVisitor<T> pp) {
+        void printLeft(PrettyPrintVisitor pp) {
           myBuilder.append(" : ");
           letClause.getResultType().accept(pp, Concrete.Expression.PREC);
         }
 
         @Override
-        void printRight(PrettyPrintVisitor<T> pp) {
+        void printRight(PrettyPrintVisitor pp) {
           letClause.getTerm().accept(pp, Concrete.LetExpression.PREC);
         }
 
@@ -654,7 +654,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitLet(Concrete.LetExpression<T> expr, Byte prec) {
+  public Void visitLet(Concrete.LetExpression expr, Byte prec) {
     if (prec > Concrete.LetExpression.PREC) myBuilder.append('(');
     myBuilder.append("\n");
     myIndent += INDENT;
@@ -711,32 +711,32 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     myBuilder.append(myInfoProvider.nameFor(def));
   }
 
-  private void prettyPrintBody(Concrete.FunctionBody<T> body) {
+  private void prettyPrintBody(Concrete.FunctionBody body) {
     if (body instanceof Concrete.TermFunctionBody) {
       myBuilder.append(" => ");
-      ((Concrete.TermFunctionBody<T>) body).getTerm().accept(this, Concrete.Expression.PREC);
+      ((Concrete.TermFunctionBody) body).getTerm().accept(this, Concrete.Expression.PREC);
     } else {
-      Concrete.ElimFunctionBody<T> elimFunctionBody = (Concrete.ElimFunctionBody<T>) body;
+      Concrete.ElimFunctionBody elimFunctionBody = (Concrete.ElimFunctionBody) body;
       prettyPrintEliminatedReferences(elimFunctionBody.getEliminatedReferences());
       prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses());
     }
   }
 
   @Override
-  public Void visitFunction(final Concrete.FunctionDefinition<T> def, Void ignored) {
+  public Void visitFunction(final Concrete.FunctionDefinition def, Void ignored) {
     myBuilder.append("\\function\n");
     printIndent();
     prettyPrintNameWithPrecedence(def.getReferable());
     myBuilder.append(" ");
 
-    final BinOpLayout<T> l = new BinOpLayout<T>(){
+    final BinOpLayout l = new BinOpLayout(){
       @Override
-      void printLeft(PrettyPrintVisitor<T> pp) {
+      void printLeft(PrettyPrintVisitor pp) {
         pp.prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
       }
 
       @Override
-      void printRight(PrettyPrintVisitor<T> pp) {
+      void printRight(PrettyPrintVisitor pp) {
         //noinspection ConstantConditions
         def.getResultType().accept(pp, Concrete.Expression.PREC);
       }
@@ -752,19 +752,19 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       }
     };
 
-    final BinOpLayout<T> r = new BinOpLayout<T>(){
+    final BinOpLayout r = new BinOpLayout(){
       @Override
       String getOpText() {
         return "";
       }
 
       @Override
-      void printRight(PrettyPrintVisitor<T> pp) {
+      void printRight(PrettyPrintVisitor pp) {
         pp.prettyPrintBody(def.getBody());
       }
 
       @Override
-      void printLeft(PrettyPrintVisitor<T> pp) {
+      void printLeft(PrettyPrintVisitor pp) {
         if (def.getResultType() != null) {
           l.doPrettyPrint(pp, noIndent);
         } else {
@@ -794,17 +794,17 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitData(Concrete.DataDefinition<T> def, Void ignored) {
+  public Void visitData(Concrete.DataDefinition def, Void ignored) {
     myBuilder.append("\\data ");
     prettyPrintNameWithPrecedence(def.getReferable());
 
-    List<? extends Concrete.TypeParameter<T>> parameters = def.getParameters();
-    for (Concrete.TypeParameter<T> parameter : parameters) {
+    List<? extends Concrete.TypeParameter> parameters = def.getParameters();
+    for (Concrete.TypeParameter parameter : parameters) {
       myBuilder.append(' ');
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
     }
 
-    Concrete.Expression<T> universe = def.getUniverse();
+    Concrete.Expression universe = def.getUniverse();
     if (universe != null) {
       myBuilder.append(" : ");
       universe.accept(this, Concrete.Expression.PREC);
@@ -813,9 +813,9 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
     prettyPrintEliminatedReferences(def.getEliminatedReferences());
 
-    for (Concrete.ConstructorClause<T> clause : def.getConstructorClauses()) {
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
       if (clause.getPatterns() == null) {
-        for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
+        for (Concrete.Constructor constructor : clause.getConstructors()) {
           myBuilder.append('\n');
           printIndent();
           myBuilder.append("| ");
@@ -851,7 +851,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  private void prettyPrintConstructorClause(Concrete.ConstructorClause<T> clause) {
+  private void prettyPrintConstructorClause(Concrete.ConstructorClause clause) {
     printIndent();
     myBuilder.append("| ");
     prettyPrintClause(clause);
@@ -861,7 +861,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       myBuilder.append("{ ");
     }
     boolean first = true;
-    for (Concrete.Constructor<T> constructor : clause.getConstructors()) {
+    for (Concrete.Constructor constructor : clause.getConstructors()) {
       if (first) {
         first = false;
       } else {
@@ -874,12 +874,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  private void prettyPrintClause(Concrete.Clause<T> clause) {
+  private void prettyPrintClause(Concrete.Clause clause) {
     if (clause.getPatterns() == null) {
       return;
     }
     boolean first = true;
-    for (Concrete.Pattern<T> pattern : clause.getPatterns()) {
+    for (Concrete.Pattern pattern : clause.getPatterns()) {
       if (first) {
         first = false;
       } else {
@@ -889,7 +889,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  public void prettyPrintPattern(Concrete.Pattern<T> pattern, byte prec) {
+  public void prettyPrintPattern(Concrete.Pattern pattern, byte prec) {
     if (!pattern.isExplicit()) {
       myBuilder.append("{");
     }
@@ -904,14 +904,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     } else if (pattern instanceof Concrete.EmptyPattern) {
       myBuilder.append("()");
     } else if (pattern instanceof Concrete.ConstructorPattern) {
-      Concrete.ConstructorPattern<T> conPattern = (Concrete.ConstructorPattern<T>) pattern;
+      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
       if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
       if (!isPrefix(conPattern.getConstructor().textRepresentation())) {
         myBuilder.append('`');
       }
       myBuilder.append(conPattern.getConstructor().textRepresentation());
-      for (Concrete.Pattern<T> patternArg : conPattern.getPatterns()) {
+      for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');
         prettyPrintPattern(patternArg, (byte) (Concrete.Pattern.PREC + 1));
       }
@@ -924,9 +924,9 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  private void visitConstructor(Concrete.Constructor<T> def) {
+  private void visitConstructor(Concrete.Constructor def) {
     prettyPrintNameWithPrecedence(def.getReferable());
-    for (Concrete.TypeParameter<T> parameter : def.getParameters()) {
+    for (Concrete.TypeParameter parameter : def.getParameters()) {
       myBuilder.append(' ');
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
     }
@@ -937,13 +937,13 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition<T> def) {
+  private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getReferable().textRepresentation());
     prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
     if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();
-      for (Concrete.ReferenceExpression<T> superClass : def.getSuperClasses()) {
+      for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
         myBuilder.append(" ");
         visitReference(superClass, Concrete.Expression.PREC);
         if (--i == 0) {
@@ -954,18 +954,18 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitClass(Concrete.ClassDefinition<T> def, Void ignored) {
+  public Void visitClass(Concrete.ClassDefinition def, Void ignored) {
     prettyPrintClassDefinitionHeader(def);
 
-    Collection<? extends Concrete.ClassField<T>> fields = def.getFields();
-    Collection<? extends Concrete.ClassFieldImpl<T>> implementations = def.getImplementations();
-    // Collection<? extends Concrete.Definition<T>> instanceDefinitions = def.getInstanceDefinitions(); // TODO[abstract]
+    Collection<? extends Concrete.ClassField> fields = def.getFields();
+    Collection<? extends Concrete.ClassFieldImpl> implementations = def.getImplementations();
+    // Collection<? extends Concrete.Definition> instanceDefinitions = def.getInstanceDefinitions(); // TODO[abstract]
 
     if (!fields.isEmpty() || !implementations.isEmpty() /* || !instanceDefinitions.isEmpty() */) {
       myBuilder.append(" {");
       myIndent += INDENT;
 
-      for (Concrete.ClassField<T> field : fields) {
+      for (Concrete.ClassField field : fields) {
         myBuilder.append('\n');
         printIndent();
         myBuilder.append("| ");
@@ -975,7 +975,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
         myBuilder.append('\n');
       }
 
-      for (Concrete.ClassFieldImpl<T> impl : implementations) {
+      for (Concrete.ClassFieldImpl impl : implementations) {
         myBuilder.append('\n');
         printIndent();
         myBuilder.append("| ").append(impl.getImplementedField().textRepresentation()).append(" => ");
@@ -984,7 +984,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       }
 
       /*
-      for (Concrete.Definition<T> definition : instanceDefinitions) {
+      for (Concrete.Definition definition : instanceDefinitions) {
         myBuilder.append('\n');
         printIndent();
         definition.accept(this, null);
@@ -1001,14 +1001,14 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView<T> def, Void params) {
+  public Void visitClassView(Concrete.ClassView def, Void params) {
     myBuilder.append("\\view ").append(def.getReferable().textRepresentation()).append(" \\on ");
     def.getUnderlyingClass().accept(this, Concrete.Expression.PREC);
     myBuilder.append(" \\by ").append(def.getClassifyingField().textRepresentation()).append(" {");
 
     if (!def.getFields().isEmpty()) {
       boolean hasImplemented = false;
-      for (Concrete.ClassViewField<T> field : def.getFields()) {
+      for (Concrete.ClassViewField field : def.getFields()) {
         if (!Objects.equals(field.getReferable().textRepresentation(), field.getUnderlyingField().textRepresentation())) {
           hasImplemented = true;
           break;
@@ -1041,7 +1041,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
   }
 
   @Override
-  public Void visitInstance(Concrete.Instance<T> def, Void params) {
+  public Void visitInstance(Concrete.Instance def, Void params) {
     myBuilder.append("\\instance ");
     prettyPrintNameWithPrecedence(def.getReferable());
     prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
@@ -1054,12 +1054,12 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     return null;
   }
 
-  public static abstract class ListLayout<T, E>{
-    abstract void printListElement(PrettyPrintVisitor<T> ppv, E e);
+  public static abstract class ListLayout<E>{
+    abstract void printListElement(PrettyPrintVisitor ppv, E e);
 
     abstract String getSeparator();
 
-    public void doPrettyPrint(PrettyPrintVisitor<T> pp, List<? extends E> l, boolean disabled){
+    public void doPrettyPrint(PrettyPrintVisitor pp, List<? extends E> l, boolean disabled){
       if (disabled) {
         if (l.size() > 0)
         printListElement(pp, l.get(0));
@@ -1077,7 +1077,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       boolean splitMultiLineArgs;
       for (E e : l) {
         StringBuilder sb = new StringBuilder();
-        PrettyPrintVisitor<T> ppv = new PrettyPrintVisitor<>(sb, pp.myInfoProvider, 0, !pp.noIndent);
+        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, pp.myInfoProvider, 0, !pp.noIndent);
         printListElement(ppv, e);
 
         String[] strs = sb.toString().split("[\\r\\n]+");
@@ -1124,9 +1124,9 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
     }
   }
 
-  public static abstract class BinOpLayout<T> {
-    abstract void printLeft(PrettyPrintVisitor<T> pp);
-    abstract void printRight(PrettyPrintVisitor<T> pp);
+  public static abstract class BinOpLayout {
+    abstract void printLeft(PrettyPrintVisitor pp);
+    abstract void printRight(PrettyPrintVisitor pp);
     abstract String getOpText();
     boolean printSpaceBefore() {return true;}
     boolean printSpaceAfter() {return true;}
@@ -1152,7 +1152,7 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
       return i;
     }
 
-    public void doPrettyPrint(PrettyPrintVisitor<T> ppv_default, boolean disabled) {
+    public void doPrettyPrint(PrettyPrintVisitor ppv_default, boolean disabled) {
       if (disabled) {
         printLeft(ppv_default);
         if (printSpaceBefore()) ppv_default.myBuilder.append(" ");
@@ -1164,8 +1164,8 @@ public class PrettyPrintVisitor<T> implements ConcreteExpressionVisitor<T, Byte,
 
       StringBuilder lhs = new StringBuilder();
       StringBuilder rhs = new StringBuilder();
-      PrettyPrintVisitor<T> ppv_left = new PrettyPrintVisitor<>(lhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
-      PrettyPrintVisitor<T> ppv_right = new PrettyPrintVisitor<>(rhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
+      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
+      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
 
       //TODO: I don't like this implementation for it works quadratically wrt to the total number of binary operations
       printLeft(ppv_left);

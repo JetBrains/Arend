@@ -8,10 +8,10 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.SimpleInstanceProvider;
 
-public class GroupInstanceResolver<T> extends GroupResolver<T> {
+public class GroupInstanceResolver extends GroupResolver {
   private final InstanceProviderSet myInstanceProviderSet;
 
-  public GroupInstanceResolver(NameResolver nameResolver, ErrorReporter<T> errorReporter, InstanceProviderSet instanceProviderSet) {
+  public GroupInstanceResolver(NameResolver nameResolver, ErrorReporter errorReporter, InstanceProviderSet instanceProviderSet) {
     super(nameResolver, errorReporter);
     myInstanceProviderSet = instanceProviderSet;
   }

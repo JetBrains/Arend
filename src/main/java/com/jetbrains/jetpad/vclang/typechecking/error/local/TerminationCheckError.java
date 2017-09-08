@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TerminationCheckError<T> extends GeneralError<T> {
+public class TerminationCheckError extends GeneralError {
   public final GlobalReferable definition;
   public final Set<RecursiveBehavior<Definition>> behaviors;
 
@@ -25,8 +25,8 @@ public class TerminationCheckError<T> extends GeneralError<T> {
   }
 
   @Override
-  public T getCause() {
-    return (T) definition;
+  public Object getCause() {
+    return definition;
   }
 
   public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {

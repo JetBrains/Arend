@@ -4,25 +4,25 @@ import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
-public class BaseImplicitArgsInference<T> implements ImplicitArgsInference<T> {
-  protected final CheckTypeVisitor<T> myVisitor;
+public class BaseImplicitArgsInference implements ImplicitArgsInference {
+  protected final CheckTypeVisitor myVisitor;
 
-  protected BaseImplicitArgsInference(CheckTypeVisitor<T> visitor) {
+  protected BaseImplicitArgsInference(CheckTypeVisitor visitor) {
     myVisitor = visitor;
   }
 
   @Override
-  public CheckTypeVisitor.TResult<T> infer(Concrete.AppExpression<T> expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.TResult<T> infer(Concrete.BinOpExpression<T> expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult infer(Concrete.BinOpExpression expr, ExpectedType expectedType) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.TResult<T> inferTail(CheckTypeVisitor.TResult<T> fun, ExpectedType expectedType, Concrete.Expression<T> expr) {
+  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult fun, ExpectedType expectedType, Concrete.Expression expr) {
     return null;
   }
 }

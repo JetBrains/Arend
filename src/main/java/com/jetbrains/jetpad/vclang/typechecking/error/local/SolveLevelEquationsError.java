@@ -14,10 +14,10 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEqua
 import java.util.ArrayList;
 import java.util.List;
 
-public class SolveLevelEquationsError<T> extends LocalTypeCheckingError<T> {
+public class SolveLevelEquationsError extends LocalTypeCheckingError {
   public final List<? extends LevelEquation<? extends LevelVariable>> equations;
 
-  public SolveLevelEquationsError(List<? extends LevelEquation<? extends LevelVariable>> equations, Concrete.SourceNode<T> cause) {
+  public SolveLevelEquationsError(List<? extends LevelEquation<? extends LevelVariable>> equations, Concrete.SourceNode cause) {
     super("Cannot solve equations", cause);
     this.equations = equations;
   }

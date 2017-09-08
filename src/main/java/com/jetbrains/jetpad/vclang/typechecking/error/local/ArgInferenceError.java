@@ -11,19 +11,19 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ArgInferenceError<T> extends LocalTypeCheckingError<T> {
+public class ArgInferenceError extends LocalTypeCheckingError {
   public final Expression[] candidates;
   public final Expression expected;
   public final Expression actual;
 
-  public ArgInferenceError(String message, Concrete.SourceNode<T> cause, Expression[] candidates) {
+  public ArgInferenceError(String message, Concrete.SourceNode cause, Expression[] candidates) {
     super(message, cause);
     this.candidates = candidates;
     this.expected = null;
     this.actual = null;
   }
 
-  public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode<T> cause, Expression candidate) {
+  public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate) {
     super(message, cause);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;

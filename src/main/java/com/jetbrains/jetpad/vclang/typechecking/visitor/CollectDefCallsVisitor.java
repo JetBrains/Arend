@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.ConcreteExpressionVisitor;
 import java.util.Collection;
 import java.util.List;
 
-public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, Void, Void> {
+public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, Void> {
   private final Collection<GlobalReferable> myDependencies;
 
   public CollectDefCallsVisitor(Collection<GlobalReferable> dependencies) {
@@ -19,14 +19,14 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitApp(Concrete.AppExpression<T> expr, Void ignore) {
+  public Void visitApp(Concrete.AppExpression expr, Void ignore) {
     expr.getFunction().accept(this, null);
     expr.getArgument().getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitReference(Concrete.ReferenceExpression<T> expr, Void ignore) {
+  public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
     if (expr.getReferent() instanceof GlobalReferable) {
       myDependencies.add((GlobalReferable) expr.getReferent());
     }
@@ -49,22 +49,22 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitLam(Concrete.LamExpression<T> expr, Void ignore) {
+  public Void visitLam(Concrete.LamExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     expr.getBody().accept(this, null);
     return null;
   }
 
-  private void visitParameters(List<? extends Concrete.Parameter<T>> params) {
-    for (Concrete.Parameter<T> param : params) {
+  private void visitParameters(List<? extends Concrete.Parameter> params) {
+    for (Concrete.Parameter param : params) {
       if (param instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter<T>) param).getType().accept(this, null);
+        ((Concrete.TypeParameter) param).getType().accept(this, null);
       }
     }
   }
 
   @Override
-  public Void visitPi(Concrete.PiExpression<T> expr, Void ignore) {
+  public Void visitPi(Concrete.PiExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     expr.getCodomain().accept(this, null);
     return null;
@@ -86,21 +86,21 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitTuple(Concrete.TupleExpression<T> expr, Void ignore) {
-    for (Concrete.Expression<T> comp : expr.getFields()) {
+  public Void visitTuple(Concrete.TupleExpression expr, Void ignore) {
+    for (Concrete.Expression comp : expr.getFields()) {
       comp.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitSigma(Concrete.SigmaExpression<T> expr, Void ignore) {
+  public Void visitSigma(Concrete.SigmaExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     return null;
   }
 
   @Override
-  public Void visitBinOp(Concrete.BinOpExpression<T> expr, Void ignore) {
+  public Void visitBinOp(Concrete.BinOpExpression expr, Void ignore) {
     if (expr.getReferent() instanceof GlobalReferable) {
       myDependencies.add((GlobalReferable) expr.getReferent());
     }
@@ -112,9 +112,9 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression<T> expr, Void ignore) {
+  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void ignore) {
     expr.getLeft().accept(this, null);
-    for (Concrete.BinOpSequenceElem<T> elem : expr.getSequence()) {
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
       visitReference(elem.binOp, null);
       if (elem.argument != null) {
         elem.argument.accept(this, null);
@@ -124,11 +124,11 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitCase(Concrete.CaseExpression<T> expr, Void ignore) {
-    for (Concrete.Expression<T> caseExpr : expr.getExpressions()) {
+  public Void visitCase(Concrete.CaseExpression expr, Void ignore) {
+    for (Concrete.Expression caseExpr : expr.getExpressions()) {
       caseExpr.accept(this, null);
     }
-    for (Concrete.FunctionClause<T> clause : expr.getClauses()) {
+    for (Concrete.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null)
         clause.getExpression().accept(this, null);
     }
@@ -136,29 +136,29 @@ public class CollectDefCallsVisitor<T> implements ConcreteExpressionVisitor<T, V
   }
 
   @Override
-  public Void visitProj(Concrete.ProjExpression<T> expr, Void ignore) {
+  public Void visitProj(Concrete.ProjExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitClassExt(Concrete.ClassExtExpression<T> expr, Void ignore) {
+  public Void visitClassExt(Concrete.ClassExtExpression expr, Void ignore) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Concrete.ClassFieldImpl<T> statement : expr.getStatements()) {
+    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
       statement.getImplementation().accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitNew(Concrete.NewExpression<T> expr, Void ignore) {
+  public Void visitNew(Concrete.NewExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitLet(Concrete.LetExpression<T> letExpression, Void ignore) {
-    for (Concrete.LetClause<T> clause : letExpression.getClauses()) {
+  public Void visitLet(Concrete.LetExpression letExpression, Void ignore) {
+    for (Concrete.LetClause clause : letExpression.getClauses()) {
       visitParameters(clause.getParameters());
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);

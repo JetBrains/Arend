@@ -28,9 +28,9 @@ public abstract class ParseSource {
   }
 
   public @Nullable
-  Group load(ErrorReporter<Position> errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
-    CountingErrorReporter<Position> countingErrorReporter = new CountingErrorReporter<>();
-    final CompositeErrorReporter<Position> compositeErrorReporter = new CompositeErrorReporter<>(errorReporter, countingErrorReporter);
+  Group load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+    CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
+    final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
     VcgrammarLexer lexer = new VcgrammarLexer(new ANTLRInputStream(myStream));
     lexer.removeErrorListeners();
@@ -67,7 +67,7 @@ public abstract class ParseSource {
       if (nameResolver.nsProviders.dynamics instanceof SimpleDynamicNamespaceProvider) {
         ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
       }
-      new GroupNameResolver<>(nameResolver, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
+      new GroupNameResolver(nameResolver, compositeErrorReporter, ReferenceTypecheckableProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     if (countingErrorReporter.getErrorsNumber() > 0) {
       if (moduleRegistry != null) {

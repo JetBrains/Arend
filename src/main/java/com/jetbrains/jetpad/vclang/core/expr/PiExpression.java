@@ -28,12 +28,12 @@ public class PiExpression extends Expression implements Type {
     myCodomain = codomain;
   }
 
-  public static <T> Sort generateUpperBound(Sort domSort, Sort codSort, Equations<T> equations, Concrete.SourceNode<T> sourceNode) {
+  public static Sort generateUpperBound(Sort domSort, Sort codSort, Equations equations, Concrete.SourceNode sourceNode) {
     if ((domSort.getPLevel().getVar() == null || codSort.getPLevel().getVar() == null || domSort.getPLevel().getVar() == codSort.getPLevel().getVar())) {
       return new Sort(domSort.getPLevel().max(codSort.getPLevel()), codSort.getHLevel());
     }
 
-    InferenceLevelVariable<T> pl = new InferenceLevelVariable<>(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
     equations.addVariable(pl);
     Level pLevel = new Level(pl);
     equations.add(domSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);
