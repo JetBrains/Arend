@@ -55,7 +55,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null);
     visitor.getFreeBindings().addAll(context.values());
-    CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType);
+    CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType, false);
     assertThat(errorList, containsErrors(errors));
     if (errors == 0) {
       assertThat(result, is(notNullValue()));

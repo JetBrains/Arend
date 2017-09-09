@@ -151,8 +151,8 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-        myVisitor.getErrorReporter().report(new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left));
+        if (!type.isInstance(ErrorExpression.class)) {ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
+        myVisitor.getErrorReporter().report( new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left));}
         return null;
       }
 
@@ -275,7 +275,6 @@ public class TypeCheckingDefCall {
       }
     }
     if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
-      //noinspection unchecked
       myVisitor.getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
     }
 

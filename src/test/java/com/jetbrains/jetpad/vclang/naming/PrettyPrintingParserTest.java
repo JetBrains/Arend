@@ -1,30 +1,36 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.CaseExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Apps;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.singleParams;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertTrue;
 
-public class PrettyPrintingParserTest extends NameResolverTestCase {
+public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Concrete.Expression.PREC);
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Precedence.DEFAULT);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
@@ -132,5 +138,25 @@ public class PrettyPrintingParserTest extends NameResolverTestCase {
     LocalReference cD = ref("D");
     Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(ref("y")), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
+  }
+
+  @Test
+  public void prettyPrintCase() throws UnsupportedEncodingException {
+    TypedSingleDependentLink x = singleParam("x", Nat());
+    HashMap<Constructor, ElimTree> myMap = new HashMap<>();
+    myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));
+    TypedSingleDependentLink y = singleParam("y", Nat());
+    myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));
+    ElimTree elimTree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
+    CaseExpression cExpr = new CaseExpression(x, Nat(), elimTree, Collections.singletonList(Ref(x)));
+
+    LocalReference cx = ref("x");
+    LocalReference cy = ref("y");
+    List<Concrete.FunctionClause> cfc = new ArrayList<>();
+    cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));
+    cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.ZERO.getReferable(), Collections.emptyList())), cZero()));
+    Concrete.CaseExpression ccExpr = cCase(Collections.singletonList(cVar(cx)), cfc);
+
+    testExpr(ccExpr, cExpr);
   }
 }

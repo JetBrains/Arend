@@ -13,6 +13,10 @@ public class LevelEquations<Var> {
     return myEquations;
   }
 
+  public List<Var> getVariables() {
+    return myVariables;
+  }
+
   void addVariable(Var var) {
     myVariables.add(var);
   }

@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
@@ -27,6 +28,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
@@ -163,14 +165,14 @@ class DefinitionTypechecking {
     return parameter("\\this", new ClassCallExpression(enclosingClass, Sort.STD));
   }
 
-  private static Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, CheckTypeVisitor visitor, LocalInstancePool localInstancePool, Sort expectedSort) {
     Sort sort = Sort.PROP;
     int index = 0;
 
     for (Concrete.Parameter parameter : parameters) {
       if (parameter instanceof Concrete.TypeParameter) {
         Concrete.TypeParameter typeParameter = (Concrete.TypeParameter) parameter;
-        Type paramResult = visitor.finalCheckType(typeParameter.getType());
+        Type paramResult = visitor.finalCheckType(typeParameter.getType(), expectedSort == null ? ExpectedType.OMEGA : new UniverseExpression(expectedSort));
         if (paramResult == null) {
           sort = null;
           paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
@@ -238,11 +240,11 @@ class DefinitionTypechecking {
   private static void typeCheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, null) != null;
     Expression expectedType = null;
     Concrete.Expression resultType = def.getResultType();
     if (resultType != null) {
-      Type expectedTypeResult = visitor.finalCheckType(resultType);
+      Type expectedTypeResult = def.getBody() instanceof Concrete.ElimFunctionBody ? visitor.finalCheckType(resultType, ExpectedType.OMEGA) : visitor.checkType(resultType, ExpectedType.OMEGA);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -283,13 +285,13 @@ class DefinitionTypechecking {
         }
       }
     } else {
-      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType);
+      CheckTypeVisitor.Result termResult = visitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
       if (termResult != null) {
-        typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
-        if (expectedType == null) {
-          typedDef.setResultType(termResult.type);
+        if (termResult.expression != null) {
+          typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+          clauses = Collections.emptyList();
         }
-        clauses = Collections.emptyList();
+        typedDef.setResultType(termResult.type);
       }
     }
 
@@ -301,10 +303,10 @@ class DefinitionTypechecking {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Sort userSort = null;
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, localInstancePool, null) != null;
 
     if (def.getUniverse() != null) {
-      Type userTypeResult = visitor.finalCheckType(def.getUniverse());
+      Type userTypeResult = visitor.finalCheckType(def.getUniverse(), ExpectedType.OMEGA);
       if (userTypeResult != null) {
         userSort = userTypeResult.getExpr().toSort();
         if (userSort == null) {
@@ -361,20 +363,23 @@ class DefinitionTypechecking {
       }
     }
 
-    boolean universeOk = true;
+    LocalErrorReporter errorReporter = visitor.getErrorReporter();
+    LocalErrorReporterCounter countingErrorReporter = new LocalErrorReporterCounter(Error.Level.ERROR, errorReporter);
+    visitor.setErrorReporter(countingErrorReporter);
+
     PatternTypechecking dataPatternTypechecking = new PatternTypechecking(visitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE));
     for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
       if (clause.getPatterns() != null) {
         if (def.getEliminatedReferences() == null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
+          errorReporter.report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
           dataOk = false;
         }
         if (elimParams != null) {
           result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
           if (result != null && result.proj2 == null) {
-            visitor.getErrorReporter().report(new LocalTypeCheckingError("This clause is redundant", clause));
+            errorReporter.report(new LocalTypeCheckingError("This clause is redundant", clause));
             result = null;
           }
         }
@@ -383,7 +388,7 @@ class DefinitionTypechecking {
         }
       } else {
         if (def.getEliminatedReferences() != null) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
+          errorReporter.report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
           dataOk = false;
         }
       }
@@ -391,22 +396,18 @@ class DefinitionTypechecking {
       // Typecheck constructors
       for (Concrete.Constructor constructor : clause.getConstructors()) {
         Patterns patterns = result == null ? null : new Patterns(result.proj1);
-        Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions);
+        Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions, userSort);
         if (conSort == null) {
           dataOk = false;
           conSort = Sort.PROP;
         }
 
         inferredSort = inferredSort.max(conSort);
-        if (userSort != null) {
-          if (!def.isTruncated() && !conSort.isLessOrEquals(userSort)) {
-            visitor.getErrorReporter().report(new ConstructorUniverseError(conSort, constructor, userSort));
-            universeOk = false;
-          }
-        }
       }
     }
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+
+    visitor.setErrorReporter(errorReporter);
 
     // Check if constructors pattern match on the interval
     for (Constructor constructor : dataDefinition.getConstructors()) {
@@ -446,26 +447,25 @@ class DefinitionTypechecking {
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
-        visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
+        errorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
-          visitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
+          errorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, msg, def.getUniverse()));
         } else {
           dataDefinition.setIsTruncated(true);
         }
       }
-    } else if (universeOk && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
+    } else if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
       String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
-      visitor.getErrorReporter().report(new LocalTypeCheckingError(msg, def.getUniverse()));
-      universeOk = false;
+      countingErrorReporter.report(new LocalTypeCheckingError(msg, def.getUniverse()));
     }
 
-    dataDefinition.setSort(universeOk && userSort != null ? userSort : inferredSort);
-    return universeOk;
+    dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
+    return countingErrorReporter.getErrorsNumber() == 0;
   }
 
-  private static Sort typeCheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions) {
+  private static Sort typeCheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions, Sort userSort) {
     Constructor constructor = new Constructor(def.getReferable(), dataDefinition);
     List<DependentLink> elimParams = null;
     Sort sort;
@@ -476,7 +476,7 @@ class DefinitionTypechecking {
         dataDefinition.addConstructor(constructor);
 
         LinkList list = new LinkList();
-        sort = typeCheckParameters(def.getParameters(), list, visitor, null);
+        sort = typeCheckParameters(def.getParameters(), list, visitor, null, userSort);
 
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
@@ -611,7 +611,7 @@ class DefinitionTypechecking {
     Concrete.SourceNode alreadyImplementedSourceNode = null;
 
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
-      CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null);
+      CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null, false);
       if (result == null) {
         classOk = false;
         continue;
@@ -660,7 +660,7 @@ class DefinitionTypechecking {
         TypedDependentLink thisParameter = createThisParam(typedDef);
         visitor.getFreeBindings().add(thisParameter);
         visitor.setThis(typedDef, thisParameter);
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)));
+        CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getBaseType(Sort.STD).subst(field.getThisParameter(), new ReferenceExpression(thisParameter)), false);
         typedDef.implementField(field, new ClassDefinition.Implementation(thisParameter, result != null ? result.expression : new ErrorExpression(null, null)));
         if (result == null || result.expression.isInstance(ErrorExpression.class)) {
           classOk = false;
@@ -682,7 +682,7 @@ class DefinitionTypechecking {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
     visitor.setThis(enclosingClass, thisParameter);
-    Type typeResult = visitor.finalCheckType(def.getResultType());
+    Type typeResult = visitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
 
     ClassField typedDef = new ClassField(def.getReferable(), typeResult == null ? new ErrorExpression(null, null) : typeResult.getExpr(), enclosingClass, thisParameter);
     if (typeResult == null) {
@@ -712,7 +712,7 @@ class DefinitionTypechecking {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
 
     LinkList list = new LinkList();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     if (!paramsOk) {

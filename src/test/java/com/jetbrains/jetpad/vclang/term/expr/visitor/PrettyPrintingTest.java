@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -94,5 +95,45 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     Concrete.Definition def = (Concrete.Definition) ((GlobalReference) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
+  }
+
+  private void testDefinition(String s) {
+    GlobalReference def = resolveNamesDef(s);
+    StringBuilder sb = new StringBuilder();
+    PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, PrettyPrinterInfoProvider.TRIVIAL, 0);
+    ((Concrete.Definition) def.getDefinition()).accept(visitor, null);
+    String s2 = sb.toString();
+    GlobalReference def2 = resolveNamesDef(s2);
+    //TODO: Current implementation only ensures that output of PrettyPrinter parses back but does not ensure that the parse result has not changed along the way
+    //TODO: Implement some comparator for definitions to fix this
+  }
+
+  @Test
+  public void prettyPrintData1() {
+    String s1 =
+        "\\data S1 \n" +
+        "| base\n" +
+        "| loop Nat \\with {\n" +
+        "  | left => base\n" +
+        "  | right => base\n" +
+        "}";
+    testDefinition(s1);
+  }
+
+  @Test
+  public void prettyPrintClass1(){
+    String s1 = "\\class C0 {\n" +
+                "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
+                "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
+                "}";
+    testDefinition(s1);
+  }
+
+  @Test
+  public void prettyPrintData2(){
+    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) => \\elim x\n" +
+                "    | suc x' => c0 (y = x')\n" +
+                "    | suc x' => c1 (p : D2 y x')";
+    testDefinition(s1);
   }
 }

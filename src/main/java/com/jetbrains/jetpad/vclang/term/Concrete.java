@@ -150,7 +150,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), Expression.PREC);
+      accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), new Precedence(Expression.PREC));
       return builder.toString();
     }
   }

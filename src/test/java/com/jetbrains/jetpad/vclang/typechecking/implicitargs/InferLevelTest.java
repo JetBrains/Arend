@@ -135,6 +135,35 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void levelOfPath2() {
-    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0");
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0", 1);
+  }
+
+  @Test
+  public void levelOfPath3() {
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : Prop) -> \\Set0");
+  }
+
+  @Test
+  public void constantUpperBound() {
+    typeCheckModule(
+      "\\function f (A : \\Type) => A\n" +
+      "\\function g (B : \\Type) : \\Set => f B", 1);
+  }
+
+  @Test
+  public void expectedType() {
+    typeCheckModule(
+      "\\function X => \\Type\n" +
+      "\\function f : X => \\Type"
+    );
+  }
+
+  @Test
+  public void parameters() {
+    typeCheckModule(
+      "\\function X => \\Type\n" +
+      "\\function f (A : X) => 0\n" +
+      "\\function g => f \\Set0"
+    );
   }
 }

@@ -333,8 +333,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
   }
 
-  private LocalReference makeLocalReference(Binding var, Set<Variable> freeVars, boolean nullable) {
-    if (nullable && !freeVars.contains(var)) {
+  private LocalReference makeLocalReference(Binding var, Set<Variable> freeVars) {
+    if (!freeVars.contains(var)) {
       return null;
     }
     LocalReference reference = ref(getFreshName(var, freeVars));
@@ -353,7 +353,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         SingleDependentLink params = expr.cast(LamExpression.class).getParameters();
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
-          parameters.add(cName(link.isExplicit(), makeLocalReference(link, freeVars, true)));
+          parameters.add(cName(link.isExplicit(), makeLocalReference(link, freeVars)));
         }
       }
     }
@@ -367,10 +367,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       DependentLink link1 = link.getNextTyped(null);
       Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(link1);
       for (; link != link1; link = link.getNext()) {
-        referableList.add(makeLocalReference(link, freeVars, true));
+        referableList.add(makeLocalReference(link, freeVars));
       }
 
-      Referable referable = makeLocalReference(link, freeVars, true);
+      Referable referable = makeLocalReference(link, freeVars);
       if (referable == null && !isNamed && referableList.isEmpty()) {
         args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
       } else {
@@ -498,11 +498,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       Concrete.Expression term = clause.getExpression().accept(this, null);
-      Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
-      clauses.add(clet(referable, Collections.emptyList(), null, term));
+      Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause));
+      if (referable != null) {
+        clauses.add(clet(referable, Collections.emptyList(), null, term));
+      }
     }
 
-    return cLet(clauses, letExpression.getExpression().accept(this, null));
+    Concrete.Expression expr = letExpression.getExpression().accept(this, null);
+    return clauses.isEmpty() ? expr : cLet(clauses, expr);
   }
 
   @Override
