@@ -328,8 +328,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : myFactory.makeInferVar(expr.getVariable());
   }
 
-  private <T extends Abstract.ReferableSourceNode> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars, boolean nullable) {
-    if (nullable && !freeVars.contains(var)) {
+  private <T extends Abstract.ReferableSourceNode> T makeReferable(Binding var, Function<String, T> fun, Set<Variable> freeVars) {
+    if (!freeVars.contains(var)) {
       return null;
     }
     T referable = fun.apply(getFreshName(var, freeVars));
@@ -338,7 +338,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
   }
 
   private Abstract.ReferableSourceNode makeReferable(Binding var, Set<Variable> freeVars) {
-    return makeReferable(var, myFactory::makeReferable, freeVars, true);
+    return makeReferable(var, myFactory::makeReferable, freeVars);
   }
 
   @Override
@@ -353,7 +353,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
           final DependentLink finalLink = link;
-          Abstract.NameParameter parameter = makeReferable(link, name -> myFactory.makeNameParameter(finalLink.isExplicit(), name), freeVars, true);
+          Abstract.NameParameter parameter = makeReferable(link, name -> myFactory.makeNameParameter(finalLink.isExplicit(), name), freeVars);
           parameters.add(parameter != null ? parameter : myFactory.makeNameParameter(link.isExplicit(), null));
         }
       }
@@ -499,10 +499,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Abstract.Expr
     List<Abstract.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
       Abstract.Expression term = clause.getExpression().accept(this, null);
-      clauses.add(makeReferable(clause, name -> myFactory.makeLetClause(name, Collections.emptyList(), term), myFreeVariablesCollector.getFreeVariables(clause), false));
+      Abstract.LetClause aClause = makeReferable(clause, name -> myFactory.makeLetClause(name, Collections.emptyList(), term), myFreeVariablesCollector.getFreeVariables(clause));
+      if (aClause != null) {
+        clauses.add(aClause);
+      }
     }
 
-    return myFactory.makeLet(clauses, letExpression.getExpression().accept(this, null));
+    Abstract.Expression expr = letExpression.getExpression().accept(this, null);
+    return clauses.isEmpty() ? expr : myFactory.makeLet(clauses, expr);
   }
 
   @Override
