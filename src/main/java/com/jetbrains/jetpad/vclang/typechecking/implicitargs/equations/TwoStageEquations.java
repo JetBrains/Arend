@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
@@ -132,15 +133,17 @@ public class TwoStageEquations implements Equations {
         Sort codSort = Sort.generateInferVars(this, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
-        Set<Binding> bounds = myVisitor.getAllBindings();
-        for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
-          bounds.add(link);
+        try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+          for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
+            myVisitor.getFreeBindings().add(link);
+          }
+          Set<Binding> bounds = myVisitor.getAllBindings();
+          InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
+          Expression newRef = new InferenceReferenceExpression(infVar, this);
+          solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
+          addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
+          return;
         }
-        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
-        Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
-        addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
-        return;
       }
 
       // ?x <> Type

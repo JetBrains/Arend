@@ -46,7 +46,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
+        if (result instanceof CheckTypeVisitor.DefCallResult) {
+          infVar = new FunctionInferenceVariable(parameter.getName(), type, ((CheckTypeVisitor.DefCallResult) result).getArguments().size() + i + 1, ((CheckTypeVisitor.DefCallResult) result).getDefinition(), expr, myVisitor.getAllBindings());
+        } else {
+          infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, null, expr, myVisitor.getAllBindings());
+        }
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);

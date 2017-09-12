@@ -166,4 +166,12 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function g => f \\Set0"
     );
   }
+
+  @Test
+  public void lhLessThanInf() {
+    typeCheckClass(
+      "\\function f (A : \\Type) (a a' : A) (p : a = a') => p\n" +
+      "\\function X : \\oo-Type => Nat\n" +
+      "\\function g : X = X => f \\Type X X (path (\\lam _ => X))");
+  }
 }
