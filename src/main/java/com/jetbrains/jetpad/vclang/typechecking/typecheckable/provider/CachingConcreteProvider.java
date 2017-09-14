@@ -6,23 +6,25 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CachingTypecheckableProvider implements TypecheckableProvider {
-  private final TypecheckableProvider myProvider;
+public class CachingConcreteProvider implements ConcreteProvider {
+  private final ConcreteProvider myProvider;
   private final Map<GlobalReferable, Concrete.ReferableDefinition> myCache = new HashMap<>();
 
-  public CachingTypecheckableProvider(TypecheckableProvider provider) {
+  public CachingConcreteProvider(ConcreteProvider provider) {
     myProvider = provider;
   }
 
   @Override
-  public Concrete.ReferableDefinition getTypecheckable(GlobalReferable referable) {
+  public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {
     Concrete.ReferableDefinition definition = myCache.get(referable);
     if (definition != null) {
       return definition;
     }
 
-    definition = myProvider.getTypecheckable(referable);
-    myCache.put(referable, definition);
+    definition = myProvider.getConcrete(referable);
+    if (definition != null) {
+      myCache.put(referable, definition);
+    }
     return definition;
   }
 

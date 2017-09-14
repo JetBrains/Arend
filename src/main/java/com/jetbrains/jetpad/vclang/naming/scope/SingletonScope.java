@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class SingletonScope implements Scope {
@@ -15,8 +16,8 @@ public class SingletonScope implements Scope {
   }
 
   @Override
-  public Set<String> getNames() {
-    return Collections.singleton(myReferable.textRepresentation());
+  public List<Referable> getElements() {
+    return Collections.singletonList(myReferable);
   }
 
   @Override

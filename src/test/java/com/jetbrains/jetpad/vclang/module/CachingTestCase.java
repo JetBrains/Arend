@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
-import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
+import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
@@ -59,7 +59,7 @@ public class CachingTestCase extends NameResolverTestCase {
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(peristenceProvider, storage, storage, sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new TypecheckedReporter() {
+    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, errorReporter, new TypecheckedReporter() {
       @Override
       public void typecheckingSucceeded(Concrete.Definition definition) {
         typecheckingSucceeded.add(definition);
@@ -96,7 +96,7 @@ public class CachingTestCase extends NameResolverTestCase {
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
     prelude = moduleLoader.load(sourceId);
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
     storage.setPreludeNamespace(staticNsProvider.forReferable(prelude.getReferable()));
   }
 

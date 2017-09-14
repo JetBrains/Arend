@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.GroupInstanceResolver;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.scope.InstanceNamespaceProvider;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
@@ -24,19 +24,19 @@ public class Typechecking {
   private final TypecheckingDependencyListener myDependencyListener;
   private final NameResolver myNameResolver;
 
-  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  public Typechecking(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ConcreteProvider concreteProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myInstanceNamespaceProvider = new InstanceNamespaceProvider(errorReporter);
-    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, typecheckableProvider, errorReporter, typecheckedReporter, dependencyListener);
+    myDependencyListener = new TypecheckingDependencyListener(state, staticNsProvider, dynamicNsProvider, concreteProvider, errorReporter, typecheckedReporter, dependencyListener);
     myNameResolver = new NameResolver(new NamespaceProviders(null, staticNsProvider, dynamicNsProvider));
   }
 
   public void typecheckModules(final Collection<? extends Group> modules) {
     GroupResolver resolver = new GroupInstanceResolver(myNameResolver, myDependencyListener.errorReporter, myDependencyListener.instanceProviderSet);
-    Scope emptyScope = new EmptyScope();
+    Scope emptyScope = EmptyScope.INSTANCE;
     for (Group group : modules) {
       resolver.resolveGroup(group, emptyScope);
     }
-    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.concreteProvider, myDependencyListener, false);
 
     try {
       for (Group group : modules) {
@@ -46,7 +46,7 @@ public class Typechecking {
   }
 
   public void typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
-    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.typecheckableProvider, myDependencyListener, false);
+    Ordering ordering = new Ordering(myDependencyListener.instanceProviderSet, myDependencyListener.concreteProvider, myDependencyListener, false);
 
     try {
       for (Concrete.Definition definition : definitions) {
@@ -56,7 +56,7 @@ public class Typechecking {
   }
 
   private void orderGroup(Group group, Ordering ordering) {
-    Concrete.ReferableDefinition def = myDependencyListener.typecheckableProvider.getTypecheckable(group.getReferable());
+    Concrete.ReferableDefinition def = myDependencyListener.concreteProvider.getConcrete(group.getReferable());
     if (def instanceof Concrete.Definition) {
       ordering.doOrder((Concrete.Definition) def);
     }

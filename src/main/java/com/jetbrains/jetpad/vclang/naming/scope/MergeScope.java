@@ -20,7 +20,8 @@ public class MergeScope implements Scope {
   }
 
   public void addScope(Scope scope, ErrorReporter errorReporter) {
-    for (String name : scope.getNames()) {
+    for (Referable element : scope.getElements()) {
+      String name = element.textRepresentation();
       Referable ref1 = resolveName(name);
       if (ref1 != null) {
         Referable ref2 = scope.resolveName(name);
@@ -33,10 +34,10 @@ public class MergeScope implements Scope {
   }
 
   @Override
-  public Set<String> getNames() {
-    Set<String> result = new HashSet<>();
+  public List<Referable> getElements() {
+    List<Referable> result = new ArrayList<>();
     for (Scope scope : myScopes) {
-      result.addAll(scope.getNames());
+      result.addAll(scope.getElements());
     }
     return result;
   }

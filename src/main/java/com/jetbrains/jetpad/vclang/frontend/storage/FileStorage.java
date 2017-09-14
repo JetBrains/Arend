@@ -62,7 +62,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   private final NameResolver myNameResolver;
   private final ModuleRegistry myModuleRegistry;
 
-  private Scope myGlobalScope = new EmptyScope();
+  private Scope myGlobalScope = EmptyScope.INSTANCE;
   private final FileSourceSupplier mySourceSupplier;
   private final FileCacheStorageSupplier myCacheStorageSupplier;
 

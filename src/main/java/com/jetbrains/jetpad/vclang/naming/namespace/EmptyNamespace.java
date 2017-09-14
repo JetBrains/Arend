@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class EmptyNamespace implements Namespace {
@@ -11,8 +12,8 @@ public class EmptyNamespace implements Namespace {
   private EmptyNamespace() {}
 
   @Override
-  public Set<String> getNames() {
-    return Collections.emptySet();
+  public List<GlobalReferable> getElements() {
+    return Collections.emptyList();
   }
 
   @Override

@@ -107,7 +107,7 @@ public class PreludeCacheGenerator {
   public static void main(String[] args) throws CachePersistenceException {
     final ListErrorReporter errorReporter = new ListErrorReporter();
     final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceTypecheckableProvider.INSTANCE);
+    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceConcreteProvider.INSTANCE);
     final NameResolver nameResolver = new NameResolver(new NamespaceProviders(new SimpleModuleNamespaceProvider(), staticNsProvider, dynamicNsProvider));
 
     PreludeStorage storage = new PreludeStorage(nameResolver);
@@ -116,7 +116,7 @@ public class PreludeCacheGenerator {
 
     Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceTypecheckableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }

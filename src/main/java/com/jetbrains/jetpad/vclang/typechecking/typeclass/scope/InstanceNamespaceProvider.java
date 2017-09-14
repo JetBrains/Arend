@@ -27,7 +27,7 @@ public class InstanceNamespaceProvider {
 
   public Scope forDefinition(Concrete.Definition definition) {
     if (!(definition instanceof Concrete.DefinitionCollection)) {
-      return new EmptyScope();
+      return EmptyScope.INSTANCE;
     }
 
     Scope ns = cache.get(definition);

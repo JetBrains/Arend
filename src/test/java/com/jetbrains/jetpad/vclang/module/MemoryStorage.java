@@ -21,7 +21,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
-  private Scope myGlobalScope = new EmptyScope();
+  private Scope myGlobalScope = EmptyScope.INSTANCE;
   private final NameResolver myNameResolver;
 
   static class Source {

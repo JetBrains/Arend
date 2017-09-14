@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Set;
 
 public interface Scope {
-  Set<String> getNames();
+  Collection<? extends Referable> getElements();
   Referable resolveName(String name);
 
   Collection<? extends Concrete.Instance> getInstances(); // TODO[abstract]: Replace Concrete.Instance with something else, idk

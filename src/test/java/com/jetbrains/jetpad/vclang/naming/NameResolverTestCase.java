@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ReferenceTypecheckableProvider;
+import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
@@ -30,14 +30,14 @@ import static org.junit.Assert.assertThat;
 public abstract class NameResolverTestCase extends ParserTestCase {
   protected final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
   protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
-  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceTypecheckableProvider.INSTANCE);
+  protected final SimpleDynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceConcreteProvider.INSTANCE);
   private   final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider);
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
 
   @SuppressWarnings("StaticNonFinalField")
   private static Group LOADED_PRELUDE  = null;
   protected Group prelude = null;
-  private Scope globalScope = new EmptyScope();
+  private Scope globalScope = EmptyScope.INSTANCE;
 
   protected void loadPrelude() {
     if (prelude != null) throw new IllegalStateException();
@@ -92,7 +92,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Group group = parseDef(text);
     staticNsProvider.collect(group, errorReporter);
     dynamicNsProvider.collect(group, errorReporter, nameResolver);
-    GroupNameResolver groupResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    GroupNameResolver groupResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceConcreteProvider.INSTANCE);
     groupResolver.resolveGroup(group, new MergeScope(new SingletonScope(group.getReferable()), globalScope));
     assertThat(errorList, containsErrors(errors));
     return (GlobalReference) group.getReferable();
@@ -104,7 +104,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(Group group, int errors) {
-    GroupNameResolver groupNameResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceTypecheckableProvider.INSTANCE);
+    GroupNameResolver groupNameResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceConcreteProvider.INSTANCE);
     groupNameResolver.resolveGroup(group, globalScope);
     assertThat(errorList, containsErrors(errors));
   }

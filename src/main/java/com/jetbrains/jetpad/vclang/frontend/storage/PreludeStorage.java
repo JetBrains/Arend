@@ -70,7 +70,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
       if (stream == null) {
         throw new IllegalStateException("Prelude source resource not found");
       }
-      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, null, new EmptyScope(), myNameResolver);
+      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, null, EmptyScope.INSTANCE, myNameResolver);
       return LoadResult.make(result, 1);
     } catch (IOException e) {
       throw new IllegalStateException(e);

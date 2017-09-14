@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 
@@ -26,13 +26,13 @@ public class Ordering {
   private final Stack<TypecheckingUnit> myStack = new Stack<>();
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final InstanceProviderSet myInstanceProviderSet;
-  private final TypecheckableProvider myTypecheckableProvider;
+  private final ConcreteProvider myConcreteProvider;
   private final DependencyListener myListener;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, TypecheckableProvider typecheckableProvider, DependencyListener listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, DependencyListener listener, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
-    myTypecheckableProvider = typecheckableProvider;
+    myConcreteProvider = concreteProvider;
     myListener = listener;
     myRefToHeaders = refToHeaders;
   }
@@ -91,7 +91,7 @@ public class Ordering {
       }
       result.add(referable);
 
-      Concrete.ReferableDefinition definition = myTypecheckableProvider.getTypecheckable(referable);
+      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
       if (definition instanceof Concrete.ClassViewField) {
         for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
           referables.push(instance.getReferable());
@@ -160,7 +160,10 @@ public class Ordering {
     }
 
     for (GlobalReferable referable : dependencies) {
-      Concrete.ReferableDefinition dependency = myTypecheckableProvider.getTypecheckable(referable);
+      Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(referable);
+      if (dependency == null) {
+        continue;
+      }
       Concrete.Definition dependencyDef = dependency.getRelatedDefinition();
 
       if (dependencyDef.getReferable().equals(definition.getReferable())) {

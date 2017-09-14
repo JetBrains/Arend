@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -25,13 +25,17 @@ import java.util.Set;
 
 public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider {
   private final Map<GlobalReferable, SimpleNamespace> myNamespaces = new HashMap<>();
-  private final TypecheckableProvider myTypecheckableProvider;
+  private ConcreteProvider myConcreteProvider;
   private NameResolver myNameResolver;
   private ErrorReporter myErrorReporter;
   private boolean myHasSuperClasses;
 
-  public SimpleDynamicNamespaceProvider(TypecheckableProvider provider) {
-    myTypecheckableProvider = provider;
+  public SimpleDynamicNamespaceProvider(ConcreteProvider provider) {
+    myConcreteProvider = provider;
+  }
+
+  public void setConcreteProvider(ConcreteProvider provider) {
+    myConcreteProvider = provider;
   }
 
   @Nonnull
@@ -49,7 +53,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     collectWithoutSuperClasses(group);
     if (myHasSuperClasses) {
       Set<GlobalReferable> updated = new HashSet<>();
-      collectWithSupperClasses(group, new EmptyScope(), updated);
+      collectWithSupperClasses(group, EmptyScope.INSTANCE, updated);
     }
   }
 
@@ -70,7 +74,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       collectWithoutSuperClasses(subgroup);
     }
 
-    Concrete.ReferableDefinition definition = myTypecheckableProvider.getTypecheckable(group.getReferable());
+    Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(group.getReferable());
     if (definition instanceof Concrete.ClassDefinition) {
       if (!((Concrete.ClassDefinition) definition).getSuperClasses().isEmpty()) {
         myHasSuperClasses = true;
@@ -95,7 +99,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   }
 
   private boolean updateClass(GlobalReferable classRef, ExpressionResolveNameVisitor visitor, Set<GlobalReferable> current, Set<GlobalReferable> updated, SimpleNamespace result) {
-    Concrete.ReferableDefinition def = myTypecheckableProvider.getTypecheckable(classRef);
+    Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(classRef);
     if (!(def instanceof Concrete.ClassDefinition)) {
       return true;
     }

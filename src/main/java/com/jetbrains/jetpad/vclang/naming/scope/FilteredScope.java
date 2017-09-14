@@ -17,14 +17,14 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Set<String> getNames() {
-    Set<String> names = new HashSet<>(myScope.getNames());
-    if (myInclude) {
-      names.retainAll(myNames);
-    } else {
-      names.removeAll(myNames);
+  public List<Referable> getElements() {
+    List<Referable> elements = new ArrayList<>();
+    for (Referable element : myScope.getElements()) {
+      if (myInclude == myNames.contains(element.textRepresentation())) {
+        elements.add(element);
+      }
     }
-    return names;
+    return elements;
   }
 
   @Override

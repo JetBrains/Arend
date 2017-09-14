@@ -22,7 +22,7 @@ import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.TypecheckableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -41,7 +41,7 @@ class TypecheckingDependencyListener implements DependencyListener {
 
   final ErrorReporter errorReporter;
   final InstanceProviderSet instanceProviderSet;
-  final TypecheckableProvider typecheckableProvider;
+  final ConcreteProvider concreteProvider;
 
   private static class Suspension {
     public final CheckTypeVisitor visitor;
@@ -53,7 +53,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
   }
 
-  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckableProvider typecheckableProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
+  TypecheckingDependencyListener(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, ConcreteProvider concreteProvider, ErrorReporter errorReporter, TypecheckedReporter typecheckedReporter, DependencyListener dependencyListener) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
@@ -61,7 +61,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     myTypecheckedReporter = typecheckedReporter;
     myDependencyListener = dependencyListener;
     instanceProviderSet = new InstanceProviderSet();
-    this.typecheckableProvider = typecheckableProvider;
+    this.concreteProvider = concreteProvider;
   }
 
   @Override
@@ -175,7 +175,7 @@ class TypecheckingDependencyListener implements DependencyListener {
     }
 
     myTypecheckingHeaders = true;
-    Ordering ordering = new Ordering(instanceProviderSet, typecheckableProvider, this, true);
+    Ordering ordering = new Ordering(instanceProviderSet, concreteProvider, this, true);
     boolean ok = true;
     for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {

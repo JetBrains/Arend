@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 
@@ -16,8 +17,8 @@ public class NamespaceScope implements Scope {
   }
 
   @Override
-  public Set<String> getNames() {
-    return myNamespace.getNames();
+  public Collection<? extends GlobalReferable> getElements() {
+    return myNamespace.getElements();
   }
 
   @Override

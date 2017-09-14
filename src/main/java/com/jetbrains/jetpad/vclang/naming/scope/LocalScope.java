@@ -14,12 +14,8 @@ public class LocalScope implements Scope {
   }
 
   @Override
-  public Set<String> getNames() {
-    Set<String> names = new HashSet<>();
-    for (Referable referable : myContext) {
-      names.add(referable.textRepresentation());
-    }
-    return names;
+  public List<Referable> getElements() {
+    return myContext;
   }
 
   @Override

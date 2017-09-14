@@ -5,9 +5,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SimpleNamespace implements Namespace {
   private final Map<String, GlobalReferable> myNames = new HashMap<>();
@@ -37,8 +35,8 @@ public class SimpleNamespace implements Namespace {
   }
 
   @Override
-  public Set<String> getNames() {
-    return myNames.keySet();
+  public Collection<GlobalReferable> getElements() {
+    return myNames.values();
   }
 
   Set<Map.Entry<String, GlobalReferable>> getEntrySet() {
