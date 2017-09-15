@@ -63,6 +63,8 @@ public final class Abstract {
     @Nullable String getName();
     @Nullable Expression getExpression();
     @Nullable ReferableSourceNode getReferent();
+    @Nullable LevelExpression getPLevel();
+    @Nullable LevelExpression getHLevel();
   }
 
   public interface InferenceReferenceExpression extends Expression {

@@ -268,6 +268,18 @@ public final class Concrete {
       return myBinOp;
     }
 
+    @Nullable
+    @Override
+    public Abstract.LevelExpression getPLevel() {
+      return null;
+    }
+
+    @Nullable
+    @Override
+    public Abstract.LevelExpression getHLevel() {
+      return null;
+    }
+
     @Nonnull
     @Override
     public Expression getLeft() {
@@ -289,12 +301,25 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Abstract.ReferenceExpression {
     private final @Nullable Expression myExpression;
     private final String myName;
+    private final LevelExpression myPLevel;
+    private final LevelExpression myHLevel;
     private Abstract.ReferableSourceNode myReferent;
+
+    public ReferenceExpression(Position position, String name, LevelExpression pLevel, LevelExpression hLevel) {
+      super(position);
+      myExpression = null;
+      myName = name;
+      myPLevel = pLevel;
+      myHLevel = hLevel;
+      myReferent = null;
+    }
 
     public ReferenceExpression(Position position, @Nullable Expression expression, String name) {
       super(position);
       myExpression = expression;
       myName = name;
+      myPLevel = null;
+      myHLevel = null;
       myReferent = null;
     }
 
@@ -302,6 +327,8 @@ public final class Concrete {
       super(position);
       myExpression = null;
       myName = referable.getName();
+      myPLevel = null;
+      myHLevel = null;
       myReferent = referable;
     }
 
@@ -314,6 +341,18 @@ public final class Concrete {
     @Override
     public Abstract.ReferableSourceNode getReferent() {
       return myReferent;
+    }
+
+    @Nullable
+    @Override
+    public LevelExpression getPLevel() {
+      return myPLevel;
+    }
+
+    @Nullable
+    @Override
+    public LevelExpression getHLevel() {
+      return myHLevel;
     }
 
     public void setResolvedReferent(Abstract.ReferableSourceNode referent) {

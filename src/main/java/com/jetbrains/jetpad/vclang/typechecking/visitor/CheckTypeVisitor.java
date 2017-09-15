@@ -486,6 +486,9 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitReference(Abstract.ReferenceExpression expr, ExpectedType expectedType) {
+    if ((expr.getExpression() != null || !(expr.getReferent() instanceof Abstract.Definition)) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
+      myErrorReporter.report(new LocalTypeCheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
+    }
     TResult result = expr.getExpression() == null && !(expr.getReferent() instanceof Abstract.Definition) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;

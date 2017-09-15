@@ -188,7 +188,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "  path (\\lam j => p @ squeeze i j)\n" +
       "\\function Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p =>\n" +
       "  coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
-      "\\function foo (A : \\oo-Type) (a0 a1 : A) (p : a0 = a1) =>\n" +
-      "  Jl (\\lam (a2 : A) q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p");
+      "\\function foo (A : \\Type) (a0 a1 : A) (p : a0 = a1) =>\n" +
+      "  Jl (\\lam _ q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p");
   }
 }
