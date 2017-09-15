@@ -12,12 +12,13 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class SolveLevelEquationsError extends LocalTypeCheckingError {
-  public final List<? extends LevelEquation<? extends LevelVariable>> equations;
+  public final Collection<? extends LevelEquation<? extends LevelVariable>> equations;
 
-  public SolveLevelEquationsError(List<? extends LevelEquation<? extends LevelVariable>> equations, Abstract.SourceNode cause) {
+  public SolveLevelEquationsError(Collection<? extends LevelEquation<? extends LevelVariable>> equations, Abstract.SourceNode cause) {
     super("Cannot solve equations", cause);
     this.equations = equations;
   }
@@ -32,7 +33,7 @@ public class SolveLevelEquationsError extends LocalTypeCheckingError {
       builder.setLength(0);
       if (equation.isInfinity()) {
         printEqExpr(builder, ppv, equation.getVariable(), null);
-        builder.append(" = inf");
+        builder.append(" = \\oo");
       } else {
         printEqExpr(builder, ppv, equation.getVariable1(), -equation.getConstant());
         builder.append(" <= ");

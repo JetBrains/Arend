@@ -338,7 +338,7 @@ public class TwoStageEquations implements Equations {
   }
 
   private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle, Set<InferenceLevelVariable> unBased) {
-    List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
+    Set<LevelEquation<? extends LevelVariable>> basedCycle = new LinkedHashSet<>();
     for (LevelEquation<InferenceLevelVariable> equation : cycle) {
       if (equation.isInfinity() || equation.getVariable1() != null) {
         basedCycle.add(new LevelEquation<>(equation));
@@ -348,7 +348,7 @@ public class TwoStageEquations implements Equations {
     }
     LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
     InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
+    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(basedCycle, var.getSourceNode()));
   }
 
   private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {
