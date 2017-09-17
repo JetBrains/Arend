@@ -191,4 +191,13 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\function foo (A : \\Type) (a0 a1 : A) (p : a0 = a1) =>\n" +
       "  Jl (\\lam _ q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p");
   }
+
+  @Test
+  public void classLevelTest() {
+    typeCheckClass(
+      "\\class A {\n" +
+        "  | X : \\oo-Type\n" +
+        "}\n" +
+        "\\function f : A (\\levels 0 _) => \\new A { X => \\oo-Type0 }", 1);
+  }
 }
