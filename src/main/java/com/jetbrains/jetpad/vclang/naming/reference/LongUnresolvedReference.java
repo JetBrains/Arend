@@ -10,9 +10,13 @@ import java.util.List;
 public class LongUnresolvedReference extends NamedUnresolvedReference {
   private final List<String> myPath;
 
-  public LongUnresolvedReference(Object data, @Nonnull String name, @Nonnull List<String> path) {
+  private LongUnresolvedReference(Object data, @Nonnull String name, @Nonnull List<String> path) {
     super(data, name);
     myPath = path;
+  }
+
+  public static NamedUnresolvedReference make(Object data, @Nonnull String name, @Nonnull List<String> path) {
+    return path.isEmpty() ? new NamedUnresolvedReference(data, name) : new LongUnresolvedReference(data, name, path);
   }
 
   @Nonnull

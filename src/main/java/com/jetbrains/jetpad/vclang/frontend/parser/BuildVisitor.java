@@ -253,7 +253,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       names = null;
     }
-    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, modulePath != null ? new ModuleUnresolvedReference(tokenPosition(ctx.nsCmdRoot().MODULE_PATH().getSymbol()), new ModulePath(modulePath), path) : new LongUnresolvedReference(tokenPosition(ctx.nsCmdRoot().id().start), name, path), ctx.hidingOpt() instanceof WithHidingContext, names);
+    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, modulePath != null ? new ModuleUnresolvedReference(tokenPosition(ctx.nsCmdRoot().MODULE_PATH().getSymbol()), new ModulePath(modulePath), path) : LongUnresolvedReference.make(tokenPosition(ctx.nsCmdRoot().id().start), name, path), ctx.hidingOpt() instanceof WithHidingContext, names);
   }
 
   @Override
