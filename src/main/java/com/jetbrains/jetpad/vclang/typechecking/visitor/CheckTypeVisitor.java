@@ -1201,7 +1201,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (result == null) {
         return null;
       }
-      letResult = new LetClause(clause.getReferable().textRepresentation(), result.expression);
+      letResult = new LetClause(clause.getData().textRepresentation(), result.expression);
     }
     return letResult;
   }
@@ -1216,7 +1216,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (letClause == null) {
           return null;
         }
-        myContext.put(clause.getReferable(), letClause);
+        myContext.put(clause.getData(), letClause);
         clauses.add(letClause);
       }
 

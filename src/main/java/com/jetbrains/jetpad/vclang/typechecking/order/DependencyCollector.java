@@ -18,8 +18,8 @@ public class DependencyCollector implements DependencyListener {
 
   @Override
   public void dependsOn(Typecheckable unit, Concrete.Definition def) {
-    myDependencies.computeIfAbsent(unit.getDefinition().getReferable(), k -> new HashSet<>()).add(def.getReferable());
-    myReverseDependencies.computeIfAbsent(def.getReferable(), k -> new HashSet<>()).add(unit.getDefinition().getReferable());
+    myDependencies.computeIfAbsent(unit.getDefinition().getData(), k -> new HashSet<>()).add(def.getData());
+    myReverseDependencies.computeIfAbsent(def.getData(), k -> new HashSet<>()).add(unit.getDefinition().getData());
   }
 
   public void update(GlobalReferable definition) {

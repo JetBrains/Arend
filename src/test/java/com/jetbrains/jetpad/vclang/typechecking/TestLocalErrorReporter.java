@@ -16,8 +16,8 @@ public class TestLocalErrorReporter implements LocalErrorReporter {
 
   public TestLocalErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
-    GlobalReference reference = new GlobalReference("testDefinition", Precedence.DEFAULT);
-    fakeDef = new Concrete.Definition(null, reference) {
+    GlobalReference reference = new GlobalReference(null, "testDefinition", Precedence.DEFAULT);
+    fakeDef = new Concrete.Definition(reference) {
       @Override
       public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
         return null;
@@ -28,7 +28,7 @@ public class TestLocalErrorReporter implements LocalErrorReporter {
 
   @Override
   public void report(LocalTypeCheckingError localError) {
-    errorReporter.report(new TypeCheckingError(fakeDef.getReferable(), localError));
+    errorReporter.report(new TypeCheckingError(fakeDef.getData(), localError));
   }
 
   @Override

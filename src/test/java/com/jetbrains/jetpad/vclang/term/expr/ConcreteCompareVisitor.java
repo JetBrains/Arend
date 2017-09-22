@@ -262,7 +262,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       if (!compareLetClause(expr1.getClauses().get(i), letExpr2.getClauses().get(i))) {
         return false;
       }
-      mySubstitution.put(expr1.getClauses().get(i).getReferable(), letExpr2.getClauses().get(i).getReferable());
+      mySubstitution.put(expr1.getClauses().get(i).getData(), letExpr2.getClauses().get(i).getData());
     }
     return expr1.getExpression().accept(this, letExpr2.getExpression());
   }

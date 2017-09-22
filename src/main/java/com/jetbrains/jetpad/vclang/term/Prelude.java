@@ -54,7 +54,7 @@ public class Prelude {
   }
 
   public static void update(Concrete.Definition abstractDef, Definition definition) {
-    switch (abstractDef.getReferable().textRepresentation()) {
+    switch (abstractDef.getData().textRepresentation()) {
       case "Nat":
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
@@ -126,12 +126,12 @@ public class Prelude {
 
     @Override
     public void typecheckingSucceeded(Concrete.Definition definition) {
-      update(definition, state.getTypechecked(definition.getReferable()));
+      update(definition, state.getTypechecked(definition.getData()));
     }
 
     @Override
     public void typecheckingFailed(Concrete.Definition definition) {
-      update(definition, state.getTypechecked(definition.getReferable()));
+      update(definition, state.getTypechecked(definition.getData()));
     }
   }
 

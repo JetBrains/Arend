@@ -94,7 +94,7 @@ public class Ordering {
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
       if (definition instanceof Concrete.ClassViewField) {
         for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
-          referables.push(instance.getReferable());
+          referables.push(instance.getData());
         }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
@@ -103,7 +103,7 @@ public class Ordering {
             Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
             if (classView != null) {
               for (Concrete.Instance instance : instanceProvider.getInstances(classView)) {
-                referables.push(instance.getReferable());
+                referables.push(instance.getData());
               }
             }
           }
@@ -140,20 +140,20 @@ public class Ordering {
 
     Stack<GlobalReferable> dependenciesWithoutInstances = new Stack<>();
     if (enclosingClass != null) {
-      dependenciesWithoutInstances.add(enclosingClass.getReferable());
+      dependenciesWithoutInstances.add(enclosingClass.getData());
     }
 
     DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
     definition.accept(new DefinitionGetDependenciesVisitor(dependenciesWithoutInstances), typecheckable.isHeader());
     Collection<GlobalReferable> dependencies;
-    InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getReferable());
+    InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getData());
     if (instanceProvider == null) {
       dependencies = dependenciesWithoutInstances;
     } else {
       dependencies = new LinkedHashSet<>();
       collectInstances(instanceProvider, dependenciesWithoutInstances, (Set<GlobalReferable>) dependencies);
     }
-    if (typecheckable.isHeader() && dependencies.contains(definition.getReferable())) {
+    if (typecheckable.isHeader() && dependencies.contains(definition.getData())) {
       myStack.pop();
       currentState.onStack = false;
       return OrderResult.RECURSION_ERROR;
@@ -166,7 +166,7 @@ public class Ordering {
       }
       Concrete.Definition dependencyDef = dependency.getRelatedDefinition();
 
-      if (dependencyDef.getReferable().equals(definition.getReferable())) {
+      if (dependencyDef.getData().equals(definition.getData())) {
         if (!(dependency instanceof Concrete.ClassField)) {
           recursion = DependencyListener.Recursion.IN_BODY;
         }

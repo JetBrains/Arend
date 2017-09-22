@@ -33,9 +33,9 @@ public class CycleError extends GeneralError {
   @Override
   public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
     List<LineDoc> docs = new ArrayList<>(cycle.size() + 1);
-    docs.add(refDoc(cycle.get(cycle.size() - 1).getReferable()));
+    docs.add(refDoc(cycle.get(cycle.size() - 1).getData()));
     for (Concrete.Definition definition : cycle) {
-      docs.add(refDoc(definition.getReferable()));
+      docs.add(refDoc(definition.getData()));
     }
     return hSep(text(" - "), docs);
   }

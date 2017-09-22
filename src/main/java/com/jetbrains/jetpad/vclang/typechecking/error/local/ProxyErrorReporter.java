@@ -32,6 +32,6 @@ public class ProxyErrorReporter implements LocalErrorReporter {
 
   @Override
   public void report(LocalTypeCheckingError localError) {
-    myErrorReporter.report(new TypeCheckingError(myDefinition.getReferable(), localError));
+    myErrorReporter.report(new TypeCheckingError(myDefinition.getData(), localError));
   }
 }

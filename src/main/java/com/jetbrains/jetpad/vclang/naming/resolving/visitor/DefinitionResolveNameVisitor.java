@@ -177,7 +177,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         field.getResultType().accept(exprVisitor, null);
       }
     }
-    exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getReferable());
+    exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getData());
 
     return null;
   }

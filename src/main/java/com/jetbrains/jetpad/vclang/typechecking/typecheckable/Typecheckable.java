@@ -30,12 +30,12 @@ public class Typecheckable {
     if (o == null || getClass() != o.getClass()) return false;
 
     Typecheckable that = (Typecheckable) o;
-    return myHeader == that.myHeader && myDefinition.getReferable().equals(that.myDefinition.getReferable());
+    return myHeader == that.myHeader && myDefinition.getData().equals(that.myDefinition.getData());
   }
 
   @Override
   public int hashCode() {
-    int result = myDefinition.getReferable().hashCode();
+    int result = myDefinition.getData().hashCode();
     result = 31 * result + (myHeader ? 1 : 0);
     return result;
   }

@@ -369,7 +369,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
           }
           clause.getTerm().accept(this, null);
         }
-        myContext.add(clause.getReferable());
+        myContext.add(clause.getData());
       }
 
       expr.getExpression().accept(this, null);

@@ -113,8 +113,8 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     LocalReference t = ref("t");
     LocalReference y = ref("y");
     LocalReference z = ref("z");
-    GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(null, reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
+    GlobalReference reference = new GlobalReference(null, "f", Precedence.DEFAULT);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }

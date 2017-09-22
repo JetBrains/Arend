@@ -41,7 +41,7 @@ public class FilteredScope implements Scope {
     Collection<? extends Concrete.Instance> instances = myScope.getInstances();
     List<Concrete.Instance> filteredInstances = new ArrayList<>(instances.size());
     for (Concrete.Instance instance : instances) {
-      if (myInclude && myNames.contains(instance.getReferable().textRepresentation()) || !myInclude && !myNames.contains(instance.getReferable().textRepresentation())) {
+      if (myInclude && myNames.contains(instance.getData().textRepresentation()) || !myInclude && !myNames.contains(instance.getData().textRepresentation())) {
         filteredInstances.add(instance);
       }
     }

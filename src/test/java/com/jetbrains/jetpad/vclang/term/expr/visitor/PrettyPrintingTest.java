@@ -67,8 +67,8 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     LocalReference x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    GlobalReference reference = new GlobalReference("f", Precedence.DEFAULT);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(null, reference, arguments, cVar(X), body(cVar(x)));
+    GlobalReference reference = new GlobalReference(null, "f", Precedence.DEFAULT);
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, arguments, cVar(X), body(cVar(x)));
     reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, 0), null);
   }

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.term;
+package com.jetbrains.jetpad.vclang.frontend.term.group;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;

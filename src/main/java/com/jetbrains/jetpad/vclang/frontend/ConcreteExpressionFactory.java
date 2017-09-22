@@ -70,15 +70,15 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.LetClause clet(Referable referable, Concrete.Expression term) {
-    return new Concrete.LetClause(null, referable, Collections.emptyList(), null, term);
+    return new Concrete.LetClause(referable, Collections.emptyList(), null, term);
   }
 
   public static Concrete.LetClause clet(Referable referable, List<Concrete.Parameter> args, Concrete.Expression term) {
-    return new Concrete.LetClause(null, referable, args, null, term);
+    return new Concrete.LetClause(referable, args, null, term);
   }
 
   public static Concrete.LetClause clet(Referable referable, List<Concrete.Parameter> args, Concrete.Expression resultType, Concrete.Expression term) {
-    return new Concrete.LetClause(null, referable, args, resultType, term);
+    return new Concrete.LetClause(referable, args, resultType, term);
   }
 
   public static LocalReference ref(String name) {

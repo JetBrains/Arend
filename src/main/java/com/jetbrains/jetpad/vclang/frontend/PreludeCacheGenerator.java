@@ -81,9 +81,7 @@ public class PreludeCacheGenerator {
     @Override
     public String getIdFor(GlobalReferable definition) {
       if (!(definition instanceof GlobalReference)) throw new IllegalStateException();
-      Object pos = ((GlobalReference) definition).getDefinition().getData();
-      if (!(pos instanceof SourceInfo)) throw new IllegalStateException();
-      return ((SourceInfo) pos).positionTextRepresentation();
+      return ((GlobalReference) definition).positionTextRepresentation();
     }
 
     @Override

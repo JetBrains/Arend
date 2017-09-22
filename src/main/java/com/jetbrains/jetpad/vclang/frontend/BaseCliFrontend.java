@@ -64,10 +64,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
     if (reference instanceof GlobalReference) {
-      Object pos = ((GlobalReference) reference).getDefinition().getData();
-      if (pos instanceof SourceInfo) {
-        map.put(((SourceInfo) pos).positionTextRepresentation(), reference);
-      }
+      map.put(((GlobalReference) reference).positionTextRepresentation(), reference);
     }
   }
 
@@ -240,9 +237,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
       @Override
       public void alreadyTypechecked(Concrete.Definition definition) {
-        Definition.TypeCheckingStatus status = state.getTypechecked(definition.getReferable()).status();
+        Definition.TypeCheckingStatus status = state.getTypechecked(definition.getData()).status();
         if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
-          updateSourceResult(srcInfoProvider.sourceOf(definition.getReferable()), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
+          updateSourceResult(srcInfoProvider.sourceOf(definition.getData()), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
         }
       }
 

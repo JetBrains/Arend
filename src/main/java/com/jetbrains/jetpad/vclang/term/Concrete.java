@@ -20,13 +20,18 @@ import java.util.List;
 public final class Concrete {
   private Concrete() {}
 
-  public static class SourceNode implements PrettyPrintable {
+  public interface SourceNode extends PrettyPrintable {
+    @Nullable Object getData();
+  }
+
+  public static abstract class SourceNodeImpl implements SourceNode, PrettyPrintable {
     private final Object myData;
 
-    public SourceNode(Object data) {
+    SourceNodeImpl(Object data) {
       myData = data;
     }
 
+    @Override
     @Nullable
     public Object getData() {
       return myData;
@@ -40,7 +45,7 @@ public final class Concrete {
 
   // Parameters
 
-  public static abstract class Parameter extends SourceNode {
+  public static abstract class Parameter extends SourceNodeImpl {
     private boolean myExplicit;
 
     public Parameter(Object data, boolean explicit) {
@@ -138,7 +143,7 @@ public final class Concrete {
     */
   }
 
-  public static abstract class Expression extends SourceNode {
+  public static abstract class Expression extends SourceNodeImpl {
     public static final byte PREC = -12;
 
     public Expression(Object data) {
@@ -389,7 +394,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassFieldImpl extends SourceNode {
+  public static class ClassFieldImpl extends SourceNodeImpl {
     private Referable myImplementedField;
     private final Expression myExpression;
 
@@ -498,21 +503,22 @@ public final class Concrete {
     }
   }
 
-  public static class LetClause extends SourceNode {
+  public static class LetClause implements SourceNode {
     private final List<Parameter> myArguments;
     private final Expression myResultType;
     private final Expression myTerm;
     private final Referable myReferable;
 
-    public LetClause(Object data, Referable referable, List<Parameter> arguments, Expression resultType, Expression term) {
-      super(data);
+    public LetClause(Referable referable, List<Parameter> arguments, Expression resultType, Expression term) {
       myArguments = arguments;
       myResultType = resultType;
       myTerm = term;
       myReferable = referable;
     }
 
-    public Referable getReferable() {
+    @Nonnull
+    @Override
+    public Referable getData() {
       return myReferable;
     }
 
@@ -528,6 +534,13 @@ public final class Concrete {
 
     public Expression getResultType() {
       return myResultType;
+    }
+
+    @Override
+    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
+      StringBuilder builder = new StringBuilder();
+      new PrettyPrintVisitor(builder, infoProvider, 0).prettyPrintLetClause(this, false);
+      return builder.toString();
     }
   }
 
@@ -751,8 +764,8 @@ public final class Concrete {
 
   // Level expressions
 
-  public static abstract class LevelExpression extends SourceNode {
-    protected LevelExpression(Object data) {
+  public static abstract class LevelExpression extends SourceNodeImpl {
+    LevelExpression(Object data) {
       super(data);
     }
 
@@ -894,19 +907,25 @@ public final class Concrete {
     return null;
   }
 
-  public static abstract class ReferableDefinition extends SourceNode /* TODO[abstract]: Do not implement SourceNode, we can put Position to GlobalReference */ {
+  public static abstract class ReferableDefinition implements SourceNode {
     private final GlobalReferable myReferable;
 
-    public ReferableDefinition(Object data, GlobalReferable referable) {
-      super(data);
+    public ReferableDefinition(GlobalReferable referable) {
       myReferable = referable;
     }
 
-    public GlobalReferable getReferable() {
+    @Nonnull
+    @Override
+    public GlobalReferable getData() {
       return myReferable;
     }
 
     public abstract Definition getRelatedDefinition();
+
+    @Override
+    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
+      return null; // TODO[abstract]: implement this properly
+    }
 
     @Override
     public String toString() {
@@ -915,13 +934,20 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ReferableDefinition {
-    public Definition(Object data, GlobalReferable referable) {
-      super(data, referable);
+    public Definition(GlobalReferable referable) {
+      super(referable);
     }
 
     @Override
     public Definition getRelatedDefinition() {
       return this;
+    }
+
+    @Override
+    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
+      StringBuilder builder = new StringBuilder();
+      accept(new PrettyPrintVisitor(builder, infoProvider, 0), null);
+      return builder.toString();
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
@@ -937,16 +963,12 @@ public final class Concrete {
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
 
-    public ClassDefinition(Object data, GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
-      super(data, referable);
+    public ClassDefinition(GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+      super(referable);
       myParameters = parameters;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
-    }
-
-    public ClassDefinition(Object data, GlobalReferable referable) {
-      this(data, referable, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
 
     @Nonnull
@@ -979,8 +1001,8 @@ public final class Concrete {
     private final ClassDefinition myParentClass;
     private final Expression myResultType;
 
-    public ClassField(Object data, GlobalReferable referable, ClassDefinition parentClass, Expression resultType) {
-      super(data, referable);
+    public ClassField(GlobalReferable referable, ClassDefinition parentClass, Expression resultType) {
+      super(referable);
       myParentClass = parentClass;
       myResultType = resultType;
     }
@@ -996,7 +1018,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class FunctionBody extends SourceNode {
+  public static abstract class FunctionBody extends SourceNodeImpl {
     public FunctionBody(Object data) {
       super(data);
     }
@@ -1042,8 +1064,8 @@ public final class Concrete {
     private final Expression myResultType;
     private final FunctionBody myBody;
 
-    public FunctionDefinition(Object data, GlobalReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
-      super(data, referable);
+    public FunctionDefinition(GlobalReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
+      super(referable);
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
@@ -1077,8 +1099,8 @@ public final class Concrete {
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
 
-    public DataDefinition(Object data, GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
-      super(data, referable);
+    public DataDefinition(GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
+      super(referable);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myConstructorClauses = constructorClauses;
@@ -1116,7 +1138,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNode implements PatternContainer {
+  public static abstract class Clause extends SourceNodeImpl implements PatternContainer {
     public Clause(Object data) {
       super(data);
     }
@@ -1145,21 +1167,21 @@ public final class Concrete {
 
   public static class Constructor extends ReferableDefinition {
     private final DataDefinition myDataType;
-    private final List<TypeParameter> myArguments;
+    private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
 
-    public Constructor(Object data, GlobalReferable referable, DataDefinition dataType, List<TypeParameter> arguments, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
-      super(data, referable);
+    public Constructor(GlobalReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
+      super(referable);
       myDataType = dataType;
-      myArguments = arguments;
+      myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
       myClauses = clauses;
     }
 
     @Nonnull
     public List<TypeParameter> getParameters() {
-      return myArguments;
+      return myParameters;
     }
 
     @Nonnull
@@ -1185,8 +1207,8 @@ public final class Concrete {
     private Referable myClassifyingField;
     private final List<ClassViewField> myFields;
 
-    public ClassView(Object data, GlobalReferable referable, ReferenceExpression underlyingClass, Referable classifyingField, List<ClassViewField> fields) {
-      super(data, referable);
+    public ClassView(GlobalReferable referable, ReferenceExpression underlyingClass, Referable classifyingField, List<ClassViewField> fields) {
+      super(referable);
       myUnderlyingClass = underlyingClass;
       myFields = fields;
       myClassifyingField = classifyingField;
@@ -1221,8 +1243,8 @@ public final class Concrete {
     private Referable myUnderlyingField;
     private final ClassView myOwnView;
 
-    public ClassViewField(Object data, GlobalReferable referable, Referable underlyingField, ClassView ownView) {
-      super(data, referable);
+    public ClassViewField(GlobalReferable referable, Referable underlyingField, ClassView ownView) {
+      super(referable);
       myUnderlyingField = underlyingField;
       myOwnView = ownView;
     }
@@ -1254,8 +1276,8 @@ public final class Concrete {
     private final List<ClassFieldImpl> myClassFieldImpls;
     private GlobalReferable myClassifyingDefinition;
 
-    public Instance(Object data, boolean isDefault, GlobalReferable referable, List<Parameter> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
-      super(data, referable);
+    public Instance(boolean isDefault, GlobalReferable referable, List<Parameter> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
+      super(referable);
       myDefault = isDefault;
       myArguments = arguments;
       myClassView = classView;
@@ -1298,7 +1320,7 @@ public final class Concrete {
 
   // Patterns
 
-  public static abstract class Pattern extends SourceNode {
+  public static abstract class Pattern extends SourceNodeImpl {
     public static final byte PREC = 11;
     private boolean myExplicit;
 

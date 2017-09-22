@@ -77,13 +77,13 @@ public abstract class Definition implements Variable {
 
   public static Definition newDefinition(Concrete.Definition definition) {
     if (definition instanceof Concrete.DataDefinition) {
-      return new DataDefinition(definition.getReferable());
+      return new DataDefinition(definition.getData());
     }
     if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
-      return new FunctionDefinition(definition.getReferable());
+      return new FunctionDefinition(definition.getData());
     }
     if (definition instanceof Concrete.ClassDefinition) {
-      return new ClassDefinition(definition.getReferable());
+      return new ClassDefinition(definition.getData());
     }
     return null;
   }

@@ -28,6 +28,6 @@ public class SimpleInstanceProvider implements InstanceProvider {
         }
       }
     }
-    return myInstances.getOrDefault(classView.getReferable(), Collections.emptyList());
+    return myInstances.getOrDefault(classView.getData(), Collections.emptyList());
   }
 }

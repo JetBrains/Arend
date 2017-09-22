@@ -201,13 +201,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
     @Override
     public String getIdFor(GlobalReferable referable) {
-      if (referable instanceof GlobalReference) {
-        Object pos = ((GlobalReference) referable).getDefinition().getData();
-        if (pos instanceof SourceInfo) {
-          return ((SourceInfo) pos).positionTextRepresentation();
-        }
-      }
-      return null;
+      return referable instanceof GlobalReference ? ((GlobalReference) referable).positionTextRepresentation() : null;
     }
 
     @Override
