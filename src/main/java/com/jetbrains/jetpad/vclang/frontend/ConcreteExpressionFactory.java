@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -197,8 +198,12 @@ public class ConcreteExpressionFactory {
     return new Concrete.BinOpExpression(null, left, binOp, right);
   }
 
-  public static Concrete.NumericLiteral cNum(int num) {
+  public static Concrete.NumericLiteral cNum(BigInteger num) {
     return new Concrete.NumericLiteral(null, num);
+  }
+
+  public static Concrete.NumericLiteral cNum(long num) {
+    return new Concrete.NumericLiteral(null, BigInteger.valueOf(num));
   }
 
   public static Concrete.TermFunctionBody body(Concrete.Expression term) {

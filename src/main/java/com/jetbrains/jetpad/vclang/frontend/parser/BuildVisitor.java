@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -930,7 +931,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.NumericLiteral visitAtomNumber(AtomNumberContext ctx) {
-    return new Concrete.NumericLiteral(tokenPosition(ctx.NUMBER().getSymbol()), Integer.parseInt(ctx.NUMBER().getText()));
+    return new Concrete.NumericLiteral(tokenPosition(ctx.NUMBER().getSymbol()), new BigInteger(ctx.NUMBER().getText(), 10));
   }
 
   @Override

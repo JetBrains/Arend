@@ -21,6 +21,7 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
@@ -284,7 +285,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitConCall(ConCallExpression expr, Void params) {
-    Integer num = getNum(expr);
+    BigInteger num = getNum(expr);
     if (num != null) {
       return cNum(num);
     }
@@ -402,18 +403,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result;
   }
 
-  private Integer getNum(Expression expr) {
+  private BigInteger getNum(Expression expr) {
     ConCallExpression conCall = expr.checkedCast(ConCallExpression.class);
     if (conCall == null) {
       return null;
     }
     if (conCall.getDefinition() == Prelude.ZERO) {
-      return 0;
+      return BigInteger.ZERO;
     }
     if (conCall.getDefinition() == Prelude.SUC) {
-      Integer result = getNum(conCall.getDefCallArguments().get(0));
+      BigInteger result = getNum(conCall.getDefCallArguments().get(0));
       if (result != null) {
-        return result + 1;
+        return result.add(BigInteger.ONE);
       }
     }
     return null;

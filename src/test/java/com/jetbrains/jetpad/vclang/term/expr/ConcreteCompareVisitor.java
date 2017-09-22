@@ -269,6 +269,6 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitNumericLiteral(Concrete.NumericLiteral expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.NumericLiteral && expr1.getNumber() == ((Concrete.NumericLiteral) expr2).getNumber();
+    return expr2 instanceof Concrete.NumericLiteral && expr1.getNumber().equals(((Concrete.NumericLiteral) expr2).getNumber());
   }
 }

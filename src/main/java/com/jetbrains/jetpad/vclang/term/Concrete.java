@@ -12,9 +12,9 @@ import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -504,13 +504,13 @@ public final class Concrete {
   }
 
   public static class LetClause implements SourceNode {
-    private final List<Parameter> myArguments;
+    private final List<Parameter> myParameters;
     private final Expression myResultType;
     private final Expression myTerm;
     private final Referable myReferable;
 
-    public LetClause(Referable referable, List<Parameter> arguments, Expression resultType, Expression term) {
-      myArguments = arguments;
+    public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
+      myParameters = parameters;
       myResultType = resultType;
       myTerm = term;
       myReferable = referable;
@@ -529,7 +529,7 @@ public final class Concrete {
 
     @Nonnull
     public List<Parameter> getParameters() {
-      return myArguments;
+      return myParameters;
     }
 
     public Expression getResultType() {
@@ -573,18 +573,18 @@ public final class Concrete {
 
   public static class PiExpression extends Expression {
     public static final byte PREC = -4;
-    private final List<TypeParameter> myArguments;
+    private final List<TypeParameter> myParameters;
     private final Expression myCodomain;
 
-    public PiExpression(Object data, List<TypeParameter> arguments, Expression codomain) {
+    public PiExpression(Object data, List<TypeParameter> parameters, Expression codomain) {
       super(data);
-      myArguments = arguments;
+      myParameters = parameters;
       myCodomain = codomain;
     }
 
     @Nonnull
     public List<TypeParameter> getParameters() {
-      return myArguments;
+      return myParameters;
     }
 
     @Nonnull
@@ -745,14 +745,14 @@ public final class Concrete {
   }
 
   public static class NumericLiteral extends Expression {
-    private final int myNumber;
+    private final BigInteger myNumber;
 
-    public NumericLiteral(Object data, int number) {
+    public NumericLiteral(Object data, BigInteger number) {
       super(data);
       myNumber = number;
     }
 
-    public int getNumber() {
+    public BigInteger getNumber() {
       return myNumber;
     }
 
