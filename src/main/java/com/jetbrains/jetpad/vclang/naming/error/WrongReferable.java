@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.error;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 public class WrongReferable extends NamingError {
   public final Referable referable;

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.term;
+package com.jetbrains.jetpad.vclang.term.abs;
 
 public interface AbstractDefinitionVisitor<R> {
   R visitFunction(Abstract.FunctionDefinition def);

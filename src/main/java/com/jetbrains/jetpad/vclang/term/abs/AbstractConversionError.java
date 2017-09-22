@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.term;
+package com.jetbrains.jetpad.vclang.term.abs;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 

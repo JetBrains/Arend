@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass.scope;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.Collection;
 import java.util.HashMap;

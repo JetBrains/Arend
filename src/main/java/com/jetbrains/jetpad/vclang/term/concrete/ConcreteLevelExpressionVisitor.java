@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term;
+package com.jetbrains.jetpad.vclang.term.concrete;
 
 public interface ConcreteLevelExpressionVisitor<P, R> {
   R visitInf(Concrete.InfLevelExpression expr, P param);

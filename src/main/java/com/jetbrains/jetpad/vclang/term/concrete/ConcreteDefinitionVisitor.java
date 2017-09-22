@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term;
+package com.jetbrains.jetpad.vclang.term.concrete;
 
 public interface ConcreteDefinitionVisitor<P, R> {
   R visitFunction(Concrete.FunctionDefinition def, P params);

@@ -3,11 +3,10 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 
 public class NamespaceScope implements Scope {
   private final Namespace myNamespace;

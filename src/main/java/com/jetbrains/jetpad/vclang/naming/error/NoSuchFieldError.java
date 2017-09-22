@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.error;
 
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 public class NoSuchFieldError extends NamingError {
   public final String name;

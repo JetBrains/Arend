@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typecheckable;
 
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 public class Typecheckable {
   private final Concrete.Definition myDefinition;

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term;
+package com.jetbrains.jetpad.vclang.term.concrete;
 
 public interface ConcreteExpressionVisitor<P, R> {
   R visitApp(Concrete.AppExpression expr, P params);

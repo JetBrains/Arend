@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
-import com.jetbrains.jetpad.vclang.term.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.List;
 
