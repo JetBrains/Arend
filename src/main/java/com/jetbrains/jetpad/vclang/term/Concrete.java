@@ -343,9 +343,9 @@ public final class Concrete {
     private final ModulePath myPath;
     private GlobalReferable myModule;
 
-    public ModuleCallExpression(Object data, List<String> path) {
+    public ModuleCallExpression(Object data, ModulePath path) {
       super(data);
-      this.myPath = new ModulePath(path);
+      myPath = path;
     }
 
     @Nonnull

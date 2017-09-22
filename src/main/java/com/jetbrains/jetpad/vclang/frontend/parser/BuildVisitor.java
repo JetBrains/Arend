@@ -117,22 +117,18 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   public Concrete.Expression visitExpr(ExprContext expr) {
-    //noinspection unchecked
     return (Concrete.Expression) visit(expr);
   }
 
   private Concrete.Expression visitExpr(AtomContext expr) {
-    //noinspection unchecked
     return (Concrete.Expression) visit(expr);
   }
 
   private Concrete.Expression visitExpr(LiteralContext expr) {
-    //noinspection unchecked
     return (Concrete.Expression) visit(expr);
   }
 
   private Concrete.UniverseExpression visitExpr(UniverseAtomContext expr) {
-    //noinspection unchecked
     return (Concrete.UniverseExpression) visit(expr);
   }
 
@@ -192,7 +188,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ModuleCallExpression visitAtomModuleCall(AtomModuleCallContext ctx) {
-    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), getModulePath(ctx.MODULE_PATH().getText()));
+    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), new ModulePath(getModulePath(ctx.MODULE_PATH().getText())));
   }
 
   private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands) {
@@ -308,7 +304,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Pattern visitPattern(PatternContext ctx) {
-    //noinspection unchecked
     return (Concrete.Pattern) visit(ctx);
   }
 
@@ -331,7 +326,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Pattern visitAtomPattern(AtomPatternOrIDContext ctx) {
-    //noinspection unchecked
     return (Concrete.Pattern) visit(ctx);
   }
 
@@ -559,7 +553,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           continue;
         }
 
-        //noinspection unchecked
         Object sourceNode = visit(statementCtx);
         if (sourceNode == null) {
           continue;
@@ -846,7 +839,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.LevelExpression visitLevel(LevelAtomContext ctx) {
-    //noinspection unchecked
     return (Concrete.LevelExpression) visit(ctx);
   }
 
@@ -971,7 +963,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
-    //noinspection unchecked
     return parseBinOpSequence(ctx.binOpLeft(), parseImplementations(ctx.maybeNew(), ctx.implementStatements(), ctx.start, (Concrete.Expression) visit(ctx.binOpArg())), ctx.postfix(), ctx.start);
   }
 
@@ -982,7 +973,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     for (BinOpLeftContext leftContext : leftCtxs) {
       String name = visitInfix(leftContext.infix());
-      //noinspection unchecked
       Concrete.Expression expr = parseImplementations(leftContext.maybeNew(), leftContext.implementStatements(), leftContext.start, (Concrete.Expression) visit(leftContext.binOpArg()));
 
       if (left == null) {
@@ -1012,7 +1002,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Concrete.Expression visitExpr(Expr0Context ctx) {
-    //noinspection unchecked
     return parseBinOpSequence(ctx.binOpLeft(), (Concrete.Expression) visit(ctx.binOpArg()), ctx.postfix(), ctx.start);
   }
 
