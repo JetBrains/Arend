@@ -7,13 +7,19 @@ edit_uri: edit/master/docs/
 
 pages:
     - Overview: index.md
+    - Tutorial: tutorial.md
     - Language Reference:
         - Definitions: language-reference/definitions.md
 
 theme: readthedocs
+
+# Code highlighting
+# highlight.js is built from https://github.com/kirelagin/highlight.js/tree/arend
+theme_dir: docs/highlight/theme/
 
 site_dir: build/site/
 
 markdown_extensions:
     - toc:
         permalink: True
+    - fenced_code
