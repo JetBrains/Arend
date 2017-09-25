@@ -5,6 +5,11 @@ site_description: Arend is good at maths. You aren’t.
 repo_url: https://github.com/valis/vclang
 edit_uri: edit/master/docs/
 
+pages:
+    - Overview: index.md
+    - Language Reference:
+        - Definitions: language-reference/definitions.md
+
 theme: readthedocs
 
 site_dir: build/site/
