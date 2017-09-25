@@ -4,7 +4,15 @@
     
     <url>
      <loc>http://arend.top//</loc>
-     <lastmod>2017-09-25</lastmod>
+     <lastmod>1970-01-01</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    
+
+    
+    <url>
+     <loc>http://arend.top//tutorial/</loc>
+     <lastmod>1970-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -13,7 +21,7 @@
         
     <url>
      <loc>http://arend.top//language-reference/definitions/</loc>
-     <lastmod>2017-09-25</lastmod>
+     <lastmod>1970-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
         

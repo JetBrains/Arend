@@ -3,7 +3,7 @@
         {
             "location": "/",
             "text": "Arend\n\u00b6\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\u00b6\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.",
-            "title": "Home"
+            "title": "Overview"
         },
         {
             "location": "/#arend",
@@ -14,6 +14,16 @@
             "location": "/#installation",
             "text": "Download the jar and hopefully it will work.  Now define your first  function .",
             "title": "Installation"
+        },
+        {
+            "location": "/tutorial/",
+            "text": "Arend Tutorial\n\u00b6\n\n\nHere is the data type for booleans in Arend:\n\n\n\\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A => \\elim b\n    | true => then\n    | false => else",
+            "title": "Tutorial"
+        },
+        {
+            "location": "/tutorial/#arend-tutorial",
+            "text": "Here is the data type for booleans in Arend:  \\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A => \\elim b\n    | true => then\n    | false => else",
+            "title": "Arend Tutorial"
         },
         {
             "location": "/language-reference/definitions/",
