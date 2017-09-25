@@ -4,12 +4,16 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 
 import javax.annotation.Nonnull;
 
-public class AbstractConversionError extends GeneralError {
+public class AbstractExpressionError extends GeneralError {
   private final Object myCause;
 
-  AbstractConversionError(@Nonnull Level level, String message, Object cause) {
+  AbstractExpressionError(@Nonnull Level level, String message, Object cause) {
     super(level, message);
     myCause = cause;
+  }
+
+  public static AbstractExpressionError incomplete(Object cause) {
+    return new AbstractExpressionError(Level.ERROR, "Incomplete expression", cause);
   }
 
   @Override
@@ -18,9 +22,9 @@ public class AbstractConversionError extends GeneralError {
   }
 
   public static class Exception extends RuntimeException {
-    public final AbstractConversionError error;
+    public final AbstractExpressionError error;
 
-    Exception(AbstractConversionError error) {
+    Exception(AbstractExpressionError error) {
       super(error.message);
       this.error = error;
     }

@@ -69,9 +69,9 @@ public final class Abstract {
 
   public interface LetClause {
     @Nonnull Referable getReferable();
-    @Nonnull Collection<? extends Abstract.Parameter> getParameters();
-    @Nullable Abstract.Expression getResultType();
-    @Nonnull Abstract.Expression getTerm();
+    @Nonnull Collection<? extends Parameter> getParameters();
+    @Nullable Expression getResultType();
+    @Nonnull Expression getTerm();
   }
 
   public interface LevelExpression {
@@ -95,7 +95,7 @@ public final class Abstract {
   public interface DataDefinition extends Definition {
     @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
-    @Nullable Collection<? extends Expression> getEliminatedReferences();
+    @Nullable Collection<? extends Expression> getEliminatedExpressions();
     boolean isTruncated();
     @Nullable Expression getUniverse();
     @Nonnull Collection<? extends ConstructorClause> getClauses();
@@ -112,7 +112,7 @@ public final class Abstract {
   public interface Constructor {
     @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
-    @Nonnull Collection<? extends Expression> getEliminatedReferences();
+    @Nonnull Collection<? extends Expression> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 

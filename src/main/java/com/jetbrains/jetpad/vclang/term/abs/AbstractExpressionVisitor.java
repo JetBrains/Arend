@@ -12,7 +12,7 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, P params);
   R visitReference(@Nullable Object data, @Nullable Abstract.Expression expr, @Nonnull Referable referent, P params);
   R visitModuleCall(@Nullable Object data, @Nonnull ModulePath modulePath, P params);
-  R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nonnull Abstract.Expression body, P params);
+  R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* Nonnull */ @Nullable Abstract.Expression body, P params);
   R visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nonnull Abstract.Expression codomain, P params);
   R visitUniverse(@Nullable Object data, @Nonnull Abstract.LevelExpression pLevel, @Nonnull Abstract.LevelExpression hLevel, P params);
   R visitInferHole(@Nullable Object data, P params);

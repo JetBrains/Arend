@@ -1045,7 +1045,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     for (Concrete.Expression elimExpr : expressions) {
       if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
         myErrorReporter.report(new ParserError((Position) elimExpr.getData(), "\\elim can be applied only to a local variable"));
-        return null;
+        throw new ParseException();
       }
       result.add((Concrete.ReferenceExpression) elimExpr);
     }

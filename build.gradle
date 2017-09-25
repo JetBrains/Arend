@@ -15,6 +15,14 @@ buildscript {
     }
 }
 
+apply plugin: 'idea'
+idea {
+    module {
+        outputDir = file("$buildDir/classes/main")
+        testOutputDir = file("$buildDir/classes/test")
+    }
+}
+
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 

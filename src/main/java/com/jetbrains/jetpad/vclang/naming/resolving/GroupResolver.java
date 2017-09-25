@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+import com.jetbrains.jetpad.vclang.term.abs.AbstractExpressionError;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,7 +90,13 @@ public class GroupResolver {
   }
 
   private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope) {
-    GlobalReferable globalRef = resolveGlobal(cmd.getGroupReference(), parentScope);
+    Referable referable = cmd.getGroupReference();
+    if (referable == null) {
+      myErrorReporter.report(AbstractExpressionError.incomplete(cmd));
+      return null;
+    }
+
+    GlobalReferable globalRef = resolveGlobal(referable, parentScope);
     if (globalRef == null) {
       return null;
     }
