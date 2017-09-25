@@ -1,0 +1,39 @@
+{
+    "docs": [
+        {
+            "location": "/",
+            "text": "Arend\n\u00b6\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\u00b6\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.",
+            "title": "Home"
+        },
+        {
+            "location": "/#arend",
+            "text": "So, you want to prove something, huh?  Good for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and  install  it!",
+            "title": "Arend"
+        },
+        {
+            "location": "/#installation",
+            "text": "Download the jar and hopefully it will work.  Now define your first  function .",
+            "title": "Installation"
+        },
+        {
+            "location": "/language-reference/definitions/",
+            "text": "There are three kinds of definitions in Arend.\n\n\nFunction\n\u00b6\n\n\nUse the \n\\function\n keyword.\n\n\nData\n\u00b6\n\n\nUse the \n\\data\n keyword.\n\n\nClass\n\u00b6\n\n\nUse the \n\\class\n keyword.",
+            "title": "Definitions"
+        },
+        {
+            "location": "/language-reference/definitions/#function",
+            "text": "Use the  \\function  keyword.",
+            "title": "Function"
+        },
+        {
+            "location": "/language-reference/definitions/#data",
+            "text": "Use the  \\data  keyword.",
+            "title": "Data"
+        },
+        {
+            "location": "/language-reference/definitions/#class",
+            "text": "Use the  \\class  keyword.",
+            "title": "Class"
+        }
+    ]
+}
