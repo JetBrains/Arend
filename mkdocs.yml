@@ -17,6 +17,8 @@ theme: readthedocs
 # The language definition is built from https://github.com/kirelagin/highlight.js/tree/arend
 extra_javascript:
     - js/highlight-arend.min.js
+extra_css:
+    - css/custom-highlight.css
 
 site_dir: build/site/
 
