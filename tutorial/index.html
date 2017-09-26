@@ -132,6 +132,91 @@ if {A : \Type} (b : Bool) (then else : A) : A =&gt; \elim b
     | true =&gt; then
     | false =&gt; else
 </code></pre>
+
+<p>Here is some fine algebra for you reading pleasure:</p>
+<pre><code class="arend">\open ::Data::Bool
+
+\class Semigroup {
+  | X : \Type0
+  | op : X -&gt; X -&gt; X
+  | assoc : \Pi (x y z : X) -&gt; op (op x y) z = op x (op y z)
+}
+
+\function
+xor-semigroup =&gt; \new Semigroup { X =&gt; Bool | op =&gt; xor | assoc =&gt; {?} }
+
+\function
+and-semigroup =&gt; \new Semigroup { X =&gt; Bool | op =&gt; and | assoc =&gt; {?} }
+
+\class Monoid {
+  | S : Semigroup
+  | id : S.X
+  | lunit : \Pi (x : S.X) -&gt; S.op id x = x
+  | runit : \Pi (x : S.X) -&gt; S.op x id = x
+}
+
+\function
+xor-monoid =&gt; \new Monoid {
+  | S =&gt; xor-semigroup
+  | id =&gt; false
+  | lunit =&gt; {?}
+  | runit =&gt; {?}
+}
+
+\function
+and-monoid =&gt; \new Monoid {
+  | S =&gt; and-semigroup
+  | id =&gt; true
+  | lunit =&gt; {?}
+  | runit =&gt; {?}
+}
+
+\class Group {
+  | M : Monoid
+  | inv : M.S.X -&gt; M.S.X
+  | linv : \Pi (x : M.S.X) -&gt; M.S.op (inv x) x = M.id
+  | rinv : \Pi (x : M.S.X) -&gt; M.S.op x (inv x) = M.id
+}
+
+\function
+xor-group =&gt; \new Group {
+  | M =&gt; xor-monoid
+  | inv =&gt; {?}
+  | linv =&gt; {?}
+  | rinv =&gt; {?}
+}
+
+\class AbelianGroup {
+  | G : Group
+  | comm : \Pi (x y : G.M.S.X) -&gt; G.M.S.op x y = G.M.S.op y x
+}
+
+\function
+xor-abelian =&gt; \new AbelianGroup {
+  | G =&gt; xor-group
+  | comm =&gt; {?}
+}
+
+{-
+\class Ring {
+  | A : AbelianGroup
+  | M : Monoid { S : Semigroup { X =&gt; A.G.M.S.X } }
+  | ldistr : \Pi (x y z : A.G.M.S.X) -&gt; M.S.op x (A.G.M.S.op y z) = A.G.M.S.op (M.S.op x y) (M.S.op x z)
+  | rdistr : \Pi (x y z : A.G.M.S.X) -&gt; M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)
+}
+
+\function
+xor-ring =&gt; \new Ring {
+  | A =&gt; xor-abelian
+  | M =&gt; and-monoid
+  | distr =&gt; {?}
+}
+
+\function
+mul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id
+    =&gt; {?}
+-}
+</code></pre>
               
             </div>
           </div>
