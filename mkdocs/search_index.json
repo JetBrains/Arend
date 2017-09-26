@@ -1,48 +1,48 @@
 {
     "docs": [
         {
-            "location": "/",
-            "text": "Arend\n\u00b6\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\u00b6\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.",
+            "location": "/", 
+            "text": "Arend\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.", 
             "title": "Overview"
-        },
+        }, 
         {
-            "location": "/#arend",
-            "text": "So, you want to prove something, huh?  Good for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and  install  it!",
+            "location": "/#arend", 
+            "text": "So, you want to prove something, huh?  Good for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and  install  it!", 
             "title": "Arend"
-        },
+        }, 
         {
-            "location": "/#installation",
-            "text": "Download the jar and hopefully it will work.  Now define your first  function .",
+            "location": "/#installation", 
+            "text": "Download the jar and hopefully it will work.  Now define your first  function .", 
             "title": "Installation"
-        },
+        }, 
         {
-            "location": "/tutorial/",
-            "text": "Arend Tutorial\n\u00b6\n\n\nHere is the data type for booleans in Arend:\n\n\n\\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A => \\elim b\n    | true => then\n    | false => else",
+            "location": "/tutorial/", 
+            "text": "Arend Tutorial\n\n\nHere is the data type for booleans in Arend:\n\n\n\\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true =\n Unit\n    | false =\n Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true =\n false\n    | false =\n true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A =\n \\elim b\n    | true =\n then\n    | false =\n else", 
             "title": "Tutorial"
-        },
+        }, 
         {
-            "location": "/tutorial/#arend-tutorial",
-            "text": "Here is the data type for booleans in Arend:  \\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A => \\elim b\n    | true => then\n    | false => else",
+            "location": "/tutorial/#arend-tutorial", 
+            "text": "Here is the data type for booleans in Arend:  \\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true =  Unit\n    | false =  Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true =  false\n    | false =  true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A =  \\elim b\n    | true =  then\n    | false =  else", 
             "title": "Arend Tutorial"
-        },
+        }, 
         {
-            "location": "/language-reference/definitions/",
-            "text": "There are three kinds of definitions in Arend.\n\n\nFunction\n\u00b6\n\n\nUse the \n\\function\n keyword.\n\n\nData\n\u00b6\n\n\nUse the \n\\data\n keyword.\n\n\nClass\n\u00b6\n\n\nUse the \n\\class\n keyword.",
+            "location": "/language-reference/definitions/", 
+            "text": "There are three kinds of definitions in Arend.\n\n\nFunction\n\n\nUse the \n\\function\n keyword.\n\n\nData\n\n\nUse the \n\\data\n keyword.\n\n\nClass\n\n\nUse the \n\\class\n keyword.", 
             "title": "Definitions"
-        },
+        }, 
         {
-            "location": "/language-reference/definitions/#function",
-            "text": "Use the  \\function  keyword.",
+            "location": "/language-reference/definitions/#function", 
+            "text": "Use the  \\function  keyword.", 
             "title": "Function"
-        },
+        }, 
         {
-            "location": "/language-reference/definitions/#data",
-            "text": "Use the  \\data  keyword.",
+            "location": "/language-reference/definitions/#data", 
+            "text": "Use the  \\data  keyword.", 
             "title": "Data"
-        },
+        }, 
         {
-            "location": "/language-reference/definitions/#class",
-            "text": "Use the  \\class  keyword.",
+            "location": "/language-reference/definitions/#class", 
+            "text": "Use the  \\class  keyword.", 
             "title": "Class"
         }
     ]
