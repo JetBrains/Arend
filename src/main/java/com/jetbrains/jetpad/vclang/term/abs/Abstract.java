@@ -28,7 +28,7 @@ public final class Abstract {
   public interface FunctionClause {
     @Nullable Object getData();
     @Nonnull Collection<? extends Pattern> getPatterns();
-    @Nonnull Expression getExpression();
+    @Nullable Expression getExpression();
   }
 
   public interface ConstructorClause {
@@ -39,12 +39,15 @@ public final class Abstract {
 
   public interface Pattern {
     @Nullable Object getData();
+    boolean isEmpty();
     boolean isExplicit();
-    @Nullable Referable getReference();
+    @Nullable Referable getHeadReference();
     @Nonnull Collection<? extends Pattern> getArguments();
   }
 
   // Expression
+
+  public static final int INFINITY_LEVEL = -33;
 
   public interface Expression {
     @Nullable Object getData();
@@ -52,7 +55,7 @@ public final class Abstract {
   }
 
   public interface BinOpSequenceElem {
-    @Nonnull Expression getBinOpCall();
+    @Nonnull Referable getBinOpReference();
     @Nullable Expression getArgument();
   }
 
@@ -64,7 +67,7 @@ public final class Abstract {
   public interface ClassFieldImpl {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
-    @Nonnull Expression getImplementation();
+    /* @Nonnull */ @Nullable Expression getImplementation();
   }
 
   public interface LetClause {

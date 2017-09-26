@@ -56,9 +56,8 @@ pattern : atomPattern             # patternAtom
         | prefix atomPatternOrID* # patternConstructor
         ;
 
-atomPattern : '(' pattern ')'     # patternExplicit
+atomPattern : '(' pattern? ')'    # patternExplicit
             | '{' pattern '}'     # patternImplicit
-            | '()'                # patternEmpty
             | '_'                 # patternAny
             ;
 
@@ -77,15 +76,13 @@ associativity : '\\infix'               # nonAssoc
               | '\\infixr'              # rightAssoc
               ;
 
-expr0 : binOpLeft* binOpArg postfix*;
-
-expr  : binOpLeft* maybeNew binOpArg implementStatements? postfix*            # binOp
+expr  : binOpLeft* binOpArg postfix*                                          # binOp
       | <assoc=right> expr '->' expr                                          # arr
       | '\\Pi' tele+ '->' expr                                                # pi
       | '\\Sigma' tele+                                                       # sigma
       | '\\lam' tele+ '=>' expr                                               # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                   # let
-      | '\\case' expr0 (',' expr0)* '\\with' '{' clause? ('|' clause)* '}'    # case
+      | '\\case' expr (',' expr)* '\\with' '{' clause? ('|' clause)* '}'      # case
       ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
@@ -109,13 +106,13 @@ levelExpr : levelAtom                     # atomLevelExpr
           | '\\max' levelAtom levelAtom   # maxLevelExpr
           ;
 
-binOpArg : atomFieldsAcc argument*                # binOpArgument
-         | TRUNCATED_UNIVERSE levelAtom?          # truncatedUniverse
-         | UNIVERSE (levelAtom levelAtom?)?       # universe
-         | SET levelAtom?                         # setUniverse
+binOpArg : maybeNew atomFieldsAcc argument* implementStatements?  # binOpArgument
+         | TRUNCATED_UNIVERSE levelAtom?                          # truncatedUniverse
+         | UNIVERSE (levelAtom levelAtom?)?                       # universe
+         | SET levelAtom?                                         # setUniverse
          ;
 
-binOpLeft : maybeNew binOpArg implementStatements? postfix* infix;
+binOpLeft : binOpArg postfix* infix;
 
 maybeNew :                              # noNew
          | '\\new'                      # withNew

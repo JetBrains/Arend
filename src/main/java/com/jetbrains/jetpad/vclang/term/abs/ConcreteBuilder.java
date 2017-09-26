@@ -72,8 +72,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     for (Abstract.ConstructorClause clause : absClauses) {
       Collection<? extends Abstract.Constructor> absConstructors = clause.getConstructors();
       if (absConstructors.isEmpty()) {
-        throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(clause));
+        myErrorReporter.report(AbstractExpressionError.incomplete(clause));
+        continue;
       }
+
       List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
       for (Abstract.Constructor constructor : absConstructors) {
         constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferenceExpressions(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
@@ -117,7 +119,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   private List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), implementation.getImplementation().accept(this, null)));
+      Abstract.Expression impl = implementation.getImplementation();
+      if (impl != null) {
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), impl.accept(this, null)));
+      } else {
+        myErrorReporter.report(AbstractExpressionError.incomplete(implementation.getData()));
+      }
     }
     return implementations;
   }
@@ -158,15 +165,22 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
-    Referable reference = pattern.getReference();
-    if (reference == null) {
-      if (pattern.getArguments().isEmpty()) {
+    if (pattern.isEmpty()) {
+      if (pattern.getHeadReference() == null && pattern.getArguments().isEmpty()) {
         return new Concrete.EmptyPattern(pattern.getData(), pattern.isExplicit());
       } else {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Missing a reference", pattern.getData()));
+        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Unexpected arguments for an empty pattern", pattern.getData()));
       }
     } else {
-      return reference instanceof GlobalReferable || reference instanceof UnresolvedReference ? new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(pattern.getArguments())) : new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), reference);
+      Referable reference = pattern.getHeadReference();
+      if (reference instanceof GlobalReferable || reference instanceof UnresolvedReference) {
+        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(pattern.getArguments()));
+      } else {
+        if (!pattern.getArguments().isEmpty()) {
+          myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Unexpected argument", pattern.getArguments().iterator().next()));
+        }
+        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), reference);
+      }
     }
   }
 
@@ -185,7 +199,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       if (patterns.isEmpty()) {
         throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(clause));
       }
-      clauses.add(new Concrete.FunctionClause(clause.getData(), buildPatterns(patterns), clause.getExpression().accept(this, null)));
+      Abstract.Expression expr = clause.getExpression();
+      clauses.add(new Concrete.FunctionClause(clause.getData(), buildPatterns(patterns), expr == null ? null : expr.accept(this, null)));
     }
     return clauses;
   }
@@ -212,24 +227,43 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.LamExpression visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, Void params) {
-    if (body == null || parameters.isEmpty()) {
+  public Concrete.Expression visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, Void params) {
+    if (body == null) {
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
     }
+    if (parameters.isEmpty()) {
+      myErrorReporter.report(AbstractExpressionError.incomplete(data));
+      return body.accept(this, null);
+    }
+
     return new Concrete.LamExpression(data, buildParameters(parameters), body.accept(this, null));
   }
 
   @Override
-  public Concrete.PiExpression visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nonnull Abstract.Expression codomain, Void params) {
-    if (parameters.isEmpty()) {
+  public Concrete.Expression visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression codomain, Void params) {
+    if (codomain == null) {
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
     }
+    if (parameters.isEmpty()) {
+      myErrorReporter.report(AbstractExpressionError.incomplete(data));
+      return codomain.accept(this, null);
+    }
+
     return new Concrete.PiExpression(data, buildTypeParameters(parameters), codomain.accept(this, null));
   }
 
   @Override
-  public Concrete.UniverseExpression visitUniverse(@Nullable Object data, @Nonnull Abstract.LevelExpression pLevel, @Nonnull Abstract.LevelExpression hLevel, Void params) {
-    return new Concrete.UniverseExpression(data, pLevel.accept(this, null), hLevel.accept(this, null));
+  public Concrete.UniverseExpression visitUniverse(@Nullable Object data, @Nullable Integer pLevelNum, @Nullable Integer hLevelNum, @Nullable Abstract.LevelExpression pLevel, @Nullable Abstract.LevelExpression hLevel, Void params) {
+    if (pLevelNum != null && pLevel != null) {
+      myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "p-level is already specified", pLevel.getData()));
+    }
+    if (hLevelNum != null && hLevel != null) {
+      myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "h-level is already specified", hLevel.getData()));
+    }
+
+    return new Concrete.UniverseExpression(data,
+      pLevelNum != null ? new Concrete.NumberLevelExpression(data, pLevelNum) : pLevel != null ? pLevel.accept(this, null) : null,
+      hLevelNum != null ? (hLevelNum == Abstract.INFINITY_LEVEL ? new Concrete.InfLevelExpression(data) : new Concrete.NumberLevelExpression(data, hLevelNum)) : hLevel != null ? hLevel.accept(this, null) : null);
   }
 
   @Override
@@ -272,11 +306,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Abstract.Expression arg = elem.getArgument();
-      Concrete.Expression binOp = elem.getBinOpCall().accept(this, null);
-      if (!(binOp instanceof Concrete.ReferenceExpression)) {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected an infix operator", binOp.getData()));
-      }
-      elems.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(binOp.getData(), ((Concrete.ReferenceExpression) binOp).getExpression(), ((Concrete.ReferenceExpression) binOp).getReferent()), arg == null ? null : arg.accept(this, null)));
+      Referable referable = elem.getBinOpReference();
+      elems.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).getData() : referable, null, elem.getBinOpReference()), arg == null ? null : arg.accept(this, null)));
     }
     return new Concrete.BinOpSequenceExpression(data, left.accept(this, null), elems);
   }
@@ -299,20 +330,30 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.ClassExtExpression visitClassExt(@Nullable Object data, @Nonnull Abstract.Expression baseClass, @Nonnull Collection<? extends Abstract.ClassFieldImpl> implementations, Void params) {
-    return new Concrete.ClassExtExpression(data, baseClass.accept(this, null), buildImplementations(implementations));
-  }
-
-  @Override
-  public Concrete.NewExpression visitNew(@Nullable Object data, @Nonnull Abstract.Expression expression, Void params) {
-    return new Concrete.NewExpression(data, expression.accept(this, null));
-  }
-
-  @Override
-  public Concrete.LetExpression visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> absClauses, @Nonnull Abstract.Expression expression, Void params) {
-    if (absClauses.isEmpty()) {
+  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, Void params) {
+    if (baseClass == null) {
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
     }
+    Concrete.Expression result = baseClass.accept(this, null);
+    if (implementations != null) {
+      result = new Concrete.ClassExtExpression(data, result, buildImplementations(implementations));
+    }
+    if (isNew) {
+      result = new Concrete.NewExpression(data, result);
+    }
+    return result;
+  }
+
+  @Override
+  public Concrete.Expression visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, Void params) {
+    if (expression == null) {
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+    }
+    if (absClauses.isEmpty()) {
+      myErrorReporter.report(AbstractExpressionError.incomplete(data));
+      return expression.accept(this, null);
+    }
+
     List<Concrete.LetClause> clauses = new ArrayList<>(absClauses.size());
     for (Abstract.LetClause clause : absClauses) {
       Abstract.Expression resultType = clause.getResultType();
@@ -349,17 +390,23 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.SucLevelExpression visitSuc(@Nullable Object data, Abstract.LevelExpression expr, Void param) {
+  public Concrete.SucLevelExpression visitSuc(@Nullable Object data, @Nullable Abstract.LevelExpression expr, Void param) {
+    if (expr == null) {
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+    }
     return new Concrete.SucLevelExpression(data, expr.accept(this, null));
   }
 
   @Override
-  public Concrete.MaxLevelExpression visitMax(@Nullable Object data, Abstract.LevelExpression left, Abstract.LevelExpression right, Void param) {
+  public Concrete.MaxLevelExpression visitMax(@Nullable Object data, @Nullable Abstract.LevelExpression left, @Nullable Abstract.LevelExpression right, Void param) {
+    if (left == null || right == null) {
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+    }
     return new Concrete.MaxLevelExpression(data, left.accept(this, null), right.accept(this, null));
   }
 
   @Override
-  public Concrete.InferVarLevelExpression visitVar(@Nullable Object data, InferenceLevelVariable var, Void param) {
+  public Concrete.InferVarLevelExpression visitVar(@Nullable Object data, @Nonnull InferenceLevelVariable var, Void param) {
     return new Concrete.InferVarLevelExpression(data, var);
   }
 }

@@ -50,6 +50,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private boolean getVars(BinOpArgumentContext expr, List<LocalReference> vars) {
+    if (expr.maybeNew() instanceof WithNewContext || expr.implementStatements() != null) {
+      return false;
+    }
+
     String firstArg = getVar(expr.atomFieldsAcc());
     if (firstArg == null) {
       return false;
@@ -78,12 +82,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private boolean getVars(ExprContext expr, List<LocalReference> vars) {
-    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).maybeNew() instanceof NoNewContext && ((BinOpContext) expr).implementStatements() == null && ((BinOpContext) expr).postfix().isEmpty())) {
+    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).postfix().isEmpty())) {
       return false;
     }
 
     for (BinOpLeftContext leftCtx : ((BinOpContext) expr).binOpLeft()) {
-      if (!(leftCtx.maybeNew() instanceof NoNewContext && leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.implementStatements() == null && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null)) {
+      if (!(leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null)) {
         return false;
       }
       if (!getVars((BinOpArgumentContext) leftCtx.binOpArg(), vars)) {
@@ -331,7 +335,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Pattern visitPatternExplicit(PatternExplicitContext ctx) {
-    return visitPattern(ctx.pattern());
+    return ctx.pattern() == null ? new Concrete.EmptyPattern(tokenPosition(ctx.start)) : visitPattern(ctx.pattern());
   }
 
   @Override
@@ -341,11 +345,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       pattern.setExplicit(false);
     }
     return pattern;
-  }
-
-  @Override
-  public Concrete.Pattern visitPatternEmpty(PatternEmptyContext ctx) {
-    return new Concrete.EmptyPattern(tokenPosition(ctx.getStart()));
   }
 
   @Override
@@ -362,7 +361,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     Position position = tokenPosition(ctx.getStart());
-    return new Concrete.NamePattern(position, new LocalReference(position, null));
+    return new Concrete.NamePattern(position, null);
   }
 
   @Override
@@ -713,20 +712,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitBinOpArgument(BinOpArgumentContext ctx) {
-    return visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
-  }
+    Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
 
-  private Concrete.Expression parseImplementations(MaybeNewContext newCtx, ImplementStatementsContext implCtx, Token token, Concrete.Expression expr) {
+    ImplementStatementsContext implCtx = ctx.implementStatements();
     if (implCtx != null) {
       List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(implCtx.implementStatement().size());
       for (ImplementStatementContext implementStatement : implCtx.implementStatement()) {
         implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.id().start), new NamedUnresolvedReference(tokenPosition(implementStatement.id().start), visitId(implementStatement.id())), visitExpr(implementStatement.expr())));
       }
-      expr = new Concrete.ClassExtExpression(tokenPosition(token), expr, implementStatements);
+      expr = new Concrete.ClassExtExpression(tokenPosition(ctx.atomFieldsAcc().start), expr, implementStatements);
     }
 
-    if (newCtx instanceof WithNewContext) {
-      expr = new Concrete.NewExpression(tokenPosition(token), expr);
+    if (ctx.maybeNew() instanceof WithNewContext) {
+      expr = new Concrete.NewExpression(tokenPosition(ctx.maybeNew().start), expr);
     }
 
     return expr;
@@ -963,7 +961,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitBinOp(BinOpContext ctx) {
-    return parseBinOpSequence(ctx.binOpLeft(), parseImplementations(ctx.maybeNew(), ctx.implementStatements(), ctx.start, (Concrete.Expression) visit(ctx.binOpArg())), ctx.postfix(), ctx.start);
+    return parseBinOpSequence(ctx.binOpLeft(), (Concrete.Expression) visit(ctx.binOpArg()), ctx.postfix(), ctx.start);
   }
 
   private Concrete.Expression parseBinOpSequence(List<BinOpLeftContext> leftCtxs, Concrete.Expression expression, List<PostfixContext> postfixCtxs, Token token) {
@@ -973,7 +971,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     for (BinOpLeftContext leftContext : leftCtxs) {
       String name = visitInfix(leftContext.infix());
-      Concrete.Expression expr = parseImplementations(leftContext.maybeNew(), leftContext.implementStatements(), leftContext.start, (Concrete.Expression) visit(leftContext.binOpArg()));
+      Concrete.Expression expr = (Concrete.Expression) visit(leftContext.binOpArg());
 
       if (left == null) {
         left = expr;
@@ -999,10 +997,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     return sequence.isEmpty() ? left : new Concrete.BinOpSequenceExpression(tokenPosition(token), left, sequence);
-  }
-
-  private Concrete.Expression visitExpr(Expr0Context ctx) {
-    return parseBinOpSequence(ctx.binOpLeft(), (Concrete.Expression) visit(ctx.binOpArg()), ctx.postfix(), ctx.start);
   }
 
   @Override
@@ -1054,8 +1048,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
-    List<Concrete.Expression> elimExprs = new ArrayList<>(ctx.expr0().size());
-    for (Expr0Context exprCtx : ctx.expr0()) {
+    List<Concrete.Expression> elimExprs = new ArrayList<>(ctx.expr().size());
+    for (ExprContext exprCtx : ctx.expr()) {
       elimExprs.add(visitExpr(exprCtx));
     }
     List<Concrete.FunctionClause> clauses = new ArrayList<>(ctx.clause().size());

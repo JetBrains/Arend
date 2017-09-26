@@ -24,7 +24,7 @@ public class AbstractExpressionError extends GeneralError {
   public static class Exception extends RuntimeException {
     public final AbstractExpressionError error;
 
-    Exception(AbstractExpressionError error) {
+    public Exception(AbstractExpressionError error) {
       super(error.message);
       this.error = error;
     }
