@@ -122,9 +122,9 @@ onlyLevelExpr : onlyLevelAtom                             # atomOnlyLevel
               ;
 
 binOpArg : maybeNew atomFieldsAcc onlyLevelAtom* argument* implementStatements? # binOpArgument
-         | TRUNCATED_UNIVERSE levelAtom?                                        # truncatedUniverse
-         | UNIVERSE (levelAtom levelAtom?)?                                     # universe
-         | SET levelAtom?                                                       # setUniverse
+         | TRUNCATED_UNIVERSE maybeLevelAtom?                                   # truncatedUniverse
+         | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?                           # universe
+         | SET maybeLevelAtom?                                                  # setUniverse
          ;
 
 binOpLeft : binOpArg postfix* infix;

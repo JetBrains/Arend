@@ -849,19 +849,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String text = ctx.UNIVERSE().getText().substring("\\Type".length());
     lp = text.isEmpty() ? null : new Concrete.NumberLevelExpression(tokenPosition(ctx.UNIVERSE().getSymbol()), Integer.parseInt(text));
 
-    if (ctx.levelAtom().size() >= 1) {
+    if (!ctx.maybeLevelAtom().isEmpty()) {
       if (lp == null) {
-        lp = visitLevel(ctx.levelAtom(0));
+        lp = visitLevel(ctx.maybeLevelAtom(0));
         lh = null;
       } else {
-        lh = visitLevel(ctx.levelAtom(0));
+        lh = visitLevel(ctx.maybeLevelAtom(0));
       }
 
-      if (ctx.levelAtom().size() >= 2) {
+      if (ctx.maybeLevelAtom().size() >= 2) {
         if (lh == null) {
-          lh = visitLevel(ctx.levelAtom(1));
+          lh = visitLevel(ctx.maybeLevelAtom(1));
         } else {
-          myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom(1).getStart()), "h-level is already specified"));
+          myErrorReporter.report(new ParserError(tokenPosition(ctx.maybeLevelAtom(1).start), "h-level is already specified"));
         }
       }
     } else {
@@ -879,11 +879,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     String text = ctx.TRUNCATED_UNIVERSE().getText();
     text = text.substring(text.indexOf('-') + "-Type".length());
     if (text.isEmpty()) {
-      pLevel = ctx.levelAtom() == null ? null : visitLevel(ctx.levelAtom());
+      pLevel = ctx.maybeLevelAtom() == null ? null : visitLevel(ctx.maybeLevelAtom());
     } else {
       pLevel = new Concrete.NumberLevelExpression(tokenPosition(ctx.TRUNCATED_UNIVERSE().getSymbol()), Integer.parseInt(text));
-      if (ctx.levelAtom() != null) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom().getStart()), "p-level is already specified"));
+      if (ctx.maybeLevelAtom() instanceof WithLevelAtomContext) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.maybeLevelAtom().start), "p-level is already specified"));
       }
     }
 
@@ -897,11 +897,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     String text = ctx.SET().getText().substring("\\Set".length());
     if (text.isEmpty()) {
-      pLevel = ctx.levelAtom() == null ? null : visitLevel(ctx.levelAtom());
+      pLevel = ctx.maybeLevelAtom() == null ? null : visitLevel(ctx.maybeLevelAtom());
     } else {
       pLevel = new Concrete.NumberLevelExpression(tokenPosition(ctx.SET().getSymbol()), Integer.parseInt(text));
-      if (ctx.levelAtom() != null) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.levelAtom().getStart()), "p-level is already specified"));
+      if (ctx.maybeLevelAtom() instanceof WithLevelAtomContext) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.maybeLevelAtom().start), "p-level is already specified"));
       }
     }
 
