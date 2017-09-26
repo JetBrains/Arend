@@ -14,8 +14,9 @@ pages:
 theme: readthedocs
 
 # Code highlighting
-# highlight.js is built from https://github.com/kirelagin/highlight.js/tree/arend
-theme_dir: docs/highlight/theme/
+# The language definition is built from https://github.com/kirelagin/highlight.js/tree/arend
+extra_javascript:
+    - js/highlight-arend.min.js
 
 site_dir: build/site/
 
