@@ -1,0 +1,30 @@
+site_name: Arend
+site_url: http://arend.top/
+site_description: Arend is good at maths. You aren’t.
+
+repo_url: https://github.com/valis/vclang
+edit_uri: edit/master/docs/
+
+pages:
+    - Overview: index.md
+    - Tutorial: tutorial.md
+    - Language Reference:
+        - Definitions: language-reference/definitions.md
+
+theme: readthedocs
+
+# Code highlighting
+# The language definition is built from https://github.com/kirelagin/highlight.js/tree/arend
+extra_javascript:
+    - js/highlight-arend.min.js
+extra_css:
+    - css/custom-highlight.css
+
+site_dir: build/site/
+
+markdown_extensions:
+    - toc:
+        permalink: True
+    - fenced_code
+
+copyright: Brought to you by the <a href="https://research.jetbrains.org/groups/group-for-dependent-types-and-hott">HoTT and Dependent Types Group</a> at JetBrains Research.<br>© 2017 <a href="https://www.jetbrains.com">JetBrains s.r.o</a>.

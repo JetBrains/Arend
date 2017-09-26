@@ -258,7 +258,36 @@ public class TypeCheckingDefCall {
   }
 
   private CheckTypeVisitor.TResult makeResult(Definition definition, Expression thisExpr, Concrete.ReferenceExpression expr) {
-    Sort sortArgument = definition instanceof DataDefinition && !definition.getParameters().hasNext() ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
+    Sort sortArgument;
+    if (definition instanceof DataDefinition && !definition.getParameters().hasNext()) {
+      sortArgument = Sort.PROP;
+    } else {
+      if (expr.getPLevel() == null && expr.getHLevel() == null) {
+        sortArgument = Sort.generateInferVars(myVisitor.getEquations(), expr);
+      } else {
+        Level pLevel = null;
+        if (expr.getPLevel() != null) {
+          pLevel = expr.getPLevel().accept(myVisitor, LevelVariable.PVAR);
+        }
+        if (pLevel == null) {
+          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr.getPLevel());
+          myVisitor.getEquations().addVariable(pl);
+          pLevel = new Level(pl);
+        }
+
+        Level hLevel = null;
+        if (expr.getHLevel() != null) {
+          hLevel = expr.getHLevel().accept(myVisitor, LevelVariable.HVAR);
+        }
+        if (hLevel == null) {
+          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr.getHLevel());
+          myVisitor.getEquations().addVariable(hl);
+          hLevel = new Level(hl);
+        }
+
+        sortArgument = new Sort(pLevel, hLevel);
+      }
+    }
 
     if (thisExpr == null && definition instanceof ClassField) {
       myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Field call without a class instance", expr));
@@ -274,7 +303,7 @@ public class TypeCheckingDefCall {
         hLevel = universe.getSort().getHLevel();
       }
     }
-    if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
+    if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0 && expr.getPLevel() == null && expr.getHLevel() == null) {
       myVisitor.getEquations().bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
     }
 

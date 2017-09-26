@@ -98,18 +98,33 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
           | NUMBER              # numLevel
-          | '(' levelExpr ')'   # exprLevel
+          | '(' levelExpr ')'   # parenLevel
           ;
 
-levelExpr : levelAtom                     # atomLevelExpr
-          | '\\suc' levelAtom             # sucLevelExpr
-          | '\\max' levelAtom levelAtom   # maxLevelExpr
+levelExpr : levelAtom                     # atomLevel
+          | '\\suc' levelAtom             # sucLevel
+          | '\\max' levelAtom levelAtom   # maxLevel
           ;
 
-binOpArg : maybeNew atomFieldsAcc argument* implementStatements?  # binOpArgument
-         | TRUNCATED_UNIVERSE levelAtom?                          # truncatedUniverse
-         | UNIVERSE (levelAtom levelAtom?)?                       # universe
-         | SET levelAtom?                                         # setUniverse
+onlyLevelAtom : '\\lp'                          # pOnlyLevel
+              | '\\lh'                          # hOnlyLevel
+              | '(' onlyLevelExpr ')'           # parenOnlyLevel
+              ;
+
+maybeLevelAtom : levelAtom  # withLevelAtom
+               | '_'        # withoutLevelAtom
+               ;
+
+onlyLevelExpr : onlyLevelAtom                             # atomOnlyLevel
+              | '\\levels' maybeLevelAtom maybeLevelAtom  # levelsOnlyLevel
+              | '\\suc' levelAtom                         # sucOnlyLevel
+              | '\\max' levelAtom levelAtom               # maxOnlyLevel
+              ;
+
+binOpArg : maybeNew atomFieldsAcc onlyLevelAtom* argument* implementStatements? # binOpArgument
+         | TRUNCATED_UNIVERSE levelAtom?                                        # truncatedUniverse
+         | UNIVERSE (levelAtom levelAtom?)?                                     # universe
+         | SET levelAtom?                                                       # setUniverse
          ;
 
 binOpLeft : binOpArg postfix* infix;

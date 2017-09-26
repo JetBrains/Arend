@@ -258,7 +258,7 @@ public final class Concrete {
     private final Expression myRight;
 
     public BinOpExpression(Object data, Expression left, Referable binOp, Expression right) {
-      super(data, binOp);
+      super(data, binOp, null, null);
       myLeft = left;
       myRight = right;
     }
@@ -283,17 +283,31 @@ public final class Concrete {
     public static final byte PREC = 12;
     private @Nullable Expression myExpression;
     private Referable myReferent;
+    private final Concrete.LevelExpression myPLevel;
+    private final Concrete.LevelExpression myHLevel;
 
     public ReferenceExpression(Object data, @Nullable Expression expression, Referable referable) {
       super(data);
       myExpression = expression;
       myReferent = referable;
+      myPLevel = null;
+      myHLevel = null;
+    }
+
+    public ReferenceExpression(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
+      super(data);
+      myExpression = null;
+      myReferent = referable;
+      myPLevel = pLevel;
+      myHLevel = hLevel;
     }
 
     public ReferenceExpression(Object data, Referable referable) {
       super(data);
       myExpression = null;
       myReferent = referable;
+      myPLevel = null;
+      myHLevel = null;
     }
 
     @Nullable
@@ -312,6 +326,14 @@ public final class Concrete {
 
     public void setReferent(Referable referent) {
       myReferent = referent;
+    }
+
+    public Concrete.LevelExpression getPLevel() {
+      return myPLevel;
+    }
+
+    public Concrete.LevelExpression getHLevel() {
+      return myHLevel;
     }
 
     @Override

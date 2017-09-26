@@ -348,6 +348,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append(variable).append(getVariableNumber(variable));
   }
 
+  public String getInferLevelVarText(InferenceLevelVariable variable) {
+    return variable.toString() + getVariableNumber(variable);
+  }
+
   @Override
   public Void visitVar(Concrete.InferVarLevelExpression expr, Precedence param) {
     InferenceLevelVariable variable = expr.getVariable();

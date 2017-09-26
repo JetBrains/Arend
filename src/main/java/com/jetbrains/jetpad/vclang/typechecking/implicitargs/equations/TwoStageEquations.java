@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
+import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
@@ -133,15 +134,17 @@ public class TwoStageEquations implements Equations {
         Sort codSort = Sort.generateInferVars(this, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
-        Set<Binding> bounds = myVisitor.getAllBindings();
-        for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
-          bounds.add(link);
+        try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+          for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
+            myVisitor.getFreeBindings().add(link);
+          }
+          Set<Binding> bounds = myVisitor.getAllBindings();
+          InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
+          Expression newRef = new InferenceReferenceExpression(infVar, this);
+          solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
+          addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
+          return;
         }
-        InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
-        Expression newRef = new InferenceReferenceExpression(infVar, this);
-        solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
-        addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
-        return;
       }
 
       // ?x <> Type
@@ -337,7 +340,7 @@ public class TwoStageEquations implements Equations {
   }
 
   private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle, Set<InferenceLevelVariable> unBased) {
-    List<LevelEquation<LevelVariable>> basedCycle = new ArrayList<>();
+    Set<LevelEquation<? extends LevelVariable>> basedCycle = new LinkedHashSet<>();
     for (LevelEquation<InferenceLevelVariable> equation : cycle) {
       if (equation.isInfinity() || equation.getVariable1() != null) {
         basedCycle.add(new LevelEquation<>(equation));
@@ -347,7 +350,7 @@ public class TwoStageEquations implements Equations {
     }
     LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);
     InferenceLevelVariable var = lastEquation.getVariable1() != null ? lastEquation.getVariable1() : lastEquation.getVariable2();
-    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(new ArrayList<LevelEquation<? extends LevelVariable>>(basedCycle), var.getSourceNode()));
+    myVisitor.getErrorReporter().report(new SolveLevelEquationsError(basedCycle, var.getSourceNode()));
   }
 
   private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
@@ -15,6 +16,8 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -82,12 +85,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private boolean getVars(ExprContext expr, List<LocalReference> vars) {
-    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).postfix().isEmpty())) {
+    if (!(expr instanceof BinOpContext && ((BinOpContext) expr).binOpArg() instanceof BinOpArgumentContext && ((BinOpContext) expr).postfix().isEmpty() && ((BinOpArgumentContext) ((BinOpContext) expr).binOpArg()).onlyLevelAtom().isEmpty())) {
       return false;
     }
 
     for (BinOpLeftContext leftCtx : ((BinOpContext) expr).binOpLeft()) {
-      if (!(leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null)) {
+      if (!(leftCtx.binOpArg() instanceof BinOpArgumentContext && leftCtx.postfix().isEmpty() && leftCtx.infix().INFIX() != null && ((BinOpArgumentContext) leftCtx.binOpArg()).onlyLevelAtom().isEmpty())) {
         return false;
       }
       if (!getVars((BinOpArgumentContext) leftCtx.binOpArg(), vars)) {
@@ -712,7 +715,61 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitBinOpArgument(BinOpArgumentContext ctx) {
-    Concrete.Expression expr = visitAtoms(visitAtomFieldsAcc(ctx.atomFieldsAcc()), ctx.argument());
+    Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
+    if (!ctx.onlyLevelAtom().isEmpty()) {
+      if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getExpression() == null) {
+        Concrete.LevelExpression pLevel = null;
+        Concrete.LevelExpression hLevel = null;
+        for (OnlyLevelAtomContext levelCtx : ctx.onlyLevelAtom()) {
+          Object obj = visit(levelCtx);
+          if (obj instanceof Pair) {
+            if ((pLevel == null || ((Pair) obj).proj1 == null) && (hLevel == null || ((Pair) obj).proj2 == null)) {
+              if (((Pair) obj).proj1 != null) {
+                pLevel = (Concrete.LevelExpression) ((Pair) obj).proj1;
+              }
+              if (((Pair) obj).proj2 != null) {
+                hLevel = (Concrete.LevelExpression) ((Pair) obj).proj2;
+              }
+            } else {
+              myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), (pLevel != null ? "p" : "h") + "-level is already specified"));
+            }
+          } else if (obj instanceof Concrete.LevelExpression) {
+            LevelType type = getLevelType((Concrete.LevelExpression) obj);
+            if (type == LevelType.PLevel) {
+              if (pLevel != null) {
+                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "p-level is already specified"));
+              } else {
+                pLevel = (Concrete.LevelExpression) obj;
+              }
+            } else if (type == LevelType.HLevel) {
+              if (hLevel != null) {
+                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "h-level is already specified"));
+              } else {
+                hLevel = (Concrete.LevelExpression) obj;
+              }
+            } else if (type == LevelType.Unknown) {
+              if (pLevel == null) {
+                pLevel = (Concrete.LevelExpression) obj;
+              } else if (hLevel == null) {
+                hLevel = (Concrete.LevelExpression) obj;
+              } else {
+                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "Both levels are already specified"));
+              }
+            } else {
+              myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "Cannot mix levels of different type"));
+            }
+          } else {
+            throw new IllegalStateException();
+          }
+        }
+
+        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), pLevel, hLevel);
+      } else {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are allowed only after a reference"));
+      }
+    }
+
+    expr = visitAtoms(expr, ctx.argument());
 
     ImplementStatementsContext implCtx = ctx.implementStatements();
     if (implCtx != null) {
@@ -728,6 +785,50 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     return expr;
+  }
+
+  enum LevelType { PLevel, HLevel, Unknown }
+
+  private LevelType getLevelType(Concrete.LevelExpression expr) {
+    return expr.accept(new ConcreteLevelExpressionVisitor<Void, LevelType>() {
+      @Override
+      public LevelType visitInf(Concrete.InfLevelExpression expr, Void param) {
+        return LevelType.HLevel;
+      }
+
+      @Override
+      public LevelType visitLP(Concrete.PLevelExpression expr, Void param) {
+        return LevelType.PLevel;
+      }
+
+      @Override
+      public LevelType visitLH(Concrete.HLevelExpression expr, Void param) {
+        return LevelType.HLevel;
+      }
+
+      @Override
+      public LevelType visitNumber(Concrete.NumberLevelExpression expr, Void param) {
+        return LevelType.Unknown;
+      }
+
+      @Override
+      public LevelType visitSuc(Concrete.SucLevelExpression expr, Void param) {
+        return expr.getExpression().accept(this, null);
+      }
+
+      @Override
+      public LevelType visitMax(Concrete.MaxLevelExpression expr, Void param) {
+        LevelType type1 = expr.getLeft().accept(this, null);
+        LevelType type2 = expr.getRight().accept(this, null);
+        return type1 == null || type2 == null || type1 != type2 && type1 != LevelType.Unknown && type2 != LevelType.Unknown ? null : type1 == LevelType.Unknown ? type2 : type1;
+      }
+
+      @Override
+      public LevelType visitVar(Concrete.InferVarLevelExpression expr, Void param) {
+        LevelVariable.LvlType type = expr.getVariable().getType();
+        return type == LevelVariable.LvlType.PLVL ? LevelType.PLevel : type == LevelVariable.LvlType.HLVL ? LevelType.HLevel : null;
+      }
+    }, null);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -840,6 +941,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.LevelExpression) visit(ctx);
   }
 
+  private Concrete.LevelExpression visitLevel(MaybeLevelAtomContext ctx) {
+    return (Concrete.LevelExpression) visit(ctx);
+  }
+
+  @Override
+  public Concrete.LevelExpression visitWithLevelAtom(WithLevelAtomContext ctx) {
+    return visitLevel(ctx.levelAtom());
+  }
+
+  @Override
+  public Concrete.LevelExpression visitWithoutLevelAtom(WithoutLevelAtomContext ctx) {
+    return null;
+  }
+
   @Override
   public Concrete.PLevelExpression visitPLevel(PLevelContext ctx) {
     return new Concrete.PLevelExpression(tokenPosition(ctx.getStart()));
@@ -856,23 +971,58 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.LevelExpression visitExprLevel(ExprLevelContext ctx) {
+  public Concrete.LevelExpression visitParenLevel(ParenLevelContext ctx) {
     return (Concrete.LevelExpression) visit(ctx.levelExpr());
   }
 
   @Override
-  public Concrete.LevelExpression visitAtomLevelExpr(AtomLevelExprContext ctx) {
+  public Concrete.LevelExpression visitAtomLevel(AtomLevelContext ctx) {
     return visitLevel(ctx.levelAtom());
   }
 
   @Override
-  public Concrete.SucLevelExpression visitSucLevelExpr(SucLevelExprContext ctx) {
-    return new Concrete.SucLevelExpression(tokenPosition(ctx.getStart()), visitLevel(ctx.levelAtom()));
+  public Concrete.SucLevelExpression visitSucLevel(SucLevelContext ctx) {
+    return new Concrete.SucLevelExpression(tokenPosition(ctx.start), visitLevel(ctx.levelAtom()));
   }
 
   @Override
-  public Concrete.MaxLevelExpression visitMaxLevelExpr(MaxLevelExprContext ctx) {
-    return new Concrete.MaxLevelExpression(tokenPosition(ctx.getStart()), visitLevel(ctx.levelAtom(0)), visitLevel(ctx.levelAtom(1)));
+  public Concrete.MaxLevelExpression visitMaxLevel(MaxLevelContext ctx) {
+    return new Concrete.MaxLevelExpression(tokenPosition(ctx.start), visitLevel(ctx.levelAtom(0)), visitLevel(ctx.levelAtom(1)));
+  }
+
+  @Override
+  public Concrete.PLevelExpression visitPOnlyLevel(POnlyLevelContext ctx) {
+    return new Concrete.PLevelExpression(tokenPosition(ctx.start));
+  }
+
+  @Override
+  public Concrete.HLevelExpression visitHOnlyLevel(HOnlyLevelContext ctx) {
+    return new Concrete.HLevelExpression(tokenPosition(ctx.start));
+  }
+
+  @Override
+  public Object visitParenOnlyLevel(ParenOnlyLevelContext ctx) {
+    return visit(ctx.onlyLevelExpr());
+  }
+
+  @Override
+  public Object visitAtomOnlyLevel(AtomOnlyLevelContext ctx) {
+    return visit(ctx.onlyLevelAtom());
+  }
+
+  @Override
+  public Pair<Concrete.LevelExpression, Concrete.LevelExpression> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
+    return new Pair<>(visitLevel(ctx.maybeLevelAtom(0)), visitLevel(ctx.maybeLevelAtom(1)));
+  }
+
+  @Override
+  public Concrete.SucLevelExpression visitSucOnlyLevel(SucOnlyLevelContext ctx) {
+    return new Concrete.SucLevelExpression(tokenPosition(ctx.start), visitLevel(ctx.levelAtom()));
+  }
+
+  @Override
+  public Concrete.MaxLevelExpression visitMaxOnlyLevel(MaxOnlyLevelContext ctx) {
+    return new Concrete.MaxLevelExpression(tokenPosition(ctx.start), visitLevel(ctx.levelAtom(0)), visitLevel(ctx.levelAtom(1)));
   }
 
   private List<Concrete.TypeParameter> visitTeles(List<TeleContext> teles) {
