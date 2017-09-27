@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.Abstract.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -109,6 +110,9 @@ public class Level {
     if (level == null) {
       return this;
     }
+    if (level == INFINITY) {
+      return INFINITY;
+    }
 
     if (level.myVar != null) {
       int constant = level.myConstant + myConstant;
@@ -124,7 +128,7 @@ public class Level {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(this, new ConcreteExpressionFactory()).accept(new PrettyPrintVisitor(builder, 0), Abstract.Expression.PREC);
+    ToAbstractVisitor.convert(this, new ConcreteExpressionFactory()).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Abstract.Expression.PREC));
     return builder.toString();
   }
 

@@ -135,6 +135,69 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void levelOfPath2() {
-    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0");
+    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0", 1);
+  }
+
+  @Test
+  public void levelOfPath3() {
+    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : Prop) -> \\Set0");
+  }
+
+  @Test
+  public void constantUpperBound() {
+    typeCheckClass(
+      "\\function f (A : \\Type) => A\n" +
+      "\\function g (B : \\Type) : \\Set => f B", 1);
+  }
+
+  @Test
+  public void expectedType() {
+    typeCheckClass(
+      "\\function X => \\Type\n" +
+      "\\function f : X => \\Type"
+    );
+  }
+
+  @Test
+  public void parameters() {
+    typeCheckClass(
+      "\\function X => \\Type\n" +
+      "\\function f (A : X) => 0\n" +
+      "\\function g => f \\Set0"
+    );
+  }
+
+  @Test
+  public void lhLessThanInf() {
+    typeCheckClass(
+      "\\function f (A : \\Type) (a a' : A) (p : a = a') => p\n" +
+      "\\function X : \\oo-Type => Nat\n" +
+      "\\function g : X = X => f \\Type X X (path (\\lam _ => X))");
+  }
+
+  @Test
+  public void pLevelTest() {
+    typeCheckClass(
+      "\\function idp  {A : \\Type} {a : A} =>\n" +
+      "  path (\\lam _ => a)\n" +
+      "\\function squeeze1 (i j : I) : I =>\n" +
+      "  coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+      "\\function squeeze (i j : I) =>\n" +
+      "  coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+      "\\function psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i =>\n" +
+      "  path (\\lam j => p @ squeeze i j)\n" +
+      "\\function Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p =>\n" +
+      "  coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
+      "\\function foo (A : \\Type) (a0 a1 : A) (p : a0 = a1) =>\n" +
+      "  Jl (\\lam _ q => (idp {A} {a0} = idp {A} {a0}) = (q = q)) idp p");
+  }
+
+  @Test
+  public void classLevelTest() {
+    typeCheckClass(
+      "\\class A {\n" +
+        "  | X : \\oo-Type\n" +
+        "}\n" +
+        "\\function f : A (\\levels 0 _) => \\new A { X => \\oo-Type0 }", 1);
   }
 }

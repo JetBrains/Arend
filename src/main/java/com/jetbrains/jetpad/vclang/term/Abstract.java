@@ -63,6 +63,8 @@ public final class Abstract {
     @Nullable String getName();
     @Nullable Expression getExpression();
     @Nullable ReferableSourceNode getReferent();
+    @Nullable LevelExpression getPLevel();
+    @Nullable LevelExpression getHLevel();
   }
 
   public interface InferenceReferenceExpression extends Expression {
@@ -416,6 +418,11 @@ public final class Abstract {
     public Precedence(@Nonnull Associativity associativity, byte priority) {
       this.associativity = associativity;
       this.priority = priority;
+    }
+
+    public Precedence(byte prec) {
+      this.associativity = Associativity.NON_ASSOC;
+      this.priority = prec;
     }
 
     @Override

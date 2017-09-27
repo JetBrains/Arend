@@ -136,7 +136,7 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
     }
 
     Set<Variable> newSet = variables.isEmpty() ? variables : new HashSet<>();
-    visitLetClauses(index + 1, expr, variables);
+    visitLetClauses(index + 1, expr, newSet);
     LetClause clause = expr.getClauses().get(index);
     addFreeVariables(clause, newSet);
     newSet.remove(clause);

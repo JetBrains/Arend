@@ -114,7 +114,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     Equations.CMP origCMP = myCMP;
-    if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class)) {
+    if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class)) {
       myCMP = Equations.CMP.EQ;
     }
 
@@ -432,11 +432,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
+    Equations.CMP origCMP = myCMP;
     for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
       if (!compare(params1.get(i).getTypeExpr(), params2.get(i).getTypeExpr())) {
         return false;
       }
       mySubstitution.put(params2.get(i), params1.get(i));
+      myCMP = origCMP;
     }
 
     return true;

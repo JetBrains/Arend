@@ -5,10 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -86,7 +83,7 @@ public class PatternTypechecking {
     // Typecheck the RHS
     CheckTypeVisitor.Result tcResult;
     if (abstractParameters != null) {
-      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType);
+      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
     } else {
       tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
     }
@@ -237,7 +234,9 @@ public class PatternTypechecking {
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
-        myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
+        if (!expr.isInstance(ErrorExpression.class)) {
+          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
+        }
         return null;
       }
       DataCallExpression dataCall = expr.cast(DataCallExpression.class);

@@ -46,7 +46,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
       if (infVar == null) {
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
+        if (result instanceof CheckTypeVisitor.DefCallResult) {
+          infVar = new FunctionInferenceVariable(parameter.getName(), type, ((CheckTypeVisitor.DefCallResult) result).getArguments().size() + 1, ((CheckTypeVisitor.DefCallResult) result).getDefinition(), expr, myVisitor.getAllBindings());
+        } else {
+          infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, null, expr, myVisitor.getAllBindings());
+        }
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding);
@@ -88,9 +92,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun);
-      fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
-      myVisitor.getErrorReporter().report(error);
+      if (!result1.type.isInstance(ErrorExpression.class)) {
+        LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun);
+        fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
+        myVisitor.getErrorReporter().report(error);
+      }
       return null;
     }
 
@@ -183,9 +189,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr);
-      expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
-      myVisitor.getErrorReporter().report(error);
+      if (!result1.type.isInstance(ErrorExpression.class)) {
+        LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr);
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
+        myVisitor.getErrorReporter().report(error);
+      }
       return null;
     }
 
