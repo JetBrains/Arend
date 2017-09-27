@@ -80,7 +80,7 @@ public final class Abstract {
     @Nonnull Referable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
     @Nullable Expression getResultType();
-    @Nonnull Expression getTerm();
+    /* @Nonnull */ @Nullable Expression getTerm();
   }
 
   public interface LevelExpression {
@@ -127,6 +127,6 @@ public final class Abstract {
 
   public interface ClassField {
     @Nonnull GlobalReferable getReferable();
-    @Nonnull Expression getResultType();
+    /* @Nonnull */ @Nullable Expression getResultType();
   }
 }

@@ -114,7 +114,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferenceExpressions(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
-      classFields.add(new Concrete.ClassField(field.getReferable(), classDef, field.getResultType().accept(this, null)));
+      Abstract.Expression resultType = field.getResultType();
+      if (resultType == null) {
+        myErrorReporter.report(AbstractExpressionError.incomplete(field.getReferable()));
+      } else {
+        classFields.add(new Concrete.ClassField(field.getReferable(), classDef, resultType.accept(this, null)));
+      }
     }
 
     return classDef;
@@ -370,8 +375,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     List<Concrete.LetClause> clauses = new ArrayList<>(absClauses.size());
     for (Abstract.LetClause clause : absClauses) {
-      Abstract.Expression resultType = clause.getResultType();
-      clauses.add(new Concrete.LetClause(clause.getReferable(), buildParameters(clause.getParameters()), resultType == null ? null : resultType.accept(this, null), clause.getTerm().accept(this, null)));
+      Abstract.Expression term = clause.getTerm();
+      if (term == null) {
+        myErrorReporter.report(AbstractExpressionError.incomplete(clause.getReferable()));
+      } else {
+        Abstract.Expression resultType = clause.getResultType();
+        clauses.add(new Concrete.LetClause(clause.getReferable(), buildParameters(clause.getParameters()), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+      }
     }
     return new Concrete.LetExpression(data, clauses, expression.accept(this, null));
   }
