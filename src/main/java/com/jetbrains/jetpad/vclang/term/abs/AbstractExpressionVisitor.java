@@ -23,6 +23,7 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, P params);
   R visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> expressions, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, P params);
   R visitProj(@Nullable Object data, @Nonnull Abstract.Expression expression, int field, P params);
+  R visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<? extends Abstract.FieldAcc> fieldAccs, P params);
   R visitClassExt(@Nullable Object data, boolean isNew, /* @Nonnull */ @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, P params);
   R visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> clauses, /* @Nonnull */ @Nullable Abstract.Expression expression, P params);
   R visitNumericLiteral(@Nullable Object data, @Nonnull BigInteger number, P params);

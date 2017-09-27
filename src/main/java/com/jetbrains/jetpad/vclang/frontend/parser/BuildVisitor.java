@@ -271,7 +271,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private Precedence visitPrecedence(PrecedenceContext ctx) {
-    return (Precedence) visit(ctx);
+    return ctx == null ? Precedence.DEFAULT : (Precedence) visit(ctx);
   }
 
   @Override
@@ -391,7 +391,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private GlobalReference visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView classView) {
     String underlyingField = visitId(ctx.id(0));
-    GlobalReference reference = new GlobalReference(tokenPosition(ctx.id(0).start), ctx.id().size() > 1 ? visitId(ctx.id(1)) : underlyingField, ctx.precedence() == null ? Precedence.DEFAULT : visitPrecedence(ctx.precedence()));
+    GlobalReference reference = new GlobalReference(tokenPosition(ctx.id(0).start), ctx.id().size() > 1 ? visitId(ctx.id(1)) : underlyingField, visitPrecedence(ctx.precedence()));
     Concrete.ClassViewField result = new Concrete.ClassViewField(reference, new NamedUnresolvedReference(tokenPosition(ctx.id(0).start), underlyingField), classView);
     reference.setDefinition(result);
     return reference;
@@ -591,7 +591,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       superClasses.add((Concrete.ReferenceExpression) superClass);
     }
 
-    GlobalReference reference = new GlobalReference(tokenPosition(ctx.start), visitId(ctx.id()), Precedence.DEFAULT);
+    GlobalReference reference = new GlobalReference(tokenPosition(ctx.start), visitId(ctx.id()), visitPrecedence(ctx.precedence()));
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, polyParameters, superClasses, fields, implementations);
     reference.setDefinition(classDefinition);
 

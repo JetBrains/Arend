@@ -38,6 +38,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.FunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
     Concrete.FunctionBody body;
     Abstract.FunctionBody absBody = def.getBody();
+    if (absBody == null) {
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def.getReferable()));
+    }
+
     Abstract.Expression term = absBody.getTerm();
     if (term != null) {
       Object data = absBody.getData();
@@ -326,7 +330,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.ProjExpression visitProj(@Nullable Object data, @Nonnull Abstract.Expression expression, int field, Void params) {
-    return new Concrete.ProjExpression(data, expression.accept(this, null), field);
+    return new Concrete.ProjExpression(data, expression.accept(this, null), field - 1);
+  }
+
+  @Override
+  public Concrete.Expression visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<? extends Abstract.FieldAcc> fieldAccs, Void params) {
+    Concrete.Expression result = expression.accept(this, null);
+    for (Abstract.FieldAcc fieldAcc : fieldAccs) {
+      Referable ref = fieldAcc.getFieldReference();
+      result = ref == null ? new Concrete.ProjExpression(data, result, fieldAcc.getProjIndex() - 1) : new Concrete.ReferenceExpression(data, result, ref);
+    }
+    return result;
   }
 
   @Override

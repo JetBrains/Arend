@@ -17,11 +17,11 @@ classStat : '|' precedence id ':' expr  # classField
           | definition                  # classDefinition
           ;
 
-definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                  # defFunction
-            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                     # defData
-            | '\\class' id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where? # defClass
-            | '\\view' id '\\on' expr '\\by' id '{' classViewField* '}'                                         # defClassView
-            | defaultInst '\\instance' id tele* '=>' expr                                                       # defInstance
+definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                              # defFunction
+            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                                 # defData
+            | '\\class' precedence id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where?  # defClass
+            | '\\view' precedence id '\\on' expr '\\by' id '{' classViewField* '}'                                          # defClassView
+            | defaultInst '\\instance' id tele* '=>' expr                                                                   # defInstance
             ;
 
 functionBody  : '=>' expr     # withoutElim

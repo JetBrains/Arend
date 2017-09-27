@@ -54,6 +54,12 @@ public final class Abstract {
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
   }
 
+  public interface FieldAcc {
+    @Nullable Object getData();
+    @Nullable Referable getFieldReference();
+    int getProjIndex();
+  }
+
   public interface BinOpSequenceElem {
     @Nonnull Referable getBinOpReference();
     @Nullable Expression getArgument();
@@ -92,7 +98,7 @@ public final class Abstract {
     @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
     @Nullable Expression getResultType();
-    @Nonnull FunctionBody getBody();
+    /* @Nonnull */ @Nullable FunctionBody getBody();
   }
 
   public interface DataDefinition extends Definition {
