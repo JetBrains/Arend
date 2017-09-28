@@ -51,7 +51,7 @@ public final class Abstract {
 
   public interface Expression {
     @Nullable Object getData();
-    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, P params);
+    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
   public interface FieldAcc {
@@ -85,7 +85,7 @@ public final class Abstract {
 
   public interface LevelExpression {
     @Nullable Object getData();
-    <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, P params);
+    <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
   // Definition
