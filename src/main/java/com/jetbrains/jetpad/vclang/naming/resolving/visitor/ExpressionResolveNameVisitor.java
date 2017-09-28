@@ -240,8 +240,8 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     if (clauses.isEmpty()) {
       return;
     }
-    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Concrete.FunctionClause clause : clauses) {
+    for (Concrete.FunctionClause clause : clauses) {
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
           Referable constructor = visitPattern(clause.getPatterns().get(i), usedNames);
