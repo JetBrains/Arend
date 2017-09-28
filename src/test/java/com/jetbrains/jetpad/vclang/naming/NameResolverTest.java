@@ -322,4 +322,15 @@ public class NameResolverTest extends NameResolverTestCase {
       "    | right => d\n" +
       "  }", 2);
   }
+
+  @Test
+  public void patternsTest() {
+    resolveNamesClass(
+      "\\data K\n" +
+      "  | k1 \\Prop\n" +
+      "  | k2 \\Prop\n" +
+      "\\function crash (k : K) : \\Prop => \\elim k\n" +
+      "  | k1 a => a\n" +
+      "  | k2 b => a", 1);
+  }
 }

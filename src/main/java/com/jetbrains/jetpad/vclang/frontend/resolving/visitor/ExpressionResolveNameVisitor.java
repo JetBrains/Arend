@@ -236,8 +236,8 @@ public class ExpressionResolveNameVisitor implements AbstractExpressionVisitor<V
     if (clauses.isEmpty()) {
       return;
     }
-    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Abstract.FunctionClause clause : clauses) {
+    for (Abstract.FunctionClause clause : clauses) {
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         Set<String> usedNames = new HashSet<>();
         for (int i = 0; i < clause.getPatterns().size(); i++) {
           Abstract.Constructor constructor = visitPattern(clause.getPatterns().get(i), usedNames);
