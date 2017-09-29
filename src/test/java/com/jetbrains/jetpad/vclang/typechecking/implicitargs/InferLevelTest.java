@@ -122,10 +122,14 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void propImpredicative() {
+    typeCheckClass("\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => \\Pi (a : X) -> P a");
+  }
+
+  @Test
+  public void propImpredicative2() {
     typeCheckClass(
       "\\function f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
-      "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P"
-    );
+      "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P", 1);
   }
 
   @Test
@@ -196,8 +200,15 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void classLevelTest() {
     typeCheckClass(
       "\\class A {\n" +
-        "  | X : \\oo-Type\n" +
-        "}\n" +
-        "\\function f : A (\\levels 0 _) => \\new A { X => \\oo-Type0 }", 1);
+      "  | X : \\oo-Type\n" +
+      "}\n" +
+      "\\function f : A (\\levels 0 _) => \\new A { X => \\oo-Type0 }", 1);
+  }
+
+  @Test
+  public void setIsNotProp() {
+    typeCheckDef(
+      "\\function isSur {A B : \\Set} (f : A -> B) : \\Prop =>\n" +
+      "  \\Pi (b : B) -> \\Sigma (a : A) (b = f a)", 1);
   }
 }

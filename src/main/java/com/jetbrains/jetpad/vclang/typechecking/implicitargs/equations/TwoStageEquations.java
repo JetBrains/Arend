@@ -30,7 +30,7 @@ public class TwoStageEquations implements Equations {
   private final LevelEquations<InferenceLevelVariable> myHLevelEquations;
   private final LevelEquations<InferenceLevelVariable> myBasedHLevelEquations;
   private final CheckTypeVisitor myVisitor;
-  private final List<InferenceVariable> myProps;
+  private final Stack<InferenceVariable> myProps;
   private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
   private final Map<InferenceLevelVariable, Set<LevelVariable>> myLowerBounds;
   private final Map<InferenceLevelVariable, LevelEquation<LevelVariable>> myConstantUpperBounds;
@@ -44,7 +44,7 @@ public class TwoStageEquations implements Equations {
     myBoundVariables = new ArrayList<>();
     myLowerBounds = new HashMap<>();
     myConstantUpperBounds = new HashMap<>();
-    myProps = new ArrayList<>();
+    myProps = new Stack<>();
     myVisitor = visitor;
   }
 
@@ -113,7 +113,7 @@ public class TwoStageEquations implements Equations {
 
       if (cType.isInstance(UniverseExpression.class) && cType.cast(UniverseExpression.class).getSort().isProp()) {
         if (cmp == CMP.LE) {
-          myProps.add(cInf);
+          myProps.push(cInf);
           return;
         } else {
           cmp = CMP.EQ;
@@ -311,11 +311,19 @@ public class TwoStageEquations implements Equations {
 
     if (cmp == CMP.LE || cmp == CMP.EQ) {
       addLevelEquation(level1.getVar(), level2.getVar(), level2.getConstant() - level1.getConstant(), level2.getMaxAddedConstant() - level1.getConstant(), sourceNode);
-      addLevelEquation(null, level2.getVar(), level2.getConstant() - level1.getMaxAddedConstant(), level2.getMaxAddedConstant() - level1.getMaxAddedConstant(), sourceNode);
+      /*
+      if (level1.getVar() != null || level1.getConstant() != 0) {
+        addLevelEquation(null, level2.getVar(), level2.getConstant() - level1.getMaxAddedConstant(), level2.getMaxAddedConstant() - level1.getMaxAddedConstant(), sourceNode);
+      }
+      */
     }
     if (cmp == CMP.GE || cmp == CMP.EQ) {
       addLevelEquation(level2.getVar(), level1.getVar(), level1.getConstant() - level2.getConstant(), level1.getMaxAddedConstant() - level2.getConstant(), sourceNode);
-      addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxAddedConstant(), level1.getMaxAddedConstant() - level2.getMaxAddedConstant(), sourceNode);
+      /*
+      if (level2.getVar() != null || level2.getConstant() != 0) {
+        addLevelEquation(null, level1.getVar(), level1.getConstant() - level2.getMaxAddedConstant(), level1.getMaxAddedConstant() - level2.getMaxAddedConstant(), sourceNode);
+      }
+      */
     }
     return true;
   }
@@ -399,7 +407,8 @@ public class TwoStageEquations implements Equations {
   public LevelSubstitution solve(Abstract.SourceNode sourceNode) {
     solveClassCalls();
 
-    for (InferenceVariable var : myProps) {
+    while (!myProps.isEmpty()) {
+      InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
         var.solve(this, new UniverseExpression(Sort.PROP));
       }
