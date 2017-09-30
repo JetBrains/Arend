@@ -468,6 +468,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, ExpectedType expectedType) {
+    String s = expr.toString();
     TResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;
@@ -521,12 +522,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   private TypedSingleDependentLink visitNameParameter(Abstract.NameParameter param, int argIndex, Abstract.SourceNode sourceNode) {
     String name = param.getName();
-
-    InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
-    InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
-    myEquations.addVariable(pLvl);
-    myEquations.addVariable(hLvl);
-    Sort sort = new Sort(new Level(pLvl), new Level(hLvl));
+    Sort sort = Sort.generateInferVars(myEquations, sourceNode);
     InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false, getAllBindings());
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
