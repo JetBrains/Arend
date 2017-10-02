@@ -34,7 +34,7 @@ public abstract class Error {
 
   public LineDoc getPositionDoc(PrettyPrinterInfoProvider src) {
     Object cause = getCause();
-    return cause instanceof SourceInfo ? hSep(text(":"), text(((SourceInfo) cause).moduleTextRepresentation()), text(((SourceInfo) cause).positionTextRepresentation())) : empty();
+    return cause instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) cause)) : empty();
   }
 
   public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {

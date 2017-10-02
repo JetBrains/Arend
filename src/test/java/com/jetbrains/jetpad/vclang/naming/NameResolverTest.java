@@ -336,7 +336,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void patternsTest() {
-    resolveNamesClass(
+    resolveNamesModule(
       "\\data K\n" +
       "  | k1 \\Prop\n" +
       "  | k2 \\Prop\n" +

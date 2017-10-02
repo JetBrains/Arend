@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+// TODO[abstract]: Merge this class with FullName
 public class ModulePath {
   private final List<String> myPath;
 

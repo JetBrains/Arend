@@ -29,6 +29,7 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
@@ -464,6 +465,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
+    if (expr.getReferent() instanceof UnresolvedReference) {
+      return null;
+    }
     Binding def = myContext.get(expr.getReferent());
     if (def == null) {
       throw new InconsistentModel();
