@@ -511,12 +511,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private TypedSingleDependentLink visitNameParameter(Concrete.NameParameter param, int argIndex, Concrete.SourceNode sourceNode) {
     Referable referable = param.getReferable();
     String name = referable == null ? null : referable.textRepresentation();
-
-    InferenceLevelVariable pLvl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
-    InferenceLevelVariable hLvl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
-    myEquations.addVariable(pLvl);
-    myEquations.addVariable(hLvl);
-    Sort sort = new Sort(new Level(pLvl), new Level(hLvl));
+    Sort sort = Sort.generateInferVars(myEquations, sourceNode);
     InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false, getAllBindings());
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 

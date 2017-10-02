@@ -115,10 +115,10 @@ maybeLevelAtom : levelAtom  # withLevelAtom
                | '_'        # withoutLevelAtom
                ;
 
-onlyLevelExpr : onlyLevelAtom                             # atomOnlyLevel
-              | '\\levels' maybeLevelAtom maybeLevelAtom  # levelsOnlyLevel
-              | '\\suc' levelAtom                         # sucOnlyLevel
-              | '\\max' levelAtom levelAtom               # maxOnlyLevel
+onlyLevelExpr : onlyLevelAtom                                         # atomOnlyLevel
+              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
+              | '\\suc' levelAtom                                     # sucOnlyLevel
+              | '\\max' levelAtom levelAtom                           # maxOnlyLevel
               ;
 
 binOpArg : maybeNew atomFieldsAcc onlyLevelAtom* argument* implementStatements? # binOpArgument

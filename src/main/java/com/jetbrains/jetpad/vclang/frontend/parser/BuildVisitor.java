@@ -1012,7 +1012,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Pair<Concrete.LevelExpression, Concrete.LevelExpression> visitLevelsOnlyLevel(LevelsOnlyLevelContext ctx) {
-    return new Pair<>(visitLevel(ctx.maybeLevelAtom(0)), visitLevel(ctx.maybeLevelAtom(1)));
+    return ctx.maybeLevelAtom().isEmpty() ? new Pair<>(new Concrete.NumberLevelExpression(tokenPosition(ctx.start), 0), new Concrete.NumberLevelExpression(tokenPosition(ctx.start), -1)) : new Pair<>(visitLevel(ctx.maybeLevelAtom(0)), visitLevel(ctx.maybeLevelAtom(1)));
   }
 
   @Override
