@@ -138,7 +138,7 @@ public class Ordering {
       }
     }
 
-    Stack<GlobalReferable> dependenciesWithoutInstances = new Stack<>();
+    Stack<GlobalReferable> dependenciesWithoutInstances = new Stack<>(); // TODO[classes]: Replace stack with a set
     if (enclosingClass != null) {
       dependenciesWithoutInstances.add(enclosingClass.getData());
     }
