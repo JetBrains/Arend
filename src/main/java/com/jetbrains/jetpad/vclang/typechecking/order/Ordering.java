@@ -130,7 +130,7 @@ public class Ordering {
       }
     }
 
-    Set<Abstract.Definition> dependencies = new LinkedHashSet<>();
+    Set<Abstract.Definition> dependencies = new LinkedHashSet<>(); // TODO[classes]: Replace stack with a set
     if (enclosingClass != null) {
       dependencies.add(enclosingClass);
     }
