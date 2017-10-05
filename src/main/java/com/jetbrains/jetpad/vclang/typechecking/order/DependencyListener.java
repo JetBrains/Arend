@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 public interface DependencyListener {
   default void sccFound(SCC scc) {}
   default void unitFound(TypecheckingUnit unit, Recursion recursion) {}
-  default boolean needsOrdering(Concrete.Definition definition) { return true; }
+  default boolean needsOrdering(Concrete.Definition definition) { return false; }
 
   default void alreadyTypechecked(Concrete.Definition definition) {}
   default void dependsOn(Typecheckable unit, Concrete.Definition def) {}

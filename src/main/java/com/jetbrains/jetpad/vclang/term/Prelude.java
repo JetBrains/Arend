@@ -18,9 +18,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collections;
@@ -54,8 +52,8 @@ public class Prelude {
   private Prelude() {
   }
 
-  public static void update(Concrete.Definition abstractDef, Definition definition) {
-    switch (abstractDef.getData().textRepresentation()) {
+  public static void update(Definition definition) {
+    switch (definition.getReferable().textRepresentation()) {
       case "Nat":
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
@@ -119,21 +117,9 @@ public class Prelude {
   }
 
   public static class UpdatePreludeReporter implements TypecheckedReporter {
-    private final TypecheckerState state;
-
-    public UpdatePreludeReporter(TypecheckerState state) {
-      this.state = state;
-    }
-
     @Override
-    public void typecheckingSucceeded(Concrete.Definition definition) {
-      update(definition, state.getTypechecked(definition.getData()));
-    }
-
-    @Override
-    public void typecheckingFailed(Concrete.Definition definition) {
-      update(definition, state.getTypechecked(definition.getData()));
+    public void typecheckingFinished(Definition definition) {
+      update(definition);
     }
   }
-
 }

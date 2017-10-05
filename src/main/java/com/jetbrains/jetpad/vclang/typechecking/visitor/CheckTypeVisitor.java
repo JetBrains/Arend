@@ -25,6 +25,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -60,6 +61,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private final DynamicNamespaceProvider myDynamicNsProvider;
   private Map<Referable, Binding> myContext;
   private final Set<Binding> myFreeBindings;
+  private boolean myHasErrors = false;
   private LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final ImplicitArgsInference myArgsInference;
@@ -244,13 +246,33 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  private class MyErrorReporter implements LocalErrorReporter {
+    private final LocalErrorReporter myErrorReporter;
+
+    private MyErrorReporter(LocalErrorReporter errorReporter) {
+      myErrorReporter = errorReporter;
+    }
+
+    @Override
+    public void report(LocalTypeCheckingError localError) {
+      myHasErrors = true;
+      myErrorReporter.report(localError);
+    }
+
+    @Override
+    public void report(GeneralError error) {
+      myHasErrors = true;
+      myErrorReporter.report(error);
+    }
+  }
+
   public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, InstancePool pool) {
     myState = state;
     myStaticNsProvider = staticNsProvider;
     myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
     myFreeBindings = new HashSet<>();
-    myErrorReporter = errorReporter;
+    myErrorReporter = new MyErrorReporter(errorReporter);
     myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myArgsInference = new StdImplicitArgsInference(this);
     myEquations = new TwoStageEquations(this);
@@ -304,11 +326,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public void setErrorReporter(LocalErrorReporter errorReporter) {
-    myErrorReporter = errorReporter;
+    myErrorReporter = new MyErrorReporter(errorReporter);
   }
 
   public Equations getEquations() {
     return myEquations;
+  }
+
+  public boolean hasErrors() {
+    return myHasErrors;
   }
 
   private static Sort getSortOf(Expression expr) {
@@ -351,8 +377,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Result checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
-      myErrorReporter.report(error);
+      myErrorReporter.report(new LocalTypeCheckingError("Incomplete expression", null));
       return null;
     }
     return expr.accept(this, expectedType);
@@ -389,8 +414,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Type checkType(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      LocalTypeCheckingError error = new LocalTypeCheckingError("Incomplete expression", null);
-      myErrorReporter.report(error);
+      myErrorReporter.report(new LocalTypeCheckingError("Incomplete expression", null));
       return null;
     }
 
@@ -466,6 +490,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
     if (expr.getReferent() instanceof UnresolvedReference) {
+      myHasErrors = true;
       return null;
     }
     Binding def = myContext.get(expr.getReferent());
@@ -800,10 +825,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Result exprResult = null;
     if (expr.getExpression() != null) {
       LocalErrorReporter errorReporter = myErrorReporter;
+      boolean hasErrors = myHasErrors;
       errors = new ArrayList<>();
       myErrorReporter = new ListLocalErrorReporter(errors);
       exprResult = checkExpr(expr.getExpression(), expectedType);
       myErrorReporter = errorReporter;
+      myHasErrors = hasErrors;
     }
 
     LocalTypeCheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);

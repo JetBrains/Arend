@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
 public interface TypecheckedReporter {
-  default void typecheckingSucceeded(Concrete.Definition definition) {}
-  default void typecheckingFailed(Concrete.Definition definition) {}
+  void typecheckingFinished(Definition definition);
 
-  class Dummy implements TypecheckedReporter {}
+  TypecheckedReporter DUMMY = definition -> {};
 }

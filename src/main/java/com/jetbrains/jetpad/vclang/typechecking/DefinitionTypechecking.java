@@ -295,7 +295,7 @@ class DefinitionTypechecking {
       }
     }
 
-    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
     return clauses;
   }
 
@@ -462,6 +462,9 @@ class DefinitionTypechecking {
     }
 
     dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
+    if (visitor.hasErrors() && dataDefinition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+      dataDefinition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+    }
     return countingErrorReporter.getErrorsNumber() == 0;
   }
 
@@ -673,7 +676,7 @@ class DefinitionTypechecking {
     }
 
     if (classOk) {
-      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      typedDef.setStatus(visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
     }
     typedDef.updateSorts();
   }
