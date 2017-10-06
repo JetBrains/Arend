@@ -2,33 +2,37 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
+
+import javax.annotation.Nonnull;
 
 public class TestLocalErrorReporter implements LocalErrorReporter {
   private final ErrorReporter errorReporter;
-  private final Concrete.Definition fakeDef;
+  private final GlobalReferable fakeDef;
 
   public TestLocalErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
-    GlobalReference reference = new GlobalReference(null, "testDefinition", Precedence.DEFAULT);
-    fakeDef = new Concrete.Definition(reference) {
+    fakeDef = new GlobalReferable() {
       @Override
-      public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-        return null;
+      public Precedence getPrecedence() {
+        return Precedence.DEFAULT;
+      }
+
+      @Nonnull
+      @Override
+      public String textRepresentation() {
+        return "testDefinition";
       }
     };
-    reference.setDefinition(fakeDef);
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
-    errorReporter.report(new TypeCheckingError(fakeDef.getData(), localError));
+  public void report(LocalError localError) {
+    errorReporter.report(new ProxyError(fakeDef, localError));
   }
 
   @Override

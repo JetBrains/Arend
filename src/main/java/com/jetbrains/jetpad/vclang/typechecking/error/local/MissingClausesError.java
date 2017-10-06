@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class MissingClausesError extends LocalTypeCheckingError {
+public class MissingClausesError extends TypecheckingError {
   private final List<List<Expression>> myMissingClauses;
 
   public MissingClausesError(List<List<Expression>> missingClauses, Concrete.SourceNode cause) {

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ArgInferenceError extends LocalTypeCheckingError {
+public class ArgInferenceError extends TypecheckingError {
   public final Expression[] candidates;
   public final Expression expected;
   public final Expression actual;

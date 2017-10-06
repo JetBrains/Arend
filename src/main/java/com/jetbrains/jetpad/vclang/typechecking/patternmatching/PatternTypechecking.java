@@ -19,10 +19,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ExpectedConstructor;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -60,12 +57,12 @@ public class PatternTypechecking {
     // If we have the absurd pattern, then RHS is ignored
     if (result.proj2 == null) {
       if (clause.getExpression() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+        myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
       }
       return new Pair<>(result.proj1, null);
     } else {
       if (clause.getExpression() == null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+        myErrorReporter.report(new TypecheckingError("Required a RHS", clause));
         return null;
       }
     }
@@ -189,7 +186,7 @@ public class PatternTypechecking {
 
     for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+        myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
         return null;
       }
 
@@ -202,13 +199,13 @@ public class PatternTypechecking {
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+              myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
               return null;
             }
           }
         } else {
           if (parameters.isExplicit()) {
-            myErrorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", pattern));
+            myErrorReporter.report(new TypecheckingError("Expected an explicit pattern", pattern));
             return null;
           }
         }
@@ -216,7 +213,7 @@ public class PatternTypechecking {
 
       if (exprs == null || pattern == null || pattern instanceof Concrete.NamePattern) {
         if (!(pattern == null || pattern instanceof Concrete.NamePattern)) {
-          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
+          myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
         Referable referable = null;
         if (pattern instanceof Concrete.NamePattern) {
@@ -246,14 +243,14 @@ public class PatternTypechecking {
       }
       DataCallExpression dataCall = expr.cast(DataCallExpression.class);
       if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
 
       if (pattern instanceof Concrete.EmptyPattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
+          myErrorReporter.report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
           return null;
         }
         if (!conCalls.isEmpty()) {
@@ -285,7 +282,7 @@ public class PatternTypechecking {
       }
       ConCallExpression conCall = conCalls.get(0);
       if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
         return null;
       }
 
@@ -321,7 +318,7 @@ public class PatternTypechecking {
     }
 
     if (parameters.hasNext()) {
-      myErrorReporter.report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
+      myErrorReporter.report(new TypecheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
       return null;
     }
 

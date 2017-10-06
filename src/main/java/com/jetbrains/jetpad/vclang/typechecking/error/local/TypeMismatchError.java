@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TypeMismatchError extends LocalTypeCheckingError {
+public class TypeMismatchError extends TypecheckingError {
   public final Doc expected;
   public final Doc actual;
 

@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
 import javax.annotation.Nonnull;
@@ -85,9 +86,10 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
   private void collectWithSupperClasses(Group group, Scope parentScope, Set<GlobalReferable> updated) {
     Scope scope = new GroupResolver(myNameResolver, myErrorReporter).getGroupScope(group, parentScope);
     SimpleNamespace ns = new SimpleNamespace();
-    if (!updateClass(group.getReferable(), new ExpressionResolveNameVisitor(scope, null, myNameResolver, myErrorReporter), new HashSet<>(), updated, ns)) {
-      updated.add(group.getReferable());
-      updateClassNamespace(group.getReferable(), ns);
+    GlobalReferable groupRef = group.getReferable();
+    if (!updateClass(groupRef, new ExpressionResolveNameVisitor(scope, null, myNameResolver, new ProxyErrorReporter(groupRef, myErrorReporter)), new HashSet<>(), updated, ns)) {
+      updated.add(groupRef);
+      updateClassNamespace(groupRef, ns);
     }
 
     for (Group subgroup : group.getSubgroups()) {
@@ -112,7 +114,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
       Referable superClassRef = superClassRefExpr.getReferent();
       if (superClassRef instanceof GlobalReferable) {
         if (updated.contains(superClassRef)) {
-          result.addAll(myNamespaces.get(superClassRef), myErrorReporter);
+          result.addAll(myNamespaces.get(superClassRef), new ProxyErrorReporter(classRef, myErrorReporter));
         } else if (current.contains(superClassRef)) {
           ok = false;
         } else {
@@ -120,7 +122,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
           if (!updateClass((GlobalReferable) superClassRef, visitor, current, updated, superClassNs)) {
             ok = false;
           }
-          result.addAll(superClassNs, myErrorReporter);
+          result.addAll(superClassNs, new ProxyErrorReporter(classRef, myErrorReporter));
         }
       }
     }
@@ -135,7 +137,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
 
   private void updateClassNamespace(GlobalReferable classRef, SimpleNamespace newNs) {
     SimpleNamespace oldNs = myNamespaces.get(classRef);
-    newNs.addAll(oldNs, myErrorReporter);
+    newNs.addAll(oldNs, new ProxyErrorReporter(classRef, myErrorReporter));
     myNamespaces.put(classRef, newNs);
   }
 }

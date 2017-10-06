@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;

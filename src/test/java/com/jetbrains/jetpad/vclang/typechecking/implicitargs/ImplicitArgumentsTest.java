@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(params, Pi(Ref(params), Ref(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
-    assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
+    assertTrue(errorList.get(0) instanceof ProxyError && ((ProxyError) errorList.get(0)).localError instanceof ArgInferenceError);
   }
 
   @Test

@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class TruncatedDataError extends LocalTypeCheckingError {
+public class TruncatedDataError extends TypecheckingError {
   public final DataDefinition dataDef;
   public final Expression expectedType;
 

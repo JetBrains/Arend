@@ -612,7 +612,7 @@ public class TwoStageEquations implements Equations {
       return true;
     }
     if (expr.findBinding(var)) {
-      LocalTypeCheckingError error = var.getErrorInfer(expr);
+      LocalError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(null, error));
       return false;
@@ -626,13 +626,13 @@ public class TwoStageEquations implements Equations {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return true;
       } else {
-        LocalTypeCheckingError error = var.getErrorInfer(expr);
+        LocalError error = var.getErrorInfer(expr);
         myVisitor.getErrorReporter().report(error);
         var.solve(this, new ErrorExpression(null, error));
         return false;
       }
     } else {
-      LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
+      LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(expr, error));
       return false;

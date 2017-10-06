@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveEquationError extends LocalTypeCheckingError {
+public class SolveEquationError extends TypecheckingError {
   public final Expression expr1;
   public final Expression expr2;
 

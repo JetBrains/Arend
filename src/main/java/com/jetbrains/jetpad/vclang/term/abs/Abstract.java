@@ -91,18 +91,17 @@ public final class Abstract {
   // Definition
 
   public interface Definition {
+    @Nonnull GlobalReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
   public interface FunctionDefinition extends Definition {
-    @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
     @Nullable Expression getResultType();
     /* @Nonnull */ @Nullable FunctionBody getBody();
   }
 
   public interface DataDefinition extends Definition {
-    @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
     @Nullable Collection<? extends Expression> getEliminatedExpressions();
     boolean isTruncated();
@@ -111,7 +110,6 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition {
-    @Nonnull GlobalReferable getReferable();
     @Nonnull Collection<? extends Parameter> getParameters();
     @Nonnull Collection<? extends Expression> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();

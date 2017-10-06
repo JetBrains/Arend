@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ConditionsError extends LocalTypeCheckingError {
+public class ConditionsError extends TypecheckingError {
   public final Expression expr1;
   public final Expression expr2;
   public final ExprSubstitution substitution1;

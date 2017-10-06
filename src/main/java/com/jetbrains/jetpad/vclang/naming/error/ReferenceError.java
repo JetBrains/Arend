@@ -1,13 +1,13 @@
 package com.jetbrains.jetpad.vclang.naming.error;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
-public class ReferenceError extends GeneralError {
+public class ReferenceError extends LocalError {
   public final Referable referable;
 
   public ReferenceError(String message, Referable referable) {

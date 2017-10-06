@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class DataTypeNotEmptyError extends LocalTypeCheckingError {
+public class DataTypeNotEmptyError extends TypecheckingError {
   public final DataCallExpression dataCall;
   public final Collection<? extends Constructor> constructors;
 

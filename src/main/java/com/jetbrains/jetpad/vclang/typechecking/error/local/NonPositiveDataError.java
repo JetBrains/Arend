@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class NonPositiveDataError extends LocalTypeCheckingError {
+public class NonPositiveDataError extends TypecheckingError {
   public final DataDefinition dataDefinition;
   public final Concrete.Constructor constructor;
 

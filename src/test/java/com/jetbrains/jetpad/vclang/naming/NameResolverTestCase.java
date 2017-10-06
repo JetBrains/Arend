@@ -15,9 +15,13 @@ import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +65,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, errorReporter), null);
+    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, nameResolver, new TestLocalErrorReporter(errorReporter)), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }

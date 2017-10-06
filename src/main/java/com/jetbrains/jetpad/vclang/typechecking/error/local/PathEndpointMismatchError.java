@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class PathEndpointMismatchError extends LocalTypeCheckingError {
+public class PathEndpointMismatchError extends TypecheckingError {
   public final boolean isLeft;
   public final Expression expected;
   public final Expression actual;

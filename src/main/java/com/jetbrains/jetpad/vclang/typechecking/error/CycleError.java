@@ -1,14 +1,17 @@
-package com.jetbrains.jetpad.vclang.typechecking.error.local;
+package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -38,5 +41,10 @@ public class CycleError extends GeneralError {
       docs.add(refDoc(definition.getData()));
     }
     return hSep(text(" - "), docs);
+  }
+
+  @Override
+  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+    return cycle.stream().map(Concrete.ReferableDefinition::getData).collect(Collectors.toList());
   }
 }

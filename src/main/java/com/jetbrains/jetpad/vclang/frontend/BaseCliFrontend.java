@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -16,15 +18,15 @@ import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
@@ -37,6 +39,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final Map<SourceIdT, Map<String, GlobalReferable>> definitionIds = new HashMap<>();
 
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
+  protected final ResultTracker resultTracker = new ResultTracker();
 
   // Modules
   protected final ModuleTracker moduleTracker;
@@ -49,7 +52,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   // Typechecking
   private final boolean useCache;
   private final TypecheckerState state;
-  Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
+  private Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
 
 
   public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
@@ -89,7 +92,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
     ModuleTracker(Storage<SourceIdT> storage) {
-      super(storage, errorReporter);
+      super(storage, resultTracker);
     }
 
     @Override
@@ -220,54 +223,42 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
-      ResultTracker() {
-        super(errorReporter);
+    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceConcreteProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+  }
+
+  class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
+    @Override
+    public void report(GeneralError error) {
+      errorReporter.report(error);
+      ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
+      if (moduleResult == null) {
+        return;
       }
 
-      @Override
-      protected void reportedError(GeneralError error) {
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.ERRORS);
-      }
-
-      @Override
-      protected void reportedGoal(GeneralError error) {
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.GOALS);
-      }
-
-      @Override
-      public void alreadyTypechecked(Concrete.Definition definition) {
-        Definition.TypeCheckingStatus status = state.getTypechecked(definition.getData()).status();
-        if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
-          updateSourceResult(srcInfoProvider.sourceOf(definition.getData()), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
-        }
-      }
-
-      @Override
-      public void typecheckingFinished(Definition definition) {
-        flushErrors();
-      }
-
-      private GlobalReferable sourceDefinitionOf(GeneralError error) {
-        if (error instanceof TypeCheckingError) {
-          return ((TypeCheckingError) error).definition;
-        } else if (error instanceof TerminationCheckError) {
-          return ((TerminationCheckError) error).definition;
+      for (GlobalReferable referable : error.getAffectedDefinitions()) {
+        if (referable instanceof SourceIdReference) {
+          //noinspection unchecked
+          updateSourceResult((SourceIdT) ((SourceIdReference) referable).sourceId, moduleResult);
         } else {
-          throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
-        }
-      }
-
-      private void updateSourceResult(SourceIdT source, ModuleResult result) {
-        ModuleResult prevResult = moduleResults.get(source);
-        if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-          moduleResults.put(source, result);
+          // TODO[abstract]: This check should be removed
+          if (error instanceof ProxyError && ((ProxyError) error).localError instanceof TypecheckingError || error instanceof TerminationCheckError) {
+            updateSourceResult(srcInfoProvider.sourceOf(referable), moduleResult);
+          }
         }
       }
     }
-    ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceConcreteProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    @Override
+    public void typecheckingFinished(Definition definition) {
+      flushErrors();
+    }
+
+    private void updateSourceResult(SourceIdT source, ModuleResult result) {
+      ModuleResult prevResult = moduleResults.get(source);
+      if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
+        moduleResults.put(source, result);
+      }
+    }
   }
 
 

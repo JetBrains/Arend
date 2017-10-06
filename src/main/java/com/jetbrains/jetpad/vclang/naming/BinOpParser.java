@@ -1,18 +1,18 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.List;
 
 public class BinOpParser {
   private final Concrete.BinOpSequenceExpression myBinOpExpression;
-  private final ErrorReporter myErrorReporter;
+  private final LocalErrorReporter myErrorReporter;
 
-  public BinOpParser(Concrete.BinOpSequenceExpression binOpExpression, ErrorReporter errorReporter) {
+  public BinOpParser(Concrete.BinOpSequenceExpression binOpExpression, LocalErrorReporter errorReporter) {
     myBinOpExpression = binOpExpression;
     myErrorReporter = errorReporter;
   }

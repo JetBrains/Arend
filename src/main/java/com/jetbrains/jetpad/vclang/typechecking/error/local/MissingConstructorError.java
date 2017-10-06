@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class MissingConstructorError extends LocalTypeCheckingError {
+public class MissingConstructorError extends TypecheckingError {
   public final String constructorName;
   public final DataDefinition dataDef;
 

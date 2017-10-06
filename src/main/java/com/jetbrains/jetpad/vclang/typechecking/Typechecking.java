@@ -13,9 +13,9 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
+import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
@@ -28,7 +28,6 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePoo
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
@@ -191,7 +190,7 @@ public class Typechecking implements DependencyListener {
 
     if (numberOfHeaders == 1) {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
+      LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, myStaticNsProvider, myDynamicNsProvider, new LinkedHashMap<>(), localErrorReporter, null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition(), unit.getEnclosingClass());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
@@ -266,7 +265,7 @@ public class Typechecking implements DependencyListener {
           fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+          myErrorReporter.report(new TerminationCheckError(entry.getKey(), functionDefinitions, entry.getValue()));
         }
       }
     }
@@ -277,7 +276,7 @@ public class Typechecking implements DependencyListener {
   }
 
   private void typecheck(TypecheckingUnit unit, boolean recursive) {
-    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition(), myErrorReporter);
+    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter);
     List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), myStaticNsProvider, myDynamicNsProvider, unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
 
@@ -288,7 +287,7 @@ public class Typechecking implements DependencyListener {
       if (!callCategory.checkTermination()) {
         typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
+          myErrorReporter.report(new TerminationCheckError(entry.getKey(), Collections.singleton(entry.getKey()), entry.getValue()));
         }
       }
     }

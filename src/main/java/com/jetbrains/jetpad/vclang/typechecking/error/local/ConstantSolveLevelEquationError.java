@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ConstantSolveLevelEquationError extends LocalTypeCheckingError {
+public class ConstantSolveLevelEquationError extends TypecheckingError {
   public final LevelVariable variable;
 
   public ConstantSolveLevelEquationError(LevelVariable variable, Concrete.SourceNode cause) {

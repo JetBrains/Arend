@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.AbstractExpressionError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,9 @@ public class GroupResolver {
   protected void processReferable(GlobalReferable referable, Scope scope) { }
 
   private Scope getGroupScope(Group group, Scope parentScope, boolean reportErrors) {
-    Scope staticScope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(group.getReferable()));
-    Scope dynamicScope = new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(group.getReferable()));
+    GlobalReferable groupRef = group.getReferable();
+    Scope staticScope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(groupRef));
+    Scope dynamicScope = new NamespaceScope(myNameResolver.nsProviders.dynamics.forReferable(groupRef));
     Scope scope = new MergeScope(staticScope, dynamicScope, parentScope);
     if (group.getNamespaceCommands().isEmpty()) {
       return scope;
@@ -42,9 +44,9 @@ public class GroupResolver {
 
     MergeScope cmdScope = new MergeScope(new ArrayList<>());
     for (NamespaceCommand cmd : group.getNamespaceCommands()) {
-      Scope openedScope = getOpenedScope(cmd, scope);
+      Scope openedScope = getOpenedScope(cmd, scope, groupRef);
       if (openedScope != null) {
-        cmdScope.addScope(openedScope, reportErrors ? myErrorReporter : DummyErrorReporter.INSTANCE);
+        cmdScope.addScope(openedScope, reportErrors ? myErrorReporter : DummyErrorReporter.INSTANCE, groupRef);
       }
     }
     return new MergeScope(staticScope, dynamicScope, cmdScope, parentScope);
@@ -71,7 +73,7 @@ public class GroupResolver {
     }
   }
 
-  private GlobalReferable resolveGlobal(Referable referable, Scope parentScope) {
+  private GlobalReferable resolveGlobal(Referable referable, Scope parentScope, GlobalReferable groupRef) {
     Referable origRef = referable;
     if (referable instanceof UnresolvedReference) {
       referable = ((UnresolvedReference) referable).resolve(parentScope, myNameResolver);
@@ -79,9 +81,9 @@ public class GroupResolver {
 
     if (!(referable instanceof GlobalReferable)) {
       if (referable == null) {
-        myErrorReporter.report(new NotInScopeError(origRef));
+        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(origRef)));
       } else if (!(referable instanceof UnresolvedReference)) {
-        myErrorReporter.report(new ReferenceError("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef));
+        myErrorReporter.report(new ProxyError(groupRef, new ReferenceError("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef)));
       }
       return null;
     }
@@ -89,14 +91,14 @@ public class GroupResolver {
     return (GlobalReferable) referable;
   }
 
-  private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope) {
+  private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope, GlobalReferable groupRef) {
     Referable referable = cmd.getGroupReference();
     if (referable == null) {
-      myErrorReporter.report(AbstractExpressionError.incomplete(cmd));
+      myErrorReporter.report(new ProxyError(groupRef, AbstractExpressionError.incomplete(cmd)));
       return null;
     }
 
-    GlobalReferable globalRef = resolveGlobal(referable, parentScope);
+    GlobalReferable globalRef = resolveGlobal(referable, parentScope, groupRef);
     if (globalRef == null) {
       return null;
     }
@@ -106,7 +108,7 @@ public class GroupResolver {
     if (refs != null) {
       Set<String> names = new HashSet<>();
       for (Referable ref : refs) {
-        globalRef = resolveGlobal(ref, scope);
+        globalRef = resolveGlobal(ref, scope, groupRef);
         if (globalRef != null) {
           names.add(globalRef.textRepresentation());
         }

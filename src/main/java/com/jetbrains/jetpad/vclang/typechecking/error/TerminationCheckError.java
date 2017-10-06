@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.error.local;
+package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -16,11 +17,13 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public class TerminationCheckError extends GeneralError {
   public final GlobalReferable definition;
+  public final Set<? extends Definition> definitions;
   public final Set<RecursiveBehavior<Definition>> behaviors;
 
-  public TerminationCheckError(Definition def, Set<RecursiveBehavior<Definition>> behaviors) {
+  public TerminationCheckError(Definition def, Set<? extends Definition> definitions, Set<RecursiveBehavior<Definition>> behaviors) {
     super(Level.ERROR, "");
     definition = def.getReferable();
+    this.definitions = definitions;
     this.behaviors = behaviors;
   }
 
@@ -45,5 +48,10 @@ public class TerminationCheckError extends GeneralError {
 
   private static Doc printBehavior(RecursiveBehavior rb) {
     return hang(text(rb.initialCallMatrix instanceof CompositeCallMatrix ? "Problematic sequence of recursive calls:" : "Problematic recursive call:"), rb.initialCallMatrix.getMatrixLabel());
+  }
+
+  @Override
+  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+    return definitions.stream().map(Definition::getReferable).collect(Collectors.toList());
   }
 }

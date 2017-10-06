@@ -11,7 +11,7 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveEquationsError extends LocalTypeCheckingError {
+public class SolveEquationsError extends TypecheckingError {
   public final List<? extends Equation> equations;
 
   public SolveEquationsError(List<? extends Equation> equations, Concrete.SourceNode cause) {

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class FieldsImplementationError extends LocalTypeCheckingError {
+public class FieldsImplementationError extends TypecheckingError {
   public boolean alreadyImplemented;
   public Collection<? extends GlobalReferable> fields;
 

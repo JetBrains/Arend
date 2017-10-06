@@ -55,25 +55,19 @@ public abstract class ParseSource {
       return null;
     }
 
-    Group result = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
+    Group result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
     }
     if (nameResolver != null) {
       if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever
-        ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, compositeErrorReporter);
+        ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, errorReporter);
       }
       if (nameResolver.nsProviders.dynamics instanceof SimpleDynamicNamespaceProvider) {
-        ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, compositeErrorReporter, nameResolver);
+        ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, errorReporter, nameResolver);
       }
-      new GroupNameResolver(nameResolver, compositeErrorReporter, ReferenceConcreteProvider.INSTANCE).resolveGroup(result, globalScope);
-    }
-    if (countingErrorReporter.getErrorsNumber() > 0) {
-      if (moduleRegistry != null) {
-        moduleRegistry.unregisterModule(mySourceId.getModulePath());
-      }
-      return null;
+      new GroupNameResolver(nameResolver, errorReporter, ReferenceConcreteProvider.INSTANCE).resolveGroup(result, globalScope);
     }
     return result;
   }

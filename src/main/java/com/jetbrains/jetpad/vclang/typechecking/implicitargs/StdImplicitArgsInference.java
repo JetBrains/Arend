@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
@@ -133,7 +133,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (param.isExplicit() != isExplicit) {
-      myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg));
+      myVisitor.getErrorReporter().report(new TypecheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg));
       return null;
     }
 

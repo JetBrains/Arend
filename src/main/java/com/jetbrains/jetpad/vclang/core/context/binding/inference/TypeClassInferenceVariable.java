@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 
 import java.util.Set;
@@ -24,12 +24,12 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   @Override
-  public LocalTypeCheckingError getErrorInfer(Expression... candidates) {
+  public LocalError getErrorInfer(Expression... candidates) {
     return new ArgInferenceError(ArgInferenceError.typeClass(), getSourceNode(), candidates);
   }
 
   @Override
-  public LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
+  public LocalError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
     return new ArgInferenceError(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
   }
 

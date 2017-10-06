@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class NotAvailableDefinitionError extends LocalTypeCheckingError {
+public class NotAvailableDefinitionError extends TypecheckingError {
   public final Definition definition;
 
   public NotAvailableDefinitionError(Definition definition, Concrete.SourceNode cause) {

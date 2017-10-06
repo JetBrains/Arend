@@ -2,22 +2,22 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
 import javax.annotation.Nonnull;
 
 public class ProxyErrorReporter implements LocalErrorReporter {
-  private final Concrete.Definition myDefinition;
+  private final GlobalReferable myDefinition;
   private final ErrorReporter myErrorReporter;
 
-  public ProxyErrorReporter(@Nonnull Concrete.Definition definition, ErrorReporter errorReporter) {
+  public ProxyErrorReporter(@Nonnull GlobalReferable definition, ErrorReporter errorReporter) {
     myDefinition = definition;
     myErrorReporter = errorReporter;
   }
 
-  public Concrete.Definition getDefinition() {
+  public GlobalReferable getDefinition() {
     return myDefinition;
   }
 
@@ -31,7 +31,7 @@ public class ProxyErrorReporter implements LocalErrorReporter {
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
-    myErrorReporter.report(new TypeCheckingError(myDefinition.getData(), localError));
+  public void report(LocalError localError) {
+    myErrorReporter.report(new ProxyError(myDefinition, localError));
   }
 }

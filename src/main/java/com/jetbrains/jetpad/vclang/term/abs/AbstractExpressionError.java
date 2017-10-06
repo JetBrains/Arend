@@ -1,10 +1,10 @@
 package com.jetbrains.jetpad.vclang.term.abs;
 
-import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 
-public class AbstractExpressionError extends GeneralError {
+public class AbstractExpressionError extends LocalError {
   private final Object myCause;
 
   AbstractExpressionError(@Nonnull Level level, String message, Object cause) {

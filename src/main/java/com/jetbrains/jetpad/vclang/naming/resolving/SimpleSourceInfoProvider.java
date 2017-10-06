@@ -19,7 +19,6 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
     names.put(def, name);
   }
 
-  // TODO[abstract]: What's the point of FullName here?
   public void registerGroup(Group group, FullName name, SourceIdT source) {
     registerDefinition(group.getReferable(), name, source);
     for (Group subGroup : group.getSubgroups()) {

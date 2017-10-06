@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
@@ -24,6 +23,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
@@ -254,7 +254,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     @Override
-    public void report(LocalTypeCheckingError localError) {
+    public void report(LocalError localError) {
       myHasErrors = true;
       myErrorReporter.report(localError);
     }
@@ -377,7 +377,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Result checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      myErrorReporter.report(new LocalTypeCheckingError("Incomplete expression", null));
+      myErrorReporter.report(new TypecheckingError("Incomplete expression", null));
       return null;
     }
     return expr.accept(this, expectedType);
@@ -408,13 +408,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (result.expression != null) {
       result.expression = result.expression.strip(counter);
     }
-    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : DummyLocalErrorReporter.INSTANCE);
+    result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : DummyErrorReporter.INSTANCE);
     return result;
   }
 
   public Type checkType(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      myErrorReporter.report(new LocalTypeCheckingError("Incomplete expression", null));
+      myErrorReporter.report(new TypecheckingError("Incomplete expression", null));
       return null;
     }
 
@@ -463,7 +463,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   private boolean checkPath(TResult result, Concrete.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected an argument for 'path'", expr));
+      myErrorReporter.report(new TypecheckingError("Expected an argument for 'path'", expr));
       return false;
     }
     if (result instanceof Result) {
@@ -503,7 +503,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Result visitReference(Concrete.ReferenceExpression expr, ExpectedType expectedType) {
     if ((expr.getExpression() != null || !(expr.getReferent() instanceof GlobalReferable)) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
-      myErrorReporter.report(new LocalTypeCheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
+      myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
     TResult result = expr.getExpression() == null && !(expr.getReferent() instanceof GlobalReferable) ? getLocalVar(expr) : myTypeCheckingDefCall.typeCheckDefCall(expr);
     if (result == null || !checkPath(result, expr)) {
@@ -526,7 +526,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Definition typeChecked = myState.getTypechecked(expr.getModule());
     if (typeChecked == null) {
       assert false;
-      myErrorReporter.report(new LocalTypeCheckingError("Internal error: module '" + expr.getPath() + "' is not available yet", expr));
+      myErrorReporter.report(new TypecheckingError("Internal error: module '" + expr.getPath() + "' is not available yet", expr));
       return null;
     }
 
@@ -606,7 +606,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         Referable referable = ((Concrete.NameParameter) param).getReferable();
         SingleDependentLink piParams = piExpectedType.getParameters();
         if (piParams.isExplicit() && !param.getExplicit()) {
-          myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
+          myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
         SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.textRepresentation(), piParams.getType());
         if (referable != null) {
@@ -653,7 +653,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           PiExpression piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
           if (piExpectedType.getParameters().isExplicit() && !param.getExplicit()) {
-            myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
+            myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             if (!argType.isInstance(ErrorExpression.class)) {
@@ -769,7 +769,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
 
     if (pLevel.isInfinity()) {
-      myErrorReporter.report(new LocalTypeCheckingError("\\inf is not a correct p-level", expr));
+      myErrorReporter.report(new TypecheckingError("\\inf is not a correct p-level", expr));
       pLevel = new Level(LevelVariable.PVAR);
     }
 
@@ -785,7 +785,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Level visitLP(Concrete.PLevelExpression expr, LevelVariable base) {
     if (base != LevelVariable.PVAR) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
+      myErrorReporter.report(new TypecheckingError("Expected " + base, expr));
     }
     return new Level(base);
   }
@@ -793,7 +793,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Level visitLH(Concrete.HLevelExpression expr, LevelVariable base) {
     if (base != LevelVariable.HVAR) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected " + base, expr));
+      myErrorReporter.report(new TypecheckingError("Expected " + base, expr));
     }
     return new Level(base);
   }
@@ -815,7 +815,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Level visitVar(Concrete.InferVarLevelExpression expr, LevelVariable base) {
-    myErrorReporter.report(new LocalTypeCheckingError("Cannot typecheck an inference variable", expr));
+    myErrorReporter.report(new TypecheckingError("Cannot typecheck an inference variable", expr));
     return new Level(base);
   }
 
@@ -833,7 +833,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myHasErrors = hasErrors;
     }
 
-    LocalTypeCheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
+    TypecheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
     myErrorReporter.report(error);
     Expression result = new ErrorExpression(null, error);
     return new Result(result, result);
@@ -860,7 +860,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         int sigmaParamsSize = DependentLink.Helper.size(sigmaParams);
 
         if (expr.getFields().size() != sigmaParamsSize) {
-          myErrorReporter.report(new LocalTypeCheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr));
+          myErrorReporter.report(new TypecheckingError("Expected a tuple with " + sigmaParamsSize + " fields, but given " + expr.getFields().size(), expr));
           return null;
         }
 
@@ -951,7 +951,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Result visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null) {
-      myErrorReporter.report(new LocalTypeCheckingError("Cannot infer the result type", expr));
+      myErrorReporter.report(new TypecheckingError("Cannot infer the result type", expr));
       return null;
     }
     if (!(expectedType instanceof Expression)) {
@@ -1041,7 +1041,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     DependentLink sigmaParams = exprResult.type.cast(SigmaExpression.class).getParameters();
     DependentLink fieldLink = DependentLink.Helper.get(sigmaParams, expr.getField());
     if (!fieldLink.hasNext()) {
-      myErrorReporter.report(new LocalTypeCheckingError("Index " + (expr.getField() + 1) + " is out of range", expr));
+      myErrorReporter.report(new TypecheckingError("Index " + (expr.getField() + 1) + " is out of range", expr));
       return null;
     }
 
@@ -1066,7 +1066,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
     Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
     if (!normalizedBaseClassExpr.isInstance(ClassCallExpression.class)) {
-      myErrorReporter.report(new LocalTypeCheckingError("Expected a class", baseClassExpr));
+      myErrorReporter.report(new TypecheckingError("Expected a class", baseClassExpr));
       return null;
     }
     ClassCallExpression classCallExpr = normalizedBaseClassExpr.cast(ClassCallExpression.class);
@@ -1155,7 +1155,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (classCallExpr == null) {
       classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
       if (classCallExpr == null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Expected a class", expr.getExpression()));
+        myErrorReporter.report(new TypecheckingError("Expected a class", expr.getExpression()));
         return null;
       } else {
         exprResult.expression = new ErrorExpression(new NewExpression(classCallExpr), normExpr.cast(ErrorExpression.class).getError());

@@ -103,11 +103,11 @@ public class TypeCheckingDefCall {
             ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
             thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
           } else { */
-            LocalTypeCheckingError error;
+            TypecheckingError error;
             if (myThisClass != null) {
               error = new NotAvailableDefinitionError(typeCheckedDefinition, expr);
             } else {
-              error = new LocalTypeCheckingError("Non-static definitions are not allowed in a static context", expr);
+              error = new TypecheckingError("Non-static definitions are not allowed in a static context", expr);
             }
             myVisitor.getErrorReporter().report(error);
             return null;
@@ -147,7 +147,7 @@ public class TypeCheckingDefCall {
       }
 
       if (typeCheckedDefinition.getThisClass() == null) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Static definitions are not allowed in a non-static context", expr));
+        myVisitor.getErrorReporter().report(new TypecheckingError("Static definitions are not allowed in a non-static context", expr));
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
@@ -228,7 +228,7 @@ public class TypeCheckingDefCall {
         thisExpr = defCall.getDefCallArguments().size() == 1 ? defCall.getDefCallArguments().get(0) : null;
         leftDefinition = defCall.getDefinition();
       } else {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Expected a definition", expr));
+        myVisitor.getErrorReporter().report(new TypecheckingError("Expected a definition", expr));
         return null;
       }
 
@@ -290,7 +290,7 @@ public class TypeCheckingDefCall {
     }
 
     if (thisExpr == null && definition instanceof ClassField) {
-      myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Field call without a class instance", expr));
+      myVisitor.getErrorReporter().report(new TypecheckingError("Field call without a class instance", expr));
       return null;
     }
 

@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
@@ -18,6 +17,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.*;
 
@@ -26,9 +26,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   private final Scope myScope;
   private final List<Referable> myContext;
   private final NameResolver myNameResolver;
-  private final ErrorReporter myErrorReporter;
+  private final LocalErrorReporter myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, ErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, LocalErrorReporter errorReporter) {
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new LocalScope(context), parentScope);
     myContext = context;

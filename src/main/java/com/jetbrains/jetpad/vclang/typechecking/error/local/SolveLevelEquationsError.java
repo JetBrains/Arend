@@ -14,7 +14,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveLevelEquationsError extends LocalTypeCheckingError {
+public class SolveLevelEquationsError extends TypecheckingError {
   public final Collection<? extends LevelEquation<? extends LevelVariable>> equations;
 
   public SolveLevelEquationsError(Collection<? extends LevelEquation<? extends LevelVariable>> equations, Concrete.SourceNode cause) {

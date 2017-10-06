@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ExpectedConstructor extends LocalTypeCheckingError {
+public class ExpectedConstructor extends TypecheckingError {
   public final Referable referable;
   public final DataCallExpression dataCall;
 

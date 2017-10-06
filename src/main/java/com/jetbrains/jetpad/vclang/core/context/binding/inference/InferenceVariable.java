@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.InferenceVariableListener;
 
@@ -86,9 +86,9 @@ public abstract class InferenceVariable implements Variable {
     }
   }
 
-  public abstract LocalTypeCheckingError getErrorInfer(Expression... candidates);
+  public abstract LocalError getErrorInfer(Expression... candidates);
 
-  public abstract LocalTypeCheckingError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
+  public abstract LocalError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate);
 
   @Override
   public String toString() {

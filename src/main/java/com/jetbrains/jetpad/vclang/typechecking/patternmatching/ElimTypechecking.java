@@ -17,7 +17,7 @@ import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TruncatedDataError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -49,7 +49,7 @@ public class ElimTypechecking {
       int expectedNumberOfPatterns = expressions.size();
       for (Concrete.Clause clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
-          visitor.getErrorReporter().report(new LocalTypeCheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
+          visitor.getErrorReporter().report(new TypecheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
           return null;
         }
       }
@@ -64,7 +64,7 @@ public class ElimTypechecking {
             while (link.hasNext() && link != elimParam) {
               link = link.getNext();
             }
-            visitor.getErrorReporter().report(new LocalTypeCheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
+            visitor.getErrorReporter().report(new TypecheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
             return null;
           }
           link = link.getNext();
@@ -127,7 +127,7 @@ public class ElimTypechecking {
           }
         } else {
           if (intervals > 1) {
-            myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Only a single interval pattern per row is allowed", clause.clause));
+            myVisitor.getErrorReporter().report(new TypecheckingError("Only a single interval pattern per row is allowed", clause.clause));
             myUnusedClauses.remove(clause.clause);
           } else {
             intervalClauses.add(clause);
@@ -149,7 +149,7 @@ public class ElimTypechecking {
       for (ExtClause clause : nonIntervalClauses) {
         for (int j = i; j < clause.patterns.size(); j++) {
           if (!(clause.patterns.get(j) instanceof BindingPattern)) {
-            myVisitor.getErrorReporter().report(new LocalTypeCheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", clause.clause));
+            myVisitor.getErrorReporter().report(new TypecheckingError("A pattern matching on a data type is allowed only before the pattern matching on the interval", clause.clause));
             myOK = false;
           }
         }
@@ -184,7 +184,7 @@ public class ElimTypechecking {
       }
 
       if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Coverage check failed", sourceNode));
+        myVisitor.getErrorReporter().report(new TypecheckingError("Coverage check failed", sourceNode));
       }
 
       ElimTree elimTree = null;
@@ -251,7 +251,7 @@ public class ElimTypechecking {
 
     if (myOK) {
       for (Concrete.FunctionClause clause : myUnusedClauses) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError(Error.Level.WARNING, "This clause is redundant", clause));
+        myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.WARNING, "This clause is redundant", clause));
       }
     }
     return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
@@ -396,7 +396,7 @@ public class ElimTypechecking {
       if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
         conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
         if (conCalls == null) {
-          myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
+          myVisitor.getErrorReporter().report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
           myOK = false;
           return null;
         }
@@ -410,15 +410,14 @@ public class ElimTypechecking {
 
       DataDefinition dataType = someConPattern.getConstructor().getDataType();
       if (dataType == Prelude.INTERVAL) {
-        myVisitor.getErrorReporter().report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
+        myVisitor.getErrorReporter().report(new TypecheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
         myOK = false;
         return null;
       }
 
       if (someConPattern.getConstructor().getDataType().isTruncated()) {
         if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
-          LocalTypeCheckingError error = new TruncatedDataError(dataType, myExpectedType, conClauseData.clause);
-          myVisitor.getErrorReporter().report(error);
+          myVisitor.getErrorReporter().report(new TruncatedDataError(dataType, myExpectedType, conClauseData.clause));
           myOK = false;
         }
       }

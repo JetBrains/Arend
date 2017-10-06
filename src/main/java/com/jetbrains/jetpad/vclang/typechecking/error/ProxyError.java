@@ -4,20 +4,23 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
+
+import java.util.Collection;
+import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 /**
- * If you would like to add a new type checking error, please, extend {@link LocalTypeCheckingError} instead.
+ * A proxy class for local errors
  */
-public class TypeCheckingError extends GeneralError {
+public class ProxyError extends GeneralError {
   public final GlobalReferable definition;
-  public final LocalTypeCheckingError localError;
+  public final LocalError localError;
 
-  public TypeCheckingError(@Nonnull GlobalReferable definition, LocalTypeCheckingError localError) {
+  public ProxyError(@Nonnull GlobalReferable definition, LocalError localError) {
     super(localError.level, localError.message);
     this.definition = definition;
     this.localError = localError;
@@ -36,5 +39,10 @@ public class TypeCheckingError extends GeneralError {
   @Override
   public Doc getDoc(PrettyPrinterInfoProvider src) {
     return vHang(localError.getDoc(src), hList(text("While typechecking: "), refDoc(definition)));
+  }
+
+  @Override
+  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+    return Collections.singletonList(definition);
   }
 }

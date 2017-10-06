@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class DuplicateInstanceError extends LocalTypeCheckingError {
+public class DuplicateInstanceError extends TypecheckingError {
   public final Expression oldInstance;
   public final Expression newInstance;
 

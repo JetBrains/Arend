@@ -16,7 +16,7 @@ import java.util.Map;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class GoalError extends LocalTypeCheckingError {
+public class GoalError extends TypecheckingError {
   public final String name;
   public final Map<Referable, Binding> context;
   public final ExpectedType expectedType;

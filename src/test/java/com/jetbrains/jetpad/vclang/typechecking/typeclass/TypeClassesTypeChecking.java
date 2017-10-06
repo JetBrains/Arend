@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class MemberNotFoundError extends LocalTypeCheckingError {
+public class MemberNotFoundError extends TypecheckingError {
   public final Definition targetDefinition;
   public final String name;
 
