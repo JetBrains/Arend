@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    return expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
+    Expression result = expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
+    if (result == null) {
+      throw new IncorrectExpressionException("Expression " + expr.getFunction() + " does not have a pi type, but is applied to " + expr.getArgument());
+    }
+    return result;
   }
 
   @Override
@@ -94,7 +99,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     }
 
     if (!type.isInstance(SigmaExpression.class)) {
-      return null;
+      throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
     }
     DependentLink params = type.cast(SigmaExpression.class).getParameters();
     if (expr.getField() == 0) {

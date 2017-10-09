@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Abstract.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -59,7 +60,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression getType() {
-    return accept(GetTypeVisitor.INSTANCE, null);
+    try {
+      return accept(GetTypeVisitor.INSTANCE, null);
+    } catch (IncorrectExpressionException e) {
+      return null;
+    }
   }
 
   public boolean findBinding(Variable binding) {
@@ -152,7 +157,11 @@ public abstract class Expression implements ExpectedType {
     if (normExpr.isInstance(ErrorExpression.class)) {
       return normExpr;
     }
-    PiExpression piExpr = normExpr.cast(PiExpression.class);
+    PiExpression piExpr = normExpr.checkedCast(PiExpression.class);
+    if (piExpr == null) {
+      return null;
+    }
+
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
     link = link.getNext();

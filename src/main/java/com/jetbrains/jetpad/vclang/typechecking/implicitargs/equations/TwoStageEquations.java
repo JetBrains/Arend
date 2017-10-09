@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -609,6 +610,12 @@ public class TwoStageEquations implements Equations {
     if (expr.isInstance(InferenceReferenceExpression.class) && expr.cast(InferenceReferenceExpression.class).getVariable() == var) {
       return true;
     }
+    if (myProps.contains(var) && !expr.isInstance(UniverseExpression.class)) {
+      LocalTypeCheckingError error = var.getErrorInfer(new UniverseExpression(Sort.PROP), expr);
+      myVisitor.getErrorReporter().report(error);
+      return false;
+    }
+
     if (expr.findBinding(var)) {
       LocalTypeCheckingError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
@@ -618,8 +625,8 @@ public class TwoStageEquations implements Equations {
 
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
-    if (actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
-      Expression result = ElimBindingVisitor.findBindings(expr, var.getBounds());
+    if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
+      Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds());
       if (result != null) {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return true;

@@ -26,6 +26,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
@@ -57,7 +58,11 @@ class DefinitionTypechecking {
 
     if (definition instanceof Abstract.FunctionDefinition) {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition);
-      typeCheckFunctionHeader(functionDef, typedEnclosingClass, visitor, localInstancePool);
+      try {
+        typecheckFunctionHeader(functionDef, typedEnclosingClass, visitor, localInstancePool);
+      } catch (IncorrectExpressionException e) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(e.getMessage(), definition));
+      }
       if (functionDef.getResultType() == null) {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", definition));
         functionDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -66,7 +71,11 @@ class DefinitionTypechecking {
     } else
     if (definition instanceof Abstract.DataDefinition) {
       DataDefinition dataDef = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) definition);
-      typeCheckDataHeader(dataDef, typedEnclosingClass, visitor, localInstancePool);
+      try {
+        typecheckDataHeader(dataDef, typedEnclosingClass, visitor, localInstancePool);
+      } catch (IncorrectExpressionException e) {
+        visitor.getErrorReporter().report(new LocalTypeCheckingError(e.getMessage(), definition));
+      }
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("Cannot infer the sort of a recursive data type", definition));
         dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -79,11 +88,19 @@ class DefinitionTypechecking {
 
   static List<Clause> typecheckBody(Definition definition, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
-      return typeCheckFunctionBody((FunctionDefinition) definition, exprVisitor);
+      try {
+        return typecheckFunctionBody((FunctionDefinition) definition, exprVisitor);
+      } catch (IncorrectExpressionException e) {
+        exprVisitor.getErrorReporter().report(new LocalTypeCheckingError(e.getMessage(), definition.getAbstractDefinition()));
+      }
     } else
     if (definition instanceof DataDefinition) {
-      if (!typeCheckDataBody((DataDefinition) definition, exprVisitor, false, dataDefinitions)) {
-        definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      try {
+        if (!typecheckDataBody((DataDefinition) definition, exprVisitor, false, dataDefinitions)) {
+          definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+        }
+      } catch (IncorrectExpressionException e) {
+        exprVisitor.getErrorReporter().report(new LocalTypeCheckingError(e.getMessage(), definition.getAbstractDefinition()));
       }
     } else {
       throw new IllegalStateException();
@@ -112,11 +129,14 @@ class DefinitionTypechecking {
           definition.addField(typedDef);
         }
       } else {
-        typeCheckClass((Abstract.ClassDefinition) unit.getDefinition(), definition, enclosingClass, visitor);
+        try {
+          typecheckClass((Abstract.ClassDefinition) unit.getDefinition(), definition, enclosingClass, visitor);
+        } catch (IncorrectExpressionException e) {
+          errorReporter.report(new LocalTypeCheckingError(e.getMessage(), unit.getDefinition()));
+        }
       }
       return null;
-    } else
-    if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
+    } else if (unit.getDefinition() instanceof Abstract.ClassViewInstance) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
       if (typechecked == null) {
         state.record(unit.getDefinition(), definition);
@@ -125,7 +145,11 @@ class DefinitionTypechecking {
         visitor.getErrorReporter().report(new LocalTypeCheckingError("An instance cannot be recursive", unit.getDefinition()));
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       } else {
-        typeCheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), definition, visitor);
+        try {
+          typecheckClassViewInstance((Abstract.ClassViewInstance) unit.getDefinition(), definition, visitor);
+        } catch (IncorrectExpressionException e) {
+          errorReporter.report(new LocalTypeCheckingError(e.getMessage(), unit.getDefinition()));
+        }
       }
       return null;
     }
@@ -135,23 +159,32 @@ class DefinitionTypechecking {
 
     if (unit.getDefinition() instanceof Abstract.FunctionDefinition) {
       FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(unit.getDefinition());
-      typeCheckFunctionHeader(definition, enclosingClass, visitor, localInstancePool);
-      if (definition.getResultType() == null) {
-        definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-        if (recursive) {
-          if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
-            errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
+      try {
+        typecheckFunctionHeader(definition, enclosingClass, visitor, localInstancePool);
+        if (definition.getResultType() == null) {
+          definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+          if (recursive) {
+            if (((Abstract.FunctionDefinition) unit.getDefinition()).getResultType() == null) {
+              errorReporter.report(new LocalTypeCheckingError("Cannot infer the result type of a recursive function", unit.getDefinition()));
+            }
+            return null;
           }
-          return null;
         }
+        return typecheckFunctionBody(definition, visitor);
+      } catch (IncorrectExpressionException e) {
+        errorReporter.report(new LocalTypeCheckingError(e.getMessage(), unit.getDefinition()));
+        return null;
       }
-      return typeCheckFunctionBody(definition, visitor);
-    } else
-    if (unit.getDefinition() instanceof Abstract.DataDefinition) {
+    } else if (unit.getDefinition() instanceof Abstract.DataDefinition) {
       DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition((Abstract.DataDefinition) unit.getDefinition());
-      typeCheckDataHeader(definition, enclosingClass, visitor, localInstancePool);
-      if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        typeCheckDataBody(definition, visitor, true, Collections.singleton(definition));
+      try {
+        typecheckDataHeader(definition, enclosingClass, visitor, localInstancePool);
+        if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
+          typecheckDataBody(definition, visitor, true, Collections.singleton(definition));
+        }
+      } catch (IncorrectExpressionException e) {
+        errorReporter.report(new LocalTypeCheckingError(e.getMessage(), unit.getDefinition()));
+        return null;
       }
       return null;
     } else {
@@ -237,7 +270,7 @@ class DefinitionTypechecking {
     return list;
   }
 
-  private static void typeCheckFunctionHeader(FunctionDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static void typecheckFunctionHeader(FunctionDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
@@ -260,7 +293,7 @@ class DefinitionTypechecking {
     typedDef.setStatus(paramsOk ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
   }
 
-  private static List<Clause> typeCheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+  private static List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     List<Clause> clauses = null;
     Abstract.FunctionDefinition def = (Abstract.FunctionDefinition) typedDef.getAbstractDefinition();
     Abstract.FunctionBody body = def.getBody();
@@ -303,7 +336,7 @@ class DefinitionTypechecking {
     return clauses;
   }
 
-  private static void typeCheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
+  private static void typecheckDataHeader(DataDefinition dataDefinition, ClassDefinition enclosingClass, CheckTypeVisitor visitor, LocalInstancePool localInstancePool) {
     LinkList list = initializeThisParam(visitor, enclosingClass);
 
     Map<Integer, ClassField> classifyingFields = new HashMap<>();
@@ -339,7 +372,7 @@ class DefinitionTypechecking {
     }
   }
 
-  private static boolean typeCheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
+  private static boolean typecheckDataBody(DataDefinition dataDefinition, CheckTypeVisitor visitor, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
     Abstract.DataDefinition def = dataDefinition.getAbstractDefinition();
     Sort userSort = dataDefinition.getSort();
     Sort inferredSort = Sort.PROP;
@@ -404,7 +437,7 @@ class DefinitionTypechecking {
       // Typecheck constructors
       for (Abstract.Constructor constructor : clause.getConstructors()) {
         Patterns patterns = result == null ? null : new Patterns(result.proj1);
-        Sort conSort = typeCheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions, userSort);
+        Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions, userSort);
         if (conSort == null) {
           dataOk = false;
           conSort = Sort.PROP;
@@ -473,7 +506,7 @@ class DefinitionTypechecking {
     return countingErrorReporter.getErrorsNumber() == 0;
   }
 
-  private static Sort typeCheckConstructor(Abstract.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions, Sort userSort) {
+  private static Sort typecheckConstructor(Abstract.Constructor def, Patterns patterns, DataDefinition dataDefinition, CheckTypeVisitor visitor, Set<DataDefinition> dataDefinitions, Sort userSort) {
     Constructor constructor = new Constructor(def, dataDefinition);
     List<DependentLink> elimParams = null;
     Sort sort;
@@ -601,7 +634,7 @@ class DefinitionTypechecking {
     return false;
   }
 
-  private static void typeCheckClass(Abstract.ClassDefinition def, ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private static void typecheckClass(Abstract.ClassDefinition def, ClassDefinition typedDef, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
@@ -652,7 +685,7 @@ class DefinitionTypechecking {
       }
 
       for (Abstract.ClassField field : def.getFields()) {
-        typeCheckClassField(field, typedDef, visitor);
+        typecheckClassField(field, typedDef, visitor);
       }
 
       if (!def.getImplementations().isEmpty()) {
@@ -691,7 +724,7 @@ class DefinitionTypechecking {
     }
   }
 
-  private static void typeCheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private static void typecheckClassField(Abstract.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
     visitor.setThis(enclosingClass, thisParameter);
@@ -718,7 +751,7 @@ class DefinitionTypechecking {
     }
   }
 
-  private static void typeCheckClassViewInstance(Abstract.ClassViewInstance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
+  private static void typecheckClassViewInstance(Abstract.ClassViewInstance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
 
     LinkList list = new LinkList();
