@@ -58,7 +58,8 @@ public class ClassDefinition extends Definition {
 
       DependentLink thisParam = ExpressionFactory.parameter("this", thisClass);
       Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-      Sort sort = expr.getType().toSort();
+      Expression type = expr.getType();
+      Sort sort = type == null ? null : type.toSort();
       if (sort != null) {
         mySort = mySort.max(sort);
       }

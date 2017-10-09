@@ -268,7 +268,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (expr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) expr).getExpression().accept(this, Mode.WHNF);
       if (!thisExpr.isInstance(InferenceReferenceExpression.class) || !(thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
-        ClassCallExpression classCall = thisExpr.getType().accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
+        Expression type = thisExpr.getType();
+        ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (classCall != null) {
           Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
           if (impl != null) {

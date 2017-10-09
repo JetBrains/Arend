@@ -82,7 +82,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
-      result = result.applyExpression(binding);
+      result = result.applyExpression(binding, myVisitor.getErrorReporter(), expr);
       substitution.add(parameter, binding);
       i++;
     }
@@ -102,7 +102,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
           Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = type.getSort().succ();
-          result = result.applyExpression(new LamExpression(sort, lamParam, binding));
+          result = result.applyExpression(new LamExpression(sort, lamParam, binding), myVisitor.getErrorReporter(), fun);
 
           CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, new PiExpression(sort, lamParam, binding));
           if (argResult == null) {
@@ -137,7 +137,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    return result.applyExpression(argResult.expression);
+    return result.applyExpression(argResult.expression, myVisitor.getErrorReporter(), fun);
   }
 
   protected CheckTypeVisitor.TResult inferArg(Concrete.Expression fun, Concrete.Expression arg, boolean isExplicit, ExpectedType expectedType) {

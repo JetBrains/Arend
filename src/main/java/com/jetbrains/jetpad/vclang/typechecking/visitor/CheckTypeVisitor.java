@@ -26,6 +26,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -71,7 +72,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public interface TResult {
     Result toResult(Equations equations);
     DependentLink getParameter();
-    TResult applyExpression(Expression expression);
+    TResult applyExpression(Expression expression, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode);
     List<? extends DependentLink> getImplicitParameters();
   }
 
@@ -157,7 +158,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     @Override
-    public TResult applyExpression(Expression expression) {
+    public TResult applyExpression(Expression expression, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
       int size = myParameters.size();
       myArguments.add(expression);
       ExprSubstitution subst = new ExprSubstitution();
@@ -232,9 +233,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     @Override
-    public Result applyExpression(Expression expr) {
+    public Result applyExpression(Expression expr, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
       expression = new AppExpression(expression, expr);
-      type = type.applyExpression(expr);
+      Expression newType = type.applyExpression(expr);
+      if (newType == null) {
+        errorReporter.report(new TypecheckingError("Expected an expression of a pi type", sourceNode));
+      } else {
+        type = newType;
+      }
       return this;
     }
 
@@ -338,9 +344,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private static Sort getSortOf(Expression expr) {
-    Sort sort = expr.toSort();
+    Sort sort = expr == null ? null : expr.toSort();
     if (sort == null) {
-      assert expr.isInstance(ErrorExpression.class);
+      assert expr != null && expr.isInstance(ErrorExpression.class);
       return Sort.PROP;
     } else {
       return sort;
@@ -380,7 +386,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter.report(new TypecheckingError("Incomplete expression", null));
       return null;
     }
-    return expr.accept(this, expectedType);
+
+    try {
+      return expr.accept(this, expectedType);
+    } catch (IncorrectExpressionException e) {
+      myErrorReporter.report(new TypecheckingError(e.getMessage(), expr));
+      return null;
+    }
   }
 
   public Result finalCheckExpr(Concrete.Expression expr, ExpectedType expectedType, boolean returnExpectedType) {
@@ -418,7 +430,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
-    Result result = expr.accept(this, expectedType);
+    Result result;
+    try {
+      result = expr.accept(this, expectedType);
+    } catch (IncorrectExpressionException e) {
+      myErrorReporter.report(new TypecheckingError(e.getMessage(), expr));
+      return null;
+    }
     if (result == null) {
       return null;
     }
@@ -497,7 +515,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (def == null) {
       throw new InconsistentModel();
     }
-    return new Result(new ReferenceExpression(def), def.getTypeExpr());
+    Expression type = def.getTypeExpr();
+    if (type == null) {
+      myErrorReporter.report(new TypecheckingError("Cannot infer type of '" + def +"'", expr));
+      return null;
+    } else {
+      return new Result(new ReferenceExpression(def), type);
+    }
   }
 
   @Override
