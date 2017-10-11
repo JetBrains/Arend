@@ -62,7 +62,7 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   Group parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
+    Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx, null) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
