@@ -200,7 +200,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
       GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
       if (resolvedClassifyingField == null) {
-        myErrorReporter.report(new ProxyError(def.getData(), new NotInScopeError(classifyingField)));
+        // myErrorReporter.report(new ProxyError(def.getData(), new NotInScopeError(classifyingField)));
         return null;
       }
       def.setClassifyingField(resolvedClassifyingField);

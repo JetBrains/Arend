@@ -54,9 +54,7 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
     if (resolved != null) {
       return resolved;
     }
-    if (scope != null) {
-      resolved = scope.resolveName(super.textRepresentation());
-    }
+    resolved = scope.resolveName(super.textRepresentation());
 
     resolvePath(nameResolver);
     return resolved;
@@ -90,15 +88,17 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
 
   private Referable resolvePath(NameResolver nameResolver) {
     if (!(resolved instanceof GlobalReferable) || !myPath.isEmpty() && nameResolver == null) {
-      resolved = this;
-      return null;
+      resolved = new ErrorReference(getData(), null, resolved.textRepresentation());
+      return resolved;
     }
 
     for (String name : myPath) {
-      resolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) resolved).resolveName(name);
-      if (resolved == null) {
-        resolved = this;
-        return null;
+      Referable newResolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) resolved).resolveName(name);
+      if (newResolved == null) {
+        resolved = new ErrorReference(getData(), resolved, name);
+        return resolved;
+      } else {
+        resolved = newResolved;
       }
     }
 

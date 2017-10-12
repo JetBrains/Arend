@@ -29,6 +29,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -508,16 +509,21 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
     if (expr.getReferent() instanceof UnresolvedReference) {
-      myHasErrors = true;
+      throw new IllegalStateException();
+    }
+    if (expr.getReferent() instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
       return null;
     }
+
     Binding def = myContext.get(expr.getReferent());
     if (def == null) {
-      throw new InconsistentModel();
+      myErrorReporter.report(new IncorrectReferenceError(expr.getReferent()));
+      return null;
     }
     Expression type = def.getTypeExpr();
     if (type == null) {
-      myErrorReporter.report(new TypecheckingError("Cannot infer type of '" + def +"'", expr));
+      myErrorReporter.report(new ReferenceTypeError(expr.getReferent()));
       return null;
     } else {
       return new Result(new ReferenceExpression(def), type);

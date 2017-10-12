@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
+import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -80,8 +80,8 @@ public class GroupResolver {
     }
 
     if (!(referable instanceof GlobalReferable)) {
-      if (referable == null) {
-        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(origRef)));
+      if (referable instanceof ErrorReference) {
+        myErrorReporter.report(new ProxyError(groupRef, ((ErrorReference) referable).getError()));
       } else if (!(referable instanceof UnresolvedReference)) {
         myErrorReporter.report(new ProxyError(groupRef, new ReferenceError("'" + origRef.textRepresentation() + "' is not a reference to a definition", origRef)));
       }

@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -60,7 +61,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
         Referable newRef = ((UnresolvedReference) referable).resolveStatic(globalRef, myNameResolver);
         if (newRef == null) {
-          myErrorReporter.report(new NotInScopeError(referable));
+          myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
         } else if (!(newRef instanceof UnresolvedReference)) {
           expr.setExpression(null); // TODO[abstract]: Remove this (after removing module calls)
           expr.setReferent(newRef);
@@ -71,7 +72,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       if (referable instanceof UnresolvedReference) {
         Referable newRef = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
         if (newRef == null) {
-          myErrorReporter.report(new NotInScopeError(referable));
+          myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
         } else if (!(newRef instanceof UnresolvedReference)) {
           expr.setReferent(newRef);
         }
@@ -308,9 +309,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     Referable referable = ((Concrete.ConstructorPattern) pattern).getConstructor();
     if (referable instanceof UnresolvedReference) {
       Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope, myNameResolver);
-      if (newRef == null) {
-        myErrorReporter.report(new NotInScopeError(referable));
-      } else if (!(newRef instanceof UnresolvedReference)) {
+      if (newRef instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) newRef).getError());
+      } else {
         ((Concrete.ConstructorPattern) pattern).setConstructor(newRef);
       }
     }

@@ -49,14 +49,9 @@ public class NamedUnresolvedReference implements UnresolvedReference {
       return resolved;
     }
 
-    if (scope != null) {
-      resolved = scope.resolveName(myName);
-      if (resolved == null) {
-        resolved = this;
-        return null;
-      }
-    } else {
-      resolved = this;
+    resolved = scope.resolveName(myName);
+    if (resolved == null) {
+      resolved = new ErrorReference(myData, null, myName);
     }
     return resolved;
   }

@@ -55,7 +55,8 @@ public class TypeCheckingDefCall {
     */
     Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
-      throw new IllegalStateException("Internal error: definition " + definition.textRepresentation() + " was not type checked");
+      myVisitor.getErrorReporter().report(new IncorrectReferenceError(definition));
+      return null;
     }
     if (!typeCheckedDefinition.status().headerIsOK()) {
       myVisitor.getErrorReporter().report(new HasErrors(Error.Level.ERROR, definition, expr));
