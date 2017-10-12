@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.scope.LocalScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -31,7 +31,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
   public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, LocalErrorReporter errorReporter) {
     myParentScope = parentScope;
-    myScope = context == null ? parentScope : new MergeScope(new LocalScope(context), parentScope);
+    myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
     myContext = context;
     myNameResolver = nameResolver;
     myErrorReporter = errorReporter;

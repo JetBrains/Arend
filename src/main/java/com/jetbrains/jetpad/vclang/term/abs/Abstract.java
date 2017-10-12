@@ -27,7 +27,7 @@ public final class Abstract {
 
   public interface FunctionClause {
     @Nullable Object getData();
-    @Nonnull Collection<? extends Pattern> getPatterns();
+    @Nonnull List<? extends Pattern> getPatterns();
     @Nullable Expression getExpression();
   }
 
@@ -42,7 +42,15 @@ public final class Abstract {
     boolean isEmpty();
     boolean isExplicit();
     @Nullable Referable getHeadReference();
-    @Nonnull Collection<? extends Pattern> getArguments();
+    @Nonnull List<? extends Pattern> getArguments();
+  }
+
+  public interface ParametersHolder {
+    @Nonnull Collection<? extends Abstract.Parameter> getParameters();
+  }
+
+  public interface LetClausesHolder {
+    @Nonnull Collection<? extends Abstract.LetClause> getLetClauses();
   }
 
   // Expression
@@ -76,9 +84,8 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getImplementation();
   }
 
-  public interface LetClause {
+  public interface LetClause extends ParametersHolder {
     @Nonnull Referable getReferable();
-    @Nonnull Collection<? extends Parameter> getParameters();
     @Nullable Expression getResultType();
     /* @Nonnull */ @Nullable Expression getTerm();
   }
@@ -95,30 +102,26 @@ public final class Abstract {
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
-  public interface FunctionDefinition extends Definition {
-    @Nonnull Collection<? extends Parameter> getParameters();
+  public interface FunctionDefinition extends Definition, ParametersHolder {
     @Nullable Expression getResultType();
     /* @Nonnull */ @Nullable FunctionBody getBody();
   }
 
-  public interface DataDefinition extends Definition {
-    @Nonnull Collection<? extends Parameter> getParameters();
+  public interface DataDefinition extends Definition, ParametersHolder {
     @Nullable Collection<? extends Expression> getEliminatedExpressions();
     boolean isTruncated();
     @Nullable Expression getUniverse();
     @Nonnull Collection<? extends ConstructorClause> getClauses();
   }
 
-  public interface ClassDefinition extends Definition {
-    @Nonnull Collection<? extends Parameter> getParameters();
+  public interface ClassDefinition extends Definition, ParametersHolder {
     @Nonnull Collection<? extends Expression> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }
 
-  public interface Constructor {
+  public interface Constructor extends ParametersHolder {
     @Nonnull GlobalReferable getReferable();
-    @Nonnull Collection<? extends Parameter> getParameters();
     @Nonnull Collection<? extends Expression> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }

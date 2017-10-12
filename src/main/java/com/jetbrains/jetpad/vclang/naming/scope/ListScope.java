@@ -5,10 +5,10 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class LocalScope implements Scope {
+public class ListScope implements Scope {
   private final List<Referable> myContext;
 
-  public LocalScope(List<Referable> context) {
+  public ListScope(List<Referable> context) {
     myContext = context;
   }
 
