@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.google.common.base.Objects;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class LocalScope implements Scope {
   private final List<Referable> myContext;
@@ -15,21 +14,18 @@ public class LocalScope implements Scope {
 
   @Override
   public List<Referable> getElements() {
-    return myContext;
+    List<Referable> elements = new ArrayList<>(myContext);
+    Collections.reverse(elements);
+    return elements;
   }
 
   @Override
-  public Referable resolveName(String name) {
+  public Referable find(Predicate<Referable> pred) {
     for (int i = myContext.size() - 1; i >= 0; i--) {
-      if (Objects.equal(myContext.get(i).textRepresentation(), name)) {
+      if (pred.test(myContext.get(i))) {
         return myContext.get(i);
       }
     }
     return null;
-  }
-
-  @Override
-  public Collection<? extends Concrete.Instance> getInstances() {
-    return Collections.emptyList();
   }
 }

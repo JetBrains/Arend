@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class SingletonScope implements Scope {
   private final Referable myReferable;
@@ -25,7 +24,7 @@ public class SingletonScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances() {
-    return Collections.emptyList();
+  public Referable find(Predicate<Referable> pred) {
+    return pred.test(myReferable) ? myReferable : null;
   }
 }

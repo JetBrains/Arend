@@ -5,10 +5,10 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.NamespaceDuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class MergeScope implements Scope {
   private final Collection<Scope> myScopes;
@@ -56,11 +56,13 @@ public class MergeScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances() {
-    Set<Concrete.Instance> result = new LinkedHashSet<>();
+  public Referable find(Predicate<Referable> pred) {
     for (Scope scope : myScopes) {
-      result.addAll(scope.getInstances());
+      Referable ref = scope.find(pred);
+      if (ref != null) {
+        return ref;
+      }
     }
-    return result;
+    return null;
   }
 }

@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class FilteredScope implements Scope {
   private final Scope myScope;
@@ -37,14 +37,7 @@ public class FilteredScope implements Scope {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances() {
-    Collection<? extends Concrete.Instance> instances = myScope.getInstances();
-    List<Concrete.Instance> filteredInstances = new ArrayList<>(instances.size());
-    for (Concrete.Instance instance : instances) {
-      if (myInclude && myNames.contains(instance.getData().textRepresentation()) || !myInclude && !myNames.contains(instance.getData().textRepresentation())) {
-        filteredInstances.add(instance);
-      }
-    }
-    return filteredInstances;
+  public Referable find(Predicate<Referable> pred) {
+    return myScope.find(ref -> pred.test(ref) && myInclude == myNames.contains(ref.textRepresentation()));
   }
 }
