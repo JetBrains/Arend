@@ -32,4 +32,8 @@ public interface Scope {
   default boolean isEmpty() {
     return find(ref -> true) == null;
   }
+
+  default Scope getGlobalScope() {
+    return this;
+  }
 }

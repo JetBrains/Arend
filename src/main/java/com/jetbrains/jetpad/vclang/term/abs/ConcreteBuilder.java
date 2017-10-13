@@ -41,23 +41,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.FunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
     Concrete.FunctionBody body;
-    Abstract.FunctionBody absBody = def.getBody();
-    if (absBody == null) {
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(myDefinition));
-    }
-
-    Abstract.Expression term = absBody.getTerm();
+    Abstract.Expression term = def.getTerm();
     if (term != null) {
-      Object data = absBody.getData();
+      Object data = term.getData();
       body = new Concrete.TermFunctionBody(data, term.accept(this, null));
-      if (!absBody.getEliminatedExpressions().isEmpty()) {
+      if (!def.getEliminatedExpressions().isEmpty()) {
         myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Eliminated expressions are ignored", data)));
       }
-      if (!absBody.getClauses().isEmpty()) {
+      if (!def.getClauses().isEmpty()) {
         myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data)));
       }
     } else {
-      body = new Concrete.ElimFunctionBody(absBody.getData(), buildReferenceExpressions(absBody.getEliminatedExpressions()), buildClauses(absBody.getClauses()));
+      body = new Concrete.ElimFunctionBody(def.getReferable(), buildReferenceExpressionsFromReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
     }
 
     Abstract.Expression resultType = def.getResultType();
@@ -74,8 +69,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
-    Collection<? extends Abstract.Expression> elimExpressions = def.getEliminatedExpressions();
-    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, buildTypeParameters(def.getParameters()), elimExpressions == null ? null : buildReferenceExpressions(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
+    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, buildTypeParameters(def.getParameters()), elimExpressions == null ? null : buildReferenceExpressionsFromReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
 
     for (Abstract.ConstructorClause clause : absClauses) {
       Collection<? extends Abstract.Constructor> absConstructors = clause.getConstructors();
@@ -86,7 +81,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
       for (Abstract.Constructor constructor : absConstructors) {
-        constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferenceExpressions(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+        constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferenceExpressionsFromReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
       }
 
       Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
@@ -108,6 +103,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       } else {
         throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a reference", absElimExpression.getData()));
       }
+    }
+    return elimExpressions;
+  }
+
+  private List<Concrete.ReferenceExpression> buildReferenceExpressionsFromReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
+    List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
+    for (Abstract.Reference reference : absElimExpressions) {
+      elimExpressions.add(new Concrete.ReferenceExpression(reference.getData(), reference.getReferent()));
     }
     return elimExpressions;
   }

@@ -11,33 +11,31 @@ import java.util.List;
 public final class Abstract {
   private Abstract() {}
 
-  public interface Parameter {
+  public interface SourceNode {
+    @Nullable SourceNode getParentSourceNode();
+  }
+
+  public interface Parameter extends SourceNode {
     @Nullable Object getData();
     boolean isExplicit();
     @Nonnull List<? extends Referable> getReferableList();
     @Nullable Expression getType();
   }
 
-  public interface FunctionBody {
-    @Nullable Object getData();
-    @Nullable Expression getTerm();
-    @Nonnull Collection<? extends Expression> getEliminatedExpressions();
-    @Nonnull Collection<? extends FunctionClause> getClauses();
-  }
-
-  public interface FunctionClause {
+  public interface Clause extends SourceNode {
     @Nullable Object getData();
     @Nonnull List<? extends Pattern> getPatterns();
+  }
+
+  public interface FunctionClause extends Clause {
     @Nullable Expression getExpression();
   }
 
-  public interface ConstructorClause {
-    @Nullable Object getData();
-    @Nonnull Collection<? extends Pattern> getPatterns();
+  public interface ConstructorClause extends Clause {
     @Nonnull Collection<? extends Constructor> getConstructors();
   }
 
-  public interface Pattern {
+  public interface Pattern extends SourceNode {
     @Nullable Object getData();
     boolean isEmpty();
     boolean isExplicit();
@@ -45,40 +43,49 @@ public final class Abstract {
     @Nonnull List<? extends Pattern> getArguments();
   }
 
-  public interface ParametersHolder {
-    @Nonnull Collection<? extends Abstract.Parameter> getParameters();
+  public interface ParametersHolder extends SourceNode {
+    @Nonnull List<? extends Abstract.Parameter> getParameters();
   }
 
-  public interface LetClausesHolder {
+  public interface LetClausesHolder extends SourceNode {
     @Nonnull Collection<? extends Abstract.LetClause> getLetClauses();
+  }
+
+  public interface Reference extends SourceNode {
+    @Nullable Object getData();
+    @Nonnull Referable getReferent();
+  }
+
+  public interface EliminatedExpressionsHolder extends ParametersHolder {
+    @Nullable Collection<? extends Reference> getEliminatedExpressions();
   }
 
   // Expression
 
   public static final int INFINITY_LEVEL = -33;
 
-  public interface Expression {
+  public interface Expression extends SourceNode {
     @Nullable Object getData();
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
-  public interface FieldAcc {
+  public interface FieldAcc extends SourceNode {
     @Nullable Object getData();
     @Nullable Referable getFieldReference();
     int getProjIndex();
   }
 
-  public interface BinOpSequenceElem {
+  public interface BinOpSequenceElem extends SourceNode {
     @Nonnull Referable getBinOpReference();
     @Nullable Expression getArgument();
   }
 
-  public interface Argument {
+  public interface Argument extends SourceNode {
     boolean isExplicit();
     @Nonnull Expression getExpression();
   }
 
-  public interface ClassFieldImpl {
+  public interface ClassFieldImpl extends SourceNode {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
@@ -90,25 +97,26 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getTerm();
   }
 
-  public interface LevelExpression {
+  public interface LevelExpression extends SourceNode {
     @Nullable Object getData();
     <P, R> R accept(AbstractLevelExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
   // Definition
 
-  public interface Definition {
+  public interface Definition extends SourceNode {
     @Nonnull GlobalReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
-  public interface FunctionDefinition extends Definition, ParametersHolder {
+  public interface FunctionDefinition extends Definition, EliminatedExpressionsHolder {
     @Nullable Expression getResultType();
-    /* @Nonnull */ @Nullable FunctionBody getBody();
+    @Nullable Expression getTerm();
+    @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
+    @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 
-  public interface DataDefinition extends Definition, ParametersHolder {
-    @Nullable Collection<? extends Expression> getEliminatedExpressions();
+  public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
     boolean isTruncated();
     @Nullable Expression getUniverse();
     @Nonnull Collection<? extends ConstructorClause> getClauses();
@@ -120,13 +128,13 @@ public final class Abstract {
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }
 
-  public interface Constructor extends ParametersHolder {
+  public interface Constructor extends EliminatedExpressionsHolder {
     @Nonnull GlobalReferable getReferable();
-    @Nonnull Collection<? extends Expression> getEliminatedExpressions();
+    @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 
-  public interface ClassField {
+  public interface ClassField extends SourceNode {
     @Nonnull GlobalReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }

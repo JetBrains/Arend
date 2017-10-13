@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class LetScope implements LocalScope {
-  private final LocalScope myParent;
+public class LetScope implements Scope {
+  private final Scope myParent;
   private final List<? extends Abstract.LetClause> myClauses;
 
-  LetScope(LocalScope parent, List<? extends Abstract.LetClause> clauses) {
+  LetScope(Scope parent, List<? extends Abstract.LetClause> clauses) {
     myParent = parent;
     myClauses = clauses;
   }
