@@ -29,7 +29,7 @@ public class PatternScope implements Scope {
         ref = args.get(i).getHeadReference();
         if (ref != null && !(ref instanceof GlobalReferable)) {
           if (globalScope == null) {
-            globalScope = myParent.getGlobalScope();
+            globalScope = myParent.getGlobalSubscope();
           }
           if (globalScope.resolveName(ref.textRepresentation()) == null && pred.test(ref)) {
             return ref;
@@ -47,7 +47,7 @@ public class PatternScope implements Scope {
   }
 
   @Override
-  public Scope getGlobalScope() {
-    return myParent.getGlobalScope();
+  public Scope getGlobalSubscope() {
+    return myParent.getGlobalSubscope();
   }
 }

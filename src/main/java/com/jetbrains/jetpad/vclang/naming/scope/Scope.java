@@ -33,7 +33,7 @@ public interface Scope {
     return find(ref -> true) == null;
   }
 
-  default Scope getGlobalScope() {
+  default Scope getGlobalSubscope() {
     return this;
   }
 }

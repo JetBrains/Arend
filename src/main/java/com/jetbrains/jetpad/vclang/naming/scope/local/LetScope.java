@@ -28,7 +28,7 @@ public class LetScope implements Scope {
   }
 
   @Override
-  public Scope getGlobalScope() {
-    return myParent.getGlobalScope();
+  public Scope getGlobalSubscope() {
+    return myParent.getGlobalSubscope();
   }
 }

@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public class ExpressionScope {
@@ -24,7 +23,7 @@ public class ExpressionScope {
 
     // We can use only global definitions in patterns
     if (sourceNode instanceof Abstract.Pattern) {
-      return parentScope.getGlobalScope();
+      return parentScope.getGlobalSubscope();
     }
 
     Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
