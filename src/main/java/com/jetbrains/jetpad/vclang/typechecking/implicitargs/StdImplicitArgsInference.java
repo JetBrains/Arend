@@ -148,7 +148,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       if (fun instanceof Concrete.ReferenceExpression) {
         Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
-        result = defCall.getExpression() == null && !(defCall.getReferent() instanceof GlobalReferable) ? myVisitor.getLocalVar(defCall) : myVisitor.getTypeCheckingDefCall().typeCheckDefCall(defCall);
+        result = defCall.getReferent() instanceof GlobalReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((GlobalReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
       } else {
         result = myVisitor.checkExpr(fun, null);
       }

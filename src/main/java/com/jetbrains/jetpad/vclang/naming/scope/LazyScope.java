@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -20,6 +22,7 @@ public class LazyScope implements Scope {
     }
   }
 
+  @Nonnull
   @Override
   public Collection<? extends Referable> getElements() {
     updateScope();
@@ -30,6 +33,13 @@ public class LazyScope implements Scope {
   public Referable resolveName(String name) {
     updateScope();
     return myScope.resolveName(name);
+  }
+
+  @Nullable
+  @Override
+  public Scope resolveNamespace(String name) {
+    updateScope();
+    return myScope.resolveNamespace(name);
   }
 
   @Override

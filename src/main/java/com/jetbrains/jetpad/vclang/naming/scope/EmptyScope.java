@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Predicate;
@@ -16,11 +17,7 @@ public class EmptyScope implements Scope {
     return null;
   }
 
-  @Override
-  public boolean isEmpty() {
-    return true;
-  }
-
+  @Nonnull
   @Override
   public Collection<? extends Referable> getElements() {
     return Collections.emptyList();

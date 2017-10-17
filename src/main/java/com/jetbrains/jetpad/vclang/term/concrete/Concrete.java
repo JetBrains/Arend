@@ -281,22 +281,12 @@ public final class Concrete {
 
   public static class ReferenceExpression extends Expression {
     public static final byte PREC = 12;
-    private @Nullable Expression myExpression;
     private Referable myReferent;
     private final Concrete.LevelExpression myPLevel;
     private final Concrete.LevelExpression myHLevel;
 
-    public ReferenceExpression(Object data, @Nullable Expression expression, Referable referable) {
-      super(data);
-      myExpression = expression;
-      myReferent = referable;
-      myPLevel = null;
-      myHLevel = null;
-    }
-
     public ReferenceExpression(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
       super(data);
-      myExpression = null;
       myReferent = referable;
       myPLevel = pLevel;
       myHLevel = hLevel;
@@ -304,19 +294,9 @@ public final class Concrete {
 
     public ReferenceExpression(Object data, Referable referable) {
       super(data);
-      myExpression = null;
       myReferent = referable;
       myPLevel = null;
       myHLevel = null;
-    }
-
-    @Nullable
-    public Expression getExpression() {
-      return myExpression;
-    }
-
-    public void setExpression(Expression expression) {
-      myExpression = expression;
     }
 
     @Nonnull

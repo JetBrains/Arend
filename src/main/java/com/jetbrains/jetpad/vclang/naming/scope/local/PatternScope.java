@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -46,6 +47,7 @@ public class PatternScope implements Scope {
     return ref != null ? ref : myParent.find(pred);
   }
 
+  @Nonnull
   @Override
   public Scope getGlobalSubscope() {
     return myParent.getGlobalSubscope();

@@ -27,7 +27,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag {SHOW_CON_DATA_TYPE, SHOW_CON_PARAMS, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS}
+  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_CLASS_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -265,8 +265,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr;
   }
 
-  private static Concrete.Expression makeReference(Concrete.Expression expr, Referable referable) {
-    return cVar(expr, referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
+  private static Concrete.Expression makeReference(Referable referable) {
+    return cVar(referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
   @Override
@@ -275,12 +275,16 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (result != null) {
       return result;
     }
-    return visitParameters(makeReference(null, expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(makeReference(expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return makeReference(expr.getExpression().accept(this, null), expr.getDefinition().getReferable());
+    Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
+    if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
+      result = new Concrete.AppExpression(null, result, new Concrete.Argument(expr.getExpression().accept(this, null), false));
+    }
+    return result;
   }
 
   @Override
@@ -290,11 +294,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return cNum(num);
     }
 
-    Concrete.Expression conParams = null;
-    if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS) && (!expr.getDataTypeArguments().isEmpty() || myFlags.contains(Flag.SHOW_CON_DATA_TYPE))) {
-      conParams = expr.getDataTypeExpression().accept(this, null);
+    Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
+    if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS)) {
+      for (Expression arg : expr.getDataTypeArguments()) {
+        result = new Concrete.AppExpression(null, result, new Concrete.Argument(arg.accept(this, null), false));
+      }
     }
-    return visitParameters(makeReference(conParams, expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return visitParameters(result, expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
@@ -316,7 +322,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    Concrete.Expression defCallExpr = makeReference(enclExpr, expr.getDefinition().getReferable());
+    Concrete.Expression defCallExpr = makeReference(expr.getDefinition().getReferable());
+    if (myFlags.contains(Flag.SHOW_CLASS_INSTANCE)) {
+      defCallExpr = new Concrete.AppExpression(null, defCallExpr, new Concrete.Argument(enclExpr, false));
+    }
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {
@@ -326,7 +335,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitReference(ReferenceExpression expr, Void params) {
-    return makeReference(null, myNames.get(expr.getBinding()));
+    return makeReference(myNames.get(expr.getBinding()));
   }
 
   @Override

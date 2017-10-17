@@ -30,9 +30,6 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
     if (expr.getReferent() instanceof GlobalReferable) {
       myDependencies.add((GlobalReferable) expr.getReferent());
     }
-    if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, null);
-    }
     return null;
   }
 

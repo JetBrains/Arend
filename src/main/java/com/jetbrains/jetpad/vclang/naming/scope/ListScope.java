@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -12,6 +13,7 @@ public class ListScope implements Scope {
     myContext = context;
   }
 
+  @Nonnull
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>(myContext);

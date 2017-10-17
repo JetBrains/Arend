@@ -140,15 +140,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, new Precedence(Concrete.ReferenceExpression.PREC));
-      myBuilder.append('.').append(expr.getReferent().textRepresentation());
-    } else {
-      if (!isPrefix(expr.getReferent().textRepresentation())) {
-        myBuilder.append('`');
-      }
-      myBuilder.append(expr.getReferent().textRepresentation());
+    if (!isPrefix(expr.getReferent().textRepresentation())) {
+      myBuilder.append('`');
     }
+    myBuilder.append(expr.getReferent().textRepresentation());
     return null;
   }
 

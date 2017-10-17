@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -187,7 +186,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitClassView(Concrete.ClassView def, Scope parentScope) {
     new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter)).visitReference(def.getUnderlyingClass(), null);
-    if (def.getUnderlyingClass().getExpression() != null || !(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
+    if (!(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
       if (!(def.getUnderlyingClass().getReferent() instanceof UnresolvedReference)) {
         myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class", def.getUnderlyingClass().getReferent(), def)));
       }

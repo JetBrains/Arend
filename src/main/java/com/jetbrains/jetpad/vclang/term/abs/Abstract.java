@@ -69,12 +69,6 @@ public final class Abstract {
     <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
-  public interface FieldAcc extends SourceNode {
-    @Nullable Object getData();
-    @Nullable Referable getFieldReference();
-    int getProjIndex();
-  }
-
   public interface BinOpSequenceElem extends SourceNode {
     @Nonnull Referable getBinOpReference();
     @Nullable Expression getArgument();

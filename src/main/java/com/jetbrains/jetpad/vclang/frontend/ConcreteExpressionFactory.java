@@ -23,10 +23,6 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression(null, referable);
   }
 
-  public static Concrete.ReferenceExpression cVar(Concrete.Expression expr, Referable referable) {
-    return new Concrete.ReferenceExpression(null, expr, referable);
-  }
-
   public static Concrete.ClassExtExpression cClassExt(Concrete.Expression expr, List<Concrete.ClassFieldImpl> definitions) {
     return new Concrete.ClassExtExpression(null, expr, definitions);
   }

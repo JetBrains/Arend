@@ -3,24 +3,15 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-
-import java.util.List;
 
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
@@ -69,189 +60,35 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.TResult typeCheckDefCall(Concrete.ReferenceExpression expr) {
-    Concrete.Expression left = expr.getExpression();
-    GlobalReferable resolvedDefinition = expr.getReferent() instanceof GlobalReferable ? (GlobalReferable) expr.getReferent() : null;
-    Definition typeCheckedDefinition = null;
-    if (resolvedDefinition != null) {
-      typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
-      if (typeCheckedDefinition == null) {
-        return null;
-      }
-    }
-
-    CheckTypeVisitor.Result result = null;
-    if (left != null && (typeCheckedDefinition == null || (!(left instanceof Concrete.ReferenceExpression) && !(left instanceof Concrete.ModuleCallExpression)))) {
-      result = left.accept(myVisitor, null);
-      if (result == null) {
-        return null;
-      }
-    }
-
-    // No left-hand side
-    if (result == null && typeCheckedDefinition != null) {
-      Expression thisExpr = null;
-      if (typeCheckedDefinition.getThisClass() != null) {
-        if (myThisClass != null) {
-          thisExpr = findParent(myThisClass, typeCheckedDefinition, new ReferenceExpression(myThisBinding));
-        }
-
-        if (thisExpr == null) {
-          /* TODO[abstract]
-          if (resolvedDefinition instanceof Concrete.ClassViewField) {
-            assert typeCheckedDefinition instanceof ClassField;
-            Concrete.ClassView ownClassView = ((Concrete.ClassViewField) resolvedDefinition).getOwnView();
-            ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-            thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
-          } else { */
-            TypecheckingError error;
-            if (myThisClass != null) {
-              error = new NotAvailableDefinitionError(typeCheckedDefinition, expr);
-            } else {
-              error = new TypecheckingError("Non-static definitions are not allowed in a static context", expr);
-            }
-            myVisitor.getErrorReporter().report(error);
-            return null;
-          // }
-        }
-      }
-
-      return makeResult(typeCheckedDefinition, thisExpr, expr);
-    }
-
-    if (left == null) {
-      // TODO: Create a separate expression for local variables
-      throw new IllegalStateException();
-    }
-
-    String name = expr.getReferent().textRepresentation();
-
-    // Field call
-    Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.isInstance(ClassCallExpression.class)) {
-      ClassDefinition classDefinition = type.cast(ClassCallExpression.class).getDefinition();
-
-      if (typeCheckedDefinition == null) {
-        GlobalReferable member = myVisitor.getDynamicNamespaceProvider().forReferable(classDefinition.getReferable()).resolveName(name);
-        if (member == null) {
-          myVisitor.getErrorReporter().report(new MemberNotFoundError(classDefinition, name, false, expr));
-          return null;
-        }
-        typeCheckedDefinition = getTypeCheckedDefinition(member, expr);
-        if (typeCheckedDefinition == null) {
-          return null;
-        }
-      } else {
-        if (!(typeCheckedDefinition instanceof ClassField && classDefinition.getFields().contains(typeCheckedDefinition))) {
-          throw new IllegalStateException("Internal error: field " + typeCheckedDefinition + " does not belong to class " + classDefinition);
-        }
-      }
-
-      if (typeCheckedDefinition.getThisClass() == null) {
-        myVisitor.getErrorReporter().report(new TypecheckingError("Static definitions are not allowed in a non-static context", expr));
-        return null;
-      }
-      if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        if (!type.isInstance(ErrorExpression.class)) {ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
-        myVisitor.getErrorReporter().report( new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left));}
-        return null;
-      }
-
-      return makeResult(typeCheckedDefinition, result.expression, expr);
-    }
-
-    int lamSize = 0;
-    Expression lamExpr = result.expression;
-    while (lamExpr.isInstance(LamExpression.class)) {
-      lamSize += DependentLink.Helper.size(lamExpr.cast(LamExpression.class).getParameters());
-      lamExpr = lamExpr.cast(LamExpression.class).getBody();
-    }
-
-    // Constructor call
-    DataCallExpression dataCall = lamExpr.checkedCast(DataCallExpression.class);
-    if (dataCall != null) {
-      DataDefinition dataDefinition = dataCall.getDefinition();
-      List<? extends Expression> args = dataCall.getDefCallArguments();
-      if (result.expression.isInstance(LamExpression.class)) {
-        args = args.subList(0, args.size() - lamSize);
-      }
-
-      Constructor constructor;
-      if (typeCheckedDefinition == null) {
-        constructor = dataDefinition.getConstructor(name);
-        if (constructor == null && !args.isEmpty()) {
-          myVisitor.getErrorReporter().report(new MissingConstructorError(name, dataDefinition, expr));
-          return null;
-        }
-        if (constructor != null && !constructor.status().headerIsOK()) {
-          myVisitor.getErrorReporter().report(new HasErrors(Error.Level.ERROR, constructor.getReferable(), expr));
-          return null;
-        }
-        if (constructor != null && constructor.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-          myVisitor.getErrorReporter().report(new HasErrors(Error.Level.WARNING, constructor.getReferable(), expr));
-        }
-      } else {
-        if (typeCheckedDefinition instanceof Constructor && dataDefinition.getConstructors().contains(typeCheckedDefinition)) {
-          constructor = (Constructor) typeCheckedDefinition;
-        } else {
-          throw new IllegalStateException("Internal error: " + typeCheckedDefinition + " is not a constructor of " + dataDefinition);
-        }
-      }
-
-      if (constructor != null) {
-        CheckTypeVisitor.TResult result1 = CheckTypeVisitor.DefCallResult.makeTResult(expr, constructor, dataCall.getSortArgument(), null);
-        return args.isEmpty() ? result1 : ((CheckTypeVisitor.DefCallResult) result1).applyExpressions(args);
-      }
+  public CheckTypeVisitor.TResult typeCheckDefCall(GlobalReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
+    Definition typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
+    if (typeCheckedDefinition == null) {
+      return null;
     }
 
     Expression thisExpr = null;
-    final Definition leftDefinition;
-    Referable member = null;
-    ClassCallExpression classCall = result.expression.checkedCast(ClassCallExpression.class);
-    if (classCall != null) {
-      // Static call
-      leftDefinition = classCall.getDefinition();
-      ClassField parentField = classCall.getDefinition().getEnclosingThisField();
-      if (parentField != null) {
-        thisExpr = classCall.getImplementation(parentField, null /* it should be OK */);
-      }
-      if (typeCheckedDefinition == null) {
-        member = myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getReferable()).resolveName(name);
-        if (member == null) {
-          myVisitor.getErrorReporter().report(new MemberNotFoundError(leftDefinition, name, true, expr));
-          return null;
-        }
-      }
-    } else {
-      // Dynamic call
-      if (result.expression.isInstance(DefCallExpression.class)) {
-        DefCallExpression defCall = result.expression.cast(DefCallExpression.class);
-        thisExpr = defCall.getDefCallArguments().size() == 1 ? defCall.getDefCallArguments().get(0) : null;
-        leftDefinition = defCall.getDefinition();
-      } else {
-        myVisitor.getErrorReporter().report(new TypecheckingError("Expected a definition", expr));
-        return null;
+    if (typeCheckedDefinition.getThisClass() != null) {
+      if (myThisClass != null) {
+        thisExpr = findParent(myThisClass, typeCheckedDefinition, new ReferenceExpression(myThisBinding));
       }
 
-      if (typeCheckedDefinition == null) {
-        if (!(leftDefinition instanceof ClassField)) { // Some class fields do not have abstract definitions
-          Scope scope = new NamespaceScope(myVisitor.getStaticNamespaceProvider().forReferable(leftDefinition.getReferable()));
-          if (leftDefinition instanceof ClassDefinition) {
-            scope = new MergeScope(scope, new NamespaceScope(myVisitor.getDynamicNamespaceProvider().forReferable(leftDefinition.getReferable())));
+      if (thisExpr == null) {
+        /* TODO[abstract]
+        if (resolvedDefinition instanceof Concrete.ClassViewField) {
+          assert typeCheckedDefinition instanceof ClassField;
+          Concrete.ClassView ownClassView = ((Concrete.ClassViewField) resolvedDefinition).getOwnView();
+          ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
+          thisExpr = new InferenceReferenceExpression(new TypeClassInferenceVariable<>(typeCheckedDefinition.getThisClass().getName() + "-inst", classCall, ownClassView, true, expr, myVisitor.getAllBindings()), myVisitor.getEquations());
+        } else { */
+          TypecheckingError error;
+          if (myThisClass != null) {
+            error = new NotAvailableDefinitionError(typeCheckedDefinition, expr);
+          } else {
+            error = new TypecheckingError("Non-static definitions are not allowed in a static context", expr);
           }
-          member = scope.resolveName(name);
-        }
-        if (!(member instanceof GlobalReferable)) {
-          myVisitor.getErrorReporter().report(new MemberNotFoundError(leftDefinition, name, expr));
+          myVisitor.getErrorReporter().report(error);
           return null;
-        }
-      }
-    }
-
-    if (member != null) {
-      typeCheckedDefinition = getTypeCheckedDefinition((GlobalReferable) member, expr);
-      if (typeCheckedDefinition == null) {
-        return null;
+        // }
       }
     }
 

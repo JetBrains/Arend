@@ -8,6 +8,5 @@ import javax.annotation.Nullable;
 public interface UnresolvedReference extends Referable {
   @Nullable Object getData();
   @Nullable Referable resolve(Scope scope, NameResolver nameResolver);
-  @Nullable Referable resolveStatic(GlobalReferable enclosingClass, NameResolver nameResolver);
   @Nullable Referable resolveDynamic(GlobalReferable enclosingClass, NameResolver nameResolver);
 }

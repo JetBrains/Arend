@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -16,6 +18,7 @@ public class FilteredScope implements Scope {
     myInclude = include;
   }
 
+  @Nonnull
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
@@ -33,6 +36,16 @@ public class FilteredScope implements Scope {
       return myNames.contains(name) ? myScope.resolveName(name) : null;
     } else {
       return myNames.contains(name) ? null : myScope.resolveName(name);
+    }
+  }
+
+  @Nullable
+  @Override
+  public Scope resolveNamespace(String name) {
+    if (myInclude) {
+      return myNames.contains(name) ? myScope.resolveNamespace(name) : null;
+    } else {
+      return myNames.contains(name) ? null : myScope.resolveNamespace(name);
     }
   }
 

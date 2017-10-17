@@ -632,7 +632,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ReferenceExpression visitName(NameContext ctx) {
-    return new Concrete.ReferenceExpression(tokenPosition(ctx.start), null, new NamedUnresolvedReference(tokenPosition(ctx.prefix().start), visitPrefix(ctx.prefix())));
+    return new Concrete.ReferenceExpression(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(ctx.prefix().start), visitPrefix(ctx.prefix())));
   }
 
   @Override
@@ -733,7 +733,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Expression visitBinOpArgument(BinOpArgumentContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
     if (!ctx.onlyLevelAtom().isEmpty()) {
-      if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getExpression() == null) {
+      if (expr instanceof Concrete.ReferenceExpression) {
         Concrete.LevelExpression pLevel = null;
         Concrete.LevelExpression hLevel = null;
         for (OnlyLevelAtomContext levelCtx : ctx.onlyLevelAtom()) {
@@ -1146,10 +1146,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
 
       for (PostfixContext postfixContext : leftContext.postfix()) {
-        sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), null, new NamedUnresolvedReference(tokenPosition(postfixContext.start), visitPostfix(postfixContext))), null));
+        sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), new NamedUnresolvedReference(tokenPosition(postfixContext.start), visitPostfix(postfixContext))), null));
       }
 
-      binOp = new Concrete.ReferenceExpression(tokenPosition(leftContext.infix().getStart()), null, new NamedUnresolvedReference(tokenPosition(leftContext.infix().start), name));
+      binOp = new Concrete.ReferenceExpression(tokenPosition(leftContext.infix().getStart()), new NamedUnresolvedReference(tokenPosition(leftContext.infix().start), name));
     }
 
     if (left == null) {
@@ -1159,7 +1159,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     for (PostfixContext postfixContext : postfixCtxs) {
-      sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), null, new NamedUnresolvedReference(tokenPosition(postfixContext.start), visitPostfix(postfixContext))), null));
+      sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(tokenPosition(postfixContext.start), new NamedUnresolvedReference(tokenPosition(postfixContext.start), visitPostfix(postfixContext))), null));
     }
 
     return sequence.isEmpty() ? left : new Concrete.BinOpSequenceExpression(tokenPosition(token), left, sequence);
@@ -1167,18 +1167,50 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
-    Concrete.Expression expression = visitExpr(ctx.atom());
-    for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
-      if (fieldAccContext instanceof ClassFieldAccContext) {
-        IdContext idCtx = ((ClassFieldAccContext) fieldAccContext).id();
-        expression = new Concrete.ReferenceExpression(tokenPosition(fieldAccContext.getStart()), expression, new NamedUnresolvedReference(tokenPosition(idCtx.start), visitId(idCtx)));
-      } else
-      if (fieldAccContext instanceof SigmaFieldAccContext) {
-        expression = new Concrete.ProjExpression(tokenPosition(fieldAccContext.getStart()), expression, Integer.parseInt(((SigmaFieldAccContext) fieldAccContext).NUMBER().getText()) - 1);
+    if (ctx.fieldAcc().isEmpty()) {
+      return visitExpr(ctx.atom());
+    }
+
+    Concrete.Expression expression = null;
+    Token errorToken = null;
+    int i = 0;
+    if (ctx.fieldAcc().get(0) instanceof ClassFieldAccContext) {
+      if (ctx.atom() instanceof AtomLiteralContext && ((AtomLiteralContext) ctx.atom()).literal() instanceof NameContext && ((NameContext) ((AtomLiteralContext) ctx.atom()).literal()).prefix().PREFIX() != null) {
+        String name = ((NameContext) ((AtomLiteralContext) ctx.atom()).literal()).prefix().PREFIX().getText();
+        List<String> path = new ArrayList<>();
+        for (; i < ctx.fieldAcc().size(); i++) {
+          if (!(ctx.fieldAcc().get(i) instanceof ClassFieldAccContext)) {
+            break;
+          }
+          path.add(visitId(((ClassFieldAccContext) ctx.fieldAcc().get(i)).id()));
+        }
+        expression = new Concrete.ReferenceExpression(tokenPosition(ctx.start), LongUnresolvedReference.make(tokenPosition(ctx.start), name, path));
       } else {
-        throw new IllegalStateException();
+        errorToken = ctx.start;
+      }
+    } else {
+      expression = visitExpr(ctx.atom());
+    }
+
+    if (errorToken == null) {
+      for (; i < ctx.fieldAcc().size(); i++) {
+        FieldAccContext fieldAccCtx = ctx.fieldAcc().get(i);
+        if (fieldAccCtx instanceof ClassFieldAccContext) {
+          errorToken = fieldAccCtx.start;
+          break;
+        } else if (fieldAccCtx instanceof SigmaFieldAccContext) {
+          expression = new Concrete.ProjExpression(tokenPosition(fieldAccCtx.start), expression, Integer.parseInt(((SigmaFieldAccContext) fieldAccCtx).NUMBER().getText()) - 1);
+        } else {
+          throw new IllegalStateException();
+        }
       }
     }
+
+    if (errorToken != null) {
+      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessor are not implemented"));
+      throw new ParseException();
+    }
+
     return expression;
   }
 
@@ -1203,7 +1235,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private List<Concrete.ReferenceExpression> checkElimExpressions(List<? extends Concrete.Expression> expressions) {
     List<Concrete.ReferenceExpression> result = new ArrayList<>(expressions.size());
     for (Concrete.Expression elimExpr : expressions) {
-      if (!(elimExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) elimExpr).getExpression() == null)) {
+      if (!(elimExpr instanceof Concrete.ReferenceExpression)) {
         myErrorReporter.report(new ParserError((Position) elimExpr.getData(), "\\elim can be applied only to a local variable"));
         throw new ParseException();
       }

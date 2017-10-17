@@ -233,8 +233,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nullable Abstract.Expression expr, @Nonnull Referable referent, Void params) {
-    return new Concrete.ReferenceExpression(data, expr == null ? null : expr.accept(this, null), referent);
+  public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, Void params) {
+    return new Concrete.ReferenceExpression(data, referent);
   }
 
   @Override
@@ -323,7 +323,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Abstract.Expression arg = elem.getArgument();
       Referable referable = elem.getBinOpReference();
-      elems.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).getData() : referable, null, elem.getBinOpReference()), arg == null ? null : arg.accept(this, null)));
+      elems.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).getData() : referable, elem.getBinOpReference()), arg == null ? null : arg.accept(this, null)));
     }
     return new Concrete.BinOpSequenceExpression(data, left.accept(this, null), elems);
   }
@@ -346,11 +346,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<? extends Abstract.FieldAcc> fieldAccs, Void params) {
+  public Concrete.Expression visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<Integer> fieldAccs, Void params) {
     Concrete.Expression result = expression.accept(this, null);
-    for (Abstract.FieldAcc fieldAcc : fieldAccs) {
-      Referable ref = fieldAcc.getFieldReference();
-      result = ref == null ? new Concrete.ProjExpression(data, result, fieldAcc.getProjIndex() - 1) : new Concrete.ReferenceExpression(data, result, ref);
+    for (Integer fieldAcc : fieldAccs) {
+      result = new Concrete.ProjExpression(data, result, fieldAcc - 1);
     }
     return result;
   }

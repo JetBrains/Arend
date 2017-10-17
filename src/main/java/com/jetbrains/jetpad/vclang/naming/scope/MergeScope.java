@@ -7,6 +7,8 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -35,6 +37,7 @@ public class MergeScope implements Scope {
     myScopes.add(scope);
   }
 
+  @Nonnull
   @Override
   public List<Referable> getElements() {
     List<Referable> result = new ArrayList<>();
@@ -50,6 +53,18 @@ public class MergeScope implements Scope {
       Referable ref = scope.resolveName(name);
       if (ref != null) {
         return ref;
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public Scope resolveNamespace(String name) {
+    for (Scope scope : myScopes) {
+      Scope result = scope.resolveNamespace(name);
+      if (result != null) {
+        return result;
       }
     }
     return null;

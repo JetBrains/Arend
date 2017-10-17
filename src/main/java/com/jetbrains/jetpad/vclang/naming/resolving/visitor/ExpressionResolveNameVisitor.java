@@ -46,36 +46,13 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
-    Concrete.Expression left = expr.getExpression();
-    if (left != null) {
-      left.accept(this, null);
-      Referable referable = expr.getReferent();
-      if (referable instanceof UnresolvedReference) {
-        GlobalReferable globalRef = null;
-
-        if (left instanceof Concrete.ModuleCallExpression) {
-          globalRef = ((Concrete.ModuleCallExpression) left).getModule();
-        } else if (left instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) left).getExpression() == null && ((Concrete.ReferenceExpression) left).getReferent() instanceof GlobalReferable) {
-          globalRef = (GlobalReferable) ((Concrete.ReferenceExpression) left).getReferent();
-        }
-
-        Referable newRef = ((UnresolvedReference) referable).resolveStatic(globalRef, myNameResolver);
-        if (newRef == null) {
-          myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
-        } else if (!(newRef instanceof UnresolvedReference)) {
-          expr.setExpression(null); // TODO[abstract]: Remove this (after removing module calls)
-          expr.setReferent(newRef);
-        }
-      }
-    } else {
-      Referable referable = expr.getReferent();
-      if (referable instanceof UnresolvedReference) {
-        Referable newRef = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
-        if (newRef == null) {
-          myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
-        } else if (!(newRef instanceof UnresolvedReference)) {
-          expr.setReferent(newRef);
-        }
+    Referable referable = expr.getReferent();
+    if (referable instanceof UnresolvedReference) {
+      Referable newRef = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
+      if (newRef == null) {
+        myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
+      } else if (!(newRef instanceof UnresolvedReference)) {
+        expr.setReferent(newRef);
       }
     }
     return null;

@@ -4,6 +4,8 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 // TODO[classes]: Get rid of this class
@@ -14,6 +16,7 @@ public class NamespaceScope implements Scope {
     myNamespace = namespace;
   }
 
+  @Nonnull
   @Override
   public Collection<? extends GlobalReferable> getElements() {
     return myNamespace.getElements();
