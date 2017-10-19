@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -224,8 +225,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
-    if (def.getClassView().getReferent() instanceof GlobalReferable) {
-      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (GlobalReferable) def.getClassView().getReferent());
+    if (def.getClassView().getReferent() instanceof ClassReferable) {
+      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassView().getReferent());
       /* TODO[abstract]
       boolean ok = false;
       for (Concrete.ClassFieldImpl impl : def.getClassFieldImpls()) {

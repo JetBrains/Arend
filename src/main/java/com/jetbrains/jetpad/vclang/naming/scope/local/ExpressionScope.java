@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope.local;
 
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
@@ -101,6 +102,14 @@ public class ExpressionScope {
         clauses1 = new ArrayList<>(clauses);
       }
       return new LetScope(parentScope, clauses1);
+    }
+
+    // Replace the scope with class fields in class extensions
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
+      Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
+      if (parentParent instanceof Abstract.ClassReferenceHolder) {
+        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());
+      }
     }
 
     // Extend the scope with patterns

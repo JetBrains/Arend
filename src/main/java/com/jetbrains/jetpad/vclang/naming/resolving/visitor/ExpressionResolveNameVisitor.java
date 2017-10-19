@@ -8,10 +8,8 @@ import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
@@ -308,17 +306,17 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   public Void visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.getBaseClassExpression().accept(this, null);
     GlobalReferable classDef = Concrete.getUnderlyingClassDef(expr);
-    if (classDef != null) {
-      visitClassFieldImpls(expr.getStatements(), classDef);
+    if (classDef instanceof ClassReferable) {
+      visitClassFieldImpls(expr.getStatements(), (ClassReferable) classDef);
     }
     return null;
   }
 
-  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls, GlobalReferable classDef) {
+  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
       Referable field = impl.getImplementedField();
       if (field instanceof UnresolvedReference) {
-        Referable resolvedRef = ((UnresolvedReference) field).resolveDynamic(classDef, myNameResolver);
+        Referable resolvedRef = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef), myNameResolver);
         if (resolvedRef == null) {
           myErrorReporter.report(new NoSuchFieldError(field.textRepresentation(), impl));
         } else if (!(resolvedRef instanceof UnresolvedReference)) {

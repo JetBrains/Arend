@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -962,12 +963,18 @@ public final class Concrete {
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
 
-    public ClassDefinition(GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(ClassReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
       myParameters = parameters;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
+    }
+
+    @Nonnull
+    @Override
+    public ClassReferable getData() {
+      return (ClassReferable) super.getData();
     }
 
     @Nonnull

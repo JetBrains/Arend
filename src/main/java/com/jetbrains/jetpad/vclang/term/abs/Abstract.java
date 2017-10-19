@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.abs;
 
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
@@ -43,6 +44,13 @@ public final class Abstract {
     @Nonnull List<? extends Pattern> getArguments();
   }
 
+  public interface Reference extends SourceNode {
+    @Nullable Object getData();
+    @Nonnull Referable getReferent();
+  }
+
+  // Holder
+
   public interface ParametersHolder extends SourceNode {
     @Nonnull List<? extends Abstract.Parameter> getParameters();
   }
@@ -51,13 +59,12 @@ public final class Abstract {
     @Nonnull Collection<? extends Abstract.LetClause> getLetClauses();
   }
 
-  public interface Reference extends SourceNode {
-    @Nullable Object getData();
-    @Nonnull Referable getReferent();
-  }
-
   public interface EliminatedExpressionsHolder extends ParametersHolder {
     @Nullable Collection<? extends Reference> getEliminatedExpressions();
+  }
+
+  public interface ClassReferenceHolder extends SourceNode {
+    @Nullable ClassReferable getClassReference();
   }
 
   // Expression
@@ -117,6 +124,7 @@ public final class Abstract {
   }
 
   public interface ClassDefinition extends Definition, ParametersHolder {
+    @Override @Nonnull ClassReferable getReferable();
     @Nonnull Collection<? extends Expression> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();

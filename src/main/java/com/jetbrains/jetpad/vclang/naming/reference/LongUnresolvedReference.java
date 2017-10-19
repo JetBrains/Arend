@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class LongUnresolvedReference extends NamedUnresolvedReference {
@@ -60,35 +59,20 @@ public class LongUnresolvedReference extends NamedUnresolvedReference {
     return resolved;
   }
 
-  @Nullable
-  @Override
-  public Referable resolveDynamic(GlobalReferable enclosingClass, NameResolver nameResolver) {
-    if (resolved != null) {
-      return resolved;
-    }
-    if (enclosingClass != null && nameResolver != null) {
-      resolved = nameResolver.nsProviders.dynamics.forReferable(enclosingClass).resolveName(super.textRepresentation());
-    }
-
-    return resolvePath(nameResolver);
-  }
-
-  private Referable resolvePath(NameResolver nameResolver) {
+  private void resolvePath(NameResolver nameResolver) {
     if (!(resolved instanceof GlobalReferable) || !myPath.isEmpty() && nameResolver == null) {
       resolved = new ErrorReference(getData(), null, resolved.textRepresentation());
-      return resolved;
+      return;
     }
 
     for (String name : myPath) {
       Referable newResolved = nameResolver.nsProviders.statics.forReferable((GlobalReferable) resolved).resolveName(name);
       if (newResolved == null) {
         resolved = new ErrorReference(getData(), resolved, name);
-        return resolved;
+        return;
       } else {
         resolved = newResolved;
       }
     }
-
-    return resolved;
   }
 }

@@ -118,7 +118,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(myDefinition, buildTypeParameters(def.getParameters()), buildReferenceExpressions(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferenceExpressions(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();

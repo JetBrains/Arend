@@ -86,14 +86,4 @@ public class ModuleUnresolvedReference implements UnresolvedReference {
     }
     return myResolved;
   }
-
-  @Nonnull
-  @Override
-  public Referable resolveDynamic(GlobalReferable enclosingClass, NameResolver nameResolver) {
-    if (myResolved != null) {
-      return myResolved;
-    }
-    myResolved = this;
-    return this;
-  }
 }

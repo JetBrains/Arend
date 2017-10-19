@@ -2,16 +2,14 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.reference.ClassReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.ModuleReference;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.reference.ModuleUnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -604,14 +602,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       superClasses.add((Concrete.ReferenceExpression) superClass);
     }
 
-    GlobalReference reference = new GlobalReference(tokenPosition(ctx.start), visitId(ctx.id()), visitPrecedence(ctx.precedence()));
+    List<GlobalReference> fieldReferences = new ArrayList<>();
+    ClassReference reference = new ClassReference(tokenPosition(ctx.start), visitId(ctx.id()), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, polyParameters, superClasses, fields, implementations);
     reference.setDefinition(classDefinition);
 
     ClassGroup resultGroup;
     if (!ctx.classStat().isEmpty()) {
       List<Group> dynamicSubgroups = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
-      List<GlobalReference> fieldReferences = new ArrayList<>(fields.size());
       resultGroup = new ClassGroup(reference, dynamicSubgroups, fieldReferences, staticSubgroups, namespaceCommands, parent);
       visitInstanceStatements(ctx.classStat(), fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
       for (Concrete.ClassField field : fields) {
