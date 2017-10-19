@@ -94,19 +94,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private List<Concrete.ReferenceExpression> buildReferenceExpressions(Collection<? extends Abstract.Expression> absElimExpressions) {
-    List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
-    for (Abstract.Expression absElimExpression : absElimExpressions) {
-      Concrete.Expression elimExpression = absElimExpression.accept(this, null);
-      if (elimExpression instanceof Concrete.ReferenceExpression) {
-        elimExpressions.add((Concrete.ReferenceExpression) elimExpression);
-      } else {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a reference", absElimExpression.getData()));
-      }
-    }
-    return elimExpressions;
-  }
-
   private List<Concrete.ReferenceExpression> buildReferenceExpressionsFromReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
     List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
     for (Abstract.Reference reference : absElimExpressions) {
@@ -118,7 +105,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferenceExpressions(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferenceExpressionsFromReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();

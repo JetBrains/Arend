@@ -125,7 +125,7 @@ public final class Abstract {
 
   public interface ClassDefinition extends Definition, ParametersHolder {
     @Override @Nonnull ClassReferable getReferable();
-    @Nonnull Collection<? extends Expression> getSuperClasses();
+    @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
   }

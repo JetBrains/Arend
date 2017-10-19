@@ -40,7 +40,7 @@ public class ClassReference extends GlobalReference implements ClassReferable {
     for (Concrete.ReferenceExpression superClass : mySuperClasses) {
       Referable referable = superClass.getReferent();
       if (referable instanceof UnresolvedReference) {
-        referable = ((UnresolvedReference) superClass.getReferent()).resolve(scope, null);
+        referable = ((UnresolvedReference) referable).resolve(scope, null);
       }
       if (referable instanceof ClassReferable) {
         superClasses.add((ClassReferable) referable);
