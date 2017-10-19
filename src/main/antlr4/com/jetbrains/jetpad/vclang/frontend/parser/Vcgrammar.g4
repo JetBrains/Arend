@@ -147,7 +147,7 @@ atomFieldsAcc : atom ('.' fieldAcc)*;
 
 implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
 
-implementStatement : id '=>' expr;
+implementStatement : atomFieldsAcc '=>' expr;
 
 argument : atomFieldsAcc                # argumentExplicit
          | universeAtom                 # argumentUniverse

@@ -789,7 +789,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (implCtx != null) {
       List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(implCtx.implementStatement().size());
       for (ImplementStatementContext implementStatement : implCtx.implementStatement()) {
-        implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.id().start), new NamedUnresolvedReference(tokenPosition(implementStatement.id().start), visitId(implementStatement.id())), visitExpr(implementStatement.expr())));
+        Concrete.Expression refExpr = visitAtomFieldsAcc(implementStatement.atomFieldsAcc());
+        if (refExpr instanceof Concrete.ReferenceExpression) {
+          implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.atomFieldsAcc().start), ((Concrete.ReferenceExpression) refExpr).getReferent(), visitExpr(implementStatement.expr())));
+        } else {
+          myErrorReporter.report(new ParserError(tokenPosition(implementStatement.atomFieldsAcc().start), "Expected a reference"));
+        }
       }
       expr = new Concrete.ClassExtExpression(tokenPosition(ctx.atomFieldsAcc().start), expr, implementStatements);
     }
