@@ -23,8 +23,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -108,8 +106,8 @@ class DefinitionTypechecking {
     return null;
   }
 
-  static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, new LinkedHashMap<>(), errorReporter, instancePool);
+  static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, new LinkedHashMap<>(), errorReporter, instancePool);
     ClassDefinition enclosingClass = unit.getEnclosingClass() == null ? null : (ClassDefinition) state.getTypechecked(unit.getEnclosingClass().getData());
     Definition typechecked = state.getTypechecked(unit.getDefinition().getData());
 

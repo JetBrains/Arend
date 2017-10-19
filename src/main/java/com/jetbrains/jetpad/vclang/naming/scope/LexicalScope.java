@@ -16,6 +16,11 @@ public class LexicalScope extends PartialLexicalScope {
   }
 
   @Override
+  public PartialLexicalScope restrict(NamespaceCommand cmd) {
+    return new LexicalScope(parent, group, cmd);
+  }
+
+  @Override
   public Referable find(Predicate<Referable> pred) {
     Referable referable = super.find(pred);
     if (referable != null) {

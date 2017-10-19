@@ -956,10 +956,6 @@ public final class Concrete {
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
   }
 
-  public interface DefinitionCollection {
-    @Nonnull Collection<? extends Definition> getGlobalDefinitions();
-  }
-
   public static class ClassDefinition extends Definition {
     private final List<TypeParameter> myParameters;
     private final List<ReferenceExpression> mySuperClasses;

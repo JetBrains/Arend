@@ -44,7 +44,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking(PRELUDE_TYPECHECKER_STATE, staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking(PRELUDE_TYPECHECKER_STATE, ReferenceConcreteProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -53,7 +53,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, staticNsProvider, dynamicNsProvider, context, localErrorReporter, null);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(state, context, localErrorReporter, null);
     visitor.getFreeBindings().addAll(context.values());
     CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType, false);
     assertThat(errorList, containsErrors(errors));
@@ -98,7 +98,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(GlobalReference reference, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
+    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(reference);
   }
@@ -113,7 +113,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckModule(Group group, int errors) {
-    new Typechecking(state, staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, localErrorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckModules(Collections.singletonList(group));
+    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, localErrorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
     return state;
   }

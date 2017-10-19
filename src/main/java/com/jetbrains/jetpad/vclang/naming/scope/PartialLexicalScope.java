@@ -11,30 +11,34 @@ import java.util.function.Predicate;
 
 public class PartialLexicalScope implements Scope {
   protected final Scope parent;
-  private final Group myGroup;
+  protected final Group group;
   private final NamespaceCommand myCommand;
 
   public PartialLexicalScope(Scope parent, Group group) {
     this.parent = parent;
-    myGroup = group;
+    this.group = group;
     myCommand = null;
   }
 
-  public PartialLexicalScope(Scope parent, Group group, NamespaceCommand cmd) {
+  protected PartialLexicalScope(Scope parent, Group group, NamespaceCommand cmd) {
     this.parent = parent;
-    myGroup = group;
+    this.group = group;
     myCommand = cmd;
+  }
+
+  public PartialLexicalScope restrict(NamespaceCommand cmd) {
+    return new PartialLexicalScope(parent, group, cmd);
   }
 
   @Override
   public Referable find(Predicate<Referable> pred) {
-    for (Group subgroup : myGroup.getSubgroups()) {
+    for (Group subgroup : group.getSubgroups()) {
       Referable ref = testSubgroup(subgroup, pred);
       if (ref != null) {
         return ref;
       }
     }
-    for (Group subgroup : myGroup.getDynamicSubgroups()) {
+    for (Group subgroup : group.getDynamicSubgroups()) {
       Referable ref = testSubgroup(subgroup, pred);
       if (ref != null) {
         return ref;
@@ -42,14 +46,14 @@ public class PartialLexicalScope implements Scope {
     }
 
     /* TODO[abstract]
-    for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
+    for (NamespaceCommand cmd : group.getNamespaceCommands()) {
       if (myCommand == cmd) {
         break;
       }
 
       Referable referable = cmd.getGroupReference();
       if (referable instanceof UnresolvedReference) {
-        referable = ((UnresolvedReference) referable).resolve(new LexicalScope(parent, myGroup, cmd), null);
+        referable = ((UnresolvedReference) referable).resolve(restrict(cmd), null);
       }
       if (referable instanceof GlobalReferable) {
         Collection<? extends Referable> refs = cmd.getSubgroupReferences();
@@ -84,12 +88,12 @@ public class PartialLexicalScope implements Scope {
   @Nullable
   @Override
   public Scope resolveNamespace(String name) {
-    for (Group subgroup : myGroup.getSubgroups()) {
+    for (Group subgroup : group.getSubgroups()) {
       if (subgroup.getReferable().textRepresentation().equals(name)) {
         return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup);
       }
     }
-    for (Group subgroup : myGroup.getDynamicSubgroups()) {
+    for (Group subgroup : group.getDynamicSubgroups()) {
       if (subgroup.getReferable().textRepresentation().equals(name)) {
         return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup);
       }

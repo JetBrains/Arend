@@ -56,7 +56,7 @@ public class CachingTestCase extends NameResolverTestCase {
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(peristenceProvider, storage, storage, sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking(tcState, staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {});
+    typechecking = new Typechecking(tcState, ReferenceConcreteProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {});
   }
 
   @Override
@@ -84,7 +84,7 @@ public class CachingTestCase extends NameResolverTestCase {
     MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
 
     prelude = moduleLoader.load(sourceId);
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));
     storage.setPreludeNamespace(staticNsProvider.forReferable(prelude.getReferable()));
   }
 

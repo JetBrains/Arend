@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
@@ -66,16 +65,6 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   }
 
   @Override
-  protected StaticNamespaceProvider getStaticNsProvider() {
-      return storageManager.staticNsProvider;
-  }
-
-  @Override
-  protected DynamicNamespaceProvider getDynamicNsProvider() {
-    return storageManager.dynamicNsProvider;
-  }
-
-  @Override
   protected PersistenceProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> createPersistenceProvider() {
     return new MyPersistenceProvider();
   }
@@ -83,7 +72,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   @Override
   protected Group loadPrelude() {
     Group prelude = super.loadPrelude();
-    Namespace preludeNamespace = getStaticNsProvider().forReferable(prelude.getReferable());
+    Namespace preludeNamespace = storageManager.staticNsProvider.forReferable(prelude.getReferable());
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
     storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);

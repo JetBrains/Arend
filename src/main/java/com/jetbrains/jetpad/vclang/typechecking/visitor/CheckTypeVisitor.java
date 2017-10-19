@@ -27,8 +27,6 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -59,8 +57,6 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 
 public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, CheckTypeVisitor.Result>, ConcreteLevelExpressionVisitor<LevelVariable, Level> {
   private final TypecheckerState myState;
-  private final StaticNamespaceProvider myStaticNsProvider;
-  private final DynamicNamespaceProvider myDynamicNsProvider;
   private Map<Referable, Binding> myContext;
   private final Set<Binding> myFreeBindings;
   private boolean myHasErrors = false;
@@ -273,10 +269,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, StaticNamespaceProvider staticNsProvider, DynamicNamespaceProvider dynamicNsProvider, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, InstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, InstancePool pool) {
     myState = state;
-    myStaticNsProvider = staticNsProvider;
-    myDynamicNsProvider = dynamicNsProvider;
     myContext = localContext;
     myFreeBindings = new HashSet<>();
     myErrorReporter = new MyErrorReporter(errorReporter);
@@ -292,14 +286,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public TypecheckerState getTypecheckingState() {
     return myState;
-  }
-
-  public StaticNamespaceProvider getStaticNamespaceProvider() {
-    return myStaticNsProvider;
-  }
-
-  public DynamicNamespaceProvider getDynamicNamespaceProvider() {
-    return myDynamicNsProvider;
   }
 
   public TypeCheckingDefCall getTypeCheckingDefCall() {

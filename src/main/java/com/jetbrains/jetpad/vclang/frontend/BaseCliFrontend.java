@@ -14,8 +14,6 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.FullName;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -164,13 +162,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
 
-  protected abstract StaticNamespaceProvider getStaticNsProvider();
-  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
   protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
@@ -223,7 +219,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), ReferenceConcreteProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
   class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
