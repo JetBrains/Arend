@@ -534,21 +534,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return new Result(new InferenceReferenceExpression(expr.getVariable(), myEquations), expr.getVariable().getType());
   }
 
-  @Override
-  public Result visitModuleCall(Concrete.ModuleCallExpression expr, ExpectedType expectedType) {
-    if (expr.getModule() == null) {
-      throw new IllegalStateException(); // TODO[abstract]
-    }
-    Definition typeChecked = myState.getTypechecked(expr.getModule());
-    if (typeChecked == null) {
-      assert false;
-      myErrorReporter.report(new TypecheckingError("Internal error: module '" + expr.getPath() + "' is not available yet", expr));
-      return null;
-    }
-
-    return new Result(new ClassCallExpression((ClassDefinition) typeChecked, Sort.PROP), new UniverseExpression(((ClassDefinition) typeChecked).getSort().subst(Sort.PROP.toLevelSubstitution())));
-  }
-
   private TypedSingleDependentLink visitNameParameter(Concrete.NameParameter param, int argIndex, Concrete.SourceNode sourceNode) {
     Referable referable = param.getReferable();
     String name = referable == null ? null : referable.textRepresentation();

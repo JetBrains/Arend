@@ -39,13 +39,6 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitModuleCall(Concrete.ModuleCallExpression expr, Void params) {
-    if (expr.getModule() != null)
-      myDependencies.add(expr.getModule());
-    return null;
-  }
-
-  @Override
   public Void visitLam(Concrete.LamExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     expr.getBody().accept(this, null);

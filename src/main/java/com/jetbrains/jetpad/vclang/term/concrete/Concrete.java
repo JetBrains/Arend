@@ -342,35 +342,6 @@ public final class Concrete {
     }
   }
 
-  public static class ModuleCallExpression extends Expression {
-    public static final byte PREC = 12;
-    private final ModulePath myPath;
-    private GlobalReferable myModule;
-
-    public ModuleCallExpression(Object data, ModulePath path) {
-      super(data);
-      myPath = path;
-    }
-
-    @Nonnull
-    public ModulePath getPath() {
-      return myPath;
-    }
-
-    public GlobalReferable getModule() {
-      return myModule;
-    }
-
-    public void setModule(GlobalReferable module) {
-      myModule = module;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitModuleCall(this, params);
-    }
-  }
-
   public static class ClassExtExpression extends Expression {
     public static final byte PREC = 12;
     private final Expression myBaseClassExpression;

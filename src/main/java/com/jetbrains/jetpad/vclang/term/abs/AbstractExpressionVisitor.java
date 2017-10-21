@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.abs;
 
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
@@ -11,7 +10,6 @@ import java.util.Collection;
 public interface AbstractExpressionVisitor<P, R> {
   R visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, P params);
   R visitReference(@Nullable Object data, @Nonnull Referable referent, P params);
-  R visitModuleCall(@Nullable Object data, @Nonnull ModulePath modulePath, P params);
   R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* @Nonnull */ @Nullable Abstract.Expression body, P params);
   R visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* @Nonnull */ @Nullable Abstract.Expression codomain, P params);
   R visitUniverse(@Nullable Object data, @Nullable Integer pLevelNum, @Nullable Integer hLevelNum, @Nullable Abstract.LevelExpression pLevel, @Nullable Abstract.LevelExpression hLevel, P params);

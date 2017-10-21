@@ -1,47 +1,74 @@
 package com.jetbrains.jetpad.vclang.term;
 
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public interface NamespaceCommand extends PrettyPrintable {
-  enum Kind { OPEN, EXPORT }
+  enum Kind { OPEN, EXPORT, IMPORT }
   @Nonnull Kind getKind();
   /* Nonnull */ @Nullable Referable getGroupReference();
-  boolean isHiding();
-  @Nullable Collection<? extends Referable> getSubgroupReferences();
+  boolean isUsing();
+  @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
+  @Nonnull Collection<? extends Referable> getHiddenReferences();
 
   @Override
   default String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-    StringBuilder builder = new StringBuilder();
-    builder.append(getKind() == Kind.OPEN ? "\\open" : "\\export");
+    List<LineDoc> docs = new ArrayList<>();
+    switch (getKind()) {
+      case OPEN: docs.add(text("\\open")); break;
+      case EXPORT: docs.add(text("\\export")); break;
+      case IMPORT: docs.add(text("\\import")); break;
+    }
+
     Referable ref = getGroupReference();
-    if (ref != null) {
-      builder.append(' ').append(ref.textRepresentation());
-    }
+    LineDoc referenceDoc = ref != null ? refDoc(ref) : text("_");
 
-    Collection<? extends Referable> references = getSubgroupReferences();
-    if (references != null) {
-      if (isHiding()) {
-        builder.append(" \\hiding");
-      }
-      builder.append(" (");
-      boolean first = true;
-      for (Referable reference : references) {
-        if (first) {
-          first = false;
-        } else {
-          builder.append(", ");
+    Collection<? extends NameRenaming> openedReferences = getOpenedReferences();
+    boolean using = isUsing();
+    if (!using || !openedReferences.isEmpty()) {
+      List<LineDoc> renamingDocs = new ArrayList<>(openedReferences.size());
+      for (NameRenaming renaming : openedReferences) {
+        LineDoc renamingDoc = refDoc(renaming.getOldReference());
+        GlobalReferable newRef = renaming.getNewReferable();
+        if (newRef != null) {
+          renamingDoc = hList(renamingDoc, text(" \\as "), refDoc(newRef));
         }
-        builder.append(reference.textRepresentation());
+        renamingDocs.add(renamingDoc);
       }
-      builder.append(')');
+
+      LineDoc openedReferencesDoc = hSep(text(", "), renamingDocs);
+      if (!using) {
+        referenceDoc = hList(referenceDoc, text("("), openedReferencesDoc, text(")"));
+      }
+      docs.add(referenceDoc);
+      if (using) {
+        docs.add(text("\\using"));
+        docs.add(openedReferencesDoc);
+      }
+    } else {
+      docs.add(referenceDoc);
     }
 
-    return builder.toString();
+    Collection<? extends Referable> hidingReferences = getHiddenReferences();
+    if (!hidingReferences.isEmpty()) {
+      docs.add(text("\\hiding"));
+      docs.add(hList(text("("), hSep(text(", "), hidingReferences.stream().map(DocFactory::refDoc).collect(Collectors.toList())), text(")")));
+    }
+
+    return DocStringBuilder.build(hSep(text(" "), docs));
   }
 }

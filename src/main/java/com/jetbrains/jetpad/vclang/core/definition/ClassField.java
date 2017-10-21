@@ -30,7 +30,7 @@ public class ClassField extends Definition {
 
   @Override
   public String getName() {
-    return getReferable() != null ? super.getName() : getThisClass().getName() + "::\\parent";
+    return getReferable() != null ? super.getName() : getThisClass().getName() + ".\\parent"; // TODO[classes]
   }
 
   @Override

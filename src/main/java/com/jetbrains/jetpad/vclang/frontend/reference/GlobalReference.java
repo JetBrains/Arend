@@ -20,6 +20,7 @@ public class GlobalReference implements GlobalReferable, SourceInfo {
     myPrecedence = precedence;
   }
 
+  @Nonnull
   @Override
   public Precedence getPrecedence() {
     return myPrecedence;

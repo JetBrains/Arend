@@ -2,25 +2,23 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
-import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.FilteredScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.AbstractExpressionError;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class GroupResolver {
   private final NameResolver myNameResolver;
@@ -76,7 +74,7 @@ public class GroupResolver {
   private GlobalReferable resolveGlobal(Referable referable, Scope parentScope, GlobalReferable groupRef) {
     Referable origRef = referable;
     if (referable instanceof UnresolvedReference) {
-      referable = ((UnresolvedReference) referable).resolve(parentScope, myNameResolver);
+      referable = ((UnresolvedReference) referable).resolve(parentScope);
     }
 
     if (!(referable instanceof GlobalReferable)) {
@@ -98,22 +96,47 @@ public class GroupResolver {
       return null;
     }
 
-    GlobalReferable globalRef = resolveGlobal(referable, parentScope, groupRef);
+    GlobalReferable globalRef;
+    if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(Arrays.asList(referable.textRepresentation().split("\\."))));
+      if (moduleNamespace == null) {
+        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(cmd, null, referable.textRepresentation())));
+        return null;
+      }
+      globalRef = moduleNamespace.getRegisteredClass();
+    } else {
+      globalRef = resolveGlobal(referable, parentScope, groupRef);
+    }
     if (globalRef == null) {
       return null;
     }
 
     Scope scope = new NamespaceScope(myNameResolver.nsProviders.statics.forReferable(globalRef));
-    Collection<? extends Referable> refs = cmd.getSubgroupReferences();
-    if (refs != null) {
+    Collection<? extends NameRenaming> refs = cmd.getOpenedReferences();
+    if (!refs.isEmpty() && !cmd.isUsing()) {
       Set<String> names = new HashSet<>();
-      for (Referable ref : refs) {
+      for (NameRenaming renaming : refs) {
+        globalRef = renaming.getNewReferable();
+        if (globalRef == null) {
+          globalRef = resolveGlobal(renaming.getOldReference(), scope, groupRef);
+        }
+        if (globalRef != null) {
+          names.add(globalRef.textRepresentation());
+        }
+      }
+      scope = new FilteredScope(scope, names, true);
+    }
+
+    Collection<? extends Referable> hiddenRefs = cmd.getHiddenReferences();
+    if (!hiddenRefs.isEmpty()) {
+      Set<String> names = new HashSet<>();
+      for (Referable ref : hiddenRefs) {
         globalRef = resolveGlobal(ref, scope, groupRef);
         if (globalRef != null) {
           names.add(globalRef.textRepresentation());
         }
       }
-      scope = new FilteredScope(scope, names, !cmd.isHiding());
+      scope = new FilteredScope(scope, names, false);
     }
 
     return scope;

@@ -13,6 +13,7 @@ public class SourceIdReference implements GlobalReferable {
     this.sourceId = sourceId;
   }
 
+  @Nonnull
   @Override
   public Precedence getPrecedence() {
     return Precedence.DEFAULT;

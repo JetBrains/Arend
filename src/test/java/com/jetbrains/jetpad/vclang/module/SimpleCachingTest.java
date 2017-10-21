@@ -40,8 +40,8 @@ public class SimpleCachingTest extends CachingTestCase {
   public void circularDependencies() {
     loadPrelude();
 
-    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\function a (n : Nat) : Nat | zero => zero | suc n => ::B.b n");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function b (n : Nat) : Nat | zero => zero | suc n => ::A.a n");
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\import B() \\function a (n : Nat) : Nat | zero => zero | suc n => B.b n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function b (n : Nat) : Nat | zero => zero | suc n => A.a n");
 
     Group aClass = moduleLoader.load(a);
     typecheck(aClass);
@@ -119,7 +119,7 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void dependencySourceChanged() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\function f : \\Type0 => ::A.D\n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function f : \\Type0 => A.D\n");
     Group bClass = moduleLoader.load(b);
     typecheck(bClass);
 
@@ -138,7 +138,7 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void dependencySourceChangedWithUnload() {
     storage.add(ModulePath.moduleName("A"), "" + "\\function a : \\Set0 => \\Prop");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" + "\\function b : \\Set0 => ::A.a");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function b : \\Set0 => A.a");
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass);

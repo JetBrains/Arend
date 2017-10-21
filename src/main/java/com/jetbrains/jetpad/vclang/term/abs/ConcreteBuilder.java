@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -222,11 +221,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, Void params) {
     return new Concrete.ReferenceExpression(data, referent);
-  }
-
-  @Override
-  public Concrete.ModuleCallExpression visitModuleCall(@Nullable Object data, @Nonnull ModulePath modulePath, Void params) {
-    return new Concrete.ModuleCallExpression(data, modulePath);
   }
 
   @Override

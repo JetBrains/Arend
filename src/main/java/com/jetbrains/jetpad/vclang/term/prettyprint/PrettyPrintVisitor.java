@@ -153,12 +153,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  @Override
-  public Void visitModuleCall(Concrete.ModuleCallExpression expr, Precedence prec) {
-    myBuilder.append(expr.getPath());
-    return null;
-  }
-
   public void prettyPrintParameters(List<? extends Concrete.Parameter> parameters, final byte prec) {
     if (parameters != null) {
       new ListLayout<Concrete.Parameter>(){

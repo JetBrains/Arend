@@ -43,7 +43,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
 
     Concrete.Expression resultType = def.getResultType();
@@ -94,7 +94,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitData(Concrete.DataDefinition def, Scope scope) {
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
     if (def.getUniverse() != null) {
       def.getUniverse().accept(exprVisitor, null);
@@ -128,7 +128,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, context, myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters());
       for (Concrete.ReferenceExpression ref : def.getEliminatedReferences()) {
@@ -158,7 +158,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
       exprVisitor.visitReference(superClass, null);
     }
@@ -186,7 +186,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitClassView(Concrete.ClassView def, Scope parentScope) {
-    new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter)).visitReference(def.getUnderlyingClass(), null);
+    new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter)).visitReference(def.getUnderlyingClass(), null);
     if (!(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
       if (!(def.getUnderlyingClass().getReferent() instanceof UnresolvedReference)) {
         myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class", def.getUnderlyingClass().getReferent(), def)));
@@ -222,7 +222,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), myNameResolver, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
     exprVisitor.visitReference(def.getClassView(), null);
     if (def.getClassView().getReferent() instanceof ClassReferable) {

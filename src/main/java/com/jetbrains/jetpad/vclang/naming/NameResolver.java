@@ -3,14 +3,7 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
-
-import java.util.List;
 
 // TODO[abstract]: Get rid of this class
 public class NameResolver {
@@ -50,31 +43,5 @@ public class NameResolver {
       }
     }
     return ns;
-  }
-
-  public GlobalReferable resolveDefinition(final Scope currentScope, final List<String> path) {
-    if (path.isEmpty()) {
-      throw new IllegalArgumentException();
-    } else {
-      Scope scope = currentScope;
-      Referable ref = null;
-      for (String name : path) {
-        ref = scope.resolveName(name);
-        if (!(ref instanceof GlobalReferable)) {
-          return null;
-        }
-        scope = new NamespaceScope(nsProviders.statics.forReferable((GlobalReferable) ref));
-      }
-      return (GlobalReferable) ref;
-    }
-  }
-
-  public GlobalReferable resolveModuleCall(final Scope currentScope, final Concrete.ModuleCallExpression moduleCall) {
-    if (moduleCall.getModule() != null) {
-      return moduleCall.getModule();
-    }
-
-    ModuleNamespace ns = resolveModuleNamespace(moduleCall.getPath());
-    return ns == null ? null : ns.getRegisteredClass();
   }
 }

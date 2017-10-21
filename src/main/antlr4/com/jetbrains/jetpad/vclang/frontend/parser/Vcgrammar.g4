@@ -2,15 +2,18 @@ grammar Vcgrammar;
 
 statements : statement* EOF;
 
-statement : definition                                                            # statDef
-          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' id (',' id)* ')')?     # statCmd
+statement : definition                                                      # statDef
+          | nsCmd atomFieldsAcc nsUsing? ('\\hiding' '(' id (',' id)* ')')? # statCmd
           ;
 
-hidingOpt : '\\hiding'  # withHiding
-          |             # withoutHiding
-          ;
+nsCmd : '\\open'                        # openCmd
+      | '\\export'                      # exportCmd
+      | '\\import'                      # importCmd
+      ;
 
-nsCmdRoot : MODULE_PATH | id;
+nsUsing : USING? '(' nsId? (',' nsId)* ')';
+
+nsId : id ('\\as' precedence id)?;
 
 classStat : '|' precedence id ':' expr  # classField
           | '|' id '=>' expr            # classImplement
@@ -47,10 +50,6 @@ defaultInst :             # noDefault
 classViewField : id ('=>' precedence id)? ;
 
 where : '\\where' ('{' statement* '}' | statement);
-
-nsCmd : '\\open'                        # openCmd
-      | '\\export'                      # exportCmd
-      ;
 
 pattern : atomPattern             # patternAtom
         | prefix atomPatternOrID* # patternConstructor
@@ -140,7 +139,6 @@ fieldAcc : id                       # classFieldAcc
 atom  : literal                         # atomLiteral
       | '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
-      | MODULE_PATH                     # atomModuleCall
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
@@ -184,6 +182,7 @@ infix : INFIX | INFIX_PREFIX;
 
 postfix : POSTFIX_INFIX | POSTFIX_PREFIX;
 
+USING : '\\using';
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
 TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
@@ -195,7 +194,6 @@ WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment INFIX_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]];
-MODULE_PATH : ('::' [a-zA-Z_] [a-zA-Z0-9_']*)+;
 INFIX : INFIX_CHAR+;
 PREFIX : (INFIX_CHAR | [a-zA-Z_]) (INFIX_CHAR | [a-zA-Z0-9_'])*;
 PREFIX_INFIX : '`' INFIX;

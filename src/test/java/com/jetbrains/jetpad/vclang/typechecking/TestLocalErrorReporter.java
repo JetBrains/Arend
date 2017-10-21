@@ -17,6 +17,7 @@ public class TestLocalErrorReporter implements LocalErrorReporter {
   public TestLocalErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
     fakeDef = new GlobalReferable() {
+      @Nonnull
       @Override
       public Precedence getPrecedence() {
         return Precedence.DEFAULT;

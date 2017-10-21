@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
@@ -42,9 +41,9 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     return myName.hashCode();
   }
 
-  @Nullable
+  @Nonnull
   @Override
-  public Referable resolve(Scope scope, NameResolver nameResolver) {
+  public Referable resolve(Scope scope) {
     if (resolved != null) {
       return resolved;
     }

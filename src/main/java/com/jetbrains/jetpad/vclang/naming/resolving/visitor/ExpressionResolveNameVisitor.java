@@ -3,11 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
-import com.jetbrains.jetpad.vclang.naming.error.NamingError;
-import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
@@ -24,14 +20,12 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   private final Scope myParentScope;
   private final Scope myScope;
   private final List<Referable> myContext;
-  private final NameResolver myNameResolver;
   private final LocalErrorReporter myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, NameResolver nameResolver, LocalErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter) {
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
     myContext = context;
-    myNameResolver = nameResolver;
     myErrorReporter = errorReporter;
   }
 
@@ -46,31 +40,13 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable referable = expr.getReferent();
     if (referable instanceof UnresolvedReference) {
-      Referable newRef = ((UnresolvedReference) referable).resolve(myScope, myNameResolver);
-      if (newRef == null) {
-        myErrorReporter.report(new NotInScopeError(((UnresolvedReference) referable).getData(), null, referable.textRepresentation()));
-      } else if (!(newRef instanceof UnresolvedReference)) {
-        expr.setReferent(newRef);
-      }
+      expr.setReferent(((UnresolvedReference) referable).resolve(myScope));
     }
     return null;
   }
 
   @Override
   public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
-    return null;
-  }
-
-  @Override
-  public Void visitModuleCall(Concrete.ModuleCallExpression expr, Void params) {
-    if (expr.getModule() == null) {
-      GlobalReferable ref = myNameResolver.resolveModuleCall(myParentScope, expr);
-      if (ref != null) {
-        expr.setModule(ref);
-      } else {
-        myErrorReporter.report(new NamingError("Not in scope: " + expr.getPath().toString(), expr));
-      }
-    }
     return null;
   }
 
@@ -283,7 +259,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
     Referable referable = ((Concrete.ConstructorPattern) pattern).getConstructor();
     if (referable instanceof UnresolvedReference) {
-      Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope, myNameResolver);
+      Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope);
       if (newRef instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) newRef).getError());
       } else {
@@ -316,12 +292,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
       Referable field = impl.getImplementedField();
       if (field instanceof UnresolvedReference) {
-        Referable resolvedRef = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef), myNameResolver);
-        if (resolvedRef == null) {
-          myErrorReporter.report(new NoSuchFieldError(field.textRepresentation(), impl));
-        } else if (!(resolvedRef instanceof UnresolvedReference)) {
-          impl.setImplementedField(resolvedRef);
-        }
+        impl.setImplementedField(((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef)));
       }
       impl.getImplementation().accept(this, null);
     }

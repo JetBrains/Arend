@@ -59,7 +59,7 @@ public class ExpressionScope {
             for (Abstract.Reference elimExpr : elimExprs) {
               Referable referable = elimExpr.getReferent();
               if (referable instanceof UnresolvedReference) {
-                referable = ((UnresolvedReference) referable).resolve(parametersScope, null);
+                referable = ((UnresolvedReference) referable).resolve(parametersScope);
               }
               excluded.add(referable);
             }

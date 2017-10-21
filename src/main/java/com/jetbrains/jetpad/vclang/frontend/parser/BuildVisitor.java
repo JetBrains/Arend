@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.ModuleReference;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
@@ -22,7 +21,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -186,17 +184,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return s.substring(0, s.length() - 1);
   }
 
-  private List<String> getModulePath(String module) {
-    String[] modulePath = module.split("::");
-    assert modulePath[0].isEmpty();
-    return Arrays.asList(modulePath).subList(1, modulePath.length);
-  }
-
-  @Override
-  public Concrete.ModuleCallExpression visitAtomModuleCall(AtomModuleCallContext ctx) {
-    return new Concrete.ModuleCallExpression(tokenPosition(ctx.getStart()), new ModulePath(getModulePath(ctx.MODULE_PATH().getText())));
-  }
-
   private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
@@ -256,31 +243,29 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
-    List<String> modulePath = ctx.nsCmdRoot().MODULE_PATH() == null ? null : getModulePath(ctx.nsCmdRoot().MODULE_PATH().getText());
-    String name = ctx.nsCmdRoot().id() == null ? null : visitId(ctx.nsCmdRoot().id());
-    if (modulePath == null && name == null) {
-      throw new IllegalStateException();
+    Concrete.ReferenceExpression refExpr = visitAtomFieldsAccRef(ctx.atomFieldsAcc());
+    if (refExpr == null) {
+      throw new ParseException();
     }
 
-    List<String> path = new ArrayList<>();
-    for (FieldAccContext fieldAccContext : ctx.fieldAcc()) {
-      if (fieldAccContext instanceof ClassFieldAccContext) {
-        path.add(visitId(((ClassFieldAccContext) fieldAccContext).id()));
-      } else {
-        myErrorReporter.report(new ParserError(tokenPosition(fieldAccContext.getStart()), "Expected a name"));
-      }
-    }
-
-    List<Referable> names;
-    if (!ctx.id().isEmpty()) {
-      names = new ArrayList<>(ctx.id().size());
-      for (IdContext idCtx : ctx.id()) {
-        names.add(new NamedUnresolvedReference(tokenPosition(idCtx.start), visitId(idCtx)));
-      }
+    List<SimpleNamespaceCommand.SimpleNameRenaming> openedReferences;
+    if (ctx.nsUsing() == null) {
+      openedReferences = Collections.emptyList();
     } else {
-      names = null;
+      openedReferences = new ArrayList<>(ctx.nsUsing().nsId().size());
+      for (NsIdContext nsIdCtx : ctx.nsUsing().nsId()) {
+        openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(
+          new NamedUnresolvedReference(tokenPosition(nsIdCtx.id(0).start), visitId(nsIdCtx.id(0))),
+          nsIdCtx.id().size() < 2 ? null : new GlobalReference(tokenPosition(nsIdCtx.id(1).start), visitId(nsIdCtx.id(1)), visitPrecedence(nsIdCtx.precedence()))));
+      }
     }
-    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, modulePath != null ? new ModuleUnresolvedReference(tokenPosition(ctx.nsCmdRoot().MODULE_PATH().getSymbol()), new ModulePath(modulePath), path) : LongUnresolvedReference.make(tokenPosition(ctx.nsCmdRoot().id().start), name, path), ctx.hidingOpt() instanceof WithHidingContext, names, parent);
+
+    List<Referable> hiddenReferences = new ArrayList<>(ctx.id().size());
+    for (IdContext idCtx : ctx.id()) {
+      hiddenReferences.add(new NamedUnresolvedReference(tokenPosition(idCtx.start), visitId(idCtx)));
+    }
+
+    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, refExpr.getReferent(), ctx.nsUsing() == null || ctx.nsUsing().USING() != null, openedReferences, hiddenReferences, parent);
   }
 
   @Override
@@ -291,6 +276,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public NamespaceCommand.Kind visitExportCmd(ExportCmdContext ctx) {
     return NamespaceCommand.Kind.EXPORT;
+  }
+
+  @Override
+  public NamespaceCommand.Kind visitImportCmd(ImportCmdContext ctx) {
+    return NamespaceCommand.Kind.IMPORT;
   }
 
   private Precedence visitPrecedence(PrecedenceContext ctx) {
@@ -594,12 +584,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
 
     for (AtomFieldsAccContext exprCtx : ctx.atomFieldsAcc()) {
-      Concrete.Expression superClass = visitAtomFieldsAcc(exprCtx);
-      if (!(superClass instanceof Concrete.ReferenceExpression)) {
-        myErrorReporter.report(new ParserError((Position) superClass.getData(), "Expected a class"));
-        throw new ParseException();
+      Concrete.ReferenceExpression superClass = visitAtomFieldsAccRef(exprCtx);
+      if (superClass != null) {
+        superClasses.add(superClass);
       }
-      superClasses.add((Concrete.ReferenceExpression) superClass);
     }
 
     List<GlobalReference> fieldReferences = new ArrayList<>();
@@ -789,11 +777,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (implCtx != null) {
       List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(implCtx.implementStatement().size());
       for (ImplementStatementContext implementStatement : implCtx.implementStatement()) {
-        Concrete.Expression refExpr = visitAtomFieldsAcc(implementStatement.atomFieldsAcc());
-        if (refExpr instanceof Concrete.ReferenceExpression) {
-          implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.atomFieldsAcc().start), ((Concrete.ReferenceExpression) refExpr).getReferent(), visitExpr(implementStatement.expr())));
-        } else {
-          myErrorReporter.report(new ParserError(tokenPosition(implementStatement.atomFieldsAcc().start), "Expected a reference"));
+        Concrete.ReferenceExpression refExpr = visitAtomFieldsAccRef(implementStatement.atomFieldsAcc());
+        if (refExpr != null) {
+          implementStatements.add(new Concrete.ClassFieldImpl(tokenPosition(implementStatement.atomFieldsAcc().start), refExpr.getReferent(), visitExpr(implementStatement.expr())));
         }
       }
       expr = new Concrete.ClassExtExpression(tokenPosition(ctx.atomFieldsAcc().start), expr, implementStatements);
@@ -1166,6 +1152,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     return sequence.isEmpty() ? left : new Concrete.BinOpSequenceExpression(tokenPosition(token), left, sequence);
+  }
+
+  private Concrete.ReferenceExpression visitAtomFieldsAccRef(AtomFieldsAccContext ctx) {
+    Concrete.Expression refExpr = visitAtomFieldsAcc(ctx);
+    if (refExpr instanceof Concrete.ReferenceExpression) {
+      return (Concrete.ReferenceExpression) refExpr;
+    }
+    myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Expected a reference"));
+    return null;
   }
 
   @Override

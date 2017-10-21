@@ -87,7 +87,7 @@ public class SimpleDynamicNamespaceProvider implements DynamicNamespaceProvider 
     Scope scope = new GroupResolver(myNameResolver, myErrorReporter).getGroupScope(group, parentScope);
     SimpleNamespace ns = new SimpleNamespace();
     GlobalReferable groupRef = group.getReferable();
-    if (!updateClass(groupRef, new ExpressionResolveNameVisitor(scope, null, myNameResolver, new ProxyErrorReporter(groupRef, myErrorReporter)), new HashSet<>(), updated, ns)) {
+    if (!updateClass(groupRef, new ExpressionResolveNameVisitor(scope, null, new ProxyErrorReporter(groupRef, myErrorReporter)), new HashSet<>(), updated, ns)) {
       updated.add(groupRef);
       updateClassNamespace(groupRef, ns);
     }

@@ -19,6 +19,7 @@ public class ModuleReference implements GlobalReferable {
     return path.toString();
   }
 
+  @Nonnull
   @Override
   public Precedence getPrecedence() {
     return Precedence.DEFAULT;

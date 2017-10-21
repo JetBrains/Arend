@@ -34,11 +34,6 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return expr2 instanceof Concrete.InferenceReferenceExpression && expr.getVariable() == ((Concrete.InferenceReferenceExpression) expr2).getVariable();
   }
 
-  @Override
-  public Boolean visitModuleCall(Concrete.ModuleCallExpression expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.ModuleCallExpression && expr1.getPath().equals(((Concrete.ModuleCallExpression) expr2).getPath());
-  }
-
   private boolean compareArg(Concrete.Parameter arg1, Concrete.Parameter arg2) {
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;

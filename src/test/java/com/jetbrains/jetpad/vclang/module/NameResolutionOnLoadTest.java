@@ -26,13 +26,13 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   }
 
   private void setupSources() {
-    storage.add(moduleName("A"), "\\function a => ::B.b");
+    storage.add(moduleName("A"), "\\import B() \\function a => B.b");
     storage.add(moduleName("B"), "\\function b => x\n \\function x => 0");
-    storage.add(moduleName("B", "C"), "\\function c => ::B::C::E.e");
-    storage.add(moduleName("B", "C", "E"), "\\function e => ::B::C::F.f");
+    storage.add(moduleName("B", "C"), "\\import B.C.E() \\function c => B.C.E.e");
+    storage.add(moduleName("B", "C", "E"), "\\import B.C.F() \\function e => B.C.F.f");
     storage.add(moduleName("B", "C", "F"), "\\function f => 0");
-    storage.add(moduleName("X"), "\\function f => ::Y.f");
-    storage.add(moduleName("Y"), "\\function f => ::X.f");
+    storage.add(moduleName("X"), "\\import Y() \\function f => Y.f");
+    storage.add(moduleName("Y"), "\\import X() \\function f => X.f");
   }
 
   @Test

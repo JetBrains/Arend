@@ -55,8 +55,13 @@ public class ModulePath {
   @Override
   public String toString() {
     StringBuilder result = new StringBuilder();
+    boolean first = true;
     for (String aPath : myPath) {
-      result.append("::");
+      if (first) {
+        first = false;
+      } else {
+        result.append(".");
+      }
       result.append(aPath);
     }
     return result.toString();
