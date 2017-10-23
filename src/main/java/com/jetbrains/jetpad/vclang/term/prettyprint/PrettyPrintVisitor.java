@@ -199,7 +199,7 @@ public class PrettyPrintVisitor implements AbstractExpressionVisitor<Precedence,
     if (parameter instanceof Abstract.TypeParameter) {
       Abstract.Expression type = ((Abstract.TypeParameter) parameter).getType();
       if (parameter.getExplicit()) {
-        type.accept(this, new Precedence(prec));
+        type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
       } else {
         myBuilder.append('{');
         type.accept(this, new Precedence(Abstract.Expression.PREC));

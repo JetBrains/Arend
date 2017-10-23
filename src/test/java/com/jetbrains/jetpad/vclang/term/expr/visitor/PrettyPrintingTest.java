@@ -133,4 +133,10 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
                 "    | suc x' => c1 (p : D2 y x')";
     testDefinition(s1);
   }
+
+  @Test
+  public void prettyPrintPiField(){
+    String s1 = "\\function f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}";
+    testDefinition(s1);
+  }
 }
