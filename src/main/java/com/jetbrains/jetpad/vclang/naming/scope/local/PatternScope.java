@@ -13,7 +13,7 @@ public class PatternScope implements Scope {
   private final Scope myParent;
   private final List<? extends Abstract.Pattern> myPatterns;
 
-  PatternScope(Scope parent, List<? extends Abstract.Pattern> patterns) {
+  public PatternScope(Scope parent, List<? extends Abstract.Pattern> patterns) {
     myParent = parent;
     myPatterns = patterns;
   }

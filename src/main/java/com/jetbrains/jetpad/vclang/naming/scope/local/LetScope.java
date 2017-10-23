@@ -12,7 +12,7 @@ public class LetScope implements Scope {
   private final Scope myParent;
   private final List<? extends Abstract.LetClause> myClauses;
 
-  LetScope(Scope parent, List<? extends Abstract.LetClause> clauses) {
+  public LetScope(Scope parent, List<? extends Abstract.LetClause> clauses) {
     myParent = parent;
     myClauses = clauses;
   }

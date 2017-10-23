@@ -6,10 +6,13 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
+import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.antlr.v4.runtime.*;
@@ -59,6 +62,7 @@ public abstract class ParseSource {
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
+      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new LexicalScope(EmptyScope.INSTANCE, result) /* TODO[abstract]: Replace with the "only exported scope" */);
     }
     if (nameResolver != null) {
       if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever

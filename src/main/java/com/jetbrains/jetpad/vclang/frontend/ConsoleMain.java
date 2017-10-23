@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
+import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
@@ -18,6 +19,8 @@ import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.apache.commons.cli.*;
 
@@ -76,6 +79,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
     storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
+    SimpleModuleScopeProvider.INSTANCE.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, new LexicalScope(EmptyScope.INSTANCE, prelude) /* TODO[abstract]: Replace with the "only exported scope" */);
     return prelude;
   }
 

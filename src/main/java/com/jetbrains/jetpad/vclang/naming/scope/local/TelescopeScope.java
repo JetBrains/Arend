@@ -15,13 +15,13 @@ public class TelescopeScope implements Scope {
   private final List<? extends Abstract.Parameter> myParameters;
   private final Collection<? extends Referable> myExcluded;
 
-  TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters) {
+  public TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters) {
     myParent = parent;
     myParameters = parameters;
     myExcluded = Collections.emptyList();
   }
 
-  TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters, Collection<? extends Referable> excluded) {
+  public TelescopeScope(Scope parent, List<? extends Abstract.Parameter> parameters, Collection<? extends Referable> excluded) {
     myParent = parent;
     myParameters = parameters;
     myExcluded = excluded;

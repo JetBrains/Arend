@@ -1,18 +1,46 @@
-package com.jetbrains.jetpad.vclang.naming.scope.local;
+package com.jetbrains.jetpad.vclang.naming.scope;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
+import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
+import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ExpressionScope {
-  public static Scope localScope(Scope parentScope, Abstract.SourceNode sourceNode) {
+public class ScopeFactory {
+  public static @Nonnull Scope forGroup(@Nullable ChildGroup group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
+    ChildGroup parentGroup = group == null ? null : group.getParentGroup();
+    Scope parentScope;
+    if (parentGroup == null) {
+      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"));
+      Scope importedScope = group == null ? null : new ImportedScope(group, moduleScopeProvider);
+      if (preludeScope == null && importedScope == null) {
+        parentScope = EmptyScope.INSTANCE;
+      } else if (preludeScope == null) {
+        parentScope = importedScope;
+      } else if (importedScope == null) {
+        parentScope = preludeScope;
+      } else {
+        List<Scope> scopes = new ArrayList<>(2);
+        scopes.add(preludeScope);
+        scopes.add(importedScope);
+        parentScope = new MergeScope(scopes);
+      }
+    } else {
+      parentScope = forGroup(parentGroup, moduleScopeProvider);
+    }
+    return new LexicalScope(parentScope, group);
+  }
+
+  public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {
     if (sourceNode == null) {
       return parentScope;
     }
