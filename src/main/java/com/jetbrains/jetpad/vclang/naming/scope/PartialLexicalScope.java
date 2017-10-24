@@ -13,17 +13,20 @@ public class PartialLexicalScope implements Scope {
   protected final Scope parent;
   protected final Group group;
   private final NamespaceCommand myCommand;
+  private boolean myIgnoreOpen;
 
-  public PartialLexicalScope(Scope parent, Group group) {
+  public PartialLexicalScope(Scope parent, Group group, boolean ignoreOpen) {
     this.parent = parent;
     this.group = group;
     myCommand = null;
+    myIgnoreOpen = ignoreOpen;
   }
 
   protected PartialLexicalScope(Scope parent, Group group, NamespaceCommand cmd) {
     this.parent = parent;
     this.group = group;
     myCommand = cmd;
+    myIgnoreOpen = false;
   }
 
   public PartialLexicalScope restrict(NamespaceCommand cmd) {
@@ -90,12 +93,12 @@ public class PartialLexicalScope implements Scope {
   public Scope resolveNamespace(String name) {
     for (Group subgroup : group.getSubgroups()) {
       if (subgroup.getReferable().textRepresentation().equals(name)) {
-        return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup);
+        return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup, true);
       }
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       if (subgroup.getReferable().textRepresentation().equals(name)) {
-        return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup);
+        return new PartialLexicalScope(EmptyScope.INSTANCE, subgroup, true);
       }
     }
 

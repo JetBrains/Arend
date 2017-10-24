@@ -41,7 +41,7 @@ public final class Concrete {
 
     @Override
     public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      return PrettyPrintVisitor.prettyPrint(this, infoProvider); // TODO[abstract]: implement this properly
+      return PrettyPrintVisitor.prettyPrint(this, infoProvider); // TODO[pretty]: implement this properly
     }
   }
 
@@ -112,7 +112,7 @@ public final class Concrete {
 
   // Expressions
 
-  public static GlobalReferable getUnderlyingClassDef(Expression expr) { // TODO[abstract]
+  public static GlobalReferable getUnderlyingClassDef(Expression expr) { // TODO[classes]
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof GlobalReferable) {
@@ -129,7 +129,7 @@ public final class Concrete {
 
   public static ClassView getUnderlyingClassView(Expression expr) {
     return null;
-    /* TODO[abstract]
+    /* TODO[classes]
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
       if (definition instanceof ClassView) {
@@ -899,7 +899,7 @@ public final class Concrete {
 
     @Override
     public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      return null; // TODO[abstract]: implement this properly
+      return null; // TODO[pretty]: implement this properly
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -74,8 +74,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.LetClause(referable, args, resultType, term);
   }
 
-  public static LocalReference ref(String name) {
-    return new LocalReference(null, name);
+  public static ParsedLocalReferable ref(String name) {
+    return new ParsedLocalReferable(null, name);
   }
 
   public static List<Referable> cvars(Referable... vars) {

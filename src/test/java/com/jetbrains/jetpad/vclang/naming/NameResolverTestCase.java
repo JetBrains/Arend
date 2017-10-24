@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -15,13 +15,10 @@ import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,17 +89,17 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  GlobalReference resolveNamesDef(String text, int errors) {
+  ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
     Group group = parseDef(text);
     staticNsProvider.collect(group, errorReporter);
     dynamicNsProvider.collect(group, errorReporter, nameResolver);
     GroupNameResolver groupResolver = new GroupNameResolver(nameResolver, errorReporter, ReferenceConcreteProvider.INSTANCE);
     groupResolver.resolveGroup(group, new MergeScope(new SingletonScope(group.getReferable()), globalScope));
     assertThat(errorList, containsErrors(errors));
-    return (GlobalReference) group.getReferable();
+    return (ConcreteGlobalReferable) group.getReferable();
   }
 
-  protected GlobalReference resolveNamesDef(String text) {
+  protected ConcreteGlobalReferable resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 

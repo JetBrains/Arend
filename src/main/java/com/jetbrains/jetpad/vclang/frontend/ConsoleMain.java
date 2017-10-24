@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProv
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -79,7 +79,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
     storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
     storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
-    SimpleModuleScopeProvider.INSTANCE.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, new LexicalScope(EmptyScope.INSTANCE, prelude) /* TODO[abstract]: Replace with the "only exported scope" */);
+    SimpleModuleScopeProvider.INSTANCE.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, new LexicalScope(EmptyScope.INSTANCE, prelude, true));
     return prelude;
   }
 
@@ -194,7 +194,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
     @Override
     public String getIdFor(GlobalReferable referable) {
-      return referable instanceof GlobalReference ? ((GlobalReference) referable).positionTextRepresentation() : null;
+      return referable instanceof ConcreteGlobalReferable ? ((ConcreteGlobalReferable) referable).positionTextRepresentation() : null;
     }
 
     @Override

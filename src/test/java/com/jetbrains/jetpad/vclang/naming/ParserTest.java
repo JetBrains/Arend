@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Test;
@@ -18,8 +18,8 @@ public class ParserTest extends NameResolverTestCase {
   public void parserLetToTheRight() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x => \\let | x => \\Type0 \\in x x");
     Concrete.Expression expr1 = resolveNamesExpr("\\let | x => \\Type0 \\in \\lam x => x x");
-    LocalReference x = ref("x");
-    LocalReference x1 = ref("x");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable x1 = ref("x");
     Concrete.LetClause xClause = clet(x1, cargs(), cUniverseStd(0));
     assertTrue(compareAbstract(cLam(cName(x), cLet(clets(xClause), cApps(cVar(x1), cVar(x1)))), expr));
     assertTrue(compareAbstract(cLet(clets(xClause), cLam(cName(x), cApps(cVar(x), cVar(x)))), expr1));
@@ -28,8 +28,8 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parseLetMultiple() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x => \\Type0 | y => x \\in y");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cUniverseStd(0));
     Concrete.LetClause yClause = clet(y, cVar(x));
     assertTrue(compareAbstract(cLet(clets(xClause, yClause), cVar(y)), expr));
@@ -38,7 +38,7 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parseLetTyped() {
     Concrete.Expression expr = resolveNamesExpr("\\let | x : \\Type1 => \\Type0 \\in x");
-    LocalReference x = ref("x");
+    ParsedLocalReferable x = ref("x");
     Concrete.LetClause xClause = clet(x, cargs(), cUniverseStd(1), cUniverseStd(0));
     assertTrue(compareAbstract(cLet(clets(xClause), cVar(x)), expr));
   }
@@ -46,9 +46,9 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parserLam() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x y z => y");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
     boolean res = compareAbstract(cLam(cargs(cName(x), cName(y), cName(z)), cVar(y)), expr);
     assertTrue(res);
   }
@@ -56,46 +56,46 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void parserLam2() {
     Concrete.Expression expr = resolveNamesExpr("\\lam x y => (\\lam z w => y z) y");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
-    LocalReference w = ref("w");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
+    ParsedLocalReferable w = ref("w");
     assertTrue(compareAbstract(cLam(cargs(cName(x), cName(y)), cApps(cLam(cargs(cName(z), cName(w)), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserLamTele() {
     Concrete.Expression expr = resolveNamesExpr("\\lam p {x t : \\Type0} {y} (a : \\Type0 -> \\Type0) => (\\lam (z w : \\Type0) => y z) y");
-    LocalReference p = ref("p");
-    LocalReference x = ref("x");
-    LocalReference t = ref("t");
-    LocalReference y = ref("y");
-    LocalReference a = ref("a");
-    LocalReference z = ref("z");
-    LocalReference w = ref("w");
+    ParsedLocalReferable p = ref("p");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable t = ref("t");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable a = ref("a");
+    ParsedLocalReferable z = ref("z");
+    ParsedLocalReferable w = ref("w");
     assertTrue(compareAbstract(cLam(cargs(cName(p), cTele(false, cvars(x, t), cUniverseStd(0)), cName(false, y), cTele(cvars(a), cPi(cUniverseStd(0), cUniverseStd(0)))), cApps(cLam(cargs(cTele(cvars(z, w), cUniverseStd(0))), cApps(cVar(y), cVar(z))), cVar(y))), expr));
   }
 
   @Test
   public void parserPi() {
     Concrete.Expression expr = resolveNamesExpr("\\Pi (x y z : \\Type0) (w t : \\Type0 -> \\Type0) -> \\Pi (a b : \\Pi (c : \\Type0) -> x c) -> x b y w");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
-    LocalReference w = ref("w");
-    LocalReference t = ref("t");
-    LocalReference a = ref("a");
-    LocalReference b = ref("b");
-    LocalReference c = ref("c");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
+    ParsedLocalReferable w = ref("w");
+    ParsedLocalReferable t = ref("t");
+    ParsedLocalReferable a = ref("a");
+    ParsedLocalReferable b = ref("b");
+    ParsedLocalReferable c = ref("c");
     assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y, z), cUniverseStd(0)), cTele(cvars(w, t), cPi(cUniverseStd(0), cUniverseStd(0)))), cPi(ctypeArgs(cTele(cvars(a, b), cPi(c, cUniverseStd(0), cApps(cVar(x), cVar(c))))), cApps(cVar(x), cVar(b), cVar(y), cVar(w)))), expr));
   }
 
   @Test
   public void parserPi2() {
     Concrete.Expression expr = resolveNamesExpr("\\Pi (x y : \\Type0) (z : x x -> y y) -> z z y x");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
     assertTrue(compareAbstract(cPi(ctypeArgs(cTele(cvars(x, y), cUniverseStd(0)), cTele(cvars(z), cPi(cApps(cVar(x), cVar(x)), cApps(cVar(y), cVar(y))))), cApps(cVar(z), cVar(z), cVar(y), cVar(x))), expr));
   }
 
@@ -119,13 +119,13 @@ public class ParserTest extends NameResolverTestCase {
     assertTrue(pi.getParameters().get(2).getExplicit());
     assertFalse(pi.getParameters().get(3).getExplicit());
     assertTrue(pi.getParameters().get(4).getExplicit());
-    LocalReference A = ref("A");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
-    LocalReference w = ref("w");
-    LocalReference t = ref("t");
-    LocalReference r = ref("r");
+    ParsedLocalReferable A = ref("A");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
+    ParsedLocalReferable w = ref("w");
+    ParsedLocalReferable t = ref("t");
+    ParsedLocalReferable r = ref("r");
     List<Concrete.TypeParameter> params = new ArrayList<>();
     params.add(cTele(cvars(x, y), cUniverseStd(1)));
     params.add(cTele(false, cvars(z, w), cUniverseStd(1)));
@@ -145,10 +145,10 @@ public class ParserTest extends NameResolverTestCase {
     assertFalse(pi.getParameters().get(2).getExplicit());
     assertTrue(pi.getParameters().get(3).getExplicit());
     assertTrue(pi.getParameters().get(4).getExplicit());
-    LocalReference A = ref("A");
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
-    LocalReference z = ref("z");
+    ParsedLocalReferable A = ref("A");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable z = ref("z");
     List<Concrete.TypeParameter> params = new ArrayList<>();
     params.add(cTele(false, cvars(x), cUniverseStd(1)));
     params.add(cTele(cvars(ref(null)), cUniverseStd(1)));
@@ -238,7 +238,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -276,7 +276,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -304,7 +304,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -328,7 +328,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
@@ -350,7 +350,7 @@ public class ParserTest extends NameResolverTestCase {
       "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) it.next().getReferable()).getDefinition()).getBody()).getTerm();
+    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
     assertEquals(0, expr.getSequence().size());
     assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
     assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());

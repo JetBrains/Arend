@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import java.util.function.Predicate;
 
 public class LexicalScope extends PartialLexicalScope {
-  public LexicalScope(Scope parent, Group group) {
-    super(parent, group);
+  public LexicalScope(Scope parent, Group group, boolean ignoreOpen) {
+    super(parent, group, ignoreOpen);
   }
 
   public LexicalScope(Scope parent, Group group, NamespaceCommand cmd) {

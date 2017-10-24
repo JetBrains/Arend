@@ -1023,7 +1023,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     Collection<? extends Concrete.ClassField> fields = def.getFields();
     Collection<? extends Concrete.ClassFieldImpl> implementations = def.getImplementations();
-    // Collection<? extends Concrete.Definition> instanceDefinitions = def.getInstanceDefinitions(); // TODO[abstract]
+    // Collection<? extends Concrete.Definition> instanceDefinitions = def.getInstanceDefinitions(); // TODO[pretty]
 
     if (!fields.isEmpty() || !implementations.isEmpty() /* || !instanceDefinitions.isEmpty() */) {
       myBuilder.append(" {");

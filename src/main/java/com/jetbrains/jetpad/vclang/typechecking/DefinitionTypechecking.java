@@ -742,7 +742,7 @@ class DefinitionTypechecking {
   }
 
   private static void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
-    throw new NotImplementedException(); // TODO[abstract]
+    throw new NotImplementedException(); // TODO[classes]
     /*
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
 
@@ -758,7 +758,7 @@ class DefinitionTypechecking {
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
+      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[classes]: check that it is a field and that it belongs to the class, also check that referable is global
       if (classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getReferable());
         alreadyImplementedSourceNode = classFieldImpl;
@@ -772,7 +772,7 @@ class DefinitionTypechecking {
 
     Concrete.ClassView classView = (Concrete.ClassView) def.getClassView().getReferent();
     Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClass().getReferent()); // TODO[abstract]: check that it is a class, also check that referable is global and there is no left part in underlying class or whatever
+    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClass().getReferent()); // TODO[classes]: check that it is a class, also check that referable is global and there is no left part in underlying class or whatever
     ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
 
     List<GlobalReferable> notImplementedFields = new ArrayList<>();
@@ -798,7 +798,7 @@ class DefinitionTypechecking {
     }
     term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
 
-    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
+    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[classes]: check that it is a field and that it belongs to the class, also check that referable is global
     Expression impl = fieldSet.get(classifyingField);
     DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {

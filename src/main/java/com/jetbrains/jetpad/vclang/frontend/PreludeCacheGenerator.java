@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
@@ -80,8 +79,8 @@ public class PreludeCacheGenerator {
 
     @Override
     public String getIdFor(GlobalReferable definition) {
-      if (!(definition instanceof GlobalReference)) throw new IllegalStateException();
-      return ((GlobalReference) definition).positionTextRepresentation();
+      if (!(definition instanceof ConcreteGlobalReferable)) throw new IllegalStateException();
+      return ((ConcreteGlobalReferable) definition).positionTextRepresentation();
     }
 
     @Override

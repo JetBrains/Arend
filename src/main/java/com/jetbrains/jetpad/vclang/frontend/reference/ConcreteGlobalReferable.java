@@ -8,13 +8,13 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 
-public class GlobalReference implements GlobalReferable, SourceInfo {
+public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
   private final Position myPosition;
   private final String myName;
   private Concrete.ReferableDefinition myDefinition;
   private final Precedence myPrecedence;
 
-  public GlobalReference(Position position, @Nonnull String name, Precedence precedence) {
+  public ConcreteGlobalReferable(Position position, @Nonnull String name, Precedence precedence) {
     myPosition = position;
     myName = name;
     myPrecedence = precedence;

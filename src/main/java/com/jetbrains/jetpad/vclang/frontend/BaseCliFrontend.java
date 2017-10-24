@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -64,8 +64,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
   private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
-    if (reference instanceof GlobalReference) {
-      map.put(((GlobalReference) reference).positionTextRepresentation(), reference);
+    if (reference instanceof ConcreteGlobalReferable) {
+      map.put(((ConcreteGlobalReferable) reference).positionTextRepresentation(), reference);
     }
   }
 

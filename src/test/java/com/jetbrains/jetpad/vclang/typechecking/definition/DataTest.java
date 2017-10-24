@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -116,8 +116,8 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    LocalReference f = ref("f");
-    LocalReference x = ref("x");
+    ParsedLocalReferable f = ref("f");
+    ParsedLocalReferable x = ref("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cVar(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
@@ -131,7 +131,7 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    LocalReference f = ref("f");
+    ParsedLocalReferable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cVar(con.getReferable()));
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));

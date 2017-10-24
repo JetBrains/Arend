@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.LetClause;
 import com.jetbrains.jetpad.vclang.core.expr.LetExpression;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -63,11 +63,11 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
     List<Concrete.Parameter> arguments = new ArrayList<>(2);
-    LocalReference X = ref("X");
-    LocalReference x = ref("X");
+    ParsedLocalReferable X = ref("X");
+    ParsedLocalReferable x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
-    GlobalReference reference = new GlobalReference(null, "f", Precedence.DEFAULT);
+    ConcreteGlobalReferable reference = new ConcreteGlobalReferable(null, "f", Precedence.DEFAULT);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, arguments, cVar(X), body(cVar(x)));
     reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, 0), null);
@@ -85,25 +85,25 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingPatternDataDef() {
-    Concrete.Definition def = (Concrete.Definition) ((GlobalReference) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getReferable()).getDefinition();
+    Concrete.Definition def = (Concrete.Definition) ((ConcreteGlobalReferable) parseDef("\\data LE Nat Nat \\with | zero, m => LE-zero | suc n, suc m => LE-suc (LE n m)").getReferable()).getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 
   @Test
   public void prettyPrintingDataWithConditions() {
-    Concrete.Definition def = (Concrete.Definition) ((GlobalReference) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
+    Concrete.Definition def = (Concrete.Definition) ((ConcreteGlobalReferable) parseDef("\\data Z | neg Nat | pos Nat { zero => neg zero }").getReferable()).getDefinition();
     assertNotNull(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), sourceInfoProvider, Concrete.Expression.PREC), null);
   }
 
   private void testDefinition(String s) {
-    GlobalReference def = resolveNamesDef(s);
+    ConcreteGlobalReferable def = resolveNamesDef(s);
     StringBuilder sb = new StringBuilder();
     PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, PrettyPrinterInfoProvider.TRIVIAL, 0);
     ((Concrete.Definition) def.getDefinition()).accept(visitor, null);
     String s2 = sb.toString();
-    GlobalReference def2 = resolveNamesDef(s2);
+    ConcreteGlobalReferable def2 = resolveNamesDef(s2);
     //TODO: Current implementation only ensures that output of PrettyPrinter parses back but does not ensure that the parse result has not changed along the way
     //TODO: Implement some comparator for definitions to fix this
   }

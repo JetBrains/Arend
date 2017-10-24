@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -343,11 +343,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
   }
 
-  private LocalReference makeLocalReference(Binding var, Set<Variable> freeVars) {
+  private ParsedLocalReferable makeLocalReference(Binding var, Set<Variable> freeVars) {
     if (!freeVars.contains(var)) {
       return null;
     }
-    LocalReference reference = ref(getFreshName(var, freeVars));
+    ParsedLocalReferable reference = ref(getFreshName(var, freeVars));
     myNames.put(var, reference);
     return reference;
   }

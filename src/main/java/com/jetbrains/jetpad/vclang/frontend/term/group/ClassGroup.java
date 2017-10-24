@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.term.group;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 
@@ -9,9 +9,9 @@ import java.util.List;
 
 public class ClassGroup extends StaticGroup {
   private final List<Group> myDynamicGroups;
-  private final List<GlobalReference> myFields;
+  private final List<ConcreteGlobalReferable> myFields;
 
-  public ClassGroup(GlobalReference reference, List<Group> dynamicGroups, List<GlobalReference> fields, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  public ClassGroup(ConcreteGlobalReferable reference, List<Group> dynamicGroups, List<ConcreteGlobalReferable> fields, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
     super(reference, staticGroups, namespaceCommands, parent);
     myDynamicGroups = dynamicGroups;
     myFields = fields;
@@ -25,7 +25,7 @@ public class ClassGroup extends StaticGroup {
 
   @Nonnull
   @Override
-  public List<GlobalReference> getFields() {
+  public List<ConcreteGlobalReferable> getFields() {
     return myFields;
   }
 }

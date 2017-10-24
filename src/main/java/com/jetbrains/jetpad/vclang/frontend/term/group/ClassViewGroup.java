@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.frontend.term.group;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -13,11 +13,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class ClassViewGroup implements ChildGroup {
-  private final GlobalReference myReference;
-  private final List<GlobalReference> myFields;
+  private final ConcreteGlobalReferable myReference;
+  private final List<ConcreteGlobalReferable> myFields;
   private final ChildGroup myParent;
 
-  public ClassViewGroup(GlobalReference reference, List<GlobalReference> fields, ChildGroup parent) {
+  public ClassViewGroup(ConcreteGlobalReferable reference, List<ConcreteGlobalReferable> fields, ChildGroup parent) {
     myReference = reference;
     myFields = fields;
     myParent = parent;

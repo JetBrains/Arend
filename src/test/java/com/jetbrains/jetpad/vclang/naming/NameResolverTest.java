@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -19,10 +19,10 @@ import static org.junit.Assert.assertTrue;
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    GlobalReference plusRef = new GlobalReference(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
     Concrete.Definition plus = new Concrete.FunctionDefinition(plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
-    GlobalReference mulRef = new GlobalReference(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7));
+    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7));
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
@@ -37,10 +37,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    GlobalReference plusRef = new GlobalReference(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
     Concrete.Definition plus = new Concrete.FunctionDefinition(plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
-    GlobalReference mulRef = new GlobalReference(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6));
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 

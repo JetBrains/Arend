@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
-import com.jetbrains.jetpad.vclang.frontend.reference.GlobalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -40,7 +40,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     setupSources();
     GlobalReferable moduleB = moduleLoader.load(storage.locateModule(moduleName("B"))).getReferable();
 
-    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
 
     assertThat(defCall.getReferent(), is(notNullValue()));
     assertThat(defCall.getReferent(), is(get(moduleB, "x")));
@@ -57,7 +57,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     GlobalReferable moduleB = moduleBNs.getRegisteredClass();
     assertThat(moduleB, is(notNullValue()));
 
-    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleA, "a")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleA, "a")).getDefinition()).getBody()).getTerm();
 
     assertThat(defCall.getReferent(), is(notNullValue()));
     assertThat(defCall.getReferent(), is(get(moduleB, "b")));
@@ -70,11 +70,11 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     GlobalReferable moduleBCE = nameResolver.resolveModuleNamespace(moduleName("B", "C", "E")).getRegisteredClass();
     GlobalReferable moduleBCF = nameResolver.resolveModuleNamespace(moduleName("B", "C", "F")).getRegisteredClass();
 
-    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleBC, "c")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleBC, "c")).getDefinition()).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
     assertThat(defCall1.getReferent(), is(get(moduleBCE, "e")));
 
-    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleBCE, "e")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleBCE, "e")).getDefinition()).getBody()).getTerm();
     assertThat(defCall2.getReferent(), is(notNullValue()));
     assertThat(defCall2.getReferent(), is(get(moduleBCF, "f")));
   }
@@ -85,11 +85,11 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
     GlobalReferable moduleX = moduleLoader.load(storage.locateModule(moduleName("X"))).getReferable();
     GlobalReferable moduleY = nameResolver.resolveModuleNamespace(moduleName("Y")).getRegisteredClass();
 
-    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleX, "f")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleX, "f")).getDefinition()).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
     assertThat(defCall1.getReferent(), is(get(moduleY, "f")));
 
-    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((GlobalReference) get(moduleY, "f")).getDefinition()).getBody()).getTerm();
+    Concrete.ReferenceExpression defCall2 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) get(moduleY, "f")).getDefinition()).getBody()).getTerm();
     assertThat(defCall2.getReferent(), is(notNullValue()));
     assertThat(defCall2.getReferent(), is(get(moduleX, "f")));
   }

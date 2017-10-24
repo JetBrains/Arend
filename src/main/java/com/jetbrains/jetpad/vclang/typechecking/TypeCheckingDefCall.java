@@ -36,7 +36,7 @@ public class TypeCheckingDefCall {
   }
 
   private Definition getTypeCheckedDefinition(GlobalReferable definition, Concrete.Expression expr) {
-    /* TODO[abstract]: I'm not sure what to do with this. Maybe eliminate class views and their fields during name resolving
+    /* TODO[classes]: I'm not sure what to do with this. Maybe eliminate class views and their fields during name resolving
     while (definition instanceof Concrete.ClassView) {
       definition = (GlobalReferable) ((Concrete.ClassView) definition).getUnderlyingClass().getReferent();
     }
@@ -73,7 +73,7 @@ public class TypeCheckingDefCall {
       }
 
       if (thisExpr == null) {
-        /* TODO[abstract]
+        /* TODO[classes]
         if (resolvedDefinition instanceof Concrete.ClassViewField) {
           assert typeCheckedDefinition instanceof ClassField;
           Concrete.ClassView ownClassView = ((Concrete.ClassViewField) resolvedDefinition).getOwnView();

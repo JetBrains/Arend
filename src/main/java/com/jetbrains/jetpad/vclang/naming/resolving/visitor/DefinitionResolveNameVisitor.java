@@ -224,7 +224,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     exprVisitor.visitReference(def.getClassView(), null);
     if (def.getClassView().getReferent() instanceof ClassReferable) {
       exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassView().getReferent());
-      /* TODO[abstract]
+      /* TODO[classes]
       boolean ok = false;
       for (Concrete.ClassFieldImpl impl : def.getClassFieldImpls()) {
         if (impl.getImplementedField() == ((GlobalReferable) def.getClassView().getReferent()).getClassifyingField()) {

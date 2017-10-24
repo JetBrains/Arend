@@ -37,7 +37,7 @@ public class Ordering {
     myRefToHeaders = refToHeaders;
   }
 
-  /* TODO[abstract]
+  /* TODO[classes]
   private Concrete.ClassDefinition getEnclosingClass(Concrete.Definition definition) {
     Concrete.Definition parent = definition.getParentDefinition();
     if (parent == null) {
@@ -51,7 +51,7 @@ public class Ordering {
   */
 
   public void doOrder(Concrete.Definition definition) {
-    if (definition instanceof Concrete.ClassView) { // TODO[abstract]: Typecheck class views
+    if (definition instanceof Concrete.ClassView) { // TODO[classes]: Typecheck class views
       return;
     }
     if (!myListener.needsOrdering(definition)) {
@@ -114,7 +114,7 @@ public class Ordering {
 
   private OrderResult doOrderRecursively(Typecheckable typecheckable) {
     Concrete.Definition definition = typecheckable.getDefinition();
-    Concrete.ClassDefinition enclosingClass = null; // getEnclosingClass(definition); // TODO[abstract]
+    Concrete.ClassDefinition enclosingClass = null; // getEnclosingClass(definition); // TODO[classes]
     TypecheckingUnit unit = new TypecheckingUnit(typecheckable, enclosingClass);
     DefState currentState = new DefState(myIndex);
     myVertices.put(typecheckable, currentState);

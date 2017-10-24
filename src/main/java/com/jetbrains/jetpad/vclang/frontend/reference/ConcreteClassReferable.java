@@ -18,12 +18,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class ClassReference extends GlobalReference implements ClassReferable {
+public class ConcreteClassReferable extends ConcreteGlobalReferable implements ClassReferable {
   private final ChildGroup myGroup;
   private final Collection<? extends GlobalReferable> myFields;
   private final Collection<? extends Concrete.ReferenceExpression> mySuperClasses;
 
-  public ClassReference(Position position, @Nonnull String name, Precedence precedence, Collection<? extends GlobalReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends GlobalReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group) {
     super(position, name, precedence);
     myFields = fields;
     mySuperClasses = superClasses;

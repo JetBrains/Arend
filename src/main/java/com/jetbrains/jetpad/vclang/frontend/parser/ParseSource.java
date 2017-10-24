@@ -62,7 +62,7 @@ public abstract class ParseSource {
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new LexicalScope(EmptyScope.INSTANCE, result) /* TODO[abstract]: Replace with the "only exported scope" */);
+      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new LexicalScope(EmptyScope.INSTANCE, result, true));
     }
     if (nameResolver != null) {
       if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever

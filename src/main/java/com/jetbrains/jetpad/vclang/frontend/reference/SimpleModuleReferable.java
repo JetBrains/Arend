@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 
-public class ModuleReference implements GlobalReferable {
+public class SimpleModuleReferable implements GlobalReferable {
   public final ModulePath path;
 
-  public ModuleReference(ModulePath path) {
+  public SimpleModuleReferable(ModulePath path) {
     this.path = path;
   }
 

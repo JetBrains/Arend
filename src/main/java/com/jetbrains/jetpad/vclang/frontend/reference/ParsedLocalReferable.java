@@ -6,11 +6,11 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
 
-public class LocalReference implements Referable, SourceInfo {
+public class ParsedLocalReferable implements Referable, SourceInfo {
   private final Position myPosition;
   private final String myName;
 
-  public LocalReference(Position position, String name) {
+  public ParsedLocalReferable(Position position, String name) {
     myPosition = position;
     myName = name;
   }

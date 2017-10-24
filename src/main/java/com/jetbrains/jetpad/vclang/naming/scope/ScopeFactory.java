@@ -37,7 +37,7 @@ public class ScopeFactory {
     } else {
       parentScope = forGroup(parentGroup, moduleScopeProvider);
     }
-    return new LexicalScope(parentScope, group);
+    return new LexicalScope(parentScope, group, false);
   }
 
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {

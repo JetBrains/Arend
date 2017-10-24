@@ -67,7 +67,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        /* TODO[abstract]: Fix class view inference
+        /* TODO[classes]: Fix class view inference
         Concrete.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
         if (classView != null) {
           infVar = new TypeClassInferenceVariable<>(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());

@@ -18,7 +18,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.reference.LocalReference;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -217,8 +217,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cZero());
     Concrete.LetClause yClause = clet(y, cSuc());
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
@@ -228,8 +228,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    LocalReference x = ref("x");
-    LocalReference y = ref("y");
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cSuc());
     Concrete.LetClause yClause = clet(y, cZero());
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
@@ -255,8 +255,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    LocalReference y = ref("y");
-    LocalReference x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable x = ref("x");
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
     CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
