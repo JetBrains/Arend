@@ -15,7 +15,7 @@ public class GroupNameResolver extends GroupResolver {
   public GroupNameResolver(NameResolver nameResolver, ErrorReporter errorReporter, ConcreteProvider provider) {
     super(nameResolver, errorReporter);
     myConcreteProvider = provider;
-    myVisitor = new DefinitionResolveNameVisitor(nameResolver, errorReporter);
+    myVisitor = new DefinitionResolveNameVisitor(errorReporter);
   }
 
   @Override

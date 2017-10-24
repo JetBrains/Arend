@@ -23,16 +23,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<Scope, Void> {
-  private final NameResolver myNameResolver;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveNameVisitor(NameResolver nameResolver, ErrorReporter errorReporter) {
-    myNameResolver = nameResolver;
+  public DefinitionResolveNameVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
-  }
-
-  public NameResolver getNameResolver() {
-    return myNameResolver;
   }
 
   public ErrorReporter getErrorReporter() {
@@ -194,9 +188,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
+    /*
     GlobalReferable underlyingClass = (GlobalReferable) def.getUnderlyingClass().getReferent();
     Referable classifyingField = def.getClassifyingField();
-    if (classifyingField instanceof UnresolvedReference) { // TODO[abstract]: Rewrite this using resolve method of UnresolvedReference
+    if (classifyingField instanceof UnresolvedReference) { // TODO[classes]: Rewrite this using resolve method of UnresolvedReference
       Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
       GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
       if (resolvedClassifyingField == null) {
@@ -208,7 +203,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     for (Concrete.ClassViewField viewField : def.getFields()) {
       Referable underlyingField = viewField.getUnderlyingField();
-      if (underlyingField instanceof UnresolvedReference) { // TODO[abstract]: Rewrite this using resolve method of UnresolvedReference
+      if (underlyingField instanceof UnresolvedReference) { // TODO[classes]: Rewrite this using resolve method of UnresolvedReference
         GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.textRepresentation());
         if (classField != null) {
           viewField.setUnderlyingField(classField);
@@ -217,6 +212,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       }
     }
+    */
+
     return null;
   }
 

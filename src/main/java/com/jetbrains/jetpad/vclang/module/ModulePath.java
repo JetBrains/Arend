@@ -42,6 +42,10 @@ public class ModulePath {
     return Collections.unmodifiableList(myPath);
   }
 
+  public boolean isSingleton() {
+    return myPath.size() == 1;
+  }
+
   @Override
   public boolean equals(Object o) {
     return this == o || o instanceof ModulePath && myPath.equals(((ModulePath) o).myPath);
