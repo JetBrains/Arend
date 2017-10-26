@@ -19,6 +19,11 @@ public class SourceIdReference implements GlobalReferable {
     return Precedence.DEFAULT;
   }
 
+  @Override
+  public boolean isModule() {
+    return true;
+  }
+
   @Nonnull
   @Override
   public String textRepresentation() {

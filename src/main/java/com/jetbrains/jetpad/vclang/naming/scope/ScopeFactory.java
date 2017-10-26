@@ -37,7 +37,7 @@ public class ScopeFactory {
     } else {
       parentScope = forGroup(parentGroup, moduleScopeProvider);
     }
-    return new LexicalScope(parentScope, group, false);
+    return LexicalScope.insideOf(group, parentScope);
   }
 
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {
@@ -69,7 +69,7 @@ public class ScopeFactory {
         if (elimExprs != null) {
           for (Abstract.Reference elimExpr : elimExprs) {
             if (sourceNode.equals(elimExpr)) {
-              return new TelescopeScope(EmptyScope.INSTANCE, ((Abstract.FunctionDefinition) parentSourceNode).getParameters());
+              return new TelescopeScope(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
             }
           }
         }

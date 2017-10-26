@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvi
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.NameResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -62,7 +62,7 @@ public abstract class ParseSource {
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new LexicalScope(EmptyScope.INSTANCE, result, true));
+      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new CachingScope(LexicalScope.opened(result)));
     }
     if (nameResolver != null) {
       if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever

@@ -38,4 +38,30 @@ public interface Scope {
   default @Nonnull Scope getGlobalSubscope() {
     return this;
   }
+
+  class Utils {
+    public static Referable resolveName(Scope scope, List<? extends String> path) {
+      for (int i = 0; i < path.size(); i++) {
+        if (scope == null) {
+          return null;
+        }
+        if (i == path.size() - 1) {
+          return scope.resolveName(path.get(i));
+        } else {
+          scope = scope.resolveNamespace(path.get(i));
+        }
+      }
+      return null;
+    }
+
+    public static Scope resolveNamespace(Scope scope, List<? extends String> path) {
+      for (String name : path) {
+        if (scope == null) {
+          return null;
+        }
+        scope = scope.resolveNamespace(name);
+      }
+      return scope;
+    }
+  }
 }

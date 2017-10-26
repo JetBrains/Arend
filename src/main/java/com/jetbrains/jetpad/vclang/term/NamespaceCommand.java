@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +19,7 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, EXPORT, IMPORT }
   @Nonnull Kind getKind();
-  /* @Nonnull */ @Nullable Referable getGroupReference();
+  @Nonnull List<? extends String> getPath();
   @Nonnull Collection<? extends GlobalReferable> getImportedPath();
   boolean isUsing();
   @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
@@ -35,13 +34,13 @@ public interface NamespaceCommand extends PrettyPrintable {
       case IMPORT: docs.add(text("\\import")); break;
     }
 
-    Collection<? extends GlobalReferable> path = getImportedPath();
+    Collection<? extends GlobalReferable> importedPath = getImportedPath();
     LineDoc referenceDoc;
-    if (path.isEmpty()) {
-      Referable ref = getGroupReference();
-      referenceDoc = ref == null ? text("_") : refDoc(ref);
+    if (importedPath.isEmpty()) {
+      Collection<? extends String> path = getPath();
+      referenceDoc = text(path.isEmpty() ? "_" : String.join(".", path));
     } else {
-      referenceDoc = hSep(text("."), path.stream().map(DocFactory::refDoc).collect(Collectors.toList()));
+      referenceDoc = hSep(text("."), importedPath.stream().map(DocFactory::refDoc).collect(Collectors.toList()));
     }
 
     Collection<? extends NameRenaming> openedReferences = getOpenedReferences();

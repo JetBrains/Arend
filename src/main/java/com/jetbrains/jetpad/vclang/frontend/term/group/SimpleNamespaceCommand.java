@@ -18,17 +18,17 @@ import java.util.List;
 public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo {
   private final Position myPosition;
   private final Kind myKind;
-  private final Referable myReferable;
+  private final List<String> myPath;
   private final List<ModuleReferable> myImportedPath;
   private final boolean myUsing;
   private final List<SimpleNameRenaming> myOpenedReferences;
   private final List<Referable> myHiddenReferences;
   private final ChildGroup myParent;
 
-  public SimpleNamespaceCommand(Position position, Kind kind, Referable referable, List<ModuleReferable> importedPath, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<Referable> hiddenReferences, ChildGroup parent) {
+  public SimpleNamespaceCommand(Position position, Kind kind, List<String> path, List<ModuleReferable> importedPath, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<Referable> hiddenReferences, ChildGroup parent) {
     myPosition = position;
     myKind = kind;
-    myReferable = referable;
+    myPath = path;
     myImportedPath = importedPath;
     myUsing = isUsing;
     myOpenedReferences = openedReferences;
@@ -42,10 +42,10 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     return myKind;
   }
 
-  @Nullable
+  @Nonnull
   @Override
-  public Referable getGroupReference() {
-    return myReferable;
+  public List<String> getPath() {
+    return myPath;
   }
 
   @Nonnull

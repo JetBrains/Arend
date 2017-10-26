@@ -90,18 +90,18 @@ public class GroupResolver {
   }
 
   private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope, GlobalReferable groupRef) {
-    Referable referable = cmd.getGroupReference();
-    Collection<? extends GlobalReferable> path = cmd.getImportedPath();
+    Collection<? extends String> path = cmd.getPath();
+    Collection<? extends GlobalReferable> importedPath = cmd.getImportedPath();
     NamespaceCommand.Kind kind = cmd.getKind();
-    if ((kind == NamespaceCommand.Kind.IMPORT && path.isEmpty()) || (kind != NamespaceCommand.Kind.IMPORT && referable == null)) {
+    if ((kind == NamespaceCommand.Kind.IMPORT && importedPath.isEmpty()) || (kind != NamespaceCommand.Kind.IMPORT && path.isEmpty())) {
       myErrorReporter.report(new ProxyError(groupRef, AbstractExpressionError.incomplete(cmd)));
       return null;
     }
 
     GlobalReferable globalRef;
     if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-      List<String> namePath = new ArrayList<>(path.size());
-      for (Referable ref : path) {
+      List<String> namePath = new ArrayList<>(importedPath.size());
+      for (Referable ref : importedPath) {
         namePath.add(ref.textRepresentation());
       }
 
@@ -112,7 +112,8 @@ public class GroupResolver {
       }
       globalRef = moduleNamespace.getRegisteredClass();
     } else {
-      globalRef = resolveGlobal(referable, parentScope, groupRef);
+      Referable ref = new LongUnresolvedReference(null, new ArrayList<>(path)).resolve(parentScope);
+      globalRef = ref instanceof GlobalReferable ? (GlobalReferable) ref : null;
     }
     if (globalRef == null) {
       return null;

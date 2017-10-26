@@ -24,4 +24,9 @@ public class ModuleReferable implements GlobalReferable {
   public Precedence getPrecedence() {
     return Precedence.DEFAULT;
   }
+
+  @Override
+  public boolean isModule() {
+    return true;
+  }
 }

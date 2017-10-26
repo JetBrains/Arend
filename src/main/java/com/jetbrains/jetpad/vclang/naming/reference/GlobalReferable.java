@@ -6,4 +6,8 @@ import javax.annotation.Nonnull;
 
 public interface GlobalReferable extends Referable {
   @Nonnull Precedence getPrecedence();
+
+  default boolean isModule() {
+    return false;
+  }
 }
