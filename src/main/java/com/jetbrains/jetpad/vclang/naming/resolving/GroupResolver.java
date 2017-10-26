@@ -91,16 +91,23 @@ public class GroupResolver {
 
   private Scope getOpenedScope(NamespaceCommand cmd, Scope parentScope, GlobalReferable groupRef) {
     Referable referable = cmd.getGroupReference();
-    if (referable == null) {
+    Collection<? extends GlobalReferable> path = cmd.getImportedPath();
+    NamespaceCommand.Kind kind = cmd.getKind();
+    if ((kind == NamespaceCommand.Kind.IMPORT && path.isEmpty()) || (kind != NamespaceCommand.Kind.IMPORT && referable == null)) {
       myErrorReporter.report(new ProxyError(groupRef, AbstractExpressionError.incomplete(cmd)));
       return null;
     }
 
     GlobalReferable globalRef;
     if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(Arrays.asList(referable.textRepresentation().split("\\."))));
+      List<String> namePath = new ArrayList<>(path.size());
+      for (Referable ref : path) {
+        namePath.add(ref.textRepresentation());
+      }
+
+      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(namePath));
       if (moduleNamespace == null) {
-        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(cmd, null, referable.textRepresentation())));
+        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(cmd, null, String.join(".", namePath))));
         return null;
       }
       globalRef = moduleNamespace.getRegisteredClass();

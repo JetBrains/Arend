@@ -5,7 +5,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
-import com.jetbrains.jetpad.vclang.frontend.reference.SimpleModuleReferable;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
@@ -217,7 +218,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Group visitStatements(StatementsContext ctx) {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
-    StaticGroup parentGroup = new StaticGroup(new SimpleModuleReferable(myModule.getModulePath()), subgroups, namespaceCommands, null);
+    StaticGroup parentGroup = new StaticGroup(new ModuleReferable(myModule.getModulePath()), subgroups, namespaceCommands, null);
     visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup);
     return parentGroup;
   }
@@ -248,6 +249,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       throw new ParseException();
     }
 
+    List<ModuleReferable> referenceList;
+    if (kind == NamespaceCommand.Kind.IMPORT) {
+      if (refExpr.getReferent() instanceof LongUnresolvedReference) {
+        List<String> path = ((LongUnresolvedReference) refExpr.getReferent()).getPath();
+        referenceList = new ArrayList<>(path.size());
+        for (int i = 1; i <= path.size(); i++) {
+          referenceList.add(new ModuleReferable(new ModulePath(path.subList(0, i))));
+        }
+      } else {
+        referenceList = Collections.singletonList(new ModuleReferable(new ModulePath(Collections.singletonList(refExpr.getReferent().textRepresentation()))));
+      }
+    } else {
+      referenceList = Collections.emptyList();
+    }
+
     List<SimpleNamespaceCommand.SimpleNameRenaming> openedReferences;
     if (ctx.nsUsing() == null) {
       openedReferences = Collections.emptyList();
@@ -265,7 +281,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       hiddenReferences.add(new NamedUnresolvedReference(tokenPosition(idCtx.start), visitId(idCtx)));
     }
 
-    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, refExpr.getReferent(), ctx.nsUsing() == null || ctx.nsUsing().USING() != null, openedReferences, hiddenReferences, parent);
+    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, refExpr.getReferent(), referenceList, ctx.nsUsing() == null || ctx.nsUsing().USING() != null, openedReferences, hiddenReferences, parent);
   }
 
   @Override
@@ -1182,7 +1198,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           }
           path.add(visitId(((ClassFieldAccContext) ctx.fieldAcc().get(i)).id()));
         }
-        expression = new Concrete.ReferenceExpression(tokenPosition(ctx.start), LongUnresolvedReference.make(tokenPosition(ctx.start), name, path));
+        expression = new Concrete.ReferenceExpression(tokenPosition(ctx.start), new LongUnresolvedReference(tokenPosition(ctx.start), name, path));
       } else {
         errorToken = ctx.start;
       }

@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 public class NamedUnresolvedReference implements UnresolvedReference {
   private final Object myData;
   private final String myName;
-  protected Referable resolved;
+  private Referable resolved;
 
   public NamedUnresolvedReference(Object data, @Nonnull String name) {
     myData = data;

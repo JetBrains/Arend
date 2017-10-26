@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.reference;
+package com.jetbrains.jetpad.vclang.naming.reference;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -6,10 +6,10 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 
-public class SimpleModuleReferable implements GlobalReferable {
+public class ModuleReferable implements GlobalReferable {
   public final ModulePath path;
 
-  public SimpleModuleReferable(ModulePath path) {
+  public ModuleReferable(ModulePath path) {
     this.path = path;
   }
 

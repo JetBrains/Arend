@@ -20,7 +20,8 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, EXPORT, IMPORT }
   @Nonnull Kind getKind();
-  /* Nonnull */ @Nullable Referable getGroupReference();
+  /* @Nonnull */ @Nullable Referable getGroupReference();
+  @Nonnull Collection<? extends GlobalReferable> getImportedPath();
   boolean isUsing();
   @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
   @Nonnull Collection<? extends Referable> getHiddenReferences();
@@ -34,8 +35,14 @@ public interface NamespaceCommand extends PrettyPrintable {
       case IMPORT: docs.add(text("\\import")); break;
     }
 
-    Referable ref = getGroupReference();
-    LineDoc referenceDoc = ref != null ? refDoc(ref) : text("_");
+    Collection<? extends GlobalReferable> path = getImportedPath();
+    LineDoc referenceDoc;
+    if (path.isEmpty()) {
+      Referable ref = getGroupReference();
+      referenceDoc = ref == null ? text("_") : refDoc(ref);
+    } else {
+      referenceDoc = hSep(text("."), path.stream().map(DocFactory::refDoc).collect(Collectors.toList()));
+    }
 
     Collection<? extends NameRenaming> openedReferences = getOpenedReferences();
     boolean using = isUsing();
