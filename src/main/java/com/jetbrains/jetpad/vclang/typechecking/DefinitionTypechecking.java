@@ -234,12 +234,14 @@ class DefinitionTypechecking {
         if (localInstancePool != null) {
           Concrete.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() instanceof GlobalReferable) {
-            ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
-            for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
-              ReferenceExpression reference = new ReferenceExpression(link);
-              Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
-              if (oldInstance != null) {
-                visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
+            ClassField classifyingField = visitor.referableToClassField(classView.getClassifyingField(), classView);
+            if (classifyingField != null) {
+              for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+                ReferenceExpression reference = new ReferenceExpression(link);
+                Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
+                if (oldInstance != null) {
+                  visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
+                }
               }
             }
           }
@@ -684,7 +686,11 @@ class DefinitionTypechecking {
     if (!def.getImplementations().isEmpty()) {
       typedDef.updateSorts();
       for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
-        ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) implementation.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
+        ClassField field = visitor.referableToClassField(implementation.getImplementedField(), implementation);
+        if (field == null) {
+          classOk = false;
+          continue;
+        }
         if (typedDef.isImplemented(field)) {
           classOk = false;
           alreadyImplementFields.add(field.getReferable());

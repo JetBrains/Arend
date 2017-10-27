@@ -27,6 +27,8 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -1056,6 +1058,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedType, exprResult, expr);
   }
 
+  public ClassField referableToClassField(Referable referable, Concrete.SourceNode sourceNode) {
+    Definition definition = referable instanceof GlobalReferable ? myState.getTypechecked((GlobalReferable) referable) : null;
+    if (definition instanceof ClassField) {
+      return (ClassField) definition;
+    }
+
+    myErrorReporter.report(definition == null ? new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()) : new WrongReferable("Expected a class field", referable, sourceNode));
+    return null;
+  }
+
   @Override
   public Result visitClassExt(Concrete.ClassExtExpression expr, ExpectedType expectedType) {
     // Typecheck the base class
@@ -1079,7 +1091,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
-      ClassField field = (ClassField) myState.getTypechecked((GlobalReferable) statement.getImplementedField()); // TODO[abstract]: check that it is a field and that it belongs to the class, also check that referable is global
+      ClassField field = referableToClassField(statement.getImplementedField(), statement);
+      if (field == null) {
+        continue;
+      }
       if (baseClass.isImplemented(field) || classFieldMap.containsKey(field)) {
         alreadyImplementedFields.add(field.getReferable());
         alreadyImplementedSourceNode = statement;
