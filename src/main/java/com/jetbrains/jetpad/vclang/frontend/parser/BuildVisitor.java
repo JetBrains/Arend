@@ -51,7 +51,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private boolean getVars(BinOpArgumentContext expr, List<ParsedLocalReferable> vars) {
-    if (expr.maybeNew() instanceof WithNewContext || expr.implementStatements() != null) {
+    if (expr.NEW() != null || expr.implementStatements() != null) {
       return false;
     }
 
@@ -510,7 +510,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<ConcreteGlobalReferable> constructors = new ArrayList<>();
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
     ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(ctx.start), visitId(ctx.id()), visitPrecedence(ctx.precedence()));
-    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(reference, visitTeles(ctx.tele()), eliminatedReferences, ctx.isTruncated() instanceof TruncatedContext, universe, new ArrayList<>());
+    Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(reference, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
     reference.setDefinition(dataDefinition);
     visitDataBody(ctx.dataBody(), dataDefinition, constructors);
     return new DataGroup(reference, constructors, Collections.emptyList(), Collections.emptyList(), parent); // TODO[classes]: add static subgroups
@@ -798,8 +798,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       expr = new Concrete.ClassExtExpression(tokenPosition(ctx.atomFieldsAcc().start), expr, implementStatements);
     }
 
-    if (ctx.maybeNew() instanceof WithNewContext) {
-      expr = new Concrete.NewExpression(tokenPosition(ctx.maybeNew().start), expr);
+    if (ctx.NEW() != null) {
+      expr = new Concrete.NewExpression(tokenPosition(ctx.NEW().getSymbol()), expr);
     }
 
     return expr;

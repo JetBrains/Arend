@@ -21,7 +21,7 @@ classStat : '|' precedence id ':' expr  # classField
           ;
 
 definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                              # defFunction
-            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                                 # defData
+            | TRUNCATED? '\\data' precedence id tele* (':' expr)? dataBody                                                  # defData
             | '\\class' precedence id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where?  # defClass
             | '\\view' precedence id '\\on' expr '\\by' id '{' classViewField* '}'                                          # defClassView
             | defaultInst '\\instance' id tele* '=>' expr                                                                   # defInstance
@@ -38,10 +38,6 @@ dataBody : elim constructorClause*                      # dataClauses
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
 elim : '\\with' | '=>' '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
-
-isTruncated : '\\truncated' # truncated
-            |               # notTruncated
-            ;
 
 defaultInst :             # noDefault
             | '\\default' # withDefault
@@ -120,17 +116,13 @@ onlyLevelExpr : onlyLevelAtom                                         # atomOnly
               | '\\max' levelAtom levelAtom                           # maxOnlyLevel
               ;
 
-binOpArg : maybeNew atomFieldsAcc onlyLevelAtom* argument* implementStatements? # binOpArgument
+binOpArg : NEW? atomFieldsAcc onlyLevelAtom* argument* implementStatements? # binOpArgument
          | TRUNCATED_UNIVERSE maybeLevelAtom?                                   # truncatedUniverse
          | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?                           # universe
          | SET maybeLevelAtom?                                                  # setUniverse
          ;
 
 binOpLeft : binOpArg postfix* infix;
-
-maybeNew :                              # noNew
-         | '\\new'                      # withNew
-         ;
 
 fieldAcc : id                       # classFieldAcc
          | NUMBER                   # sigmaFieldAcc
@@ -183,6 +175,8 @@ infix : INFIX | INFIX_PREFIX;
 postfix : POSTFIX_INFIX | POSTFIX_PREFIX;
 
 USING : '\\using';
+TRUNCATED : '\\truncated';
+NEW : '\\new';
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
 TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
