@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
+import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -7,10 +8,11 @@ import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 
 public class LexicalScope implements Scope {
   private final Scope myParent;
@@ -37,23 +39,20 @@ public class LexicalScope implements Scope {
     return new LexicalScope(null, group, true, null);
   }
 
+  @Nonnull
   @Override
-  public Referable find(Predicate<Referable> pred) {
+  public List<Referable> getElements() {
+    List<Referable> elements = new ArrayList<>();
+
     for (Group subgroup : myGroup.getSubgroups()) {
-      Referable ref = testSubgroup(subgroup, pred);
-      if (ref != null) {
-        return ref;
-      }
+      elements.addAll(subgroup.getConstructors());
+      elements.addAll(subgroup.getFields());
+      elements.add(subgroup.getReferable());
     }
     for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      Referable ref = testSubgroup(subgroup, pred);
-      if (ref != null) {
-        return ref;
-      }
-    }
-
-    if (myParent == null && myIgnoreExports) {
-      return null;
+      elements.addAll(subgroup.getConstructors());
+      elements.addAll(subgroup.getFields());
+      elements.add(subgroup.getReferable());
     }
 
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
@@ -67,92 +66,171 @@ public class LexicalScope implements Scope {
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Collection<? extends Referable> hidden = cmd.getHiddenReferences();
-      List<? extends String> path = cmd.getPath();
-      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports, cmd), path);
+      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports, cmd), cmd.getPath());
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
 
-      if (opened.isEmpty() && hidden.isEmpty()) {
-        Referable ref = scope.find(pred);
-        if (ref != null) {
-          return ref;
+      for (NameRenaming renaming : opened) {
+        Referable resolvedRef = renaming.getNewReferable();
+        if (resolvedRef != null) {
+          elements.add(resolvedRef);
+        } else {
+          resolvedRef = renaming.getOldReference();
+          if (resolvedRef instanceof UnresolvedReference) {
+            resolvedRef = ((UnresolvedReference) resolvedRef).resolve(scope);
+          }
+          if (!(resolvedRef instanceof ErrorReference)) {
+            elements.add(resolvedRef);
+          }
         }
-      } else {
-        testLoop:
-        for (Referable testRef : scope.getElements()) {
-          for (Referable hiddenRef : hidden) {
-            if (hiddenRef instanceof UnresolvedReference && testRef.textRepresentation().equals(hiddenRef.textRepresentation()) || !(hiddenRef instanceof UnresolvedReference) && testRef.equals(hiddenRef)) {
-              continue testLoop;
+      }
+
+      if (isUsing) {
+        Collection<? extends Referable> hidden = cmd.getHiddenReferences();
+        Collection<? extends Referable> scopeElements = scope.getElements();
+        elemLoop:
+        for (Referable ref : scopeElements) {
+          for (NameRenaming renaming : opened) {
+            if (renaming.getOldReference().textRepresentation().equals(ref.textRepresentation())) {
+              continue elemLoop;
             }
           }
 
-          boolean isOpened = isUsing && !(testRef instanceof GlobalReferable && ((GlobalReferable) testRef).isModule());
-          if (!isOpened) {
-            for (NameRenaming renaming : opened) {
-              Referable openedRef = renaming.getOldReference();
-              if (openedRef instanceof UnresolvedReference && testRef.textRepresentation().equals(openedRef.textRepresentation()) || !(openedRef instanceof UnresolvedReference) && testRef.equals(openedRef)) {
-                GlobalReferable newRef = renaming.getNewReferable();
-                if (newRef != null) {
-                  if (pred.test(newRef)) {
-                    return newRef;
-                  } else {
-                    continue testLoop;
-                  }
-                }
-
-                isOpened = true;
-                break;
+          if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).isModule())) {
+            for (Referable hiddenRef : hidden) {
+              if (hiddenRef.textRepresentation().equals(ref.textRepresentation())) {
+                continue elemLoop;
               }
             }
-          }
 
-          if (isOpened && pred.test(testRef)) {
-            return testRef;
+            for (NameRenaming renaming : opened) {
+              if (renaming.getNewReferable() != null) {
+                if (renaming.getOldReference().textRepresentation().equals(ref.textRepresentation())) {
+                  continue elemLoop;
+                }
+              }
+            }
+
+            elements.add(ref);
           }
         }
       }
     }
 
-    return myParent == null ? null : myParent.find(pred);
-  }
-
-  private static Referable testSubgroup(Group group, Predicate<Referable> pred) {
-    for (GlobalReferable referable : group.getConstructors()) {
-      if (pred.test(referable)) {
-        return referable;
-      }
+    if (myParent != null) {
+      elements.addAll(myParent.getElements());
     }
 
-    for (GlobalReferable referable : group.getFields()) {
-      if (pred.test(referable)) {
-        return referable;
+    return elements;
+  }
+
+  private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
+    if (resolveRef) {
+      for (GlobalReferable referable : group.getConstructors()) {
+        if (referable.textRepresentation().equals(name)) {
+          return referable;
+        }
+      }
+
+      for (GlobalReferable referable : group.getFields()) {
+        if (referable.textRepresentation().equals(name)) {
+          return referable;
+        }
       }
     }
 
     Referable ref = group.getReferable();
-    if (pred.test(ref)) {
-      return ref;
+    if (ref.textRepresentation().equals(name)) {
+      return resolveRef ? ref : LexicalScope.opened(group);
     }
 
     return null;
   }
 
-  @Nullable
-  @Override
-  public Scope resolveNamespace(String name) {
+  private Object resolve(String name, boolean resolveRef, boolean includeModules) {
     for (Group subgroup : myGroup.getSubgroups()) {
-      if (subgroup.getReferable().textRepresentation().equals(name)) {
-        return LexicalScope.opened(subgroup);
+      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      if (result != null) {
+        return result;
       }
     }
     for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      if (subgroup.getReferable().textRepresentation().equals(name)) {
-        return LexicalScope.opened(subgroup);
+      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      if (result != null) {
+        return result;
       }
     }
 
-    return null;
+    cmdLoop:
+    for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
+      if (myCommand == cmd) {
+        break;
+      }
+      NamespaceCommand.Kind kind = cmd.getKind();
+      if (myIgnoreExports && kind == NamespaceCommand.Kind.EXPORT || myParent == null && kind != NamespaceCommand.Kind.EXPORT) {
+        continue;
+      }
+
+      boolean isUsing = cmd.isUsing();
+      Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
+      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports, cmd), cmd.getPath());
+      if (scope == null || opened.isEmpty() && !isUsing) {
+        continue;
+      }
+
+      for (NameRenaming renaming : opened) {
+        Referable resolvedRef = renaming.getNewReferable();
+        if (resolvedRef == null) {
+          resolvedRef = renaming.getOldReference();
+        }
+        if (resolvedRef.textRepresentation().equals(name)) {
+          if (resolveRef) {
+            if (resolvedRef instanceof UnresolvedReference) {
+              resolvedRef = ((UnresolvedReference) resolvedRef).resolve(scope);
+            }
+            return resolvedRef;
+          } else {
+            return scope.resolveNamespace(name, true);
+          }
+        }
+      }
+
+      if (isUsing) {
+        Collection<? extends Referable> hidden = cmd.getHiddenReferences();
+        for (Referable hiddenRef : hidden) {
+          if (hiddenRef.textRepresentation().equals(name)) {
+            continue cmdLoop;
+          }
+        }
+
+        for (NameRenaming renaming : opened) {
+          if (renaming.getNewReferable() != null && renaming.getOldReference().textRepresentation().equals(name)) {
+            continue cmdLoop;
+          }
+        }
+
+        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+
+    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, includeModules);
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveName(String name) {
+    Object result = resolve(name, true, true);
+    return result instanceof Referable ? (Referable) result : null;
+  }
+
+  @Nullable
+  @Override
+  public Scope resolveNamespace(String name, boolean includeModules) {
+    Object result = resolve(name, false, includeModules);
+    return result instanceof Scope ? (Scope) result : null;
   }
 }

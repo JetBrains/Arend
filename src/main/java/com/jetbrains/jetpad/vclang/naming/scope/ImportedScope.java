@@ -50,7 +50,11 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean includeModules) {
+    if (!includeModules) {
+      return null;
+    }
+
     Triple triple = myExpectedNamesTree.map.get(name);
     if (triple == null) {
       return null;

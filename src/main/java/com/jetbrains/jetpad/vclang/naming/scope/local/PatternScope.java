@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -45,6 +46,13 @@ public class PatternScope implements Scope {
   public Referable find(Predicate<Referable> pred) {
     Referable ref = find(myPatterns, pred);
     return ref != null ? ref : myParent.find(pred);
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveName(String name) {
+    Referable ref = find(myPatterns, ref2 -> ref2.textRepresentation().equals(name));
+    return ref != null ? ref : myParent.resolveName(name);
   }
 
   @Nonnull

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -26,6 +27,18 @@ public class LetScope implements Scope {
       }
     }
     return myParent.find(pred);
+  }
+
+  @Nullable
+  @Override
+  public Referable resolveName(String name) {
+    for (int i = myClauses.size() - 1; i >= 0; i--) {
+      Referable ref = myClauses.get(i).getReferable();
+      if (ref.textRepresentation().equals(name)) {
+        return ref;
+      }
+    }
+    return myParent.resolveName(name);
   }
 
   @Nonnull

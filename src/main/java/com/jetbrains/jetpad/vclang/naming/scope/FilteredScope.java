@@ -41,11 +41,11 @@ public class FilteredScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean includeModules) {
     if (myInclude) {
-      return myNames.contains(name) ? myScope.resolveNamespace(name) : null;
+      return myNames.contains(name) ? myScope.resolveNamespace(name, includeModules) : null;
     } else {
-      return myNames.contains(name) ? null : myScope.resolveNamespace(name);
+      return myNames.contains(name) ? null : myScope.resolveNamespace(name, includeModules);
     }
   }
 

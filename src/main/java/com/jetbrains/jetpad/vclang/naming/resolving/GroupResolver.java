@@ -100,14 +100,16 @@ public class GroupResolver {
 
     GlobalReferable globalRef;
     if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-      List<String> namePath = new ArrayList<>(importedPath.size());
-      for (Referable ref : importedPath) {
-        namePath.add(ref.textRepresentation());
+      GlobalReferable referable = null;
+      for (GlobalReferable ref : importedPath) {
+        referable = ref;
       }
+      assert referable != null;
+      String name = referable.textRepresentation();
 
-      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(namePath));
+      ModuleNamespace moduleNamespace = myNameResolver.resolveModuleNamespace(new ModulePath(Arrays.asList(name.split("\\."))));
       if (moduleNamespace == null) {
-        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(cmd, null, String.join(".", namePath))));
+        myErrorReporter.report(new ProxyError(groupRef, new NotInScopeError(cmd, null, name)));
         return null;
       }
       globalRef = moduleNamespace.getRegisteredClass();

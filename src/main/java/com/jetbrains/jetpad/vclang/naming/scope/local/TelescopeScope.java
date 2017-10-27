@@ -27,8 +27,7 @@ public class TelescopeScope implements Scope {
     myExcluded = excluded;
   }
 
-  @Override
-  public Referable find(Predicate<Referable> pred) {
+  private Referable findHere(Predicate<Referable> pred) {
     for (int i = myParameters.size() - 1; i >= 0; i--) {
       List<? extends Referable> referables = myParameters.get(i).getReferableList();
       for (int j = referables.size() - 1; j >= 0; j--) {
@@ -37,7 +36,19 @@ public class TelescopeScope implements Scope {
         }
       }
     }
-    return myParent.find(pred);
+    return null;
+  }
+
+  @Override
+  public Referable find(Predicate<Referable> pred) {
+    Referable ref = findHere(pred);
+    return ref != null ? ref : myParent.find(pred);
+  }
+
+  @Override
+  public Referable resolveName(String name) {
+    Referable ref = findHere(ref2 -> ref2.textRepresentation().equals(name));
+    return ref != null ? ref : myParent.resolveName(name);
   }
 
   @Nonnull
