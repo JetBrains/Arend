@@ -6,6 +6,7 @@ public class ReferenceDoc extends LineDoc {
   private final Referable myReference;
 
   ReferenceDoc(Referable reference) {
+    assert reference != null;
     myReference = reference;
   }
 

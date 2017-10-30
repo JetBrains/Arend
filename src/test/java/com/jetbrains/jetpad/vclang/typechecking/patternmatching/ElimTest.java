@@ -437,4 +437,13 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | _, _, _ => 0\n" +
       "\\function g (n : Nat) : f 0 0 n = 2 => path (\\lam _ => 2)", 1);
   }
+
+  @Test
+  public void elimExpression() {
+    typeCheckModule(
+      "\\function + (a b : Nat) => a\n" +
+      "\\function f (a b : Nat) : Nat => \\elim (a + b)\n" +
+      "  | zero => zero\n" +
+      "  | suc n' => zero", 1);
+  }
 }

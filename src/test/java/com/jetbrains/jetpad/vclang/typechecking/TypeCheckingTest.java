@@ -176,4 +176,11 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void infixLocal() {
     typeCheckExpr("\\lam (x # : \\Prop) ($ foo %% : \\Prop -> \\Prop -> \\Prop) => (foo (`# $ x) `#) %% x", null);
   }
+
+  @Test
+  public void elimGoalTest() {
+    typeCheckModule(
+      "\\function f (n : Nat) : Nat => \\elim n\n" +
+      "  | _ => {?}", 1);
+  }
 }
