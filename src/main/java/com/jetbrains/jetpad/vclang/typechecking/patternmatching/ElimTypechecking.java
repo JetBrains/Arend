@@ -505,7 +505,13 @@ public class ElimTypechecking {
 
             conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
-          patterns.addAll(oldPatterns.subList(index + 1, oldPatterns.size()));
+          List<Pattern> rest = oldPatterns.subList(index + 1, oldPatterns.size());
+          DependentLink last = new Patterns(patterns).getLastBinding();
+          DependentLink first = new Patterns(rest).getFirstBinding();
+          if (last.hasNext() && first.hasNext()) {
+            last.setNext(first);
+          }
+          patterns.addAll(rest);
           conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
         }
 

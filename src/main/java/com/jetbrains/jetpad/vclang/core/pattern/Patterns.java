@@ -28,6 +28,16 @@ public class Patterns {
     return EmptyDependentLink.getInstance();
   }
 
+  public DependentLink getLastBinding() {
+    for (int i = myPatterns.size() - 1; i >= 0; i--) {
+      DependentLink result = myPatterns.get(i).getLastBinding();
+      if (result.hasNext()) {
+        return result;
+      }
+    }
+    return EmptyDependentLink.getInstance();
+  }
+
   public Pattern.MatchResult match(List<? extends Expression> expressions, List<Expression> result) {
     assert myPatterns.size() == expressions.size();
 

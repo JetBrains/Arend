@@ -29,6 +29,11 @@ public class BindingPattern implements Pattern {
   }
 
   @Override
+  public DependentLink getLastBinding() {
+    return myBinding;
+  }
+
+  @Override
   public MatchResult match(Expression expression, List<Expression> result) {
     result.add(expression);
     return MatchResult.OK;

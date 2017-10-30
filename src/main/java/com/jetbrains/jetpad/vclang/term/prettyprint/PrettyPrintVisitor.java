@@ -193,7 +193,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (parameter instanceof Concrete.TypeParameter) {
       Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
       if (parameter.getExplicit()) {
-        type.accept(this, new Precedence(prec));
+        type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
       } else {
         myBuilder.append('{');
         type.accept(this, new Precedence(Concrete.Expression.PREC));
