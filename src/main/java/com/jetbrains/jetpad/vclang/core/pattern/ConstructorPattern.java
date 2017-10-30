@@ -63,6 +63,11 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
+  public DependentLink getLastBinding() {
+    return myPatterns.getLastBinding();
+  }
+
+  @Override
   public MatchResult match(Expression expression, List<Expression> result) {
     ConCallExpression conCall = expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ConCallExpression.class);
     if (conCall == null) {

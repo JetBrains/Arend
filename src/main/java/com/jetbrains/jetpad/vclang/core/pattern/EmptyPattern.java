@@ -23,6 +23,11 @@ public class EmptyPattern implements Pattern {
   }
 
   @Override
+  public DependentLink getLastBinding() {
+    return EmptyDependentLink.getInstance();
+  }
+
+  @Override
   public MatchResult match(Expression expression, List<Expression> result) {
     return MatchResult.FAIL;
   }

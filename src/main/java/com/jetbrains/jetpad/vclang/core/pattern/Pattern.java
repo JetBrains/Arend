@@ -9,6 +9,7 @@ import java.util.List;
 public interface Pattern {
   Expression toExpression();
   DependentLink getFirstBinding();
+  DependentLink getLastBinding();
   MatchResult match(Expression expression, List<Expression> result);
   boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2);
 
