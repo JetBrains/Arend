@@ -49,9 +49,10 @@ public interface NamespaceCommand extends PrettyPrintable {
       List<LineDoc> renamingDocs = new ArrayList<>(openedReferences.size());
       for (NameRenaming renaming : openedReferences) {
         LineDoc renamingDoc = refDoc(renaming.getOldReference());
-        GlobalReferable newRef = renaming.getNewReferable();
+        Referable newRef = renaming.getNewReferable();
         if (newRef != null) {
-          renamingDoc = hList(renamingDoc, text(" \\as "), refDoc(newRef));
+          Precedence precedence = renaming.getPrecedence();
+          renamingDoc = hList(renamingDoc, text(" \\as " + (precedence == null ? "" : precedence)), refDoc(newRef));
         }
         renamingDocs.add(renamingDoc);
       }

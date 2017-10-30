@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -17,7 +14,7 @@ import java.util.List;
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
-  private boolean myIgnoreExports;
+  private final boolean myIgnoreExports;
   private final NamespaceCommand myCommand;
 
   private LexicalScope(Scope parent, Group group, boolean ignoreExports, NamespaceCommand cmd) {
@@ -72,17 +69,13 @@ public class LexicalScope implements Scope {
       }
 
       for (NameRenaming renaming : opened) {
-        Referable resolvedRef = renaming.getNewReferable();
-        if (resolvedRef != null) {
-          elements.add(resolvedRef);
-        } else {
-          resolvedRef = renaming.getOldReference();
-          if (resolvedRef instanceof UnresolvedReference) {
-            resolvedRef = ((UnresolvedReference) resolvedRef).resolve(scope);
-          }
-          if (!(resolvedRef instanceof ErrorReference)) {
-            elements.add(resolvedRef);
-          }
+        Referable oldRef = renaming.getOldReference();
+        if (oldRef instanceof UnresolvedReference) {
+          oldRef = ((UnresolvedReference) oldRef).resolve(scope);
+        }
+        if (!(oldRef instanceof ErrorReference)) {
+          Referable newRef = renaming.getNewReferable();
+          elements.add(newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef);
         }
       }
 
@@ -91,29 +84,23 @@ public class LexicalScope implements Scope {
         Collection<? extends Referable> scopeElements = scope.getElements();
         elemLoop:
         for (Referable ref : scopeElements) {
+          if (ref instanceof GlobalReferable && ((GlobalReferable) ref).isModule()) {
+            continue;
+          }
+
+          for (Referable hiddenRef : hidden) {
+            if (hiddenRef.textRepresentation().equals(ref.textRepresentation())) {
+              continue elemLoop;
+            }
+          }
+
           for (NameRenaming renaming : opened) {
             if (renaming.getOldReference().textRepresentation().equals(ref.textRepresentation())) {
               continue elemLoop;
             }
           }
 
-          if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).isModule())) {
-            for (Referable hiddenRef : hidden) {
-              if (hiddenRef.textRepresentation().equals(ref.textRepresentation())) {
-                continue elemLoop;
-              }
-            }
-
-            for (NameRenaming renaming : opened) {
-              if (renaming.getNewReferable() != null) {
-                if (renaming.getOldReference().textRepresentation().equals(ref.textRepresentation())) {
-                  continue elemLoop;
-                }
-              }
-            }
-
-            elements.add(ref);
-          }
+          elements.add(ref);
         }
       }
     }
@@ -180,16 +167,14 @@ public class LexicalScope implements Scope {
       }
 
       for (NameRenaming renaming : opened) {
-        Referable resolvedRef = renaming.getNewReferable();
-        if (resolvedRef == null) {
-          resolvedRef = renaming.getOldReference();
-        }
-        if (resolvedRef.textRepresentation().equals(name)) {
+        Referable newRef = renaming.getNewReferable();
+        Referable oldRef = renaming.getOldReference();
+        if ((newRef != null ? newRef : oldRef).textRepresentation().equals(name)) {
           if (resolveRef) {
-            if (resolvedRef instanceof UnresolvedReference) {
-              resolvedRef = ((UnresolvedReference) resolvedRef).resolve(scope);
+            if (oldRef instanceof UnresolvedReference) {
+              oldRef = ((UnresolvedReference) oldRef).resolve(scope);
             }
-            return resolvedRef;
+            return newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef;
           } else {
             return scope.resolveNamespace(name, true);
           }
@@ -205,14 +190,14 @@ public class LexicalScope implements Scope {
         }
 
         for (NameRenaming renaming : opened) {
-          if (renaming.getNewReferable() != null && renaming.getOldReference().textRepresentation().equals(name)) {
+          if (renaming.getOldReference().textRepresentation().equals(name)) {
             continue cmdLoop;
           }
         }
 
         Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false);
         if (result != null) {
-          return result;
+          return result instanceof GlobalReferable && ((GlobalReferable) result).isModule() ? null : result;
         }
       }
     }

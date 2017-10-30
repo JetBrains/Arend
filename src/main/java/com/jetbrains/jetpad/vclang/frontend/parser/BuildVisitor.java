@@ -267,7 +267,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       for (NsIdContext nsIdCtx : ctx.nsUsing().nsId()) {
         openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(
           new NamedUnresolvedReference(tokenPosition(nsIdCtx.id(0).start), visitId(nsIdCtx.id(0))),
-          nsIdCtx.id().size() < 2 ? null : new ConcreteGlobalReferable(tokenPosition(nsIdCtx.id(1).start), visitId(nsIdCtx.id(1)), visitPrecedence(nsIdCtx.precedence()))));
+          nsIdCtx.id().size() < 2 ? null : new ConcreteGlobalReferable(tokenPosition(nsIdCtx.id(1).start), visitId(nsIdCtx.id(1)), visitPrecedence(nsIdCtx.precedence())),
+          nsIdCtx.precedence() == null ? null : visitPrecedence(nsIdCtx.precedence())));
       }
     }
 

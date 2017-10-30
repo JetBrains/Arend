@@ -29,10 +29,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
@@ -496,7 +493,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
-    if (expr.getReferent() instanceof UnresolvedReference) {
+    if (expr.getReferent() instanceof UnresolvedReference || expr.getReferent() instanceof RedirectingReferable) {
       throw new IllegalStateException();
     }
     if (expr.getReferent() instanceof ErrorReference) {

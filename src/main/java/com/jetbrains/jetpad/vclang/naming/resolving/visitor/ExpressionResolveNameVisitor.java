@@ -39,6 +39,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable referable = expr.getReferent();
+    if (referable instanceof RedirectingReferable) {
+      referable = ((RedirectingReferable) referable).getOriginalReferable();
+    }
     if (referable instanceof UnresolvedReference) {
       expr.setReferent(((UnresolvedReference) referable).resolve(myScope));
     }
@@ -164,10 +167,18 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
         visitReference(elem.binOp, null);
         Referable ref = elem.binOp.getReferent();
+        Precedence precedence = null;
+        if (ref instanceof RedirectingReferable) {
+          precedence = ((RedirectingReferable) ref).getPrecedence();
+          ref = ((RedirectingReferable) ref).getOriginalReferable();
+        }
         if (ref instanceof UnresolvedReference) {
           errorCause = elem.binOp.getData();
         } else {
-          parser.pushOnStack(stack, expression, ref, ref instanceof GlobalReferable ? ((GlobalReferable) ref).getPrecedence() : Precedence.DEFAULT, elem.binOp, elem.argument == null);
+          if (precedence == null) {
+            precedence = ref instanceof GlobalReferable ? ((GlobalReferable) ref).getPrecedence() : Precedence.DEFAULT;
+          }
+          parser.pushOnStack(stack, expression, ref, precedence, elem.binOp, elem.argument == null);
           expression = elem.argument;
         }
       }
@@ -258,6 +269,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     }
 
     Referable referable = ((Concrete.ConstructorPattern) pattern).getConstructor();
+    if (referable instanceof RedirectingReferable) {
+      referable = ((RedirectingReferable) referable).getOriginalReferable();
+    }
     if (referable instanceof UnresolvedReference) {
       Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope);
       if (newRef instanceof ErrorReference) {
@@ -291,6 +305,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
       Referable field = impl.getImplementedField();
+      if (field instanceof RedirectingReferable) {
+        field = ((RedirectingReferable) field).getOriginalReferable();
+      }
       if (field instanceof UnresolvedReference) {
         impl.setImplementedField(((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef)));
       }

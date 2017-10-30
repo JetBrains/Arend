@@ -126,12 +126,12 @@ public class GroupResolver {
     if (!refs.isEmpty() && !cmd.isUsing()) {
       Set<String> names = new HashSet<>();
       for (NameRenaming renaming : refs) {
-        globalRef = renaming.getNewReferable();
-        if (globalRef == null) {
-          globalRef = resolveGlobal(renaming.getOldReference(), scope, groupRef);
+        Referable ref = renaming.getNewReferable();
+        if (ref == null) {
+          ref = resolveGlobal(renaming.getOldReference(), scope, groupRef);
         }
-        if (globalRef != null) {
-          names.add(globalRef.textRepresentation());
+        if (ref != null) {
+          names.add(ref.textRepresentation());
         }
       }
       scope = new FilteredScope(scope, names, true);
