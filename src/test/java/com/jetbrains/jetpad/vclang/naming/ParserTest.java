@@ -371,4 +371,9 @@ public class ParserTest extends NameResolverTestCase {
     postfixTest5("foo", "$", "\\infixl 6", "\\infixr 5");
     postfixTest5("#", "$", "\\infixl 5", "\\infixr 6");
   }
+
+  @Test
+  public void keyword() {
+    parseExpr("\\lamx => x", 1);
+  }
 }
