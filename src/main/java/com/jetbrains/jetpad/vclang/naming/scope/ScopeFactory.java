@@ -19,9 +19,12 @@ public class ScopeFactory {
   public static @Nonnull Scope forGroup(@Nullable ChildGroup group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
+    ImportedScope importedScope = null;
     if (parentGroup == null) {
       Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"), true);
-      Scope importedScope = group == null ? null : new ImportedScope(group, moduleScopeProvider);
+      if (group != null) {
+        importedScope = new ImportedScope(group, moduleScopeProvider);
+      }
       if (preludeScope == null && importedScope == null) {
         parentScope = EmptyScope.INSTANCE;
       } else if (preludeScope == null) {
@@ -37,7 +40,7 @@ public class ScopeFactory {
     } else {
       parentScope = forGroup(parentGroup, moduleScopeProvider);
     }
-    return LexicalScope.insideOf(group, parentScope);
+    return importedScope != null ? new TopLevelLexicalScope(importedScope, parentScope, group) : LexicalScope.insideOf(group, parentScope);
   }
 
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {

@@ -14,26 +14,71 @@ import java.util.List;
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
-  private final boolean myIgnoreExports;
+  private final IgnoreFlag myIgnoreFlag;
   private final NamespaceCommand myCommand;
 
-  private LexicalScope(Scope parent, Group group, boolean ignoreExports, NamespaceCommand cmd) {
+  enum IgnoreFlag {
+    EXPORTS {
+      @Override
+      boolean ignoreExports() {
+        return true;
+      }
+
+      @Override
+      boolean ignoreOpens() {
+        return false;
+      }
+    },
+
+    ALL {
+      @Override
+      boolean ignoreExports() {
+        return true;
+      }
+
+      @Override
+      boolean ignoreOpens() {
+        return true;
+      }
+    },
+
+    OPENS {
+      @Override
+      boolean ignoreExports() {
+        return false;
+      }
+
+      @Override
+      boolean ignoreOpens() {
+        return true;
+      }
+    };
+
+    abstract boolean ignoreExports();
+    abstract boolean ignoreOpens();
+  }
+
+  LexicalScope(Scope parent, Group group, IgnoreFlag ignoreFlag, NamespaceCommand cmd) {
     myParent = parent;
     myGroup = group;
     myCommand = cmd;
-    myIgnoreExports = ignoreExports;
+    myIgnoreFlag = ignoreFlag;
+  }
+
+  ImportedScope getImportedScope() {
+    return null;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, true, null);
+    return new LexicalScope(parent, group, IgnoreFlag.EXPORTS, null);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(null, group, false, null);
+    return new LexicalScope(EmptyScope.INSTANCE, group, IgnoreFlag.OPENS, null);
   }
 
   public static LexicalScope exported(Group group) {
-    return new LexicalScope(null, group, true, null);
+    return new LexicalScope(EmptyScope.INSTANCE, group, IgnoreFlag.ALL, null);
   }
 
   @Nonnull
@@ -57,13 +102,18 @@ public class LexicalScope implements Scope {
         break;
       }
       NamespaceCommand.Kind kind = cmd.getKind();
-      if (myIgnoreExports && kind == NamespaceCommand.Kind.EXPORT || myParent == null && kind != NamespaceCommand.Kind.EXPORT) {
+      if (kind == NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreExports() || kind != NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreOpens()) {
+        continue;
+      }
+
+      ImportedScope importedScope = getImportedScope();
+      if ((kind == NamespaceCommand.Kind.IMPORT || kind == NamespaceCommand.Kind.EXPORT) && importedScope == null) {
         continue;
       }
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports || kind == NamespaceCommand.Kind.EXPORT, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
+      Scope scope = Scope.Utils.resolveNamespace(kind == NamespaceCommand.Kind.IMPORT ? importedScope : new LexicalScope(kind == NamespaceCommand.Kind.EXPORT ? importedScope : myParent, myGroup, kind == NamespaceCommand.Kind.EXPORT ? IgnoreFlag.ALL : myIgnoreFlag, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -155,13 +205,18 @@ public class LexicalScope implements Scope {
         break;
       }
       NamespaceCommand.Kind kind = cmd.getKind();
-      if (myIgnoreExports && kind == NamespaceCommand.Kind.EXPORT || myParent == null && kind != NamespaceCommand.Kind.EXPORT) {
+      if (kind == NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreExports() || kind != NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreOpens()) {
+        continue;
+      }
+
+      ImportedScope importedScope = getImportedScope();
+      if ((kind == NamespaceCommand.Kind.IMPORT || kind == NamespaceCommand.Kind.EXPORT) && importedScope == null) {
         continue;
       }
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports || kind == NamespaceCommand.Kind.EXPORT, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
+      Scope scope = Scope.Utils.resolveNamespace(kind == NamespaceCommand.Kind.IMPORT ? importedScope : new LexicalScope(kind == NamespaceCommand.Kind.EXPORT ? importedScope : myParent, myGroup, kind == NamespaceCommand.Kind.EXPORT ? IgnoreFlag.ALL : myIgnoreFlag, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
