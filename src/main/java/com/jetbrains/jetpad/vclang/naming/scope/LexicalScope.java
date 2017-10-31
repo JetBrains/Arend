@@ -14,12 +14,12 @@ import java.util.List;
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
-  private final NamespaceCommand myCommand;
+  private final boolean myIgnoreOpens;
 
-  LexicalScope(Scope parent, Group group, NamespaceCommand cmd) {
+  LexicalScope(Scope parent, Group group, boolean ignoreOpens) {
     myParent = parent;
     myGroup = group;
-    myCommand = cmd;
+    myIgnoreOpens = ignoreOpens;
   }
 
   ImportedScope getImportedScope() {
@@ -27,11 +27,11 @@ public class LexicalScope implements Scope {
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, null);
+    return new LexicalScope(parent, group, false);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(null, group, null);
+    return new LexicalScope(EmptyScope.INSTANCE, group, true);
   }
 
   @Nonnull
@@ -50,13 +50,23 @@ public class LexicalScope implements Scope {
       elements.add(subgroup.getReferable());
     }
 
+    CachingScope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myCommand == cmd || myParent == null) {
+      if (myIgnoreOpens) {
         break;
       }
 
       boolean isUsing = cmd.isUsing();
-      Scope scope = Scope.Utils.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? getImportedScope() : new LexicalScope(myParent, myGroup, cmd), cmd.getPath());
+      Scope scope;
+      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        scope = getImportedScope();
+      } else {
+        if (cachingScope == null) {
+          cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
+        }
+        scope = cachingScope;
+      }
+      scope = Scope.Utils.resolveNamespace(scope, cmd.getPath());
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
@@ -99,10 +109,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (myParent != null) {
-      elements.addAll(myParent.getElements());
-    }
-
+    elements.addAll(myParent.getElements());
     return elements;
   }
 
@@ -143,15 +150,25 @@ public class LexicalScope implements Scope {
       }
     }
 
+    CachingScope cachingScope = null;
     cmdLoop:
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myCommand == cmd || myParent == null) {
+      if (myIgnoreOpens) {
         break;
       }
 
       boolean isUsing = cmd.isUsing();
+      Scope scope;
+      if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        scope = getImportedScope();
+      } else {
+        if (cachingScope == null) {
+          cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
+        }
+        scope = cachingScope;
+      }
+      scope = Scope.Utils.resolveNamespace(scope, cmd.getPath());
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? getImportedScope() : new LexicalScope(myParent, myGroup, cmd), cmd.getPath());
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -192,7 +209,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames);
+    return resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames);
   }
 
   @Nullable
