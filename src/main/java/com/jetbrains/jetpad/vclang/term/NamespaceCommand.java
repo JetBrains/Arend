@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
@@ -20,7 +21,7 @@ public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, IMPORT }
   @Nonnull Kind getKind();
   @Nonnull List<? extends String> getPath();
-  @Nonnull Collection<? extends GlobalReferable> getImportedPath();
+  @Nonnull Collection<? extends ModuleReferable> getImportedPath();
   boolean isUsing();
   @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
   @Nonnull Collection<? extends Referable> getHiddenReferences();

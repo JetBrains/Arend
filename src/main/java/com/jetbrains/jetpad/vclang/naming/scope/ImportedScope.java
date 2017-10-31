@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -61,26 +62,22 @@ public class ImportedScope implements Scope {
     }
 
     Scope scope2 = new ImportedScope(triple.tree, myProvider);
-    if (triple.path == null) {
+    if (triple.modulePath == null) {
       return scope2;
     }
 
-    List<String> path = new ArrayList<>(triple.path.size());
-    for (Referable referable : triple.path) {
-      path.add(referable.textRepresentation());
-    }
-    Scope scope1 = myProvider.forModule(new ModulePath(path));
+    Scope scope1 = myProvider.forModule(triple.modulePath);
     return scope1 == null ? scope2 : new MergeScope(scope1, scope2);
   }
 
   private static class Triple {
     Referable referable;
-    Collection<? extends Referable> path;
+    ModulePath modulePath;
     Tree tree;
 
-    Triple(Referable referable, Collection<? extends Referable> path, Tree tree) {
+    Triple(Referable referable, ModulePath modulePath, Tree tree) {
       this.referable = referable;
-      this.path = path;
+      this.modulePath = modulePath;
       this.tree = tree;
     }
   }
@@ -88,15 +85,15 @@ public class ImportedScope implements Scope {
   private static class Tree {
     final Map<String, Triple> map = new LinkedHashMap<>();
 
-    void addPath(Collection<? extends Referable> path) {
+    void addPath(Collection<? extends ModuleReferable> path) {
       if (path.isEmpty()) {
         return;
       }
 
       Tree tree = this;
-      for (Iterator<? extends Referable> it = path.iterator(); it.hasNext(); ) {
-        Referable key = it.next();
-        tree = tree.map.computeIfAbsent(key.textRepresentation(), k -> new Triple(key, it.hasNext() ? null : path, new Tree())).tree;
+      for (Iterator<? extends ModuleReferable> it = path.iterator(); it.hasNext(); ) {
+        ModuleReferable key = it.next();
+        tree = tree.map.computeIfAbsent(key.path.getName(), k -> new Triple(key, it.hasNext() ? null : key.path, new Tree())).tree;
       }
     }
   }
