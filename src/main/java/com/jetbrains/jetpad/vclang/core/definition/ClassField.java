@@ -69,8 +69,8 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
-    return new FieldCallExpression(this, thisExpr);
+  public Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
+    return FieldCallExpression.make(this, thisExpr);
   }
 
   public void setBaseType(Expression type) {

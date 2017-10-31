@@ -21,7 +21,7 @@ public class InferenceReferenceExpression extends Expression {
         for (ClassField field : classCall.getDefinition().getFields()) {
           Expression impl = classCall.getImplementation(field, this);
           if (impl != null) {
-            equations.add(new FieldCallExpression(field, this), impl, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
+            equations.add(FieldCallExpression.make(field, this), impl, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
           }
         }
         type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());

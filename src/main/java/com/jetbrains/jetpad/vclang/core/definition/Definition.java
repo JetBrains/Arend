@@ -54,7 +54,7 @@ public abstract class Definition implements Variable {
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
 
-  public abstract DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
+  public abstract Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
 
   public ClassDefinition getThisClass() {
     return myThisClass;

@@ -277,7 +277,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return new FieldCallExpression((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {

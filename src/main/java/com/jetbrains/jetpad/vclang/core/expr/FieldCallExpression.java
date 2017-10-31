@@ -11,9 +11,24 @@ import java.util.List;
 public class FieldCallExpression extends DefCallExpression {
   private final Expression myExpression;
 
-  public FieldCallExpression(ClassField definition, Expression expression) {
+  private FieldCallExpression(ClassField definition, Expression expression) {
     super(definition);
     myExpression = expression;
+  }
+
+  public static Expression make(ClassField definition, Expression thisExpr) {
+    if (thisExpr.isInstance(NewExpression.class)) {
+      Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
+      assert impl != null;
+      return impl;
+    } else {
+      ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
+      if (errorExpr != null && errorExpr.getExpression() != null) {
+        return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
+      } else {
+        return new FieldCallExpression(definition, thisExpr);
+      }
+    }
   }
 
   public Expression getExpression() {

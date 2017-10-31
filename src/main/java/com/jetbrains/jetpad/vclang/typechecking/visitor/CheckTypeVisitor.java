@@ -485,7 +485,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitApp(Abstract.AppExpression expr, ExpectedType expectedType) {
-    String s = expr.toString();
     TResult result = myArgsInference.infer(expr, expectedType);
     if (result == null || !checkPath(result, expr)) {
       return null;

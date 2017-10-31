@@ -303,7 +303,7 @@ class DefinitionDeserialization {
     return new CaseExpression(parameters, type, elimTree, arguments);
   }
 
-  private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
-    return new FieldCallExpression(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
+  private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
+    return FieldCallExpression.make(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
   }
 }
