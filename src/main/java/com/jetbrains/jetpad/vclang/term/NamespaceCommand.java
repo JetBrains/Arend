@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
 public interface NamespaceCommand extends PrettyPrintable {
-  enum Kind { OPEN, EXPORT, IMPORT }
+  enum Kind { OPEN, IMPORT }
   @Nonnull Kind getKind();
   @Nonnull List<? extends String> getPath();
   @Nonnull Collection<? extends GlobalReferable> getImportedPath();
@@ -30,7 +30,6 @@ public interface NamespaceCommand extends PrettyPrintable {
     List<LineDoc> docs = new ArrayList<>();
     switch (getKind()) {
       case OPEN: docs.add(text("\\open")); break;
-      case EXPORT: docs.add(text("\\export")); break;
       case IMPORT: docs.add(text("\\import")); break;
     }
 

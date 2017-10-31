@@ -286,11 +286,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public NamespaceCommand.Kind visitExportCmd(ExportCmdContext ctx) {
-    return NamespaceCommand.Kind.EXPORT;
-  }
-
-  @Override
   public NamespaceCommand.Kind visitImportCmd(ImportCmdContext ctx) {
     return NamespaceCommand.Kind.IMPORT;
   }

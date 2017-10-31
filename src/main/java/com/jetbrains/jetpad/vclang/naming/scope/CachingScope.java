@@ -35,11 +35,7 @@ public class CachingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
-    if (!includeExports) {
-      return myScope.resolveNamespace(name, resolveModuleNames, false);
-    }
-
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     if (!resolveModuleNames) {
       Referable referable = resolveName(name);
       if (referable == null || referable instanceof GlobalReferable && ((GlobalReferable) referable).isModule()) {
@@ -49,7 +45,7 @@ public class CachingScope implements Scope {
 
     Scope namespace = myNamespaces.get(name);
     if (namespace == null) {
-      namespace = myScope.resolveNamespace(name, true, true);
+      namespace = myScope.resolveNamespace(name, true);
       namespace = namespace == null ? EMPTY_SCOPE : new CachingScope(namespace);
       myNamespaces.put(name, namespace);
     }

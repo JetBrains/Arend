@@ -7,7 +7,6 @@ statement : definition                                                      # st
           ;
 
 nsCmd : '\\open'                        # openCmd
-      | '\\export'                      # exportCmd
       | '\\import'                      # importCmd
       ;
 

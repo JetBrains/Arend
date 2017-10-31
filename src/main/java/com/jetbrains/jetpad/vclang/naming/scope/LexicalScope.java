@@ -14,55 +14,12 @@ import java.util.List;
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
-  private final IgnoreFlag myIgnoreFlag;
   private final NamespaceCommand myCommand;
 
-  enum IgnoreFlag {
-    EXPORTS {
-      @Override
-      boolean ignoreExports() {
-        return true;
-      }
-
-      @Override
-      boolean ignoreOpens() {
-        return false;
-      }
-    },
-
-    ALL {
-      @Override
-      boolean ignoreExports() {
-        return true;
-      }
-
-      @Override
-      boolean ignoreOpens() {
-        return true;
-      }
-    },
-
-    OPENS {
-      @Override
-      boolean ignoreExports() {
-        return false;
-      }
-
-      @Override
-      boolean ignoreOpens() {
-        return true;
-      }
-    };
-
-    abstract boolean ignoreExports();
-    abstract boolean ignoreOpens();
-  }
-
-  LexicalScope(Scope parent, Group group, IgnoreFlag ignoreFlag, NamespaceCommand cmd) {
+  LexicalScope(Scope parent, Group group, NamespaceCommand cmd) {
     myParent = parent;
     myGroup = group;
     myCommand = cmd;
-    myIgnoreFlag = ignoreFlag;
   }
 
   ImportedScope getImportedScope() {
@@ -70,15 +27,11 @@ public class LexicalScope implements Scope {
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, IgnoreFlag.EXPORTS, null);
+    return new LexicalScope(parent, group, null);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, IgnoreFlag.OPENS, null);
-  }
-
-  public static LexicalScope exported(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, IgnoreFlag.ALL, null);
+    return new LexicalScope(null, group, null);
   }
 
   @Nonnull
@@ -98,22 +51,13 @@ public class LexicalScope implements Scope {
     }
 
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myCommand == cmd) {
+      if (myCommand == cmd || myParent == null) {
         break;
-      }
-      NamespaceCommand.Kind kind = cmd.getKind();
-      if (kind == NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreExports() || kind != NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreOpens()) {
-        continue;
-      }
-
-      ImportedScope importedScope = getImportedScope();
-      if ((kind == NamespaceCommand.Kind.IMPORT || kind == NamespaceCommand.Kind.EXPORT) && importedScope == null) {
-        continue;
       }
 
       boolean isUsing = cmd.isUsing();
+      Scope scope = Scope.Utils.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? getImportedScope() : new LexicalScope(myParent, myGroup, cmd), cmd.getPath());
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(kind == NamespaceCommand.Kind.IMPORT ? importedScope : new LexicalScope(kind == NamespaceCommand.Kind.EXPORT ? importedScope : myParent, myGroup, kind == NamespaceCommand.Kind.EXPORT ? IgnoreFlag.ALL : myIgnoreFlag, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -162,7 +106,7 @@ public class LexicalScope implements Scope {
     return elements;
   }
 
-  private static Object resolveSubgroup(Group group, String name, boolean resolveRef, boolean includeExports) {
+  private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
     if (resolveRef) {
       for (GlobalReferable referable : group.getConstructors()) {
         if (referable.textRepresentation().equals(name)) {
@@ -179,21 +123,21 @@ public class LexicalScope implements Scope {
 
     Referable ref = group.getReferable();
     if (ref.textRepresentation().equals(name)) {
-      return resolveRef ? ref : includeExports ? LexicalScope.opened(group) : LexicalScope.exported(group);
+      return resolveRef ? ref : LexicalScope.opened(group);
     }
 
     return null;
   }
 
-  private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames, boolean includeExports) {
+  private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames) {
     for (Group subgroup : myGroup.getSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef, includeExports);
+      Object result = resolveSubgroup(subgroup, name, resolveRef);
       if (result != null) {
         return result;
       }
     }
     for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef, includeExports);
+      Object result = resolveSubgroup(subgroup, name, resolveRef);
       if (result != null) {
         return result;
       }
@@ -201,22 +145,13 @@ public class LexicalScope implements Scope {
 
     cmdLoop:
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myCommand == cmd) {
+      if (myCommand == cmd || myParent == null) {
         break;
-      }
-      NamespaceCommand.Kind kind = cmd.getKind();
-      if (kind == NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreExports() || kind != NamespaceCommand.Kind.EXPORT && myIgnoreFlag.ignoreOpens()) {
-        continue;
-      }
-
-      ImportedScope importedScope = getImportedScope();
-      if ((kind == NamespaceCommand.Kind.IMPORT || kind == NamespaceCommand.Kind.EXPORT) && importedScope == null) {
-        continue;
       }
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(kind == NamespaceCommand.Kind.IMPORT ? importedScope : new LexicalScope(kind == NamespaceCommand.Kind.EXPORT ? importedScope : myParent, myGroup, kind == NamespaceCommand.Kind.EXPORT ? IgnoreFlag.ALL : myIgnoreFlag, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
+      Scope scope = Scope.Utils.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? getImportedScope() : new LexicalScope(myParent, myGroup, cmd), cmd.getPath());
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -231,7 +166,7 @@ public class LexicalScope implements Scope {
             }
             return newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef;
           } else {
-            return scope.resolveNamespace(name, true, includeExports);
+            return scope.resolveNamespace(name, true);
           }
         }
       }
@@ -250,27 +185,27 @@ public class LexicalScope implements Scope {
           }
         }
 
-        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false, includeExports);
+        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false);
         if (result != null) {
           return result instanceof GlobalReferable && ((GlobalReferable) result).isModule() ? null : result;
         }
       }
     }
 
-    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames, includeExports);
+    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames);
   }
 
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    Object result = resolve(name, true, true, true);
+    Object result = resolve(name, true, true);
     return result instanceof Referable ? (Referable) result : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
-    Object result = resolve(name, false, resolveModuleNames, includeExports);
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
+    Object result = resolve(name, false, resolveModuleNames);
     return result instanceof Scope ? (Scope) result : null;
   }
 }

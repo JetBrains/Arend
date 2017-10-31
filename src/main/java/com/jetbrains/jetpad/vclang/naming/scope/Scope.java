@@ -31,7 +31,7 @@ public interface Scope {
     return find(ref -> Objects.equals(name, ref.textRepresentation()));
   }
 
-  default @Nullable Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
+  default @Nullable Scope resolveNamespace(String name, boolean resolveModuleNames) {
     return null;
   }
 
@@ -48,18 +48,18 @@ public interface Scope {
         if (i == path.size() - 1) {
           return scope.resolveName(path.get(i));
         } else {
-          scope = scope.resolveNamespace(path.get(i), true, true);
+          scope = scope.resolveNamespace(path.get(i), true);
         }
       }
       return null;
     }
 
-    public static Scope resolveNamespace(Scope scope, List<? extends String> path, boolean includeExports) {
+    public static Scope resolveNamespace(Scope scope, List<? extends String> path) {
       for (String name : path) {
         if (scope == null) {
           return null;
         }
-        scope = scope.resolveNamespace(name, true, includeExports);
+        scope = scope.resolveNamespace(name, true);
       }
       return scope;
     }

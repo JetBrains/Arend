@@ -21,7 +21,7 @@ public class ScopeFactory {
     Scope parentScope;
     ImportedScope importedScope = null;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"), true);
+      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"));
       if (group != null) {
         importedScope = new ImportedScope(group, moduleScopeProvider);
       }

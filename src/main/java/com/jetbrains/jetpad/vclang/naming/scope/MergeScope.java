@@ -60,9 +60,9 @@ public class MergeScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     for (Scope scope : myScopes) {
-      Scope result = scope.resolveNamespace(name, resolveModuleNames, includeExports);
+      Scope result = scope.resolveNamespace(name, resolveModuleNames);
       if (result != null) {
         return result;
       }

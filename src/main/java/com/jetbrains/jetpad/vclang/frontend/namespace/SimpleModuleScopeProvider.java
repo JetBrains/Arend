@@ -21,7 +21,7 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider {
 
   @Nullable
   @Override
-  public Scope forModule(@Nonnull ModulePath module, boolean includeExports) {
+  public Scope forModule(@Nonnull ModulePath module) {
     return myMap.get(module);
   }
 }

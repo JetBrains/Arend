@@ -6,7 +6,7 @@ public class TopLevelLexicalScope extends LexicalScope {
   private final ImportedScope myImportedScope;
 
   public TopLevelLexicalScope(ImportedScope importedScope, Scope parent, Group group) {
-    super(parent, group, IgnoreFlag.EXPORTS, null);
+    super(parent, group, null);
     myImportedScope = importedScope;
   }
 

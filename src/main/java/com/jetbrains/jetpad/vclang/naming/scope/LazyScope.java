@@ -37,9 +37,9 @@ public class LazyScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     updateScope();
-    return myScope.resolveNamespace(name, resolveModuleNames, includeExports);
+    return myScope.resolveNamespace(name, resolveModuleNames);
   }
 
   @Override

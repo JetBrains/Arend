@@ -50,7 +50,7 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     if (!resolveModuleNames) {
       return null;
     }
@@ -69,7 +69,7 @@ public class ImportedScope implements Scope {
     for (Referable referable : triple.path) {
       path.add(referable.textRepresentation());
     }
-    Scope scope1 = myProvider.forModule(new ModulePath(path), includeExports);
+    Scope scope1 = myProvider.forModule(new ModulePath(path));
     return scope1 == null ? scope2 : new MergeScope(scope1, scope2);
   }
 
