@@ -20,7 +20,7 @@ public class ScopeFactory {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"));
+      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"), true);
       Scope importedScope = group == null ? null : new ImportedScope(group, moduleScopeProvider);
       if (preludeScope == null && importedScope == null) {
         parentScope = EmptyScope.INSTANCE;

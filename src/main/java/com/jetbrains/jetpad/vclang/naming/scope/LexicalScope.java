@@ -63,7 +63,7 @@ public class LexicalScope implements Scope {
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports, cmd), cmd.getPath());
+      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports || kind == NamespaceCommand.Kind.EXPORT, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -112,7 +112,7 @@ public class LexicalScope implements Scope {
     return elements;
   }
 
-  private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
+  private static Object resolveSubgroup(Group group, String name, boolean resolveRef, boolean includeExports) {
     if (resolveRef) {
       for (GlobalReferable referable : group.getConstructors()) {
         if (referable.textRepresentation().equals(name)) {
@@ -129,21 +129,21 @@ public class LexicalScope implements Scope {
 
     Referable ref = group.getReferable();
     if (ref.textRepresentation().equals(name)) {
-      return resolveRef ? ref : LexicalScope.opened(group);
+      return resolveRef ? ref : includeExports ? LexicalScope.opened(group) : LexicalScope.exported(group);
     }
 
     return null;
   }
 
-  private Object resolve(String name, boolean resolveRef, boolean includeModules) {
+  private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames, boolean includeExports) {
     for (Group subgroup : myGroup.getSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      Object result = resolveSubgroup(subgroup, name, resolveRef, includeExports);
       if (result != null) {
         return result;
       }
     }
     for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      Object result = resolveSubgroup(subgroup, name, resolveRef, includeExports);
       if (result != null) {
         return result;
       }
@@ -161,7 +161,7 @@ public class LexicalScope implements Scope {
 
       boolean isUsing = cmd.isUsing();
       Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports, cmd), cmd.getPath());
+      Scope scope = Scope.Utils.resolveNamespace(new LexicalScope(myParent, myGroup, myIgnoreExports || kind == NamespaceCommand.Kind.EXPORT, cmd), cmd.getPath(), kind != NamespaceCommand.Kind.EXPORT);
       if (scope == null || opened.isEmpty() && !isUsing) {
         continue;
       }
@@ -176,7 +176,7 @@ public class LexicalScope implements Scope {
             }
             return newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef;
           } else {
-            return scope.resolveNamespace(name, true);
+            return scope.resolveNamespace(name, true, includeExports);
           }
         }
       }
@@ -195,27 +195,27 @@ public class LexicalScope implements Scope {
           }
         }
 
-        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false);
+        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false, includeExports);
         if (result != null) {
           return result instanceof GlobalReferable && ((GlobalReferable) result).isModule() ? null : result;
         }
       }
     }
 
-    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, includeModules);
+    return myParent == null ? null : resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames, includeExports);
   }
 
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    Object result = resolve(name, true, true);
+    Object result = resolve(name, true, true, true);
     return result instanceof Referable ? (Referable) result : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean includeModules) {
-    Object result = resolve(name, false, includeModules);
+  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
+    Object result = resolve(name, false, resolveModuleNames, includeExports);
     return result instanceof Scope ? (Scope) result : null;
   }
 }

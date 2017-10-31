@@ -48,7 +48,7 @@ public class ClassFieldImplScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean includeModules) {
+  public Scope resolveNamespace(String name, boolean resolveModuleNames, boolean includeExports) {
     Referable referable = resolveName(name);
     return referable instanceof ClassReferable ? new ClassFieldImplScope((ClassReferable) referable) : null;
   }

@@ -12,7 +12,7 @@ public class EmptyModuleScopeProvider implements ModuleScopeProvider {
 
   @Nullable
   @Override
-  public Scope forModule(@Nonnull ModulePath module) {
+  public Scope forModule(@Nonnull ModulePath module, boolean includeExports) {
     return null;
   }
 }
