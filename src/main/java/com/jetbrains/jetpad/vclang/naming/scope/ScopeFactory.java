@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
 import javax.annotation.Nonnull;
@@ -40,7 +41,7 @@ public class ScopeFactory {
     } else {
       parentScope = forGroup(parentGroup, moduleScopeProvider);
     }
-    return importedScope != null ? new TopLevelLexicalScope(importedScope, parentScope, group) : LexicalScope.insideOf(group, parentScope);
+    return LexicalScope.insideOf(group, parentScope);
   }
 
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {
@@ -59,6 +60,13 @@ public class ScopeFactory {
     }
 
     Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
+
+    // After namespace command
+    if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
+      if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
+        return ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope;
+      }
+    }
 
     // We cannot use any references in the universe of a data type
     if (parentSourceNode instanceof Abstract.DataDefinition && sourceNode instanceof Abstract.Expression) {

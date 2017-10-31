@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -65,6 +66,10 @@ public final class Abstract {
 
   public interface ClassReferenceHolder extends SourceNode {
     @Nullable ClassReferable getClassReference();
+  }
+
+  public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
+    @Nullable Abstract.Reference getOpenedReference();
   }
 
   // Expression

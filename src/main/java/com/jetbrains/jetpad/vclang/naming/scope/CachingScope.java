@@ -52,4 +52,10 @@ public class CachingScope implements Scope {
 
     return namespace == EMPTY_SCOPE ? null : namespace;
   }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    return myScope.getImportedSubscope();
+  }
 }

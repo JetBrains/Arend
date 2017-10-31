@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.scope.local;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.ImportedScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
@@ -59,5 +60,11 @@ public class PatternScope implements Scope {
   @Override
   public Scope getGlobalSubscope() {
     return myParent.getGlobalSubscope();
+  }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    return myParent.getImportedSubscope();
   }
 }

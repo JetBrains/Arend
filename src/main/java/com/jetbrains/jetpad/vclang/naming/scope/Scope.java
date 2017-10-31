@@ -39,6 +39,10 @@ public interface Scope {
     return this;
   }
 
+  default @Nullable ImportedScope getImportedSubscope() {
+    return null;
+  }
+
   class Utils {
     public static Referable resolveName(Scope scope, List<? extends String> path) {
       for (int i = 0; i < path.size(); i++) {

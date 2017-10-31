@@ -47,4 +47,18 @@ public class LazyScope implements Scope {
     updateScope();
     return myScope.find(pred);
   }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscope() {
+    updateScope();
+    return myScope.getGlobalSubscope();
+  }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    updateScope();
+    return myScope.getImportedSubscope();
+  }
 }

@@ -80,4 +80,16 @@ public class MergeScope implements Scope {
     }
     return null;
   }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    for (Scope scope : myScopes) {
+      ImportedScope importedScope = scope.getImportedSubscope();
+      if (importedScope != null) {
+        return importedScope;
+      }
+    }
+    return null;
+  }
 }

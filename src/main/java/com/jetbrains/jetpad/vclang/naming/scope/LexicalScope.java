@@ -22,10 +22,6 @@ public class LexicalScope implements Scope {
     myIgnoreOpens = ignoreOpens;
   }
 
-  ImportedScope getImportedScope() {
-    return null;
-  }
-
   public static LexicalScope insideOf(Group group, Scope parent) {
     return new LexicalScope(parent, group, false);
   }
@@ -59,7 +55,7 @@ public class LexicalScope implements Scope {
       boolean isUsing = cmd.isUsing();
       Scope scope;
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        scope = getImportedScope();
+        scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
           cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
@@ -160,7 +156,7 @@ public class LexicalScope implements Scope {
       boolean isUsing = cmd.isUsing();
       Scope scope;
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        scope = getImportedScope();
+        scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
           cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
@@ -224,5 +220,11 @@ public class LexicalScope implements Scope {
   public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     Object result = resolve(name, false, resolveModuleNames);
     return result instanceof Scope ? (Scope) result : null;
+  }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    return myParent.getImportedSubscope();
   }
 }

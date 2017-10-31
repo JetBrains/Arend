@@ -53,4 +53,10 @@ public class FilteredScope implements Scope {
   public Referable find(Predicate<Referable> pred) {
     return myScope.find(ref -> pred.test(ref) && myInclude == myNames.contains(ref.textRepresentation()));
   }
+
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    return myScope.getImportedSubscope();
+  }
 }

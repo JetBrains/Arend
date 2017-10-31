@@ -70,6 +70,12 @@ public class ImportedScope implements Scope {
     return scope1 == null ? scope2 : new MergeScope(scope1, scope2);
   }
 
+  @Nullable
+  @Override
+  public ImportedScope getImportedSubscope() {
+    return this;
+  }
+
   private static class Triple {
     Referable referable;
     ModulePath modulePath;
