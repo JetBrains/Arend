@@ -63,8 +63,11 @@ public class ScopeFactory {
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
+      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope;
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
-        return ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope;
+        return scope;
+      } else {
+        return Scope.Utils.resolveNamespace(scope, ((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
       }
     }
 
