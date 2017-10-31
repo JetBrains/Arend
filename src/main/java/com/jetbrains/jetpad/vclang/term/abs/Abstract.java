@@ -50,6 +50,11 @@ public final class Abstract {
     @Nonnull Referable getReferent();
   }
 
+  public interface LongReference extends Reference {
+    @Nullable Reference getHeadReference();
+    @Nonnull Collection<? extends Reference> getTailReferences();
+  }
+
   // Holder
 
   public interface ParametersHolder extends SourceNode {
@@ -69,7 +74,7 @@ public final class Abstract {
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
-    @Nullable Abstract.Reference getOpenedReference();
+    @Nullable Abstract.LongReference getOpenedReference();
   }
 
   // Expression

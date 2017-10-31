@@ -63,12 +63,33 @@ public class ScopeFactory {
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
-      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope;
+      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope(), EmptyModuleScopeProvider.INSTANCE) : parentScope;
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;
       } else {
         return Scope.Utils.resolveNamespace(scope, ((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
       }
+    }
+
+    // After a dot
+    if (parentSourceNode instanceof Abstract.LongReference && sourceNode instanceof Abstract.Reference) {
+      Abstract.Reference headRef = ((Abstract.LongReference) parentSourceNode).getHeadReference();
+      if (headRef == null || sourceNode.equals(headRef)) {
+        return parentScope;
+      }
+
+      Scope scope = parentScope.getGlobalSubscope().resolveNamespace(headRef.getReferent().textRepresentation(), true);
+      for (Abstract.Reference reference : ((Abstract.LongReference) parentSourceNode).getTailReferences()) {
+        if (scope == null || reference == null) {
+          return EmptyScope.INSTANCE;
+        }
+        if (sourceNode.equals(reference)) {
+          return scope;
+        }
+        scope = scope.resolveNamespace(reference.getReferent().textRepresentation(), true);
+      }
+
+      return EmptyScope.INSTANCE;
     }
 
     // We cannot use any references in the universe of a data type

@@ -26,6 +26,11 @@ public class ImportedScope implements Scope {
     }
   }
 
+  public ImportedScope(ImportedScope scope, ModuleScopeProvider provider) {
+    myExpectedNamesTree = scope.myExpectedNamesTree;
+    myProvider = provider;
+  }
+
   private ImportedScope(Tree tree, ModuleScopeProvider provider) {
     myExpectedNamesTree = tree;
     myProvider = provider;
