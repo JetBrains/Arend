@@ -193,9 +193,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
-  public ProjExpression visitProj(ProjExpression expr, Void params) {
+  public Expression visitProj(ProjExpression expr, Void params) {
     Expression newExpr = findBindings(expr.getExpression(), false);
-    return newExpr == null ? null : new ProjExpression(newExpr, expr.getField());
+    return newExpr == null ? null : ProjExpression.make(newExpr, expr.getField());
   }
 
   private boolean visitDependentLink(DependentLink link) {

@@ -392,7 +392,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.WHNF ? new ProjExpression(newExpr, expr.getField()) : new ProjExpression(expr.getExpression().accept(this, mode), expr.getField());
+      return mode == Mode.WHNF ? ProjExpression.make(newExpr, expr.getField()) : ProjExpression.make(expr.getExpression().accept(this, mode), expr.getField());
     }
   }
 

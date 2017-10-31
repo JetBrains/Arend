@@ -1059,10 +1059,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; sigmaParams != fieldLink; sigmaParams = sigmaParams.getNext(), i++) {
-      substitution.add(sigmaParams, new ProjExpression(exprResult.expression, i));
+      substitution.add(sigmaParams, ProjExpression.make(exprResult.expression, i));
     }
 
-    exprResult.expression = new ProjExpression(exprResult.expression, expr.getField());
+    exprResult.expression = ProjExpression.make(exprResult.expression, expr.getField());
     exprResult.type = fieldLink.getTypeExpr().subst(substitution);
     return checkResult(expectedType, exprResult, expr);
   }

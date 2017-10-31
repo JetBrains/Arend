@@ -6,9 +6,13 @@ public class ProjExpression extends Expression {
   private final Expression myExpression;
   private final int myField;
 
-  public ProjExpression(Expression expression, int field) {
+  private ProjExpression(Expression expression, int field) {
     myExpression = expression;
     myField = field;
+  }
+
+  public static Expression make(Expression expression, int field) {
+    return expression.isInstance(TupleExpression.class) ? expression.cast(TupleExpression.class).getFields().get(field) : new ProjExpression(expression, field);
   }
 
   public Expression getExpression() {

@@ -274,8 +274,8 @@ class DefinitionDeserialization {
     return new SigmaExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
   }
 
-  private ProjExpression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {
-    return new ProjExpression(readExpr(proto.getExpression()), proto.getField());
+  private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {
+    return ProjExpression.make(readExpr(proto.getExpression()), proto.getField());
   }
 
   private NewExpression readNew(ExpressionProtos.Expression.New proto) throws DeserializationError {

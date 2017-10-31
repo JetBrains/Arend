@@ -485,7 +485,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private Boolean compareTupleEta(TupleExpression tuple1, Expression expr2, boolean correctOrder) {
     int i = 0;
     for (Expression field : tuple1.getFields()) {
-      if (correctOrder ? !compare(field, new ProjExpression(expr2, i++)) : !compare(new ProjExpression(expr2, i++), field)) {
+      if (correctOrder ? !compare(field, ProjExpression.make(expr2, i++)) : !compare(ProjExpression.make(expr2, i++), field)) {
         return false;
       }
     }
