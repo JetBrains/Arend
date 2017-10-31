@@ -108,7 +108,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
     ExprSubstitution subst = new ExprSubstitution();
     for (int i = 0; i < expr.getField(); i++) {
-      subst.add(params, new ProjExpression(expr.getExpression(), i));
+      subst.add(params, ProjExpression.make(expr.getExpression(), i));
       params = params.getNext();
     }
     return params.getTypeExpr().subst(subst);

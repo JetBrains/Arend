@@ -140,8 +140,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public ProjExpression visitProj(ProjExpression expr, Void params) {
-    return new ProjExpression(expr.getExpression().accept(this, null), expr.getField());
+  public Expression visitProj(ProjExpression expr, Void params) {
+    return ProjExpression.make(expr.getExpression().accept(this, null), expr.getField());
   }
 
   @Override
