@@ -46,20 +46,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final SourceInfoProvider<SourceIdT> srcInfoProvider;
-  private final CacheManager<SourceIdT> cacheManager;
+  private CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
   private final boolean useCache;
-  private final TypecheckerState state;
+  private TypecheckerState state;
   private Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
 
 
-  public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
+  public BaseCliFrontend(boolean recompile) {
     useCache = !recompile;
 
-    moduleTracker = new ModuleTracker(storage);
+    moduleTracker = new ModuleTracker();
     srcInfoProvider = moduleTracker.sourceInfoProvider;
+  }
 
+  protected void initialize(Storage<SourceIdT> storage) {
+    if (cacheManager != null) {
+      throw new IllegalStateException();
+    }
+
+    moduleTracker.setStorage(storage);
     cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
     state = cacheManager.getTypecheckerState();
   }
@@ -90,8 +97,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
-    ModuleTracker(Storage<SourceIdT> storage) {
-      super(storage, resultTracker);
+    ModuleTracker() {
+      super(resultTracker);
     }
 
     @Override

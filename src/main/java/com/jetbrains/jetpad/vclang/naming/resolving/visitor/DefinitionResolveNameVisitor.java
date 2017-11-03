@@ -7,9 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
-import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
@@ -252,6 +250,15 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
+  private static Scope makeScope(Group group, Scope parentScope) {
+    if (group.getNamespaceCommands().isEmpty()) {
+      Scope childScope = CachingScope.make(LexicalScope.insideOf(group, EmptyScope.INSTANCE));
+      return childScope.getElements().isEmpty() ? parentScope : new MergeScope(childScope, parentScope);
+    } else {
+      return CachingScope.make(LexicalScope.insideOf(group, parentScope));
+    }
+  }
+
   public void resolveGroup(Group group, Scope scope, ConcreteProvider concreteProvider) {
     Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
     if (def instanceof Concrete.Definition) {
@@ -259,10 +266,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     for (Group subgroup : group.getSubgroups()) {
-      resolveGroup(subgroup, new CachingScope(LexicalScope.insideOf(subgroup, scope)), concreteProvider);
+      resolveGroup(subgroup, makeScope(subgroup, scope), concreteProvider);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      resolveGroup(subgroup, new CachingScope(LexicalScope.insideOf(subgroup, scope)), concreteProvider);
+      resolveGroup(subgroup, makeScope(subgroup, scope), concreteProvider);
     }
   }
 }

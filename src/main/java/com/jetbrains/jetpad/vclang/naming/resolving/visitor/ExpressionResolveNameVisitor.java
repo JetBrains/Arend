@@ -43,7 +43,11 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       referable = ((RedirectingReferable) referable).getOriginalReferable();
     }
     if (referable instanceof UnresolvedReference) {
-      expr.setReferent(((UnresolvedReference) referable).resolve(myScope));
+      referable = ((UnresolvedReference) referable).resolve(myScope);
+      expr.setReferent(referable);
+      if (referable instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) referable).getError());
+      }
     }
     return null;
   }

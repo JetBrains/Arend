@@ -130,12 +130,13 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesModule("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => A.x");
   }
 
+  @Ignore("dynamic call")
   @Test
   public void staticFieldAccCallTest() {
     resolveNamesModule("\\class A { | x : \\Type0 \\class B \\where { \\function y => x } } \\function f (a : A) => a.B.y");
   }
 
-  @Ignore
+  @Ignore("export")
   @Test
   public void exportPublicFieldsTest() {
     /*

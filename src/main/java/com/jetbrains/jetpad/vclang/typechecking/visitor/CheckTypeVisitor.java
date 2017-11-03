@@ -497,7 +497,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       throw new IllegalStateException();
     }
     if (expr.getReferent() instanceof ErrorReference) {
-      myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
       return null;
     }
 

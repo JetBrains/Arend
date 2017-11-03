@@ -25,8 +25,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
 
   @Before
   public void initialize() {
-    storage = new MemoryStorage(null, null, EmptyModuleScopeProvider.INSTANCE);
-    moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
+    moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(errorReporter) {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         Group old = loadedModules.put(module, result.group);
@@ -38,6 +37,8 @@ public class BaseModuleLoaderTest extends VclangTestCase {
         failedModules.add(module);
       }
     };
+    storage = new MemoryStorage(null, null, EmptyModuleScopeProvider.INSTANCE);
+    moduleLoader.setStorage(storage);
   }
 
   protected Group load(MemoryStorage.SourceId sourceId) {

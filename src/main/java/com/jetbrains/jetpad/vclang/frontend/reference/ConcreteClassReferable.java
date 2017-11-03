@@ -36,7 +36,7 @@ public class ConcreteClassReferable extends ConcreteGlobalReferable implements C
       return Collections.emptyList();
     }
 
-    Scope scope = new CachingScope(myGroup.getGroupScope());
+    Scope scope = CachingScope.make(myGroup.getGroupScope());
     List<ClassReferable> superClasses = new ArrayList<>(mySuperClasses.size());
     for (Concrete.ReferenceExpression superClass : mySuperClasses) {
       Referable referable = superClass.getReferent();

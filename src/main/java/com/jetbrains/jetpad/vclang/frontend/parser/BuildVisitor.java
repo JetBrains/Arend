@@ -1202,8 +1202,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Token errorToken = null;
     int i = 0;
     if (ctx.fieldAcc().get(0) instanceof ClassFieldAccContext) {
-      if (ctx.atom() instanceof AtomLiteralContext && ((AtomLiteralContext) ctx.atom()).literal() instanceof NameContext && ((NameContext) ((AtomLiteralContext) ctx.atom()).literal()).prefix().PREFIX() != null) {
-        String name = ((NameContext) ((AtomLiteralContext) ctx.atom()).literal()).prefix().PREFIX().getText();
+      if (ctx.atom() instanceof AtomLiteralContext && ((AtomLiteralContext) ctx.atom()).literal() instanceof NameContext) {
+        String name = visitPrefix(((NameContext) ((AtomLiteralContext) ctx.atom()).literal()).prefix());
         List<String> path = new ArrayList<>();
         for (; i < ctx.fieldAcc().size(); i++) {
           if (!(ctx.fieldAcc().get(i) instanceof ClassFieldAccContext)) {

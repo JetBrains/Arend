@@ -34,7 +34,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class CachingTestCase extends NameResolverTestCase {
-  protected final MemoryStorage storage = new MemoryStorage(moduleScopeProvider, null, moduleScopeProvider);
+  protected MemoryStorage storage;
   protected BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
   protected TypecheckerState tcState;
@@ -45,14 +45,15 @@ public class CachingTestCase extends NameResolverTestCase {
   @Before
   public void initialize() {
     sourceInfoProvider = new SimpleSourceInfoProvider<>();
-    moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(storage, errorReporter) {
+    moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(errorReporter) {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         if (result == null) throw new IllegalStateException("Could not load module");
         sourceInfoProvider.registerGroup(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
       }
     };
-    storage.setModuleResolver(moduleLoader);
+    storage = new MemoryStorage(moduleScopeProvider, moduleLoader, moduleScopeProvider);
+    moduleLoader.setStorage(storage);
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(persistenceProvider, storage, storage, sourceInfoProvider);
     tcState = cacheManager.getTypecheckerState();

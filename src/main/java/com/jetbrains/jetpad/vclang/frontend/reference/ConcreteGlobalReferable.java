@@ -50,4 +50,9 @@ public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
   public String positionTextRepresentation() {
     return myPosition == null ? null : myPosition.positionTextRepresentation();
   }
+
+  @Override
+  public String toString() {
+    return myName;
+  }
 }

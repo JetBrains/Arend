@@ -60,12 +60,14 @@ public abstract class ParseSource {
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-    }
-
-    if (moduleResolver != null) {
-      for (NamespaceCommand command : result.getNamespaceCommands()) {
-        if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
-          moduleResolver.load(new ModulePath(command.getPath()));
+      if (moduleResolver != null) {
+        for (NamespaceCommand command : result.getNamespaceCommands()) {
+          if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
+            ModulePath modulePath = new ModulePath(command.getPath());
+            if (!moduleRegistry.isRegistered(modulePath)) {
+              moduleResolver.load(modulePath);
+            }
+          }
         }
       }
     }

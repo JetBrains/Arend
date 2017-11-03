@@ -378,4 +378,34 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | _ => 0\n" +
       "  | zero => 1", 1);
   }
+
+  @Test
+  public void casePatternWrongDefinition() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\case x \\with { zero => 0 | Nat => 1 }", 1);
+  }
+
+  @Test
+  public void elimPatternWrongDefinition() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat => \\elim x | zero => 0 | Nat => 1", 1);
+  }
+
+  @Test
+  public void patternWrongDefinition() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\data D (n m : Nat) | d\n" +
+      "\\data C | c (n m : Nat) (D n m)\n" +
+      "\\data E C \\with | E (c zero (suc zero) d) => e", 1);
+  }
+
+  @Test
+  public void functionPatternWrongDefinition() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
+  }
 }

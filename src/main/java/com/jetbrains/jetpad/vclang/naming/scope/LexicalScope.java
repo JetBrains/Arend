@@ -16,7 +16,7 @@ public class LexicalScope implements Scope {
   private final Group myGroup;
   private final boolean myIgnoreOpens;
 
-  LexicalScope(Scope parent, Group group, boolean ignoreOpens) {
+  private LexicalScope(Scope parent, Group group, boolean ignoreOpens) {
     myParent = parent;
     myGroup = group;
     myIgnoreOpens = ignoreOpens;
@@ -34,6 +34,8 @@ public class LexicalScope implements Scope {
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
+    elements.addAll(myGroup.getConstructors());
+    elements.addAll(myGroup.getFields());
 
     for (Group subgroup : myGroup.getSubgroups()) {
       elements.addAll(subgroup.getConstructors());
@@ -46,7 +48,7 @@ public class LexicalScope implements Scope {
       elements.add(subgroup.getReferable());
     }
 
-    CachingScope cachingScope = null;
+    Scope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
       if (myIgnoreOpens) {
         break;
@@ -58,7 +60,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, true));
         }
         scope = cachingScope;
       }
@@ -109,18 +111,27 @@ public class LexicalScope implements Scope {
     return elements;
   }
 
+  private static Object resolveInternal(Group group, String name) {
+    for (GlobalReferable referable : group.getConstructors()) {
+      if (referable.textRepresentation().equals(name)) {
+        return referable;
+      }
+    }
+
+    for (GlobalReferable referable : group.getFields()) {
+      if (referable.textRepresentation().equals(name)) {
+        return referable;
+      }
+    }
+
+    return null;
+  }
+
   private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
     if (resolveRef) {
-      for (GlobalReferable referable : group.getConstructors()) {
-        if (referable.textRepresentation().equals(name)) {
-          return referable;
-        }
-      }
-
-      for (GlobalReferable referable : group.getFields()) {
-        if (referable.textRepresentation().equals(name)) {
-          return referable;
-        }
+      Object result = resolveInternal(group, name);
+      if (result != null) {
+        return result;
       }
     }
 
@@ -133,6 +144,13 @@ public class LexicalScope implements Scope {
   }
 
   private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames) {
+    if (resolveRef) {
+      Object result = resolveInternal(myGroup, name);
+      if (result != null) {
+        return result;
+      }
+    }
+
     for (Group subgroup : myGroup.getSubgroups()) {
       Object result = resolveSubgroup(subgroup, name, resolveRef);
       if (result != null) {
@@ -146,7 +164,7 @@ public class LexicalScope implements Scope {
       }
     }
 
-    CachingScope cachingScope = null;
+    Scope cachingScope = null;
     cmdLoop:
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
       if (myIgnoreOpens) {
@@ -159,7 +177,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = new CachingScope(new LexicalScope(myParent, myGroup, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, true));
         }
         scope = cachingScope;
       }

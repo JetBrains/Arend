@@ -10,14 +10,16 @@ import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
-  protected final Storage<SourceIdT> myStorage;
+  protected Storage<SourceIdT> myStorage;
   private final ErrorReporter myErrorReporter;
 
-  public BaseModuleLoader(Storage<SourceIdT> storage, ErrorReporter errorReporter) {
-    myStorage = storage;
+  public BaseModuleLoader(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
+  public void setStorage(Storage<SourceIdT> storage) {
+    myStorage = storage;
+  }
 
   protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {}
 

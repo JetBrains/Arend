@@ -35,13 +35,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   private final StorageManager storageManager;
 
   public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir, boolean recompile) throws IOException {
-    this(new StorageManager(libDir, sourceDir, cacheDir), recompile);
-  }
-
-  private ConsoleMain(StorageManager storageManager, boolean recompile) {
-    super(storageManager.storage, recompile);
-    this.storageManager = storageManager;
-    storageManager.moduleResolver = moduleTracker;
+    super(recompile);
+    this.storageManager = new StorageManager(libDir, sourceDir, cacheDir, moduleTracker);
+    initialize(storageManager.storage);
   }
 
   @Override
@@ -76,12 +72,11 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     final PreludeStorage preludeStorage;
 
     final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
-    ModuleResolver moduleResolver = null;
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
-    StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
+    StorageManager(Path libDir, Path projectDir, Path cacheDir, ModuleResolver moduleResolver) throws IOException {
       projectStorage = new FileStorage(projectDir, cacheDir, moduleScopeProvider, moduleResolver, moduleScopeProvider);
       libStorage = libDir != null ? new LibStorage(libDir, moduleScopeProvider, moduleResolver, moduleScopeProvider) : null;
       preludeStorage = new PreludeStorage(moduleScopeProvider);

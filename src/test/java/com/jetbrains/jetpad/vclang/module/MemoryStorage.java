@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,7 +17,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
-  private ModuleResolver myModuleResolver;
+  private final ModuleResolver myModuleResolver;
   private final ModuleScopeProvider myModuleScopeProvider;
 
   static class Source {
@@ -35,10 +34,6 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     myModuleRegistry = moduleRegistry;
     myModuleResolver = moduleResolver;
     myModuleScopeProvider = moduleScopeProvider;
-  }
-
-  public void setModuleResolver(ModuleResolver moduleResolver) {
-    myModuleResolver = moduleResolver;
   }
 
   public SourceId add(ModulePath modulePath, String source) {

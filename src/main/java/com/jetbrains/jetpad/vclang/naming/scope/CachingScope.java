@@ -16,9 +16,13 @@ public class CachingScope implements Scope {
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
 
-  public CachingScope(Scope scope) {
+  private CachingScope(Scope scope) {
     myScope = scope;
     scope.find(ref -> { myElements.put(ref.textRepresentation(), ref); return false; });
+  }
+
+  public static Scope make(Scope scope) {
+    return scope instanceof CachingScope ? scope : new CachingScope(scope);
   }
 
   @Nonnull
@@ -46,7 +50,7 @@ public class CachingScope implements Scope {
     Scope namespace = myNamespaces.get(name);
     if (namespace == null) {
       namespace = myScope.resolveNamespace(name, true);
-      namespace = namespace == null ? EMPTY_SCOPE : new CachingScope(namespace);
+      namespace = namespace == null ? EMPTY_SCOPE : make(namespace);
       myNamespaces.put(name, namespace);
     }
 

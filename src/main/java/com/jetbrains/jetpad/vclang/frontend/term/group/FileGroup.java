@@ -18,7 +18,7 @@ public class FileGroup extends StaticGroup {
     if (myScope != EmptyScope.INSTANCE) {
       throw new IllegalStateException();
     }
-    myScope = new CachingScope(ScopeFactory.forGroup(this, moduleScopeProvider));
+    myScope = CachingScope.make(ScopeFactory.forGroup(this, moduleScopeProvider));
   }
 
   @Nonnull

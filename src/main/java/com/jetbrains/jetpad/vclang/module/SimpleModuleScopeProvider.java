@@ -16,12 +16,17 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
 
   @Override
   public void registerModule(ModulePath module, Group group) {
-    myMap.put(module, new CachingScope(LexicalScope.opened(group)));
+    myMap.put(module, CachingScope.make(LexicalScope.opened(group)));
   }
 
   @Override
   public void unregisterModule(ModulePath path) {
     myMap.remove(path);
+  }
+
+  @Override
+  public boolean isRegistered(ModulePath modulePath) {
+    return myMap.containsKey(modulePath);
   }
 
   @Nullable
