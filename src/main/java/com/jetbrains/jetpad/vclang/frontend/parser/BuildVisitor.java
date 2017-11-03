@@ -215,7 +215,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Group visitStatements(StatementsContext ctx) {
+  public ChildGroup visitStatements(StatementsContext ctx) {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup parentGroup = new StaticGroup(new ModuleReferable(myModule.getModulePath()), subgroups, namespaceCommands, null);

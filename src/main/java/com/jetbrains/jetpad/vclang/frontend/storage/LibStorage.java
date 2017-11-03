@@ -1,11 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import net.harawata.appdirs.AppDirsFactory;
 
 import javax.annotation.Nonnull;
@@ -25,7 +24,7 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     return Files.createDirectories(Paths.get(AppDirsFactory.getInstance().getUserCacheDir("vclang", null, "JetBrains")));
   }
 
-  public LibStorage(Path libdir, Collection<String> libs, NameResolver nameResolver, ModuleRegistry moduleRegistry) throws IOException {
+  public LibStorage(Path libdir, Collection<String> libs, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) throws IOException {
     if (!Files.isDirectory(libdir)) {
       throw new IllegalArgumentException("libdir must be an existing directory");
     }
@@ -38,12 +37,12 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     for (String lib : libs) {
       Path sourcePath = libdir.resolve(lib);
       Path cachePath = cacheDir.resolve(lib);
-      myLibStorages.put(lib, new FileStorage(sourcePath, cachePath, nameResolver, moduleRegistry));
+      myLibStorages.put(lib, new FileStorage(sourcePath, cachePath, moduleRegistry, moduleResolver));
     }
   }
 
-  public LibStorage(Path libdir, NameResolver nameResolver, ModuleRegistry moduleRegistry) throws IOException {
-    this(libdir, getAllLibs(libdir), nameResolver, moduleRegistry);
+  public LibStorage(Path libdir, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) throws IOException {
+    this(libdir, getAllLibs(libdir), moduleRegistry, moduleResolver);
   }
 
   private static Collection<String> getAllLibs(Path libdir) throws IOException {
@@ -56,12 +55,6 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
       }
 
       return files;
-    }
-  }
-
-  public void setPreludeNamespace(Namespace ns) {
-    for (FileStorage fileStorage : myLibStorages.values()) {
-      fileStorage.setPreludeNamespace(ns);
     }
   }
 

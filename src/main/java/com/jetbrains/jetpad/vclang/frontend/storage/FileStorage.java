@@ -1,17 +1,13 @@
 package com.jetbrains.jetpad.vclang.frontend.storage;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
@@ -59,24 +55,19 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   }
 
 
-  private final NameResolver myNameResolver;
   private final ModuleRegistry myModuleRegistry;
+  private final ModuleResolver myModuleResolver;
 
-  private Scope myGlobalScope = EmptyScope.INSTANCE;
   private final FileSourceSupplier mySourceSupplier;
   private final FileCacheStorageSupplier myCacheStorageSupplier;
 
 
-  public FileStorage(Path sourceRoot, Path cacheRoot, NameResolver nameResolver, ModuleRegistry moduleRegistry) {
-    myNameResolver = nameResolver;
+  public FileStorage(Path sourceRoot, Path cacheRoot, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) {
     myModuleRegistry = moduleRegistry;
+    myModuleResolver = moduleResolver;
 
     mySourceSupplier = new FileSourceSupplier(sourceRoot);
     myCacheStorageSupplier = new FileCacheStorageSupplier(cacheRoot);
-  }
-
-  public void setPreludeNamespace(Namespace ns) {
-    myGlobalScope = new NamespaceScope(ns);
   }
 
   private class FileSourceSupplier implements SourceSupplier<SourceId> {
@@ -115,7 +106,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
         long mtime = getLastModifiedTime(file);
 
         FileSource fileSource = new FileSource(sourceId, file);
-        Group result = fileSource.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+        Group result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver);
 
         // Make sure file did not change
         if (getLastModifiedTime(file) != mtime) return null;

@@ -7,10 +7,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CachingConcreteProvider implements ConcreteProvider {
-  private final ConcreteProvider myProvider;
+  private ConcreteProvider myProvider;
   private final Map<GlobalReferable, Concrete.ReferableDefinition> myCache = new HashMap<>();
 
+  public CachingConcreteProvider() {
+    myProvider = EmptyConcreteProvider.INSTANCE;
+  }
+
   public CachingConcreteProvider(ConcreteProvider provider) {
+    myProvider = provider;
+  }
+
+  public void setProvider(ConcreteProvider provider) {
     myProvider = provider;
   }
 

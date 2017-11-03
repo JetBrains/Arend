@@ -38,7 +38,6 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePoo
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 
@@ -748,7 +747,7 @@ class DefinitionTypechecking {
   }
 
   private static void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
-    throw new NotImplementedException(); // TODO[classes]
+    throw new UnsupportedOperationException(); // TODO[classes]
     /*
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
 

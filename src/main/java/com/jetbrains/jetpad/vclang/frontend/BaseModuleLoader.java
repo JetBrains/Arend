@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.module.source.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.ModuleResolver;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
@@ -38,8 +38,8 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   }
 
   @Override
-  public Group load(ModulePath modulePath) {
-    return load(locateModule(modulePath));
+  public void load(ModulePath modulePath) {
+    load(locateModule(modulePath));
   }
 
   public SourceIdT locateModule(ModulePath modulePath) {

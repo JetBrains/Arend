@@ -122,8 +122,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Group load(ModulePath modulePath) {
-      return load(locateModule(modulePath));
+    public void load(ModulePath modulePath) {
+      load(locateModule(modulePath));
     }
 
     public SourceIdT locateModule(ModulePath modulePath) {
@@ -162,7 +162,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -219,7 +219,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
   }
 
   class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {

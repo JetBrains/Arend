@@ -20,8 +20,8 @@ import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, IMPORT }
   @Nonnull Kind getKind();
-  @Nonnull List<? extends String> getPath();
-  @Nonnull Collection<? extends ModuleReferable> getImportedPath();
+  @Nonnull List<String> getPath();
+  @Nonnull List<? extends ModuleReferable> getImportedPath();
   boolean isUsing();
   @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
   @Nonnull Collection<? extends Referable> getHiddenReferences();

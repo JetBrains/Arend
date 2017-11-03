@@ -2,19 +2,20 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.error.NoSuchFieldError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -249,5 +250,19 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     return null;
+  }
+
+  public void resolveGroup(Group group, Scope scope, ConcreteProvider concreteProvider) {
+    Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
+    if (def instanceof Concrete.Definition) {
+      ((Concrete.Definition) def).accept(this, scope);
+    }
+
+    for (Group subgroup : group.getSubgroups()) {
+      resolveGroup(subgroup, new CachingScope(LexicalScope.insideOf(subgroup, scope)), concreteProvider);
+    }
+    for (Group subgroup : group.getDynamicSubgroups()) {
+      resolveGroup(subgroup, new CachingScope(LexicalScope.insideOf(subgroup, scope)), concreteProvider);
+    }
   }
 }

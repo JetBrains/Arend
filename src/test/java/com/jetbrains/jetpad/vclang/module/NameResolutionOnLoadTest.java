@@ -20,8 +20,9 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
 
   @Before
   public void initialize() {
-    storage = new MemoryStorage(moduleNsProvider, nameResolver);
+    storage = new MemoryStorage(moduleNsProvider, null);
     moduleLoader = new BaseModuleLoader<>(storage, errorReporter);
+    storage.setModuleResolver(moduleLoader);
     nameResolver.setModuleResolver(moduleLoader);
   }
 

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -44,7 +44,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     if (PRELUDE_TYPECHECKER_STATE == null) {
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Typechecking(PRELUDE_TYPECHECKER_STATE, ReferenceConcreteProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+      new Typechecking(PRELUDE_TYPECHECKER_STATE, ConcreteReferableProvider.INSTANCE, internalErrorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
       //assertThat(internalErrorReporter.getErrorList(), is(empty()));  // does not type-check by design
     }
 
@@ -98,7 +98,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(ConcreteGlobalReferable reference, int errors) {
-    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, errorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(reference);
   }
@@ -113,7 +113,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckModule(Group group, int errors) {
-    new Typechecking(state, ReferenceConcreteProvider.INSTANCE, localErrorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckModules(Collections.singletonList(group));
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, localErrorReporter, TypecheckedReporter.DUMMY, new DependencyListener() {}).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
     return state;
   }

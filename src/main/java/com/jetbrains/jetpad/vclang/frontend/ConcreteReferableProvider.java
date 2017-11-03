@@ -5,10 +5,10 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
-public class ReferenceConcreteProvider implements ConcreteProvider {
-  public static final ConcreteProvider INSTANCE = new ReferenceConcreteProvider();
+public class ConcreteReferableProvider implements ConcreteProvider {
+  public static final ConcreteProvider INSTANCE = new ConcreteReferableProvider();
 
-  private ReferenceConcreteProvider() {}
+  private ConcreteReferableProvider() {}
 
   @Override
   public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {

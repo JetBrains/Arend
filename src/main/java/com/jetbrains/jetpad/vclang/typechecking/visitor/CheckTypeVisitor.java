@@ -503,7 +503,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Binding def = myContext.get(expr.getReferent());
     if (def == null) {
-      myErrorReporter.report(new IncorrectReferenceError(expr.getReferent()));
+      myErrorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
       return null;
     }
     Expression type = def.getTypeExpr();

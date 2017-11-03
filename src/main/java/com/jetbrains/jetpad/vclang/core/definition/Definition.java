@@ -86,7 +86,7 @@ public abstract class Definition implements Variable {
       return new ClassDefinition(definition.getData());
     }
     if (definition instanceof Concrete.ClassView) {
-      // TODO[classes]
+      return new ClassDefinition(definition.getData()); // TODO[classes]
     }
     throw new IllegalStateException();
   }

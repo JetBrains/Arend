@@ -1,18 +1,13 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +16,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
-  private Scope myGlobalScope = EmptyScope.INSTANCE;
-  private final NameResolver myNameResolver;
+  private ModuleResolver myModuleResolver;
 
   static class Source {
     long version;
@@ -34,13 +28,13 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     }
   }
 
-  public MemoryStorage(ModuleRegistry moduleRegistry, NameResolver nameResolver) {
+  public MemoryStorage(@Nullable ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) {
     myModuleRegistry = moduleRegistry;
-    myNameResolver = nameResolver;
+    myModuleResolver = moduleResolver;
   }
 
-  public void setPreludeNamespace(Namespace ns) {
-    myGlobalScope = new NamespaceScope(ns);
+  public void setModuleResolver(ModuleResolver moduleResolver) {
+    myModuleResolver = moduleResolver;
   }
 
   public SourceId add(ModulePath modulePath, String source) {
@@ -76,7 +70,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      Group result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+      Group result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleResolver);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);

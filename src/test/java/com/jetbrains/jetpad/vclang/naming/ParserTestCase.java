@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
@@ -60,25 +61,25 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseExpr(text, 0);
   }
 
-  Group parseDef(String text, int errors) {
+  ChildGroup parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    Group definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx, null) : null;
+    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx, null) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
 
-  protected Group parseDef(String text) {
+  protected ChildGroup parseDef(String text) {
     return parseDef(text, 0);
   }
 
-  Group parseModule(String text, int errors) {
+  ChildGroup parseModule(String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    Group group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
+    ChildGroup group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
     assertThat(errorList, containsErrors(errors));
     return group;
   }
 
-  protected Group parseModule(String text) {
+  protected ChildGroup parseModule(String text) {
     return parseModule(text, 0);
   }
 

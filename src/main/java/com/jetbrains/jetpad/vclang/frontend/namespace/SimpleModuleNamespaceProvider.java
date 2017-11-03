@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.namespace;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -16,10 +17,9 @@ public class SimpleModuleNamespaceProvider extends BaseModuleNamespaceProvider i
   }
 
   @Override
-  public ModuleNamespace registerModule(ModulePath modulePath, Group group) {
+  public void registerModule(ModulePath modulePath, Group group) {
     SimpleModuleNamespace ns = registerModuleNs(modulePath, group);
     ns.registerClass(group);
-    return ns;
   }
 
   @Override

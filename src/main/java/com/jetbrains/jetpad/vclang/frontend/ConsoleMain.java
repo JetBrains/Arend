@@ -1,9 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
+import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
@@ -13,13 +12,7 @@ import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.NullStorage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
-import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.apache.commons.cli.*;
 
@@ -49,7 +42,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   private ConsoleMain(StorageManager storageManager, boolean recompile) {
     super(storageManager.storage, recompile);
     this.storageManager = storageManager;
-    storageManager.nameResolver.setModuleResolver(moduleTracker);
+    storageManager.moduleResolver = moduleTracker;
   }
 
   @Override
@@ -74,11 +67,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   @Override
   protected Group loadPrelude() {
     Group prelude = super.loadPrelude();
-    Namespace preludeNamespace = storageManager.staticNsProvider.forReferable(prelude.getReferable());
-    if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
-    storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
-    storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
-    SimpleModuleScopeProvider.INSTANCE.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, LexicalScope.opened(prelude));
+    storageManager.moduleRegistry.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
     return prelude;
   }
 
@@ -87,18 +76,16 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     final LibStorage libStorage;
     final PreludeStorage preludeStorage;
 
-    final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
-    final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceConcreteProvider.INSTANCE);
-    final NameResolver nameResolver = new NameResolver(new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider));
+    final ModuleRegistry moduleRegistry = SimpleModuleScopeProvider.INSTANCE;
+    ModuleResolver moduleResolver = null;
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
     StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
-      projectStorage = new FileStorage(projectDir, cacheDir, nameResolver, moduleNsProvider);
-      libStorage = libDir != null ? new LibStorage(libDir, nameResolver, moduleNsProvider) : null;
-      preludeStorage = new PreludeStorage(nameResolver);
+      projectStorage = new FileStorage(projectDir, cacheDir, moduleRegistry, moduleResolver);
+      libStorage = libDir != null ? new LibStorage(libDir, moduleRegistry, moduleResolver) : null;
+      preludeStorage = new PreludeStorage(moduleRegistry);
 
       nonProjectCompositeStorage = new CompositeStorage<>(libStorage != null ? libStorage : new NullStorage<>(), preludeStorage);
       storage = new CompositeStorage<>(projectStorage, nonProjectCompositeStorage);

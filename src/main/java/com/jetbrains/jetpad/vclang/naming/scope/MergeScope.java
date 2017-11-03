@@ -1,11 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.NamespaceDuplicateNameError;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,20 +16,6 @@ public class MergeScope implements Scope {
 
   public MergeScope(Scope... scopes) {
     myScopes = Arrays.asList(scopes);
-  }
-
-  public void addScope(Scope scope, ErrorReporter errorReporter, GlobalReferable groupRef) {
-    for (Referable element : scope.getElements()) {
-      String name = element.textRepresentation();
-      Referable ref1 = resolveName(name);
-      if (ref1 != null) {
-        Referable ref2 = scope.resolveName(name);
-        if (ref2 != null && ref1 != ref2) {
-          errorReporter.report(new ProxyError(groupRef, new NamespaceDuplicateNameError(Error.Level.WARNING, ref2, ref1)));
-        }
-      }
-    }
-    myScopes.add(scope);
   }
 
   @Nonnull

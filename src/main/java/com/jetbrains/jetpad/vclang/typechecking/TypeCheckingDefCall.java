@@ -46,7 +46,7 @@ public class TypeCheckingDefCall {
     */
     Definition typeCheckedDefinition = myVisitor.getTypecheckingState().getTypechecked(definition);
     if (typeCheckedDefinition == null) {
-      myVisitor.getErrorReporter().report(new IncorrectReferenceError(definition));
+      myVisitor.getErrorReporter().report(new IncorrectReferenceError(definition, expr));
       return null;
     }
     if (!typeCheckedDefinition.status().headerIsOK()) {

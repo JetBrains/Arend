@@ -3,18 +3,18 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ReferenceConcreteProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
+import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.resolving.GroupNameResolver;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
-import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nullable;
@@ -31,7 +31,7 @@ public abstract class ParseSource {
   }
 
   public @Nullable
-  Group load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+  Group load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -58,21 +58,21 @@ public abstract class ParseSource {
       return null;
     }
 
-    Group result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
+    ChildGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-      SimpleModuleScopeProvider.INSTANCE.registerModule(mySourceId.getModulePath(), new CachingScope(LexicalScope.opened(result)));
     }
-    if (nameResolver != null) {
-      if (nameResolver.nsProviders.statics instanceof SimpleStaticNamespaceProvider) { // TODO[abstract]: Move this somewhere else, like BaseCliFrontend or whatever
-        ((SimpleStaticNamespaceProvider) nameResolver.nsProviders.statics).collect(result, errorReporter);
+
+    if (moduleResolver != null) {
+      for (NamespaceCommand command : result.getNamespaceCommands()) {
+        if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
+          moduleResolver.load(new ModulePath(command.getPath()));
+        }
       }
-      if (nameResolver.nsProviders.dynamics instanceof SimpleDynamicNamespaceProvider) {
-        ((SimpleDynamicNamespaceProvider) nameResolver.nsProviders.dynamics).collect(result, errorReporter, nameResolver);
-      }
-      new GroupNameResolver(nameResolver, errorReporter, ReferenceConcreteProvider.INSTANCE).resolveGroup(result, globalScope);
     }
+
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, new CachingScope(ScopeFactory.forGroup(result, SimpleModuleScopeProvider.INSTANCE)), ConcreteReferableProvider.INSTANCE);
     return result;
   }
 }

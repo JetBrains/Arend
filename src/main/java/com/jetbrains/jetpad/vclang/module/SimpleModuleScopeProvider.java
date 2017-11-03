@@ -1,22 +1,30 @@
-package com.jetbrains.jetpad.vclang.frontend.namespace;
+package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleModuleScopeProvider implements ModuleScopeProvider {
+public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
   private final Map<ModulePath, Scope> myMap = new HashMap<>();
   public static final SimpleModuleScopeProvider INSTANCE = new SimpleModuleScopeProvider();
 
   private SimpleModuleScopeProvider() {}
 
-  public void registerModule(ModulePath module, Scope scope) {
-    myMap.put(module, scope);
+  @Override
+  public void registerModule(ModulePath module, Group group) {
+    myMap.put(module, new CachingScope(LexicalScope.opened(group)));
+  }
+
+  @Override
+  public void unregisterModule(ModulePath path) {
+    myMap.remove(path);
   }
 
   @Nullable

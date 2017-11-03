@@ -1,17 +1,10 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.*;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -102,18 +95,14 @@ public class PreludeCacheGenerator {
   }
 
   public static void main(String[] args) throws CachePersistenceException {
-    final ListErrorReporter errorReporter = new ListErrorReporter();
-    final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider(ReferenceConcreteProvider.INSTANCE);
-    final NameResolver nameResolver = new NameResolver(new NamespaceProviders(new SimpleModuleNamespaceProvider(), staticNsProvider, dynamicNsProvider));
-
-    PreludeStorage storage = new PreludeStorage(nameResolver);
+    PreludeStorage storage = new PreludeStorage(null);
     CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])),
         new PreludeVersionTracker(), new PreludeDefLocator(storage.preludeSourceId));
 
+    final ListErrorReporter errorReporter = new ListErrorReporter();
     Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), ReferenceConcreteProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    new Typechecking(cacheManager.getTypecheckerState(), ConcreteReferableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }

@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.namespace.ModuleNamespace;
-import com.jetbrains.jetpad.vclang.term.Group;
 
 // TODO[abstract]: Get rid of this class
 public class NameResolver {
@@ -26,8 +26,8 @@ public class NameResolver {
   public ModuleNamespace resolveModuleNamespace(final ModulePath modulePath) {
     ModuleNamespace ns = resolveModuleNamespace_(modulePath);
     if (myModuleResolver != null && (ns == null || ns.getRegisteredClass() == null)) {
-      Group loadedGroup = myModuleResolver.load(modulePath);
-      if (ns == null && loadedGroup != null) {
+      myModuleResolver.load(modulePath);
+      if (ns == null) {
         ns = resolveModuleNamespace_(modulePath);
       }
     }

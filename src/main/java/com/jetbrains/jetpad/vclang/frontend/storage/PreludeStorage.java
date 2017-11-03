@@ -3,13 +3,13 @@ package com.jetbrains.jetpad.vclang.frontend.storage;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,10 +29,10 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
 
   public static final ModulePath PRELUDE_MODULE_PATH = new ModulePath("Prelude");
   public final SourceId preludeSourceId = new SourceId();
-  private final NameResolver myNameResolver;
+  private final ModuleRegistry myModuleRegistry;
 
-  public PreludeStorage(NameResolver nameResolver) {
-    myNameResolver = nameResolver;
+  public PreludeStorage(@Nullable ModuleRegistry moduleRegistry) {
+    myModuleRegistry = moduleRegistry;
   }
 
   @Override
@@ -70,7 +70,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
       if (stream == null) {
         throw new IllegalStateException("Prelude source resource not found");
       }
-      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, null, EmptyScope.INSTANCE, myNameResolver);
+      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, myModuleRegistry, null);
       return LoadResult.make(result, 1);
     } catch (IOException e) {
       throw new IllegalStateException(e);
