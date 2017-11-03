@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Test;
 
@@ -18,22 +19,22 @@ public class SimpleCachingTest extends CachingTestCase {
         "\\function a : \\Set0 => \\Prop\n" +
         "\\function b1 : \\Set0 => \\Set0\n" +
         "\\function b2 : \\Set0 => b1");
-    Group aClass = moduleLoader.load(a);
+    ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
     errorList.clear();
 
-    Definition.TypeCheckingStatus aStatus = tcState.getTypechecked(get(aClass.getReferable(), "a")).status();
-    Definition.TypeCheckingStatus b1Status = tcState.getTypechecked(get(aClass.getReferable(), "b1")).status();
-    Definition.TypeCheckingStatus b2Status = tcState.getTypechecked(get(aClass.getReferable(), "b2")).status();
+    Definition.TypeCheckingStatus aStatus = tcState.getTypechecked(get(aClass.getGroupScope(), "a")).status();
+    Definition.TypeCheckingStatus b1Status = tcState.getTypechecked(get(aClass.getGroupScope(), "b1")).status();
+    Definition.TypeCheckingStatus b2Status = tcState.getTypechecked(get(aClass.getGroupScope(), "b2")).status();
 
     persist(a);
     tcState.reset();
 
     load(a, aClass.getReferable());
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")).status(), is(equalTo(aStatus)));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b1")).status(), is(equalTo(b1Status)));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b2")).status(), is(equalTo(b2Status)));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(b1Status)));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(b2Status)));
   }
 
   @Test
@@ -55,7 +56,7 @@ public class SimpleCachingTest extends CachingTestCase {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
         "\\function a : \\Set0 => b\n" +
         "\\function b : \\Set0 => {?}");
-    Group aClass = moduleLoader.load(a);
+    ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 1);
     assertThatErrorsAre(goal(0));
@@ -64,12 +65,12 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(a);
 
     tcState.reset();
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(nullValue()));
 
     load(a, aClass.getReferable());
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(notNullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(notNullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(notNullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(notNullValue()));
   }
 
   @Test
@@ -78,24 +79,24 @@ public class SimpleCachingTest extends CachingTestCase {
         "\\data D\n" +
         "\\function a (d : D) \\with\n" +
         "\\function b : \\Set0 => (\\lam x y => x) \\Prop a");
-    Group aClass = moduleLoader.load(a);
+    ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
 
-    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass.getReferable(), "a")));
+    assertThatErrorsAre(typecheckingError(), hasErrors(get(aClass.getGroupScope(), "a")));
     errorList.clear();
 
     persist(a);
 
     tcState.reset();
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "D")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "D")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(nullValue()));
 
     load(a, aClass.getReferable());
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "D")), is(notNullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "a")), is(nullValue()));
-    assertThat(tcState.getTypechecked(get(aClass.getReferable(), "b")), is(notNullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "D")), is(notNullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
+    assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(notNullValue()));
   }
 
   @Test
@@ -145,8 +146,8 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(b);
     tcState.reset();
 
-    moduleNsProvider.unregisterModule(ModulePath.moduleName("A"));
-    moduleNsProvider.unregisterModule(ModulePath.moduleName("B"));
+    moduleScopeProvider.unregisterModule(ModulePath.moduleName("A"));
+    moduleScopeProvider.unregisterModule(ModulePath.moduleName("B"));
 
     storage.incVersion(ModulePath.moduleName("A"));
     bClass = moduleLoader.load(b);

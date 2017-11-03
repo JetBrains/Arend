@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.namespace.SimpleNamespace;
-import com.jetbrains.jetpad.vclang.naming.scope.NamespaceScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import org.junit.Ignore;
@@ -26,11 +24,7 @@ public class NameResolverTest extends NameResolverTestCase {
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
-    SimpleNamespace namespace = new SimpleNamespace();
-    namespace.addDefinition(plus.getData(), DummyErrorReporter.INSTANCE);
-    namespace.addDefinition(mul.getData(), DummyErrorReporter.INSTANCE);
-
-    Concrete.Expression result = resolveNamesExpr(new NamespaceScope(namespace), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
+    Concrete.Expression result = resolveNamesExpr(new ListScope(plusRef, mulRef), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
     assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plusRef, cBinOp(cNum(1), mulRef, cNum(2))), plusRef, cBinOp(cBinOp(cNum(3), mulRef, cBinOp(cNum(4), mulRef, cNum(5))), mulRef, cBinOp(cNum(6), plusRef, cNum(7)))), result));
   }
@@ -43,12 +37,7 @@ public class NameResolverTest extends NameResolverTestCase {
     ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6));
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
-
-    SimpleNamespace namespace = new SimpleNamespace();
-    namespace.addDefinition(plus.getData(), DummyErrorReporter.INSTANCE);
-    namespace.addDefinition(mul.getData(), DummyErrorReporter.INSTANCE);
-
-    resolveNamesExpr(new NamespaceScope(namespace), "11 + 2 * 3", 1);
+    resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
   }
 
   @Test

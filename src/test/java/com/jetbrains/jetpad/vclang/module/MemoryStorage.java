@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
@@ -73,7 +74,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      Group result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
+      ChildGroup result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);

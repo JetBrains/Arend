@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -953,7 +954,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void resolvedConstructorTest() {
-    Group cd = resolveNamesModule(
+    ChildGroup cd = resolveNamesModule(
         "\\function isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\function inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
     Iterator<? extends Group> it = cd.getSubgroups().iterator();

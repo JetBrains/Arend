@@ -13,6 +13,10 @@ public class ListScope implements Scope {
     myContext = context;
   }
 
+  public ListScope(Referable... context) {
+    myContext = Arrays.asList(context);
+  }
+
   @Nonnull
   @Override
   public List<Referable> getElements() {

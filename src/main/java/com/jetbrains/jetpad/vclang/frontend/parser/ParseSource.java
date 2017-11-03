@@ -7,12 +7,10 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
-import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;
 
@@ -31,7 +29,7 @@ public abstract class ParseSource {
   }
 
   public @Nullable
-  Group load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
+  ChildGroup load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 

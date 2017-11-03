@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
   protected final Storage<SourceIdT> myStorage;
@@ -24,7 +24,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   protected void loadingFailed(SourceIdT module) {}
 
   @Override
-  public Group load(SourceIdT sourceId) {
+  public ChildGroup load(SourceIdT sourceId) {
     final SourceSupplier.LoadResult result;
     result = myStorage.loadSource(sourceId, myErrorReporter);
 

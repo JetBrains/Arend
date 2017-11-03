@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -109,7 +109,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
         long mtime = getLastModifiedTime(file);
 
         FileSource fileSource = new FileSource(sourceId, file);
-        Group result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
+        ChildGroup result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
 
         // Make sure file did not change
         if (getLastModifiedTime(file) != mtime) return null;

@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
@@ -111,7 +112,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Group load(SourceIdT sourceId) {
+    public ChildGroup load(SourceIdT sourceId) {
       assert !loadedSources.containsKey(sourceId);
       ModuleResult moduleResult = moduleResults.get(sourceId);
       if (moduleResult != null) {

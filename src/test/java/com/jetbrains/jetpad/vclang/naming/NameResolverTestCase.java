@@ -1,17 +1,13 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
@@ -20,20 +16,13 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
-  protected final SimpleModuleNamespaceProvider moduleNsProvider  = new SimpleModuleNamespaceProvider();
-  protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
-  private   final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, null);
-  protected final NameResolver nameResolver = new NameResolver(nsProviders);
   protected final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
 
   @SuppressWarnings("StaticNonFinalField")
@@ -52,8 +41,6 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     }
 
     prelude = LOADED_PRELUDE;
-
-    staticNsProvider.collect(prelude, DummyErrorReporter.INSTANCE);
   }
 
 
@@ -70,11 +57,11 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesExpr(parentScope, new ArrayList<>(), text, errors);
   }
 
-  protected Concrete.Expression resolveNamesExpr(String text, int errors) {
+  Concrete.Expression resolveNamesExpr(String text, @SuppressWarnings("SameParameterValue") int errors) {
     return resolveNamesExpr(new CachingScope(ScopeFactory.forGroup(null, moduleScopeProvider)), new ArrayList<>(), text, errors);
   }
 
-  Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
+  Concrete.Expression resolveNamesExpr(Scope parentScope, @SuppressWarnings("SameParameterValue") String text) {
     return resolveNamesExpr(parentScope, text, 0);
   }
 
@@ -90,7 +77,6 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
     ChildGroup group = parseDef(text);
-    staticNsProvider.collect(group, errorReporter);
     new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, new CachingScope(ScopeFactory.forGroup(group, moduleScopeProvider)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
     return (ConcreteGlobalReferable) group.getReferable();
@@ -107,24 +93,19 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   // FIXME[tests] should be package-private
-  protected Group resolveNamesModule(String text, int errors) {
+  protected ChildGroup resolveNamesModule(String text, int errors) {
     ChildGroup group = parseModule(text);
-    staticNsProvider.collect(group, errorReporter);
     resolveNamesModule(group, errors);
     return group;
   }
 
-  protected Group resolveNamesModule(String text) {
+  protected ChildGroup resolveNamesModule(String text) {
     return resolveNamesModule(text, 0);
   }
 
 
-  public GlobalReferable get(GlobalReferable ref, String path) {
-    for (String n : path.split("\\.")) {
-      ref = staticNsProvider.forReferable(ref).resolveName(n);
-      if (ref == null) return null;
-    }
-    return ref;
+  public GlobalReferable get(Scope scope, String path) {
+    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
   }
-
 }

@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -121,32 +122,32 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
   protected class TypeCheckModuleResult {
     public final TypecheckerState typecheckerState;
-    public final GlobalReferable referable;
+    public final ChildGroup group;
 
-    public TypeCheckModuleResult(TypecheckerState typecheckerState, GlobalReferable referable) {
+    public TypeCheckModuleResult(TypecheckerState typecheckerState, ChildGroup group) {
       this.typecheckerState = typecheckerState;
-      this.referable = referable;
+      this.group = group;
     }
 
     public Definition getDefinition(String path) {
-      GlobalReferable ref = get(referable, path);
+      GlobalReferable ref = get(group.getGroupScope(), path);
       return ref != null ? typecheckerState.getTypechecked(ref) : null;
     }
 
     public Definition getDefinition() {
-      return typecheckerState.getTypechecked(referable);
+      return typecheckerState.getTypechecked(group.getReferable());
     }
   }
 
-  protected TypeCheckModuleResult typeCheckModule(Group group) {
+  protected TypeCheckModuleResult typeCheckModule(ChildGroup group) {
     TypecheckerState state = typeCheckModule(group, 0);
-    return new TypeCheckModuleResult(state, group.getReferable());
+    return new TypeCheckModuleResult(state, group);
   }
 
   protected TypeCheckModuleResult typeCheckModule(String text, int errors) {
-    Group module = resolveNamesModule(text);
+    ChildGroup module = resolveNamesModule(text);
     TypecheckerState state = typeCheckModule(module, errors);
-    return new TypeCheckModuleResult(state, module.getReferable());
+    return new TypeCheckModuleResult(state, module);
   }
 
   protected TypeCheckModuleResult typeCheckModule(String text) {
@@ -154,8 +155,8 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected TypeCheckModuleResult typeCheckModule(String instance, String global, int errors) {
-    Group group = resolveNamesModule("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
-    return new TypeCheckModuleResult(typeCheckModule(group, errors), group.getReferable());
+    ChildGroup group = resolveNamesModule("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    return new TypeCheckModuleResult(typeCheckModule(group, errors), group);
   }
 
   protected TypeCheckModuleResult typeCheckModule(String instance, String global) {
