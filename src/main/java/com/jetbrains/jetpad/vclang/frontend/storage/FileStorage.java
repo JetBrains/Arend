@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
@@ -57,14 +58,16 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
   private final ModuleRegistry myModuleRegistry;
   private final ModuleResolver myModuleResolver;
+  private final ModuleScopeProvider myModuleScopeProvider;
 
   private final FileSourceSupplier mySourceSupplier;
   private final FileCacheStorageSupplier myCacheStorageSupplier;
 
 
-  public FileStorage(Path sourceRoot, Path cacheRoot, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) {
+  public FileStorage(Path sourceRoot, Path cacheRoot, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver, ModuleScopeProvider moduleScopeProvider) {
     myModuleRegistry = moduleRegistry;
     myModuleResolver = moduleResolver;
+    myModuleScopeProvider = moduleScopeProvider;
 
     mySourceSupplier = new FileSourceSupplier(sourceRoot);
     myCacheStorageSupplier = new FileCacheStorageSupplier(cacheRoot);
@@ -106,7 +109,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
         long mtime = getLastModifiedTime(file);
 
         FileSource fileSource = new FileSource(sourceId, file);
-        Group result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver);
+        Group result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
 
         // Make sure file did not change
         if (getLastModifiedTime(file) != mtime) return null;

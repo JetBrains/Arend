@@ -20,18 +20,15 @@ public class ScopeFactory {
   public static @Nonnull Scope forGroup(@Nullable ChildGroup group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
-    ImportedScope importedScope = null;
     if (parentGroup == null) {
       Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"));
-      if (group != null) {
-        importedScope = new ImportedScope(group, moduleScopeProvider);
+      if (group == null) {
+        return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
-      if (preludeScope == null && importedScope == null) {
-        parentScope = EmptyScope.INSTANCE;
-      } else if (preludeScope == null) {
+
+      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
+      if (preludeScope == null) {
         parentScope = importedScope;
-      } else if (importedScope == null) {
-        parentScope = preludeScope;
       } else {
         List<Scope> scopes = new ArrayList<>(2);
         scopes.add(preludeScope);

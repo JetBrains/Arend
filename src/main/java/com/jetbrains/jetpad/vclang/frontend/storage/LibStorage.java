@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import net.harawata.appdirs.AppDirsFactory;
 
 import javax.annotation.Nonnull;
@@ -24,7 +25,7 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     return Files.createDirectories(Paths.get(AppDirsFactory.getInstance().getUserCacheDir("vclang", null, "JetBrains")));
   }
 
-  public LibStorage(Path libdir, Collection<String> libs, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) throws IOException {
+  public LibStorage(Path libdir, Collection<String> libs, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver, ModuleScopeProvider moduleScopeProvider) throws IOException {
     if (!Files.isDirectory(libdir)) {
       throw new IllegalArgumentException("libdir must be an existing directory");
     }
@@ -37,12 +38,12 @@ public class LibStorage implements Storage<LibStorage.SourceId> {
     for (String lib : libs) {
       Path sourcePath = libdir.resolve(lib);
       Path cachePath = cacheDir.resolve(lib);
-      myLibStorages.put(lib, new FileStorage(sourcePath, cachePath, moduleRegistry, moduleResolver));
+      myLibStorages.put(lib, new FileStorage(sourcePath, cachePath, moduleRegistry, moduleResolver, moduleScopeProvider));
     }
   }
 
-  public LibStorage(Path libdir, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver) throws IOException {
-    this(libdir, getAllLibs(libdir), moduleRegistry, moduleResolver);
+  public LibStorage(Path libdir, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver, ModuleScopeProvider moduleScopeProvider) throws IOException {
+    this(libdir, getAllLibs(libdir), moduleRegistry, moduleResolver, moduleScopeProvider);
   }
 
   private static Collection<String> getAllLibs(Path libdir) throws IOException {

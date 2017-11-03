@@ -34,6 +34,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   protected final SimpleStaticNamespaceProvider staticNsProvider  = new SimpleStaticNamespaceProvider();
   private   final NamespaceProviders nsProviders = new NamespaceProviders(moduleNsProvider, staticNsProvider, null);
   protected final NameResolver nameResolver = new NameResolver(nsProviders);
+  protected final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
 
   @SuppressWarnings("StaticNonFinalField")
   private static Group LOADED_PRELUDE  = null;
@@ -43,7 +44,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     if (prelude != null) throw new IllegalStateException();
 
     if (LOADED_PRELUDE == null) {
-      PreludeStorage preludeStorage = new PreludeStorage(SimpleModuleScopeProvider.INSTANCE);
+      PreludeStorage preludeStorage = new PreludeStorage(moduleScopeProvider);
 
       ListErrorReporter internalErrorReporter = new ListErrorReporter();
       LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).group;
@@ -70,7 +71,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected Concrete.Expression resolveNamesExpr(String text, int errors) {
-    return resolveNamesExpr(new CachingScope(ScopeFactory.forGroup(null, SimpleModuleScopeProvider.INSTANCE)), new ArrayList<>(), text, errors);
+    return resolveNamesExpr(new CachingScope(ScopeFactory.forGroup(null, moduleScopeProvider)), new ArrayList<>(), text, errors);
   }
 
   Concrete.Expression resolveNamesExpr(Scope parentScope, String text) {
@@ -79,7 +80,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   protected Concrete.Expression resolveNamesExpr(Map<Referable, Binding> context, String text) {
     List<Referable> names = new ArrayList<>(context.keySet());
-    return resolveNamesExpr(new CachingScope(ScopeFactory.forGroup(null, SimpleModuleScopeProvider.INSTANCE)), names, text, 0);
+    return resolveNamesExpr(new CachingScope(ScopeFactory.forGroup(null, moduleScopeProvider)), names, text, 0);
   }
 
   protected Concrete.Expression resolveNamesExpr(String text) {
@@ -90,7 +91,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
     ChildGroup group = parseDef(text);
     staticNsProvider.collect(group, errorReporter);
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, new CachingScope(ScopeFactory.forGroup(group, SimpleModuleScopeProvider.INSTANCE)), ConcreteReferableProvider.INSTANCE);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, new CachingScope(ScopeFactory.forGroup(group, moduleScopeProvider)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
     return (ConcreteGlobalReferable) group.getReferable();
   }
@@ -101,7 +102,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(ChildGroup group, int errors) {
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, new CachingScope(ScopeFactory.forGroup(group, SimpleModuleScopeProvider.INSTANCE)), ConcreteReferableProvider.INSTANCE);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, new CachingScope(ScopeFactory.forGroup(group, moduleScopeProvider)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
   }
 

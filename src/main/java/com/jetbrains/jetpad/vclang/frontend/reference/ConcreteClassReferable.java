@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
-import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -8,7 +7,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -38,7 +36,7 @@ public class ConcreteClassReferable extends ConcreteGlobalReferable implements C
       return Collections.emptyList();
     }
 
-    Scope scope = new CachingScope(ScopeFactory.forGroup(myGroup, SimpleModuleScopeProvider.INSTANCE));
+    Scope scope = new CachingScope(myGroup.getGroupScope());
     List<ClassReferable> superClasses = new ArrayList<>(mySuperClasses.size());
     for (Concrete.ReferenceExpression superClass : mySuperClasses) {
       Referable referable = superClass.getReferent();

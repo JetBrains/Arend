@@ -34,7 +34,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class CachingTestCase extends NameResolverTestCase {
-  protected final MemoryStorage storage = new MemoryStorage(moduleNsProvider, null);
+  protected final MemoryStorage storage = new MemoryStorage(moduleScopeProvider, null, moduleScopeProvider);
   protected BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
   protected TypecheckerState tcState;

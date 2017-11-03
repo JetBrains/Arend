@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
@@ -67,7 +66,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   @Override
   protected Group loadPrelude() {
     Group prelude = super.loadPrelude();
-    storageManager.moduleRegistry.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
+    storageManager.moduleScopeProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
     return prelude;
   }
 
@@ -76,16 +75,16 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     final LibStorage libStorage;
     final PreludeStorage preludeStorage;
 
-    final ModuleRegistry moduleRegistry = SimpleModuleScopeProvider.INSTANCE;
+    final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
     ModuleResolver moduleResolver = null;
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
     StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
-      projectStorage = new FileStorage(projectDir, cacheDir, moduleRegistry, moduleResolver);
-      libStorage = libDir != null ? new LibStorage(libDir, moduleRegistry, moduleResolver) : null;
-      preludeStorage = new PreludeStorage(moduleRegistry);
+      projectStorage = new FileStorage(projectDir, cacheDir, moduleScopeProvider, moduleResolver, moduleScopeProvider);
+      libStorage = libDir != null ? new LibStorage(libDir, moduleScopeProvider, moduleResolver, moduleScopeProvider) : null;
+      preludeStorage = new PreludeStorage(moduleScopeProvider);
 
       nonProjectCompositeStorage = new CompositeStorage<>(libStorage != null ? libStorage : new NullStorage<>(), preludeStorage);
       storage = new CompositeStorage<>(projectStorage, nonProjectCompositeStorage);

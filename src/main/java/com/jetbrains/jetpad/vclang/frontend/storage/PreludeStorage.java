@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 
@@ -70,7 +71,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
       if (stream == null) {
         throw new IllegalStateException("Prelude source resource not found");
       }
-      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, myModuleRegistry, null);
+      Group result = new ParseSource(preludeSourceId, new InputStreamReader(stream, StandardCharsets.UTF_8)) {}.load(errorReporter, myModuleRegistry, null, EmptyModuleScopeProvider.INSTANCE);
       return LoadResult.make(result, 1);
     } catch (IOException e) {
       throw new IllegalStateException(e);

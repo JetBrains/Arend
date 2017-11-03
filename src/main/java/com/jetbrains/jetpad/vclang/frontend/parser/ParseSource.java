@@ -10,13 +10,13 @@ import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
-import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
@@ -31,7 +31,7 @@ public abstract class ParseSource {
   }
 
   public @Nullable
-  Group load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver) throws IOException {
+  Group load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -58,7 +58,7 @@ public abstract class ParseSource {
       return null;
     }
 
-    ChildGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
+    ChildGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree, moduleScopeProvider);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
@@ -72,7 +72,7 @@ public abstract class ParseSource {
       }
     }
 
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, new CachingScope(ScopeFactory.forGroup(result, SimpleModuleScopeProvider.INSTANCE)), ConcreteReferableProvider.INSTANCE);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
     return result;
   }
 }

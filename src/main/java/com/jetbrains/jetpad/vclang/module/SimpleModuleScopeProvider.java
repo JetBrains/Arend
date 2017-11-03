@@ -13,9 +13,6 @@ import java.util.Map;
 
 public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
   private final Map<ModulePath, Scope> myMap = new HashMap<>();
-  public static final SimpleModuleScopeProvider INSTANCE = new SimpleModuleScopeProvider();
-
-  private SimpleModuleScopeProvider() {}
 
   @Override
   public void registerModule(ModulePath module, Group group) {
