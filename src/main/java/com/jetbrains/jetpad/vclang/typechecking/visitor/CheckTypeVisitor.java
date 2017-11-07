@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
@@ -1212,10 +1213,21 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       Abstract.Expression letResult = letClause.getResultType();
       if (letResult != null) {
         Type type = checkType(letResult, ExpectedType.OMEGA);
-        if (type == null) return null;
-        return checkExpr(letClause.getTerm(), type.getExpr());
+        if (type == null) {
+          return null;
+        }
+
+        Result result = checkExpr(letClause.getTerm(), type.getExpr());
+        if (result == null) {
+          return new Result(new ErrorExpression(null, null), type.getExpr());
+        }
+        return result.type.isInstance(ErrorExpression.class) ? new Result(result.expression, type.getExpr()) : result;
       } else {
-        return checkExpr(letClause.getTerm(), null);
+        Result result = checkExpr(letClause.getTerm(), null);
+        if (result == null) {
+          myErrorReporter.report(new LocalTypeCheckingError("Cannot infer the type of the let clause", letClause));
+        }
+        return result;
       }
     }
 
@@ -1242,16 +1254,15 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  private LetClause typecheckLetClause(Abstract.LetClause clause) {
+  private Binding typecheckLetClause(Abstract.LetClause clause) {
     LetClause letResult;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       Result result = typecheckLetClause(clause.getParameters(), clause, 1);
       if (result == null) {
         return null;
       }
-      letResult = new LetClause(clause.getName(), result.expression);
+      letResult = new TypedLetClause(clause.getName(), result.expression, result.type);
     }
-    myContext.put(clause, letResult);
     return letResult;
   }
 
@@ -1261,12 +1272,14 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       List<? extends Abstract.LetClause> abstractClauses = expr.getClauses();
       List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
       for (Abstract.LetClause clause : abstractClauses) {
-        LetClause letClause = typecheckLetClause(clause);
-        if (letClause == null) {
+        Binding binding = typecheckLetClause(clause);
+        if (binding == null) {
           return null;
         }
-        myContext.put(clause, letClause);
-        clauses.add(letClause);
+        myContext.put(clause, binding);
+        if (binding instanceof LetClause) {
+          clauses.add((LetClause) binding);
+        }
       }
 
       Result result = checkExpr(expr.getExpression(), expectedType);
