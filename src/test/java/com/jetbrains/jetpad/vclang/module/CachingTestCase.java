@@ -81,8 +81,8 @@ public class CachingTestCase extends NameResolverTestCase {
       throw new IllegalStateException();
     }
 
-    storage.add(ModulePath.moduleName("Prelude"), preludeSource);
-    MemoryStorage.SourceId sourceId = storage.locateModule(ModulePath.moduleName("Prelude"));
+    storage.add(PreludeStorage.PRELUDE_MODULE_PATH, preludeSource);
+    MemoryStorage.SourceId sourceId = storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
 
     prelude = moduleLoader.load(sourceId);
     new Typechecking(cacheManager.getTypecheckerState(), ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(this.prelude));

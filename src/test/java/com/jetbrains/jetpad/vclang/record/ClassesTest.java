@@ -64,7 +64,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void staticFromDynamicCall() {
-    typeCheckModule(
+    typeCheckClass(
         "\\function h : Nat => f",
         "\\function f => 0");
   }
@@ -83,14 +83,14 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicFromAbstractCall() {
-    typeCheckModule(
+    typeCheckClass(
         "\\function f => 0\n" +
         "| h : f = 0\n", "", 1);
   }
 
   @Test
   public void dynamicFromDynamicCall() {
-    typeCheckModule(
+    typeCheckClass(
         "\\function f => 0\n" +
         "\\function h (_ : f = 0) => 0", "");
   }
@@ -291,7 +291,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorIndicesThisTest() {
-    typeCheckModule(
+    typeCheckClass(
         "| + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  | x : Nat\n" +

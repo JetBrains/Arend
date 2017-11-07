@@ -37,7 +37,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void nilConstructorTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => (List Nat).nil");
+    TypeCheckModuleResult result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\function test => List.nil {Nat}");
     testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.SET0, Nat()), result);
   }
 

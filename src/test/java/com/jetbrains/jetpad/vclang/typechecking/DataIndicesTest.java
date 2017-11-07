@@ -70,6 +70,6 @@ public class DataIndicesTest extends TypeCheckingTestCase {
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\function f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("(Fin (suc (suc n))).fsuc ((Fin (suc n)).fsuc x)", ((LeafElimTree) ((FunctionDefinition) result.getDefinition("f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
+    assertEquals("fsuc {suc n} (fsuc {n} x)", ((LeafElimTree) ((FunctionDefinition) result.getDefinition("f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
   }
 }

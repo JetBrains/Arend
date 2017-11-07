@@ -51,11 +51,7 @@ public class PreludeStorage implements Storage<PreludeStorage.SourceId> {
 
   @Override
   public SourceId locateModule(@Nonnull ModulePath modulePath) {
-    if (modulePath.getParent().toList().isEmpty() && modulePath.getName().equals("Prelude")) {
-      return preludeSourceId;
-    } else {
-      return null;
-    }
+    return PRELUDE_MODULE_PATH.equals(modulePath) ? preludeSourceId : null;
   }
 
   @Override

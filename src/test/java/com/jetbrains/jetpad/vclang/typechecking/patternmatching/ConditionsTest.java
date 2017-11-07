@@ -141,7 +141,7 @@ public class ConditionsTest extends TypeCheckingTestCase {
 
   @Test
   public void nonStatic() {
-    typeCheckModule(
+    typeCheckClass(
       "| S' : \\Type0\n" +
       "| base' : S'\n" +
       "| loop' : I -> S'\n" +

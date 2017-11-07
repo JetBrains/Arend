@@ -128,7 +128,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\data D (n m : Nat) | d (n = n) (m = m)\n" +
         "\\data C | c (n m : Nat) (D n m)\n" +
         "\\data E C \\with | c zero (suc zero) (d _ _) => e\n" +
-        "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
+        "\\function test => e {path (\\lam _ => 0)} {path (\\lam _ => 1)}");
   }
 
   @Test
@@ -167,7 +167,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\data E (x : 0 = 0) | e\n" +
         "\\data C (n m : Nat) => \\elim n, m | suc n, suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
-        "\\function test => x (E (path (\\lam _ => 0))).e");
+        "\\function test => x (e {path (\\lam _ => 0)})");
   }
 
   @Test

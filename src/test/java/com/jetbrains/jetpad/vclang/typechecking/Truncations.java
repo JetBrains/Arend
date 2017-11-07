@@ -25,7 +25,7 @@ public class Truncations extends TypeCheckingTestCase {
   public void truncPEval() {
     typeCheckModule(
         "\\function inP-inv (P : \\Prop) (p : TrP P) : P => \\elim p | inP p => p\n" +
-        "\\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) ((TrP P).inP (inP-inv P p)) p) => path ((TrP P).truncP ((TrP P).inP (inP-inv P p)) p)");
+        "\\function trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) (inP {P} (inP-inv P p)) p) => path (truncP {P} (inP {P} (inP-inv P p)) p)");
   }
 
   @Test
@@ -48,7 +48,7 @@ public class Truncations extends TypeCheckingTestCase {
 
   @Test
   public void dynamicSetTruncationTests() {
-    typeCheckModule(
+    typeCheckClass(
         "\\data TrS' (A : \\Type0)\n" +
         "  | inS' A\n" +
         "  | truncS' (a a' : TrS' A) (p q : a = a') (i j : I) => \\elim i, j {\n" +

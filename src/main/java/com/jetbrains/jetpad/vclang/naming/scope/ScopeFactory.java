@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
+import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -21,20 +22,13 @@ public class ScopeFactory {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(new ModulePath("Prelude"));
+      Scope preludeScope = moduleScopeProvider.forModule(PreludeStorage.PRELUDE_MODULE_PATH);
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
 
       ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
-      if (preludeScope == null) {
-        parentScope = importedScope;
-      } else {
-        List<Scope> scopes = new ArrayList<>(2);
-        scopes.add(preludeScope);
-        scopes.add(importedScope);
-        parentScope = new MergeScope(scopes);
-      }
+      parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
       parentScope = forGroup(parentGroup, moduleScopeProvider);
     }

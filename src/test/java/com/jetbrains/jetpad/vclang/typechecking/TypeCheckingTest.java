@@ -9,6 +9,7 @@ import org.junit.Test;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.FunCall;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -39,15 +40,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
-  }
-
-  @Test
-  public void typeCheckConstructor1d() {
-    typeCheckModule(
-        "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
+        "\\function f : con {1} {2} {3} = con => idp");
   }
 
   @Test
@@ -55,15 +48,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
-  }
-
-  @Test
-  public void typeCheckConstructor2d() {
-    typeCheckModule(
-        "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
+        "\\function f : con {0} (path (\\lam _ => 1)) = con {0} idp => idp");
   }
 
   @Test
@@ -182,5 +167,13 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\function f (n : Nat) : Nat => \\elim n\n" +
       "  | _ => {?}", 1);
+  }
+
+  @Test
+  public void twoDefinitions() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\function test : Nat => 0", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

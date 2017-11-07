@@ -5,8 +5,6 @@ import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -24,8 +22,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
-  protected final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
-
   @SuppressWarnings("StaticNonFinalField")
   private static Group LOADED_PRELUDE  = null;
   protected Group prelude = null;
@@ -42,7 +38,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     }
 
     prelude = LOADED_PRELUDE;
-    moduleScopeProvider.registerModule(new ModulePath("Prelude"), prelude);
+    moduleScopeProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
   }
 
 
@@ -77,11 +73,24 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
 
-  ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
+  ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider)), ConcreteReferableProvider.INSTANCE);
+    Scope preludeScope = moduleScopeProvider.forModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    Scope parentScope = new SingletonScope(group.getReferable());
+    if (preludeScope != null) {
+      parentScope = new MergeScope(parentScope, preludeScope);
+    }
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, CachingScope.make(LexicalScope.insideOf(group, parentScope)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
-    return (ConcreteGlobalReferable) group.getReferable();
+    return group;
+  }
+
+  protected ChildGroup resolveNamesDefGroup(String text) {
+    return resolveNamesDefGroup(text, 0);
+  }
+
+  ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
+    return (ConcreteGlobalReferable) resolveNamesDefGroup(text, errors).getReferable();
   }
 
   protected ConcreteGlobalReferable resolveNamesDef(String text) {

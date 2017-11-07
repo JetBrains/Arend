@@ -440,7 +440,7 @@ public class ElimTest extends TypeCheckingTestCase {
 
   @Test
   public void elimExpression() {
-    typeCheckModule(
+    parseModule(
       "\\function + (a b : Nat) => a\n" +
       "\\function f (a b : Nat) : Nat => \\elim (a + b)\n" +
       "  | zero => zero\n" +

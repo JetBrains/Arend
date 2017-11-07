@@ -154,12 +154,12 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return typeCheckModule(text, 0);
   }
 
-  protected TypeCheckModuleResult typeCheckModule(String instance, String global, int errors) {
-    ChildGroup group = resolveNamesModule("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+  protected TypeCheckModuleResult typeCheckClass(String instance, String global, int errors) {
+    ChildGroup group = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
     return new TypeCheckModuleResult(typeCheckModule(group, errors), group);
   }
 
-  protected TypeCheckModuleResult typeCheckModule(String instance, String global) {
-    return typeCheckModule(instance, global, 0);
+  protected TypeCheckModuleResult typeCheckClass(String instance, String global) {
+    return typeCheckClass(instance, global, 0);
   }
 }

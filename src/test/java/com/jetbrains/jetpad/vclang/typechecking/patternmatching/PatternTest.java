@@ -71,7 +71,7 @@ public class PatternTest extends TypeCheckingTestCase {
     return true;
   }
 
-  private void checkPatterns(List<? extends Concrete.Pattern> patternArgs, List<Pattern> patterns, Map<Referable, Binding> expected, boolean hasImplicit) {
+  private void checkPatterns(List<? extends Concrete.Pattern> patternArgs, List<Pattern> patterns, Map<Referable, Binding> expected, @SuppressWarnings("SameParameterValue") boolean hasImplicit) {
     Map<Referable, Binding> actual = new HashMap<>();
     boolean withoutEmpty = checkPatterns(patternArgs, patterns, expected, actual, hasImplicit);
     assertEquals(expected, withoutEmpty ? actual : null);
@@ -332,7 +332,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withThis() {
-    typeCheckModule(
+    typeCheckClass(
       "\\function tests (n : Nat) : Nat\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", "");
@@ -340,7 +340,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void withThisAndElim() {
-    typeCheckModule(
+    typeCheckClass(
       "\\function tests (n : Nat) : Nat => \\elim n\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", "");
@@ -381,16 +381,12 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void casePatternWrongDefinition() {
-    typeCheckModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\function test (x : Nat) : Nat => \\case x \\with { zero => 0 | Nat => 1 }", 1);
+    typeCheckModule("\\function test (x : Nat) : Nat => \\case x \\with { zero => 0 | Nat => 1 }", 1);
   }
 
   @Test
   public void elimPatternWrongDefinition() {
-    typeCheckModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\function test (x : Nat) : Nat => \\elim x | zero => 0 | Nat => 1", 1);
+    typeCheckModule("\\function test (x : Nat) : Nat => \\elim x | zero => 0 | Nat => 1", 1);
   }
 
   @Test
@@ -404,8 +400,6 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void functionPatternWrongDefinition() {
-    typeCheckModule(
-      "\\data Nat | zero | suc Nat\n" +
-      "\\function test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
+    typeCheckModule("\\function test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
   }
 }

@@ -144,7 +144,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void levelOfPath3() {
-    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : Prop) -> \\Set0");
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : \\Prop) -> \\Set0");
   }
 
   @Test
