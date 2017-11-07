@@ -79,11 +79,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    Expression expr1 = null;
-    if (expr.getExpression() != null) {
-      expr1 = expr.getExpression().accept(this, null);
-    }
-    return new ErrorExpression(expr1, expr.getError());
+    return expr.getExpression() == null ? expr : expr.getExpression();
   }
 
   @Override

@@ -242,7 +242,7 @@ public class TypeCheckingDefCall {
         leftDefinition = defCall.getDefinition();
       } else {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a definition", expr);
-        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result.type, error));
         myVisitor.getErrorReporter().report(error);
         return null;
       }

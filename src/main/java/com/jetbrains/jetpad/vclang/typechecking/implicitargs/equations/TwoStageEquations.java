@@ -639,7 +639,7 @@ public class TwoStageEquations implements Equations {
     } else {
       LocalTypeCheckingError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
-      var.solve(this, new ErrorExpression(expr, error));
+      var.solve(this, new ErrorExpression(actualType, error));
       return false;
     }
   }

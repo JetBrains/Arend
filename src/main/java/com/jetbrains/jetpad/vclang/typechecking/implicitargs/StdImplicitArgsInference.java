@@ -94,7 +94,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       if (!result1.type.isError()) {
         LocalTypeCheckingError error = new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun);
-        fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
+        fun.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.type, error));
         myVisitor.getErrorReporter().report(error);
       }
       return null;
@@ -107,7 +107,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (param.isExplicit() != isExplicit) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an " + (param.isExplicit() ? "explicit" : "implicit") + " argument", arg);
-      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.expression, error));
+      arg.setWellTyped(myVisitor.getContext(), new ErrorExpression(argResult.type, error));
       myVisitor.getErrorReporter().report(error);
       return null;
     }
@@ -191,7 +191,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       if (!result1.type.isError()) {
         LocalTypeCheckingError error = new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr);
-        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.expression, error));
+        expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(result1.type, error));
         myVisitor.getErrorReporter().report(error);
       }
       return null;

@@ -347,7 +347,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
     if (!result.type.isError()) {
       LocalTypeCheckingError error = new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr);
-      expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+      expr.setWellTyped(myContext, new ErrorExpression(result.type, error));
       myErrorReporter.report(error);
     }
     return false;
@@ -432,7 +432,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
         if (!result.type.isError()) {
           LocalTypeCheckingError error = new TypeMismatchError(text("a universe"), termDoc(result.type), expr);
-          expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+          expr.setWellTyped(myContext, new ErrorExpression(result.type, error));
           myErrorReporter.report(error);
         }
         return null;
@@ -458,7 +458,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr)) {
       CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr);
       LocalTypeCheckingError error = new PathEndpointMismatchError(isLeft, expected, actual, expr);
-      expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
+      expr.setWellTyped(myContext, new ErrorExpression(result.type, error));
       myErrorReporter.report(error);
       return false;
     }
@@ -468,7 +468,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   private boolean checkPath(TResult result, Abstract.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected an argument for 'path'", expr);
-      expr.setWellTyped(myContext, new ErrorExpression(result.toResult(myEquations).expression, error));
+      expr.setWellTyped(myContext, new ErrorExpression(result.toResult(myEquations).type, error));
       myErrorReporter.report(error);
       return false;
     }
@@ -1079,7 +1079,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
     if (!normalizedBaseClassExpr.isInstance(ClassCallExpression.class)) {
       LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", baseClassExpr);
-      expr.setWellTyped(myContext, new ErrorExpression(normalizedBaseClassExpr, error));
+      expr.setWellTyped(myContext, new ErrorExpression(typeCheckedBaseClass.type, error));
       myErrorReporter.report(error);
       return null;
     }
@@ -1167,18 +1167,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      Expression errorExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression() : null;
-      classCallExpr = errorExpr != null ? errorExpr.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
-      if (classCallExpr == null) {
-        LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
-        expr.setWellTyped(myContext, new ErrorExpression(normExpr, error));
-        myErrorReporter.report(error);
-        return null;
-      } else {
-        exprResult.expression = new ErrorExpression(new NewExpression(classCallExpr), normExpr.cast(ErrorExpression.class).getError());
-        exprResult.type = normExpr;
-        return exprResult;
-      }
+      LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
+      expr.setWellTyped(myContext, new ErrorExpression(exprResult.type, error));
+      myErrorReporter.report(error);
+      exprResult.expression = new ErrorExpression(exprResult.type, error);
+      exprResult.type = normExpr;
+      return exprResult;
     }
 
     if (checkAllImplemented(classCallExpr, expr)) {
@@ -1219,7 +1213,10 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
 
         Result result = checkExpr(letClause.getTerm(), type.getExpr());
         if (result == null) {
-          return new Result(new ErrorExpression(null, null), type.getExpr());
+          return new Result(new ErrorExpression(type.getExpr(), null), type.getExpr());
+        }
+        if (result.expression.isInstance(ErrorExpression.class)) {
+          result.expression = new ErrorExpression(type.getExpr(), result.expression.cast(ErrorExpression.class).getError());
         }
         return result.type.isInstance(ErrorExpression.class) ? new Result(result.expression, type.getExpr()) : result;
       } else {
@@ -1261,7 +1258,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       if (result == null) {
         return null;
       }
-      letResult = new TypedLetClause(clause.getName(), result.expression, result.type);
+      letResult = new LetClause(clause.getName(), result.expression);
     }
     return letResult;
   }
