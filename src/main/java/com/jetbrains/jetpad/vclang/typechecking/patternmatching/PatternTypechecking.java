@@ -234,7 +234,7 @@ public class PatternTypechecking {
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
-        if (!expr.isInstance(ErrorExpression.class)) {
+        if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
         }
         return null;

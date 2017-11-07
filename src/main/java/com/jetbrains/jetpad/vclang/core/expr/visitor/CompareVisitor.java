@@ -99,8 +99,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
-      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
+    if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
+      stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
     }
 

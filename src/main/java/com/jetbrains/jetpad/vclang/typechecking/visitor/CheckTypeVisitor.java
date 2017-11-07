@@ -344,7 +344,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       return true;
     }
 
-    if (!result.type.isInstance(ErrorExpression.class)) {
+    if (!result.type.isError()) {
       LocalTypeCheckingError error = new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr);
       expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
       myErrorReporter.report(error);
@@ -428,8 +428,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     UniverseExpression universe = type.checkedCast(UniverseExpression.class);
     if (universe == null) {
       Expression stuck = type.getStuckExpression();
-      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isInstance(ErrorExpression.class)) {
-        if (!result.type.isInstance(ErrorExpression.class)) {
+      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
+        if (!result.type.isError()) {
           LocalTypeCheckingError error = new TypeMismatchError(text("a universe"), termDoc(result.type), expr);
           expr.setWellTyped(myContext, new ErrorExpression(result.expression, error));
           myErrorReporter.report(error);
@@ -656,7 +656,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
             myErrorReporter.report(new LocalTypeCheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
-            if (!argType.isInstance(ErrorExpression.class)) {
+            if (!argType.isError()) {
               myErrorReporter.report(new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType));
             }
             return null;
@@ -711,7 +711,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       if (result != null) {
         expr.setWellTyped(myContext, result.expression);
         if (expectedType != null && !(expectedType instanceof Expression)) {
-          if (!result.type.isInstance(ErrorExpression.class)) {
+          if (!result.type.isError()) {
             myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
           }
           return null;
@@ -1039,7 +1039,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     if (exprResult == null) return null;
     exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!exprResult.type.isInstance(SigmaExpression.class)) {
-      if (!exprResult.type.isInstance(ErrorExpression.class)) {
+      if (!exprResult.type.isError()) {
         LocalTypeCheckingError error = new TypeMismatchError(text("A sigma type"), termDoc(exprResult.type), expr1);
         expr.setWellTyped(myContext, new ErrorExpression(null, error));
         myErrorReporter.report(error);
@@ -1166,7 +1166,8 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
+      Expression errorExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression() : null;
+      classCallExpr = errorExpr != null ? errorExpr.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
       if (classCallExpr == null) {
         LocalTypeCheckingError error = new LocalTypeCheckingError("Expected a class", expr.getExpression());
         expr.setWellTyped(myContext, new ErrorExpression(normExpr, error));

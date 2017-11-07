@@ -121,8 +121,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLet(LetExpression expr, Void params) {
-    Expression type = expr.getExpression().accept(this, null);
-    return type.isInstance(ErrorExpression.class) ? type : type.subst(expr.getClausesSubstitution());
+    return expr.getExpression().accept(this, null).subst(expr.getClausesSubstitution());
   }
 
   @Override

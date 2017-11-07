@@ -154,7 +154,7 @@ public class TypeCheckingDefCall {
         return null;
       }
       if (!classDefinition.isSubClassOf(typeCheckedDefinition.getThisClass())) {
-        if (!type.isInstance(ErrorExpression.class)) {
+        if (!type.isError()) {
           ClassCallExpression classCall = new ClassCallExpression(typeCheckedDefinition.getThisClass(), Sort.generateInferVars(myVisitor.getEquations(), expr));
           LocalTypeCheckingError error = new TypeMismatchError(DocFactory.termDoc(classCall), DocFactory.termDoc(type), left);
           expr.setWellTyped(myVisitor.getContext(), new ErrorExpression(null, error));

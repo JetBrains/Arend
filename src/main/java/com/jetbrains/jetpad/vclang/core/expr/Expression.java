@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Abstract.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -41,6 +42,10 @@ public abstract class Expression implements ExpectedType {
   @Override
   public boolean equals(Object obj) {
     return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
+  }
+
+  public boolean isError() {
+    return isInstance(ErrorExpression.class) && !(cast(ErrorExpression.class).getError() instanceof GoalError);
   }
 
   public void prettyPrint(StringBuilder builder, boolean doIndent) {

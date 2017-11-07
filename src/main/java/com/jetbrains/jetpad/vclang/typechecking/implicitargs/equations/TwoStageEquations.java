@@ -490,11 +490,11 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
-      if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
+      if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
         iterator.remove();
       } else {
         stuckExpr = equation.type.getStuckExpression();
-        if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
+        if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
           iterator.remove();
         }
       }
