@@ -491,11 +491,11 @@ public class TwoStageEquations implements Equations {
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       Expression stuckExpr = equation.expr.getStuckExpression();
-      if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
+      if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
         iterator.remove();
       } else {
         stuckExpr = equation.type.getStuckExpression();
-        if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isInstance(ErrorExpression.class))) {
+        if (stuckExpr != null && (stuckExpr.isInstance(InferenceReferenceExpression.class) || stuckExpr.isError())) {
           iterator.remove();
         }
       }
@@ -640,7 +640,7 @@ public class TwoStageEquations implements Equations {
     } else {
       LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
-      var.solve(this, new ErrorExpression(expr, error));
+      var.solve(this, new ErrorExpression(actualType, error));
       return false;
     }
   }

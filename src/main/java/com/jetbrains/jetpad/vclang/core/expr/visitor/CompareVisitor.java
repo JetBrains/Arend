@@ -16,6 +16,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -81,14 +82,56 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return ok;
   }
 
+  private LetClause getLetClause(Expression expr) {
+    while (expr.isInstance(AppExpression.class)) {
+      expr = expr.cast(AppExpression.class).getFunction();
+    }
+    if (expr.isInstance(ReferenceExpression.class)) {
+      Binding binding = expr.cast(ReferenceExpression.class).getBinding();
+      return binding instanceof LetClause ? (LetClause) binding : null;
+    }
+    return null;
+  }
+
   private Boolean compare(Expression expr1, Expression expr2) {
-    if (expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class) ||
+    Equations.CMP origCMP = myCMP;
+
+    LetClause letClause1 = getLetClause(expr1);
+    if (letClause1 != null && letClause1 == getLetClause(expr2) ||
            expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition()) {
+      myCMP = Equations.CMP.EQ;
       Equations equations = myEquations;
       myEquations = DummyEquations.getInstance();
-      boolean ok = expr1.isInstance(AppExpression.class) ? visitApp(expr1.cast(AppExpression.class), expr2.cast(AppExpression.class)) :
-        visitDefCall(expr1.cast(FunCallExpression.class), expr2.cast(FunCallExpression.class));
+
+      boolean ok;
+      if (letClause1 == null) {
+        ok = visitDefCall(expr1.cast(FunCallExpression.class), expr2.cast(FunCallExpression.class));
+      } else {
+        List<Expression> args1 = new ArrayList<>();
+        while (expr1.isInstance(AppExpression.class)) {
+          args1.add(expr1.cast(AppExpression.class).getArgument());
+          expr1 = expr1.cast(AppExpression.class).getFunction();
+        }
+        List<Expression> args2 = new ArrayList<>();
+        while (expr2.isInstance(AppExpression.class)) {
+          args2.add(expr2.cast(AppExpression.class).getArgument());
+          expr2 = expr2.cast(AppExpression.class).getFunction();
+        }
+        if (args1.size() == args2.size()) {
+          ok = true;
+          for (int i = 0; i < args1.size(); i++) {
+            if (compare(args1.get(i), args2.get(i))) {
+              ok = false;
+              break;
+            }
+          }
+        } else {
+          ok = false;
+        }
+      }
+
       myEquations = equations;
+      myCMP = origCMP;
       if (ok) {
         return true;
       }
@@ -99,8 +142,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
-      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
+    if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
+      stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
     }
 
@@ -113,7 +156,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
     }
 
-    Equations.CMP origCMP = myCMP;
     if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class)) {
       myCMP = Equations.CMP.EQ;
     }
@@ -452,7 +494,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2) {
-    return false;
+    return expr1.getError() instanceof GoalError && expr2.isInstance(ErrorExpression.class) && expr1.getError().equals(expr2.cast(ErrorExpression.class).getError());
   }
 
   @Override

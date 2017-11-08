@@ -735,7 +735,7 @@ class DefinitionTypechecking {
 
   private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
     ClassDefinition.Implementation oldImpl = classDef.getImplementation(classField);
-    if (oldImpl == null || oldImpl.term.isInstance(ErrorExpression.class)) {
+    if (oldImpl == null) {
       classDef.implementField(classField, implementation);
     }
     if (oldImpl != null && !oldImpl.substThisParam(new ReferenceExpression(implementation.thisParam)).equals(implementation.term)) {

@@ -28,7 +28,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Expression function = expr;
     while (function.isInstance(AppExpression.class)) {
       args.add(function.cast(AppExpression.class).getArgument());
-      function = function.cast(AppExpression.class).getFunction().accept(this, mode == Mode.NF ? Mode.WHNF : mode);
+      function = function.cast(AppExpression.class).getFunction().accept(this, Mode.WHNF);
     }
     Collections.reverse(args);
 

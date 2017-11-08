@@ -348,13 +348,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public boolean compare(Result result, Expression expectedType, Concrete.Expression expr) {
-    result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (result.type.isLessOrEquals(expectedType, myEquations, expr)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return true;
     }
 
-    if (!result.type.isInstance(ErrorExpression.class)) {
+    if (!result.type.isError()) {
       myErrorReporter.report(new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr));
     }
     return false;
@@ -434,8 +433,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     UniverseExpression universe = type.checkedCast(UniverseExpression.class);
     if (universe == null) {
       Expression stuck = type.getStuckExpression();
-      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isInstance(ErrorExpression.class)) {
-        if (!result.type.isInstance(ErrorExpression.class)) {
+      if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
+        if (!result.type.isError()) {
           myErrorReporter.report(new TypeMismatchError(text("a universe"), termDoc(result.type), expr));
         }
         return null;
@@ -655,7 +654,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
-            if (!argType.isInstance(ErrorExpression.class)) {
+            if (!argType.isError()) {
               myErrorReporter.report(new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType));
             }
             return null;
@@ -708,7 +707,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       Result result = visitLam(expr.getParameters(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
       if (result != null && expectedType != null && !(expectedType instanceof Expression)) {
-        if (!result.type.isInstance(ErrorExpression.class)) {
+        if (!result.type.isError()) {
           myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
         }
         return null;
@@ -1031,7 +1030,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (exprResult == null) return null;
     exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!exprResult.type.isInstance(SigmaExpression.class)) {
-      if (!exprResult.type.isInstance(ErrorExpression.class)) {
+      if (!exprResult.type.isError()) {
         myErrorReporter.report(new TypeMismatchError(text("A sigma type"), termDoc(exprResult.type), expr1));
       }
       return null;
@@ -1165,15 +1164,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
-      classCallExpr = normExpr.isInstance(ErrorExpression.class) ? normExpr.cast(ErrorExpression.class).getExpression().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class) : null;
-      if (classCallExpr == null) {
-        myErrorReporter.report(new TypecheckingError("Expected a class", expr.getExpression()));
-        return null;
-      } else {
-        exprResult.expression = new ErrorExpression(new NewExpression(classCallExpr), normExpr.cast(ErrorExpression.class).getError());
-        exprResult.type = normExpr;
-        return exprResult;
-      }
+      TypecheckingError error = new TypecheckingError("Expected a class", expr.getExpression());
+      myErrorReporter.report(error);
+      exprResult.expression = new ErrorExpression(exprResult.type, error);
+      exprResult.type = normExpr;
+      return exprResult;
     }
 
     if (checkAllImplemented(classCallExpr, expr)) {
@@ -1206,10 +1201,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       Concrete.Expression letResult = letClause.getResultType();
       if (letResult != null) {
         Type type = checkType(letResult, ExpectedType.OMEGA);
-        if (type == null) return null;
-        return checkExpr(letClause.getTerm(), type.getExpr());
+        if (type == null) {
+          return null;
+        }
+
+        Result result = checkExpr(letClause.getTerm(), type.getExpr());
+        if (result == null) {
+          return new Result(new ErrorExpression(type.getExpr(), null), type.getExpr());
+        }
+        if (result.expression.isInstance(ErrorExpression.class)) {
+          result.expression = new ErrorExpression(type.getExpr(), result.expression.cast(ErrorExpression.class).getError());
+        }
+        return result.type.isInstance(ErrorExpression.class) ? new Result(result.expression, type.getExpr()) : result;
       } else {
-        return checkExpr(letClause.getTerm(), null);
+        Result result = checkExpr(letClause.getTerm(), null);
+        if (result == null) {
+          myErrorReporter.report(new TypecheckingError("Cannot infer the type of the let clause", letClause));
+        }
+        return result;
       }
     }
 

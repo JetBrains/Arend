@@ -90,7 +90,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
-    if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isInstance(ErrorExpression.class)) {
+    if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isError()) {
       return result;
     }
 
@@ -121,7 +121,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     DependentLink param = result.getParameter();
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      if (!result1.type.isInstance(ErrorExpression.class)) {
+      if (!result1.type.isError()) {
         myVisitor.getErrorReporter().report(new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun));
       }
       return null;
@@ -212,7 +212,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     expectedType.getPiParameters(expectedParams, true);
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      if (!result1.type.isInstance(ErrorExpression.class)) {
+      if (!result1.type.isError()) {
         myVisitor.getErrorReporter().report(new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr));
       }
       return null;
