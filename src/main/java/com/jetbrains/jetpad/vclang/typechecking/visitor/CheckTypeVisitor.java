@@ -339,7 +339,6 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
   }
 
   public boolean compare(Result result, Expression expectedType, Abstract.Expression expr) {
-    result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (result.type.isLessOrEquals(expectedType, myEquations, expr)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return true;
@@ -1251,7 +1250,7 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
     }
   }
 
-  private Binding typecheckLetClause(Abstract.LetClause clause) {
+  private LetClause typecheckLetClause(Abstract.LetClause clause) {
     LetClause letResult;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       Result result = typecheckLetClause(clause.getParameters(), clause, 1);
@@ -1269,14 +1268,12 @@ public class CheckTypeVisitor implements AbstractExpressionVisitor<ExpectedType,
       List<? extends Abstract.LetClause> abstractClauses = expr.getClauses();
       List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
       for (Abstract.LetClause clause : abstractClauses) {
-        Binding binding = typecheckLetClause(clause);
-        if (binding == null) {
+        LetClause letClause = typecheckLetClause(clause);
+        if (letClause == null) {
           return null;
         }
-        myContext.put(clause, binding);
-        if (binding instanceof LetClause) {
-          clauses.add((LetClause) binding);
-        }
+        myContext.put(clause, letClause);
+        clauses.add(letClause);
       }
 
       Result result = checkExpr(expr.getExpression(), expectedType);
