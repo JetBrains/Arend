@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -222,12 +221,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule.getModulePath()), subgroups, namespaceCommands);
     visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup);
     return parentGroup;
-  }
-
-  public ChildGroup visitStatements(StatementsContext ctx, ModuleScopeProvider moduleScopeProvider) {
-    FileGroup group = visitStatements(ctx);
-    group.setModuleScopeProvider(moduleScopeProvider);
-    return group;
   }
 
   public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent) {

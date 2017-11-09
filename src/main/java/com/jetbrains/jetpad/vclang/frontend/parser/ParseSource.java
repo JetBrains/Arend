@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
+import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
@@ -56,7 +57,7 @@ public abstract class ParseSource {
       return null;
     }
 
-    ChildGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree, moduleScopeProvider);
+    FileGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
@@ -72,6 +73,7 @@ public abstract class ParseSource {
       }
     }
 
+    result.setModuleScopeProvider(moduleScopeProvider);
     new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
     return result;
   }

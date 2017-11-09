@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
+import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -76,7 +77,10 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   protected ChildGroup parseModule(String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    ChildGroup group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree, moduleScopeProvider) : null;
+    FileGroup group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
+    if (group != null) {
+      group.setModuleScopeProvider(moduleScopeProvider);
+    }
     assertThat(errorList, containsErrors(errors));
     return group;
   }
