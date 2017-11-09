@@ -19,26 +19,35 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
     names.put(def, name);
   }
 
+  public void registerModule(Group group, SourceIdT source) {
+    modules.put(group.getReferable(), source);
+    registerGroup(group, null, source);
+  }
+
   public void registerGroup(Group group, FullName name, SourceIdT source) {
-    registerDefinition(group.getReferable(), name, source);
     for (Group subGroup : group.getSubgroups()) {
-      registerGroup(subGroup, new FullName(subGroup.getReferable().textRepresentation()), source);
+      registerSubGroup(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
     }
     for (GlobalReferable constructor : group.getConstructors()) {
-      registerDefinition(constructor, new FullName(constructor.textRepresentation()), source);
+      registerDefinition(constructor, new FullName(name, constructor.textRepresentation()), source);
     }
     for (Group subGroup : group.getDynamicSubgroups()) {
-      registerGroup(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
+      registerSubGroup(subGroup, new FullName(name, subGroup.getReferable().textRepresentation()), source);
     }
     for (GlobalReferable field : group.getFields()) {
       registerDefinition(field, new FullName(name, field.textRepresentation()), source);
     }
   }
 
+  // TODO[abstract]: What's the point of FullName here?
+  private void registerSubGroup(Group group, FullName name, SourceIdT source) {
+    registerDefinition(group.getReferable(), name, source);
+    registerGroup(group, name, source);
+  }
+
   @Override
-  public String fullNameFor(GlobalReferable definition) {
-    FullName name = names.get(definition);
-    return name != null ? name.toString() : definition.textRepresentation();
+  public FullName fullNameFor(GlobalReferable definition) {
+    return names.get(definition);
   }
 
   @Override

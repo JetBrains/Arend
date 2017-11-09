@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 
 public class DefinitionStateSerialization {
@@ -33,17 +34,11 @@ public class DefinitionStateSerialization {
     ModuleProtos.Module.DefinitionState.Builder builder = ModuleProtos.Module.DefinitionState.newBuilder();
     for (GlobalReferable definition : state.getTypecheckedDefinitions()) {
       Definition typechecked = state.getTypechecked(definition);
+      if (!myPersistenceProvider.needsCaching(definition, typechecked)) continue;
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-
-      if (canBeReferred(typechecked)) {
-        builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
-      }
+      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
     }
     return builder.build();
-  }
-
-  private boolean canBeReferred(Definition typechecked) {
-    return typechecked.status().headerIsOK();
   }
 
   // TODO: HACK. Second parameter should not be needed
@@ -101,7 +96,8 @@ public class DefinitionStateSerialization {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setName(myPersistenceProvider.getIdFor(field.getReferable()));
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
-      fBuilder.setType(defSerializer.writeExpr(field.getBaseType(Sort.STD)));
+      Expression baseType = field.getBaseType(Sort.STD);
+      if (baseType != null) fBuilder.setType(defSerializer.writeExpr(baseType));
       builder.addPersonalField(fBuilder.build());
     }
 
@@ -192,7 +188,7 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-    builder.setType(defSerializer.writeExpr(definition.getResultType()));
+    if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
     if (definition.getBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getBody()));
     }
@@ -200,7 +196,7 @@ public class DefinitionStateSerialization {
     return builder.build();
   }
 
-  private DefinitionProtos.Body writeBody(DefinitionSerialization defSerializer, Body body) {
+  private DefinitionProtos.Body writeBody(DefinitionSerialization defSerializer, @Nonnull Body body) {
     DefinitionProtos.Body.Builder bodyBuilder = DefinitionProtos.Body.newBuilder();
     if (body instanceof IntervalElim) {
       IntervalElim intervalElim = (IntervalElim) body;

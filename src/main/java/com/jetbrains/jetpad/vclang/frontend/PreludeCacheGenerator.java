@@ -1,17 +1,20 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,24 +63,39 @@ public class PreludeCacheGenerator {
   }
 
   static class PreludePersistenceProvider implements PersistenceProvider<PreludeStorage.SourceId> {
+    private final FullNameProvider myFullNameProvider;
+
+    PreludePersistenceProvider(FullNameProvider fullNameProvider) {
+      myFullNameProvider = fullNameProvider;
+    }
+
     @Override
-    public URI getUri(PreludeStorage.SourceId sourceId) {
+    public @Nonnull URI getUri(PreludeStorage.SourceId sourceId) {
       throw new IllegalStateException();
     }
 
     @Override
-    public PreludeStorage.SourceId getModuleId(URI sourceUrl) {
+    public @Nonnull PreludeStorage.SourceId getModuleId(URI sourceUrl) {
       throw new IllegalStateException();
     }
 
     @Override
-    public String getIdFor(GlobalReferable definition) {
-      if (!(definition instanceof ConcreteGlobalReferable)) throw new IllegalStateException();
-      return ((ConcreteGlobalReferable) definition).positionTextRepresentation();
+    public boolean needsCaching(GlobalReferable def, Definition typechecked) {
+      return true;
     }
 
     @Override
-    public GlobalReferable getFromId(PreludeStorage.SourceId sourceId, String id) {
+    public @Nullable String getIdFor(GlobalReferable definition) {
+      return BaseCliFrontend.getNameIdFor(myFullNameProvider, definition);
+    }
+
+    @Override
+    public @Nonnull GlobalReferable getFromId(PreludeStorage.SourceId sourceId, String id) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public void registerCachedDefinition(PreludeStorage.SourceId sourceId, String id, Definition definition) {
       throw new IllegalStateException();
     }
   }
@@ -96,12 +114,14 @@ public class PreludeCacheGenerator {
 
   public static void main(String[] args) throws CachePersistenceException {
     PreludeStorage storage = new PreludeStorage(null);
-    CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])),
+    SimpleSourceInfoProvider<PreludeStorage.SourceId> sourceInfoProvider = new SimpleSourceInfoProvider<>();
+    CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(sourceInfoProvider), new PreludeBuildCacheSupplier(Paths.get(args[0])),
         new PreludeVersionTracker(), new PreludeDefLocator(storage.preludeSourceId));
 
     final ListErrorReporter errorReporter = new ListErrorReporter();
     Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
+    sourceInfoProvider.registerModule(prelude, storage.preludeSourceId);
     new Typechecking(cacheManager.getTypecheckerState(), ConcreteReferableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);

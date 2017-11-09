@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
@@ -10,7 +11,6 @@ import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
@@ -22,12 +22,16 @@ import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import org.junit.Before;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -49,7 +53,7 @@ public class CachingTestCase extends NameResolverTestCase {
       @Override
       protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
         if (result == null) throw new IllegalStateException("Could not load module");
-        sourceInfoProvider.registerGroup(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
+        sourceInfoProvider.registerModule(result.group, module);
       }
     };
     storage = new MemoryStorage(moduleScopeProvider, moduleLoader, moduleScopeProvider);
@@ -126,26 +130,35 @@ public class CachingTestCase extends NameResolverTestCase {
     private final Map<String, Object> memMap = new HashMap<>();
 
     @Override
-    public URI getUri(SourceIdT sourceId) {
+    public @Nonnull URI getUri(SourceIdT sourceId) {
       String key = remember(sourceId);
       return URI.create("memory://" + key);
     }
 
     @Override
-    public SourceIdT getModuleId(URI sourceUrl) {
+    public @Nullable SourceIdT getModuleId(URI sourceUrl) {
       if (!("memory".equals(sourceUrl.getScheme()))) throw new IllegalArgumentException();
       //noinspection unchecked
       return (SourceIdT) recall(sourceUrl.getHost());
     }
 
     @Override
-    public String getIdFor(GlobalReferable definition) {
+    public boolean needsCaching(GlobalReferable def, Definition typechecked) {
+      return typechecked.status().headerIsOK();
+    }
+
+    @Override
+    public @Nullable String getIdFor(GlobalReferable definition) {
       return remember(definition);
     }
 
     @Override
-    public GlobalReferable getFromId(SourceIdT sourceId, String id) {
+    public @Nonnull GlobalReferable getFromId(SourceIdT sourceId, String id) {
       return (GlobalReferable) recall(id);
+    }
+
+    @Override
+    public void registerCachedDefinition(SourceIdT sourceId, String id, Definition definition) {
     }
 
     private String remember(Object o) {

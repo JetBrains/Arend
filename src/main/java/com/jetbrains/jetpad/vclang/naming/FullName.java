@@ -1,5 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class FullName {
   private final FullName myParent;
   private final String myName;
@@ -13,8 +16,21 @@ public class FullName {
     myName = name;
   }
 
+  public List<String> toList() {
+    LinkedList<String> res = new LinkedList<>();
+    toList(res);
+    return res;
+  }
+
+  private void toList(LinkedList<String> res) {
+    if (myParent != null) {
+      myParent.toList(res);
+    }
+    res.add(myName);
+  }
+
   @Override
   public String toString() {
-    return (myParent != null ? myParent.toString() + "." : "") + myName;
+    return String.join(".", toList());
   }
 }

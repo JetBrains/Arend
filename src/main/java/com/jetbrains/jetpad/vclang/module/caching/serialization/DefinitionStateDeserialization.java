@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,8 +36,10 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
-      final Definition def;
+
       final GlobalReferable abstractDef = getAbstract(id);
+
+      final Definition def;
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = new ClassDefinition(abstractDef);
@@ -44,6 +47,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
             GlobalReferable absField = getAbstract(fieldProto.getName());
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            myPersistenceProvider.registerCachedDefinition(mySourceId, fieldProto.getName(), res);
             state.record(absField, res);
           }
           def = classDef;
@@ -54,6 +58,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
             GlobalReferable absConstructor = getAbstract(constructorId);
             Constructor res = new Constructor(absConstructor, dataDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            myPersistenceProvider.registerCachedDefinition(mySourceId, constructorId, res);
             state.record(absConstructor, res);
           }
           def = dataDef;
@@ -65,30 +70,28 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
-      switch (defProto.getStatus()) {
-        case HEADER_HAS_ERRORS:
-          def.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-          break;
-        case BODY_HAS_ERRORS:
-          def.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-          break;
-        case HEADER_NEEDS_TYPE_CHECKING:
-          def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-          break;
-        case BODY_NEEDS_TYPE_CHECKING:
-          def.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
-          break;
-        case HAS_ERRORS:
-          def.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-          break;
-        case NO_ERRORS:
-          def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-          break;
-        default:
-          throw new IllegalStateException("Unknown typechecking state");
-      }
-
+      myPersistenceProvider.registerCachedDefinition(mySourceId, id, def);
+      def.setStatus(readTcStatus(defProto));
       state.record(abstractDef, def);
+    }
+  }
+
+  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
+    switch (defProto.getStatus()) {
+      case HEADER_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
+      case BODY_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
+      case HEADER_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
+      case BODY_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+      case HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HAS_ERRORS;
+      case NO_ERRORS:
+        return Definition.TypeCheckingStatus.NO_ERRORS;
+      default:
+        throw new IllegalStateException("Unknown typechecking state");
     }
   }
 
@@ -148,7 +151,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = getTypechecked(state, fieldProto.getName());
       field.setThisParameter((TypedDependentLink) defDeserializer.readParameter(fieldProto.getThisParam()));
-      field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
+      if (fieldProto.hasType()) {
+        field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
+      }
       classDef.addPersonalField(field);
     }
   }
@@ -245,7 +250,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
 
   private void fillInFunctionDefinition(DefinitionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
-    functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
+    if (functionProto.hasType()) {
+      functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
+    }
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
     }

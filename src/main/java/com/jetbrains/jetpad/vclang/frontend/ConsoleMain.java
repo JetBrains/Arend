@@ -1,26 +1,36 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
-import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.NullStorage;
+import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.util.Pair;
 import org.apache.commons.cli.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
+import java.util.List;
 
 public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
   private static final Options cmdOptions = new Options();
@@ -61,9 +71,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   @Override
   protected Group loadPrelude() {
-    Group prelude = super.loadPrelude();
-    storageManager.moduleScopeProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
-    return prelude;
+    return super.loadPrelude();
   }
 
   private static class StorageManager {
@@ -71,7 +79,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     final LibStorage libStorage;
     final PreludeStorage preludeStorage;
 
-    final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
+    final CliModuleScopeProvider moduleScopeProvider = new CliModuleScopeProvider();
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
@@ -101,7 +109,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   class MyPersistenceProvider implements PersistenceProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
     @Override
-    public URI getUri(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId) {
+    public @Nonnull URI getUri(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId) {
       try {
         final String scheme;
         final String root;
@@ -137,7 +145,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId getModuleId(URI sourceUri) {
+    public @Nullable CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId getModuleId(URI sourceUri) {
       if ("file".equals(sourceUri.getScheme())) {
         if (sourceUri.getAuthority() != null) return null;
         try {
@@ -173,18 +181,44 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
 
     @Override
-    public String getIdFor(GlobalReferable referable) {
-      return referable instanceof ConcreteGlobalReferable ? ((ConcreteGlobalReferable) referable).positionTextRepresentation() : null;
+    public boolean needsCaching(GlobalReferable def, Definition typechecked) {
+      return true;
     }
 
     @Override
-    public GlobalReferable getFromId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id) {
-      Map<String, GlobalReferable> sourceMap = definitionIds.get(sourceId);
-      if (sourceMap == null) {
-        return null;
+    public @Nullable String getIdFor(GlobalReferable referable) {
+      return BaseCliFrontend.getNameIdFor(srcInfoProvider, referable);
+    }
+
+    @Override
+    public @Nonnull GlobalReferable getFromId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id) {
+      Pair<Precedence, List<String>> name = BaseCliFrontend.fullNameFromNameId(id);
+      SourceSupplier.LoadResult loadResult = loadedSources.get(sourceId);
+      final @Nonnull Scope scope;
+      if (loadResult == null) {
+        // Source is not loaded, lookup in cache
+        CacheScope cacheScope =  storageManager.moduleScopeProvider.cachedScopes.get(sourceId.getModulePath());
+        if (cacheScope == null) {
+          throw new IllegalStateException("Required cache is not loaded");
+        }
+        scope = cacheScope.root;
       } else {
-        return sourceMap.get(id);
+        scope = LexicalScope.opened(loadResult.group);
       }
+      Referable res = Scope.Utils.resolveName(scope, name.proj2);
+      if (res instanceof GlobalReferable) {
+        return (GlobalReferable) res;
+      }
+      throw new IllegalArgumentException("Definition does not exit");
+    }
+
+    @Override
+    public void registerCachedDefinition(CompositeSourceSupplier<FileStorage.SourceId, CompositeSourceSupplier<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id, Definition definition) {
+      Pair<Precedence, List<String>> name = BaseCliFrontend.fullNameFromNameId(id);
+      CacheScope cacheScope = storageManager.moduleScopeProvider.cachedScopes.computeIfAbsent(sourceId.getModulePath(), sid -> new CacheScope());
+      // This horribly sucks, but valera said it was ok
+      boolean addToGrandparentScope = definition instanceof ClassField || definition instanceof Constructor;
+      cacheScope.ensureReferable(name.proj2, name.proj1, addToGrandparentScope);
     }
   }
 

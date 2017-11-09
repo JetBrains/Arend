@@ -4,21 +4,27 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -27,8 +33,10 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -42,10 +50,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   // Modules
   protected final ModuleTracker moduleTracker;
-  protected final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
+  final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
-  private final SourceInfoProvider<SourceIdT> srcInfoProvider;
+  protected final SourceInfoProvider<SourceIdT> srcInfoProvider;
   private CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
@@ -94,6 +102,45 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
   }
 
+  static class CliModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
+    final Map<ModulePath, Scope> loadedScopes = new HashMap<>();
+    final Map<ModulePath, CacheScope> cachedScopes = new HashMap<>();
+
+    @Override
+    public void registerModule(ModulePath modulePath, Group group) {
+      if (loadedScopes.get(modulePath) != null) {
+        throw new IllegalStateException("Module already registered");
+      }
+      loadedScopes.put(modulePath, LexicalScope.opened(group));
+    }
+
+    @Override
+    public void unregisterModule(ModulePath path) {
+      loadedScopes.remove(path);
+    }
+
+    @Override
+    public boolean isRegistered(ModulePath modulePath) {
+      return loadedScopes.containsKey(modulePath);
+    }
+
+    @Nullable
+    @Override
+    public Scope forModule(@Nonnull ModulePath module) {
+      Scope scope = loadedScopes.get(module);
+      if (scope != null) {
+        return scope;
+      } else {
+        CacheScope cacheScope = cachedScopes.get(module);
+        if (cacheScope != null) {
+          return cacheScope.root;
+        } else {
+          return null;
+        }
+      }
+    }
+  }
+
   class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
@@ -107,7 +154,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         definitionIds.put(module, new HashMap<>());
       }
       collectIds(result.group, definitionIds.get(module));
-      sourceInfoProvider.registerGroup(result.group, new FullName(result.group.getReferable().textRepresentation()), module);
+      sourceInfoProvider.registerModule(result.group, module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
@@ -358,5 +405,40 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
     }
     errorReporter.getErrorList().clear();
+  }
+
+
+  public static String getNameIdFor(FullNameProvider fullNameProvider, GlobalReferable referable) {
+    Precedence precedence = referable.getPrecedence();
+    final char assocChr;
+    switch (precedence.associativity) {
+      case LEFT_ASSOC:
+        assocChr = 'l';
+        break;
+      case RIGHT_ASSOC:
+        assocChr = 'r';
+        break;
+      default:
+        assocChr = 'n';
+    }
+    return "" + assocChr + precedence.priority + ';' + String.join(" ", fullNameProvider.fullNameFor(referable).toList());
+  }
+
+  public static Pair<Precedence, List<String>> fullNameFromNameId(String s) {
+    final Precedence.Associativity assoc;
+    switch (s.charAt(0)) {
+      case 'l':
+        assoc = Precedence.Associativity.LEFT_ASSOC;
+        break;
+      case 'r':
+        assoc = Precedence.Associativity.RIGHT_ASSOC;
+        break;
+      default:
+        assoc = Precedence.Associativity.NON_ASSOC;
+    }
+
+    int sepIndex = s.indexOf(';');
+    final byte priority = Byte.parseByte(s.substring(1, sepIndex));
+    return new Pair<>(new Precedence(assoc, priority), Arrays.asList(s.substring(sepIndex + 1).split(" ")));
   }
 }
