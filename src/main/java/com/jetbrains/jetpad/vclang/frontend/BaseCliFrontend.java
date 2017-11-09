@@ -4,22 +4,17 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
-import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -36,7 +31,6 @@ import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -99,45 +93,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
     for (GlobalReferable field : group.getFields()) {
       collectIds(field, map);
-    }
-  }
-
-  static class CliModuleScopeProvider implements ModuleScopeProvider, ModuleRegistry {
-    final Map<ModulePath, Scope> loadedScopes = new HashMap<>();
-    final Map<ModulePath, CacheScope> cachedScopes = new HashMap<>();
-
-    @Override
-    public void registerModule(ModulePath modulePath, Group group) {
-      if (loadedScopes.get(modulePath) != null) {
-        throw new IllegalStateException("Module already registered");
-      }
-      loadedScopes.put(modulePath, LexicalScope.opened(group));
-    }
-
-    @Override
-    public void unregisterModule(ModulePath path) {
-      loadedScopes.remove(path);
-    }
-
-    @Override
-    public boolean isRegistered(ModulePath modulePath) {
-      return loadedScopes.containsKey(modulePath);
-    }
-
-    @Nullable
-    @Override
-    public Scope forModule(@Nonnull ModulePath module) {
-      Scope scope = loadedScopes.get(module);
-      if (scope != null) {
-        return scope;
-      } else {
-        CacheScope cacheScope = cachedScopes.get(module);
-        if (cacheScope != null) {
-          return cacheScope.root;
-        } else {
-          return null;
-        }
-      }
     }
   }
 

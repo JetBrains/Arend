@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
@@ -79,7 +80,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     final LibStorage libStorage;
     final PreludeStorage preludeStorage;
 
-    final CliModuleScopeProvider moduleScopeProvider = new CliModuleScopeProvider();
+    final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider();
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
