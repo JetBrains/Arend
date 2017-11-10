@@ -71,9 +71,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
     StorageManager(Path libDir, Path projectDir, Path cacheDir, ModuleResolver moduleResolver) throws IOException {
-      projectStorage = new FileStorage(projectDir, cacheDir, moduleScopeProvider, moduleResolver, moduleScopeProvider);
-      libStorage = libDir != null ? new LibStorage(libDir, moduleScopeProvider, moduleResolver, moduleScopeProvider) : null;
-      preludeStorage = new PreludeStorage(moduleScopeProvider);
+      projectStorage = new FileStorage(projectDir, cacheDir, sourceModuleScopeProvider, moduleResolver, moduleScopeProvider);
+      libStorage = libDir != null ? new LibStorage(libDir, sourceModuleScopeProvider, moduleResolver, moduleScopeProvider) : null;
+      preludeStorage = new PreludeStorage(sourceModuleScopeProvider);
 
       nonProjectCompositeStorage = new CompositeStorage<>(libStorage != null ? libStorage : new NullStorage<>(), preludeStorage);
       storage = new CompositeStorage<>(projectStorage, nonProjectCompositeStorage);

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 
 import javax.annotation.Nonnull;
@@ -8,8 +9,13 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CacheModuleScopeProvider extends SimpleModuleScopeProvider {
-  private final Map<ModulePath, CacheScope> cachedScopes = new HashMap<>();
+public class CacheModuleScopeProvider implements ModuleScopeProvider {
+  private final ModuleScopeProvider mySourceScopeProvider;
+  private final Map<ModulePath, CacheScope> myCachedScopes = new HashMap<>();
+
+  public CacheModuleScopeProvider(ModuleScopeProvider soureScopeProvider) {
+    mySourceScopeProvider = soureScopeProvider;
+  }
 
   @Nullable
   @Override
@@ -28,14 +34,14 @@ public class CacheModuleScopeProvider extends SimpleModuleScopeProvider {
   }
 
   public Scope forLoadedModule(@Nonnull ModulePath module) {
-    return super.forModule(module);
+    return mySourceScopeProvider.forModule(module);
   }
 
   public CacheScope forCacheModule(@Nonnull ModulePath module) {
-    return cachedScopes.get(module);
+    return myCachedScopes.get(module);
   }
 
   public CacheScope ensureForCacheModule(@Nonnull ModulePath module) {
-    return cachedScopes.computeIfAbsent(module, m -> new CacheScope());
+    return myCachedScopes.computeIfAbsent(module, m -> new CacheScope());
   }
 }

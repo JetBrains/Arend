@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
@@ -41,7 +42,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ResultTracker resultTracker = new ResultTracker();
 
   // Modules
-  protected final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider();
+  protected final SimpleModuleScopeProvider sourceModuleScopeProvider = new SimpleModuleScopeProvider();
+  protected final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider(sourceModuleScopeProvider);
   protected final ModuleTracker moduleTracker;
   private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
