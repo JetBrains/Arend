@@ -6,12 +6,8 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.net.URI;
 
-public interface PersistenceProvider<SourceIdT extends SourceId> {
-  @Nonnull URI getUri(SourceIdT sourceId);
-  @Nullable SourceIdT getModuleId(URI sourceUrl);
-
+public interface PersistenceProvider<SourceIdT extends SourceId> extends ModuleUriProvider<SourceIdT> {
   default boolean needsCaching(GlobalReferable def, Definition typechecked) {
     return true;
   }

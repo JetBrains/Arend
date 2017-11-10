@@ -26,7 +26,7 @@ public class CacheManager<SourceIdT extends SourceId> {
   private final Set<SourceIdT> myStubsLoaded = new HashSet<>();
 
   public CacheManager(PersistenceProvider<SourceIdT> persistenceProvider, CacheStorageSupplier<SourceIdT> cacheSupplier,
-                      SourceVersionTracker<SourceIdT> versionTracker, DefinitionLocator<SourceIdT> defLocator) {
+                      DefinitionLocator<SourceIdT> defLocator, SourceVersionTracker<SourceIdT> versionTracker) {
     myPersistenceProvider = persistenceProvider;
     myCacheSupplier = cacheSupplier;
     myVersionTracker = versionTracker;

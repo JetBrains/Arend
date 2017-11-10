@@ -86,7 +86,7 @@ public class PreludeCacheGenerator {
 
     @Override
     public @Nullable String getIdFor(GlobalReferable definition) {
-      return BaseCliFrontend.getNameIdFor(myFullNameProvider, definition);
+      return SourcelessCacheManager.getNameIdFor(myFullNameProvider, definition);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class PreludeCacheGenerator {
     PreludeStorage storage = new PreludeStorage(null);
     SimpleSourceInfoProvider<PreludeStorage.SourceId> sourceInfoProvider = new SimpleSourceInfoProvider<>();
     CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(sourceInfoProvider), new PreludeBuildCacheSupplier(Paths.get(args[0])),
-        new PreludeVersionTracker(), new PreludeDefLocator(storage.preludeSourceId));
+        new PreludeDefLocator(storage.preludeSourceId), new PreludeVersionTracker());
 
     final ListErrorReporter errorReporter = new ListErrorReporter();
     Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;

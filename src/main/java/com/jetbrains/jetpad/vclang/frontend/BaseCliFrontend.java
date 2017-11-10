@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
@@ -17,9 +18,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -28,7 +27,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -43,8 +41,9 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ResultTracker resultTracker = new ResultTracker();
 
   // Modules
+  protected final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider();
   protected final ModuleTracker moduleTracker;
-  final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
+  private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   protected final SourceInfoProvider<SourceIdT> srcInfoProvider;
@@ -69,7 +68,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     moduleTracker.setStorage(storage);
-    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
+    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), moduleScopeProvider, srcInfoProvider, moduleTracker);
     state = cacheManager.getTypecheckerState();
   }
 
@@ -177,7 +176,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
 
-  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
+  protected abstract ModuleUriProvider<SourceIdT> createModuleUriProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
 
@@ -360,40 +359,5 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
     }
     errorReporter.getErrorList().clear();
-  }
-
-
-  public static String getNameIdFor(FullNameProvider fullNameProvider, GlobalReferable referable) {
-    Precedence precedence = referable.getPrecedence();
-    final char assocChr;
-    switch (precedence.associativity) {
-      case LEFT_ASSOC:
-        assocChr = 'l';
-        break;
-      case RIGHT_ASSOC:
-        assocChr = 'r';
-        break;
-      default:
-        assocChr = 'n';
-    }
-    return "" + assocChr + precedence.priority + ';' + String.join(" ", fullNameProvider.fullNameFor(referable).toList());
-  }
-
-  public static Pair<Precedence, List<String>> fullNameFromNameId(String s) {
-    final Precedence.Associativity assoc;
-    switch (s.charAt(0)) {
-      case 'l':
-        assoc = Precedence.Associativity.LEFT_ASSOC;
-        break;
-      case 'r':
-        assoc = Precedence.Associativity.RIGHT_ASSOC;
-        break;
-      default:
-        assoc = Precedence.Associativity.NON_ASSOC;
-    }
-
-    int sepIndex = s.indexOf(';');
-    final byte priority = Byte.parseByte(s.substring(1, sepIndex));
-    return new Pair<>(new Precedence(assoc, priority), Arrays.asList(s.substring(sepIndex + 1).split(" ")));
   }
 }
