@@ -541,6 +541,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
     if (referable != null) {
       myContext.put(referable, link);
+    } else {
+      myFreeBindings.add(link);
     }
     return link;
   }
@@ -561,6 +563,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         if (referableList.get(i) != null) {
           myContext.put(referableList.get(i), link1);
+        } else {
+          myFreeBindings.add(link1);
         }
       }
       return link;
@@ -578,9 +582,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (expectedType != null) {
       expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       if (param.getExplicit() && expectedType.isInstance(PiExpression.class) && !expectedType.cast(PiExpression.class).getParameters().isExplicit()) {
-        // myContext.put(referable, piParams);
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         SingleDependentLink piParams = piExpectedType.getParameters();
+        myFreeBindings.add(piParams);
         Result bodyResult = visitLam(parameters, expr, piExpectedType.getCodomain(), argIndex + DependentLink.Helper.size(piParams));
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(piParams.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
@@ -610,7 +614,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (referable != null) {
           myContext.put(referable, link);
         } else {
-          myFreeBindings.add(link); // TODO[references]
+          myFreeBindings.add(link);
         }
         Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
         Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);
@@ -705,14 +709,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Result visitLam(Concrete.LamExpression expr, ExpectedType expectedType) {
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      Result result = visitLam(expr.getParameters(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
-      if (result != null && expectedType != null && !(expectedType instanceof Expression)) {
-        if (!result.type.isError()) {
-          myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
+      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        Result result = visitLam(expr.getParameters(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
+        if (result != null && expectedType != null && !(expectedType instanceof Expression)) {
+          if (!result.type.isError()) {
+            myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
+          }
+          return null;
         }
-        return null;
+        return result;
       }
-      return result;
     }
   }
 
@@ -722,42 +728,46 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      for (Concrete.TypeParameter arg : expr.getParameters()) {
-        Type result = checkType(arg.getType(), ExpectedType.OMEGA);
-        if (result == null) return null;
+      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        for (Concrete.TypeParameter arg : expr.getParameters()) {
+          Type result = checkType(arg.getType(), ExpectedType.OMEGA);
+          if (result == null) return null;
 
-        if (arg instanceof Concrete.TelescopeParameter) {
-          List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
-          List<String> names = new ArrayList<>(referableList.size());
-          for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.textRepresentation());
-          }
-          SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
-          list.add(link);
-          int i = 0;
-          for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-            if (referableList.get(i) != null) {
-              myContext.put(referableList.get(i), link1);
+          if (arg instanceof Concrete.TelescopeParameter) {
+            List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
+            List<String> names = new ArrayList<>(referableList.size());
+            for (Referable referable : referableList) {
+              names.add(referable == null ? null : referable.textRepresentation());
             }
+            SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
+            list.add(link);
+            int i = 0;
+            for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+              if (referableList.get(i) != null) {
+                myContext.put(referableList.get(i), link1);
+              } else {
+                myFreeBindings.add(link1);
+              }
+            }
+          } else {
+            list.add(new TypedSingleDependentLink(arg.getExplicit(), null, result));
           }
-        } else {
-          list.add(new TypedSingleDependentLink(arg.getExplicit(), null, result));
+
+          sorts.add(result.getSortOfType());
         }
 
-        sorts.add(result.getSortOfType());
+        Type result = checkType(expr.getCodomain(), ExpectedType.OMEGA);
+        if (result == null) return null;
+        Sort codSort = result.getSortOfType();
+
+        Expression piExpr = result.getExpr();
+        for (int i = list.size() - 1; i >= 0; i--) {
+          codSort = PiExpression.generateUpperBound(sorts.get(i), codSort, myEquations, expr);
+          piExpr = new PiExpression(codSort, list.get(i), piExpr);
+        }
+
+        return checkResult(expectedType, new Result(piExpr, new UniverseExpression(codSort)), expr);
       }
-
-      Type result = checkType(expr.getCodomain(), ExpectedType.OMEGA);
-      if (result == null) return null;
-      Sort codSort = result.getSortOfType();
-
-      Expression piExpr = result.getExpr();
-      for (int i = list.size() - 1; i >= 0; i--) {
-        codSort = PiExpression.generateUpperBound(sorts.get(i), codSort, myEquations, expr);
-        piExpr = new PiExpression(codSort, list.get(i), piExpr);
-      }
-
-      return checkResult(expectedType, new Result(piExpr, new UniverseExpression(codSort)), expr);
     }
   }
 
@@ -896,30 +906,34 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     LinkList list = new LinkList();
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      for (Concrete.TypeParameter arg : parameters) {
-        Type result = checkType(arg.getType(), ExpectedType.OMEGA);
-        if (result == null) return null;
+      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        for (Concrete.TypeParameter arg : parameters) {
+          Type result = checkType(arg.getType(), ExpectedType.OMEGA);
+          if (result == null) return null;
 
-        if (arg instanceof Concrete.TelescopeParameter) {
-          List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
-          List<String> names = new ArrayList<>(referableList.size());
-          for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.textRepresentation());
-          }
-          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
-          list.append(link);
-          int i = 0;
-          for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-            if (referableList.get(i) != null) {
-              myContext.put(referableList.get(i), link1);
+          if (arg instanceof Concrete.TelescopeParameter) {
+            List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
+            List<String> names = new ArrayList<>(referableList.size());
+            for (Referable referable : referableList) {
+              names.add(referable == null ? null : referable.textRepresentation());
             }
+            DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
+            list.append(link);
+            int i = 0;
+            for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
+              if (referableList.get(i) != null) {
+                myContext.put(referableList.get(i), link1);
+              } else {
+                myFreeBindings.add(link1);
+              }
+            }
+          } else {
+            DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), (String) null, result);
+            list.append(link);
           }
-        } else {
-          DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), (String) null, result);
-          list.append(link);
-        }
 
-        resultSorts.add(result.getSortOfType());
+          resultSorts.add(result.getSortOfType());
+        }
       }
     }
 
@@ -1248,11 +1262,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private LetClause typecheckLetClause(Concrete.LetClause clause) {
     LetClause letResult;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
-      Result result = typecheckLetClause(clause.getParameters(), clause, 1);
-      if (result == null) {
-        return null;
+      try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        Result result = typecheckLetClause(clause.getParameters(), clause, 1);
+        if (result == null) {
+          return null;
+        }
+        letResult = new LetClause(clause.getData().textRepresentation(), result.expression);
       }
-      letResult = new LetClause(clause.getData().textRepresentation(), result.expression);
     }
     return letResult;
   }

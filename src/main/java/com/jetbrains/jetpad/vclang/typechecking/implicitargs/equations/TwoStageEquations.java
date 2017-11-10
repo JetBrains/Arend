@@ -138,8 +138,7 @@ public class TwoStageEquations implements Equations {
           for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
             myVisitor.getFreeBindings().add(link);
           }
-          Set<Binding> bounds = myVisitor.getAllBindings();
-          InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), bounds);
+          InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
           addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
