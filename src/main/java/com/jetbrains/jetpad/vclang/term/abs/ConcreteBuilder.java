@@ -84,10 +84,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
 
       Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
-      if (patterns.isEmpty()) {
-        throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(clause));
-      }
-      clauses.add(new Concrete.ConstructorClause(clause.getData(), buildPatterns(patterns), constructors));
+      clauses.add(new Concrete.ConstructorClause(clause.getData(), patterns.isEmpty() ? null : buildPatterns(patterns), constructors));
     }
 
     return data;

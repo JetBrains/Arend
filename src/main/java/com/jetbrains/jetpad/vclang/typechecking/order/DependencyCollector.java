@@ -23,7 +23,7 @@ public class DependencyCollector implements DependencyListener {
   }
 
   public void update(GlobalReferable definition) {
-    if (myState.getTypechecked(definition) != null) {
+    if (myState.getTypechecked(definition) == null) {
       return;
     }
 
