@@ -81,9 +81,9 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
     public void registerCachedDefinition(SourceIdT sourceId, String id, Definition definition) {
       Pair<Precedence, List<String>> name = fullNameFromNameId(id);
       CacheScope cacheScope = myScopeProvider.ensureForCacheModule(sourceId.getModulePath());
-      // This horribly sucks, but valera said it was ok
-      boolean addToGrandparentScope = definition instanceof ClassField || definition instanceof Constructor;
-      cacheScope.ensureReferable(name.proj2, name.proj1, addToGrandparentScope);
+      GlobalReferable ref = definition.getReferable();
+      GlobalReferable tcRef = ref.getTypecheckable();
+      cacheScope.ensureReferable(name.proj2, name.proj1, ref == tcRef ? null : tcRef);
     }
   }
 

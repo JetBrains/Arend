@@ -54,10 +54,6 @@ public class Ordering {
     if (definition instanceof Concrete.ClassView) { // TODO[classes]: Typecheck class views
       return;
     }
-    if (!myListener.needsOrdering(definition)) {
-      myListener.alreadyTypechecked(definition);
-      return;
-    }
 
     Typecheckable typecheckable = new Typecheckable(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckable)) {
@@ -68,10 +64,6 @@ public class Ordering {
   private enum OrderResult { REPORTED, NOT_REPORTED, RECURSION_ERROR }
 
   private OrderResult updateState(DefState currentState, Typecheckable dependency) {
-    if (!myListener.needsOrdering(dependency.getDefinition())) {
-      return OrderResult.REPORTED;
-    }
-
     OrderResult ok = OrderResult.REPORTED;
     DefState state = myVertices.get(dependency);
     if (state == null) {
@@ -160,19 +152,19 @@ public class Ordering {
     }
 
     for (GlobalReferable referable : dependencies) {
-      Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(referable);
-      if (dependency == null) {
-        continue;
-      }
-      Concrete.Definition dependencyDef = dependency.getRelatedDefinition();
-
-      if (dependencyDef.getData().equals(definition.getData())) {
-        if (!(dependency instanceof Concrete.ClassField)) {
+      GlobalReferable tcReferable = referable.getTypecheckable();
+      if (tcReferable.equals(definition.getData())) {
+        if (referable.equals(tcReferable)) {
           recursion = DependencyListener.Recursion.IN_BODY;
         }
       } else {
-        myListener.dependsOn(typecheckable, dependencyDef);
-        updateState(currentState, new Typecheckable(dependencyDef, myRefToHeaders));
+        myListener.dependsOn(typecheckable, tcReferable);
+        if (myListener.needsOrdering(tcReferable)) {
+          Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
+          if (dependency instanceof Concrete.Definition) {
+            updateState(currentState, new Typecheckable((Concrete.Definition) dependency, myRefToHeaders));
+          }
+        }
       }
     }
 

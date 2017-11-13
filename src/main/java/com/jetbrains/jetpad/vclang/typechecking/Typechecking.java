@@ -78,10 +78,16 @@ public class Typechecking implements DependencyListener {
   }
 
   private void orderGroup(Group group, Ordering ordering) {
-    Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(group.getReferable());
-    if (def instanceof Concrete.Definition) {
-      ordering.doOrder((Concrete.Definition) def);
+    GlobalReferable referable = group.getReferable();
+    if (needsOrdering(referable)) {
+      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
+      if (def instanceof Concrete.Definition) {
+        ordering.doOrder((Concrete.Definition) def);
+      }
+    } else {
+      alreadyTypechecked(referable);
     }
+
     for (Group subgroup : group.getSubgroups()) {
       orderGroup(subgroup, ordering);
     }
@@ -89,7 +95,6 @@ public class Typechecking implements DependencyListener {
       orderGroup(subgroup, ordering);
     }
   }
-
 
   @Override
   public void sccFound(SCC scc) {
@@ -147,26 +152,25 @@ public class Typechecking implements DependencyListener {
   }
 
   @Override
-  public boolean needsOrdering(Concrete.Definition definition) {
+  public boolean needsOrdering(GlobalReferable definition) {
     if (myDependencyListener.needsOrdering(definition)) {
       return true;
     }
 
-    Definition typechecked = myState.getTypechecked(definition.getData());
+    Definition typechecked = myState.getTypechecked(definition);
     return typechecked == null || typechecked.status().needsTypeChecking();
   }
 
   @Override
-  public void alreadyTypechecked(Concrete.Definition definition) {
-    myTypecheckedReporter.typecheckingFinished(myState.getTypechecked(definition.getData()));
+  public void alreadyTypechecked(GlobalReferable definition) {
+    myTypecheckedReporter.typecheckingFinished(myState.getTypechecked(definition));
     myDependencyListener.alreadyTypechecked(definition);
   }
 
   @Override
-  public void dependsOn(Typecheckable unit, Concrete.Definition def) {
+  public void dependsOn(Typecheckable unit, GlobalReferable def) {
     myDependencyListener.dependsOn(unit, def);
   }
-
 
   private boolean typecheckHeaders(SCC scc) {
     int numberOfHeaders = 0;

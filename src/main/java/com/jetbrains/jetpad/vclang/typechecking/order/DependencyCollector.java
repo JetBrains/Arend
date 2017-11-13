@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 
@@ -17,9 +16,9 @@ public class DependencyCollector implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(Typecheckable unit, Concrete.Definition def) {
-    myDependencies.computeIfAbsent(unit.getDefinition().getData(), k -> new HashSet<>()).add(def.getData());
-    myReverseDependencies.computeIfAbsent(def.getData(), k -> new HashSet<>()).add(unit.getDefinition().getData());
+  public void dependsOn(Typecheckable unit, GlobalReferable def) {
+    myDependencies.computeIfAbsent(unit.getDefinition().getData(), k -> new HashSet<>()).add(def);
+    myReverseDependencies.computeIfAbsent(def, k -> new HashSet<>()).add(unit.getDefinition().getData());
   }
 
   public void update(GlobalReferable definition) {

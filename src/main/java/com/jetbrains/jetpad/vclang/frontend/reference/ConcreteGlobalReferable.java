@@ -30,6 +30,11 @@ public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
     return myDefinition;
   }
 
+  @Override
+  public GlobalReferable getTypecheckable() {
+    return myDefinition.getRelatedDefinition().getData();
+  }
+
   public void setDefinition(Concrete.ReferableDefinition definition) {
     assert myDefinition == null;
     myDefinition = definition;
