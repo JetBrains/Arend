@@ -38,7 +38,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
       }
     };
     storage = new MemoryStorage(null, null, EmptyModuleScopeProvider.INSTANCE);
-    moduleLoader.setStorage(storage);
+    moduleLoader.setSourceSupplier(storage);
   }
 
   protected Group load(MemoryStorage.SourceId sourceId) {

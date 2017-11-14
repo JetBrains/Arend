@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.module.caching;
 
-import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
@@ -61,14 +59,9 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
     @Override
     public @Nonnull GlobalReferable getFromId(SourceIdT sourceId, String id) {
       Pair<Precedence, List<String>> name = fullNameFromNameId(id);
-      Scope scope = myScopeProvider.forLoadedModule(sourceId.getModulePath());
+      Scope scope = myScopeProvider.forModule(sourceId.getModulePath());
       if (scope == null) {
-        // Source is not loaded, lookup in cache
-        CacheScope cacheScope = myScopeProvider.forCacheModule(sourceId.getModulePath());
-        if (cacheScope == null) {
-          throw new IllegalStateException("Required cache is not loaded");
-        }
-        scope = cacheScope.root;
+        throw new IllegalStateException("Required cache is not loaded");
       }
       Referable res = Scope.Utils.resolveName(scope, name.proj2);
       if (res instanceof GlobalReferable) {

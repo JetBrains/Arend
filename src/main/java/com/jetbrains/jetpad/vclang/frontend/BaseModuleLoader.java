@@ -2,23 +2,22 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.source.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
-  protected Storage<SourceIdT> myStorage;
+  protected SourceSupplier<SourceIdT> mySourceSupplier;
   private final ErrorReporter myErrorReporter;
 
   public BaseModuleLoader(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 
-  public void setStorage(Storage<SourceIdT> storage) {
-    myStorage = storage;
+  public void setSourceSupplier(SourceSupplier<SourceIdT> sourceSupplier) {
+    mySourceSupplier = sourceSupplier;
   }
 
   protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {}
@@ -28,7 +27,7 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   @Override
   public ChildGroup load(SourceIdT sourceId) {
     final SourceSupplier.LoadResult result;
-    result = myStorage.loadSource(sourceId, myErrorReporter);
+    result = mySourceSupplier.loadSource(sourceId, myErrorReporter);
 
     if (result != null) {
       loadingSucceeded(sourceId, result);
@@ -45,7 +44,8 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
     return sourceId != null && load(sourceId) != null;
   }
 
+  @Override
   public SourceIdT locateModule(ModulePath modulePath) {
-    return myStorage.locateModule(modulePath);
+    return mySourceSupplier.locateModule(modulePath);
   }
 }

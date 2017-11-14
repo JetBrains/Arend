@@ -69,7 +69,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       throw new IllegalStateException();
     }
 
-    moduleTracker.setStorage(storage);
+    moduleTracker.setSourceSupplier(storage);
     cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), moduleScopeProvider, srcInfoProvider, moduleTracker);
     state = cacheManager.getTypecheckerState();
   }
@@ -133,7 +133,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     public boolean isAvailable(SourceIdT sourceId) {
-      return myStorage.isAvailable(sourceId);
+      return mySourceSupplier.isAvailable(sourceId);
     }
 
     @Override

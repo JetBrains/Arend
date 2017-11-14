@@ -57,7 +57,7 @@ public class CachingTestCase extends NameResolverTestCase {
       }
     };
     storage = new MemoryStorage(moduleScopeProvider, moduleLoader, moduleScopeProvider);
-    moduleLoader.setStorage(storage);
+    moduleLoader.setSourceSupplier(storage);
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
     tcState = cacheManager.getTypecheckerState();
