@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
@@ -36,8 +35,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
-  protected final Map<SourceIdT, Map<String, GlobalReferable>> definitionIds = new HashMap<>();
-
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
   protected final ResultTracker resultTracker = new ResultTracker();
 
@@ -74,29 +71,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     state = cacheManager.getTypecheckerState();
   }
 
-  private static void collectIds(GlobalReferable reference, Map<String, GlobalReferable> map) {
-    if (reference instanceof ConcreteGlobalReferable) {
-      map.put(((ConcreteGlobalReferable) reference).positionTextRepresentation(), reference);
-    }
-  }
-
-  private static void collectIds(Group group, Map<String, GlobalReferable> map) {
-    collectIds(group.getReferable(), map);
-
-    for (Group subGroup : group.getSubgroups()) {
-      collectIds(subGroup, map);
-    }
-    for (GlobalReferable constructor : group.getConstructors()) {
-      collectIds(constructor, map);
-    }
-    for (Group subGroup : group.getDynamicSubgroups()) {
-      collectIds(subGroup, map);
-    }
-    for (GlobalReferable field : group.getFields()) {
-      collectIds(field, map);
-    }
-  }
-
   class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
@@ -106,10 +80,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     @Override
     protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
-      if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<>());
-      }
-      collectIds(result.group, definitionIds.get(module));
       sourceInfoProvider.registerModule(result.group, module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
