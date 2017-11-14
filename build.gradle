@@ -81,8 +81,8 @@ task prelude(type:JavaExec) {
 }
 
 prelude.dependsOn copyPrelude
-jar.dependsOn prelude
-jarDep.dependsOn prelude
+// jar.dependsOn prelude
+// jarDep.dependsOn prelude
 
 /* Prelude is copied in the copyPrelude task
 jar {
