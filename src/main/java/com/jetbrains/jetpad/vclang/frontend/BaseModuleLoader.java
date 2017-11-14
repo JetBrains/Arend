@@ -40,13 +40,12 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
   }
 
   @Override
-  public void load(ModulePath modulePath) {
-    load(locateModule(modulePath));
+  public boolean load(ModulePath modulePath) {
+    SourceIdT sourceId = locateModule(modulePath);
+    return sourceId != null && load(sourceId) != null;
   }
 
   public SourceIdT locateModule(ModulePath modulePath) {
-    SourceIdT sourceId = myStorage.locateModule(modulePath);
-    if (sourceId == null) throw new IllegalStateException();
-    return sourceId;
+    return myStorage.locateModule(modulePath);
   }
 }

@@ -2,13 +2,16 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
@@ -19,6 +22,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collection;
+import java.util.Collections;
 
 public abstract class ParseSource {
   private final SourceId mySourceId;
@@ -66,7 +71,15 @@ public abstract class ParseSource {
           if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
             ModulePath modulePath = new ModulePath(command.getPath());
             if (!moduleRegistry.isRegistered(modulePath)) {
-              moduleResolver.load(modulePath);
+              boolean loaded = moduleResolver.load(modulePath);
+              if (!loaded) {
+                compositeErrorReporter.report(new GeneralError(Error.Level.ERROR, "[Import] Could not load module: " + modulePath) {
+                  @Override
+                  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+                    return Collections.singleton(result.getReferable());
+                  }
+                });
+              }
             }
           }
         }

@@ -132,17 +132,6 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       return super.load(sourceId);
     }
 
-    @Override
-    public void load(ModulePath modulePath) {
-      load(locateModule(modulePath));
-    }
-
-    public SourceIdT locateModule(ModulePath modulePath) {
-      SourceIdT sourceId = myStorage.locateModule(modulePath);
-      if (sourceId == null) throw new IllegalStateException();
-      return sourceId;
-    }
-
     public boolean isAvailable(SourceIdT sourceId) {
       return myStorage.isAvailable(sourceId);
     }
