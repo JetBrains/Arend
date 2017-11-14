@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
@@ -15,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -728,52 +726,23 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
     if (!ctx.onlyLevelAtom().isEmpty()) {
       if (expr instanceof Concrete.ReferenceExpression) {
-        Concrete.LevelExpression pLevel = null;
-        Concrete.LevelExpression hLevel = null;
-        for (OnlyLevelAtomContext levelCtx : ctx.onlyLevelAtom()) {
-          Object obj = visit(levelCtx);
-          if (obj instanceof Pair) {
-            if ((pLevel == null || ((Pair) obj).proj1 == null) && (hLevel == null || ((Pair) obj).proj2 == null)) {
-              if (((Pair) obj).proj1 != null) {
-                pLevel = (Concrete.LevelExpression) ((Pair) obj).proj1;
-              }
-              if (((Pair) obj).proj2 != null) {
-                hLevel = (Concrete.LevelExpression) ((Pair) obj).proj2;
-              }
-            } else {
-              myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), (pLevel != null ? "p" : "h") + "-level is already specified"));
-            }
-          } else if (obj instanceof Concrete.LevelExpression) {
-            LevelType type = getLevelType((Concrete.LevelExpression) obj);
-            if (type == LevelType.PLevel) {
-              if (pLevel != null) {
-                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "p-level is already specified"));
-              } else {
-                pLevel = (Concrete.LevelExpression) obj;
-              }
-            } else if (type == LevelType.HLevel) {
-              if (hLevel != null) {
-                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "h-level is already specified"));
-              } else {
-                hLevel = (Concrete.LevelExpression) obj;
-              }
-            } else if (type == LevelType.Unknown) {
-              if (pLevel == null) {
-                pLevel = (Concrete.LevelExpression) obj;
-              } else if (hLevel == null) {
-                hLevel = (Concrete.LevelExpression) obj;
-              } else {
-                myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "Both levels are already specified"));
-              }
-            } else {
-              myErrorReporter.report(new ParserError(tokenPosition(levelCtx.start), "Cannot mix levels of different type"));
-            }
-          } else {
-            throw new IllegalStateException();
-          }
+        Object obj1 = ctx.onlyLevelAtom().isEmpty() ? null : visit(ctx.onlyLevelAtom(0));
+        Object obj2 = ctx.onlyLevelAtom().size() < 2 ? null : visit(ctx.onlyLevelAtom(1));
+        if (ctx.onlyLevelAtom().size() > 2 || obj1 instanceof Pair && obj2 != null || obj2 instanceof Pair) {
+          myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "too many level specifications"));
         }
 
-        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), pLevel, hLevel);
+        Concrete.LevelExpression level1;
+        Concrete.LevelExpression level2;
+        if (obj1 instanceof Pair) {
+          level1 = (Concrete.LevelExpression) ((Pair) obj1).proj1;
+          level2 = (Concrete.LevelExpression) ((Pair) obj1).proj2;
+        } else {
+          level1 = (Concrete.LevelExpression) obj1;
+          level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
+        }
+
+        expr = Concrete.ReferenceExpression.make(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are allowed only after a reference"));
       }
@@ -799,50 +768,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     return expr;
-  }
-
-  enum LevelType { PLevel, HLevel, Unknown }
-
-  private LevelType getLevelType(Concrete.LevelExpression expr) {
-    return expr.accept(new ConcreteLevelExpressionVisitor<Void, LevelType>() {
-      @Override
-      public LevelType visitInf(Concrete.InfLevelExpression expr, Void param) {
-        return LevelType.HLevel;
-      }
-
-      @Override
-      public LevelType visitLP(Concrete.PLevelExpression expr, Void param) {
-        return LevelType.PLevel;
-      }
-
-      @Override
-      public LevelType visitLH(Concrete.HLevelExpression expr, Void param) {
-        return LevelType.HLevel;
-      }
-
-      @Override
-      public LevelType visitNumber(Concrete.NumberLevelExpression expr, Void param) {
-        return LevelType.Unknown;
-      }
-
-      @Override
-      public LevelType visitSuc(Concrete.SucLevelExpression expr, Void param) {
-        return expr.getExpression().accept(this, null);
-      }
-
-      @Override
-      public LevelType visitMax(Concrete.MaxLevelExpression expr, Void param) {
-        LevelType type1 = expr.getLeft().accept(this, null);
-        LevelType type2 = expr.getRight().accept(this, null);
-        return type1 == null || type2 == null || type1 != type2 && type1 != LevelType.Unknown && type2 != LevelType.Unknown ? null : type1 == LevelType.Unknown ? type2 : type1;
-      }
-
-      @Override
-      public LevelType visitVar(Concrete.InferVarLevelExpression expr, Void param) {
-        LevelVariable.LvlType type = expr.getVariable().getType();
-        return type == LevelVariable.LvlType.PLVL ? LevelType.PLevel : type == LevelVariable.LvlType.HLVL ? LevelType.HLevel : null;
-      }
-    }, null);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {

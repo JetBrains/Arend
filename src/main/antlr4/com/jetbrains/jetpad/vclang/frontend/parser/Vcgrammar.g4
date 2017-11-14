@@ -100,9 +100,10 @@ levelExpr : levelAtom                     # atomLevel
           | '\\max' levelAtom levelAtom   # maxLevel
           ;
 
-onlyLevelAtom : '\\lp'                          # pOnlyLevel
-              | '\\lh'                          # hOnlyLevel
-              | '(' onlyLevelExpr ')'           # parenOnlyLevel
+onlyLevelAtom : '\\lp'                                                # pOnlyLevel
+              | '\\lh'                                                # hOnlyLevel
+              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
+              | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
 
 maybeLevelAtom : levelAtom  # withLevelAtom
@@ -110,7 +111,6 @@ maybeLevelAtom : levelAtom  # withLevelAtom
                ;
 
 onlyLevelExpr : onlyLevelAtom                                         # atomOnlyLevel
-              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
               | '\\suc' levelAtom                                     # sucOnlyLevel
               | '\\max' levelAtom levelAtom                           # maxOnlyLevel
               ;
