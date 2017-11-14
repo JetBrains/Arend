@@ -52,18 +52,12 @@ public class CacheManager<SourceIdT extends SourceId> {
    * loaded as all the references will have been resolved).
    *
    * @param sourceId  ID of the source to load cache of
-   * @param module    root class (module) loaded from the provided source
    *
    * @return <code>true</code> if loading succeeded;
    *         <code>false</code> otherwise.
    * @throws CacheLoadingException if an <code>IOException</code> occurs.
    */
-  public boolean loadCache(@Nonnull SourceIdT sourceId, @Nonnull GlobalReferable module) throws CacheLoadingException {
-    if (!sourceId.equals(myDefLocator.sourceOf(module))) throw new IllegalArgumentException();
-    return loadCache(sourceId);
-  }
-
-  private boolean loadCache(@Nonnull SourceIdT sourceId) throws CacheLoadingException {
+  public boolean loadCache(@Nonnull SourceIdT sourceId) throws CacheLoadingException {
     if (myStubsLoaded.contains(sourceId)) return true;
 
     LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);

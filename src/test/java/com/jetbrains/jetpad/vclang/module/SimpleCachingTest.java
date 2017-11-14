@@ -31,7 +31,7 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(a);
     tcState.reset();
 
-    load(a, aClass.getReferable());
+    load(a);
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(b1Status)));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(b2Status)));
@@ -68,7 +68,7 @@ public class SimpleCachingTest extends CachingTestCase {
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(nullValue()));
 
-    load(a, aClass.getReferable());
+    load(a);
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(notNullValue()));
   }
@@ -93,7 +93,7 @@ public class SimpleCachingTest extends CachingTestCase {
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(nullValue()));
 
-    load(a, aClass.getReferable());
+    load(a);
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "D")), is(notNullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "a")), is(nullValue()));
     assertThat(tcState.getTypechecked(get(aClass.getGroupScope(), "b")), is(notNullValue()));
@@ -110,7 +110,7 @@ public class SimpleCachingTest extends CachingTestCase {
 
     storage.incVersion(ModulePath.moduleName("A"));
     try {
-      tryLoad(a, aClass.getReferable(), false);
+      tryLoad(a, false);
       fail("Exception expected");
     } catch (CacheLoadingException e) {
       assertThat(e.getMessage(), is(equalTo("Source has changed")));
@@ -129,7 +129,7 @@ public class SimpleCachingTest extends CachingTestCase {
 
     storage.incVersion(ModulePath.moduleName("A"));
     try {
-      tryLoad(b, bClass.getReferable(), false);
+      tryLoad(b, false);
       fail("Exception expected");
     } catch (CacheLoadingException e) {
       assertThat(e.getMessage(), is(equalTo("Source has changed")));
@@ -150,9 +150,9 @@ public class SimpleCachingTest extends CachingTestCase {
     moduleScopeProvider.unregisterModule(ModulePath.moduleName("B"));
 
     storage.incVersion(ModulePath.moduleName("A"));
-    bClass = moduleLoader.load(b);
+    moduleLoader.load(b);
     try {
-      tryLoad(b, bClass.getReferable(), false);
+      tryLoad(b, false);
       fail("Exception expected");
     } catch (CacheLoadingException e) {
       assertThat(e.getMessage(), is(equalTo("Source has changed")));

@@ -166,7 +166,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     assert errorReporter.getErrorList().isEmpty();
     boolean cacheLoaded;
     try {
-      cacheLoaded = cacheManager.loadCache(sourceId, prelude.getReferable());
+      cacheLoaded = cacheManager.loadCache(sourceId);
     } catch (CacheLoadingException e) {
       cacheLoaded = false;
     }
@@ -215,7 +215,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
         if (useCache) {
           try {
-            cacheManager.loadCache(source, group.getReferable());
+            cacheManager.loadCache(source);
           } catch (CacheLoadingException e) {
             //e.printStackTrace();
           }
