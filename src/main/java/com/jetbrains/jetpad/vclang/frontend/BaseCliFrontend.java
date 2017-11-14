@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.caching.*;
@@ -16,6 +15,7 @@ import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -40,13 +40,13 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   // Modules
   protected final SimpleModuleScopeProvider sourceModuleScopeProvider = new SimpleModuleScopeProvider();
-  protected final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider(sourceModuleScopeProvider);
+  protected ModuleScopeProvider moduleScopeProvider;
   protected final ModuleTracker moduleTracker;
   private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   protected final SourceInfoProvider<SourceIdT> srcInfoProvider;
-  private CacheManager<SourceIdT> cacheManager;
+  private SourcelessCacheManager<SourceIdT> cacheManager;
 
   // Typechecking
   private final boolean useCache;
@@ -67,7 +67,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     moduleTracker.setSourceSupplier(storage);
-    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), moduleScopeProvider, srcInfoProvider, moduleTracker);
+    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), sourceModuleScopeProvider, srcInfoProvider, moduleTracker);
+    moduleScopeProvider = cacheManager.createModuleScopeProvider();
     state = cacheManager.getTypecheckerState();
   }
 
