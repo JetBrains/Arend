@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.BinOpSequenceElem;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.Constructor;
@@ -144,6 +145,20 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append('`');
     }
     myBuilder.append(expr.getReferent().textRepresentation());
+    if (expr.getPLevel() != null || expr.getHLevel() != null) {
+      myBuilder.append(" \\levels ");
+      if (expr.getPLevel() != null) {
+        expr.getPLevel().accept(this, new Precedence(Expression.PREC));
+      } else {
+        myBuilder.append('_');
+      }
+      myBuilder.append(' ');
+      if (expr.getHLevel() != null) {
+        expr.getHLevel().accept(this, new Precedence(Expression.PREC));
+      } else {
+        myBuilder.append('_');
+      }
+    }
     return null;
   }
 
