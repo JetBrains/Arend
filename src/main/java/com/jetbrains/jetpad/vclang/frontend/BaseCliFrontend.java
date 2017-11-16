@@ -23,9 +23,6 @@ import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
-import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
@@ -196,34 +193,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     @Override
     public void report(GeneralError error) {
       errorReporter.report(error);
-      ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
-      if (moduleResult == null) {
-        return;
-      }
-
-      for (GlobalReferable referable : error.getAffectedDefinitions()) {
-        if (referable instanceof SourceIdReference) {
-          //noinspection unchecked
-          updateSourceResult((SourceIdT) ((SourceIdReference) referable).sourceId, moduleResult);
-        } else {
-          // TODO[abstract]: This check should be removed
-          if (error instanceof ProxyError && ((ProxyError) error).localError instanceof TypecheckingError || error instanceof TerminationCheckError) {
-            updateSourceResult(srcInfoProvider.sourceOf(referable), moduleResult);
-          }
-        }
-      }
     }
 
     @Override
     public void typecheckingFinished(Definition definition) {
       flushErrors();
-    }
-
-    private void updateSourceResult(SourceIdT source, ModuleResult result) {
-      ModuleResult prevResult = moduleResults.get(source);
-      if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-        moduleResults.put(source, result);
-      }
     }
   }
 
@@ -317,8 +291,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
+      ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
+      if (moduleResult != null) {
+        for (GlobalReferable referable : error.getAffectedDefinitions()) {
+          if (referable instanceof SourceIdReference) {
+            //noinspection unchecked
+            updateSourceResult((SourceIdT) ((SourceIdReference) referable).sourceId, moduleResult);
+          } else {
+            updateSourceResult(srcInfoProvider.sourceOf(referable), moduleResult);
+          }
+        }
+      }
+
       System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
     }
     errorReporter.getErrorList().clear();
+  }
+
+  private void updateSourceResult(SourceIdT source, ModuleResult result) {
+    ModuleResult prevResult = moduleResults.get(source);
+    if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
+      moduleResults.put(source, result);
+    }
   }
 }
