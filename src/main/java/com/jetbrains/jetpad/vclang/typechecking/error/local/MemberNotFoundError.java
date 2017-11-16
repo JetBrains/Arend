@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -26,7 +26,7 @@ public class MemberNotFoundError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getBodyDoc(PrettyPrinterConfig src) {
     return hList(text(name + " of some compiled definition called "), refDoc(targetDefinition.getReferable()));
   }
 }

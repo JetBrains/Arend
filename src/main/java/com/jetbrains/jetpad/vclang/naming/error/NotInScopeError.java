@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.error;
 
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
@@ -23,7 +23,7 @@ public class NotInScopeError extends LocalError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return referable == null ? super.getHeaderDoc(src) : hList(super.getHeaderDoc(src), text(" in "), refDoc(referable));
   }
 }

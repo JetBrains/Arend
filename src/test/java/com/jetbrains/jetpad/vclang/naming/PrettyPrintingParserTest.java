@@ -12,9 +12,9 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), Precedence.DEFAULT);
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
@@ -41,7 +41,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
 
   private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
     StringBuilder builder = new StringBuilder();
-    def.accept(new PrettyPrintVisitor(builder, sourceInfoProvider, 0), null);
+    def.accept(new PrettyPrintVisitor(builder, 0), null);
 
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString()).getDefinition();
     List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();

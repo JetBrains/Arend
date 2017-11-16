@@ -5,7 +5,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -16,10 +19,13 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ExpectedConstructor;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -237,7 +243,7 @@ public class PatternTypechecking {
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
         if (!expr.isError()) {
-          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
+          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
         return null;
       }

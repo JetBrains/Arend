@@ -1,15 +1,15 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 public class PPDoc extends CachingDoc {
   private final PrettyPrintable myPrettyPrintable;
-  private final PrettyPrinterInfoProvider myInfoProvider;
+  private final PrettyPrinterConfig myPPConfig;
 
-  PPDoc(PrettyPrintable prettyPrintable, PrettyPrinterInfoProvider infoProvider) {
+  PPDoc(PrettyPrintable prettyPrintable, PrettyPrinterConfig ppConfig) {
     myPrettyPrintable = prettyPrintable;
-    myInfoProvider = infoProvider;
+    myPPConfig = ppConfig;
   }
 
   public PrettyPrintable getPrettyPrintable() {
@@ -18,7 +18,8 @@ public class PPDoc extends CachingDoc {
 
   @Override
   protected String getString() {
-    String text = myPrettyPrintable.prettyPrint(myInfoProvider);
-    return text == null ? myPrettyPrintable.toString() : text;
+    StringBuilder builder = new StringBuilder();
+    myPrettyPrintable.prettyPrint(builder, myPPConfig);
+    return builder.toString();
   }
 }

@@ -4,8 +4,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
-import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -29,8 +28,6 @@ public abstract class VclangTestCase {
   }
 
 
-  protected static final SourceInfoProvider sourceInfoProvider = new SimpleSourceInfoProvider();
-
   protected static Matcher<? super Collection<? extends GeneralError>> containsErrors(final int n) {
     return new TypeSafeDiagnosingMatcher<Collection<? extends GeneralError>>() {
       @Override
@@ -41,7 +38,7 @@ public abstract class VclangTestCase {
           List<Doc> docs = new ArrayList<>(errors.size() + 1);
           docs.add(text("there were errors:"));
           for (GeneralError error : errors) {
-            docs.add(error.getDoc(sourceInfoProvider));
+            docs.add(error.getDoc(PrettyPrinterConfig.DEFAULT));
           }
           description.appendText(DocStringBuilder.build(vList(docs)));
         }

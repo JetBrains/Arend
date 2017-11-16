@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,24 +33,24 @@ public class ConditionsError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
-      dataToDoc(expr1, substitution1, evaluatedExpr1),
-      dataToDoc(expr2, substitution2, evaluatedExpr2));
+      dataToDoc(expr1, substitution1, evaluatedExpr1, ppConfig),
+      dataToDoc(expr2, substitution2, evaluatedExpr2, ppConfig));
   }
 
-  private Doc dataToDoc(Expression expr, ExprSubstitution substitution, Expression evaluatedExpr) {
-    Doc doc = termDoc(expr);
+  private Doc dataToDoc(Expression expr, ExprSubstitution substitution, Expression evaluatedExpr, PrettyPrinterConfig ppConfig) {
+    Doc doc = termDoc(expr, ppConfig);
     if (substitution != null && !substitution.isEmpty()) {
       List<LineDoc> substDocs = new ArrayList<>(substitution.getEntries().size());
       for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {
         String name = entry.getKey().getName() ;
-        substDocs.add(hList(text((name == null ? "_" : name) + " = "), termLine(entry.getValue())));
+        substDocs.add(hList(text((name == null ? "_" : name) + " = "), termLine(entry.getValue(), ppConfig)));
       }
 
       doc = hang(doc, hList(text("with "), hSep(text(", "), substDocs)));
     }
 
-    return hang(doc, hang(text("evaluates to"), termDoc(evaluatedExpr)));
+    return hang(doc, hang(text("evaluates to"), termDoc(evaluatedExpr, ppConfig)));
   }
 }

@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,16 +33,16 @@ public class GoalError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
-    Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), typeDoc(expectedType));
-    Doc actualDoc = actualType == null ? nullDoc() : hang(text(expectedType != null ? "  Actual type:" : "Type:"), termDoc(actualType));
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
+    Doc actualDoc = actualType == null ? nullDoc() : hang(text(expectedType != null ? "  Actual type:" : "Type:"), termDoc(actualType, ppConfig));
 
     Doc contextDoc;
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
         Expression type = entry.getValue().getTypeExpr();
-        contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type)));
+        contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
       }
       contextDoc = hang(text("Context:"), vList(contextDocs));
     } else {
@@ -53,7 +53,7 @@ public class GoalError extends TypecheckingError {
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
       for (Error error : errors) {
-        errorsDocs.add(hang(error.getHeaderDoc(src), error.getBodyDoc(src)));
+        errorsDocs.add(hang(error.getHeaderDoc(ppConfig), error.getBodyDoc(ppConfig)));
       }
       errorsDoc = hang(text("Errors:"), vList(errorsDocs));
     } else {

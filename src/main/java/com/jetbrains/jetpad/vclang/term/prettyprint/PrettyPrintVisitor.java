@@ -3,18 +3,17 @@ package com.jetbrains.jetpad.vclang.term.prettyprint;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.BinOpSequenceElem;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.Constructor;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.Expression;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.ReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
 
 import java.util.*;
 
@@ -24,26 +23,25 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public static final float SMALL_RATIO = (float) 0.1;
 
   protected final StringBuilder myBuilder;
-  private final PrettyPrinterInfoProvider myInfoProvider;
   private Map<InferenceLevelVariable, Integer> myPVariables = Collections.emptyMap();
   private Map<InferenceLevelVariable, Integer> myHVariables = Collections.emptyMap();
   protected int myIndent;
   private boolean noIndent;
 
-  public PrettyPrintVisitor(StringBuilder builder, PrettyPrinterInfoProvider infoProvider, int indent, boolean doIndent) {
+  public PrettyPrintVisitor(StringBuilder builder, int indent, boolean doIndent) {
     myBuilder = builder;
-    myInfoProvider = infoProvider;
     myIndent = indent;
     noIndent = !doIndent;
   }
 
-  public PrettyPrintVisitor(StringBuilder builder, PrettyPrinterInfoProvider infoProvider, int indent) {
-    this(builder, infoProvider, indent, true);
+  public PrettyPrintVisitor(StringBuilder builder, int indent) {
+    this(builder, indent, true);
   }
 
-  public static String prettyPrint(Concrete.SourceNode node, PrettyPrinterInfoProvider infoProvider) {
-    StringBuilder builder = new StringBuilder();
-    return new PrettyPrintVisitor(builder, infoProvider, 0).prettyPrint(node, Concrete.Expression.PREC) ? builder.toString() : null;
+  public static void prettyPrint(StringBuilder builder, Concrete.SourceNode node) {
+    if (!new PrettyPrintVisitor(builder, 0).prettyPrint(node, Concrete.Expression.PREC)) {
+      builder.append(node);
+    }
   }
 
   public boolean prettyPrint(Concrete.SourceNode node, byte prec) {
@@ -764,7 +762,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append(' ');
     }
 
-    myBuilder.append(myInfoProvider.nameFor(def));
+    myBuilder.append(def.textRepresentation());
   }
 
   private void prettyPrintBody(Concrete.FunctionBody body) {
@@ -1170,7 +1168,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       boolean splitMultiLineArgs;
       for (E e : l) {
         StringBuilder sb = new StringBuilder();
-        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, pp.myInfoProvider, 0, !pp.noIndent);
+        PrettyPrintVisitor ppv = new PrettyPrintVisitor(sb, 0, !pp.noIndent);
         printListElement(ppv, e);
 
         String[] strs = sb.toString().split("[\\r\\n]+");
@@ -1256,8 +1254,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       StringBuilder lhs = new StringBuilder();
       StringBuilder rhs = new StringBuilder();
-      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
-      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, ppv_default.myInfoProvider, 0, !ppv_default.noIndent);
+      PrettyPrintVisitor ppv_left = new PrettyPrintVisitor(lhs, 0, !ppv_default.noIndent);
+      PrettyPrintVisitor ppv_right = new PrettyPrintVisitor(rhs, 0, !ppv_default.noIndent);
 
       //TODO: I don't like this implementation for it works quadratically wrt to the total number of binary operations
       printLeft(ppv_left);

@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -21,7 +21,7 @@ public class FieldsImplementationError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(super.getHeaderDoc(src), hSep(text(", "), fields.stream().map(f -> f == null ? text("parent") : refDoc(f) /* TODO[classes] */).collect(Collectors.toList())));
   }
 }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 class TestCallMatrix extends BaseCallMatrix<TestVertex> {
   private final TestVertex myDomain;
@@ -68,7 +69,7 @@ class TestCallMatrix extends BaseCallMatrix<TestVertex> {
   }
 
   @Override
-  public Doc getMatrixLabel() {
+  public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) {
     return DocFactory.text(myLabel);
   }
 }

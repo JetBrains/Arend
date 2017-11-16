@@ -11,10 +11,12 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -35,7 +37,7 @@ public abstract class Expression implements ExpectedType {
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
       ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
-    expr.accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), new Precedence(Concrete.Expression.PREC));
+    expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
   }
 
@@ -48,11 +50,16 @@ public abstract class Expression implements ExpectedType {
     return isInstance(ErrorExpression.class) && !(cast(ErrorExpression.class).getError() instanceof GoalError);
   }
 
-  public void prettyPrint(StringBuilder builder, boolean doIndent) {
-    Concrete.Expression expr = ToAbstractVisitor.convert(normalize(NormalizeVisitor.Mode.RNF), EnumSet.of(
-      ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
-      ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
-    expr.accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0, doIndent), new Precedence(Concrete.Expression.PREC));
+  @Override
+  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    ToAbstractVisitor
+      .convert(normalize(infoProvider.getNormalizationMode()), infoProvider.getExpressionFlags())
+      .accept(new PrettyPrintVisitor(builder, 0, !infoProvider.isSingleLine()), new Precedence(Concrete.Expression.PREC));
+  }
+
+  @Override
+  public Doc prettyPrint(PrettyPrinterConfig ppConfig) {
+    return DocFactory.termDoc(this, ppConfig);
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {

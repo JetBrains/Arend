@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -18,9 +18,9 @@ public class SolveEquationError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
-      hang(text("1st expression:"), termDoc(expr1)),
-      hang(text("2st expression:"), termDoc(expr2)));
+      hang(text("1st expression:"), termDoc(expr1, ppConfig)),
+      hang(text("2st expression:"), termDoc(expr2, ppConfig)));
   }
 }

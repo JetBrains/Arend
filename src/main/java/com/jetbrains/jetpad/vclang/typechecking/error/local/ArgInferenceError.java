@@ -2,9 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -76,16 +75,16 @@ public class ArgInferenceError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
       candidates.length == 0
         ? nullDoc()
         : hang(text("Candidates are:"),
-            vList(Arrays.stream(candidates).map(DocFactory::termDoc).collect(Collectors.toList()))),
+            vList(Arrays.stream(candidates).map(expr -> termDoc(expr, ppConfig)).collect(Collectors.toList()))),
       expected == null && actual == null
         ? nullDoc()
         : vList(text("Since types of the candidates are not less than or equal to the expected type"),
-                expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected)),
-                actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual))));
+                expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected, ppConfig)),
+                actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual, ppConfig))));
   }
 }

@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,12 +29,12 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+  public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.ppDoc(cycle.get(0), src);
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     List<LineDoc> docs = new ArrayList<>(cycle.size() + 1);
     docs.add(refDoc(cycle.get(cycle.size() - 1).getData()));
     for (Concrete.Definition definition : cycle) {

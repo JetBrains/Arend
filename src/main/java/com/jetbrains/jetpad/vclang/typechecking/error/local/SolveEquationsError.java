@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equation;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -20,12 +20,12 @@ public class SolveEquationsError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     List<Doc> docs = new ArrayList<>(equations.size());
     for (Equation equation : equations) {
-      docs.add(hang(termDoc(equation.type),
+      docs.add(hang(termDoc(equation.type, ppConfig),
                 hang(text(equation.cmp == Equations.CMP.LE ? " <= " : equation.cmp == Equations.CMP.EQ ? " == " : " >= "),
-                  termDoc(equation.expr))));
+                  termDoc(equation.expr, ppConfig))));
     }
     return vList(docs);
   }

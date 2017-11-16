@@ -3,15 +3,13 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,7 +25,7 @@ public final class Concrete {
     @Nullable Object getData();
   }
 
-  public static abstract class SourceNodeImpl implements SourceNode, PrettyPrintable {
+  public static abstract class SourceNodeImpl implements SourceNode {
     private final Object myData;
 
     SourceNodeImpl(Object data) {
@@ -41,8 +39,8 @@ public final class Concrete {
     }
 
     @Override
-    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      return PrettyPrintVisitor.prettyPrint(this, infoProvider); // TODO[pretty]: implement this properly
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+      PrettyPrintVisitor.prettyPrint(builder, this); // TODO[pretty]: implement this properly
     }
   }
 
@@ -158,7 +156,7 @@ public final class Concrete {
     @Override
     public String toString() {
       StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), new Precedence(Expression.PREC));
+      accept(new PrettyPrintVisitor(builder, 0), new Precedence(Expression.PREC));
       return builder.toString();
     }
   }
@@ -562,10 +560,8 @@ public final class Concrete {
     }
 
     @Override
-    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      StringBuilder builder = new StringBuilder();
-      new PrettyPrintVisitor(builder, infoProvider, 0).prettyPrintLetClause(this, false);
-      return builder.toString();
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintLetClause(this, false);
     }
   }
 
@@ -948,8 +944,8 @@ public final class Concrete {
     public abstract Definition getRelatedDefinition();
 
     @Override
-    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      return null; // TODO[pretty]: implement this properly
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+      builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
     @Override
@@ -969,10 +965,8 @@ public final class Concrete {
     }
 
     @Override
-    public String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
-      StringBuilder builder = new StringBuilder();
-      accept(new PrettyPrintVisitor(builder, infoProvider, 0), null);
-      return builder.toString();
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      accept(new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()), null);
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);

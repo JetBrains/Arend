@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -18,7 +18,7 @@ public class NonPositiveDataError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(super.getHeaderDoc(src), text(" Non-positive recursive occurrence of data type '"), refDoc(dataDefinition.getReferable()), text("' in constructor '"), refDoc(constructor.getData()), text("'"));
   }
 }

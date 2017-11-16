@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.termination.CompositeCallMatrix;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 
@@ -32,22 +32,22 @@ public class TerminationCheckError extends GeneralError {
     return definition;
   }
 
-  public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
+  public Doc getCauseDoc(PrettyPrinterConfig infoProvider) {
     return refDoc(definition);
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(super.getHeaderDoc(src), text("Termination check failed for function '"), refDoc(definition), text("'"));
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
-    return vList(behaviors.stream().map(TerminationCheckError::printBehavior).collect(Collectors.toList()));
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    return vList(behaviors.stream().map(rb -> printBehavior(rb, ppConfig)).collect(Collectors.toList()));
   }
 
-  private static Doc printBehavior(RecursiveBehavior rb) {
-    return hang(text(rb.initialCallMatrix instanceof CompositeCallMatrix ? "Problematic sequence of recursive calls:" : "Problematic recursive call:"), rb.initialCallMatrix.getMatrixLabel());
+  private static Doc printBehavior(RecursiveBehavior rb, PrettyPrinterConfig ppConfig) {
+    return hang(text(rb.initialCallMatrix instanceof CompositeCallMatrix ? "Problematic sequence of recursive calls:" : "Problematic recursive call:"), rb.initialCallMatrix.getMatrixLabel(ppConfig));
   }
 
   @Override

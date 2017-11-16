@@ -27,16 +27,19 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.error.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.ListLocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
@@ -50,7 +53,6 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 import java.math.BigInteger;
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.ordinal;
 
@@ -354,7 +356,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (!result.type.isError()) {
-      myErrorReporter.report(new TypeMismatchError(termDoc(expectedType), termDoc(result.type), expr));
+      myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
     }
     return false;
   }
@@ -435,7 +437,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       Expression stuck = type.getStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
         if (!result.type.isError()) {
-          myErrorReporter.report(new TypeMismatchError(text("a universe"), termDoc(result.type), expr));
+          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), result.type, expr));
         }
         return null;
       }
@@ -659,7 +661,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             if (!argType.isError()) {
-              myErrorReporter.report(new TypeMismatchError(termDoc(argExpectedType), termDoc(argType), paramType));
+              myErrorReporter.report(new TypeMismatchError(argExpectedType, argType, paramType));
             }
             return null;
           }
@@ -713,7 +715,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         Result result = visitLam(expr.getParameters(), expr, expectedType instanceof Expression ? (Expression) expectedType : null, 1);
         if (result != null && expectedType != null && !(expectedType instanceof Expression)) {
           if (!result.type.isError()) {
-            myErrorReporter.report(new TypeMismatchError(typeDoc(expectedType), termDoc(result.type), expr));
+            myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
           }
           return null;
         }
@@ -1045,7 +1047,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     exprResult.type = exprResult.type.normalize(NormalizeVisitor.Mode.WHNF);
     if (!exprResult.type.isInstance(SigmaExpression.class)) {
       if (!exprResult.type.isError()) {
-        myErrorReporter.report(new TypeMismatchError(text("A sigma type"), termDoc(exprResult.type), expr1));
+        myErrorReporter.report(new TypeMismatchError(DocFactory.text("A sigma type"), exprResult.type, expr1));
       }
       return null;
     }

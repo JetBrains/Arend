@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -22,12 +22,12 @@ public class DataTypeNotEmptyError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(super.getHeaderDoc(src), text(" Data type '"), refDoc(dataCall.getDefinition().getReferable()), text("' is not empty"));
   }
 
   @Override
-  public LineDoc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getBodyDoc(PrettyPrinterConfig src) {
     return hList(text("Available constructors: "), hSep(text(", "), constructors.stream().map(con -> refDoc(con.getReferable())).collect(Collectors.toList())));
   }
 }

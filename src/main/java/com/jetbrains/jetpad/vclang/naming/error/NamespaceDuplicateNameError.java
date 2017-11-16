@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.error;
 
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 public class NamespaceDuplicateNameError extends ReferenceError {
   public final Referable referable;
@@ -15,7 +15,7 @@ public class NamespaceDuplicateNameError extends ReferenceError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     return DuplicateNameError.getBodyDoc(referable, previous);
   }
 }

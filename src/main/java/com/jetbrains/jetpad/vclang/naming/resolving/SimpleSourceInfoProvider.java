@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 
@@ -53,10 +52,5 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
   @Override
   public SourceIdT sourceOf(GlobalReferable definition) {
     return modules.get(definition);
-  }
-
-  @Override
-  public String nameFor(Referable referable) {
-    return referable.textRepresentation();
   }
 }

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -20,7 +20,7 @@ public class TruncatedDataError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(
       super.getHeaderDoc(src),
       text(" Data type '"),
@@ -29,7 +29,7 @@ public class TruncatedDataError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
-    return hang(indent(text("which does not fit in the universe of the eliminator type:")), termDoc(expectedType));
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    return hang(indent(text("which does not fit in the universe of the eliminator type:")), termDoc(expectedType, ppConfig));
   }
 }

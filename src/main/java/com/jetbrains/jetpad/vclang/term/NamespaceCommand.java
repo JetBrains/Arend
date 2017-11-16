@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public interface NamespaceCommand extends PrettyPrintable {
   @Nonnull Collection<? extends Referable> getHiddenReferences();
 
   @Override
-  default String prettyPrint(PrettyPrinterInfoProvider infoProvider) {
+  default void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
     List<LineDoc> docs = new ArrayList<>();
     switch (getKind()) {
       case OPEN: docs.add(text("\\open")); break;
@@ -76,6 +76,6 @@ public interface NamespaceCommand extends PrettyPrintable {
       docs.add(hList(text("("), hSep(text(", "), hidingReferences.stream().map(DocFactory::refDoc).collect(Collectors.toList())), text(")")));
     }
 
-    return DocStringBuilder.build(hSep(text(" "), docs));
+    DocStringBuilder.build(builder, hSep(text(" "), docs));
   }
 }

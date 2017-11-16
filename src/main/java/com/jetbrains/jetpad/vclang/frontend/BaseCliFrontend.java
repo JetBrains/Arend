@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -42,6 +43,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
+  private final PrettyPrinterConfig myPrettyPrinterConfig = new PrettyPrinterConfig() {};
   protected final SourceInfoProvider<SourceIdT> srcInfoProvider;
   private CacheManager<SourceIdT> cacheManager;
 
@@ -303,7 +305,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         }
       }
 
-      System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
+      System.out.println(DocStringBuilder.build(error.getDoc(myPrettyPrinterConfig)));
     }
     errorReporter.getErrorList().clear();
   }

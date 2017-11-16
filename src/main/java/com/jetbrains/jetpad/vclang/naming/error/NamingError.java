@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 public class NamingError extends LocalError {
@@ -25,7 +25,7 @@ public class NamingError extends LocalError {
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+  public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.ppDoc(cause, src);
   }
 }

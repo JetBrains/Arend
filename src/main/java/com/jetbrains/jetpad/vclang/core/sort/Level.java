@@ -3,10 +3,9 @@ package com.jetbrains.jetpad.vclang.core.sort;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 public class Level {
@@ -128,7 +127,7 @@ public class Level {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor(builder, SourceInfoProvider.TRIVIAL, 0), new Precedence(Concrete.Expression.PREC));
+    ToAbstractVisitor.convert(this).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
   }
 

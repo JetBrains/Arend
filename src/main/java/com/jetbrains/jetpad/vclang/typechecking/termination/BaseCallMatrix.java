@@ -5,6 +5,7 @@ package com.jetbrains.jetpad.vclang.typechecking.termination;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.util.StringFormat;
 
 import java.util.Arrays;
@@ -222,7 +223,7 @@ public abstract class BaseCallMatrix<T> {
     return result;
   }
 
-  public Doc getMatrixLabel() {
+  public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) {
     return DocFactory.nullDoc();
   }
 
@@ -239,7 +240,7 @@ public abstract class BaseCallMatrix<T> {
 
   @Override
   public String toString() {
-    StringBuilder result = new StringBuilder(DocStringBuilder.build(getMatrixLabel())).append('\n');
+    StringBuilder result = new StringBuilder(DocStringBuilder.build(getMatrixLabel(PrettyPrinterConfig.DEFAULT))).append('\n');
     String[] columnLabels = getColumnLabels();
     String[] rowLabels = getRowLabels();
     int max = 0;

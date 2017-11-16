@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
@@ -26,7 +26,7 @@ public class TypecheckingError extends LocalError {
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+  public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.ppDoc(cause, src);
   }
 }

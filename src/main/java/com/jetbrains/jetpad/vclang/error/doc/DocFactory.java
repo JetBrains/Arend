@@ -1,10 +1,9 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.*;
 
@@ -57,26 +56,16 @@ public class DocFactory {
     return new VListDoc(docs);
   }
 
-  public static TermDoc termDoc(Expression expression) {
-    return new TermDoc(expression);
+  public static TermDoc termDoc(Expression expression, PrettyPrinterConfig ppConfig) {
+    return new TermDoc(expression, ppConfig);
   }
 
-  public static TermLineDoc termLine(Expression expression) {
-    return new TermLineDoc(expression);
+  public static TermLineDoc termLine(Expression expression, PrettyPrinterConfig ppConfig) {
+    return new TermLineDoc(expression, ppConfig);
   }
 
-  public static Doc typeDoc(ExpectedType type) {
-    if (type instanceof Expression) {
-      return new TermDoc((Expression) type);
-    }
-    if (type == ExpectedType.OMEGA) {
-      return new TextDoc("a universe");
-    }
-    throw new IllegalStateException();
-  }
-
-  public static PPDoc ppDoc(PrettyPrintable prettyPrintable, PrettyPrinterInfoProvider infoProvider) {
-    return new PPDoc(prettyPrintable, infoProvider);
+  public static PPDoc ppDoc(PrettyPrintable prettyPrintable, PrettyPrinterConfig ppConfig) {
+    return new PPDoc(prettyPrintable, ppConfig);
   }
 
   public static Doc vList(Collection<? extends Doc> docs) {

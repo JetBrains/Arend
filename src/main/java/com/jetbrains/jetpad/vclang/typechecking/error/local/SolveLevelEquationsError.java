@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.*;
@@ -23,10 +23,10 @@ public class SolveLevelEquationsError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     List<Doc> docs = new ArrayList<>(equations.size());
     StringBuilder builder = new StringBuilder();
-    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, src, 0);
+    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0, !src.isSingleLine());
 
     Set<InferenceLevelVariable> variables = new HashSet<>();
     for (LevelEquation<? extends Variable> equation : equations) {

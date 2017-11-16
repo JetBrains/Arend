@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 public class ReferenceError extends LocalError {
@@ -32,7 +32,7 @@ public class ReferenceError extends LocalError {
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterInfoProvider src) {
+  public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.refDoc(referable);
   }
 }

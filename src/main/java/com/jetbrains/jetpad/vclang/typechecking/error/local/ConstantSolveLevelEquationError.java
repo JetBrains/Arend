@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -19,12 +19,12 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hList(super.getHeaderDoc(src), text(" Cannot solve equation " + variable + " <= constant"));
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     if (variable instanceof InferenceLevelVariable) {
       Concrete.SourceNode sourceNode = ((InferenceLevelVariable) variable).getSourceNode();
       if (sourceNode.getData() != getCause()) {

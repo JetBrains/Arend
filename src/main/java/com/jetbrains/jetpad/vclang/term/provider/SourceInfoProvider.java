@@ -3,10 +3,9 @@ package com.jetbrains.jetpad.vclang.term.provider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 
-public interface SourceInfoProvider<SourceIdT extends SourceId> extends DefinitionLocator<SourceIdT>, PrettyPrinterInfoProvider, FullNameProvider {
+public interface SourceInfoProvider<SourceIdT extends SourceId> extends DefinitionLocator<SourceIdT>, FullNameProvider {
   class Trivial implements SourceInfoProvider {
     @Override
     public FullName fullNameFor(GlobalReferable definition) {
@@ -16,11 +15,6 @@ public interface SourceInfoProvider<SourceIdT extends SourceId> extends Definiti
     @Override
     public SourceId sourceOf(GlobalReferable definition) {
       return null;
-    }
-
-    @Override
-    public String nameFor(Referable referable) {
-      return referable.textRepresentation();
     }
   }
 

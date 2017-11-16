@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.error;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
@@ -32,30 +32,30 @@ public abstract class Error {
     return message;
   }
 
-  public LineDoc getPositionDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getPositionDoc(PrettyPrinterConfig src) {
     Object cause = getCause();
     return cause instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) cause)) : empty();
   }
 
-  public LineDoc getHeaderDoc(PrettyPrinterInfoProvider src) {
+  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     return hSep(text(" "), text("[" + level + "]"), hEnd(text(":"), getPositionDoc(src)), text(message));
   }
 
-  public Doc getCauseDoc(PrettyPrinterInfoProvider infoProvider) {
+  public Doc getCauseDoc(PrettyPrinterConfig infoProvider) {
     return null;
   }
 
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     return nullDoc();
   }
 
-  public Doc getDoc(PrettyPrinterInfoProvider src) {
+  public Doc getDoc(PrettyPrinterConfig src) {
     Doc cause = getCauseDoc(src);
     return vHang(getHeaderDoc(src), vList(getBodyDoc(src), cause == null ? nullDoc() : hang(text("In:"), cause)));
   }
 
   @Override
   public final String toString() {
-    return DocStringBuilder.build(getDoc(PrettyPrinterInfoProvider.TRIVIAL));
+    return DocStringBuilder.build(getDoc(PrettyPrinterConfig.DEFAULT));
   }
 }

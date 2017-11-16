@@ -12,11 +12,12 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.refDoc;
 
 public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   public StdImplicitArgsInference(CheckTypeVisitor visitor) {
@@ -122,7 +123,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     if (!param.hasNext()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       if (!result1.type.isError()) {
-        myVisitor.getErrorReporter().report(new TypeMismatchError(text("A pi type"), termDoc(result1.type), fun));
+        myVisitor.getErrorReporter().report(new TypeMismatchError(DocFactory.text("A pi type"), result1.type, fun));
       }
       return null;
     }
@@ -159,7 +160,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
           if (dataCall != null) {
             if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError(termDoc(dataCall), refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
+              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
               return null;
             }
 
@@ -213,7 +214,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     if (expectedParams.size() > actualParams.size()) {
       CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
       if (!result1.type.isError()) {
-        myVisitor.getErrorReporter().report(new TypeMismatchError(typeDoc(expectedType), termDoc(result1.type), expr));
+        myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
       }
       return null;
     }

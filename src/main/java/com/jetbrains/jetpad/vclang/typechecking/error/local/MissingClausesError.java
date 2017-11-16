@@ -2,10 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.provider.PrettyPrinterInfoProvider;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +25,10 @@ public class MissingClausesError extends TypecheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(PrettyPrinterInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     List<LineDoc> docs = new ArrayList<>(myMissingClauses.size());
     for (List<Expression> missingClause : myMissingClauses) {
-      docs.add(hSep(text(", "), missingClause.stream().map(DocFactory::termLine).collect(Collectors.toList())));
+      docs.add(hSep(text(", "), missingClause.stream().map(expr -> termLine(expr, ppConfig)).collect(Collectors.toList())));
     }
     return vList(docs);
   }
