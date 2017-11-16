@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming;
 
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.typechecking.Matchers;
 import org.junit.Test;
 
 public class PatternTest extends NameResolverTestCase {
@@ -131,5 +133,13 @@ public class PatternTest extends NameResolverTestCase {
     resolveNamesClass(
       "\\data Nat | zero | suc Nat\n" +
       "\\function test (x : Nat) : Nat => \\case x \\with { zero a => 0 | Nat => 1 }", 1);
+  }
+
+  @Test
+  public void freeVars() {
+    resolveNamesClass(
+      "\\data D | c1 \\Prop | c2 \\Prop\n" +
+      "\\function f (d : D) : \\Prop => \\case d \\with { c1 x => x | c2 y => x }", 1);
+    assertThatErrorsAre(Matchers.notInScope("x"));
   }
 }

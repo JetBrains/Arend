@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
@@ -53,6 +54,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a type mismatch");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> notInScope(String name) {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof NotInScopeError && ((NotInScopeError) error).name.equals(name)) {
+          description.appendText("Not in scope '" + name + "'");
+          return true;
+        } else {
+          description.appendText(error instanceof NotInScopeError ? "'Not in scope: " + ((NotInScopeError) error).name + "' error" : "not a 'Not in scope' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Not in scope: " + name + "' error");
       }
     };
   }

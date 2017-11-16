@@ -412,38 +412,40 @@ class DefinitionTypechecking {
     for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
       // Typecheck patterns and compute free bindings
       Pair<List<Pattern>, List<Expression>> result = null;
-      if (clause.getPatterns() != null) {
-        if (def.getEliminatedReferences() == null) {
-          errorReporter.report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
-          dataOk = false;
-        }
-        if (elimParams != null) {
-          result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
-          if (result != null && result.proj2 == null) {
-            errorReporter.report(new LocalTypeCheckingError("This clause is redundant", clause));
-            result = null;
+      try (Utils.SetContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+        if (clause.getPatterns() != null) {
+          if (def.getEliminatedReferences() == null) {
+            errorReporter.report(new LocalTypeCheckingError("Expected a constructor without patterns", clause));
+            dataOk = false;
+          }
+          if (elimParams != null) {
+            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, visitor);
+            if (result != null && result.proj2 == null) {
+              errorReporter.report(new LocalTypeCheckingError("This clause is redundant", clause));
+              result = null;
+            }
+          }
+          if (result == null) {
+            continue;
+          }
+        } else {
+          if (def.getEliminatedReferences() != null) {
+            errorReporter.report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
+            dataOk = false;
           }
         }
-        if (result == null) {
-          continue;
-        }
-      } else {
-        if (def.getEliminatedReferences() != null) {
-          errorReporter.report(new LocalTypeCheckingError("Expected constructors with patterns", clause));
-          dataOk = false;
-        }
-      }
 
-      // Typecheck constructors
-      for (Abstract.Constructor constructor : clause.getConstructors()) {
-        Patterns patterns = result == null ? null : new Patterns(result.proj1);
-        Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions, userSort);
-        if (conSort == null) {
-          dataOk = false;
-          conSort = Sort.PROP;
-        }
+        // Typecheck constructors
+        for (Abstract.Constructor constructor : clause.getConstructors()) {
+          Patterns patterns = result == null ? null : new Patterns(result.proj1);
+          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, visitor, dataDefinitions, userSort);
+          if (conSort == null) {
+            dataOk = false;
+            conSort = Sort.PROP;
+          }
 
-        inferredSort = inferredSort.max(conSort);
+          inferredSort = inferredSort.max(conSort);
+        }
       }
     }
     dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);

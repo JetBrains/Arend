@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 
+import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
@@ -48,46 +49,48 @@ public class PatternTypechecking {
   }
 
   Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
-    // Typecheck patterns
-    Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
-    if (result == null) {
-      return null;
-    }
-
-    // If we have the absurd pattern, then RHS is ignored
-    if (result.proj2 == null) {
-      if (clause.getExpression() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
-      }
-      return new Pair<>(result.proj1, null);
-    } else {
-      if (clause.getExpression() == null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+    try (Utils.SetContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+      // Typecheck patterns
+      Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
+      if (result == null) {
         return null;
       }
-    }
 
-    ExprSubstitution substitution = new ExprSubstitution();
-    for (Expression expr : result.proj2) {
-      substitution.add(parameters, expr);
-      parameters = parameters.getNext();
-    }
-    for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
-      Expression expr = substitution.get(entry.getValue());
-      if (expr != null) {
-        entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
+      // If we have the absurd pattern, then RHS is ignored
+      if (result.proj2 == null) {
+        if (clause.getExpression() != null) {
+          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+        }
+        return new Pair<>(result.proj1, null);
+      } else {
+        if (clause.getExpression() == null) {
+          myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+          return null;
+        }
       }
-    }
-    expectedType = expectedType.subst(substitution);
 
-    // Typecheck the RHS
-    CheckTypeVisitor.Result tcResult;
-    if (abstractParameters != null) {
-      tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
-    } else {
-      tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
+      ExprSubstitution substitution = new ExprSubstitution();
+      for (Expression expr : result.proj2) {
+        substitution.add(parameters, expr);
+        parameters = parameters.getNext();
+      }
+      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+        Expression expr = substitution.get(entry.getValue());
+        if (expr != null) {
+          entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
+        }
+      }
+      expectedType = expectedType.subst(substitution);
+
+      // Typecheck the RHS
+      CheckTypeVisitor.Result tcResult;
+      if (abstractParameters != null) {
+        tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
+      } else {
+        tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
+      }
+      return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
     }
-    return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
   }
 
   public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
