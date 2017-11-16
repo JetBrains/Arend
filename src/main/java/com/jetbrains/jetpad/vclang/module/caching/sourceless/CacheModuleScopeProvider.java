@@ -1,6 +1,7 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 

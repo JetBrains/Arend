@@ -7,10 +7,12 @@ import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.caching.*;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
@@ -44,7 +46,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
   private final PrettyPrinterConfig myPrettyPrinterConfig = new PrettyPrinterConfig() {};
-  protected final SourceInfoProvider<SourceIdT> srcInfoProvider;
+  protected final CacheSourceInfoProvider<SourceIdT> srcInfoProvider;
   private CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
@@ -57,7 +59,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     useCache = !recompile;
 
     moduleTracker = new ModuleTracker();
-    srcInfoProvider = moduleTracker.sourceInfoProvider;
+    srcInfoProvider = new CacheSourceInfoProvider<>(moduleTracker.sourceInfoProvider);
   }
 
   protected void initialize(Storage<SourceIdT> storage) {

@@ -1,15 +1,15 @@
-package com.jetbrains.jetpad.vclang.module.caching;
+package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
-import com.jetbrains.jetpad.vclang.module.CacheModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
-import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -19,16 +19,16 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheManager<SourceIdT> {
-  public SourcelessCacheManager(CacheStorageSupplier<SourceIdT> cacheSupplier, ModuleUriProvider<SourceIdT> moduleUriProvider, CacheModuleScopeProvider scopeProvider, SourceInfoProvider<SourceIdT> srcInfoProvider, SourceVersionTracker<SourceIdT> versionTracker) {
+  public SourcelessCacheManager(CacheStorageSupplier<SourceIdT> cacheSupplier, ModuleUriProvider<SourceIdT> moduleUriProvider, CacheModuleScopeProvider scopeProvider, CacheSourceInfoProvider<SourceIdT> srcInfoProvider, SourceVersionTracker<SourceIdT> versionTracker) {
     super(new SourcelessPersistenceProvider<>(srcInfoProvider, scopeProvider, moduleUriProvider), cacheSupplier, srcInfoProvider, versionTracker);
   }
 
   public static class SourcelessPersistenceProvider<SourceIdT extends SourceId> implements PersistenceProvider<SourceIdT> {
-    private final FullNameProvider mySrcInfoProvider;
+    private final CacheSourceInfoProvider<SourceIdT> mySrcInfoProvider;
     private final CacheModuleScopeProvider myScopeProvider;
     private final ModuleUriProvider<SourceIdT> myModuleUriProvider;
 
-    public SourcelessPersistenceProvider(FullNameProvider srcInfoProvider, CacheModuleScopeProvider scopeProvider, ModuleUriProvider<SourceIdT> moduleUriProvider) {
+    public SourcelessPersistenceProvider(CacheSourceInfoProvider<SourceIdT> srcInfoProvider, CacheModuleScopeProvider scopeProvider, ModuleUriProvider<SourceIdT> moduleUriProvider) {
       mySrcInfoProvider = srcInfoProvider;
       myScopeProvider = scopeProvider;
       myModuleUriProvider = moduleUriProvider;
@@ -77,6 +77,7 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
       GlobalReferable ref = definition.getReferable();
       GlobalReferable tcRef = ref.getTypecheckable();
       cacheScope.ensureReferable(name.proj2, name.proj1, ref == tcRef ? null : tcRef);
+      mySrcInfoProvider.myCacheSrcInfoProvider.registerDefinition(ref, FullName.fromList(name.proj2), sourceId);
     }
   }
 

@@ -16,6 +16,12 @@ public class FullName {
     myName = name;
   }
 
+  public static FullName fromList(List<String> path) {
+    if (path.isEmpty()) throw new IllegalArgumentException("Empty FullName");
+    if (path.size() == 1) return new FullName(null, path.get(0));
+    return new FullName(fromList(path.subList(0, path.size() - 1)), path.get(path.size() - 1));
+  }
+
   public List<String> toList() {
     LinkedList<String> res = new LinkedList<>();
     toList(res);
