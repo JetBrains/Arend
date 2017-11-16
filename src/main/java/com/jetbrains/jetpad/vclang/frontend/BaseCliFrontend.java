@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
@@ -65,7 +66,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     moduleTracker.setSourceSupplier(storage);
-    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), moduleScopeProvider, srcInfoProvider, moduleTracker);
+    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), EmptyModuleScopeProvider.INSTANCE, moduleScopeProvider, srcInfoProvider, moduleTracker);
     state = cacheManager.getTypecheckerState();
   }
 

@@ -17,7 +17,7 @@ import static java.util.Collections.singletonList;
 public class CacheScope {
   public final @Nonnull CachedSubScope root = new CachedSubScope();
 
-  public GlobalReferable ensureReferable(List<String> path, Precedence precedence, GlobalReferable parent) {
+  public GlobalReferable registerDefinition(List<String> path, Precedence precedence, GlobalReferable parent) {
     if (path.isEmpty()) {
       throw new IllegalArgumentException("Path cannot be empty");
     }
@@ -34,10 +34,6 @@ public class CacheScope {
     }
 
     return scope.here;
-  }
-
-  public GlobalReferable ensureReferable(List<String> path, Precedence precedence) {
-    return ensureReferable(path, precedence, null);
   }
 
   private CachedSubScope ensureSubScope(CachedSubScope parent, List<String> ns) {
