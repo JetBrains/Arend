@@ -4,16 +4,18 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -507,7 +509,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(reference, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
     reference.setDefinition(dataDefinition);
     visitDataBody(ctx.dataBody(), dataDefinition, constructors);
-    return new DataGroup(reference, constructors, Collections.emptyList(), Collections.emptyList(), parent); // TODO[classes]: add static subgroups
+
+    List<Group> subgroups = new ArrayList<>();
+    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    DataGroup resultGroup = new DataGroup(reference, constructors, Collections.emptyList(), Collections.emptyList(), parent);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    return resultGroup;
   }
 
   private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<ConcreteGlobalReferable> constructors) {
