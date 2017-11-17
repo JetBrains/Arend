@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.SimpleModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;

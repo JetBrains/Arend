@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term;
 
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;

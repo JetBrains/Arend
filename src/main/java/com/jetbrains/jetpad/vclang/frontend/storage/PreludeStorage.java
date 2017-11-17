@@ -4,8 +4,8 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 

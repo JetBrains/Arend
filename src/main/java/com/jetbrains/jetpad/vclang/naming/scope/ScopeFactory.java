@@ -1,7 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;

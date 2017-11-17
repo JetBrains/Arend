@@ -1,19 +1,16 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
-import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
+import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.ModuleResolver;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
-import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;

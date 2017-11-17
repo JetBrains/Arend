@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.frontend.namespace.CacheScope;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.FullName;

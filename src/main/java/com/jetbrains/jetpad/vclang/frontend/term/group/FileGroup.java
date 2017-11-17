@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.frontend.term.group;
 
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;
 import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;

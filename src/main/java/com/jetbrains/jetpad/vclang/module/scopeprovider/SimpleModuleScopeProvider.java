@@ -1,8 +1,9 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.module.scopeprovider;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.naming.scope.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Group;
 

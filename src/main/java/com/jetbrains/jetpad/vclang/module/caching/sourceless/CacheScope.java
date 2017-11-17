@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.frontend.namespace;
+package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;

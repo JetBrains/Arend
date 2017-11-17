@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Before;
 import org.junit.Test;

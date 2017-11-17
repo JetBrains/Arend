@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
@@ -8,7 +9,10 @@ import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class ImportedScope implements Scope {
