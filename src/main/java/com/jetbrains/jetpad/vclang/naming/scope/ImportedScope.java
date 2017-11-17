@@ -108,7 +108,7 @@ public class ImportedScope implements Scope {
       Tree tree = this;
       for (Iterator<? extends ModuleReferable> it = path.iterator(); it.hasNext(); ) {
         ModuleReferable key = it.next();
-        tree = tree.map.computeIfAbsent(key.path.getName(), k -> new Triple(key, it.hasNext() ? null : key.path, new Tree())).tree;
+        tree = tree.map.computeIfAbsent(key.path.getLastName(), k -> new Triple(key, it.hasNext() ? null : key.path, new Tree())).tree;
       }
     }
   }

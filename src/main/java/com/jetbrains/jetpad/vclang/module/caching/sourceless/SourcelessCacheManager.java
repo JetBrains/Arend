@@ -76,7 +76,7 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
       GlobalReferable ref = definition.getReferable();
       GlobalReferable tcRef = ref.getTypecheckable();
       cacheScope.ensureReferable(name.proj2, name.proj1, ref == tcRef ? null : tcRef);
-      mySrcInfoProvider.myCacheSrcInfoProvider.registerDefinition(ref, FullName.fromList(name.proj2), sourceId);
+      mySrcInfoProvider.myCacheSrcInfoProvider.registerDefinition(ref, new FullName(name.proj2), sourceId);
     }
   }
 

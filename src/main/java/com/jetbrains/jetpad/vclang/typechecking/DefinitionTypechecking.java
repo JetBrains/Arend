@@ -45,7 +45,7 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
-// TODO[abstract]: Make this class into a visitor
+// TODO[classes]: Make this class into a visitor
 class DefinitionTypechecking {
   static Definition typecheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Concrete.Definition definition, Concrete.ClassDefinition enclosingClass) {
     LocalInstancePool localInstancePool = new LocalInstancePool();

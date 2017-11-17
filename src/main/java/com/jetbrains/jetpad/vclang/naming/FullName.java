@@ -1,42 +1,25 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import java.util.LinkedList;
+import com.jetbrains.jetpad.vclang.util.LongName;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class FullName {
-  private final FullName myParent;
-  private final String myName;
+public class FullName extends LongName {
+  public FullName(List<String> path) {
+    super(path);
+  }
 
   public FullName(String name) {
-    this(null, name);
+    super(Collections.singletonList(name));
   }
 
-  public FullName(FullName parent, String name) {
-    myParent = parent;
-    myName = name;
-  }
-
-  public static FullName fromList(List<String> path) {
-    if (path.isEmpty()) throw new IllegalArgumentException("Empty FullName");
-    if (path.size() == 1) return new FullName(null, path.get(0));
-    return new FullName(fromList(path.subList(0, path.size() - 1)), path.get(path.size() - 1));
-  }
-
-  public List<String> toList() {
-    LinkedList<String> res = new LinkedList<>();
-    toList(res);
-    return res;
-  }
-
-  private void toList(LinkedList<String> res) {
-    if (myParent != null) {
-      myParent.toList(res);
-    }
-    res.add(myName);
-  }
-
-  @Override
-  public String toString() {
-    return String.join(".", toList());
+  public static FullName make(FullName parent, String name) {
+    List<String> path = parent.toList();
+    List<String> newPath = new ArrayList<>(path.size() + 1);
+    newPath.addAll(path);
+    newPath.add(name);
+    return new FullName(newPath);
   }
 }
