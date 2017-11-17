@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 
 import java.util.*;
 
@@ -16,9 +15,9 @@ public class DependencyCollector implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(Typecheckable unit, GlobalReferable def) {
-    myDependencies.computeIfAbsent(unit.getDefinition().getData(), k -> new HashSet<>()).add(def);
-    myReverseDependencies.computeIfAbsent(def, k -> new HashSet<>()).add(unit.getDefinition().getData());
+  public void dependsOn(GlobalReferable def1, boolean header, GlobalReferable def2) {
+    myDependencies.computeIfAbsent(def1, k -> new HashSet<>()).add(def2);
+    myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
   }
 
   public void update(GlobalReferable definition) {

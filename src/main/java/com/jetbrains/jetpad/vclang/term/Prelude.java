@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collections;
@@ -122,7 +121,7 @@ public class Prelude {
 
   public static class PreludeTypechecking extends Typechecking {
     public PreludeTypechecking(TypecheckerState state) {
-      super(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new DependencyListener() {});
+      super(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE);
     }
 
     @Override

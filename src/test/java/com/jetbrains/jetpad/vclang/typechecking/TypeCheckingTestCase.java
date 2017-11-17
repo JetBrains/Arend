@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.Collections;
@@ -96,7 +95,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(ConcreteGlobalReferable reference, int errors) {
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, errorReporter, new DependencyListener() {}).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, errorReporter).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(reference);
   }
@@ -111,7 +110,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private TypecheckerState typeCheckModule(Group group, int errors) {
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, localErrorReporter, new DependencyListener() {}).typecheckModules(Collections.singletonList(group));
+    new Typechecking(state, ConcreteReferableProvider.INSTANCE, localErrorReporter).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
     return state;
   }

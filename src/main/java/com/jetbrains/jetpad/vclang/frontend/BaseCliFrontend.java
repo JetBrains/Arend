@@ -25,7 +25,6 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -193,7 +192,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private class MyTypechecking extends Typechecking {
     MyTypechecking(TypecheckerState state) {
-      super(state, ConcreteReferableProvider.INSTANCE, errorReporter, new DependencyListener() {});
+      super(state, ConcreteReferableProvider.INSTANCE, errorReporter);
     }
 
     @Override

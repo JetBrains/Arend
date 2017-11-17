@@ -46,6 +46,10 @@ public class Typechecking implements DependencyListener {
     myConcreteProvider = concreteProvider;
   }
 
+  public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
+    this(state, concreteProvider, errorReporter, (def1, header, def2) -> {});
+  }
+
   public void typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
     Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, false);
 
@@ -171,8 +175,8 @@ public class Typechecking implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(Typecheckable unit, GlobalReferable def) {
-    myDependencyListener.dependsOn(unit, def);
+  public void dependsOn(GlobalReferable def1, boolean header, GlobalReferable def2) {
+    myDependencyListener.dependsOn(def1, header, def2);
   }
 
   private boolean typecheckHeaders(SCC scc) {

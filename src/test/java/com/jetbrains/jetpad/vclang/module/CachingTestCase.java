@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import org.junit.Before;
 
 import javax.annotation.Nonnull;
@@ -59,7 +58,7 @@ public class CachingTestCase extends NameResolverTestCase {
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
     tcState = cacheManager.getTypecheckerState();
-    typechecking = new Typechecking(tcState, ConcreteReferableProvider.INSTANCE, errorReporter, new DependencyListener() {});
+    typechecking = new Typechecking(tcState, ConcreteReferableProvider.INSTANCE, errorReporter);
   }
 
   @Override

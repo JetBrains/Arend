@@ -159,7 +159,7 @@ public class Ordering {
           recursion = Typechecking.Recursion.IN_BODY;
         }
       } else {
-        myTypechecking.dependsOn(typecheckable, tcReferable);
+        myTypechecking.dependsOn(definition.getData(), typecheckable.isHeader(), tcReferable);
         if (myTypechecking.getTypechecked(tcReferable) == null) {
           Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
           if (dependency instanceof Concrete.Definition) {
