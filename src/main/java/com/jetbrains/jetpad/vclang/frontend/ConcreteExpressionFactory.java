@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -190,8 +190,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.EmptyPattern(null, isExplicit);
   }
 
-  public static Concrete.BinOpExpression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression right) {
-    return new Concrete.BinOpExpression(null, left, binOp, right);
+  public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression right) {
+    return new Concrete.BinOpSequenceExpression(null, left, Collections.singletonList(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), right)));
   }
 
   public static Concrete.NumericLiteral cNum(BigInteger num) {

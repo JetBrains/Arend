@@ -2,15 +2,14 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.cBinOp;
-import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.cNum;
+import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +25,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
     Concrete.Expression result = resolveNamesExpr(new ListScope(plusRef, mulRef), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
     assertNotNull(result);
-    assertTrue(compareAbstract(cBinOp(cBinOp(cNum(0), plusRef, cBinOp(cNum(1), mulRef, cNum(2))), plusRef, cBinOp(cBinOp(cNum(3), mulRef, cBinOp(cNum(4), mulRef, cNum(5))), mulRef, cBinOp(cNum(6), plusRef, cNum(7)))), result));
+    assertTrue(compareAbstract(result, cApps(cVar(plusRef), cApps(cVar(plusRef), cNum(0), cApps(cVar(mulRef), cNum(1), cNum(2))), cApps(cVar(mulRef), cApps(cVar(mulRef), cNum(3), cApps(cVar(mulRef), cNum(4), cNum(5))), cApps(cVar(plusRef), cNum(6), cNum(7))))));
   }
 
   @Test

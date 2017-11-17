@@ -952,11 +952,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   @Override
-  public Result visitBinOp(Concrete.BinOpExpression expr, ExpectedType expectedType) {
-    return tResultToResult(expectedType, myArgsInference.infer(expr, expectedType), expr);
-  }
-
-  @Override
   public Result visitBinOpSequence(Concrete.BinOpSequenceExpression expr, ExpectedType expectedType) {
     assert expr.getSequence().isEmpty();
     return checkExpr(expr.getLeft(), expectedType);

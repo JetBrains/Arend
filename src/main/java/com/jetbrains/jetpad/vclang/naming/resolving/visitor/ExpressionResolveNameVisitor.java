@@ -9,9 +9,9 @@ import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.*;
@@ -135,15 +135,6 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   public Void visitSigma(Concrete.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters());
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitBinOp(Concrete.BinOpExpression expr, Void params) {
-    expr.getLeft().accept(this, null);
-    if (expr.getRight() != null) {
-      expr.getRight().accept(this, null);
     }
     return null;
   }

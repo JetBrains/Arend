@@ -90,18 +90,6 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitBinOp(Concrete.BinOpExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof GlobalReferable) {
-      myDependencies.add((GlobalReferable) expr.getReferent());
-    }
-    expr.getLeft().accept(this, null);
-    if (expr.getRight() != null) {
-      expr.getRight().accept(this, null);
-    }
-    return null;
-  }
-
-  @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void ignore) {
     expr.getLeft().accept(this, null);
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {

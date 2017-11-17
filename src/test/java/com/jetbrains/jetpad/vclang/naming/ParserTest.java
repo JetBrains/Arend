@@ -2,8 +2,11 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -237,16 +240,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
-    assertEquals(0, expr.getSequence().size());
-    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
-    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().textRepresentation());
-    assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
-    assertTrue(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getLeft()).getReferent().textRepresentation());
+    GlobalReferable named = it.next().getReferable();
+    GlobalReferable d = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(d), cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1)))), cVar(refs.get(2)));
+    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
   }
 
   @Test
@@ -275,20 +275,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
-    assertEquals(0, expr.getSequence().size());
-    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
-    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
-    Concrete.Expression expr1 = ((Concrete.BinOpExpression) expr.getLeft()).getRight();
-    assertNotNull(expr1);
-    assertEquals("$", ((Concrete.BinOpExpression) expr1).getReferent().textRepresentation());
-    Concrete.BinOpExpression expr2 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
-    assertNotNull(expr2);
-    assertTrue(expr2.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) expr2.getLeft()).getReferent().textRepresentation());
-    assertNull(((Concrete.BinOpExpression) expr2.getLeft()).getRight());
+    GlobalReferable named = it.next().getReferable();
+    GlobalReferable d = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(d), cApps(cVar(named), cVar(refs.get(1))), cVar(refs.get(2))));
+    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
   }
 
   @Test
@@ -303,16 +296,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
-    assertEquals(0, expr.getSequence().size());
-    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals("$", ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
-    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getRight() instanceof Concrete.BinOpExpression);
-    Concrete.BinOpExpression expr1 = (Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getRight();
-    assertNotNull(expr1);
-    assertEquals(name, expr1.getReferent().textRepresentation());
-    assertNull(expr1.getRight());
+    GlobalReferable named = it.next().getReferable();
+    GlobalReferable d = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(named), cVar(refs.get(1))));
+    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
   }
 
   @Test
@@ -327,14 +317,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\function f (A B : \\Prop) => A $ B " + name + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
-    assertEquals(0, expr.getSequence().size());
-    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
-    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
-    assertEquals("$", ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().textRepresentation());
+    GlobalReferable named = it.next().getReferable();
+    GlobalReferable d = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1))));
+    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
   }
 
   @Test
@@ -349,15 +338,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
       "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    it.next(); it.next();
-    Concrete.BinOpSequenceExpression expr = (Concrete.BinOpSequenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition()).getBody()).getTerm();
-    assertEquals(0, expr.getSequence().size());
-    assertTrue(expr.getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name2, ((Concrete.BinOpExpression) expr.getLeft()).getReferent().textRepresentation());
-    assertNull(((Concrete.BinOpExpression) expr.getLeft()).getRight());
-    assertTrue(((Concrete.BinOpExpression) expr.getLeft()).getLeft() instanceof Concrete.BinOpExpression);
-    assertEquals(name1, ((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getReferent().textRepresentation());
-    assertNull(((Concrete.BinOpExpression) ((Concrete.BinOpExpression) expr.getLeft()).getLeft()).getRight());
+    GlobalReferable named1 = it.next().getReferable();
+    GlobalReferable named2 = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Referable refA = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList().get(0);
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(named2), cApps(cVar(named1), cVar(refA)));
+    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
   }
 
   @Test

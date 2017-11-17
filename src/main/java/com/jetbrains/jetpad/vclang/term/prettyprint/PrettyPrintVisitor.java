@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.BinOpSequenceElem;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.Constructor;
@@ -446,59 +445,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     prettyPrintParameters(expr.getParameters(), (byte) (Concrete.AppExpression.PREC + 1));
 
     if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.append(')');
-    return null;
-  }
-
-  @Override
-  public Void visitBinOp(final Concrete.BinOpExpression expr, final Precedence prec) {
-    Referable referable = expr.getReferent();
-    Precedence precedence = referable instanceof GlobalReferable ? ((GlobalReferable) expr.getReferent()).getPrecedence() : Precedence.DEFAULT;
-    final Precedence leftPrecedence = new Precedence(precedence.associativity.equals(Precedence.Associativity.RIGHT_ASSOC) ? Precedence.Associativity.NON_ASSOC : precedence.associativity, precedence.priority);
-    final Precedence rightPrecedence = new Precedence(precedence.associativity.equals(Precedence.Associativity.LEFT_ASSOC) ? Precedence.Associativity.NON_ASSOC : precedence.associativity, precedence.priority);
-    final boolean needParentheses = prec.priority > precedence.priority || (prec.priority == precedence.priority && (prec.associativity.equals(Precedence.Associativity.NON_ASSOC) || !prec.associativity.equals(precedence.associativity)));
-    if (expr.getRight() == null) {
-      if (needParentheses) {
-        myBuilder.append('(');
-      }
-      expr.getLeft().accept(this, precedence);
-      String name = referable.textRepresentation();
-      myBuilder.append(" ").append(name).append("`");
-      if (needParentheses) {
-        myBuilder.append(')');
-      }
-    } else {
-      new BinOpLayout() {
-        @Override
-        void printLeft(PrettyPrintVisitor pp) {
-          if (needParentheses) pp.myBuilder.append('(');
-          expr.getLeft().accept(pp, leftPrecedence);
-        }
-
-        @Override
-        void printRight(PrettyPrintVisitor pp) {
-          expr.getRight().accept(pp, rightPrecedence);
-          if (needParentheses) pp.myBuilder.append(')');
-        }
-
-        @Override
-        String getOpText() {
-          String result = referable.textRepresentation();
-          return (isPrefix(result) ? "`" : "") + result;
-        }
-
-        @Override
-        boolean increaseIndent(List<String> right_strings) {
-          Concrete.Expression r = expr.getRight();
-          if (r instanceof Concrete.BinOpExpression) {
-            Referable ref = ((Concrete.BinOpExpression) r).getReferent();
-            if (!needParentheses)
-              return false; // no bracket drawn
-          }
-          return super.increaseIndent(right_strings);
-        }
-      }.doPrettyPrint(this, noIndent);
-    }
-
     return null;
   }
 

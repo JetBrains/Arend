@@ -145,7 +145,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     CheckTypeVisitor.TResult result;
     if (fun instanceof Concrete.AppExpression) {
       Concrete.Argument argument = ((Concrete.AppExpression) fun).getArgument();
-      result = checkBinOpInferArg(((Concrete.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
+      result = inferArg(((Concrete.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
     } else {
       if (fun instanceof Concrete.ReferenceExpression) {
         Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
@@ -187,23 +187,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return inferArg(result, arg, isExplicit, fun);
   }
 
-  private CheckTypeVisitor.TResult checkBinOpInferArg(Concrete.Expression fun, Concrete.Expression arg, boolean isExplicit, ExpectedType expectedType) {
-    if (fun instanceof Concrete.BinOpExpression) {
-      return inferArg(inferArg(inferArg(fun, ((Concrete.BinOpExpression) fun).getLeft(), true, null), ((Concrete.BinOpExpression) fun).getRight(), true, fun), arg, isExplicit, fun);
-    } else {
-      return inferArg(fun, arg, isExplicit, expectedType);
-    }
-  }
-
   @Override
   public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
     Concrete.Argument arg = expr.getArgument();
-    return checkBinOpInferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
-  }
-
-  @Override
-  public CheckTypeVisitor.TResult infer(Concrete.BinOpExpression expr, ExpectedType expectedType) {
-    return inferArg(inferArg(expr, expr.getLeft(), true, null), expr.getRight(), true, expr);
+    return inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
   }
 
   @Override

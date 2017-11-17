@@ -296,8 +296,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.BinOpExpression visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, Void params) {
-    return new Concrete.BinOpExpression(data, left.accept(this, null), binOp, right == null ? null : right.accept(this, null));
+  public Concrete.Expression visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, Void params) {
+    Concrete.AppExpression expr = new Concrete.AppExpression(data, new Concrete.ReferenceExpression(data, binOp), new Concrete.Argument(left.accept(this, null), true));
+    return right == null ? expr : new Concrete.AppExpression(data, expr, new Concrete.Argument(right.accept(this, null), true));
   }
 
   @Override

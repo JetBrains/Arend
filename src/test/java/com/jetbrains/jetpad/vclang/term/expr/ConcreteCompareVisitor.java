@@ -147,16 +147,6 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitBinOp(Concrete.BinOpExpression expr1, Concrete.Expression expr2) {
-    if (expr2 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr2).getSequence().isEmpty()) {
-      return visitBinOp(expr1, ((Concrete.BinOpSequenceExpression) expr2).getLeft());
-    }
-    if (!(expr2 instanceof Concrete.BinOpExpression)) return false;
-    Concrete.BinOpExpression binOpExpr2 = (Concrete.BinOpExpression) expr2;
-    return expr1.getLeft().accept(this, binOpExpr2.getLeft()) && (expr1.getRight() == null && binOpExpr2.getRight() == null || expr1.getRight() != null && binOpExpr2.getRight() != null && expr1.getRight().accept(this, binOpExpr2.getRight())) && expr1.getReferent().equals(((Concrete.BinOpExpression) expr2).getReferent());
-  }
-
-  @Override
   public Boolean visitBinOpSequence(Concrete.BinOpSequenceExpression expr1, Concrete.Expression expr2) {
     if (expr1.getSequence().isEmpty()) {
       return expr1.getLeft().accept(this, expr2);

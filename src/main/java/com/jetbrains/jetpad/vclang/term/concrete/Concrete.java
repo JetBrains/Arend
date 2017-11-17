@@ -238,8 +238,9 @@ public final class Concrete {
       return mySequence;
     }
 
-    public BinOpExpression makeBinOp(Expression left, Referable binOp, ReferenceExpression var, Expression right) {
-      return new BinOpExpression(var.getData(), left, binOp, right);
+    public Expression makeBinOp(Expression left, Referable binOp, ReferenceExpression var, Expression right) {
+      Expression expr = new AppExpression(var.getData(), new ReferenceExpression(var.getData(), binOp), new Argument(left, true));
+      return right == null ? expr : new AppExpression(var.getData(), expr, new Argument(right, true));
     }
 
     public void replace(Expression expression) {
@@ -250,32 +251,6 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOpSequence(this, params);
-    }
-  }
-
-  public static class BinOpExpression extends ReferenceExpression { // TODO[abstract]: replace binops with applications
-    private final Expression myLeft;
-    private final Expression myRight;
-
-    public BinOpExpression(Object data, Expression left, Referable binOp, Expression right) {
-      super(data, binOp);
-      myLeft = left;
-      myRight = right;
-    }
-
-    @Nonnull
-    public Expression getLeft() {
-      return myLeft;
-    }
-
-    @Nullable
-    public Expression getRight() {
-      return myRight;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitBinOp(this, params);
     }
   }
 
