@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
@@ -27,13 +28,13 @@ public class Ordering {
   private final Map<Typecheckable, DefState> myVertices = new HashMap<>();
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
-  private final DependencyListener myListener;
+  private final Typechecking myTypechecking;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, DependencyListener listener, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, Typechecking typechecking, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
-    myListener = listener;
+    myTypechecking = typechecking;
     myRefToHeaders = refToHeaders;
   }
 
@@ -121,7 +122,7 @@ public class Ordering {
       if (result == OrderResult.RECURSION_ERROR) {
         myStack.pop();
         currentState.onStack = false;
-        myListener.unitFound(unit, DependencyListener.Recursion.IN_HEADER);
+        myTypechecking.unitFound(unit, Typechecking.Recursion.IN_HEADER);
         return OrderResult.REPORTED;
       }
 
@@ -135,7 +136,7 @@ public class Ordering {
       dependenciesWithoutInstances.add(enclosingClass.getData());
     }
 
-    DependencyListener.Recursion recursion = DependencyListener.Recursion.NO;
+    Typechecking.Recursion recursion = Typechecking.Recursion.NO;
     definition.accept(new DefinitionGetDependenciesVisitor(dependenciesWithoutInstances), typecheckable.isHeader());
     Collection<GlobalReferable> dependencies;
     InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getData());
@@ -155,11 +156,11 @@ public class Ordering {
       GlobalReferable tcReferable = referable.getTypecheckable();
       if (tcReferable.equals(definition.getData())) {
         if (referable.equals(tcReferable)) {
-          recursion = DependencyListener.Recursion.IN_BODY;
+          recursion = Typechecking.Recursion.IN_BODY;
         }
       } else {
-        myListener.dependsOn(typecheckable, tcReferable);
-        if (myListener.needsOrdering(tcReferable)) {
+        myTypechecking.dependsOn(typecheckable, tcReferable);
+        if (myTypechecking.getTypechecked(tcReferable) == null) {
           Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
           if (dependency instanceof Concrete.Definition) {
             updateState(currentState, new Typecheckable((Concrete.Definition) dependency, myRefToHeaders));
@@ -180,7 +181,7 @@ public class Ordering {
       scc = new SCC(units);
 
       if (myRefToHeaders) {
-        myListener.sccFound(scc);
+        myTypechecking.sccFound(scc);
         return OrderResult.REPORTED;
       }
 
@@ -189,16 +190,16 @@ public class Ordering {
       }
 
       if (units.size() == 1) {
-        myListener.unitFound(unit, recursion);
+        myTypechecking.unitFound(unit, recursion);
         return OrderResult.REPORTED;
       }
     }
 
     if (header != null) {
-      myListener.sccFound(new SCC(Collections.singletonList(new TypecheckingUnit(header, enclosingClass))));
+      myTypechecking.sccFound(new SCC(Collections.singletonList(new TypecheckingUnit(header, enclosingClass))));
     }
     if (scc != null) {
-      myListener.sccFound(scc);
+      myTypechecking.sccFound(scc);
     }
 
     return OrderResult.REPORTED;

@@ -1,8 +1,9 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
@@ -22,7 +23,6 @@ import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
@@ -35,7 +35,6 @@ import java.util.*;
 
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
-  protected final ResultTracker resultTracker = new ResultTracker();
 
   // Modules
   protected final SimpleModuleScopeProvider sourceModuleScopeProvider = new SimpleModuleScopeProvider();
@@ -75,7 +74,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
     ModuleTracker() {
-      super(resultTracker);
+      super(errorReporter);
     }
 
     @Override
@@ -132,7 +131,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     if (!cacheLoaded) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
+    new Prelude.PreludeTypechecking(state).typecheckModules(Collections.singletonList(prelude));
     return prelude;
   }
 
@@ -189,13 +188,12 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    new MyTypechecking(state).typecheckModules(modulesToTypeCheck);
   }
 
-  class ResultTracker implements ErrorReporter, DependencyListener, TypecheckedReporter {
-    @Override
-    public void report(GeneralError error) {
-      errorReporter.report(error);
+  private class MyTypechecking extends Typechecking {
+    MyTypechecking(TypecheckerState state) {
+      super(state, ConcreteReferableProvider.INSTANCE, errorReporter, new DependencyListener() {});
     }
 
     @Override

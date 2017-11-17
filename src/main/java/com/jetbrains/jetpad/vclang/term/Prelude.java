@@ -18,7 +18,11 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
+import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collections;
@@ -116,7 +120,11 @@ public class Prelude {
     }
   }
 
-  public static class UpdatePreludeReporter implements TypecheckedReporter {
+  public static class PreludeTypechecking extends Typechecking {
+    public PreludeTypechecking(TypecheckerState state) {
+      super(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE, new DependencyListener() {});
+    }
+
     @Override
     public void typecheckingFinished(Definition definition) {
       update(definition);

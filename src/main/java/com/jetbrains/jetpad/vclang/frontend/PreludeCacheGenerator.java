@@ -11,8 +11,6 @@ import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -123,7 +121,7 @@ public class PreludeCacheGenerator {
     Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
     sourceInfoProvider.registerModule(prelude, storage.preludeSourceId);
-    new Typechecking(cacheManager.getTypecheckerState(), ConcreteReferableProvider.INSTANCE, errorReporter, new Prelude.UpdatePreludeReporter(), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    new Prelude.PreludeTypechecking(cacheManager.getTypecheckerState()).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }
