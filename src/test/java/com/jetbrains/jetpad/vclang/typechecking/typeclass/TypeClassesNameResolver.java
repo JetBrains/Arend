@@ -161,7 +161,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\data D\n" +
-      "\\instance D-X => \\new X { A => D | B => \\lam n => D }", 1);
+      "\\instance D-X : X | A => D | B => \\lam n => D", 1);
   }
 
   @Test
@@ -173,6 +173,6 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
       "}\n" +
       "\\view X' \\on X \\by A { B }\n" +
       "\\data D\n" +
-      "\\instance D-X => \\new X { A => D | B => \\lam _ => D }", 1);
+      "\\instance D-X : X | A => D | B => \\lam _ => D", 1);
   }
 }

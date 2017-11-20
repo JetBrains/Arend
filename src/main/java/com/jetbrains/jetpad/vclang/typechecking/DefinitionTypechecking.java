@@ -747,10 +747,6 @@ class DefinitionTypechecking {
   }
 
   private static void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, CheckTypeVisitor visitor) {
-    throw new UnsupportedOperationException(); // TODO[classes]
-    /*
-    LocalErrorReporter errorReporter = visitor.getErrorReporter();
-
     LinkList list = new LinkList();
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
@@ -759,61 +755,13 @@ class DefinitionTypechecking {
       return;
     }
 
-    Map<ClassField, Concrete.ClassFieldImpl> classFieldMap = new HashMap<>();
-    List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
-    Concrete.SourceNode alreadyImplementedSourceNode = null;
-    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-      ClassField field = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classFieldImpl.getImplementedField()); // TODO[classes]: check that it is a field and that it belongs to the class, also check that referable is global
-      if (classFieldMap.containsKey(field)) {
-        alreadyImplementedFields.add(field.getReferable());
-        alreadyImplementedSourceNode = classFieldImpl;
-      } else {
-        classFieldMap.put(field, classFieldImpl);
-      }
-    }
-    if (!alreadyImplementedFields.isEmpty()) {
-      visitor.getErrorReporter().report(new FieldsImplementationError<>(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? def : alreadyImplementedSourceNode));
-    }
-
-    Concrete.ClassView classView = (Concrete.ClassView) def.getClassView().getReferent();
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    ClassDefinition classDef = (ClassDefinition) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getUnderlyingClass().getReferent()); // TODO[classes]: check that it is a class, also check that referable is global and there is no left part in underlying class or whatever
-    ClassCallExpression term = new ClassCallExpression(classDef, Sort.generateInferVars(visitor.getEquations(), def.getClassView()), fieldSet, Sort.PROP);
-
-    List<GlobalReferable> notImplementedFields = new ArrayList<>();
-    for (ClassField field : classDef.getFields()) {
-      Concrete.ClassFieldImpl impl = classFieldMap.get(field);
-      if (impl != null) {
-        if (notImplementedFields.isEmpty()) {
-          fieldSet.put(field, visitor.typecheckImplementation(field, impl.getImplementation(), term));
-          classFieldMap.remove(field);
-        }
-      } else {
-        notImplementedFields.add(field.getReferable());
-      }
-    }
-    if (!notImplementedFields.isEmpty()) {
-      visitor.getErrorReporter().report(new FieldsImplementationError<>(false, notImplementedFields, def));
+    CheckTypeVisitor.Result result = visitor.finalCheckExpr(new Concrete.ClassExtExpression(def.getData(), def.getClassReference(), def.getClassFieldImpls()), ExpectedType.OMEGA, false);
+    if (result == null || !(result.expression instanceof ClassCallExpression)) {
       return;
     }
 
-    LevelSubstitution substitution = visitor.getEquations().solve(def);
-    if (!substitution.isEmpty()) {
-      term = new SubstVisitor(new ExprSubstitution(), substitution).visitClassCall(term, null);
-    }
-    term = new StripVisitor(visitor.getErrorReporter()).visitClassCall(term, null);
-
-    ClassField classifyingField = (ClassField) visitor.getTypecheckingState().getTypechecked((GlobalReferable) classView.getClassifyingField()); // TODO[classes]: check that it is a field and that it belongs to the class, also check that referable is global
-    Expression impl = fieldSet.get(classifyingField);
-    DefCallExpression defCall = impl.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
-    if (defCall == null || !defCall.getDefCallArguments().isEmpty()) {
-      errorReporter.report(new LocalTypeCheckingError<>("Expected a definition in the classifying field", def));
-      return;
-    }
-
-    typedDef.setResultType(term);
-    typedDef.setBody(new LeafElimTree(list.getFirst(), new NewExpression(term)));
+    visitor.checkAllImplemented((ClassCallExpression) result.expression, def);
+    typedDef.setResultType(result.expression);
     typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    */
   }
 }

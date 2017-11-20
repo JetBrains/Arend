@@ -51,7 +51,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data)));
       }
     } else {
-      body = new Concrete.ElimFunctionBody(def.getReferable(), buildReferenceExpressionsFromReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
+      body = new Concrete.ElimFunctionBody(def.getReferable(), buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
     }
 
     Abstract.Expression resultType = def.getResultType();
@@ -69,7 +69,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
     Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
-    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, buildTypeParameters(def.getParameters()), elimExpressions == null ? null : buildReferenceExpressionsFromReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, buildTypeParameters(def.getParameters()), elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
 
     for (Abstract.ConstructorClause clause : absClauses) {
       Collection<? extends Abstract.Constructor> absConstructors = clause.getConstructors();
@@ -80,7 +80,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
       for (Abstract.Constructor constructor : absConstructors) {
-        constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferenceExpressionsFromReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+        constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
       }
 
       Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
@@ -90,18 +90,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private List<Concrete.ReferenceExpression> buildReferenceExpressionsFromReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
-    List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
-    for (Abstract.Reference reference : absElimExpressions) {
-      elimExpressions.add(new Concrete.ReferenceExpression(reference.getData(), reference.getReferent()));
-    }
-    return elimExpressions;
-  }
-
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferenceExpressionsFromReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();
@@ -113,6 +105,23 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
 
     return classDef;
+  }
+
+  @Override
+  public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
+    return new Concrete.Instance(def.getReferable(), buildParameters(def.getParameters()), buildReference(def.getResultClass()), buildImplementations(def.getImplementation()));
+  }
+
+  private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {
+    return new Concrete.ReferenceExpression(reference.getData(), reference.getReferent());
+  }
+
+  private List<Concrete.ReferenceExpression> buildReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
+    List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
+    for (Abstract.Reference reference : absElimExpressions) {
+      elimExpressions.add(buildReference(reference));
+    }
+    return elimExpressions;
   }
 
   private List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {

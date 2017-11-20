@@ -150,4 +150,9 @@ public final class Abstract {
     @Nonnull GlobalReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }
+
+  public interface InstanceDefinition extends Definition, ParametersHolder {
+    /* @Nonnull */ @Nullable Reference getResultClass();
+    @Nonnull Collection<? extends ClassFieldImpl> getImplementation();
+  }
 }

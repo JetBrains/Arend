@@ -585,24 +585,24 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitClassExt(Concrete.ClassExtExpression expr, Precedence prec) {
     if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append('(');
     expr.getBaseClassExpression().accept(this, new Precedence(Concrete.ClassExtExpression.PREC));
-    myBuilder.append(" ");
+    myBuilder.append(" {");
     visitClassFieldImpls(expr.getStatements());
+    myBuilder.append("\n");
+    printIndent();
+    myBuilder.append("}");
     if (prec.priority > Concrete.ClassExtExpression.PREC) myBuilder.append(')');
     return null;
   }
 
   private void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls) {
-    myBuilder.append("{\n");
     myIndent += INDENT;
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
+      myBuilder.append("\n");
       printIndent();
       myBuilder.append("| ");
       visitClassFieldImpl(classFieldImpl);
-      myBuilder.append("\n");
     }
     myIndent -= INDENT;
-    printIndent();
-    myBuilder.append("}");
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
@@ -1073,13 +1073,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitInstance(Concrete.Instance def, Void params) {
     myBuilder.append("\\instance ");
     prettyPrintNameWithPrecedence(def.getData());
-    prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
+    if (!def.getParameters().isEmpty()) {
+      myBuilder.append(" ");
+      prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
+    }
 
-    myBuilder.append(" => \\new ");
-    def.getClassView().accept(this, new Precedence(Concrete.Expression.PREC));
-    myBuilder.append(" ");
     visitClassFieldImpls(def.getClassFieldImpls());
-
     return null;
   }
 

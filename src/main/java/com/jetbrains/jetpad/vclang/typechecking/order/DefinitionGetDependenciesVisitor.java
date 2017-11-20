@@ -133,8 +133,11 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       }
     }
 
-    def.getClassView().accept(myVisitor, null);
+    def.getClassReference().accept(myVisitor, null);
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+      if (classFieldImpl.getImplementedField() instanceof GlobalReferable) {
+        myVisitor.getDependencies().add((GlobalReferable) classFieldImpl.getImplementedField());
+      }
       classFieldImpl.getImplementation().accept(myVisitor, null);
     }
 

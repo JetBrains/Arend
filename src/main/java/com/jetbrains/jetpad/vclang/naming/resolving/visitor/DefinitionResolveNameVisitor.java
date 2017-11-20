@@ -220,31 +220,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
-    exprVisitor.visitReference(def.getClassView(), null);
-    if (def.getClassView().getReferent() instanceof ClassReferable) {
-      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassView().getReferent());
-      /* TODO[classes]
-      boolean ok = false;
-      for (Concrete.ClassFieldImpl impl : def.getClassFieldImpls()) {
-        if (impl.getImplementedField() == ((GlobalReferable) def.getClassView().getReferent()).getClassifyingField()) {
-          ok = true;
-          Concrete.Expression expr = impl.getImplementation();
-          while (expr instanceof Concrete.AppExpression) {
-            expr = ((Concrete.AppExpression) expr).getFunction();
-          }
-          if (expr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr).getReferent() instanceof GlobalReferable) {
-            def.setClassifyingDefinition((GlobalReferable) ((Concrete.ReferenceExpression) expr).getReferent());
-          } else {
-            myErrorReporter.report(new NamingError("Expected a definition applied to arguments", impl.getImplementation()));
-          }
-        }
-      }
-      if (!ok) {
-        myErrorReporter.report(new NamingError("Classifying field is not implemented", def));
-      }
-      */
+    exprVisitor.visitReference(def.getClassReference(), null);
+    if (def.getClassReference().getReferent() instanceof ClassReferable) {
+      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassReference().getReferent());
     } else {
-      myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class view", def.getClassView().getReferent(), def)));
+      myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class view", def.getClassReference().getReferent(), def)));
+      def.getClassFieldImpls().clear();
     }
 
     return null;

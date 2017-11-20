@@ -1064,14 +1064,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedType, exprResult, expr);
   }
 
-  public ClassField referableToClassField(Referable referable, Concrete.SourceNode sourceNode) {
+  public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
     Definition definition = referable instanceof GlobalReferable ? myState.getTypechecked((GlobalReferable) referable) : null;
-    if (definition instanceof ClassField) {
-      return (ClassField) definition;
+    if (clazz.isInstance(definition)) {
+      return clazz.cast(definition);
     }
 
-    myErrorReporter.report(definition == null ? new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()) : new WrongReferable("Expected a class field", referable, sourceNode));
+    myErrorReporter.report(definition == null ? new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()) : new WrongReferable(errorMsg, referable, sourceNode));
     return null;
+  }
+
+  public ClassField referableToClassField(Referable referable, Concrete.SourceNode sourceNode) {
+    return referableToDefinition(referable, ClassField.class, "Expected a class field", sourceNode);
   }
 
   @Override
@@ -1191,7 +1195,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private boolean checkAllImplemented(ClassCallExpression classCall, Concrete.Expression expr) {
+  public boolean checkAllImplemented(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     int notImplemented = classCall.getDefinition().getFields().size() - classCall.getDefinition().getImplemented().size() - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
@@ -1202,7 +1206,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           fields.add(field.getReferable());
         }
       }
-      myErrorReporter.report(new FieldsImplementationError(false, fields, expr));
+      myErrorReporter.report(new FieldsImplementationError(false, fields, sourceNode));
       return false;
     }
   }

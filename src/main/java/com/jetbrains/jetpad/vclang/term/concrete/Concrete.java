@@ -1266,22 +1266,15 @@ public final class Concrete {
   }
 
   public static class Instance extends Definition {
-    private final boolean myDefault;
     private final List<Parameter> myArguments;
     private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
-    private GlobalReferable myClassifyingDefinition;
 
-    public Instance(boolean isDefault, GlobalReferable referable, List<Parameter> arguments, ReferenceExpression classView, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(GlobalReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
-      myDefault = isDefault;
       myArguments = arguments;
-      myClassView = classView;
+      myClassView = classRef;
       myClassFieldImpls = classFieldImpls;
-    }
-
-    public boolean isDefault() {
-      return myDefault;
     }
 
     @Nonnull
@@ -1290,17 +1283,8 @@ public final class Concrete {
     }
 
     @Nonnull
-    public ReferenceExpression getClassView() {
+    public ReferenceExpression getClassReference() {
       return myClassView;
-    }
-
-    @Nonnull
-    public GlobalReferable getClassifyingDefinition() {
-      return myClassifyingDefinition;
-    }
-
-    public void setClassifyingDefinition(GlobalReferable classifyingDefinition) {
-      myClassifyingDefinition = classifyingDefinition;
     }
 
     @Nonnull

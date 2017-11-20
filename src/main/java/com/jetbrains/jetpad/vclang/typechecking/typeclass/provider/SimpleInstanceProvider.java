@@ -31,8 +31,8 @@ public class SimpleInstanceProvider implements InstanceProvider {
           Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete((GlobalReferable) referable);
           if (definition instanceof Concrete.Instance) {
             Concrete.Instance instance = (Concrete.Instance) definition;
-            if (instance.getClassView().getReferent() instanceof GlobalReferable) {
-              myInstances.computeIfAbsent((GlobalReferable) instance.getClassView().getReferent(), k -> new ArrayList<>()).add(instance);
+            if (instance.getClassReference().getReferent() instanceof GlobalReferable) {
+              myInstances.computeIfAbsent((GlobalReferable) instance.getClassReference().getReferent(), k -> new ArrayList<>()).add(instance);
             }
           }
         }

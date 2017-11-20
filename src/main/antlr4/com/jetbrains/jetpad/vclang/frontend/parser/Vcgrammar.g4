@@ -19,12 +19,14 @@ classStat : '|' precedence id ':' expr  # classField
           | definition                  # classDefinition
           ;
 
-definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                              # defFunction
-            | TRUNCATED? '\\data' precedence id tele* (':' expr)? dataBody where?                                           # defData
-            | '\\class' precedence id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where?  # defClass
-            | '\\view' precedence id '\\on' expr '\\by' id '{' classViewField* '}'                                          # defClassView
-            | defaultInst '\\instance' id tele* '=>' expr where?                                                            # defInstance
+definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                      # defFunction
+            | TRUNCATED? '\\data' precedence id tele* (':' expr)? dataBody where?                                   # defData
+            | '\\class' precedence id tele* ('\\extends' classCall (',' classCall)*)? ('{' classStat* '}')? where?  # defClass
+            | '\\view' precedence id '\\on' expr '\\by' id '{' classViewField* '}'                                  # defClassView
+            | '\\instance' id tele* ':' classCall coClauses where?                                                  # defInstance
             ;
+
+classCall : atomFieldsAcc; // TODO[classes]: add arguments
 
 functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim
@@ -37,10 +39,6 @@ dataBody : elim constructorClause*                      # dataClauses
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
 elim : '\\with' | '=>' '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
-
-defaultInst :             # noDefault
-            | '\\default' # withDefault
-            ;
 
 classViewField : id ('=>' precedence id)? ;
 
@@ -83,11 +81,17 @@ clauses : ('|' clause)*                 # clausesWithoutBraces
         | '{' clause? ('|' clause)* '}' # clausesWithBraces
         ;
 
+coClauses : ('|' coClause)*                   # coClausesWithoutBraces
+          | '{' coClause? ('|' coClause)* '}' # coClausesWithBraces
+          ;
+
+clause : pattern (',' pattern)* ('=>' expr)?;
+
+coClause : prefix '=>' expr;
+
 letClause : id tele* typeAnnotation? '=>' expr;
 
 typeAnnotation : ':' expr;
-
-clause : pattern (',' pattern)* ('=>' expr)?;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
@@ -134,9 +138,7 @@ atom  : literal                         # atomLiteral
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
 
-implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
-
-implementStatement : atomFieldsAcc '=>' expr;
+implementStatements : '{' coClause? ('|' coClause)* '}';
 
 argument : atomFieldsAcc                # argumentExplicit
          | universeAtom                 # argumentUniverse
