@@ -426,7 +426,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (classExt.getBaseClassExpression() instanceof Concrete.ReferenceExpression) {
           ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(ctx.start), visitId(ctx.id()), Precedence.DEFAULT);
           reference.setDefinition(new Concrete.Instance(ctx.defaultInst() instanceof WithDefaultContext, reference, arguments, (Concrete.ReferenceExpression) classExt.getBaseClassExpression(), classExt.getStatements()));
-          return new StaticGroup(reference, Collections.emptyList(), Collections.emptyList(), parent); // TODO[classes]: add static subgroups
+          List<Group> subgroups = new ArrayList<>();
+          List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+          StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
+          visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+          return resultGroup;
         }
       }
     }
