@@ -73,14 +73,12 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
     }
 
     @Override
-    public void registerCachedDefinition(SourceIdT sourceId, String id, Definition definition) {
+    public void registerCachedDefinition(SourceIdT sourceId, String id, GlobalReferable parent) {
       Scope sourceScope = mySourceModuleScopeProvider.forModule(sourceId.getModulePath());
       if (sourceScope == null) {
         Pair<Precedence, List<String>> name = fullNameFromNameId(id);
-        GlobalReferable ref = definition.getReferable();
-        GlobalReferable tcRef = ref.getTypecheckable();
-        myScopeProvider.registerDefinition(sourceId.getModulePath(), name.proj2, name.proj1, tcRef);
-        mySrcInfoProvider.myCacheSrcInfoProvider.registerDefinition(ref, new FullName(name.proj2), sourceId);
+        GlobalReferable res = myScopeProvider.registerDefinition(sourceId.getModulePath(), name.proj2, name.proj1, parent);
+        mySrcInfoProvider.myCacheSrcInfoProvider.registerDefinition(res, new FullName(name.proj2), sourceId);
       }
     }
   }

@@ -53,7 +53,7 @@ public class CachingTestCase extends NameResolverTestCase {
         sourceInfoProvider.registerModule(result.group, module);
       }
     };
-    storage = new MemoryStorage(moduleScopeProvider, moduleLoader, moduleScopeProvider);
+    storage = new MemoryStorage(moduleScopeProvider, moduleScopeProvider);
     moduleLoader.setSourceSupplier(storage);
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
@@ -155,7 +155,7 @@ public class CachingTestCase extends NameResolverTestCase {
     }
 
     @Override
-    public void registerCachedDefinition(SourceIdT sourceId, String id, Definition definition) {
+    public void registerCachedDefinition(SourceIdT sourceId, String id, GlobalReferable parent) {
     }
 
     private String remember(Object o) {

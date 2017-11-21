@@ -13,5 +13,5 @@ public interface PersistenceProvider<SourceIdT extends SourceId> extends ModuleU
   }
   @Nullable String getIdFor(GlobalReferable definition);
   @Nonnull GlobalReferable getFromId(SourceIdT sourceId, String id);
-  void registerCachedDefinition(SourceIdT sourceId, String id, Definition definition);
+  void registerCachedDefinition(SourceIdT sourceId, String id, GlobalReferable parent);
 }

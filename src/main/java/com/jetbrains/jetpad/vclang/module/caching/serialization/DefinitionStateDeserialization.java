@@ -37,17 +37,17 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       String id = entry.getKey();
       DefinitionProtos.Definition defProto = entry.getValue();
 
+      myPersistenceProvider.registerCachedDefinition(mySourceId, id, null);
       final GlobalReferable abstractDef = getAbstract(id);
-
       final Definition def;
       switch (defProto.getDefinitionDataCase()) {
         case CLASS:
           ClassDefinition classDef = new ClassDefinition(abstractDef);
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+            myPersistenceProvider.registerCachedDefinition(mySourceId, fieldProto.getName(), abstractDef);
             GlobalReferable absField = getAbstract(fieldProto.getName());
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            myPersistenceProvider.registerCachedDefinition(mySourceId, fieldProto.getName(), res);
             state.record(absField, res);
           }
           def = classDef;
@@ -55,10 +55,10 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
         case DATA:
           DataDefinition dataDef = new DataDefinition(abstractDef);
           for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
+            myPersistenceProvider.registerCachedDefinition(mySourceId, constructorId, abstractDef);
             GlobalReferable absConstructor = getAbstract(constructorId);
             Constructor res = new Constructor(absConstructor, dataDef);
             res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-            myPersistenceProvider.registerCachedDefinition(mySourceId, constructorId, res);
             state.record(absConstructor, res);
           }
           def = dataDef;
@@ -70,7 +70,6 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
           throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
 
-      myPersistenceProvider.registerCachedDefinition(mySourceId, id, def);
       def.setStatus(readTcStatus(defProto));
       state.record(abstractDef, def);
     }

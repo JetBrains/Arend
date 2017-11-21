@@ -11,10 +11,10 @@ import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheScope;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
@@ -37,9 +37,8 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
 
   // Modules
-  protected final SimpleModuleScopeProvider sourceModuleScopeProvider = new SimpleModuleScopeProvider();
-  protected final CacheModuleScopeProvider moduleScopeProvider = new CacheModuleScopeProvider(sourceModuleScopeProvider);
   protected final ModuleTracker moduleTracker;
+  protected final CacheModuleScopeProvider<SourceIdT> moduleScopeProvider;
   private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
@@ -57,6 +56,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     useCache = !recompile;
 
     moduleTracker = new ModuleTracker();
+    moduleScopeProvider = new CacheModuleScopeProvider<>(moduleTracker);
     srcInfoProvider = new CacheSourceInfoProvider<>(moduleTracker.sourceInfoProvider);
   }
 
@@ -67,10 +67,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     moduleTracker.setSourceSupplier(storage);
     cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), EmptyModuleScopeProvider.INSTANCE, moduleScopeProvider, srcInfoProvider, moduleTracker);
+    moduleScopeProvider.initialise(storage, cacheManager);
     state = cacheManager.getTypecheckerState();
   }
 
-  class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
+  class ModuleTracker extends LoadingModuleScopeProvider<SourceIdT> implements SourceVersionTracker<SourceIdT> {
     private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
     ModuleTracker() {
@@ -79,6 +80,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     @Override
     protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
+      super.loadingSucceeded(module, result);
       sourceInfoProvider.registerModule(result.group, module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
@@ -86,6 +88,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     @Override
     protected void loadingFailed(SourceIdT module) {
+      super.loadingFailed(module);
       moduleResults.put(module, ModuleResult.NOT_LOADED);
       System.out.println("[Failed] " + displaySource(module, false));
     }
@@ -109,30 +112,15 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     public long getCurrentVersion(@Nonnull SourceIdT sourceId) {
       return loadedSources.get(sourceId).version;
     }
-
-    @Override
-    public boolean ensureLoaded(@Nonnull SourceIdT sourceId, long version) {
-      SourceSupplier.LoadResult result = loadedSources.get(sourceId);
-      if (result == null) throw new IllegalStateException("Cache manager trying to load a new module");
-      return result.version == version;
-    }
   }
 
-  protected Group loadPrelude() {
-    SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    Group prelude = moduleTracker.load(sourceId);
-    assert errorReporter.getErrorList().isEmpty();
-    boolean cacheLoaded;
-    try {
-      cacheLoaded = cacheManager.loadCache(sourceId);
-    } catch (CacheLoadingException e) {
-      cacheLoaded = false;
-    }
-    if (!cacheLoaded) {
+  private void loadPrelude() {
+    CacheScope prelude = moduleScopeProvider.forCacheModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    if (prelude == null) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Prelude.PreludeTypechecking(state).typecheckModules(Collections.singletonList(prelude));
-    return prelude;
+
+    Prelude.initialise(prelude.root, state);
   }
 
 

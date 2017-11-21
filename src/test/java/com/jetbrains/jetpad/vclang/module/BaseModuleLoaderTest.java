@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.Group;
 import org.junit.Before;
@@ -37,7 +38,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
         failedModules.add(module);
       }
     };
-    storage = new MemoryStorage(null, null, EmptyModuleScopeProvider.INSTANCE);
+    storage = new MemoryStorage(new SimpleModuleScopeProvider(), EmptyModuleScopeProvider.INSTANCE);
     moduleLoader.setSourceSupplier(storage);
   }
 

@@ -20,6 +20,8 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.util.Pair;
@@ -116,6 +118,14 @@ public class Prelude {
         SET_TRUNC.setSort(Sort.SetOfLevel(new Level(LevelVariable.PVAR)));
         SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
         break;
+    }
+  }
+
+  // This works only because currently the prelude namespace is flat.
+  // This solution is flat from perfect, but someone on our team said it was fine to do that.
+  public static void initialise(Scope scope, TypecheckerState state) {
+    for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
+      update(state.getTypechecked((GlobalReferable) scope.resolveName(name)));
     }
   }
 

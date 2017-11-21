@@ -4,12 +4,10 @@ import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.ModuleUriProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.NullStorage;
-import com.jetbrains.jetpad.vclang.term.Group;
 import org.apache.commons.cli.*;
 
 import javax.annotation.Nonnull;
@@ -34,7 +32,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir, boolean recompile) throws IOException {
     super(recompile);
-    this.storageManager = new StorageManager(libDir, sourceDir, cacheDir, moduleTracker);
+    this.storageManager = new StorageManager(libDir, sourceDir, cacheDir);
     initialize(storageManager.storage);
   }
 
@@ -57,11 +55,6 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     return new MyModuleUriProvider();
   }
 
-  @Override
-  protected Group loadPrelude() {
-    return super.loadPrelude();
-  }
-
   private class StorageManager {
     final FileStorage projectStorage;
     final LibStorage libStorage;
@@ -70,10 +63,10 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
-    StorageManager(Path libDir, Path projectDir, Path cacheDir, ModuleResolver moduleResolver) throws IOException {
-      projectStorage = new FileStorage(projectDir, cacheDir, sourceModuleScopeProvider, moduleResolver, moduleScopeProvider);
-      libStorage = libDir != null ? new LibStorage(libDir, sourceModuleScopeProvider, moduleResolver, moduleScopeProvider) : null;
-      preludeStorage = new PreludeStorage(sourceModuleScopeProvider);
+    StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
+      projectStorage = new FileStorage(projectDir, cacheDir, moduleTracker, moduleScopeProvider);
+      libStorage = libDir != null ? new LibStorage(libDir, moduleTracker, moduleScopeProvider) : null;
+      preludeStorage = new PreludeStorage(moduleTracker);
 
       nonProjectCompositeStorage = new CompositeStorage<>(libStorage != null ? libStorage : new NullStorage<>(), preludeStorage);
       storage = new CompositeStorage<>(projectStorage, nonProjectCompositeStorage);

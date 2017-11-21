@@ -94,7 +94,7 @@ public class PreludeCacheGenerator {
     }
 
     @Override
-    public void registerCachedDefinition(PreludeStorage.SourceId sourceId, String id, Definition definition) {
+    public void registerCachedDefinition(PreludeStorage.SourceId sourceId, String id, GlobalReferable parent) {
       throw new IllegalStateException();
     }
   }
@@ -103,11 +103,6 @@ public class PreludeCacheGenerator {
     @Override
     public long getCurrentVersion(@Nonnull PreludeStorage.SourceId sourceId) {
       return 1;
-    }
-
-    @Override
-    public boolean ensureLoaded(@Nonnull PreludeStorage.SourceId sourceId, long version) {
-      throw new IllegalStateException();
     }
   }
 

@@ -43,19 +43,8 @@ public class CacheManager<SourceIdT extends SourceId> {
   }
 
   /**
-   * Load persisted cache for a source.
-   * <p>
-   * Also loads caches for all the dependencies of the requested source.
-   * <p>
-   * It is assumed that abstract source of this module is available, as well as abstract sources of all the modules
-   * that this one refers to (which is probably automatically true by the time you have the source of this module
-   * loaded as all the references will have been resolved).
-   *
-   * @param sourceId  ID of the source to load cache of
-   *
-   * @return <code>true</code> if loading succeeded;
-   *         <code>false</code> otherwise.
-   * @throws CacheLoadingException if an <code>IOException</code> occurs.
+   * Normally, {@link com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider} will call this
+   * method, so you don't have to.
    */
   public boolean loadCache(@Nonnull SourceIdT sourceId) throws CacheLoadingException {
     if (myStubsLoaded.contains(sourceId)) return true;
@@ -84,10 +73,6 @@ public class CacheManager<SourceIdT extends SourceId> {
   }
 
   private void readModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState, ModuleProtos.Module moduleProto) throws CacheLoadingException {
-    if (!myVersionTracker.ensureLoaded(sourceId, moduleProto.getVersion())) {
-      throw new CacheLoadingException(sourceId, "Source has changed");
-    }
-
     try {
       DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
       defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);

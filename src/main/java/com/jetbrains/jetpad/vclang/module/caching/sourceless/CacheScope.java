@@ -47,7 +47,7 @@ public class CacheScope {
     return ensureSubScope(root, ns);
   }
 
-  private final class CachedSubScope implements Scope {
+  public final class CachedSubScope implements Scope {
     public final Map<String, CachedSubScope> sub = new HashMap<>();
     public GlobalReferable here = null;
 

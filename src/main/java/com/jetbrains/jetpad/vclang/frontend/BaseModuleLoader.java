@@ -2,13 +2,12 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.source.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 
-public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT>, ModuleResolver {
+public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT> {
   protected SourceSupplier<SourceIdT> mySourceSupplier;
   private final ErrorReporter myErrorReporter;
 
@@ -38,10 +37,13 @@ public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoade
     }
   }
 
-  @Override
-  public boolean load(ModulePath modulePath) {
+  public ChildGroup load(ModulePath modulePath) {
     SourceIdT sourceId = locateModule(modulePath);
-    return sourceId != null && load(sourceId) != null;
+    if (sourceId != null) {
+      return load(sourceId);
+    } else {
+      return null;
+    }
   }
 
   @Override

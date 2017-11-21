@@ -17,7 +17,6 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   private final Map<ModulePath, Source> mySources = new HashMap<>();
   private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
-  private final ModuleResolver myModuleResolver;
   private final ModuleScopeProvider myModuleScopeProvider;
 
   static class Source {
@@ -30,9 +29,8 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     }
   }
 
-  public MemoryStorage(@Nullable ModuleRegistry moduleRegistry, ModuleResolver moduleResolver, ModuleScopeProvider moduleScopeProvider) {
+  public MemoryStorage(@Nullable ModuleRegistry moduleRegistry, ModuleScopeProvider moduleScopeProvider) {
     myModuleRegistry = moduleRegistry;
-    myModuleResolver = moduleResolver;
     myModuleScopeProvider = moduleScopeProvider;
   }
 
@@ -69,7 +67,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      ChildGroup result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
+      ChildGroup result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleScopeProvider);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);
@@ -84,11 +82,6 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   @Override
   public long getCurrentVersion(@Nonnull SourceId sourceId) {
     return getAvailableVersion(sourceId);
-  }
-
-  @Override
-  public boolean ensureLoaded(@Nonnull SourceId sourceId, long version) {
-    return getCurrentVersion(sourceId) == version;
   }
 
   @Override

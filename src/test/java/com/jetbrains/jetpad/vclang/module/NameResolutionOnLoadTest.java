@@ -20,7 +20,7 @@ public class NameResolutionOnLoadTest extends NameResolverTestCase {
   @Before
   public void initialize() {
     moduleLoader = new BaseModuleLoader<>(errorReporter);
-    storage = new MemoryStorage(moduleScopeProvider, moduleLoader, moduleScopeProvider);
+    storage = new MemoryStorage(moduleScopeProvider, moduleScopeProvider);
     moduleLoader.setSourceSupplier(storage);
   }
 

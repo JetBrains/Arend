@@ -6,11 +6,11 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;
@@ -32,7 +32,7 @@ public abstract class ParseSource {
   }
 
   public @Nullable
-  ChildGroup load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nullable ModuleResolver moduleResolver, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
+  ChildGroup load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -63,20 +63,18 @@ public abstract class ParseSource {
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-      if (moduleResolver != null) {
-        for (NamespaceCommand command : result.getNamespaceCommands()) {
-          if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
-            ModulePath modulePath = new ModulePath(command.getPath());
-            if (!moduleRegistry.isRegistered(modulePath)) {
-              boolean loaded = moduleResolver.load(modulePath);
-              if (!loaded) {
-                compositeErrorReporter.report(new GeneralError(Error.Level.ERROR, "[Import] Could not load module: " + modulePath) {
-                  @Override
-                  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-                    return Collections.singleton(result.getReferable());
-                  }
-                });
-              }
+      for (NamespaceCommand command : result.getNamespaceCommands()) {
+        if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
+          ModulePath modulePath = new ModulePath(command.getPath());
+          if (!moduleRegistry.isRegistered(modulePath)) {
+            Scope s = moduleScopeProvider.forModule(modulePath);
+            if (s == null) {
+              compositeErrorReporter.report(new GeneralError(Error.Level.ERROR, "[Import] Could not load module: " + modulePath) {
+                @Override
+                public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+                  return Collections.singleton(result.getReferable());
+                }
+              });
             }
           }
         }

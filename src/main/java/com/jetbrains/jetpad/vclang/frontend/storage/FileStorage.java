@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.module.ModuleResolver;
 import com.jetbrains.jetpad.vclang.module.caching.CacheStorageSupplier;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
@@ -57,16 +56,14 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
 
   private final ModuleRegistry myModuleRegistry;
-  private final ModuleResolver myModuleResolver;
   private final ModuleScopeProvider myModuleScopeProvider;
 
   private final FileSourceSupplier mySourceSupplier;
   private final FileCacheStorageSupplier myCacheStorageSupplier;
 
 
-  public FileStorage(Path sourceRoot, Path cacheRoot, ModuleRegistry moduleRegistry, ModuleResolver moduleResolver, ModuleScopeProvider moduleScopeProvider) {
+  public FileStorage(Path sourceRoot, Path cacheRoot, ModuleRegistry moduleRegistry, ModuleScopeProvider moduleScopeProvider) {
     myModuleRegistry = moduleRegistry;
-    myModuleResolver = moduleResolver;
     myModuleScopeProvider = moduleScopeProvider;
 
     mySourceSupplier = new FileSourceSupplier(sourceRoot);
@@ -86,8 +83,8 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
     @Override
     public SourceId locateModule(@Nonnull ModulePath modulePath) {
-      Path file = sourceFile(baseFile(myRoot, modulePath));
-      if (Files.exists(file)) {
+      Path sourceFile = sourceFile(baseFile(myRoot, modulePath));
+      if (Files.exists(sourceFile)) {
         return new SourceId(modulePath);
       }
       return null;
@@ -109,7 +106,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
         long mtime = getLastModifiedTime(file);
 
         FileSource fileSource = new FileSource(sourceId, file);
-        ChildGroup result = fileSource.load(errorReporter, myModuleRegistry, myModuleResolver, myModuleScopeProvider);
+        ChildGroup result = fileSource.load(errorReporter, myModuleRegistry, myModuleScopeProvider);
 
         // Make sure file did not change
         if (getLastModifiedTime(file) != mtime) return null;
@@ -167,6 +164,14 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
       }
       return null;
     }
+
+    public SourceId locateModule(ModulePath modulePath) {
+      Path cacheFile = cacheFile(baseFile(myRoot, modulePath));
+      if (Files.exists(cacheFile)) {
+        return new SourceId(modulePath);
+      }
+      return null;
+    }
   }
 
   @Override
@@ -181,7 +186,12 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
   @Override
   public SourceId locateModule(@Nonnull ModulePath modulePath) {
-    return mySourceSupplier.locateModule(modulePath);
+    SourceId sourceId = mySourceSupplier.locateModule(modulePath);
+    if (sourceId != null) {
+      return sourceId;
+    } else {
+      return myCacheStorageSupplier.locateModule(modulePath);
+    }
   }
 
   @Override
