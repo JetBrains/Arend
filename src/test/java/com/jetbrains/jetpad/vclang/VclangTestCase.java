@@ -4,6 +4,9 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -11,6 +14,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,6 +25,11 @@ import static org.junit.Assert.assertThat;
 public abstract class VclangTestCase {
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
+
+  public GlobalReferable get(Scope scope, String path) {
+    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
+  }
 
   @SafeVarargs
   protected final void assertThatErrorsAre(Matcher<? super GeneralError>... matchers) {

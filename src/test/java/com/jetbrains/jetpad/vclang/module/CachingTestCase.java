@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
+import com.jetbrains.jetpad.vclang.StorageTestCase;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
@@ -10,9 +10,9 @@ import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -34,9 +34,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-public class CachingTestCase extends NameResolverTestCase {
-  protected MemoryStorage storage;
-  protected BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
+public class CachingTestCase extends StorageTestCase {
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
   protected TypecheckerState tcState;
   private SimpleSourceInfoProvider<MemoryStorage.SourceId> sourceInfoProvider;
@@ -45,16 +43,10 @@ public class CachingTestCase extends NameResolverTestCase {
 
   @Before
   public void initialize() {
+    super.initialize();
+
     sourceInfoProvider = new SimpleSourceInfoProvider<>();
-    moduleLoader = new BaseModuleLoader<MemoryStorage.SourceId>(errorReporter) {
-      @Override
-      protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
-        if (result == null) throw new IllegalStateException("Could not load module");
-        sourceInfoProvider.registerModule(result.group, module);
-      }
-    };
-    storage = new MemoryStorage(moduleScopeProvider, moduleScopeProvider);
-    moduleLoader.setSourceSupplier(storage);
+
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
     cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
     tcState = cacheManager.getTypecheckerState();
@@ -62,6 +54,10 @@ public class CachingTestCase extends NameResolverTestCase {
   }
 
   @Override
+  protected void loadingSucceeded(MemoryStorage.SourceId module, SourceSupplier.LoadResult result) {
+    sourceInfoProvider.registerModule(result.group, module);
+  }
+
   protected void loadPrelude() {
     final String preludeSource;
     InputStream preludeStream = Prelude.class.getResourceAsStream(PreludeStorage.SOURCE_RESOURCE_PATH);
@@ -85,8 +81,8 @@ public class CachingTestCase extends NameResolverTestCase {
     storage.add(PreludeStorage.PRELUDE_MODULE_PATH, preludeSource);
     MemoryStorage.SourceId sourceId = storage.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
 
-    prelude = moduleLoader.load(sourceId);
-    new Prelude.PreludeTypechecking(cacheManager.getTypecheckerState()).typecheckModules(Collections.singleton(this.prelude));
+    ChildGroup prelude = moduleLoader.load(sourceId);
+    new Prelude.PreludeTypechecking(cacheManager.getTypecheckerState()).typecheckModules(Collections.singleton(prelude));
   }
 
   protected void typecheck(Group module) {

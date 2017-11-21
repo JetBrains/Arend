@@ -146,8 +146,8 @@ public class SimpleCachingTest extends CachingTestCase {
     persist(b);
     tcState.reset();
 
-    moduleScopeProvider.unregisterModule(ModulePath.moduleName("A"));
-    moduleScopeProvider.unregisterModule(ModulePath.moduleName("B"));
+    moduleLoader.unregisterModule(ModulePath.moduleName("A"));
+    moduleLoader.unregisterModule(ModulePath.moduleName("B"));
 
     storage.incVersion(ModulePath.moduleName("A"));
     moduleLoader.load(b);

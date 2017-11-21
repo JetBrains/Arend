@@ -1,11 +1,9 @@
 package com.jetbrains.jetpad.vclang.module;
 
-import com.jetbrains.jetpad.vclang.frontend.BaseModuleLoader;
+import com.jetbrains.jetpad.vclang.StorageTestCase;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
@@ -13,17 +11,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-public class NameResolutionOnLoadTest extends NameResolverTestCase {
-  private MemoryStorage storage;
-  private BaseModuleLoader<MemoryStorage.SourceId> moduleLoader;
-
-  @Before
-  public void initialize() {
-    moduleLoader = new BaseModuleLoader<>(errorReporter);
-    storage = new MemoryStorage(moduleScopeProvider, moduleScopeProvider);
-    moduleLoader.setSourceSupplier(storage);
-  }
-
+public class NameResolutionOnLoadTest extends StorageTestCase {
   private void setupSources() {
     storage.add(moduleName("A"), "\\import B() \\function a => B.b");
     storage.add(moduleName("B"), "\\function b => x\n \\function x => 0");
