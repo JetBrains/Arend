@@ -3,10 +3,14 @@ package com.jetbrains.jetpad.vclang.module;
 import com.jetbrains.jetpad.vclang.StorageTestCase;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
-import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
@@ -18,9 +22,10 @@ import java.util.Collections;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
-public class CachingTestCase extends StorageTestCase {
+public class SourcelessCachingTestCase extends StorageTestCase {
+  protected CacheModuleScopeProvider<MemoryStorage.SourceId> cacheModuleScopeProvider;
+  protected CacheSourceInfoProvider<MemoryStorage.SourceId> cacheSourceInfoProvider;
   protected CacheManager<MemoryStorage.SourceId> cacheManager;
   protected TypecheckerState tcState;
   private PersistenceProvider<MemoryStorage.SourceId> persistenceProvider = new MemoryPersistenceProvider<>();
@@ -30,8 +35,12 @@ public class CachingTestCase extends StorageTestCase {
   public void initialize() {
     super.initialize();
 
+    cacheSourceInfoProvider = new CacheSourceInfoProvider<>(sourceInfoProvider);
+
     // It is a little odd to use the storage itself as a version tracker as it knows nothing about loaded modules
-    cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
+    cacheManager = new SourcelessCacheManager<>(storage, persistenceProvider, EmptyModuleScopeProvider.INSTANCE, cacheModuleScopeProvider, cacheSourceInfoProvider, storage);
+    cacheModuleScopeProvider.initialise(storage, cacheManager);
+
     tcState = cacheManager.getTypecheckerState();
     typechecking = new Typechecking(tcState, ConcreteReferableProvider.INSTANCE, errorReporter);
   }
@@ -50,18 +59,8 @@ public class CachingTestCase extends StorageTestCase {
     assertThat(errorList, size > 0 ? hasSize(size) : is(empty()));
   }
 
-  protected void tryLoad(MemoryStorage.SourceId sourceId, boolean shouldLoad) throws CacheLoadingException {
-    boolean loaded = cacheManager.loadCache(sourceId);
-    assertThat(loaded, is(shouldLoad));
-    assertThat(errorList, is(empty()));
-  }
-
-  protected void load(MemoryStorage.SourceId sourceId) {
-    try {
-      tryLoad(sourceId, true);
-    } catch (CacheLoadingException e) {
-      fail(e.toString());
-    }
+  protected void load(ModulePath module) {
+    cacheModuleScopeProvider.forModule(module);
   }
 
   protected void persist(MemoryStorage.SourceId sourceId) {
@@ -72,5 +71,11 @@ public class CachingTestCase extends StorageTestCase {
       throw new IllegalStateException();
     }
     assertThat(errorList, is(empty()));
+  }
+
+  @Override
+  public ModuleScopeProvider createModuleScopeProvider() {
+    cacheModuleScopeProvider = new CacheModuleScopeProvider<>(moduleLoader);
+    return cacheModuleScopeProvider;
   }
 }

@@ -28,7 +28,7 @@ public class CacheModuleScopeProvider<SourceIdT extends SourceId> implements Mod
   }
 
   public void initialise(SourceSupplier<SourceIdT> sourceSupplier, CacheManager<SourceIdT> cacheManager) {
-    assert mySourceSupplier != null && myCacheManager != null;
+    assert mySourceSupplier == null && myCacheManager == null;
     mySourceSupplier = sourceSupplier;
     myCacheManager = cacheManager;
   }
