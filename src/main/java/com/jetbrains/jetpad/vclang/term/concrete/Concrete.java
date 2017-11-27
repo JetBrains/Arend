@@ -238,11 +238,6 @@ public final class Concrete {
       return mySequence;
     }
 
-    public Expression makeBinOp(Expression left, Referable binOp, ReferenceExpression var, Expression right) {
-      Expression expr = new AppExpression(var.getData(), new ReferenceExpression(var.getData(), binOp), new Argument(left, true));
-      return right == null ? expr : new AppExpression(var.getData(), expr, new Argument(right, true));
-    }
-
     public void replace(Expression expression) {
       myLeft = expression;
       mySequence.clear();

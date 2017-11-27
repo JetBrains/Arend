@@ -146,43 +146,25 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       left.accept(this, null);
       expr.replace(left);
     } else {
-      BinOpParser parser = new BinOpParser(expr, myErrorReporter);
-      List<Concrete.BinOpSequenceElem> sequence = expr.getSequence();
+      BinOpParser parser = new BinOpParser(myErrorReporter);
 
       expr.getLeft().accept(this, null);
-      for (Concrete.BinOpSequenceElem elem : sequence) {
+      parser.push(expr.getLeft(), true);
+      for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
+        Precedence precedence = elem.binOp.getReferent() instanceof GlobalReferable ? ((GlobalReferable) elem.binOp.getReferent()).getPrecedence() : null;
+        visitReference(elem.binOp, null);
+        if (precedence == null) {
+          precedence = elem.binOp.getReferent() instanceof GlobalReferable ? ((GlobalReferable) elem.binOp.getReferent()).getPrecedence() : Precedence.DEFAULT;
+        }
+        parser.push(elem.binOp, precedence, elem.argument == null);
+
         if (elem.argument != null) {
           elem.argument.accept(this, null);
+          parser.push(elem.argument, true);
         }
       }
 
-      Object errorCause = null;
-      Concrete.Expression expression = expr.getLeft();
-      List<BinOpParser.StackElem> stack = new ArrayList<>(sequence.size());
-      for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-        visitReference(elem.binOp, null);
-        Referable ref = elem.binOp.getReferent();
-        Precedence precedence = null;
-        if (ref instanceof RedirectingReferable) {
-          precedence = ((RedirectingReferable) ref).getPrecedence();
-          ref = ((RedirectingReferable) ref).getOriginalReferable();
-        }
-        if (ref instanceof UnresolvedReference) {
-          errorCause = elem.binOp.getData();
-        } else {
-          if (precedence == null) {
-            precedence = ref instanceof GlobalReferable ? ((GlobalReferable) ref).getPrecedence() : Precedence.DEFAULT;
-          }
-          parser.pushOnStack(stack, expression, ref, precedence, elem.binOp, elem.argument == null);
-          expression = elem.argument;
-        }
-      }
-
-      if (errorCause == null) {
-        expr.replace(parser.rollUpStack(stack, expression));
-      } else {
-        expr.replace(new Concrete.InferHoleExpression(errorCause));
-      }
+      expr.replace(parser.rollUp());
     }
     return null;
   }
