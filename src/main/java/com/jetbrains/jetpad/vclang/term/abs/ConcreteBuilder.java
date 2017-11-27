@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 
@@ -313,12 +314,19 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.BinOpSequenceExpression visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
     List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
+    elems.add(new Concrete.BinOpSequenceElem(left.accept(this, null), Fixity.NONFIX, true));
     for (Abstract.BinOpSequenceElem elem : sequence) {
-      Abstract.Expression arg = elem.getArgument();
-      Referable referable = elem.getBinOpReference();
-      elems.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(referable instanceof UnresolvedReference ? ((UnresolvedReference) referable).getData() : referable, elem.getBinOpReference()), arg == null ? null : arg.accept(this, null)));
+      Concrete.Expression elemExpr = elem.getExpression().accept(this, null);
+      Fixity fixity = elem.getFixity();
+      boolean isExplicit = elem.isExplicit();
+
+      if (!isExplicit && fixity != Fixity.NONFIX || (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) && !(elemExpr instanceof Concrete.ReferenceExpression)) {
+        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Inconsistent model", elem));
+      }
+
+      elems.add(new Concrete.BinOpSequenceElem(elemExpr, fixity, isExplicit));
     }
-    return new Concrete.BinOpSequenceExpression(data, left.accept(this, null), elems);
+    return new Concrete.BinOpSequenceExpression(data, elems);
   }
 
   @Override

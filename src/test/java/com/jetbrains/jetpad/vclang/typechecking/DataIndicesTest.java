@@ -30,10 +30,10 @@ public class DataIndicesTest extends TypeCheckingTestCase {
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
-      "\\function\n" +
+      "\\function \\infixr 9\n" +
       "+^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
-      "  | suc n', `:^ x xs' => x :^ xs' +^ ys\n" +
+      "  | suc n', :^ x xs' => x :^ xs' +^ ys\n" +
       "\n" +
       "\\function\n" +
       "vnil-vconcat {n : Nat} {A : \\Set0} (xs : Vector n A) : vnil +^ xs = xs => path (\\lam _ => xs)");

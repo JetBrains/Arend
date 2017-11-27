@@ -86,6 +86,7 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
 
   public static String getNameIdFor(FullNameProvider fullNameProvider, GlobalReferable referable) {
     Precedence precedence = referable.getPrecedence();
+    char fixityChar = precedence.isInfix ? 'i' : 'n';
     final char assocChr;
     switch (precedence.associativity) {
       case LEFT_ASSOC:
@@ -97,12 +98,13 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
       default:
         assocChr = 'n';
     }
-    return "" + assocChr + precedence.priority + ';' + String.join(" ", fullNameProvider.fullNameFor(referable).toList());
+    return "" + fixityChar + assocChr + precedence.priority + ';' + String.join(" ", fullNameProvider.fullNameFor(referable).toList());
   }
 
   public static Pair<Precedence, List<String>> fullNameFromNameId(String s) {
+    boolean isInfix = s.charAt(0) == 'i';
     final Precedence.Associativity assoc;
-    switch (s.charAt(0)) {
+    switch (s.charAt(1)) {
       case 'l':
         assoc = Precedence.Associativity.LEFT_ASSOC;
         break;
@@ -114,7 +116,7 @@ public class SourcelessCacheManager<SourceIdT extends SourceId> extends CacheMan
     }
 
     int sepIndex = s.indexOf(';');
-    final byte priority = Byte.parseByte(s.substring(1, sepIndex));
-    return new Pair<>(new Precedence(assoc, priority), Arrays.asList(s.substring(sepIndex + 1).split(" ")));
+    final byte priority = Byte.parseByte(s.substring(2, sepIndex));
+    return new Pair<>(new Precedence(assoc, priority, isInfix), Arrays.asList(s.substring(sepIndex + 1).split(" ")));
   }
 }

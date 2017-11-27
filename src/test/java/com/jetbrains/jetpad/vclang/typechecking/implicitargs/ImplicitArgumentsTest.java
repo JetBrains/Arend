@@ -386,7 +386,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   public void differentLevels() {
     typeCheckModule(
         "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
-        "\\function g (X : \\Type \\lp) => F X (\\lam _ => `= X X)");
+        "\\function g (X : \\Type \\lp) => F X (\\lam _ => X = X)");
   }
 
   @Test
@@ -397,7 +397,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void etaExpansionTest() {
     typeCheckModule(
-        "\\function $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+        "\\function \\infixr 9 $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +

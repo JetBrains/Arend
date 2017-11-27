@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
@@ -208,29 +209,24 @@ public final class Concrete {
   }
 
   public static class BinOpSequenceElem {
-    public final ReferenceExpression binOp;
-    public final Expression argument;
+    public final Expression expression;
+    public final Fixity fixity;
+    public final boolean isExplicit;
 
-    public BinOpSequenceElem(ReferenceExpression binOp, Expression argument) {
-      this.binOp = binOp;
-      this.argument = argument;
+    public BinOpSequenceElem(@Nonnull Expression expression, @Nonnull Fixity fixity, boolean isExplicit) {
+      this.expression = expression;
+      this.fixity = fixity;
+      this.isExplicit = isExplicit;
     }
   }
 
   public static class BinOpSequenceExpression extends Expression {
     public static final byte PREC = 0;
-    private Expression myLeft;
     private final List<BinOpSequenceElem> mySequence;
 
-    public BinOpSequenceExpression(Object data, Expression left, List<BinOpSequenceElem> sequence) {
+    public BinOpSequenceExpression(Object data, List<BinOpSequenceElem> sequence) {
       super(data);
-      myLeft = left;
       mySequence = sequence;
-    }
-
-    @Nonnull
-    public Expression getLeft() {
-      return myLeft;
     }
 
     @Nonnull
@@ -239,8 +235,8 @@ public final class Concrete {
     }
 
     public void replace(Expression expression) {
-      myLeft = expression;
       mySequence.clear();
+      mySequence.add(new BinOpSequenceElem(expression, Fixity.NONFIX, true));
     }
 
     @Override

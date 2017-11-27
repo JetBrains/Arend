@@ -16,10 +16,10 @@ import static org.junit.Assert.assertTrue;
 public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
-    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true));
     Concrete.Definition plus = new Concrete.FunctionDefinition(plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
-    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7));
+    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true));
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
 
@@ -30,10 +30,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable plusRef = new ConcreteGlobalReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true));
     Concrete.Definition plus = new Concrete.FunctionDefinition(plusRef, Collections.emptyList(), null, null);
     plusRef.setDefinition(plus);
-    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6));
+    ConcreteGlobalReferable mulRef = new ConcreteGlobalReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true));
     Concrete.Definition mul = new Concrete.FunctionDefinition(mulRef, Collections.emptyList(), null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);

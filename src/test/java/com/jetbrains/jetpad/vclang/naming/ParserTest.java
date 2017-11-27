@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -238,7 +237,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
+      "\\function f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -246,7 +245,7 @@ public class ParserTest extends NameResolverTestCase {
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1)))), cVar(refs.get(2)));
-    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
   }
 
   @Test
@@ -259,7 +258,7 @@ public class ParserTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B " + name + "`", 1);
+      "\\function f (A B : \\Prop) => A $ B `" + name + "", 1);
   }
 
   @Test
@@ -273,7 +272,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => A $ B " + name + "` $ C");
+      "\\function f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -281,7 +280,7 @@ public class ParserTest extends NameResolverTestCase {
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(d), cApps(cVar(named), cVar(refs.get(1))), cVar(refs.get(2))));
-    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
   }
 
   @Test
@@ -294,7 +293,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\function \\infix 6 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B " + name + "`");
+      "\\function f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -302,7 +301,7 @@ public class ParserTest extends NameResolverTestCase {
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(named), cVar(refs.get(1))));
-    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
   }
 
   @Test
@@ -315,7 +314,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\function \\infix 4 " + name + " (A : \\Prop) => A\n" +
       "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B " + name + "`");
+      "\\function f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -323,7 +322,7 @@ public class ParserTest extends NameResolverTestCase {
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1))));
-    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
   }
 
   @Test
@@ -336,7 +335,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\function " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
       "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
-      "\\function f (A : \\Prop) => A " + name1 + "` " + name2 + "`");
+      "\\function f (A : \\Prop) => A `" + name1 + " `" + name2);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named1 = it.next().getReferable();
     GlobalReferable named2 = it.next().getReferable();
@@ -344,7 +343,7 @@ public class ParserTest extends NameResolverTestCase {
     Referable refA = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList().get(0);
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named2), cApps(cVar(named1), cVar(refA)));
-    assertTrue(actualTerm.accept(new ConcreteCompareVisitor(), expectedTerm));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
   }
 
   @Test
@@ -362,5 +361,36 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void keyword() {
     parseExpr("\\lamx => x", 1);
+  }
+
+  @Test
+  public void postfixTest6() {
+    Group module = resolveNamesModule(
+      "\\function \\infixr 1 >== (A B : \\Prop) => A\n" +
+      "\\function \\infix 2 ==< (A B : \\Prop) => A\n" +
+      "\\function \\infix 2 qed (A : \\Prop) => A\n" +
+      "\\function g (A : \\Prop) => A\n" +
+      "\\function f (A B C : \\Prop) => g A ==< g B >== g C `qed");
+    Iterator<? extends Group> it = module.getSubgroups().iterator();
+    GlobalReferable rightP = it.next().getReferable();
+    GlobalReferable leftP = it.next().getReferable();
+    GlobalReferable qed = it.next().getReferable();
+    GlobalReferable g = it.next().getReferable();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
+
+    Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+    Concrete.Expression expectedTerm = cApps(cVar(rightP), cApps(cVar(leftP), cApps(cVar(g), cVar(refs.get(0))), cApps(cVar(g), cVar(refs.get(1)))), cApps(cVar(qed), cApps(cVar(g), cVar(refs.get(2)))));
+    assertTrue(compareAbstract(actualTerm, expectedTerm));
+  }
+
+  @Test
+  public void infixTest() {
+    resolveNamesModule(
+      "\\function \\infixr 1 >== (A B : \\Prop) => A\n" +
+      "\\function \\infix 2 ==< (A B : \\Prop) => A\n" +
+      "\\function \\infix 2 qed (A : \\Prop) => A\n" +
+      "\\function g (A : \\Prop) => A\n" +
+      "\\function f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
   }
 }

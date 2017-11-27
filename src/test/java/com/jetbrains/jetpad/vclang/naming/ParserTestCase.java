@@ -91,6 +91,6 @@ public abstract class ParserTestCase extends VclangTestCase {
 
 
   protected static boolean compareAbstract(Concrete.Expression expr1, Concrete.Expression expr2) {
-    return expr1.accept(new ConcreteCompareVisitor(), expr2);
+    return new ConcreteCompareVisitor().compare(expr1, expr2);
   }
 }

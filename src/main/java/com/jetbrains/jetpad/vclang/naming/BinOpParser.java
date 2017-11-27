@@ -75,7 +75,7 @@ public class BinOpParser {
       }
 
       if (!(nextElem.precedence.priority > precedence.priority || (nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC)))) {
-        String msg = "Precedence parsing error: cannot mix " + ((Concrete.ReferenceExpression) nextElem.expression).getReferent().textRepresentation() + " [" + nextElem.precedence + "] and " + reference.getReferent().textRepresentation() + " [" + precedence + "] in the same infix expression";
+        String msg = "Precedence parsing error: cannot mix " + getOperator(nextElem.expression).textRepresentation() + " [" + nextElem.precedence + "] and " + reference.getReferent().textRepresentation() + " [" + precedence + "] in the same infix expression";
         myErrorReporter.report(new NamingError(msg, reference));
       }
 
@@ -83,21 +83,37 @@ public class BinOpParser {
     }
   }
 
+  private Referable getOperator(Concrete.Expression expr) {
+    while (expr instanceof Concrete.AppExpression) {
+      expr = ((Concrete.AppExpression) expr).getFunction();
+    }
+    return ((Concrete.ReferenceExpression) expr).getReferent();
+  }
+
   private void foldTop() {
     StackElem topElem = myStack.remove(myStack.size() - 1);
+    if (topElem.precedence != null && myStack.size() > 1) {
+      StackElem nextElem = myStack.get(myStack.size() - 2);
+      myErrorReporter.report(new NamingError("The operator " + getOperator(topElem.expression) + " [" + topElem.precedence + "] of a section must have lower precedence than that of the operand, namely " + getOperator(nextElem.expression) + " [" + nextElem.precedence + "]", topElem.expression));
+      topElem = myStack.remove(myStack.size() - 1);
+    }
     StackElem midElem = myStack.remove(myStack.size() - 1);
     StackElem botElem = myStack.isEmpty() ? null : myStack.remove(myStack.size() - 1);
 
     if (botElem == null) {
-      Referable leftRef = new LocalReferable(null);
-      myStack.add(new StackElem(new Concrete.LamExpression(midElem.expression.getData(), Collections.singletonList(new Concrete.NameParameter(midElem.expression.getData(), true, leftRef)), makeBinOp(new Concrete.ReferenceExpression(midElem.expression.getData(), leftRef), (Concrete.ReferenceExpression) midElem.expression, topElem.expression)), null));
+      if (topElem.precedence != null) {
+        myStack.add(new StackElem(new Concrete.AppExpression(midElem.expression.getData(), topElem.expression, new Concrete.Argument(midElem.expression, true)), null));
+      } else {
+        Referable leftRef = new LocalReferable(null);
+        myStack.add(new StackElem(new Concrete.LamExpression(midElem.expression.getData(), Collections.singletonList(new Concrete.NameParameter(midElem.expression.getData(), true, leftRef)), makeBinOp(new Concrete.ReferenceExpression(midElem.expression.getData(), leftRef), midElem.expression, topElem.expression)), null));
+      }
     } else {
-      myStack.add(new StackElem(makeBinOp(botElem.expression, (Concrete.ReferenceExpression) midElem.expression, topElem.expression), null));
+      myStack.add(new StackElem(makeBinOp(botElem.expression, midElem.expression, topElem.expression), null));
     }
   }
 
-  private static Concrete.Expression makeBinOp(Concrete.Expression left, Concrete.ReferenceExpression var, Concrete.Expression right) {
-    Concrete.Expression expr = new Concrete.AppExpression(var.getData(), new Concrete.ReferenceExpression(var.getData(), var.getReferent()), new Concrete.Argument(left, true));
+  private static Concrete.Expression makeBinOp(Concrete.Expression left, Concrete.Expression var, Concrete.Expression right) {
+    Concrete.Expression expr = new Concrete.AppExpression(var.getData(), var, new Concrete.Argument(left, true));
     return right == null ? expr : new Concrete.AppExpression(var.getData(), expr, new Concrete.Argument(right, true));
   }
 

@@ -132,7 +132,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => 0\n" +
         "  | y => 0\n" +
         "}\n" +
-        "\\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
+        "\\function test : \\new diagonal1 {} = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
   }
 
   @Test

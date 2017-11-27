@@ -2,10 +2,12 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -191,7 +193,11 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression right) {
-    return new Concrete.BinOpSequenceExpression(null, left, Collections.singletonList(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), right)));
+    List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(3);
+    sequence.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
+    sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), Fixity.UNKNOWN, true));
+    sequence.add(new Concrete.BinOpSequenceElem(right, Fixity.NONFIX, true));
+    return new Concrete.BinOpSequenceExpression(null, sequence);
   }
 
   public static Concrete.NumericLiteral cNum(BigInteger num) {

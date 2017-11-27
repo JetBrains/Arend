@@ -28,22 +28,22 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void plus() {
-    assertTrue(typeCheckDef("\\function + (x y : Nat) : Nat => \\elim x | zero => y | suc x' => suc (x' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertTrue(typeCheckDef("\\function \\infixr 9 + (x y : Nat) : Nat => \\elim x | zero => y | suc x' => suc (x' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void doubleRec() {
-    assertTrue(typeCheckDef("\\function + (x y : Nat) : Nat => \\elim x | zero => y | suc zero => y | suc (suc x'') => x'' + (x'' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertTrue(typeCheckDef("\\function \\infixr 9 + (x y : Nat) : Nat => \\elim x | zero => y | suc zero => y | suc (suc x'') => x'' + (x'' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionError() {
-    assertTrue(typeCheckDef("\\function + (x y : Nat) : Nat => x + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertTrue(typeCheckDef("\\function \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
   }
 
   @Test
   public void functionError2() {
-    assertTrue(typeCheckDef("\\function + (x y : Nat) : Nat => \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertTrue(typeCheckDef("\\function \\infixr 9 + (x y : Nat) : Nat => \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
   }
 
   @Test

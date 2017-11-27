@@ -91,12 +91,8 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
 
   @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void ignore) {
-    expr.getLeft().accept(this, null);
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      visitReference(elem.binOp, null);
-      if (elem.argument != null) {
-        elem.argument.accept(this, null);
-      }
+      elem.expression.accept(this, null);
     }
     return null;
   }

@@ -12,10 +12,10 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -120,16 +120,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     DependentLink param = result.getParameter();
-    if (!param.hasNext()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      if (!result1.type.isError()) {
-        myVisitor.getErrorReporter().report(new TypeMismatchError(DocFactory.text("A pi type"), result1.type, fun));
-      }
+    CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, param.hasNext() ? param.getTypeExpr() : null);
+    if (argResult == null) {
       return null;
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.checkExpr(arg, param.getTypeExpr());
-    if (argResult == null) {
+    if (!param.hasNext()) {
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
+      if (!result1.type.isError()) {
+        myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result1.type, fun));
+      }
       return null;
     }
 

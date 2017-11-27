@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
 import javax.annotation.Nonnull;
@@ -87,8 +88,9 @@ public final class Abstract {
   }
 
   public interface BinOpSequenceElem extends SourceNode {
-    @Nonnull Referable getBinOpReference();
-    @Nullable Expression getArgument();
+    @Nonnull Expression getExpression();
+    @Nonnull Fixity getFixity();
+    boolean isExplicit();
   }
 
   public interface Argument extends SourceNode {

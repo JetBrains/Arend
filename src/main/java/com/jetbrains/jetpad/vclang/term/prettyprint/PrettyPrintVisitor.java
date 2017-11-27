@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete.BinOpSequenceElem;
@@ -123,24 +124,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public static boolean isPrefix(String name) {
-    if (name == null) {
-      return true;
-    }
-    for (int i = 0; i < name.length(); i++) {
-      char ch = name.charAt(i);
-      if (ch == '_' || Character.isLetter(ch) || ch == '\'') {
-        return true;
-      }
-    }
-    return false;
-  }
-
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    if (!isPrefix(expr.getReferent().textRepresentation())) {
-      myBuilder.append('`');
-    }
     myBuilder.append(expr.getReferent().textRepresentation());
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
       myBuilder.append(" \\levels ");
@@ -448,41 +433,84 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private AbstractLayout createBinOpLayout(final Expression lhs, List<BinOpSequenceElem> elems) {
-    if (elems.isEmpty()) {
-      if (lhs != null) return (ppv_default, disabled) -> lhs.accept(ppv_default, new Precedence((byte) 10));
-      else return new EmptyLayout();
+  private AbstractLayout createBinOpLayout(List<BinOpSequenceElem> elems) {
+    Concrete.Expression lhs = elems.get(0).expression;
+
+    int i = 1;
+    for (; i < elems.size(); i++) {
+      if (elems.get(i).fixity == null || elems.get(i).fixity == Fixity.NONFIX) {
+        lhs = new Concrete.AppExpression(lhs.getData(), lhs, new Concrete.Argument(elems.get(i).expression, elems.get(i).isExplicit));
+      } else {
+        break;
+      }
     }
 
-    final BinOpSequenceElem elem = elems.get(0);
-    final AbstractLayout layout = createBinOpLayout(elem.argument, elems.subList(1, elems.size()));
+    if (i == elems.size()) {
+      if (lhs != null) {
+        final Expression finalLhs = lhs;
+        return (ppv_default, disabled) -> finalLhs.accept(ppv_default, new Precedence((byte) 10));
+      } else {
+        return new EmptyLayout();
+      }
+    }
+
+    // TODO[pretty]
+    List<BinOpSequenceElem> ops = new ArrayList<>();
+    for (; i < elems.size(); i++) {
+      if (elems.get(i).fixity != null && elems.get(i).fixity != Fixity.NONFIX || !elems.get(i).isExplicit) {
+        ops.add(elems.get(i));
+      } else {
+        break;
+      }
+    }
+
+    final AbstractLayout layout = i == elems.size() ? null : createBinOpLayout(elems.subList(i, elems.size()));
+    final Expression finalLhs = lhs;
     return new BinOpLayout(){
       @Override
       void printLeft(PrettyPrintVisitor pp) {
-        if (lhs != null) lhs.accept(pp, new Precedence((byte) 10));
+        if (finalLhs != null) finalLhs.accept(pp, new Precedence((byte) 10));
       }
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        layout.doPrettyPrint(pp, noIndent);
+        if (layout != null) {
+          layout.doPrettyPrint(pp, noIndent);
+        }
       }
 
       @Override
       String getOpText() {
-        String result = elem.binOp.getReferent().textRepresentation();
-        return elem.argument == null ? result + "`" : (isPrefix(result) ? "`" : "") + result;
+        StringBuilder builder = new StringBuilder();
+        for (BinOpSequenceElem elem : ops) {
+          if (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX && elem.expression instanceof Concrete.ReferenceExpression) {
+            builder.append('`').append(((ReferenceExpression) elem.expression).getReferent().textRepresentation());
+            if (elem.fixity == Fixity.INFIX) {
+              builder.append('`');
+            }
+          } else {
+            if (!elem.isExplicit) {
+              builder.append('{');
+            }
+            elem.expression.accept(new PrettyPrintVisitor(builder, myIndent, !noIndent), new Precedence(Expression.PREC));
+            if (!elem.isExplicit) {
+              builder.append('}');
+            }
+          }
+        }
+        return builder.toString();
       }
     };
   }
 
   @Override
   public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Precedence prec) {
-    if (expr.getSequence().isEmpty()) {
-      expr.getLeft().accept(this, prec);
+    if (expr.getSequence().size() == 1) {
+      expr.getSequence().get(0).expression.accept(this, prec);
       return null;
     }
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append('(');
-    createBinOpLayout(expr.getLeft(), expr.getSequence()).doPrettyPrint(this, noIndent);
+    createBinOpLayout(expr.getSequence()).doPrettyPrint(this, noIndent);
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append(')');
     return null;
   }
@@ -929,9 +957,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
       if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');
 
-      if (!isPrefix(conPattern.getConstructor().textRepresentation())) {
-        myBuilder.append('`');
-      }
       myBuilder.append(conPattern.getConstructor().textRepresentation());
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         myBuilder.append(' ');

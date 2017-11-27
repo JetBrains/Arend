@@ -47,7 +47,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test33() {
-    typeCheckModule(minus + "\\function \\infix 9 / (x y : Nat) : Nat => div' x (`-.p x - y)\n" +
+    typeCheckModule(minus + "\\function \\infix 9 / (x y : Nat) : Nat => div' x (-.p x - y)\n" +
       "\\where \\function div' (x : Nat) (y' : Nat) : Nat =>\n" +
       "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''))\n", 2);
   }
@@ -64,31 +64,31 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   public void test36_1() {
     typeCheckModule(list + "\\function flatten {A : \\Type0} (l : List (List A)) : List A => \\elim l\n" +
       "| nil => nil\n" +
-      "| `:-: nil xs => flatten xs\n" +
-      "| `:-: (`:-: y ys) xs => y :-: flatten (ys :-: xs)", 0);
+      "| :-: nil xs => flatten xs\n" +
+      "| :-: (:-: y ys) xs => y :-: flatten (ys :-: xs)", 0);
   }
 
   @Test
   public void test36_2() {
-    typeCheckModule(list + "\\function f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | `:-: x xs => g x xs\n" +
-      "\\function g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | `:-: x xs => x :-: g xs ls", 0);
+    typeCheckModule(list + "\\function f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | :-: x xs => g x xs\n" +
+      "\\function g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | :-: x xs => x :-: g xs ls", 0);
   }
 
   @Test
   public void test38_1() {
     typeCheckModule(list + "\\function zip1 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
-      "| `:-: x xs => x :-: zip2 l2 xs\n" +
+      "| :-: x xs => x :-: zip2 l2 xs\n" +
       "\\function zip2 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
-      "| `:-: x xs => x :-: zip1 l2 xs\n", 0);
+      "| :-: x xs => x :-: zip1 l2 xs\n", 0);
   }
 
   @Test
   public void test38_2() {
     typeCheckModule(list + "\\function zip-bad {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
-      "| `:-: x xs => x :-: zip-bad l2 xs", 1);
+      "| :-: x xs => x :-: zip-bad l2 xs", 1);
   }
 
   @Test

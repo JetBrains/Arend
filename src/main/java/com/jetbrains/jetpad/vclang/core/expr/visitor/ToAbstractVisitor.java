@@ -17,7 +17,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
@@ -170,36 +169,33 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     Collections.reverse(args);
     DefCallExpression defCall = fun.checkedCast(DefCallExpression.class);
-    ReferenceExpression refExpr = fun.checkedCast(ReferenceExpression.class);
 
-    if (refExpr == null && defCall == null || PrettyPrintVisitor.isPrefix(defCall != null ? defCall.getDefinition().getName() : refExpr.getBinding().getName())) {
+    if (!(defCall != null && defCall.getDefinition().getReferable().getPrecedence().isInfix)) {
       return null;
     }
 
-    int defCallArgsSize = defCall != null ? defCall.getDefCallArguments().size() : 0;
+    int defCallArgsSize = defCall.getDefCallArguments().size();
     boolean[] isExplicit = new boolean[defCallArgsSize + args.size()];
     Expression[] visibleArgs = new Expression[2];
     int i = 0;
 
-    if (defCall != null) {
-      for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
-        isExplicit[i++] = link.isExplicit();
-      }
-      if (!getArgumentsExplicitness(defCall, isExplicit, i)) {
-        return null;
-      }
-      if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
-        return null;
-      }
+    for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
+      isExplicit[i++] = link.isExplicit();
+    }
+    if (!getArgumentsExplicitness(defCall, isExplicit, i)) {
+      return null;
+    }
+    if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
+      return null;
+    }
 
-      i = 0;
-      for (int j = 0; j < defCall.getDefCallArguments().size(); j++) {
-        if (isExplicit[j]) {
-          if (i == 2) {
-            return null;
-          }
-          visibleArgs[i++] = defCall.getDefCallArguments().get(j);
+    i = 0;
+    for (int j = 0; j < defCall.getDefCallArguments().size(); j++) {
+      if (isExplicit[j]) {
+        if (i == 2) {
+          return null;
         }
+        visibleArgs[i++] = defCall.getDefCallArguments().get(j);
       }
     }
 
@@ -211,7 +207,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         visibleArgs[i++] = args.get(j);
       }
     }
-    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall != null ? defCall.getDefinition().getReferable() : myNames.get(refExpr.getBinding()), visibleArgs[1].accept(this, null)) : null;
+    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition().getReferable(), visibleArgs[1].accept(this, null)) : null;
   }
 
   @Override
