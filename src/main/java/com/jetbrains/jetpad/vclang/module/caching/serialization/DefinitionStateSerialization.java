@@ -126,7 +126,9 @@ public class DefinitionStateSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-    builder.setSort(defSerializer.writeSort(definition.getSort()));
+    if (definition.status().headerIsOK()) {
+      builder.setSort(defSerializer.writeSort(definition.getSort()));
+    }
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
@@ -187,9 +189,11 @@ public class DefinitionStateSerialization {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(DefinitionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
-    builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-    if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
-    if (definition.getBody() != null) {
+    if (definition.status().headerIsOK()) {
+      builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+      if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
+    }
+    if (definition.status().bodyIsOK() && definition.getBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getBody()));
     }
 
