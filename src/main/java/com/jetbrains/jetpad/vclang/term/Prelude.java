@@ -121,8 +121,7 @@ public class Prelude {
     }
   }
 
-  // This works only because currently the prelude namespace is flat.
-  // This solution is flat from perfect, but someone on our team said it was fine to do that.
+  // TODO[prelude]: This works only because currently the prelude namespace is flat.
   public static void initialise(Scope scope, TypecheckerState state) {
     for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((GlobalReferable) scope.resolveName(name)));

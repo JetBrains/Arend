@@ -15,8 +15,8 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 
 public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
   private static final Options cmdOptions = new Options();
@@ -30,8 +30,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   private final StorageManager storageManager;
 
-  public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir, boolean recompile) throws IOException {
-    super(recompile);
+  public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir) throws IOException {
     this.storageManager = new StorageManager(libDir, sourceDir, cacheDir);
     initialize(storageManager.storage);
   }
@@ -178,13 +177,31 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
         String cacheDirStr = cmdLine.getOptionValue("c");
         Path cacheDir = sourceDir.resolve(cacheDirStr != null ? cacheDirStr : ".cache");
 
-        boolean recompile = cmdLine.hasOption("recompile");
+        if (cmdLine.hasOption("recompile")) {
+          deleteCache(cacheDir);
+        }
 
-        new ConsoleMain(libDir, sourceDir, cacheDir, recompile).run(sourceDir, cmdLine.getArgList());
+        new ConsoleMain(libDir, sourceDir, cacheDir).run(sourceDir, cmdLine.getArgList());
       }
     } catch (ParseException e) {
       System.err.println(e.getMessage());
     }
+  }
+
+  private static void deleteCache(Path cacheDir) throws IOException {
+    Files.walkFileTree(cacheDir, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        if (file.getFileName().toString().endsWith(FileStorage.SERIALIZED_EXTENSION)) {
+          try {
+            Files.delete(file);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
   }
 
   private static void printHelp() {

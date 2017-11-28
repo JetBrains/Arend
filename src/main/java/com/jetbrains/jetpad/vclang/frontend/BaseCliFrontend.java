@@ -47,14 +47,11 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
-  private final boolean useCache;
   private TypecheckerState state;
   private Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
 
 
-  public BaseCliFrontend(boolean recompile) {
-    useCache = !recompile;
-
+  public BaseCliFrontend() {
     moduleTracker = new ModuleTracker();
     moduleScopeProvider = new CacheModuleScopeProvider<>(moduleTracker);
     srcInfoProvider = new CacheSourceInfoProvider<>(moduleTracker.sourceInfoProvider);
@@ -159,12 +156,10 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           continue;
         }
 
-        if (useCache) {
-          try {
-            cacheManager.loadCache(source);
-          } catch (CacheLoadingException e) {
-            //e.printStackTrace();
-          }
+        try {
+          cacheManager.loadCache(source);
+        } catch (CacheLoadingException e) {
+          //e.printStackTrace();
         }
 
         flushErrors();
