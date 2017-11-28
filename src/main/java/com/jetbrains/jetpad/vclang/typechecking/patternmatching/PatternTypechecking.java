@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -14,13 +17,16 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ExpectedConstructor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.WrongConstructorError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -29,7 +35,7 @@ import java.util.*;
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
   private final EnumSet<Flag> myFlags;
-  private Map<Abstract.ReferableSourceNode, Binding> myContext;
+  private Map<Referable, Binding> myContext;
 
   public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
 
@@ -48,8 +54,8 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Abstract.FunctionClause clause, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
-    try (Utils.SetContextSaver<Abstract.ReferableSourceNode> ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
+    try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
       // Typecheck patterns
       Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
       if (result == null) {
@@ -59,12 +65,12 @@ public class PatternTypechecking {
       // If we have the absurd pattern, then RHS is ignored
       if (result.proj2 == null) {
         if (clause.getExpression() != null) {
-          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+          myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
         }
         return new Pair<>(result.proj1, null);
       } else {
         if (clause.getExpression() == null) {
-          myErrorReporter.report(new LocalTypeCheckingError("Required a RHS", clause));
+          myErrorReporter.report(new TypecheckingError("Required a RHS", clause));
           return null;
         }
       }
@@ -74,7 +80,7 @@ public class PatternTypechecking {
         substitution.add(parameters, expr);
         parameters = parameters.getNext();
       }
-      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
         Expression expr = substitution.get(entry.getValue());
         if (expr != null) {
           entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
@@ -93,7 +99,7 @@ public class PatternTypechecking {
     }
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, List<? extends Abstract.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Abstract.SourceNode sourceNode, CheckTypeVisitor visitor) {
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor) {
     myContext = visitor.getContext();
     if (myFlags.contains(Flag.CONTEXT_FREE)) {
       myContext.clear();
@@ -104,7 +110,7 @@ public class PatternTypechecking {
     if (!elimParams.isEmpty()) {
       // Put patterns in the correct order
       // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
-      List<Abstract.Pattern> patterns1 = new ArrayList<>();
+      List<Concrete.Pattern> patterns1 = new ArrayList<>();
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         int index = elimParams.indexOf(link);
         patterns1.add(index < 0 ? null : patterns.get(index));
@@ -112,7 +118,7 @@ public class PatternTypechecking {
       result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
     } else {
       if (myFlags.contains(Flag.HAS_THIS) && visitor.getTypeCheckingDefCall().getThisClass() != null) {
-        List<Abstract.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
+        List<Concrete.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
         patterns1.add(null);
         patterns1.addAll(patterns);
         result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
@@ -132,18 +138,18 @@ public class PatternTypechecking {
       }
 
       if (!elimParams.isEmpty()) {
-        for (Abstract.Parameter parameter : abstractParameters) {
-          if (parameter instanceof Abstract.TelescopeParameter) {
-            for (Abstract.ReferableSourceNode referable : ((Abstract.TelescopeParameter) parameter).getReferableList()) {
+        for (Concrete.Parameter parameter : abstractParameters) {
+          if (parameter instanceof Concrete.TelescopeParameter) {
+            for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
               if (!elimParams.contains(link)) {
                 myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
               }
               link = link.getNext();
               i++;
             }
-          } else if (parameter instanceof Abstract.NameParameter) {
+          } else if (parameter instanceof Concrete.NameParameter) {
             if (!elimParams.contains(link)) {
-              myContext.put((Abstract.NameParameter) parameter, ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put(((Concrete.NameParameter) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -160,7 +166,7 @@ public class PatternTypechecking {
     return result;
   }
 
-  Pair<List<Pattern>, Map<Abstract.ReferableSourceNode, Binding>> typecheckPatterns(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
+  Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
     myContext = new HashMap<>();
     Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
@@ -183,13 +189,13 @@ public class PatternTypechecking {
     return null;
   }
 
-  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Abstract.Pattern> patterns, DependentLink parameters, Abstract.SourceNode sourceNode, boolean fullList) {
+  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, boolean fullList) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
 
-    for (Abstract.Pattern pattern : patterns) {
+    for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+        myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
         return null;
       }
 
@@ -202,24 +208,26 @@ public class PatternTypechecking {
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new LocalTypeCheckingError("Too many patterns", pattern));
+              myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
               return null;
             }
           }
         } else {
           if (parameters.isExplicit()) {
-            myErrorReporter.report(new LocalTypeCheckingError("Expected an explicit pattern", pattern));
+            myErrorReporter.report(new TypecheckingError("Expected an explicit pattern", pattern));
             return null;
           }
         }
       }
 
-      if (exprs == null || pattern == null || pattern instanceof Abstract.NamePattern) {
-        if (!(pattern == null || pattern instanceof Abstract.NamePattern)) {
-          myErrorReporter.report(new LocalTypeCheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
+      if (exprs == null || pattern == null || pattern instanceof Concrete.NamePattern) {
+        if (!(pattern == null || pattern instanceof Concrete.NamePattern)) {
+          myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
         }
-        if (pattern instanceof Abstract.NamePattern) {
-          String name = ((Abstract.NamePattern) pattern).getName();
+        Referable referable = null;
+        if (pattern instanceof Concrete.NamePattern) {
+          referable = ((Concrete.NamePattern) pattern).getReferable();
+          String name = referable == null ? null : referable.textRepresentation();
           if (name != null) {
             parameters.setName(name);
           }
@@ -228,7 +236,7 @@ public class PatternTypechecking {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null) {
-            myContext.put((Abstract.NamePattern) pattern, parameters);
+            myContext.put(referable, parameters);
           }
         }
         parameters = parameters.getNext();
@@ -238,20 +246,20 @@ public class PatternTypechecking {
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
       if (!expr.isInstance(DataCallExpression.class)) {
         if (!expr.isError()) {
-          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), DocFactory.termDoc(expr), pattern));
+          myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
         return null;
       }
       DataCallExpression dataCall = expr.cast(DataCallExpression.class);
       if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on the interval is not allowed here", pattern));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
 
-      if (pattern instanceof Abstract.EmptyPattern) {
+      if (pattern instanceof Concrete.EmptyPattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new LocalTypeCheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
+          myErrorReporter.report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
           return null;
         }
         if (!conCalls.isEmpty()) {
@@ -268,20 +276,22 @@ public class PatternTypechecking {
         continue;
       }
 
-      if (!(pattern instanceof Abstract.ConstructorPattern)) {
+      if (!(pattern instanceof Concrete.ConstructorPattern)) {
         throw new IllegalStateException();
       }
-      Abstract.ConstructorPattern conPattern = (Abstract.ConstructorPattern) pattern;
+      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
 
-      Constructor constructor = dataCall.getDefinition().getConstructor(conPattern.getConstructor());
+      Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
-        myErrorReporter.report(new WrongConstructorError(conPattern.getConstructor(), dataCall, pattern));
+        if (!(conPattern.getConstructor() instanceof UnresolvedReference)) {
+          myErrorReporter.report(new ExpectedConstructor(conPattern.getConstructor(), dataCall, pattern));
+        }
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);
       if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
-        myErrorReporter.report(new LocalTypeCheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
         return null;
       }
 
@@ -317,7 +327,7 @@ public class PatternTypechecking {
     }
 
     if (parameters.hasNext()) {
-      myErrorReporter.report(new LocalTypeCheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
+      myErrorReporter.report(new TypecheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
       return null;
     }
 
@@ -330,7 +340,7 @@ public class PatternTypechecking {
         }
       }
 
-      for (Map.Entry<Abstract.ReferableSourceNode, Binding> entry : myContext.entrySet()) {
+      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
         Expression expr = substitution.get(entry.getValue());
         if (expr != null) {
           entry.setValue(((ReferenceExpression) expr).getBinding());

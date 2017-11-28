@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 public class BaseImplicitArgsInference implements ImplicitArgsInference {
@@ -12,17 +12,12 @@ public class BaseImplicitArgsInference implements ImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.AppExpression expr, ExpectedType expectedType) {
+  public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
     return null;
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Abstract.BinOpExpression expr, ExpectedType expectedType) {
-    return null;
-  }
-
-  @Override
-  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult fun, ExpectedType expectedType, Abstract.Expression expr) {
+  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult fun, ExpectedType expectedType, Concrete.Expression expr) {
     return null;
   }
 }

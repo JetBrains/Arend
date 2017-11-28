@@ -6,7 +6,7 @@ import org.junit.Test;
 public class IntervalTest extends TypeCheckingTestCase {
   @Test
   public void interval1() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i : I) : Nat\n" +
       "  | zero, _ => 0\n" +
       "  | suc _, _ => 0\n" +
@@ -17,7 +17,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void intervalRedundantClause() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i : I) : Nat\n" +
       "  | zero, _ => 0\n" +
       "  | suc _, _ => 0\n" +
@@ -29,7 +29,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void interval1error() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i : I) : Nat\n" +
       "  | zero, _ => 0\n" +
       "  | suc _, _ => 1\n" +
@@ -39,7 +39,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void interval2error() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i j : I) : Nat\n" +
       "  | zero, _, _ => 0\n" +
       "  | suc _, _, _ => 0\n" +
@@ -50,7 +50,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void intervalEvalError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i : I) : Nat\n" +
       "  | zero, _ => 0\n" +
       "  | suc _, _ => 0\n" +
@@ -61,7 +61,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void intervalCoverageError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (i : I) : Nat\n" +
       "  | left => 0\n" +
       "  | right => 0", 1);
@@ -69,7 +69,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void intervalCoverageError2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n : Nat) (i : I) : Nat\n" +
       "  | zero, _ => 0\n" +
       "  | _, left => 0\n" +
@@ -78,7 +78,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void at() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function at {A : I -> \\Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i => \\elim p, i\n" +
       "  | _, left => a\n" +
       "  | _, right => a'\n" +
@@ -88,7 +88,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void atConditionsError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function at {A : \\Type} (a a' : A) (p : a = a') (i : I) : A => \\elim p, i\n" +
       "  | path f, i => f i\n" +
       "  | _, left => a'\n" +
@@ -97,7 +97,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void twoPatterns() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n m : Nat) (i : I) : Nat\n" +
       "  | zero, _, _ => 0\n" +
       "  | _, zero, _ => 0\n" +
@@ -109,7 +109,7 @@ public class IntervalTest extends TypeCheckingTestCase {
 
   @Test
   public void twoPatternsError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (n m : Nat) (i : I) : Nat\n" +
       "  | zero, _, _ => 0\n" +
       "  | _, zero, _ => 0\n" +

@@ -18,7 +18,8 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -216,18 +217,22 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    Concrete.LetClause x = clet("x", cZero());
-    Concrete.LetClause y = clet("y", cSuc());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cLet(clets(y), cApps(cVar(y), cVar(x)))), null);
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    Concrete.LetClause xClause = clet(x, cZero());
+    Concrete.LetClause yClause = clet(y, cSuc());
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    Concrete.LetClause x = clet("x", cSuc());
-    Concrete.LetClause y = clet("y", cZero());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cLet(clets(y), cApps(cVar(x), cVar(y)))), null);
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    Concrete.LetClause xClause = clet(x, cSuc());
+    Concrete.LetClause yClause = clet(y, cZero());
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -250,16 +255,17 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable x = ref("x");
+    Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | d Nat\n" +
         "\\function test (x : D) : Nat => \\elim x | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
@@ -274,7 +280,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConditionNormalization() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
         "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
@@ -411,8 +417,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConCallEta() {
-    TypeCheckClassResult result = typeCheckClass(
-        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+    TypeCheckModuleResult result = typeCheckModule(
+        "\\function \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +

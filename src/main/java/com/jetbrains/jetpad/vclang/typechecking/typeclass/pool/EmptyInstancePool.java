@@ -1,20 +1,15 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
-public class EmptyInstancePool implements ClassViewInstancePool {
+public class EmptyInstancePool implements InstancePool {
   public static EmptyInstancePool INSTANCE = new EmptyInstancePool();
 
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
-    return null;
-  }
-
-  @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
     return null;
   }
 }

@@ -22,21 +22,35 @@ import static org.junit.Assert.assertEquals;
 public class RecordsTest extends TypeCheckingTestCase {
   @Test
   public void unknownExtTestError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 | z => 0 | y => 0 }", 1);
   }
 
   @Test
   public void resultTypeMismatchTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => \\lam (t : Nat) => t }", 1);
   }
 
   @Test
   public void parentCallTest() {
-    resolveNamesClass(
+    resolveNamesModule(
+        "\\class M {" +
+        "  \\class A {\n" +
+        "    | c : Nat -> Nat -> Nat\n" +
+        "    | f : Nat -> Nat\n" +
+        "  }\n" +
+        "}\n" +
+        "\\function B => M.A {\n" +
+        "  f => \\lam n => c n n\n" +
+        "}", 1);
+  }
+
+  @Test
+  public void parentCallTypecheckingTest() {
+    typeCheckModule(
         "\\class A {\n" +
         "  | c : Nat -> Nat -> Nat\n" +
         "  | f : Nat -> Nat\n" +
@@ -48,7 +62,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void duplicateNameTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | f : Nat\n" +
         "}\n" +
@@ -60,7 +74,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void overriddenFieldAccTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
@@ -74,7 +88,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void notImplementedTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
@@ -84,7 +98,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void notImplementedTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : x = x -> Nat\n" +
@@ -94,7 +108,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void newAbstractTestError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
@@ -105,7 +119,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void newTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
@@ -118,12 +132,27 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => 0\n" +
         "  | y => 0\n" +
         "}\n" +
-        "\\function test : \\new diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
+        "\\function test : \\new diagonal1 {} = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
   }
 
   @Test
   public void mutualRecursionTestError() {
-    resolveNamesClass(
+    resolveNamesModule(
+        "\\class M {" +
+        "  \\class Point {\n" +
+        "    | x : Nat\n" +
+        "    | y : Nat\n" +
+        "  }\n" +
+        "}\n" +
+        "\\function test => M.Point {\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
+        "}", 2);
+  }
+
+  @Test
+  public void mutualRecursionTypecheckingError() {
+    typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
         "  | y : Nat\n" +
@@ -136,7 +165,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void splitClassTestError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A \\where {\n" +
         "  \\function x => 0\n" +
         "}\n" +
@@ -147,7 +176,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
@@ -156,7 +185,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest2() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\function C => Point { x => 0 | y => 1 }");
     assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
@@ -165,7 +194,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest3() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
@@ -174,7 +203,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest4() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
         "\\function C => Point { x => Nat }");
     assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
@@ -183,7 +212,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest5() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\function C => Point { x => \\Type2 }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
@@ -192,7 +221,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordConstructorsTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
@@ -228,7 +257,7 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordConstructorsParametersTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo (p : x = x) | foo (p = p)\n" +

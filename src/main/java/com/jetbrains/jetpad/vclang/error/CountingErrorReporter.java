@@ -2,9 +2,9 @@ package com.jetbrains.jetpad.vclang.error;
 
 public class CountingErrorReporter implements ErrorReporter {
   private int myCounter = 0;
-  private final GeneralError.Level myLevel;
+  private final Error.Level myLevel;
 
-  public CountingErrorReporter(GeneralError.Level level) {
+  public CountingErrorReporter(Error.Level level) {
     myLevel = level;
   }
 

@@ -1,33 +1,22 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class CompositeInstancePool implements ClassViewInstancePool {
-  private final List<ClassViewInstancePool> myPools;
+public class CompositeInstancePool implements InstancePool {
+  private final List<InstancePool> myPools;
 
-  public CompositeInstancePool(ClassViewInstancePool... pools) {
+  public CompositeInstancePool(InstancePool... pools) {
     myPools = Arrays.asList(pools);
   }
 
   @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, Expression classifyingExpression, Abstract.ClassView classView) {
-    for (ClassViewInstancePool pool : myPools) {
-      Expression expr = pool.getInstance(defCall, classifyingExpression, classView);
-      if (expr != null) {
-        return expr;
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Expression getInstance(Abstract.ReferenceExpression defCall, int paramIndex, Expression classifyingExpression, Abstract.ClassDefinition classDefinition) {
-    for (ClassViewInstancePool pool : myPools) {
-      Expression expr = pool.getInstance(defCall, paramIndex, classifyingExpression, classDefinition);
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+    for (InstancePool pool : myPools) {
+      Expression expr = pool.getInstance(classifyingExpression, classView, isView);
       if (expr != null) {
         return expr;
       }

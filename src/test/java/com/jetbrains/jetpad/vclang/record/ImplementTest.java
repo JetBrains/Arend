@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class ImplementTest extends TypeCheckingTestCase {
   @Test
   public void implement() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -32,7 +32,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementUnknownError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -43,7 +43,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementTypeMismatchError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat -> Nat\n" +
         "}\n" +
@@ -54,12 +54,12 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implement2() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "  | a => 0\n" +
         "}\n" +
@@ -68,7 +68,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implement3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -81,7 +81,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementImplementedError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -95,7 +95,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementExistingFunction() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  \\function a => \\Type0\n" +
         "}\n" +
@@ -106,21 +106,21 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementNew() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}\n" +
-        "\\function f (x : A) => x.a\n" +
+        "\\function f (x : C) => x.a\n" +
         "\\function g : f (\\new B { a => 0 }) = 0 => path (\\lam _ => 0)");
   }
 
   @Test
   public void implementNewError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -132,7 +132,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementMultiple() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "  | b : Nat\n" +
@@ -148,12 +148,12 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | p : b = c\n" +
         "  | f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
-        "\\function f => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
+        "\\function g => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
 
   @Test
   public void implementMultipleSame() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "  | b : Nat\n" +
@@ -173,7 +173,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void implementMultipleSameError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -188,21 +188,21 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void universe() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\class A {\n" +
+    TypeCheckModuleResult result = typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set1\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}");
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
+    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("B")).getSort());
   }
 
   @Test
   public void universeClassExt() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class C {\n" +
         "  | A : \\Type\n" +
         "  | a : A\n" +
@@ -214,7 +214,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void universeMultiple() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\class A {\n" +
         "  | X : \\Set1\n" +
         "  | Y : \\Set0\n" +
@@ -242,7 +242,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classExtDep() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
@@ -252,7 +252,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classImplDep() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
@@ -265,7 +265,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classExtDepMissingError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
@@ -275,7 +275,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classExtDepOrder() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
@@ -285,7 +285,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classImplDepMissingError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
@@ -297,7 +297,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void classImplDepOrderError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  | y : x = 0\n" +

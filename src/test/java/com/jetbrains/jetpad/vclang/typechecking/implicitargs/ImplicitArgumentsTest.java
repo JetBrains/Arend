@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(params, Pi(Ref(params), Ref(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
-    assertTrue(errorList.get(0) instanceof TypeCheckingError && ((TypeCheckingError) errorList.get(0)).localError instanceof ArgInferenceError);
+    assertTrue(errorList.get(0) instanceof ProxyError && ((ProxyError) errorList.get(0)).localError instanceof ArgInferenceError);
   }
 
   @Test
@@ -304,14 +304,14 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void inferUnderPi() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
@@ -368,7 +368,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void orderTest1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
         "  => idpOver (\\lam (j : I) => P (q @ j)) pa @ i\n");
@@ -376,7 +376,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void orderTest2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
         "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
@@ -384,9 +384,9 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void differentLevels() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
-        "\\function g (X : \\Type \\lp) => F X (\\lam _ => `= X X)");
+        "\\function g (X : \\Type \\lp) => F X (\\lam _ => X = X)");
   }
 
   @Test
@@ -396,8 +396,8 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void etaExpansionTest() {
-    typeCheckClass(
-        "\\function $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+    typeCheckModule(
+        "\\function \\infixr 9 $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
@@ -410,7 +410,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
 
   @Test
   public void freeVars() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
       "\\function h => f (path (\\lam _ x => x))", 1);
   }

@@ -13,6 +13,10 @@ public class DocStringBuilder extends LineDocVisitor {
     return visitor.myBuilder.toString();
   }
 
+  public static void build(StringBuilder builder, Doc doc) {
+    doc.accept(new DocStringBuilder(builder), false);
+  }
+
   @Override
   public Void visitHList(HListDoc listDoc, Boolean newLine) {
     for (LineDoc doc : listDoc.getDocs()) {
@@ -44,7 +48,7 @@ public class DocStringBuilder extends LineDocVisitor {
 
   @Override
   public Void visitReference(ReferenceDoc doc, Boolean newLine) {
-    myBuilder.append(doc.getReference().getName());
+    myBuilder.append(doc.getReference().textRepresentation());
     if (newLine) {
       myBuilder.append('\n');
     }

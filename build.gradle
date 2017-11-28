@@ -15,6 +15,14 @@ buildscript {
     }
 }
 
+apply plugin: 'idea'
+idea {
+    module {
+        outputDir = file("$buildDir/classes/main")
+        testOutputDir = file("$buildDir/classes/test")
+    }
+}
+
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
@@ -65,7 +73,7 @@ task copyPrelude(type:Copy) {
 }
 
 task prelude(type:JavaExec) {
-    description 'Builds the prelude source.'
+    description 'Builds the prelude cache.'
     group 'Build'
     main = "${pathToMain}.PreludeCacheGenerator"
     classpath = sourceSets.main.runtimeClasspath
@@ -73,8 +81,8 @@ task prelude(type:JavaExec) {
 }
 
 prelude.dependsOn copyPrelude
-jar.dependsOn prelude
-jarDep.dependsOn prelude
+// jar.dependsOn prelude
+// jarDep.dependsOn prelude
 
 /* Prelude is copied in the copyPrelude task
 jar {
@@ -89,13 +97,16 @@ jar {
 // Some configs
 
 protobuf {
-  protoc {
-    artifact = 'com.google.protobuf:protoc:3.1.0'
-  }
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.1.0'
+    }
 }
 
 antlr4 {
-  version = '4.5'
-  listener = false
-  visitor = true
+    group 'Source'
+    description 'Generates antlr4 sources.'
+
+    version = '4.5'
+    listener = false
+    visitor = true
 }

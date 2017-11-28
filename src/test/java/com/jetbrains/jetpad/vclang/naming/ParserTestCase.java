@@ -1,21 +1,21 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
-import com.jetbrains.jetpad.vclang.frontend.AbstractCompareVisitor;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
-import com.jetbrains.jetpad.vclang.frontend.parser.BuildVisitor;
-import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
-import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarLexer;
-import com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser;
+import com.jetbrains.jetpad.vclang.frontend.parser.*;
+import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import org.antlr.v4.runtime.*;
 
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends VclangTestCase {
+  protected final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
+
   private static final SourceId SOURCE_ID = new SourceId() {
     @Override
     public ModulePath getModulePath() {
@@ -34,7 +34,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
       }
     });
 
@@ -44,7 +44,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Concrete.Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
       }
     });
     // parser.addErrorListener(new DiagnosticErrorListener());
@@ -64,31 +64,33 @@ public abstract class ParserTestCase extends VclangTestCase {
     return parseExpr(text, 0);
   }
 
-  Concrete.Definition parseDef(String text, int errors) {
+  ChildGroup parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    Concrete.Definition definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx) : null;
+    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx, null) : null;
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
 
-  protected Concrete.Definition parseDef(String text) {
+  protected ChildGroup parseDef(String text) {
     return parseDef(text, 0);
   }
 
-  Concrete.ClassDefinition parseClass(String name, String text, int errors) {
+  protected ChildGroup parseModule(String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    Concrete.ClassDefinition classDefinition = errorList.isEmpty() ? new Concrete.ClassDefinition(ConcreteExpressionFactory.POSITION, name, new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree)) : null;
+    FileGroup group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
+    if (group != null) {
+      group.setModuleScopeProvider(moduleScopeProvider);
+    }
     assertThat(errorList, containsErrors(errors));
-    // classDefinition.accept(new DefinitionResolveStaticModVisitor(new ConcreteStaticModListener()), null);
-    return classDefinition;
+    return group;
   }
 
-  protected Concrete.ClassDefinition parseClass(String name, String text) {
-    return parseClass(name, text, 0);
+  protected ChildGroup parseModule(String text) {
+    return parseModule(text, 0);
   }
 
 
-  protected static boolean compareAbstract(Abstract.Expression expr1, Abstract.Expression expr2) {
-    return expr1.accept(new AbstractCompareVisitor(), expr2);
+  protected static boolean compareAbstract(Concrete.Expression expr1, Concrete.Expression expr2) {
+    return new ConcreteCompareVisitor().compare(expr1, expr2);
   }
 }

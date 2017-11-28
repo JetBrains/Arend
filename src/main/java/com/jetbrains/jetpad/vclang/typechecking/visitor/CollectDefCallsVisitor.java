@@ -1,152 +1,108 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.ClassViewInstanceProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
-public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, Void> {
-  private final ClassViewInstanceProvider myInstanceProvider;
-  private final Set<Abstract.Definition> myDependencies;
+public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, Void> {
+  private final Collection<GlobalReferable> myDependencies;
 
-  public CollectDefCallsVisitor(ClassViewInstanceProvider instanceProvider, Set<Abstract.Definition> dependencies) {
-    myInstanceProvider = instanceProvider;
+  public CollectDefCallsVisitor(Collection<GlobalReferable> dependencies) {
     myDependencies = dependencies;
   }
 
+  public Collection<GlobalReferable> getDependencies() {
+    return myDependencies;
+  }
+
   @Override
-  public Void visitApp(Abstract.AppExpression expr, Void ignore) {
+  public Void visitApp(Concrete.AppExpression expr, Void ignore) {
     expr.getFunction().accept(this, null);
     expr.getArgument().getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitReference(Abstract.ReferenceExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof Abstract.Definition) {
-      if (myInstanceProvider != null) {
-        if (expr.getReferent() instanceof Abstract.ClassViewField) {
-          myDependencies.addAll(myInstanceProvider.getInstances(expr, 0));
-        } else {
-          Collection<? extends Abstract.Parameter> arguments = Abstract.getParameters((Abstract.Definition) expr.getReferent());
-          if (arguments != null) {
-            int i = 0;
-            for (Abstract.Parameter arg : arguments) {
-              myDependencies.addAll(myInstanceProvider.getInstances(expr, i));
-              if (arg instanceof Abstract.TelescopeParameter) {
-                i += ((Abstract.TelescopeParameter) arg).getReferableList().size();
-              } else {
-                i++;
-              }
-            }
-          }
-        }
-      }
-      myDependencies.add((Abstract.Definition) expr.getReferent());
-    }
-    if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, null);
+  public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
+    if (expr.getReferent() instanceof GlobalReferable) {
+      myDependencies.add((GlobalReferable) expr.getReferent());
     }
     return null;
   }
 
   @Override
-  public Void visitInferenceReference(Abstract.InferenceReferenceExpression expr, Void params) {
+  public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
     return null;
   }
 
   @Override
-  public Void visitModuleCall(Abstract.ModuleCallExpression expr, Void params) {
-    if (expr.getModule() != null)
-      myDependencies.add(expr.getModule());
-    return null;
-  }
-
-  @Override
-  public Void visitLam(Abstract.LamExpression expr, Void ignore) {
+  public Void visitLam(Concrete.LamExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     expr.getBody().accept(this, null);
     return null;
   }
 
-  private void visitParameters(List<? extends Abstract.Parameter> args) {
-    for (Abstract.Parameter arg : args) {
-      if (arg instanceof Abstract.TypeParameter) {
-        ((Abstract.TypeParameter) arg).getType().accept(this, null);
+  private void visitParameters(List<? extends Concrete.Parameter> params) {
+    for (Concrete.Parameter param : params) {
+      if (param instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter) param).getType().accept(this, null);
       }
     }
   }
 
   @Override
-  public Void visitPi(Abstract.PiExpression expr, Void ignore) {
+  public Void visitPi(Concrete.PiExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     expr.getCodomain().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitUniverse(Abstract.UniverseExpression expr, Void ignore) {
+  public Void visitUniverse(Concrete.UniverseExpression expr, Void ignore) {
     return null;
   }
 
   @Override
-  public Void visitInferHole(Abstract.InferHoleExpression expr, Void ignore) {
+  public Void visitInferHole(Concrete.InferHoleExpression expr, Void ignore) {
     return null;
   }
 
   @Override
-  public Void visitGoal(Abstract.GoalExpression expr, Void ignore) {
+  public Void visitGoal(Concrete.GoalExpression expr, Void ignore) {
     return null;
   }
 
   @Override
-  public Void visitTuple(Abstract.TupleExpression expr, Void ignore) {
-    for (Abstract.Expression comp : expr.getFields()) {
+  public Void visitTuple(Concrete.TupleExpression expr, Void ignore) {
+    for (Concrete.Expression comp : expr.getFields()) {
       comp.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitSigma(Abstract.SigmaExpression expr, Void ignore) {
+  public Void visitSigma(Concrete.SigmaExpression expr, Void ignore) {
     visitParameters(expr.getParameters());
     return null;
   }
 
   @Override
-  public Void visitBinOp(Abstract.BinOpExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof Abstract.Definition) {
-      myDependencies.add((Abstract.Definition) expr.getReferent());
-    }
-
-    expr.getLeft().accept(this, null);
-    if (expr.getRight() != null) {
-      expr.getRight().accept(this, null);
+  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void ignore) {
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
+      elem.expression.accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitBinOpSequence(Abstract.BinOpSequenceExpression expr, Void ignore) {
-    expr.getLeft().accept(this, null);
-    for (Abstract.BinOpSequenceElem elem : expr.getSequence()) {
-      visitReference(elem.binOp, null);
-      if (elem.argument != null) {
-        elem.argument.accept(this, null);
-      }
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitCase(Abstract.CaseExpression expr, Void ignore) {
-    for (Abstract.Expression caseExpr : expr.getExpressions()) {
+  public Void visitCase(Concrete.CaseExpression expr, Void ignore) {
+    for (Concrete.Expression caseExpr : expr.getExpressions()) {
       caseExpr.accept(this, null);
     }
-    for (Abstract.FunctionClause clause : expr.getClauses()) {
+    for (Concrete.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null)
         clause.getExpression().accept(this, null);
     }
@@ -154,29 +110,29 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitProj(Abstract.ProjExpression expr, Void ignore) {
+  public Void visitProj(Concrete.ProjExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitClassExt(Abstract.ClassExtExpression expr, Void ignore) {
+  public Void visitClassExt(Concrete.ClassExtExpression expr, Void ignore) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Abstract.ClassFieldImpl statement : expr.getStatements()) {
+    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
       statement.getImplementation().accept(this, null);
     }
     return null;
   }
 
   @Override
-  public Void visitNew(Abstract.NewExpression expr, Void ignore) {
+  public Void visitNew(Concrete.NewExpression expr, Void ignore) {
     expr.getExpression().accept(this, null);
     return null;
   }
 
   @Override
-  public Void visitLet(Abstract.LetExpression letExpression, Void ignore) {
-    for (Abstract.LetClause clause : letExpression.getClauses()) {
+  public Void visitLet(Concrete.LetExpression letExpression, Void ignore) {
+    for (Concrete.LetClause clause : letExpression.getClauses()) {
       visitParameters(clause.getParameters());
       if (clause.getResultType() != null) {
         clause.getResultType().accept(this, null);
@@ -188,7 +144,7 @@ public class CollectDefCallsVisitor implements AbstractExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitNumericLiteral(Abstract.NumericLiteral expr, Void ignore) {
+  public Void visitNumericLiteral(Concrete.NumericLiteral expr, Void ignore) {
     return null;
   }
 }

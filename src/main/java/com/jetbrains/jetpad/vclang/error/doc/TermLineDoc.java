@@ -1,13 +1,35 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
+
+import java.util.EnumSet;
 
 public class TermLineDoc extends LineDoc {
+  private final PrettyPrinterConfig myPPConfig;
   private final Expression myTerm;
   private String myText;
 
-  public TermLineDoc(Expression term) {
+  TermLineDoc(Expression term, PrettyPrinterConfig ppConfig) {
     myTerm = term;
+    myPPConfig = new PrettyPrinterConfig() {
+        @Override
+        public boolean isSingleLine() {
+          return true;
+        }
+
+        @Override
+        public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+          return ppConfig.getExpressionFlags();
+        }
+
+        @Override
+        public NormalizeVisitor.Mode getNormalizationMode() {
+          return ppConfig.getNormalizationMode();
+        }
+    };
   }
 
   public Expression getTerm() {
@@ -17,7 +39,7 @@ public class TermLineDoc extends LineDoc {
   public String getText() {
     if (myText == null) {
       StringBuilder builder = new StringBuilder();
-      myTerm.prettyPrint(builder, false);
+      myTerm.prettyPrint(builder, myPPConfig);
       myText = builder.toString();
     }
     return myText;

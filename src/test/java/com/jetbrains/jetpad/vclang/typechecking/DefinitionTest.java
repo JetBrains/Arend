@@ -43,7 +43,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void errorInParameters() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
         "\\function test => D", 2);
@@ -51,7 +51,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void errorInParametersCon() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
         "\\function test => d", 2);
@@ -64,14 +64,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternDepParams() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
         "\\data C {n : Nat} {p : n = n} (D n p) => \\elim n | zero => c (p = p)");
   }
 
   @Test
   public void patternDepParams2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
         "\\data C {n : Nat} {p : n = n} (D n p) | c (p = p)");
   }
@@ -93,14 +93,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternConstructorCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D {Nat} \\with | {zero} => d\n" +
         "\\function test => d");
   }
 
   @Test
   public void patternAbstract() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Wheel | wheel\n" +
         "\\data VehicleType | bikeType | carType\n" +
         "\\data Vehicle VehicleType \\with\n" +
@@ -110,44 +110,44 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternLift() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
         "\\data C (m n : Nat) (d : D m) => \\elim m, n | zero, zero => c");
   }
 
   @Test
   public void patternLift2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
         "\\data C (m n : Nat) (D m) => \\elim n | zero => c");
   }
 
   @Test
   public void patternMultipleSubst() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n m : Nat) | d (n = n) (m = m)\n" +
         "\\data C | c (n m : Nat) (D n m)\n" +
         "\\data E C \\with | c zero (suc zero) (d _ _) => e\n" +
-        "\\function test => (E (c 0 1 (d (path (\\lam _ => 0)) (path (\\lam _ => 1))))).e");
+        "\\function test => e {path (\\lam _ => 0)} {path (\\lam _ => 1)}");
   }
 
   @Test
   public void patternConstructorDefCall() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n m : Nat) => \\elim n, m | suc n, suc m => d (n = n) (m = m)\n" +
         "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
   @Test
   public void patternConstructorDefCallError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
         "\\function test (n : Nat) : D n => d", 1);
   }
 
   @Test
   public void patternSubstTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data E Nat \\with | zero => e\n" +
         "\\data D (n : Nat) (E n) => \\elim n | zero => d\n" +
         "\\function test => d");
@@ -155,7 +155,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternExpandArgsTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) | d (n = n)\n" +
         "\\data C (D 1) \\with | d p => c\n" +
         "\\function test : C (d (path (\\lam _ => 1))) => c");
@@ -163,16 +163,16 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternNormalizeTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data E (x : 0 = 0) | e\n" +
         "\\data C (n m : Nat) => \\elim n, m | suc n, suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
-        "\\function test => x (E (path (\\lam _ => 0))).e");
+        "\\function test => x (e {path (\\lam _ => 0)})");
   }
 
   @Test
   public void patternNormalizeTest1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data E (x : 0 = 0) | e\n" +
         "\\data C Nat Nat \\with | suc n, suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 1)) \\with | c p => x (E p)", 1);
@@ -180,7 +180,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternTypeCheck() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0) \\with\n" +
         "  | suc n => foo (f n)", 1);

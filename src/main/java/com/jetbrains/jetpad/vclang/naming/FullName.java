@@ -1,20 +1,25 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-public class FullName {
-  private final FullName myParent;
-  private final String myName;
+import com.jetbrains.jetpad.vclang.util.LongName;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class FullName extends LongName {
+  public FullName(List<String> path) {
+    super(path);
+  }
 
   public FullName(String name) {
-    this(null, name);
+    super(Collections.singletonList(name));
   }
 
-  public FullName(FullName parent, String name) {
-    myParent = parent;
-    myName = name;
-  }
-
-  @Override
-  public String toString() {
-    return (myParent != null ? myParent.toString() + "." : "") + myName;
+  public static FullName make(FullName parent, String name) {
+    List<String> path = parent.toList();
+    List<String> newPath = new ArrayList<>(path.size() + 1);
+    newPath.addAll(path);
+    newPath.add(name);
+    return new FullName(newPath);
   }
 }

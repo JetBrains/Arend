@@ -14,22 +14,21 @@ public class Pair<T, S> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Pair<?, ?> that = (Pair<?, ?>) o;
+    Pair<?, ?> pair = (Pair<?, ?>) o;
 
-    if (!proj1.equals(that.proj1)) return false;
-    return proj2 != null ? proj2.equals(that.proj2) : that.proj2 == null;
-
+    if (proj1 != null ? !proj1.equals(pair.proj1) : pair.proj1 != null) return false;
+    return proj2 != null ? proj2.equals(pair.proj2) : pair.proj2 == null;
   }
 
   @Override
   public int hashCode() {
-    int result = proj1.hashCode();
+    int result = proj1 != null ? proj1.hashCode() : 0;
     result = 31 * result + (proj2 != null ? proj2.hashCode() : 0);
     return result;
   }
 
   @Override
   public String toString() {
-    return "(" + proj1 + ", " + proj2 + ')';
+    return "(" + (proj1 == null ? "null" : proj1) + ", " + (proj2 == null ? "null" : proj2) + ')';
   }
 }

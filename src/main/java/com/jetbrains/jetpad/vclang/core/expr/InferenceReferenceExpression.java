@@ -12,22 +12,22 @@ public class InferenceReferenceExpression extends Expression {
 
   public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
     myVar = binding;
-    myVar.setReference(this);
+    binding.setReference(this);
 
-    Expression type = myVar.getType().normalize(NormalizeVisitor.Mode.WHNF);
+    Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
     if (type.isInstance(ClassCallExpression.class)) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (!classCall.getDefinition().getFields().isEmpty()) {
         for (ClassField field : classCall.getDefinition().getFields()) {
           Expression impl = classCall.getImplementation(field, this);
           if (impl != null) {
-            equations.add(FieldCallExpression.make(field, this), impl, Equations.CMP.EQ, myVar.getSourceNode(), myVar);
+            equations.add(FieldCallExpression.make(field, this), impl, Equations.CMP.EQ, binding.getSourceNode(), binding);
           }
         }
         type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
       }
     }
-    myVar.setType(type);
+    binding.setType(type);
   }
 
   public InferenceReferenceExpression(InferenceVariable binding, Expression substExpression) {
@@ -53,12 +53,12 @@ public class InferenceReferenceExpression extends Expression {
   }
 
   @Override
-  public <T extends Expression> T cast(Class<T> clazz) {
+  public <E extends Expression> E cast(Class<E> clazz) {
     return clazz.isInstance(this) ? clazz.cast(this) : mySubstExpression.cast(clazz);
   }
 
   @Override
-  public <T extends Expression> boolean isInstance(Class<T> clazz) {
+  public boolean isInstance(Class clazz) {
     return mySubstExpression != null && mySubstExpression.isInstance(clazz) || clazz.isInstance(this);
   }
 

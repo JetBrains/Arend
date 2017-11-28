@@ -6,12 +6,12 @@ import org.junit.Test;
 public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void classNotInScope() {
-    resolveNamesClass("\\view Foo \\on X \\by X { }", 1);
+    resolveNamesModule("\\view Foo \\on X \\by X { }", 1);
   }
 
   @Test
   public void resolveNames() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -22,7 +22,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveNames2() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -33,7 +33,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveNamesNonImplicit() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -45,7 +45,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveNamesDuplicate() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -60,7 +60,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveNamesInner() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X \\where {\n" +
         "  \\class Z {\n" +
         "    | T : \\Type0\n" +
@@ -73,7 +73,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveNamesRecursive() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X \\where {\n" +
         "  \\class Z {\n" +
         "    | T : \\Type0\n" +
@@ -91,7 +91,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveClassExt() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type1\n" +
         "  | f : \\Type1\n" +
@@ -102,7 +102,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveClassExtSameName() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type1\n" +
         "  | f : \\Type1\n" +
@@ -113,7 +113,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void resolveClassExtSameName2() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type1\n" +
         "  | f : \\Type1\n" +
@@ -124,7 +124,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void duplicateClassView() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -139,7 +139,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void duplicateClassViewFieldName() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
@@ -150,29 +150,29 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
 
   @Test
   public void cyclicView() {
-    resolveNamesClass("\\view X \\on X \\by X { }", 1);
+    resolveNamesModule("\\view X \\on X \\by X { }", 1);
   }
 
   @Test
   public void instanceWithoutView() {
-    resolveNamesClass(
+    resolveNamesModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\data D\n" +
-      "\\instance D-X => \\new X { A => D | B => \\lam n => D }", 1);
+      "\\instance D-X : X | A => D | B => \\lam n => D", 1);
   }
 
   @Test
   public void instanceNotView() {
-    resolveNamesClass(
+    resolveNamesModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\view X' \\on X \\by A { B }\n" +
       "\\data D\n" +
-      "\\instance D-X => \\new X { A => D | B => \\lam _ => D }", 1);
+      "\\instance D-X : X | A => D | B => \\lam _ => D", 1);
   }
 }

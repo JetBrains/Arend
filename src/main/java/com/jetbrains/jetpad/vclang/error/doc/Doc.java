@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.error.doc;
 
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
+
 import java.util.List;
 
-public abstract class Doc {
+public abstract class Doc implements PrettyPrintable {
   public abstract <P, R> R accept(DocVisitor<? super P, ? extends R> visitor, P params);
 
   public abstract int getWidth();
@@ -20,5 +23,15 @@ public abstract class Doc {
   @Override
   public String toString() {
     return DocStringBuilder.build(this);
+  }
+
+  @Override
+  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+    DocStringBuilder.build(builder, this);
+  }
+
+  @Override
+  public Doc prettyPrint(PrettyPrinterConfig ppConfig) {
+    return this;
   }
 }

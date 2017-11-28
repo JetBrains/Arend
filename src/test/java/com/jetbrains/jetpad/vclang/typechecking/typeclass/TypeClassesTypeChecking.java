@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.CycleError;
+import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.instanceOf;
 public class TypeClassesTypeChecking extends TypeCheckingTestCase {
   @Test
   public void classViewFieldNotInScope() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "}\n" +
@@ -18,7 +18,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void classifyingFieldNotInScope() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "}\n" +
@@ -27,7 +27,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void classViewExt() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -40,22 +40,22 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void notImplementedField() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B }\n" +
-        "\\instance x => \\new X' { A => Nat }", 1);
+        "\\instance x : X' | A => Nat", 1);
   }
 
   @Test
   public void mutuallyRecursiveInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\view X' \\on X \\by A { B }\n" +
-      "\\default \\instance Nat-X => \\new X' { A => Nat | B => \\lam _ => Nat }\n" +
+      "\\default \\instance Nat-X : X' | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
-      "\\instance D-X => \\new X' { A => D | B => \\lam _ => f }\n" +
+      "\\instance D-X : X' | A => D | B => \\lam _ => f\n" +
       "\\function g {x : X' { A => Nat }} => \\Prop\n" +
       "\\function f => g\n" +
       "\\class X {\n" +
@@ -66,11 +66,11 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void mutuallyRecursiveInstanceError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\view X' \\on X \\by A { B }\n" +
-      "\\instance Nat-X => \\new X' { A => Nat | B => \\lam _ => Nat }\n" +
+      "\\instance Nat-X : X' | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
-      "\\default \\instance D-X => \\new X' { A => D | B => \\lam _ => f }\n" +
+      "\\default \\instance D-X : X' | A => D | B => \\lam _ => f\n" +
       "\\function g {x : X' { A => Nat }} => \\Prop\n" +
       "\\function f : \\Set0 => g\n" +
       "\\class X {\n" +
@@ -82,20 +82,20 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
 
   @Test
   public void duplicateInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\view Y \\on X \\by A { B }\n" +
       "\\data D\n" +
-      "\\instance D-X => \\new Y { A => D | B => \\lam n => D }\n" +
-      "\\instance D-Y => \\new Y { A => D | B => \\lam n => D -> D }", 1);
+      "\\instance D-X : Y | A => D | B => \\lam n => D\n" +
+      "\\instance D-Y : Y | A => D | B => \\lam n => D -> D", 1);
   }
 
   @Test
   public void duplicateDefaultInstance() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
@@ -103,8 +103,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\view Y \\on X \\by A { B }\n" +
       "\\view Z \\on X \\by A { B => C }\n" +
       "\\data D | c\n" +
-      "\\default \\instance D-Y => \\new Y { A => D | B => \\lam n => D -> D }\n" +
-      "\\default \\instance D-Z => \\new Z { A => D | C => \\lam n => D -> D }\n" +
+      "\\default \\instance D-Y : Y | A => D | B => \\lam n => D -> D\n" +
+      "\\default \\instance D-Z : Z | A => D | C => \\lam n => D -> D\n" +
       "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
       "\\function g => f c", 1);
   }

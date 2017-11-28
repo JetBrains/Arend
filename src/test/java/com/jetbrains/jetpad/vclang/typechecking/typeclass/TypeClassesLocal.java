@@ -6,7 +6,7 @@ import org.junit.Test;
 public class TypeClassesLocal extends TypeCheckingTestCase {
   @Test
   public void inferVar() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -17,7 +17,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVar2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -28,7 +28,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarGlobalType() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -39,7 +39,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarRenamedView() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -50,7 +50,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarRenamedView2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -61,7 +61,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarRenamedViewError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -72,7 +72,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarRenamedViewError2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -83,7 +83,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicateTele() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -94,7 +94,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicateTele2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -105,7 +105,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicate() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -116,7 +116,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicate2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -127,7 +127,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDifferent() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -139,7 +139,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVar3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> Nat\n" +
@@ -150,7 +150,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarFromType() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | a : A\n" +
@@ -161,7 +161,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicateFromType() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | a : A\n" +
@@ -172,7 +172,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarFromType2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | a : A\n" +
@@ -183,7 +183,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarDuplicateFromType2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | a : A\n" +
@@ -194,7 +194,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void inferVarFromType3() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | a : A\n" +
@@ -205,7 +205,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveInferLocal() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -218,7 +218,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveInferLocal2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +
@@ -231,7 +231,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void transitiveLocalDuplicate() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | A : \\Type0\n" +
         "  | B : A -> \\Type0\n" +

@@ -11,7 +11,7 @@ public class CoverageTest extends TypeCheckingTestCase {
 
   @Test
   public void coverageTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Fin Nat \\with | _ => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin n) : Fin n => \\elim n, x\n" +
         "  | zero, fzero => fzero\n" +
@@ -21,7 +21,7 @@ public class CoverageTest extends TypeCheckingTestCase {
 
   @Test
   public void coverageTest2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Fin Nat \\with | _ => fzero | suc n => fsuc (Fin n)\n" +
         "\\function unsuc {n : Nat} (x : Fin n) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
@@ -30,7 +30,7 @@ public class CoverageTest extends TypeCheckingTestCase {
 
   @Test
   public void conditionsCoverage() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Z | pos Nat | neg Nat { zero => pos zero }\n" +
       "\\function f (z : Z) (n : Nat) : Nat\n" +
       "  | pos zero, zero => zero\n" +

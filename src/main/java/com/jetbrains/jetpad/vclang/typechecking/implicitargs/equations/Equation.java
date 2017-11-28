@@ -3,15 +3,15 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.InferenceReferenceExpression;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 public class Equation implements InferenceVariableListener {
   public final Expression type;
   public final Expression expr;
   public final Equations.CMP cmp;
-  public final Abstract.SourceNode sourceNode;
+  public final Concrete.SourceNode sourceNode;
 
-  public Equation(Expression type, Expression expr, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
+  public Equation(Expression type, Expression expr, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
     this.type = type;
     this.expr = expr;
     this.cmp = cmp;

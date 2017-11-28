@@ -41,7 +41,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void squeezeTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function squeeze1 (i j : I) => coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
         "\\function squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j"
     );
@@ -49,7 +49,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void concatTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\function concat {A : I -> \\Type} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') => transport (Path A a) q p\n" +
         "\\function *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => concat p q");
@@ -57,7 +57,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void inv0Test() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\function inv {A : \\Type} {a a' : A} (p : a = a') => transport (\\lam a'' => a'' = a) p idp\n" +
@@ -72,7 +72,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void invTest() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\function transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\function inv {A : \\Type} {a a' : A} (p : a = a') => transport (\\lam a'' => a'' = a) p idp\n" +
@@ -87,7 +87,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void idpTypeTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function idp {A : \\Type} {a : A} : a = a => path (\\lam _ => a)\n" +
       "\\function f : 3 = 3 => idp");
   }

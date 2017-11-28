@@ -1,23 +1,19 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.*;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,32 +56,45 @@ public class PreludeCacheGenerator {
     }
 
     @Override
-    public PreludeStorage.SourceId sourceOf(Abstract.Definition definition) {
+    public PreludeStorage.SourceId sourceOf(GlobalReferable definition) {
       return preludeSourceId;
     }
   }
 
   static class PreludePersistenceProvider implements PersistenceProvider<PreludeStorage.SourceId> {
+    private final FullNameProvider myFullNameProvider;
+
+    PreludePersistenceProvider(FullNameProvider fullNameProvider) {
+      myFullNameProvider = fullNameProvider;
+    }
+
     @Override
-    public URI getUri(PreludeStorage.SourceId sourceId) {
+    public @Nonnull URI getUri(PreludeStorage.SourceId sourceId) {
       throw new IllegalStateException();
     }
 
     @Override
-    public PreludeStorage.SourceId getModuleId(URI sourceUrl) {
+    public @Nonnull PreludeStorage.SourceId getModuleId(URI sourceUrl) {
       throw new IllegalStateException();
     }
 
     @Override
-    public String getIdFor(Abstract.Definition definition) {
-      if (!(definition instanceof Concrete.Definition)) throw new IllegalStateException();
-      Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
-      if (pos == null) throw new IllegalStateException();
-      return pos.line + ";" + pos.column;
+    public boolean needsCaching(GlobalReferable def, Definition typechecked) {
+      return true;
     }
 
     @Override
-    public Abstract.Definition getFromId(PreludeStorage.SourceId sourceId, String id) {
+    public @Nullable String getIdFor(GlobalReferable definition) {
+      return SourcelessCacheManager.getNameIdFor(myFullNameProvider, definition);
+    }
+
+    @Override
+    public @Nonnull GlobalReferable getFromId(PreludeStorage.SourceId sourceId, String id) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public void registerCachedDefinition(PreludeStorage.SourceId sourceId, String id, GlobalReferable parent) {
       throw new IllegalStateException();
     }
   }
@@ -95,26 +104,19 @@ public class PreludeCacheGenerator {
     public long getCurrentVersion(@Nonnull PreludeStorage.SourceId sourceId) {
       return 1;
     }
-
-    @Override
-    public boolean ensureLoaded(@Nonnull PreludeStorage.SourceId sourceId, long version) {
-      throw new IllegalStateException();
-    }
   }
 
   public static void main(String[] args) throws CachePersistenceException {
+    PreludeStorage storage = new PreludeStorage(null);
+    SimpleSourceInfoProvider<PreludeStorage.SourceId> sourceInfoProvider = new SimpleSourceInfoProvider<>();
+    CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(sourceInfoProvider), new PreludeBuildCacheSupplier(Paths.get(args[0])),
+        new PreludeDefLocator(storage.preludeSourceId), new PreludeVersionTracker());
+
     final ListErrorReporter errorReporter = new ListErrorReporter();
-    final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
-    final NameResolver nameResolver = new NameResolver(new NamespaceProviders(new SimpleModuleNamespaceProvider(), staticNsProvider, dynamicNsProvider));
-
-    PreludeStorage storage = new PreludeStorage(nameResolver);
-    CacheManager<PreludeStorage.SourceId> cacheManager = new CacheManager<>(new PreludePersistenceProvider(), new PreludeBuildCacheSupplier(Paths.get(args[0])),
-        new PreludeVersionTracker(), new PreludeDefLocator(storage.preludeSourceId));
-
-    Abstract.ClassDefinition prelude = storage.loadSource(storage.preludeSourceId, errorReporter).definition;
+    Group prelude = storage.loadSource(storage.preludeSourceId, errorReporter).group;
     if (!errorReporter.getErrorList().isEmpty()) throw new IllegalStateException();
-    new Typechecking(cacheManager.getTypecheckerState(), staticNsProvider, dynamicNsProvider, HasOpens.GET, errorReporter, new Prelude.UpdatePreludeReporter(cacheManager.getTypecheckerState()), new DependencyListener() {}).typecheckModules(Collections.singleton(prelude));
+    sourceInfoProvider.registerModule(prelude, storage.preludeSourceId);
+    new Prelude.PreludeTypechecking(cacheManager.getTypecheckerState()).typecheckModules(Collections.singleton(prelude));
 
     cacheManager.persistCache(storage.preludeSourceId);
   }

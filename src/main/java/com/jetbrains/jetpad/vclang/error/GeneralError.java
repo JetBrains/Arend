@@ -1,18 +1,17 @@
 package com.jetbrains.jetpad.vclang.error;
 
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 
 /**
- * Marker class for errors that can be readily reported to an ErrorReporter.
+ * Errors that can be readily reported to an ErrorReporter.
  */
-public class GeneralError extends Error {
-  public GeneralError(String message, Abstract.SourceNode cause) {
-    super(message, cause);
+public abstract class GeneralError extends Error {
+  public GeneralError(@Nonnull Level level, String message) {
+    super(level, message);
   }
 
-  public GeneralError(@Nonnull Level level, String message, Abstract.SourceNode cause) {
-    super(level, message, cause);
-  }
+  public abstract Collection<? extends GlobalReferable> getAffectedDefinitions();
 }

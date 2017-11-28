@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -27,21 +27,21 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
-  private final Abstract.SourceNode mySourceNode;
+  private final Concrete.SourceNode mySourceNode;
   private Equations.CMP myCMP;
 
-  private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
+  private CompareVisitor(Equations equations, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
     mySourceNode = sourceNode;
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
+  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
-  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Abstract.SourceNode sourceNode) {
+  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(tree1, tree2);
   }
 

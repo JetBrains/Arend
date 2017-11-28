@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class UniverseLevels extends TypeCheckingTestCase {
   @Test
   public void dataExpansion() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
       "\\function f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
       "\\function test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
@@ -19,39 +19,39 @@ public class UniverseLevels extends TypeCheckingTestCase {
 
   @Test
   public void allowedInArgs() {
-    typeCheckClass("\\function f (A : \\Type -> \\Type) => 0");
+    typeCheckModule("\\function f (A : \\Type -> \\Type) => 0");
   }
 
   @Test
   public void allowedInResultType() {
-    typeCheckClass("\\function g : \\Type -> \\Type => \\lam X => X");
+    typeCheckModule("\\function g : \\Type -> \\Type => \\lam X => X");
   }
 
   @Test
   public void allowedAsExpression() {
-    typeCheckClass("\\function f => \\Type");
+    typeCheckModule("\\function f => \\Type");
   }
 
   @Test
   public void equalityOfTypes() {
-    typeCheckClass("\\function f (A B : \\Type) => A = B");
+    typeCheckModule("\\function f (A B : \\Type) => A = B");
   }
 
   @Test
   public void callPolyFromOmega() {
-     typeCheckClass(
+     typeCheckModule(
          "\\function f (A : \\Type) => A\n" +
          "\\function g (A : \\Type) => f A");
   }
 
   @Test
   public void typeOmegaResult() {
-    typeCheckClass("\\function f (A : \\Type) : \\Type => A");
+    typeCheckModule("\\function f (A : \\Type) : \\Type => A");
   }
 
   @Test
   public void callNonPolyFromOmega() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\Type0) => 0\n" +
         "\\function g (A : \\Type) => f A", 1);
   }
@@ -73,14 +73,14 @@ public class UniverseLevels extends TypeCheckingTestCase {
 
   @Test
   public void functionMaxTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Foo (A : \\Type) : \\Type | foo A\n" +
       "\\function bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
   }
 
   @Test
   public void dataMaxTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Foo (A : \\Type) : \\Type | foo A\n" +
       "\\data Bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) | bar (Foo A)");
   }

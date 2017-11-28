@@ -1,28 +1,25 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.frontend.parser.ParseSource;
+import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.SourceVersionTracker;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.NamespaceScope;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.Prelude;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVersionTracker<MemoryStorage.SourceId> {
-  private final Map<ModulePath, Source> mySources = new HashMap<>();
-  private final Map<SourceId, ByteArrayOutputStream> myCaches = new HashMap<>();
+  private Map<ModulePath, Source> mySources = new HashMap<>();
+  private Map<ModulePath, ByteArrayOutputStream> myCaches = new HashMap<>();
   private final ModuleRegistry myModuleRegistry;
-  private Scope myGlobalScope = new EmptyScope();
-  private final NameResolver myNameResolver;
+  private final ModuleScopeProvider myModuleScopeProvider;
 
   static class Source {
     long version;
@@ -34,13 +31,30 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     }
   }
 
-  public MemoryStorage(ModuleRegistry moduleRegistry, NameResolver nameResolver) {
+  public MemoryStorage(@Nullable ModuleRegistry moduleRegistry, ModuleScopeProvider moduleScopeProvider) {
     myModuleRegistry = moduleRegistry;
-    myNameResolver = nameResolver;
-  }
+    myModuleScopeProvider = moduleScopeProvider;
 
-  public void setPreludeNamespace(Namespace ns) {
-    myGlobalScope = new NamespaceScope(ns);
+    // Be ready to load Prelude
+    final String preludeSource;
+    InputStream preludeStream = Prelude.class.getResourceAsStream(PreludeStorage.SOURCE_RESOURCE_PATH);
+    if (preludeStream == null) {
+      throw new IllegalStateException("Prelude source is not available");
+    }
+    try (Reader in = new InputStreamReader(preludeStream, "UTF-8")) {
+      StringBuilder builder = new StringBuilder();
+      final char[] buffer = new char[1024 * 1024];
+      for (;;) {
+        int rsz = in.read(buffer, 0, buffer.length);
+        if (rsz < 0)
+          break;
+        builder.append(buffer, 0, rsz);
+      }
+      preludeSource = builder.toString();
+    } catch (IOException e) {
+      throw new IllegalStateException();
+    }
+    add(PreludeStorage.PRELUDE_MODULE_PATH, preludeSource);
   }
 
   public SourceId add(ModulePath modulePath, String source) {
@@ -54,6 +68,11 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     assert old != null;
   }
 
+  public void removeCache(ModulePath modulePath) {
+    ByteArrayOutputStream old = myCaches.remove(modulePath);
+    assert old != null;
+  }
+
   public void incVersion(ModulePath modulePath) {
     Source source = mySources.get(modulePath);
     assert source != null;
@@ -62,8 +81,11 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
 
   @Override
   public SourceId locateModule(@Nonnull ModulePath modulePath) {
-    Source source = mySources.get(modulePath);
-    return source != null ? new SourceId(modulePath) : null;
+    if (mySources.containsKey(modulePath) || myCaches.containsKey(modulePath)) {
+      return new SourceId(modulePath);
+    } else {
+      return null;
+    }
   }
 
   @Override
@@ -76,8 +98,7 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     if (!isAvailable(sourceId)) return null;
     try {
       Source source = mySources.get(sourceId.getModulePath());
-      Abstract.ClassDefinition result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(
-          errorReporter, myModuleRegistry, myGlobalScope, myNameResolver);
+      ChildGroup result = new ParseSource(sourceId, new StringReader(source.data)) {}.load(errorReporter, myModuleRegistry, myModuleScopeProvider);
       return LoadResult.make(result, source.version);
     } catch (IOException e) {
       throw new IllegalStateException(e);
@@ -95,21 +116,25 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
   }
 
   @Override
-  public boolean ensureLoaded(@Nonnull SourceId sourceId, long version) {
-    return getCurrentVersion(sourceId) == version;
-  }
-
-  @Override
   public InputStream getCacheInputStream(SourceId sourceId) {
-    ByteArrayOutputStream stream = myCaches.get(sourceId);
+    ByteArrayOutputStream stream = myCaches.get(sourceId.getModulePath());
     return stream != null ? new ByteArrayInputStream(stream.toByteArray()) : null;
   }
 
   @Override
   public OutputStream getCacheOutputStream(SourceId sourceId) {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    myCaches.put(sourceId, stream);
+    myCaches.put(sourceId.getModulePath(), stream);
     return stream;
+  }
+
+  public Snapshot getSnapshot() {
+    return new Snapshot(new HashMap<>(mySources), new HashMap<>(myCaches));
+  }
+
+  public void restoreSnapshot(Snapshot snapshot) {
+    mySources = new HashMap<>(snapshot.mySources);
+    myCaches = new HashMap<>(snapshot.myCaches);
   }
 
   public class SourceId implements com.jetbrains.jetpad.vclang.module.source.SourceId {
@@ -137,6 +162,16 @@ public class MemoryStorage implements Storage<MemoryStorage.SourceId>, SourceVer
     @Override
     public int hashCode() {
       return myPath != null ? myPath.hashCode() : 0;
+    }
+  }
+
+  public class Snapshot {
+    public final Map<ModulePath, Source> mySources;
+    public final Map<ModulePath, ByteArrayOutputStream> myCaches;
+
+    private Snapshot(Map<ModulePath, Source> sources, Map<ModulePath, ByteArrayOutputStream> caches) {
+      mySources = sources;
+      myCaches = caches;
     }
   }
 }

@@ -4,14 +4,17 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
-import com.jetbrains.jetpad.vclang.frontend.resolving.SimpleSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -23,13 +26,16 @@ public abstract class VclangTestCase {
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
 
+  public GlobalReferable get(Scope scope, String path) {
+    Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
+    return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
+  }
+
   @SafeVarargs
   protected final void assertThatErrorsAre(Matcher<? super GeneralError>... matchers) {
     assertThat(errorList, Matchers.contains(matchers));
   }
 
-
-  private static final SourceInfoProvider mySourceInfoProvider = new SimpleSourceInfoProvider();
 
   protected static Matcher<? super Collection<? extends GeneralError>> containsErrors(final int n) {
     return new TypeSafeDiagnosingMatcher<Collection<? extends GeneralError>>() {
@@ -41,7 +47,7 @@ public abstract class VclangTestCase {
           List<Doc> docs = new ArrayList<>(errors.size() + 1);
           docs.add(text("there were errors:"));
           for (GeneralError error : errors) {
-            docs.add(error.getDoc(mySourceInfoProvider));
+            docs.add(error.getDoc(PrettyPrinterConfig.DEFAULT));
           }
           description.appendText(DocStringBuilder.build(vList(docs)));
         }

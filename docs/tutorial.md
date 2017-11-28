@@ -4,8 +4,8 @@ Arend Tutorial
 Here is the data type for booleans in Arend:
 
 ~~~~.arend
-\open ::Data::Unit
-\open ::Data::Empty
+\import Data.Unit
+\import Data.Empty
 
 \data Bool | true | false
 
@@ -29,7 +29,7 @@ Here is some fine algebra for you reading pleasure:
 
 
 ~~~~arend
-\open ::Data::Bool
+\import Data.Bool
 
 \class Semigroup {
   | X : \Type0

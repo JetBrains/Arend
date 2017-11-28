@@ -1,21 +1,26 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
-import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
-import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteResolveListener;
-import com.jetbrains.jetpad.vclang.frontend.namespace.ModuleRegistry;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotNameResolver;
+import com.jetbrains.jetpad.vclang.error.*;
+import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
+import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.scope.primitive.Scope;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import org.antlr.v4.runtime.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 
 public abstract class ParseSource {
   private final SourceId mySourceId;
@@ -26,7 +31,8 @@ public abstract class ParseSource {
     myStream = stream;
   }
 
-  public @Nullable Concrete.ClassDefinition load(ErrorReporter errorReporter, ModuleRegistry moduleRegistry, Scope globalScope, NameResolver nameResolver) throws IOException {
+  public @Nullable
+  ChildGroup load(ErrorReporter errorReporter, @Nullable ModuleRegistry moduleRegistry, @Nonnull ModuleScopeProvider moduleScopeProvider) throws IOException {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
@@ -35,7 +41,7 @@ public abstract class ParseSource {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -44,7 +50,7 @@ public abstract class ParseSource {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        compositeErrorReporter.report(new ParserError(new Concrete.Position(mySourceId, line, pos), msg));
+        compositeErrorReporter.report(new ParserError(new Position(mySourceId, line, pos), msg));
       }
     });
 
@@ -53,22 +59,30 @@ public abstract class ParseSource {
       return null;
     }
 
-    List<Concrete.Statement> statements = new BuildVisitor(mySourceId, compositeErrorReporter).visitStatements(tree);
-
-    Concrete.ClassDefinition result = new Concrete.ClassDefinition(new Concrete.Position(mySourceId, 0, 0), mySourceId.getModulePath().getName(), statements);
+    FileGroup result = new BuildVisitor(mySourceId, errorReporter).visitStatements(tree);
 
     if (moduleRegistry != null) {
       moduleRegistry.registerModule(mySourceId.getModulePath(), result);
-    }
-    if (nameResolver != null) {
-      OneshotNameResolver.visitModule(result, globalScope, nameResolver, new ConcreteResolveListener(), compositeErrorReporter);
-    }
-    if (countingErrorReporter.getErrorsNumber() > 0) {
-      if (moduleRegistry != null) {
-        moduleRegistry.unregisterModule(mySourceId.getModulePath());
+      for (NamespaceCommand command : result.getNamespaceCommands()) {
+        if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
+          ModulePath modulePath = new ModulePath(command.getPath());
+          if (!moduleRegistry.isRegistered(modulePath)) {
+            Scope s = moduleScopeProvider.forModule(modulePath);
+            if (s == null) {
+              compositeErrorReporter.report(new GeneralError(Error.Level.ERROR, "[Import] Could not load module: " + modulePath) {
+                @Override
+                public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+                  return Collections.singleton(result.getReferable());
+                }
+              });
+            }
+          }
+        }
       }
-      return null;
     }
+
+    result.setModuleScopeProvider(moduleScopeProvider);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
     return result;
   }
 }

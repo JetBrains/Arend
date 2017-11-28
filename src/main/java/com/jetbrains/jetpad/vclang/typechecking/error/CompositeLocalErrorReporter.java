@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 public class CompositeLocalErrorReporter implements LocalErrorReporter {
   private final LocalErrorReporter myLocalErrorReporter;
@@ -20,7 +20,7 @@ public class CompositeLocalErrorReporter implements LocalErrorReporter {
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
+  public void report(LocalError localError) {
     myLocalErrorReporter.report(localError);
   }
 }

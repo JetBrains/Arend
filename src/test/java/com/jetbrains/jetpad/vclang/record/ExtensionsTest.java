@@ -11,12 +11,12 @@ import static org.junit.Assert.assertEquals;
 public class ExtensionsTest extends TypeCheckingTestCase {
   @Test
   public void fields() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
@@ -25,12 +25,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newTest() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
@@ -39,12 +39,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void badFieldTypeError() {
-    resolveNamesClass(
-        "\\class A {\n" +
+    resolveNamesModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "  | p : undefined_variable = a'\n" +
         "}\n" +
@@ -53,12 +53,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newError() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
         "\\function f => \\new B { A => Nat | a' => 0 }", 1);
@@ -66,12 +66,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldEval() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
         "\\function f : \\Sigma (1 = 1) (0 = 0) =>\n" +
@@ -81,88 +81,94 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void coercion() {
-    typeCheckClass(
-        "\\class A {\n" +
+    typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
+        "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
-        "\\function f (a : A) => a.a\n" +
+        "\\function f (a : C) => a.a\n" +
         "\\function g : 3 = 3 => path (\\lam _ => f (\\new B { A => Nat | a' => 2 | a => 3 }))\n" +
         "\\function h (b : B { A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
   }
 
   @Test
   public void nameClashError() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\class B \\extends A {\n" +
-        "  | x : Nat\n" +
+        "\\class M {\n" +
+        "  \\class B \\extends A {\n" +
+        "    | x : Nat\n" +
+        "  }\n" +
         "}", 1);
   }
 
   @Test
   public void nameClashError2() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  | y : Nat\n" +
         "}\n" +
-        "\\class C \\extends B {\n" +
-        "  | x : Nat -> Nat\n" +
+        "\\class M {\n" +
+        "  \\class C \\extends B {\n" +
+        "    | x : Nat -> Nat\n" +
+        "  }\n" +
         "}", 1);
   }
 
   @Test
   public void nameClashError3() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class A {\n" +
-        "  | A : \\Set0\n" +
+        "  | S : \\Set0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  | a : A\n" +
+        "  | s : S\n" +
         "}\n" +
-        "\\class C \\extends A {\n" +
-        "  | a : A\n" +
+        "\\class M {\n" +
+        "  \\class C \\extends A {\n" +
+        "    | s : S\n" +
+        "  }\n" +
         "}\n" +
-        "\\class D \\extends B, C", 1);
+        "\\class D \\extends B, M.C", 1);
   }
 
   @Test
   public void multiple() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
-        "  | A : \\Set0\n" +
+        "  | S : \\Set0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
-        "  | b : A\n" +
+        "  | b : S\n" +
         "}\n" +
         "\\class C \\extends A {\n" +
-        "  | c : A\n" +
+        "  | c : S\n" +
         "}\n" +
         "\\class D \\extends B, C {\n" +
         "  | p : b = c\n" +
         "}\n" +
-        "\\function f (d : D { A => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
-        "\\function g => \\new D { A => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
+        "\\function f (d : D { S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
+        "\\function g => \\new D { S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
   }
 
   @Test
   public void superClassExpression() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A\n" +
         "\\class B \\extends ((\\lam x => x) A)");
   }
 
   @Test
   public void dynamicInheritance() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
@@ -170,10 +176,20 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends x.A");
   }
 
+  @Test
+  public void dynamicInheritanceUnresolved() {
+    resolveNamesModule(
+        "\\class X {\n" +
+        "  \\class A\n" +
+        "}\n" +
+        "\\function x => \\new X\n" +
+        "\\class B \\extends x.C", 1);
+  }
+
   @Ignore
   @Test
   public void dynamicInheritanceFieldAccess() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
         "    \\function n : Nat => 0\n" +
@@ -187,7 +203,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicInheritanceFieldAccessQualified() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
         "    \\function n : Nat => 0\n" +
@@ -201,7 +217,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleInheritanceSingleImplementation() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -213,7 +229,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleInheritanceEqualImplementations() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class A {\n" +
         "  | a : Nat\n" +
         "}\n" +
@@ -224,7 +240,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleDynamicInheritanceSameParent() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
@@ -235,7 +251,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void multipleDynamicInheritanceDifferentParentsError() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class X {\n" +
         "  | n : Nat" +
         "  \\class A\n" +
@@ -247,18 +263,18 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void internalInheritance() {
-    typeCheckClass("\\class A { \\class B \\extends A }");
+    typeCheckModule("\\class A { \\class B \\extends A }");
   }
 
   @Test
   public void universe() {
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
-        "\\class A {\n" +
+    TypeCheckModuleResult result = typeCheckModule(
+        "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\class B \\extends A");
-    assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
+        "\\class B \\extends C");
+    assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
   }
 }

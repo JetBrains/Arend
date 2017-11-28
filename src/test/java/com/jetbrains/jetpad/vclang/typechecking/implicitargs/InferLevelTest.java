@@ -8,7 +8,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void noEquations() {
     // no equations
     // error: cannot infer ?l
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\Type\n" +
         "\\function f => A");
   }
@@ -17,7 +17,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void metaVarEquation() {
     // ?l <= ?l'
     // error: cannot infer ?l, ?l'
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\Type\n" +
         "\\function f (A : \\Type) => A\n" +
         "\\function g => f A");
@@ -27,7 +27,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void belowTen() {
     // ?l <= 10
     // error: cannot infer ?l
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\oo-Type\n" +
         "\\function f : \\oo-Type10 => A");
   }
@@ -36,14 +36,14 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void belowParam() {
     // ?l <= c
     // error: cannot infer ?l
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\Type\n" +
         "\\function f : \\Type (\\suc \\lp) (\\suc \\lh) => A");
   }
 
   @Test
   public void belowParam2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\Type\n" +
         "\\function f : \\oo-Type (\\suc \\lp) => A");
   }
@@ -52,7 +52,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void belowParamError() {
     // ?l + 1 <= c
     // error: cannot infer ?l
-    typeCheckClass(
+    typeCheckModule(
         "\\function A => \\oo-Type\n" +
         "\\function f : \\oo-Type => A", 1);
   }
@@ -61,7 +61,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void btwZeroAndParam() {
     // 0 <= ?l, 0 <= c
     // ok: ?l = 0
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\oo-Type) => A\n" +
         "\\function g : \\oo-Type => f Nat");
   }
@@ -70,7 +70,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void btwOneAndParam() {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\Type) => A\n" +
         "\\function g : \\Type \\lp (\\suc \\lh) => f \\Type0", 1);
   }
@@ -79,7 +79,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void btwOneAndParamWithH() {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\Type) => A\n" +
         "\\function g : \\Type => f \\Type0", 2);
   }
@@ -88,7 +88,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void btwZeroAndTen() {
     // 0 <= ?l <= 10
     // ok: ?l = 0
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\oo-Type) => A\n" +
         "\\function g : \\oo-Type10 => f Nat");
   }
@@ -97,7 +97,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void btwOneAndTen() {
     // 1 <= ?l <= 10
     // ok: ?l = 1
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\oo-Type) => A\n" +
         "\\function g : \\oo-Type10 => f \\oo-Type0");
   }
@@ -106,7 +106,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void greaterThanZero() {
     // 0 <= ?l
     // ok: ?l = 0
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\Type) => A\n" +
         "\\function g => f Nat");
   }
@@ -115,48 +115,48 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void greaterThanOne() {
     // 1 <= ?l
     // ok: ?l = 1
-    typeCheckClass(
+    typeCheckModule(
         "\\function f (A : \\Type) => A\n" +
         "\\function g => f \\Type0");
   }
 
   @Test
   public void propImpredicative() {
-    typeCheckClass("\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => \\Pi (a : X) -> P a");
+    typeCheckModule("\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => \\Pi (a : X) -> P a");
   }
 
   @Test
   public void propImpredicative2() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
       "\\function g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P", 1);
   }
 
   @Test
   public void levelOfPath() {
-    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\Prop => x = x");
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\Prop => x = x");
   }
 
   @Test
   public void levelOfPath2() {
-    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0", 1);
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => x = x -> \\Set0", 1);
   }
 
   @Test
   public void levelOfPath3() {
-    typeCheckClass("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : Prop) -> \\Set0");
+    typeCheckModule("\\function f (X : \\Set10) (x : X) : \\1-Type1 => (x = x : \\Prop) -> \\Set0");
   }
 
   @Test
   public void constantUpperBound() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (A : \\Type) => A\n" +
       "\\function g (B : \\Type) : \\Set => f B", 1);
   }
 
   @Test
   public void expectedType() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function X => \\Type\n" +
       "\\function f : X => \\Type"
     );
@@ -164,7 +164,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void parameters() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function X => \\Type\n" +
       "\\function f (A : X) => 0\n" +
       "\\function g => f \\Set0"
@@ -173,7 +173,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void lhLessThanInf() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function f (A : \\Type) (a a' : A) (p : a = a') => p\n" +
       "\\function X : \\oo-Type => Nat\n" +
       "\\function g : X = X => f \\Type X X (path (\\lam _ => X))");
@@ -181,7 +181,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void pLevelTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\function idp  {A : \\Type} {a : A} =>\n" +
       "  path (\\lam _ => a)\n" +
       "\\function squeeze1 (i j : I) : I =>\n" +
@@ -198,7 +198,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void classLevelTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\class A {\n" +
       "  | X : \\oo-Type\n" +
       "}\n" +

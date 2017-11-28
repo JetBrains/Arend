@@ -125,7 +125,7 @@ class DefinitionDeserialization {
     for (String name : proto.getNameList()) {
       unfixedNames.add(name.isEmpty() ? null : name);
     }
-    Type type = readType(proto.getType());
+    Type type = proto.getType() != null ? readType(proto.getType()) : null;
     SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);

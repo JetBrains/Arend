@@ -6,7 +6,7 @@ import org.junit.Test;
 public class TypeClassesNamespaces extends TypeCheckingTestCase {
   @Test
   public void typeClassFullNameInside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -19,7 +19,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInsideRenamed() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -32,7 +32,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameOutside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -45,7 +45,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameOutsideRenamed() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -58,14 +58,14 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceInside() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
         "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
-        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\instance Nat-X : X' | A => Nat | B => \\lam x => x\n" +
         "  \\function T => B 0 = 0\n" +
         "}\n" +
         "\\function f (t : M.T) => 0");
@@ -73,14 +73,14 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceII() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
         "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
-        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\instance Nat-X : X' | A => Nat | B => \\lam x => x\n" +
         "  \\function T => B 0 = 0\n" +
         "}\n" +
         "\\function f (t : M.T) => M.B 0", 1);
@@ -88,7 +88,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceIO() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -96,13 +96,13 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
         "}\n" +
-        "\\instance Nat-X => \\new M.X' { A => Nat | B => \\lam x => x }\n" +
+        "\\instance Nat-X : M.X' { A => Nat | B => \\lam x => x\n" +
         "\\function f => M.B 0");
   }
 
   @Test
   public void typeClassFullNameInstanceOO() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -110,13 +110,13 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\view X' \\on M.X \\by A { B }\n" +
-        "\\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "\\instance Nat-X : X' | A => Nat | B => \\lam x => x\n" +
         "\\function f => B 0");
   }
 
   @Test
   public void typeClassOpen() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
@@ -130,14 +130,14 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceIIOpen() {
-    typeCheckClass(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X {\n" +
         "    | A : \\Type0\n" +
         "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\view X' \\on X \\by A { B }\n" +
-        "  \\instance Nat-X => \\new X' { A => Nat | B => \\lam x => x }\n" +
+        "  \\instance Nat-X : X' | A => Nat | B => \\lam x => x\n" +
         "}\n" +
         "\\open M\n" +
         "\\function f => B 0");
