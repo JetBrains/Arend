@@ -28,7 +28,7 @@ public class MissingClausesError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     List<LineDoc> docs = new ArrayList<>(myMissingClauses.size());
     for (List<Expression> missingClause : myMissingClauses) {
-      docs.add(hSep(text(", "), missingClause.stream().map(expr -> termLine(expr, ppConfig)).collect(Collectors.toList())));
+      docs.add(missingClause == null ? text("...") : hSep(text(", "), missingClause.stream().map(expr -> termLine(expr, ppConfig)).collect(Collectors.toList())));
     }
     return vList(docs);
   }

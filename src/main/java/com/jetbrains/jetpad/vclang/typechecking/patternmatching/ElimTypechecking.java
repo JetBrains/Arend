@@ -15,11 +15,11 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.MissingClausesError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TruncatedDataError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -241,6 +241,10 @@ public class ElimTypechecking {
         }
 
         Util.removeArguments(expressions, parameters, elimParams);
+        if (missingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
+          missingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
+          break;
+        }
         missingClauses.add(expressions);
       }
 
@@ -531,12 +535,8 @@ public class ElimTypechecking {
 
   private void addMissingClause(List<Util.ClauseElem> clause, boolean isInterval) {
     if (myMissingClauses == null) {
-      myMissingClauses = new ArrayList<>(MISSING_CLAUSES_LIST_SIZE);
+      myMissingClauses = new ArrayList<>();
     }
-    if (myMissingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
-      myMissingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
-    } else {
-      myMissingClauses.add(new Pair<>(clause, isInterval));
-    }
+    myMissingClauses.add(new Pair<>(clause, isInterval));
   }
 }
