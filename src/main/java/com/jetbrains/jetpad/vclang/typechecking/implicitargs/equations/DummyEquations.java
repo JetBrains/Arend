@@ -13,7 +13,6 @@ public class DummyEquations implements Equations {
   private DummyEquations() {}
 
   public static DummyEquations getInstance() {
-    //noinspection unchecked
     return INSTANCE;
   }
 
