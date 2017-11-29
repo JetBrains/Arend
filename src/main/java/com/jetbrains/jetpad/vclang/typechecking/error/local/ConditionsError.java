@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
@@ -9,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +43,22 @@ public class ConditionsError extends TypecheckingError {
   }
 
   private Doc dataToDoc(Expression expr, ExprSubstitution substitution, Expression evaluatedExpr, PrettyPrinterConfig ppConfig) {
-    Doc doc = termDoc(expr, ppConfig);
+    Doc doc = termDoc(expr, new PrettyPrinterConfig() {
+      @Override
+      public boolean isSingleLine() {
+        return ppConfig.isSingleLine();
+      }
+
+      @Override
+      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+        return ppConfig.getExpressionFlags();
+      }
+
+      @Override
+      public NormalizeVisitor.Mode getNormalizationMode() {
+        return null;
+      }
+    });
     if (substitution != null && !substitution.isEmpty()) {
       List<LineDoc> substDocs = new ArrayList<>(substitution.getEntries().size());
       for (Map.Entry<Variable, Expression> entry : substitution.getEntries()) {

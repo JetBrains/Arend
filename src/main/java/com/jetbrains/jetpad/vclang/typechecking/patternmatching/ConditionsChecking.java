@@ -17,8 +17,8 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -42,7 +42,7 @@ public class ConditionsChecking {
     }
 
     for (Clause clause : clauses) {
-      if (clause.expression != null && !checkClause(clause, null, definition, errorReporter)) {
+      if (!checkClause(clause, null, definition, errorReporter)) {
         ok = false;
       }
     }
@@ -190,7 +190,7 @@ public class ConditionsChecking {
   public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
-      if (clause.expression != null && !checkClause(clause, elimTree, null, errorReporter)) {
+      if (!checkClause(clause, elimTree, null, errorReporter)) {
         ok = false;
       }
     }
@@ -198,6 +198,10 @@ public class ConditionsChecking {
   }
 
   private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
+    if (clause.expression == null || clause.expression.isInstance(ErrorExpression.class)) {
+      return true;
+    }
+
     boolean ok = true;
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;

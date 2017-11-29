@@ -52,8 +52,9 @@ public abstract class Expression implements ExpectedType {
 
   @Override
   public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    NormalizeVisitor.Mode mode = infoProvider.getNormalizationMode();
     ToAbstractVisitor
-      .convert(normalize(infoProvider.getNormalizationMode()), infoProvider.getExpressionFlags())
+      .convert(mode == null ? this : normalize(mode), infoProvider.getExpressionFlags())
       .accept(new PrettyPrintVisitor(builder, 0, !infoProvider.isSingleLine()), new Precedence(Concrete.Expression.PREC));
   }
 
