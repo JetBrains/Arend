@@ -92,33 +92,69 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitApp(final Concrete.AppExpression expr, Precedence prec) {
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
 
-    new BinOpLayout(){
-      @Override
-      void printLeft(PrettyPrintVisitor pp) {
-        expr.getFunction().accept(pp, new Precedence(Concrete.AppExpression.PREC));
-      }
+    Concrete.Expression fun = expr;
+    List<Concrete.Argument> args = new ArrayList<>();
+    while (fun instanceof Concrete.AppExpression) {
+      args.add(((Concrete.AppExpression) fun).getArgument());
+      fun = ((Concrete.AppExpression) fun).getFunction();
+    }
 
-      @Override
-      void printRight(PrettyPrintVisitor pp) {
-        if (expr.getArgument().isExplicit()) {
-          expr.getArgument().getExpression().accept(pp, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-        } else {
-          pp.myBuilder.append("{");
-          expr.getArgument().getExpression().accept(pp, new Precedence(Concrete.Expression.PREC));
-          pp.myBuilder.append('}');
+    if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence().isInfix) {
+      Collections.reverse(args);
+
+      boolean infix = false;
+      for (int i = 0; i < args.size(); i++) {
+        if (args.get(i).isExplicit()) {
+          infix = i == args.size() - 2 && args.get(i + 1).isExplicit();
+          break;
         }
       }
 
-      @Override
-      boolean printSpaceBefore() {
-        return false;
-      }
+      if (infix) {
+        List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>();
+        // print first explicit argument
+        sequence.add(new Concrete.BinOpSequenceElem(args.get(args.size() - 2).getExpression(), Fixity.NONFIX, true));
+        // print operation
+        sequence.add(new Concrete.BinOpSequenceElem(fun, Fixity.UNKNOWN, true));
 
-      @Override
-      String getOpText() {
-        return "";
+        // print implicit arguments
+        for (int i = 0; i < args.size() - 2; i++) {
+          sequence.add(new Concrete.BinOpSequenceElem(args.get(i).getExpression(), Fixity.NONFIX, false));
+        }
+
+        // print second explicit argument
+        sequence.add(new Concrete.BinOpSequenceElem(args.get(args.size() - 1).getExpression(), Fixity.NONFIX, true));
+        new Concrete.BinOpSequenceExpression(null, sequence).accept(this, new Precedence(Concrete.Expression.PREC));
       }
-    }.doPrettyPrint(this, noIndent);
+    } else {
+      new BinOpLayout() {
+        @Override
+        void printLeft(PrettyPrintVisitor pp) {
+          expr.getFunction().accept(pp, new Precedence(Concrete.AppExpression.PREC));
+        }
+
+        @Override
+        void printRight(PrettyPrintVisitor pp) {
+          if (expr.getArgument().isExplicit()) {
+            expr.getArgument().getExpression().accept(pp, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+          } else {
+            pp.myBuilder.append("{");
+            expr.getArgument().getExpression().accept(pp, new Precedence(Concrete.Expression.PREC));
+            pp.myBuilder.append('}');
+          }
+        }
+
+        @Override
+        boolean printSpaceBefore() {
+          return false;
+        }
+
+        @Override
+        String getOpText() {
+          return "";
+        }
+      }.doPrettyPrint(this, noIndent);
+    }
 
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
     return null;
@@ -490,7 +526,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
             }
           } else {
             if (!elem.isExplicit) {
-              builder.append('{');
+              builder.append(" {");
             }
             elem.expression.accept(new PrettyPrintVisitor(builder, myIndent, !noIndent), new Precedence(Expression.PREC));
             if (!elem.isExplicit) {

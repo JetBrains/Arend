@@ -15,8 +15,8 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
@@ -160,63 +160,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return null;
   }
 
-  private Concrete.Expression checkBinOp(Expression expr) {
-    List<Expression> args = new ArrayList<>(2);
-    Expression fun = expr;
-    while (fun.isInstance(AppExpression.class)) {
-      args.add(fun.cast(AppExpression.class).getArgument());
-      fun = fun.cast(AppExpression.class).getFunction();
-    }
-    Collections.reverse(args);
-    DefCallExpression defCall = fun.checkedCast(DefCallExpression.class);
-
-    if (!(defCall != null && defCall.getDefinition().getReferable().getPrecedence().isInfix)) {
-      return null;
-    }
-
-    int defCallArgsSize = defCall.getDefCallArguments().size();
-    boolean[] isExplicit = new boolean[defCallArgsSize + args.size()];
-    Expression[] visibleArgs = new Expression[2];
-    int i = 0;
-
-    for (DependentLink link = defCall.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
-      isExplicit[i++] = link.isExplicit();
-    }
-    if (!getArgumentsExplicitness(defCall, isExplicit, i)) {
-      return null;
-    }
-    if (isExplicit.length < 2 || myFlags.contains(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) && (!isExplicit[0] || !isExplicit[1])) {
-      return null;
-    }
-
-    i = 0;
-    for (int j = 0; j < defCall.getDefCallArguments().size(); j++) {
-      if (isExplicit[j]) {
-        if (i == 2) {
-          return null;
-        }
-        visibleArgs[i++] = defCall.getDefCallArguments().get(j);
-      }
-    }
-
-    for (int j = 0; j < args.size(); j++) {
-      if (isExplicit[defCallArgsSize + j]) {
-        if (i == 2) {
-          return null;
-        }
-        visibleArgs[i++] = args.get(j);
-      }
-    }
-    return i == 2 ? cBinOp(visibleArgs[0].accept(this, null), defCall.getDefinition().getReferable(), visibleArgs[1].accept(this, null)) : null;
-  }
-
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
-    Concrete.Expression result = checkBinOp(expr);
-    if (result != null) {
-      return result;
-    }
-
     List<Expression> args = new ArrayList<>();
     Expression fun = expr;
     while (fun.isInstance(AppExpression.class)) {
@@ -225,27 +170,24 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     Collections.reverse(args);
 
-    result = fun.accept(this, null);
+    Concrete.Expression result = fun.accept(this, null);
     boolean[] isExplicit = new boolean[args.size()];
-    getArgumentsExplicitness(expr.getFunction(), isExplicit, 0);
+    getArgumentsExplicitness(expr.getFunction(), isExplicit);
     for (int index = 0; index < args.size(); index++) {
       result = visitApp(result, args.get(index), isExplicit[index]);
     }
     return result;
   }
 
-  private boolean getArgumentsExplicitness(Expression expr, boolean[] isExplicit, int i) {
-    List<SingleDependentLink> params = new ArrayList<>(isExplicit.length - i);
+  private void getArgumentsExplicitness(Expression expr, boolean[] isExplicit) {
+    List<SingleDependentLink> params = new ArrayList<>(isExplicit.length);
     Expression type = expr.getType();
-    if (type == null) {
-      return false;
+    if (type != null) {
+      type.getPiParameters(params, false);
+      for (int i = 0; i < isExplicit.length; i++) {
+        isExplicit[i] = i >= params.size() || params.get(i).isExplicit();
+      }
     }
-
-    type.getPiParameters(params, false);
-    for (int j = 0; i < isExplicit.length; i++, j++) {
-      isExplicit[i] = j >= params.size() || params.get(j).isExplicit();
-    }
-    return true;
   }
 
   private Concrete.Expression visitApp(Concrete.Expression function, Expression argument, boolean isExplicit) {
@@ -267,10 +209,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
-    Concrete.Expression result = checkBinOp(expr);
-    if (result != null) {
-      return result;
-    }
     return visitParameters(makeReference(expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
