@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
@@ -182,11 +181,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
     } else {
       Referable reference = pattern.getHeadReference();
-      if (reference instanceof GlobalReferable || reference instanceof UnresolvedReference) {
-        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(pattern.getArguments()));
+      List<? extends Abstract.Pattern> args = pattern.getArguments();
+      if (reference instanceof GlobalReferable || !args.isEmpty()) {
+        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args));
       } else {
         if (!pattern.getArguments().isEmpty()) {
-          myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Unexpected argument", pattern.getArguments().iterator().next())));
+          myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Unexpected argument", args.iterator().next())));
         }
         return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), reference);
       }
@@ -311,10 +311,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return right == null ? expr : new Concrete.AppExpression(data, expr, new Concrete.Argument(right.accept(this, null), true));
   }
 
-  @Override
-  public Concrete.BinOpSequenceExpression visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
+  private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence) {
+    if (sequence.isEmpty()) {
+      return left;
+    }
+
     List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
-    elems.add(new Concrete.BinOpSequenceElem(left.accept(this, null), Fixity.NONFIX, true));
+    elems.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Concrete.Expression elemExpr = elem.getExpression().accept(this, null);
       Fixity fixity = elem.getFixity();
@@ -327,6 +330,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       elems.add(new Concrete.BinOpSequenceElem(elemExpr, fixity, isExplicit));
     }
     return new Concrete.BinOpSequenceExpression(data, elems);
+  }
+
+  @Override
+  public Concrete.Expression visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
+    return makeBinOpSequence(data, left.accept(this, null), sequence);
   }
 
   @Override
@@ -356,7 +364,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, Void params) {
+  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, Void params) {
     if (baseClass == null) {
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
     }
@@ -367,7 +375,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (isNew) {
       result = new Concrete.NewExpression(data, result);
     }
-    return result;
+    return makeBinOpSequence(data, result, sequence);
   }
 
   @Override
