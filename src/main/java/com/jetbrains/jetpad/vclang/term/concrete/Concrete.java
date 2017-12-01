@@ -907,6 +907,7 @@ public final class Concrete {
       return myReferable;
     }
 
+    @Nonnull
     public abstract Definition getRelatedDefinition();
 
     @Override
@@ -925,6 +926,7 @@ public final class Concrete {
       super(referable);
     }
 
+    @Nonnull
     @Override
     public Definition getRelatedDefinition() {
       return this;
@@ -999,6 +1001,7 @@ public final class Concrete {
       return myResultType;
     }
 
+    @Nonnull
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
@@ -1181,6 +1184,7 @@ public final class Concrete {
       return myClauses;
     }
 
+    @Nonnull
     @Override
     public DataDefinition getRelatedDefinition() {
       return myDataType;
@@ -1250,6 +1254,7 @@ public final class Concrete {
       myUnderlyingField = underlyingField;
     }
 
+    @Nonnull
     @Override
     public Definition getRelatedDefinition() {
       return myOwnView;
