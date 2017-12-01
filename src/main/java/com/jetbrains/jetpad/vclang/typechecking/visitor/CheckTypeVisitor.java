@@ -1229,11 +1229,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
         return result.type.isInstance(ErrorExpression.class) ? new Result(result.expression, type.getExpr()) : result;
       } else {
-        Result result = checkExpr(letClause.getTerm(), null);
-        if (result == null) {
-          myErrorReporter.report(new TypecheckingError("Cannot infer the type of the let clause", letClause));
-        }
-        return result;
+        return checkExpr(letClause.getTerm(), null);
       }
     }
 

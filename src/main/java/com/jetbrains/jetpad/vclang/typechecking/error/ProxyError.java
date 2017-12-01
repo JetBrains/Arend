@@ -37,7 +37,7 @@ public class ProxyError extends GeneralError {
 
   @Override
   public Doc getDoc(PrettyPrinterConfig src) {
-    return vHang(localError.getDoc(src), hList(text("While typechecking: "), refDoc(definition)));
+    return vHang(localError.getDoc(src), hList(text("While processing: "), refDoc(definition)));
   }
 
   @Override
