@@ -98,7 +98,7 @@ public final class Abstract {
     @Nonnull Expression getExpression();
   }
 
-  public interface ClassFieldImpl extends SourceNode {
+  public interface ClassFieldImpl extends ParametersHolder {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
@@ -148,7 +148,7 @@ public final class Abstract {
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 
-  public interface ClassField extends SourceNode {
+  public interface ClassField extends ParametersHolder {
     @Nonnull GlobalReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }

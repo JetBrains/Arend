@@ -156,16 +156,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       exprVisitor.visitReference(superClass, null);
     }
 
-    for (Concrete.TypeParameter param : def.getParameters()) {
-      param.getType().accept(exprVisitor, null);
-      if (param instanceof Concrete.TelescopeParameter) {
-        for (Referable referable : ((Concrete.TelescopeParameter) param).getReferableList()) {
-          if (referable != null && referable.textRepresentation().equals("_")) {
-            context.add(referable);
-          }
-        }
-      }
-    }
+    exprVisitor.visitParameters(def.getParameters());
 
     for (Concrete.ClassField field : def.getFields()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {

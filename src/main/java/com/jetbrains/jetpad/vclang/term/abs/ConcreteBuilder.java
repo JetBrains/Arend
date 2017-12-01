@@ -93,14 +93,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildTypeParameters(def.getParameters()), buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildParameters(def.getParameters()), buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();
       if (resultType == null) {
         myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(field.getReferable())));
       } else {
-        classFields.add(new Concrete.ClassField(field.getReferable(), classDef, resultType.accept(this, null)));
+        List<? extends Abstract.Parameter> parameters = field.getParameters();
+        Concrete.Expression type = resultType.accept(this, null);
+        if (!parameters.isEmpty()) {
+          type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
+        }
+
+        classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
       }
     }
 
@@ -129,7 +135,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
       Abstract.Expression impl = implementation.getImplementation();
       if (impl != null) {
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), impl.accept(this, null)));
+        List<? extends Abstract.Parameter> parameters = implementation.getParameters();
+        Concrete.Expression term = impl.accept(this, null);
+        if (!parameters.isEmpty()) {
+          term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters), term);
+        }
+
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), term));
       } else {
         myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(implementation.getData())));
       }

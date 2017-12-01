@@ -108,6 +108,12 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       myVisitor.visitReference(superClass, null);
     }
 
+    for (Concrete.Parameter param : def.getParameters()) {
+      if (param instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter) param).getType().accept(myVisitor, null);
+      }
+    }
+
     for (Concrete.ClassField field : def.getFields()) {
       field.getResultType().accept(myVisitor, null);
     }

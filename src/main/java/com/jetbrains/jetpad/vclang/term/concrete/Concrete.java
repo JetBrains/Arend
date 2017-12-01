@@ -941,12 +941,12 @@ public final class Concrete {
   }
 
   public static class ClassDefinition extends Definition {
-    private final List<TypeParameter> myParameters;
+    private final List<Parameter> myParameters;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
 
-    public ClassDefinition(ClassReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(ClassReferable referable, List<Parameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
       myParameters = parameters;
       mySuperClasses = superClasses;
@@ -961,7 +961,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<TypeParameter> getParameters() {
+    public List<Parameter> getParameters() {
       return myParameters;
     }
 

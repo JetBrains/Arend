@@ -14,9 +14,9 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID ('\\as' precedence ID)?;
 
-classStat : '|' precedence ID ':' expr  # classField
-          | '|' ID '=>' expr            # classImplement
-          | definition                  # classDefinition
+classStat : '|' precedence ID tele* ':' expr  # classField
+          | '|' ID tele* '=>' expr            # classImplement
+          | definition                        # classDefinition
           ;
 
 definition  : '\\function' precedence ID tele* (':' expr)? functionBody where?                                      # defFunction
@@ -104,7 +104,7 @@ coClauses : ('|' coClause)*                   # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : ID '=>' expr;
+coClause : ID tele* '=>' expr;
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 

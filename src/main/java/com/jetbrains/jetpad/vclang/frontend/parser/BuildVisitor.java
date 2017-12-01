@@ -558,8 +558,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       try {
         if (statementCtx instanceof ClassFieldContext) {
           ClassFieldContext fieldCtx = (ClassFieldContext) statementCtx;
+          List<Concrete.TypeParameter> parameters = visitTeles(fieldCtx.tele());
+          Concrete.Expression type = visitExpr(fieldCtx.expr());
+          if (!parameters.isEmpty()) {
+            type = new Concrete.PiExpression(tokenPosition(fieldCtx.tele(0).start), parameters, type);
+          }
+
           ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()));
-          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, visitExpr(fieldCtx.expr()));
+          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, type);
           reference.setDefinition(field);
           fields.add(field);
         } else if (statementCtx instanceof ClassImplementContext) {
@@ -576,7 +582,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
-    List<Concrete.TypeParameter> polyParameters = visitTeles(ctx.tele());
+    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
     List<Concrete.ClassField> fields = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Concrete.ClassFieldImpl> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
@@ -593,12 +599,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<ConcreteGlobalReferable> fieldReferences = new ArrayList<>();
     ConcreteClassReferable reference = new ConcreteClassReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, polyParameters, superClasses, fields, implementations);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, parameters, superClasses, fields, implementations);
     reference.setDefinition(classDefinition);
 
     ClassGroup resultGroup;
     if (!ctx.classStat().isEmpty()) {
-      List<Group> dynamicSubgroups = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
+      List<Group> dynamicSubgroups = new ArrayList<>();
       resultGroup = new ClassGroup(reference, dynamicSubgroups, fieldReferences, staticSubgroups, namespaceCommands, parent);
       visitInstanceStatements(ctx.classStat(), fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
       for (Concrete.ClassField field : fields) {
@@ -614,7 +620,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitClassImplement(ClassImplementContext ctx) {
-    return new Concrete.ClassFieldImpl(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText()), visitExpr(ctx.expr()));
+    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
+    Concrete.Expression term = visitExpr(ctx.expr());
+    if (!parameters.isEmpty()) {
+      term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
+    }
+
+    return new Concrete.ClassFieldImpl(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText()), term);
   }
 
   @Override
@@ -795,7 +807,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
     String fieldName = ctx.ID().getText();
     Position position = tokenPosition(ctx.ID().getSymbol());
-    return new Concrete.ClassFieldImpl(position, new NamedUnresolvedReference(position, fieldName), visitExpr(ctx.expr()));
+    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
+    Concrete.Expression term = visitExpr(ctx.expr());
+    if (!parameters.isEmpty()) {
+      term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
+    }
+
+    return new Concrete.ClassFieldImpl(position, new NamedUnresolvedReference(position, fieldName), term);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
