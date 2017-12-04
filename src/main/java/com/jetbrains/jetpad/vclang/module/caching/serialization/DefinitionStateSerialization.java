@@ -36,13 +36,12 @@ public class DefinitionStateSerialization {
       Definition typechecked = state.getTypechecked(definition);
       if (!myPersistenceProvider.needsCaching(definition, typechecked)) continue;
       if (typechecked instanceof Constructor || typechecked instanceof ClassField) continue;
-      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked, state));
+      builder.putDefinition(myPersistenceProvider.getIdFor(definition), writeDefinition(typechecked));
     }
     return builder.build();
   }
 
-  // TODO: HACK. Second parameter should not be needed
-  private DefinitionProtos.Definition writeDefinition(Definition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+  private DefinitionProtos.Definition writeDefinition(Definition definition) {
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
 
     switch (definition.status()) {
@@ -76,7 +75,7 @@ public class DefinitionStateSerialization {
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
-      out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition, state));
+      out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition));
     } else if (definition instanceof DataDefinition) {
       out.setData(writeDataDefinition(defSerializer, (DataDefinition) definition));
     } else if (definition instanceof FunctionDefinition) {
@@ -88,8 +87,7 @@ public class DefinitionStateSerialization {
     return out.build();
   }
 
-  // TODO: HACK. State should not be needed as class fields are not individually typecheckable
-  private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition, LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
+  private DefinitionProtos.Definition.ClassData writeClassDefinition(DefinitionSerialization defSerializer, ClassDefinition definition) {
     DefinitionProtos.Definition.ClassData.Builder builder = DefinitionProtos.Definition.ClassData.newBuilder();
 
     for (ClassField field : definition.getPersonalFields()) {
