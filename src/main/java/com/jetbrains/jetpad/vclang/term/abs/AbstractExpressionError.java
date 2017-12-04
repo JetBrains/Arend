@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 public class AbstractExpressionError extends LocalError {
   private final Object myCause;
 
-  AbstractExpressionError(@Nonnull Level level, String message, Object cause) {
+  public AbstractExpressionError(@Nonnull Level level, String message, Object cause) {
     super(level, message);
     myCause = cause;
   }
