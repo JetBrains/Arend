@@ -121,7 +121,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   }
 
 
-  protected abstract ModuleUriProvider<SourceIdT> createModuleUriProvider();
+  protected abstract ModuleCacheIdProvider<SourceIdT> createModuleUriProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
 

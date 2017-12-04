@@ -10,14 +10,13 @@ import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.provider.FullNameProvider;
+import com.jetbrains.jetpad.vclang.term.provider.CacheIdProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,19 +61,19 @@ public class PreludeCacheGenerator {
   }
 
   static class PreludePersistenceProvider implements PersistenceProvider<PreludeStorage.SourceId> {
-    private final FullNameProvider myFullNameProvider;
+    private final CacheIdProvider myCacheIdProvider;
 
-    PreludePersistenceProvider(FullNameProvider fullNameProvider) {
-      myFullNameProvider = fullNameProvider;
+    PreludePersistenceProvider(CacheIdProvider cacheIdProvider) {
+      myCacheIdProvider = cacheIdProvider;
     }
 
     @Override
-    public @Nonnull URI getUri(PreludeStorage.SourceId sourceId) {
+    public @Nonnull String getCacheId(PreludeStorage.SourceId sourceId) {
       throw new IllegalStateException();
     }
 
     @Override
-    public @Nonnull PreludeStorage.SourceId getModuleId(URI sourceUrl) {
+    public @Nonnull PreludeStorage.SourceId getModuleId(String sourceUrl) {
       throw new IllegalStateException();
     }
 
@@ -85,7 +84,7 @@ public class PreludeCacheGenerator {
 
     @Override
     public @Nullable String getIdFor(GlobalReferable definition) {
-      return SourcelessCacheManager.getNameIdFor(myFullNameProvider, definition);
+      return SourcelessCacheManager.getNameIdFor(myCacheIdProvider, definition);
     }
 
     @Override

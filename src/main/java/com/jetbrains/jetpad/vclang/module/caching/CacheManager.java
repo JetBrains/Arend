@@ -11,7 +11,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -91,10 +90,10 @@ public class CacheManager<SourceIdT extends SourceId> {
       for (ModuleProtos.Module.DefinitionReference proto : refDefProtos) {
         final SourceIdT targetSourceId;
         if (!proto.getSourceUrl().isEmpty()) {
-          URI uri = URI.create(proto.getSourceUrl());
-          targetSourceId = myPersistenceProvider.getModuleId(uri);
+          String moduleCacheId = proto.getSourceUrl();
+          targetSourceId = myPersistenceProvider.getModuleId(moduleCacheId);
           if (targetSourceId == null) {
-            throw new CacheLoadingException(sourceId, "Unresolvable source URI: " + uri);
+            throw new CacheLoadingException(sourceId, "Unresolvable module ID: " + moduleCacheId);
           }
           boolean targetLoaded = loadCache(targetSourceId);
           if (!targetLoaded) {
@@ -195,7 +194,7 @@ public class CacheManager<SourceIdT extends SourceId> {
           if (!targetPersisted) {
             throw new CachePersistenceException(mySourceId, "Dependency does not support persistence " + targetSourceId);
           }
-          entry.setSourceUrl(myPersistenceProvider.getUri(targetSourceId).toString());
+          entry.setSourceUrl(myPersistenceProvider.getCacheId(targetSourceId));
         }
         entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getReferable()));
         out.add(entry.build());

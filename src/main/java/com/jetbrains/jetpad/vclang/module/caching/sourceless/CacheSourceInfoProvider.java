@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.naming.FullName;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.provider.SourceInfoProvider;
@@ -25,12 +24,12 @@ public class CacheSourceInfoProvider<SourceIdT extends SourceId> implements Sour
   }
 
   @Override
-  public FullName fullNameFor(GlobalReferable definition) {
-    FullName res = mySourceSrcInfoProvider.fullNameFor(definition);
+  public String cacheIdFor(GlobalReferable definition) {
+    String res = mySourceSrcInfoProvider.cacheIdFor(definition);
     if (res != null) {
       return res;
     } else {
-      return myCacheSrcInfoProvider.fullNameFor(definition);
+      return myCacheSrcInfoProvider.cacheIdFor(definition);
     }
   }
 }

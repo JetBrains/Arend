@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,17 +15,17 @@ public class MemoryPersistenceProvider<SourceIdT extends SourceId> implements Pe
 
   @Override
   public @Nonnull
-  URI getUri(SourceIdT sourceId) {
+  String getCacheId(SourceIdT sourceId) {
     String key = remember(sourceId);
-    return URI.create("memory://" + key);
+    return "memory:" + key;
   }
 
   @Override
   public @Nullable
-  SourceIdT getModuleId(URI sourceUrl) {
-    if (!("memory".equals(sourceUrl.getScheme()))) throw new IllegalArgumentException();
+  SourceIdT getModuleId(String cacheId) {
+    if (!cacheId.startsWith("memory:")) throw new IllegalArgumentException();
     //noinspection unchecked
-    return (SourceIdT) recall(sourceUrl.getHost());
+    return (SourceIdT) recall(cacheId.substring(7));
   }
 
   @Override

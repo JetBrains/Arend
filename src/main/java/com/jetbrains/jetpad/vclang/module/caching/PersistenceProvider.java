@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public interface PersistenceProvider<SourceIdT extends SourceId> extends ModuleUriProvider<SourceIdT> {
+public interface PersistenceProvider<SourceIdT extends SourceId> extends ModuleCacheIdProvider<SourceIdT> {
   default boolean needsCaching(GlobalReferable def, Definition typechecked) {
     return true;
   }
