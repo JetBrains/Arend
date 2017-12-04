@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
@@ -51,7 +52,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data)));
       }
     } else {
-      body = new Concrete.ElimFunctionBody(def.getReferable(), buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
+      body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
     }
 
     Abstract.Expression resultType = def.getResultType();
@@ -93,7 +94,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition(def.getReferable(), buildParameters(def.getParameters()), buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();
@@ -115,7 +116,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
-    return new Concrete.Instance(def.getReferable(), buildParameters(def.getParameters()), buildReference(def.getResultClass()), buildImplementations(def.getImplementation()));
+    return new Concrete.Instance(myDefinition, buildParameters(def.getParameters()), buildReference(def.getResultClass()), buildImplementations(def.getImplementation()));
   }
 
   private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {

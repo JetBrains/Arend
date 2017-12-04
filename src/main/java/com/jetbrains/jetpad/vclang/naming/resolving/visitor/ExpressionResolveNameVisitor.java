@@ -60,29 +60,33 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
   void visitParameters(List<? extends Concrete.Parameter> parameters) {
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter) parameter).getType().accept(this, null);
-      }
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
-        for (int i = 0; i < referableList.size(); i++) {
-          Referable referable = referableList.get(i);
-          if (referable != null && !referable.textRepresentation().equals("_")) {
-            for (int j = 0; j < i; j++) {
-              Referable referable1 = referableList.get(j);
-              if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
-                myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
-              }
-            }
-            myContext.add(referable);
-          }
-        }
-      } else
-      if (parameter instanceof Concrete.NameParameter) {
-        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+      visitParameter(parameter);
+    }
+  }
+
+  void visitParameter(Concrete.Parameter parameter) {
+    if (parameter instanceof Concrete.TypeParameter) {
+      ((Concrete.TypeParameter) parameter).getType().accept(this, null);
+    }
+    if (parameter instanceof Concrete.TelescopeParameter) {
+      List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
+      for (int i = 0; i < referableList.size(); i++) {
+        Referable referable = referableList.get(i);
         if (referable != null && !referable.textRepresentation().equals("_")) {
+          for (int j = 0; j < i; j++) {
+            Referable referable1 = referableList.get(j);
+            if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
+              myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
+            }
+          }
           myContext.add(referable);
         }
+      }
+    } else
+    if (parameter instanceof Concrete.NameParameter) {
+      Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+      if (referable != null && !referable.textRepresentation().equals("_")) {
+        myContext.add(referable);
       }
     }
   }

@@ -156,8 +156,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       exprVisitor.visitReference(superClass, null);
     }
 
-    exprVisitor.visitParameters(def.getParameters());
-
     for (Concrete.ClassField field : def.getFields()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
         field.getResultType().accept(exprVisitor, null);

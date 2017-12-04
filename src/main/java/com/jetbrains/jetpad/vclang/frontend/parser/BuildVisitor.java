@@ -582,7 +582,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
-    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
     List<Concrete.ClassField> fields = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Concrete.ClassFieldImpl> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
@@ -599,23 +598,63 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<ConcreteGlobalReferable> fieldReferences = new ArrayList<>();
     ConcreteClassReferable reference = new ConcreteClassReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, parameters, superClasses, fields, implementations);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations);
     reference.setDefinition(classDefinition);
+
+    Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), classDefinition);
+    if (firstField != null) {
+      fields.add(firstField);
+    }
 
     ClassGroup resultGroup;
     if (!ctx.classStat().isEmpty()) {
       List<Group> dynamicSubgroups = new ArrayList<>();
-      resultGroup = new ClassGroup(reference, dynamicSubgroups, fieldReferences, staticSubgroups, namespaceCommands, parent);
+      resultGroup = new ClassGroup(reference, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
       visitInstanceStatements(ctx.classStat(), fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
-      for (Concrete.ClassField field : fields) {
-        fieldReferences.add((ConcreteGlobalReferable) field.getData());
-      }
     } else {
-      resultGroup = new ClassGroup(reference, Collections.emptyList(), Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
+      resultGroup = new ClassGroup(reference, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
+    }
+
+    for (Concrete.ClassField field : fields) {
+      fieldReferences.add((ConcreteGlobalReferable) field.getData());
     }
 
     visitWhere(ctx.where(), staticSubgroups, namespaceCommands, resultGroup);
     return resultGroup;
+  }
+
+  private Concrete.ClassField visitUniqueFieldTele(List<TeleContext> teles, Concrete.ClassDefinition classDef) {
+    if (teles.isEmpty()) {
+      return null;
+    }
+
+    TypedExprContext typedExpr;
+    if (teles.get(0) instanceof ExplicitContext) {
+      typedExpr = ((ExplicitContext) teles.get(0)).typedExpr();
+    } else
+    if (teles.get(0) instanceof ImplicitContext) {
+      typedExpr = ((ImplicitContext) teles.get(0)).typedExpr();
+      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Class parameter must be explicit"));
+    } else {
+      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Expected a field name with a type"));
+      return null;
+    }
+
+    List<ParsedLocalReferable> vars = new ArrayList<>(1);
+    getVarList(((TypedContext) typedExpr).expr(0), vars);
+    Concrete.Expression type = visitExpr(((TypedContext) typedExpr).expr(1));
+
+    if (vars.isEmpty()) {
+      return null;
+    }
+    if (teles.size() > 1 || vars.size() > 1) {
+      myErrorReporter.report(new ParserError(tokenPosition(teles.get(1).start), "Class can have at most one parameter"));
+    }
+
+    ConcreteGlobalReferable referable = new ConcreteGlobalReferable(tokenPosition(teles.get(0).start), vars.get(0).textRepresentation(), Precedence.DEFAULT);
+    Concrete.ClassField field = new Concrete.ClassField(referable, classDef, type);
+    referable.setDefinition(field);
+    return field;
   }
 
   @Override

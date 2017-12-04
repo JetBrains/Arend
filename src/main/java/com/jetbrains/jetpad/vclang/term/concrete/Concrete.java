@@ -907,6 +907,7 @@ public final class Concrete {
       return myReferable;
     }
 
+    // TODO: Delete this method.
     @Nonnull
     public abstract Definition getRelatedDefinition();
 
@@ -941,14 +942,12 @@ public final class Concrete {
   }
 
   public static class ClassDefinition extends Definition {
-    private final List<Parameter> myParameters;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
 
-    public ClassDefinition(ClassReferable referable, List<Parameter> parameters, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(ClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
-      myParameters = parameters;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
@@ -958,11 +957,6 @@ public final class Concrete {
     @Override
     public ClassReferable getData() {
       return (ClassReferable) super.getData();
-    }
-
-    @Nonnull
-    public List<Parameter> getParameters() {
-      return myParameters;
     }
 
     @Nonnull

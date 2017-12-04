@@ -204,7 +204,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  public void prettyPrintParameter(Concrete.Parameter parameter, byte prec) {
+  private void prettyPrintParameter(Concrete.Parameter parameter, byte prec) {
     if (parameter instanceof Concrete.NameParameter) {
       Referable referable = ((Concrete.NameParameter) parameter).getReferable();
       String name = referable == null ? null : referable.textRepresentation();
@@ -1023,7 +1023,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getData().textRepresentation());
-    prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
     if (!def.getSuperClasses().isEmpty()) {
       myBuilder.append(" \\extends");
       int i = def.getSuperClasses().size();
