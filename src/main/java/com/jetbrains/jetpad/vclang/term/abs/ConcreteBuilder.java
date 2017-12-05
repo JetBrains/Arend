@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
@@ -27,13 +28,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   public static Concrete.Definition convert(Abstract.Definition definition, ErrorReporter errorReporter) {
-    ConcreteBuilder builder = new ConcreteBuilder(errorReporter, definition.getReferable());
-    try {
-      return definition.accept(builder);
-    } catch (AbstractExpressionError.Exception e) {
-      errorReporter.report(new ProxyError(builder.myDefinition, e.error));
-      return null;
-    }
+    return definition.accept(new ConcreteBuilder(errorReporter, definition.getReferable()));
   }
 
   // Definition
@@ -42,35 +37,71 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.FunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
     Concrete.FunctionBody body;
     Abstract.Expression term = def.getTerm();
-    if (term != null) {
-      Object data = term.getData();
-      body = new Concrete.TermFunctionBody(data, term.accept(this, null));
-      if (!def.getEliminatedExpressions().isEmpty()) {
-        myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Eliminated expressions are ignored", data)));
+    try {
+      if (term != null) {
+        Object data = term.getData();
+        body = new Concrete.TermFunctionBody(data, term.accept(this, null));
+        if (!def.getEliminatedExpressions().isEmpty()) {
+          myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Eliminated expressions are ignored", data)));
+        }
+        if (!def.getClauses().isEmpty()) {
+          myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data)));
+        }
+      } else {
+        body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
       }
-      if (!def.getClauses().isEmpty()) {
-        myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data)));
-      }
-    } else {
-      body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      Object data = term == null ? def.getReferable() : term.getData();
+      body = new Concrete.TermFunctionBody(data, new Concrete.InferHoleExpression(data));
     }
 
-    Abstract.Expression resultType = def.getResultType();
-    return new Concrete.FunctionDefinition(myDefinition, buildParameters(def.getParameters()), resultType == null ? null : resultType.accept(this, null), body);
+    List<Concrete.Parameter> parameters;
+    try {
+      parameters = buildParameters(def.getParameters());
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      parameters = Collections.emptyList();
+    }
+
+    Concrete.Expression type;
+    try {
+      Abstract.Expression resultType = def.getResultType();
+      type = resultType == null ? null : resultType.accept(this, null);
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      type = null;
+    }
+
+    return new Concrete.FunctionDefinition(myDefinition, parameters, type, body);
   }
 
   @Override
   public Concrete.DataDefinition visitData(Abstract.DataDefinition def) {
-    Abstract.Expression absUniverse = def.getUniverse();
-    Concrete.Expression universe = absUniverse == null ? null : absUniverse.accept(this, null);
-    if (universe != null && !(universe instanceof Concrete.UniverseExpression)) {
-      myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Expected a universe", universe.getData())));
+    Concrete.Expression universe;
+    try {
+      Abstract.Expression absUniverse = def.getUniverse();
+      universe = absUniverse == null ? null : absUniverse.accept(this, null);
+      if (universe != null && !(universe instanceof Concrete.UniverseExpression)) {
+        myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Expected a universe", universe.getData())));
+      }
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      universe = null;
+    }
+
+    List<Concrete.TypeParameter> typeParameters;
+    try {
+      typeParameters = buildTypeParameters(def.getParameters());
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      typeParameters = Collections.emptyList();
     }
 
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
     Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
-    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, buildTypeParameters(def.getParameters()), elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
 
     for (Abstract.ConstructorClause clause : absClauses) {
       Collection<? extends Abstract.Constructor> absConstructors = clause.getConstructors();
@@ -79,13 +110,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         continue;
       }
 
-      List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
-      for (Abstract.Constructor constructor : absConstructors) {
-        constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
-      }
+      try {
+        List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
+        for (Abstract.Constructor constructor : absConstructors) {
+          constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+        }
 
-      Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
-      clauses.add(new Concrete.ConstructorClause(clause.getData(), patterns.isEmpty() ? null : buildPatterns(patterns), constructors));
+        Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
+        clauses.add(new Concrete.ConstructorClause(clause.getData(), patterns.isEmpty() ? null : buildPatterns(patterns), constructors));
+      } catch (AbstractExpressionError.Exception e) {
+        myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      }
     }
 
     return data;
@@ -93,21 +128,33 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
+    List<Concrete.ClassFieldImpl> implementations;
+    try {
+      implementations = buildImplementations(def.getClassFieldImpls());
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      implementations = Collections.emptyList();
+    }
+
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, buildImplementations(def.getClassFieldImpls()));
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations);
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();
       if (resultType == null) {
         myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(field.getReferable())));
       } else {
-        List<? extends Abstract.Parameter> parameters = field.getParameters();
-        Concrete.Expression type = resultType.accept(this, null);
-        if (!parameters.isEmpty()) {
-          type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
-        }
+        try {
+          List<? extends Abstract.Parameter> parameters = field.getParameters();
+          Concrete.Expression type = resultType.accept(this, null);
+          if (!parameters.isEmpty()) {
+            type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
+          }
 
-        classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
+          classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
+        } catch (AbstractExpressionError.Exception e) {
+          myErrorReporter.report(new ProxyError(myDefinition, e.error));
+        }
       }
     }
 
@@ -116,7 +163,23 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
-    return new Concrete.Instance(myDefinition, buildParameters(def.getParameters()), buildReference(def.getResultClass()), buildImplementations(def.getImplementation()));
+    List<Concrete.Parameter> parameters;
+    try {
+      parameters = buildParameters(def.getParameters());
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      parameters = Collections.emptyList();
+    }
+
+    List<Concrete.ClassFieldImpl> implementations;
+    try {
+      implementations = buildImplementations(def.getImplementation());
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      implementations = Collections.emptyList();
+    }
+
+    return new Concrete.Instance(myDefinition, parameters, buildReference(def.getResultClass()), implementations);
   }
 
   private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {
