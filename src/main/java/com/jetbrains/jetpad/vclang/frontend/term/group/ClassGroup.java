@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.term.group;
 
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.InternalConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
 
@@ -20,8 +19,8 @@ public class ClassGroup extends StaticGroup {
 
   @Nonnull
   @Override
-  public ClassReferable getReferable() {
-    return (ClassReferable) super.getReferable();
+  public ConcreteClassReferable getReferable() {
+    return (ConcreteClassReferable) super.getReferable();
   }
 
   @Nonnull
@@ -32,7 +31,7 @@ public class ClassGroup extends StaticGroup {
 
   @Nonnull
   @Override
-  public Collection<? extends GlobalReferable> getFields() {
-    return getReferable().getFields();
+  public Collection<? extends InternalConcreteGlobalReferable> getFields() {
+    return getReferable().getFieldReferables();
   }
 }

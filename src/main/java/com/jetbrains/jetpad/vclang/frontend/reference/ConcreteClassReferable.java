@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
@@ -19,10 +18,10 @@ import java.util.List;
 
 public class ConcreteClassReferable extends ConcreteGlobalReferable implements ClassReferable {
   private final ChildGroup myGroup;
-  private final Collection<? extends GlobalReferable> myFields;
+  private final Collection<? extends InternalConcreteGlobalReferable> myFields;
   private final Collection<? extends Concrete.ReferenceExpression> mySuperClasses;
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends GlobalReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteGlobalReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group) {
     super(position, name, precedence);
     myFields = fields;
     mySuperClasses = superClasses;
@@ -52,7 +51,7 @@ public class ConcreteClassReferable extends ConcreteGlobalReferable implements C
 
   @Nonnull
   @Override
-  public Collection<? extends GlobalReferable> getFields() {
+  public Collection<? extends InternalConcreteGlobalReferable> getFieldReferables() {
     return myFields;
   }
 }

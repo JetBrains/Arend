@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.InternalConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.frontend.term.group.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -491,7 +492,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       universe = null;
     }
 
-    List<ConcreteGlobalReferable> constructors = new ArrayList<>();
+    List<InternalConcreteGlobalReferable> constructors = new ArrayList<>();
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
     ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()));
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(reference, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
@@ -505,7 +506,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return resultGroup;
   }
 
-  private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<ConcreteGlobalReferable> constructors) {
+  private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<InternalConcreteGlobalReferable> constructors) {
     if (ctx instanceof DataClausesContext) {
       for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
         try {
@@ -523,7 +524,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<ConcreteGlobalReferable> constructors) {
+  private List<Concrete.Constructor> visitConstructors(List<ConstructorContext> conContexts, Concrete.DataDefinition def, List<InternalConcreteGlobalReferable> constructors) {
     List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
       try {
@@ -537,7 +538,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           clauses = Collections.emptyList();
         }
 
-        ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()));
+        InternalConcreteGlobalReferable reference = new InternalConcreteGlobalReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele()), visitElim(conCtx.elim()), clauses);
         reference.setDefinition(constructor);
         constructors.add(reference);
@@ -564,7 +565,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             type = new Concrete.PiExpression(tokenPosition(fieldCtx.tele(0).start), parameters, type);
           }
 
-          ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()));
+          InternalConcreteGlobalReferable reference = new InternalConcreteGlobalReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true);
           Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, type);
           reference.setDefinition(field);
           fields.add(field);
@@ -596,7 +597,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
 
-    List<ConcreteGlobalReferable> fieldReferences = new ArrayList<>();
+    List<InternalConcreteGlobalReferable> fieldReferences = new ArrayList<>();
     ConcreteClassReferable reference = new ConcreteClassReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations);
     reference.setDefinition(classDefinition);
@@ -616,7 +617,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     for (Concrete.ClassField field : fields) {
-      fieldReferences.add((ConcreteGlobalReferable) field.getData());
+      fieldReferences.add((InternalConcreteGlobalReferable) field.getData());
     }
 
     visitWhere(ctx.where(), staticSubgroups, namespaceCommands, resultGroup);
@@ -651,7 +652,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       myErrorReporter.report(new ParserError(tokenPosition(teles.get(1).start), "Class can have at most one parameter"));
     }
 
-    ConcreteGlobalReferable referable = new ConcreteGlobalReferable(tokenPosition(teles.get(0).start), vars.get(0).textRepresentation(), Precedence.DEFAULT);
+    InternalConcreteGlobalReferable referable = new InternalConcreteGlobalReferable(tokenPosition(teles.get(0).start), vars.get(0).textRepresentation(), Precedence.DEFAULT, false);
     Concrete.ClassField field = new Concrete.ClassField(referable, classDef, type);
     referable.setDefinition(field);
     return field;

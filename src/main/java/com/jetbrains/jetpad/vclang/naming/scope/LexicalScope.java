@@ -30,23 +30,35 @@ public class LexicalScope implements Scope {
     return new LexicalScope(EmptyScope.INSTANCE, group, true);
   }
 
+  private void addSubgroups(Collection<? extends Group> subgroups, List<Referable> elements) {
+    for (Group subgroup : subgroups) {
+      for (Group.InternalReferable constructor : subgroup.getConstructors()) {
+        if (constructor.isVisible()) {
+          elements.add(constructor.getReferable());
+        }
+      }
+      for (Group.InternalReferable field : subgroup.getFields()) {
+        if (field.isVisible()) {
+          elements.add(field.getReferable());
+        }
+      }
+      elements.add(subgroup.getReferable());
+    }
+  }
+
   @Nonnull
   @Override
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
-    elements.addAll(myGroup.getConstructors());
-    elements.addAll(myGroup.getFields());
+    for (Group.InternalReferable constructor : myGroup.getConstructors()) {
+      elements.add(constructor.getReferable());
+    }
+    for (Group.InternalReferable field : myGroup.getFields()) {
+      elements.add(field.getReferable());
+    }
 
-    for (Group subgroup : myGroup.getSubgroups()) {
-      elements.addAll(subgroup.getConstructors());
-      elements.addAll(subgroup.getFields());
-      elements.add(subgroup.getReferable());
-    }
-    for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      elements.addAll(subgroup.getConstructors());
-      elements.addAll(subgroup.getFields());
-      elements.add(subgroup.getReferable());
-    }
+    addSubgroups(myGroup.getSubgroups(), elements);
+    addSubgroups(myGroup.getDynamicSubgroups(), elements);
 
     Scope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
@@ -111,16 +123,22 @@ public class LexicalScope implements Scope {
     return elements;
   }
 
-  private static Object resolveInternal(Group group, String name) {
-    for (GlobalReferable referable : group.getConstructors()) {
-      if (referable.textRepresentation().equals(name)) {
-        return referable;
+  private static GlobalReferable resolveInternal(Group group, String name, boolean onlyVisible) {
+    for (Group.InternalReferable internalReferable : group.getConstructors()) {
+      if (!onlyVisible || internalReferable.isVisible()) {
+        GlobalReferable constructor = internalReferable.getReferable();
+        if (constructor.textRepresentation().equals(name)) {
+          return constructor;
+        }
       }
     }
 
-    for (GlobalReferable referable : group.getFields()) {
-      if (referable.textRepresentation().equals(name)) {
-        return referable;
+    for (Group.InternalReferable internalReferable : group.getFields()) {
+      if (!onlyVisible || internalReferable.isVisible()) {
+        GlobalReferable field = internalReferable.getReferable();
+        if (field.textRepresentation().equals(name)) {
+          return field;
+        }
       }
     }
 
@@ -129,7 +147,7 @@ public class LexicalScope implements Scope {
 
   private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
     if (resolveRef) {
-      Object result = resolveInternal(group, name);
+      GlobalReferable result = resolveInternal(group, name, true);
       if (result != null) {
         return result;
       }
@@ -145,7 +163,7 @@ public class LexicalScope implements Scope {
 
   private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames) {
     if (resolveRef) {
-      Object result = resolveInternal(myGroup, name);
+      Object result = resolveInternal(myGroup, name, false);
       if (result != null) {
         return result;
       }

@@ -11,8 +11,13 @@ public interface Group {
   @Nonnull Collection<? extends Group> getSubgroups();
   @Nonnull Collection<? extends NamespaceCommand> getNamespaceCommands();
 
-  @Nonnull Collection<? extends GlobalReferable> getConstructors();
+  @Nonnull Collection<? extends InternalReferable> getConstructors();
 
   @Nonnull Collection<? extends Group> getDynamicSubgroups();
-  @Nonnull Collection<? extends GlobalReferable> getFields();
+  @Nonnull Collection<? extends InternalReferable> getFields();
+
+  interface InternalReferable {
+    GlobalReferable getReferable();
+    boolean isVisible();
+  }
 }

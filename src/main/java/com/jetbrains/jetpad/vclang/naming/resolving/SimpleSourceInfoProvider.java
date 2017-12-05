@@ -34,13 +34,15 @@ public class SimpleSourceInfoProvider<SourceIdT extends SourceId> implements Sou
     for (Group subGroup : group.getSubgroups()) {
       registerSubGroup(subGroup, makeLongName(name, subGroup.getReferable().textRepresentation()), source);
     }
-    for (GlobalReferable constructor : group.getConstructors()) {
+    for (Group.InternalReferable internalRef : group.getConstructors()) {
+      GlobalReferable constructor = internalRef.getReferable();
       registerDefinition(constructor, makeLongName(name, constructor.textRepresentation()), source);
     }
     for (Group subGroup : group.getDynamicSubgroups()) {
       registerSubGroup(subGroup, makeLongName(name, subGroup.getReferable().textRepresentation()), source);
     }
-    for (GlobalReferable field : group.getFields()) {
+    for (Group.InternalReferable internalRef : group.getFields()) {
+      GlobalReferable field = internalRef.getReferable();
       registerDefinition(field, makeLongName(name, field.textRepresentation()), source);
     }
   }

@@ -43,7 +43,7 @@ public class ClassViewGroup implements ChildGroup {
 
   @Nonnull
   @Override
-  public Collection<? extends GlobalReferable> getConstructors() {
+  public Collection<? extends InternalReferable> getConstructors() {
     return Collections.emptyList();
   }
 
@@ -55,8 +55,8 @@ public class ClassViewGroup implements ChildGroup {
 
   @Nonnull
   @Override
-  public Collection<? extends GlobalReferable> getFields() {
-    return myFields;
+  public Collection<? extends InternalReferable> getFields() {
+    return Collections.emptyList();
   }
 
   @Nullable

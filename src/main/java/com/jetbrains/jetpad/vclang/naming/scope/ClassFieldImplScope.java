@@ -27,7 +27,7 @@ public class ClassFieldImplScope implements Scope {
         continue;
       }
 
-      for (GlobalReferable referable : classRef.getFields()) {
+      for (GlobalReferable referable : classRef.getFieldReferables()) {
         if (pred.test(referable)) {
           return referable;
         }
