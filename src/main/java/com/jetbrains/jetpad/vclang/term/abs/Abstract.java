@@ -140,6 +140,7 @@ public final class Abstract {
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
+    boolean hasParameter();
   }
 
   public interface Constructor extends EliminatedExpressionsHolder {

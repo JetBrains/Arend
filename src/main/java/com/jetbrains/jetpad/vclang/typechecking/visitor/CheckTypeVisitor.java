@@ -350,7 +350,27 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public boolean compare(Result result, Expression expectedType, Concrete.Expression expr) {
-    if (result.type.isLessOrEquals(expectedType, myEquations, expr)) {
+    CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.LE, expr);
+    if (cmpVisitor.nonNormalizingCompare(result.type, expectedType)) {
+      return true;
+    }
+
+    result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+
+    if (result.type.isInstance(ClassCallExpression.class)) {
+      ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
+      ClassField coercingField = classCall.getDefinition().getCoercingField();
+      if (coercingField != null) {
+        Expression actualType = coercingField.getBaseType(classCall.getSortArgument()).subst(coercingField.getThisParameter(), result.expression);
+        if (cmpVisitor.compare(actualType, expectedType)) {
+          result.expression = OfTypeExpression.make(FieldCallExpression.make(coercingField, result.expression), actualType, expectedType);
+          return true;
+        }
+      }
+    }
+
+    expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (cmpVisitor.normalizedCompare(result.type, expectedType)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return true;
     }

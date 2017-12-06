@@ -117,6 +117,11 @@ public class DefinitionStateSerialization {
       builder.addSuperClassRef(myCalltargetIndexProvider.getDefIndex(classDefinition));
     }
 
+    if (definition.getCoercingField() != null) {
+      builder.setCoercingFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getCoercingField()));
+    } else {
+      builder.setCoercingFieldRef(-1);
+    }
     return builder.build();
   }
 

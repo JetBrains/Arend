@@ -138,6 +138,9 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
       classDef.implementField(calltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
     }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
+    if (classProto.getCoercingFieldRef() != -1) {
+      classDef.setCoercingField(calltargetProvider.getCalltarget(classProto.getCoercingFieldRef(), ClassField.class));
+    }
 
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = calltargetProvider.getCalltarget(superClassRef, ClassDefinition.class);

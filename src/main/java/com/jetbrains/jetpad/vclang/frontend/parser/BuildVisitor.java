@@ -584,7 +584,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
     List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
-    List<Concrete.ClassField> fields = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
+    List<Concrete.ClassField> fields = new ArrayList<>();
     List<Concrete.ClassFieldImpl> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
     List<Group> staticSubgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
@@ -599,12 +599,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<InternalConcreteGlobalReferable> fieldReferences = new ArrayList<>();
     ConcreteClassReferable reference = new ConcreteClassReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
     reference.setDefinition(classDefinition);
 
     Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), classDefinition);
     if (firstField != null) {
       fields.add(firstField);
+      classDefinition.setHasParameter();
     }
 
     ClassGroup resultGroup;

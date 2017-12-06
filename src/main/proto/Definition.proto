@@ -51,6 +51,7 @@ message Definition {
         int32 enclosing_this_field_ref = 6;
         repeated int32 field_ref = 8;
         map<int32, Implementation> implementations = 9;
+        int32 coercing_field_ref = 11;
         Sort sort = 7;
 
         message Field {

@@ -137,7 +137,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
 
     List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations);
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
 
     for (Abstract.ClassField field : def.getClassFields()) {
       Abstract.Expression resultType = field.getResultType();

@@ -945,12 +945,22 @@ public final class Concrete {
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
+    private boolean myHasParameter;
 
-    public ClassDefinition(ClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(ClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations, boolean hasParameter) {
       super(referable);
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
+      myHasParameter = hasParameter;
+    }
+
+    public boolean hasParameter() {
+      return myHasParameter;
+    }
+
+    public void setHasParameter() {
+      myHasParameter = true;
     }
 
     @Nonnull

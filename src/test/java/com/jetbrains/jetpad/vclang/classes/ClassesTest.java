@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.record;
+package com.jetbrains.jetpad.vclang.classes;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;

@@ -29,6 +29,7 @@ public class ClassDefinition extends Definition {
   private final LinkedHashSet<ClassField> myFields;
   private final List<ClassField> myPersonalFields;
   private final Map<ClassField, Implementation> myImplemented;
+  private ClassField myCoercingField;
   private Sort mySort;
 
   private ClassField myEnclosingThisField = null;
@@ -40,6 +41,14 @@ public class ClassDefinition extends Definition {
     myPersonalFields = new ArrayList<>();
     myImplemented = new HashMap<>();
     mySort = Sort.PROP;
+  }
+
+  public ClassField getCoercingField() {
+    return myCoercingField;
+  }
+
+  public void setCoercingField(ClassField coercingField) {
+    myCoercingField = coercingField;
   }
 
   public void updateSorts() {
