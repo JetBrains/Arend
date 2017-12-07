@@ -21,15 +21,15 @@ public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void vectorTest() {
     typeCheckModule(
-      "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
+      "\\data Vector (n : Nat) (A : \\Set0) \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
       "\n" +
-      "\\func \\infixl 6 + (x y : Nat) : Nat => \\elim x\n" +
+      "\\func \\infixl 6 + (x y : Nat) : Nat \\elim x\n" +
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
-      "\\func \\infixr 9 +^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
+      "\\func \\infixr 9 +^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
       "  | suc n', :^ x xs' => x :^ xs' +^ ys\n" +
       "\n" +
@@ -39,7 +39,7 @@ public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void vectorTest2() {
     typeCheckModule(
-      "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
+      "\\data Vector (n : Nat) (A : \\Set0) \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
       "\\func id {n : Nat} (A : \\Set0) (v : Vector n A) => v\n" +

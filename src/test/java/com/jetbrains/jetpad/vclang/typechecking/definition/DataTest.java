@@ -152,13 +152,13 @@ public class DataTest extends TypeCheckingTestCase {
   public void truncatedDataElimOk() {
     typeCheckModule(
       "\\truncated \\data S : \\Set | base | loop I { | left => base | right => base }\n"+
-      "\\func f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
+      "\\func f (x : S) : Nat | base => 0 | loop _ => 0");
   }
 
   @Test
   public void truncatedDataElimError() {
     typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\func f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
+      "\\func f (x : S) : Nat | base => 0 | loop _ => 0", 1);
   }
 }

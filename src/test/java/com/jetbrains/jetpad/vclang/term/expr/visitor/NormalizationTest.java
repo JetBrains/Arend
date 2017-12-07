@@ -267,7 +267,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     DependentLink var0 = param("var0", Universe(0));
     TypeCheckModuleResult result = typeCheckModule(
         "\\data D | d Nat\n" +
-        "\\func test (x : D) : Nat => \\elim x | _ => 0");
+        "\\func test (x : D) : Nat | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }

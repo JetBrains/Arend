@@ -131,7 +131,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintData2(){
-    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) => \\elim x\n" +
+    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x\n" +
                 "    | suc x' => c0 (y = x')\n" +
                 "    | suc x' => c1 (p : D2 y x')";
     testDefinition(s1);

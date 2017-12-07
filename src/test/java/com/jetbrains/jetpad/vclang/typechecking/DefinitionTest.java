@@ -59,20 +59,20 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void patternVector() {
-    typeCheckDef("\\data Vec (A : \\Type0) (n : Nat) => \\elim n | zero => Nil | suc m => Cons A (Vec A m)");
+    typeCheckDef("\\data Vec (A : \\Type0) (n : Nat) \\elim n | zero => Nil | suc m => Cons A (Vec A m)");
   }
 
   @Test
   public void patternDepParams() {
     typeCheckModule(
-        "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
-        "\\data C {n : Nat} {p : n = n} (D n p) => \\elim n | zero => c (p = p)");
+        "\\data D (n : Nat) (n = n) \\elim n | zero => d\n" +
+        "\\data C {n : Nat} {p : n = n} (D n p) \\elim n | zero => c (p = p)");
   }
 
   @Test
   public void patternDepParams2() {
     typeCheckModule(
-        "\\data D (n : Nat) (n = n) => \\elim n | zero => d\n" +
+        "\\data D (n : Nat) (n = n) \\elim n | zero => d\n" +
         "\\data C {n : Nat} {p : n = n} (D n p) | c (p = p)");
   }
 
@@ -112,14 +112,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternLift() {
     typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
-        "\\data C (m n : Nat) (d : D m) => \\elim m, n | zero, zero => c");
+        "\\data C (m n : Nat) (d : D m) \\elim m, n | zero, zero => c");
   }
 
   @Test
   public void patternLift2() {
     typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
-        "\\data C (m n : Nat) (D m) => \\elim n | zero => c");
+        "\\data C (m n : Nat) (D m) \\elim n | zero => c");
   }
 
   @Test
@@ -134,7 +134,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructorDefCall() {
     typeCheckModule(
-        "\\data D (n m : Nat) => \\elim n, m | suc n, suc m => d (n = n) (m = m)\n" +
+        "\\data D (n m : Nat) \\elim n, m | suc n, suc m => d (n = n) (m = m)\n" +
         "\\func test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
@@ -149,7 +149,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternSubstTest() {
     typeCheckModule(
         "\\data E Nat \\with | zero => e\n" +
-        "\\data D (n : Nat) (E n) => \\elim n | zero => d\n" +
+        "\\data D (n : Nat) (E n) \\elim n | zero => d\n" +
         "\\func test => d");
   }
 
@@ -165,7 +165,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest() {
     typeCheckModule(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C (n m : Nat) => \\elim n, m | suc n, suc (suc n) => c (n = n)\n" +
+        "\\data C (n m : Nat) \\with | suc n, suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
         "\\func test => x (e {path (\\lam _ => 0)})");
   }

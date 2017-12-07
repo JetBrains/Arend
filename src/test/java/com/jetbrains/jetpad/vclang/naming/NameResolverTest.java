@@ -322,7 +322,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\data K\n" +
       "  | k1 \\Prop\n" +
       "  | k2 \\Prop\n" +
-      "\\func crash (k : K) : \\Prop => \\elim k\n" +
+      "\\func crash (k : K) : \\Prop\n" +
       "  | k1 a => a\n" +
       "  | k2 b => a", 1);
   }

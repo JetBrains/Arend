@@ -112,8 +112,8 @@ public class GetTypeTest extends TypeCheckingTestCase {
   @Test
   public void patternConstructor2() {
     TypeCheckModuleResult result = typeCheckModule(
-        "\\data Vec (A : \\Set0) (n : Nat) => \\elim n | zero => Nil | suc n => Cons A (Vec A n)" +
-        "\\data D (n : Nat) (Vec Nat n) => \\elim n | zero => dzero | suc n => done");
+        "\\data Vec (A : \\Set0) (n : Nat) \\elim n | zero => Nil | suc n => Cons A (Vec A n)" +
+        "\\data D (n : Nat) (Vec Nat n) \\elim n | zero => dzero | suc n => done");
     DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dzeroParams = new ArrayList<>();
@@ -158,7 +158,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
   public void patternConstructorDep() {
     TypeCheckModuleResult result = typeCheckModule(
         "\\data Box (n : Nat) | box\n" +
-        "\\data D (n : Nat) (Box n) => \\elim n | zero => d");
+        "\\data D (n : Nat) (Box n) \\elim n | zero => d");
     DataDefinition d = (DataDefinition) result.getDefinition("D");
     List<DependentLink> dParams = new ArrayList<>();
     Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.SET0);

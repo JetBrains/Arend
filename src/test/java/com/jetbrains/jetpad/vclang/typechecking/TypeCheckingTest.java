@@ -55,7 +55,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void testEither() {
     typeCheckModule(
         "\\data Either (A B : \\Type0) | inl A | inr B\n" +
-        "\\func fun {A B : \\Type0} (e : Either A B) : \\Set0 => \\elim e\n" +
+        "\\func fun {A B : \\Type0} (e : Either A B) : \\Set0 \\elim e\n" +
         "  | inl _ => Nat\n" +
         "  | inr _ => Nat\n" +
         "\\func test : fun (inl {Nat} {Nat} 0) => 0");
@@ -111,7 +111,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void interruptThreadTest() throws InterruptedException {
     Thread thread = new Thread(() -> typeCheckModule(
-      "\\func ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
+      "\\func ack (m n : Nat) : Nat | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
       "\\func t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)"));
     thread.start();
     thread.interrupt();
@@ -138,7 +138,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "\\func \\infix 6 # (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
       "  | suc n => suc (suc (n `#))\n" +
-      "\\func \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
       "  | zero => n\n" +
       "  | suc m => suc (n $ m)\n" +
       "\\func f : (1 $ 1 `#) = 3 => path (\\lam _ => 3)");
@@ -150,7 +150,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "\\func \\infix 4 d (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
       "  | suc n => suc (suc (n `d))\n" +
-      "\\func \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
       "  | zero => n\n" +
       "  | suc m => suc (n $ m)\n" +
       "\\func f : (1 $ 1 `d) = 4 => path (\\lam _ => 4)");
@@ -164,7 +164,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void elimGoalTest() {
     typeCheckModule(
-      "\\func f (n : Nat) : Nat => \\elim n\n" +
+      "\\func f (n : Nat) : Nat\n" +
       "  | _ => {?}", 1);
   }
 

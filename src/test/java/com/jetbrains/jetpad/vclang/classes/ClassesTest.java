@@ -295,16 +295,16 @@ public class ClassesTest extends TypeCheckingTestCase {
         "| + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  | x : Nat\n" +
-        "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) => \\elim n\n" +
+        "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) \\elim n\n" +
         "    | zero => con1 (f x x = f x x)\n" +
         "    | suc n => con2 (D n f) (f n x = f n x)\n" +
-        "  \\func f (n : Nat) : D n `+ => \\elim n\n" +
+        "  \\func f (n : Nat) : D n (+)\n" +
         "    | zero => con1 (path (\\lam _ => x + x))\n" +
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
         "\\func f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
         "\\func f' (a : A) (n : Nat) => a.f\n" +
-        "\\func g (a : A) (n : Nat) : a.D n `+ => \\elim n\n" +
+        "\\func g (a : A) (n : Nat) : a.D n (+) \\elim n\n" +
         "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
         "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))", "");
   }

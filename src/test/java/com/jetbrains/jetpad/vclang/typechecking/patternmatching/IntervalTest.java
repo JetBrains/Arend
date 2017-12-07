@@ -79,7 +79,7 @@ public class IntervalTest extends TypeCheckingTestCase {
   @Test
   public void at() {
     typeCheckModule(
-      "\\func at {A : I -> \\Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i => \\elim p, i\n" +
+      "\\func at {A : I -> \\Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \\elim p, i\n" +
       "  | _, left => a\n" +
       "  | _, right => a'\n" +
       "  | path f, i => f i\n" +
@@ -89,7 +89,7 @@ public class IntervalTest extends TypeCheckingTestCase {
   @Test
   public void atConditionsError() {
     typeCheckModule(
-      "\\func at {A : \\Type} (a a' : A) (p : a = a') (i : I) : A => \\elim p, i\n" +
+      "\\func at {A : \\Type} (a a' : A) (p : a = a') (i : I) : A \\elim p, i\n" +
       "  | path f, i => f i\n" +
       "  | _, left => a'\n" +
       "  | _, right => a", 2);

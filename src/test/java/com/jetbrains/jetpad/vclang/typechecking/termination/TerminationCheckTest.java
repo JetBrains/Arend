@@ -25,16 +25,16 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test31_1() {
-    typeCheckModule("\\func \\infixl 9 ++ (a b : Nat) : Nat => \\elim a | suc a' => suc (a' ++ b) | zero => b", 0);
+    typeCheckModule("\\func \\infixl 9 ++ (a b : Nat) : Nat \\elim a | suc a' => suc (a' ++ b) | zero => b", 0);
   }
 
   @Test
   public void test31_2() {
-    typeCheckModule("\\func \\infixl 9 + (a b : Nat) : Nat => \\elim a | suc a' => suc (suc a' + b) | zero => b", 1);
+    typeCheckModule("\\func \\infixl 9 + (a b : Nat) : Nat \\elim a | suc a' => suc (suc a' + b) | zero => b", 1);
   }
 
   private static final String minus =
-    "\\func \\infix 9 - (x y : Nat) : Nat => \\elim x | zero => zero | suc x' => x' - p y\n" +
+    "\\func \\infix 9 - (x y : Nat) : Nat \\elim x | zero => zero | suc x' => x' - p y\n" +
       "\\where \\func p (z : Nat) : Nat | zero => zero | suc z' => z'\n";
 
   private static final String list =
@@ -48,7 +48,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void test33() {
     typeCheckModule(minus + "\\func \\infix 9 / (x y : Nat) : Nat => div' x (-.p x - y)\n" +
-      "\\where \\func div' (x : Nat) (y' : Nat) : Nat =>\n" +
+      "\\where \\func div' (x : Nat) (y' : Nat) : Nat\n" +
       "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''))\n", 2);
   }
 
@@ -62,7 +62,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_1() {
-    typeCheckModule(list + "\\func flatten {A : \\Type0} (l : List (List A)) : List A => \\elim l\n" +
+    typeCheckModule(list + "\\func flatten {A : \\Type0} (l : List (List A)) : List A \\elim l\n" +
       "| nil => nil\n" +
       "| :-: nil xs => flatten xs\n" +
       "| :-: (:-: y ys) xs => y :-: flatten (ys :-: xs)", 0);
@@ -70,23 +70,23 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_2() {
-    typeCheckModule(list + "\\func f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | :-: x xs => g x xs\n" +
-      "\\func g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | :-: x xs => x :-: g xs ls", 0);
+    typeCheckModule(list + "\\func f {A : \\Type0} (l : List (List A)) : List A \\elim l | nil => nil | :-: x xs => g x xs\n" +
+      "\\func g {A : \\Type0} (l : List A) (ls : List (List A)) : List A \\elim l | nil => f ls | :-: x xs => x :-: g xs ls", 0);
   }
 
   @Test
   public void test38_1() {
-    typeCheckModule(list + "\\func zip1 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+    typeCheckModule(list + "\\func zip1 {A : \\Type0} (l1 l2 : List A) : List A \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip2 l2 xs\n" +
-      "\\func zip2 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+      "\\func zip2 {A : \\Type0} (l1 l2 : List A) : List A \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip1 l2 xs\n", 0);
   }
 
   @Test
   public void test38_2() {
-    typeCheckModule(list + "\\func zip-bad {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+    typeCheckModule(list + "\\func zip-bad {A : \\Type0} (l1 l2 : List A) : List A \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip-bad l2 xs", 1);
   }
@@ -94,7 +94,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void test310() {
     typeCheckModule("\\data ord | O | S (_ : ord) | Lim (_ : Nat -> ord)\n" +
-      "\\func addord (x y : ord) : ord => \\elim x\n" +
+      "\\func addord (x y : ord) : ord \\elim x\n" +
       "| O => y\n" +
       "| S x' => S (addord x' y)\n" +
       "| Lim f => Lim (\\lam z => addord (f z) y)", 0);
@@ -165,7 +165,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   public void nonMonomialCallMatrixTest() {
     typeCheckModule(
       "\\data Int : \\Set0 | pos Nat | neg Nat { zero => pos zero }\n" +
-      "\\func \\infixl 6 +$ (n m : Int) : Int => \\elim n\n" +
+      "\\func \\infixl 6 +$ (n m : Int) : Int \\elim n\n" +
       "  | pos zero => m\n" +
       "  | pos (suc n) => pos n +$ m\n" +
       "  | neg zero => m\n" +

@@ -38,7 +38,7 @@ dataBody : elim constructorClause*                      # dataClauses
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '=>' '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
+elim : '\\with' | '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
 
 classViewField : ID ('=>' precedence ID)? ;
 

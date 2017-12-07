@@ -105,7 +105,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void threeVars() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat) => \\elim n, m, k\n" +
+      "\\func f (n m k : Nat)\n" +
       "  | suc n, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -117,7 +117,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void nestedPatterns() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat) => \\elim n, m, k\n" +
+      "\\func f (n m k : Nat)\n" +
       "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -129,7 +129,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void incorrectType() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat) => \\elim n, m, k\n" +
+      "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat)\n" +
       "  | suc n, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
@@ -141,7 +141,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void incorrectDataType() {
     Group module = resolveNamesModule(
       "\\data D | con\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, zero, suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable dataDef = it.next().getReferable();
@@ -160,7 +160,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void tooManyPatterns() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat) => \\elim n, m, k\n" +
+      "\\func f (n m k : Nat)\n" +
       "  | suc n m, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -171,7 +171,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void interval() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (i : I) => \\elim n, i\n" +
+      "\\func f (n : Nat) (i : I)\n" +
       "  | zero, i => zero").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
@@ -183,7 +183,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void intervalFail() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (i : I) => \\elim n, i\n" +
+      "\\func f (n : Nat) (i : I)\n" +
       "  | zero, left => zero").getDefinition();
     List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.HAS_THIS, PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
@@ -195,7 +195,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void emptyDataType() {
     Group module = resolveNamesModule(
       "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, (), k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable dataDef = it.next().getReferable();
@@ -216,7 +216,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void emptyDataTypeWarning() {
     Group module = resolveNamesModule(
       "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat) => \\elim n, d, k\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, (), suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable dataDef = it.next().getReferable();
@@ -236,7 +236,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimBefore() {
     typeCheckDef(
-      "\\func if (n : Nat) {A : \\Type} (a a' : A) : A => \\elim n\n" +
+      "\\func if (n : Nat) {A : \\Type} (a a' : A) : A \\elim n\n" +
       "  | zero => a\n" +
       "  | suc _ => a'");
   }
@@ -244,7 +244,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimAfter() {
     typeCheckDef(
-      "\\func if {A : \\Type} (a a' : A) (n : Nat) : A => \\elim n\n" +
+      "\\func if {A : \\Type} (a a' : A) (n : Nat) : A \\elim n\n" +
       "  | zero => a\n" +
       "  | suc _ => a'");
   }
@@ -252,10 +252,10 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void dependentElim() {
     typeCheckModule(
-      "\\func if {A : \\Type} (n : Nat) (a a' : A) : A => \\elim n\n" +
+      "\\func if {A : \\Type} (n : Nat) (a a' : A) : A \\elim n\n" +
       "  | zero => a\n" +
       "  | suc _ => a'\n" +
-      "\\func f (n : Nat) (x : if n Nat (Nat -> Nat)) : Nat => \\elim n\n" +
+      "\\func f (n : Nat) (x : if n Nat (Nat -> Nat)) : Nat \\elim n\n" +
       "  | zero => x\n" +
       "  | suc _ => x 0");
   }
@@ -264,7 +264,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void elimLess() {
     typeCheckModule(
       "\\data D Nat \\with | suc n => dsuc\n" +
-      "\\func tests (n : Nat) (d : D n) : Nat => \\elim n, d\n" +
+      "\\func tests (n : Nat) (d : D n) : Nat \\elim n, d\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", 1);
   }
@@ -281,7 +281,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimMore() {
     typeCheckModule(
-      "\\func tests (n m : Nat) : Nat => \\elim n\n" +
+      "\\func tests (n m : Nat) : Nat \\elim n\n" +
       "  | suc n, zero => 0\n" +
       "  | zero, suc m => 0", 1);
   }
@@ -289,7 +289,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void elimEvenMore() {
     typeCheckModule(
-      "\\func tests (n m : Nat) : Nat => \\elim n\n" +
+      "\\func tests (n m : Nat) : Nat \\elim n\n" +
       "  | suc n, zero => 0\n" +
       "  | zero, zero => 0\n" +
       "  | suc n, suc m => 0\n" +
@@ -341,7 +341,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void withThisAndElim() {
     typeCheckClass(
-      "\\func tests (n : Nat) : Nat => \\elim n\n" +
+      "\\func tests (n : Nat) : Nat\n" +
       "  | suc n => 0\n" +
       "  | zero => 0", "");
   }
@@ -349,7 +349,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void nonEliminatedAvailable() {
     typeCheckModule(
-      "\\func tests {n : Nat} (m : Nat) : Nat => \\elim m\n" +
+      "\\func tests {n : Nat} (m : Nat) : Nat \\elim m\n" +
       "  | suc m => m\n" +
       "  | zero => n");
   }
@@ -365,7 +365,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void eliminateOverridden() {
     typeCheckModule(
-      "\\func f (n : Nat) (n : Nat) : Nat => \\elim n\n" +
+      "\\func f (n : Nat) (n : Nat) : Nat \\elim n\n" +
       "  | suc _ => 2\n" +
       "  | zero => n\n" +
       "\\func g : f 1 0 = 1 => path (\\lam _ => 1)");
@@ -386,7 +386,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void elimPatternWrongDefinition() {
-    typeCheckModule("\\func test (x : Nat) : Nat => \\elim x | zero => 0 | Nat => 1", 1);
+    typeCheckModule("\\func test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
   }
 
   @Test

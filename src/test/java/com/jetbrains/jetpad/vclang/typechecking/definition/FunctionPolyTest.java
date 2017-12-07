@@ -47,14 +47,14 @@ public class FunctionPolyTest extends TypeCheckingTestCase {
 
   @Test
   public void funWithTypeOmegaExplicitRecursive() {
-    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\func f (A : \\Type) (n : Nat) : \\Prop => \\elim n | zero => 0 = 0 | suc n => f A n");
+    FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef("\\func f (A : \\Type) (n : Nat) : \\Prop \\elim n | zero => 0 = 0 | suc n => f A n");
     assertEquals(Sort.PROP, funDefinition.getResultType().toSort());
   }
 
   @Test
   public void funWithTypeOmegaResultRecursive() {
     FunctionDefinition funDefinition = (FunctionDefinition) typeCheckDef(
-      "\\func f (A : \\Type) (n : Nat) : \\oo-Type (\\max \\lp 1) => \\elim n | zero => \\Set0 | suc n => A");
+      "\\func f (A : \\Type) (n : Nat) : \\oo-Type (\\max \\lp 1) \\elim n | zero => \\Set0 | suc n => A");
     assertEquals(new Sort(new Level(LevelVariable.PVAR, 0, 1), Level.INFINITY), funDefinition.getResultType().toSort());
   }
 

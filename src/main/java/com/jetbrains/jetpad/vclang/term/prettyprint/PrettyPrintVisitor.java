@@ -923,7 +923,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       return;
     }
 
-    myBuilder.append("=> \\elim ");
+    myBuilder.append("\\elim ");
     new ListLayout<Concrete.ReferenceExpression>(){
       @Override
       void printListElement(PrettyPrintVisitor ppv, ReferenceExpression referenceExpression) {

@@ -399,11 +399,11 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\func \\infixr 9 $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
-        "\\func unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
+        "\\func unsuc {n : Nat} (x : Fin (suc n)) : Fin n \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
         "  | zero, fsuc x => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)\n" +
-        "\\func foo {n : Nat} (x : Fin n) : Nat => \\elim n\n" +
+        "\\func foo {n : Nat} (x : Fin n) : Nat \\elim n\n" +
         "  | zero => zero\n" +
         "  | suc n' => foo $ unsuc x");
   }

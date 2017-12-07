@@ -17,7 +17,7 @@ Here is the data type for booleans in Arend:
     | true => false
     | false => true
 
-\func if {A : \Type} (b : Bool) (then else : A) : A => \elim b
+\func if {A : \Type} (b : Bool) (then else : A) : A \elim b
     | true => then
     | false => else
 ~~~~

@@ -83,9 +83,9 @@ public class ConditionsTest extends TypeCheckingTestCase {
   @Test
   public void bidirectionalList() {
     typeCheckModule(
-        "\\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A) => \\elim xs\n" +
+        "\\data BD-list (A : \\Type0) | nil | cons A (BD-list A) | snoc (xs : BD-list A) (y : A) \\elim xs\n" +
         "  { | cons x xs => cons x (snoc xs y) | nil => cons y nil }\n" +
-        "\\func length {A : \\Type0} (x : BD-list A) : Nat => \\elim x\n" +
+        "\\func length {A : \\Type0} (x : BD-list A) : Nat \\elim x\n" +
         "  | nil => 0\n" +
         "  | cons x xs => suc (length xs)\n" +
         "  | snoc xs x => suc (length xs)", 1);

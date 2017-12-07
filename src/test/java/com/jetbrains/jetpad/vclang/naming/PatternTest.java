@@ -71,7 +71,7 @@ public class PatternTest extends NameResolverTestCase {
   public void eliminateOverridden() {
     resolveNamesModule(
       "\\data Nat | zero | suc Nat\n" +
-      "\\func tests (n : Nat) (n : Nat) : Nat => \\elim n\n" +
+      "\\func tests (n : Nat) (n : Nat) : Nat \\elim n\n" +
       "  | suc _ => zero\n" +
       "  | zero => n");
   }
@@ -94,7 +94,7 @@ public class PatternTest extends NameResolverTestCase {
   public void elimPatternUnknownConstructor() {
     resolveNamesModule(
       "\\data Nat | zero | suc Nat\n" +
-      "\\func test (x : Nat) : Nat => \\elim x | zero a => 0 | sucs n => 1", 1);
+      "\\func test (x : Nat) : Nat | zero a => 0 | sucs n => 1", 1);
   }
 
   @Test
