@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -14,8 +13,6 @@ import org.antlr.v4.runtime.*;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends VclangTestCase {
-  protected final SimpleModuleScopeProvider moduleScopeProvider = new SimpleModuleScopeProvider();
-
   private static final SourceId SOURCE_ID = new SourceId() {
     @Override
     public ModulePath getModulePath() {

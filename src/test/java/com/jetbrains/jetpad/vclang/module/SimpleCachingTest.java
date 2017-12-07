@@ -39,8 +39,6 @@ public class SimpleCachingTest extends CachingTestCase {
 
   @Test
   public void circularDependencies() {
-    loadPrelude();
-
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\import B() \\function a (n : Nat) : Nat | zero => zero | suc n => B.b n");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function b (n : Nat) : Nat | zero => zero | suc n => A.a n");
 

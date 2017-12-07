@@ -38,8 +38,6 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   private void typeCheckPrelude() {
-    loadPrelude();
-
     if (PRELUDE_TYPECHECKER_STATE == null) {
       PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
       new Prelude.PreludeTypechecking(PRELUDE_TYPECHECKER_STATE).typecheckModules(Collections.singletonList(prelude));

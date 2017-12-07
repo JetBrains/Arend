@@ -2,14 +2,11 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.StorageTestCase;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
-import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import org.junit.Before;
@@ -34,11 +31,6 @@ public class CachingTestCase extends StorageTestCase {
     cacheManager = new CacheManager<>(persistenceProvider, storage, sourceInfoProvider, storage);
     tcState = cacheManager.getTypecheckerState();
     typechecking = new Typechecking(tcState, ConcreteReferableProvider.INSTANCE, errorReporter);
-  }
-
-  protected void loadPrelude() {
-    ChildGroup prelude = moduleLoader.load(PreludeStorage.PRELUDE_MODULE_PATH);
-    new Prelude.PreludeTypechecking(cacheManager.getTypecheckerState()).typecheckModules(Collections.singleton(prelude));
   }
 
   protected void typecheck(Group module) {

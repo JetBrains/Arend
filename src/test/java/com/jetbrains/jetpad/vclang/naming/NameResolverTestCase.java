@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
@@ -10,7 +9,6 @@ import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNam
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
 
@@ -24,26 +22,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public abstract class NameResolverTestCase extends ParserTestCase {
-  @SuppressWarnings("StaticNonFinalField")
-  private static Group LOADED_PRELUDE  = null;
-  protected Group prelude = null;
-
-  protected void loadPrelude() {
-    if (prelude != null) throw new IllegalStateException();
-
-    if (LOADED_PRELUDE == null) {
-      PreludeStorage preludeStorage = new PreludeStorage(null);
-
-      ListErrorReporter internalErrorReporter = new ListErrorReporter();
-      LOADED_PRELUDE = preludeStorage.loadSource(preludeStorage.preludeSourceId, internalErrorReporter).group;
-      assertThat("Failed loading Prelude", internalErrorReporter.getErrorList(), containsErrors(0));
-    }
-
-    prelude = LOADED_PRELUDE;
-    moduleScopeProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
-  }
-
-
   private Concrete.Expression resolveNamesExpr(Scope parentScope, List<Referable> context, String text, int errors) {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
