@@ -1,10 +1,13 @@
 package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.frontend.parser.ParserError;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T extends SourceId> implements SourceSupplier<CompositeSourceSupplier<SourceId1T, SourceId2T>.SourceId> {
   private final @Nonnull SourceSupplier<SourceId1T> mySup1;
@@ -44,9 +47,11 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
   public LoadResult loadSource(@Nonnull SourceId sourceId, @Nonnull ErrorReporter errorReporter) {
     if (sourceId.getSourceSupplier() != this) return null;
     if (sourceId.source1 != null) {
-      return mySup1.loadSource(sourceId.source1, errorReporter);
+      //noinspection unchecked
+      return mySup1.loadSource(sourceId.source1, new FixupErrorReporter(errorReporter, sourceId1 -> idFromFirst((SourceId1T) sourceId1)));
     } else {
-      return mySup2.loadSource(sourceId.source2, errorReporter);
+      //noinspection unchecked
+      return mySup2.loadSource(sourceId.source2, new FixupErrorReporter(errorReporter, sourceId2 -> idFromSecond((SourceId2T) sourceId2)));
     }
   }
 
@@ -104,6 +109,7 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
+      //noinspection unchecked
       SourceId sourceId = (SourceId) o;
 
       return Objects.equals(getSourceSupplier(), (sourceId.getSourceSupplier())) &&
@@ -118,6 +124,25 @@ public class CompositeSourceSupplier<SourceId1T extends SourceId, SourceId2T ext
     @Override
     public String toString() {
       return getActualSourceId().toString();
+    }
+  }
+
+  class FixupErrorReporter implements ErrorReporter {
+    private final ErrorReporter myErrorReporter;
+    private final Function<com.jetbrains.jetpad.vclang.module.source.SourceId, com.jetbrains.jetpad.vclang.module.source.SourceId> myFix;
+
+    FixupErrorReporter(ErrorReporter errorReporter, Function<com.jetbrains.jetpad.vclang.module.source.SourceId, com.jetbrains.jetpad.vclang.module.source.SourceId> fix) {
+      myErrorReporter = errorReporter;
+      myFix = fix;
+    }
+
+    @Override
+    public void report(GeneralError error) {
+      // Fixing it Valera-style
+      if (error instanceof ParserError) {
+        ((ParserError) error).fixup(myFix);
+      }
+      myErrorReporter.report(error);
     }
   }
 }

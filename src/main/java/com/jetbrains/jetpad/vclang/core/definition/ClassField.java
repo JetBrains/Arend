@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.List;
 
@@ -16,13 +16,13 @@ public class ClassField extends Definition {
   private TypedDependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(Abstract.ClassField abstractDef, ClassDefinition thisClass) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public ClassField(GlobalReferable referable, ClassDefinition thisClass) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     setThisClass(thisClass);
   }
 
-  public ClassField(Abstract.ClassField abstractDef, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
-    super(abstractDef, TypeCheckingStatus.NO_ERRORS);
+  public ClassField(GlobalReferable referable, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
+    super(referable, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;
     setThisClass(thisClass);
@@ -30,12 +30,7 @@ public class ClassField extends Definition {
 
   @Override
   public String getName() {
-    return getAbstractDefinition() != null ? super.getName() : getThisClass().getName() + "::\\parent";
-  }
-
-  @Override
-  public Abstract.ClassField getAbstractDefinition() {
-    return (Abstract.ClassField) super.getAbstractDefinition();
+    return getReferable() != null ? super.getName() : getThisClass().getName() + ".\\parent"; // TODO[classes]
   }
 
   @Override
@@ -69,8 +64,8 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
-    return new FieldCallExpression(this, thisExpr);
+  public Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
+    return FieldCallExpression.make(this, thisExpr);
   }
 
   public void setBaseType(Expression type) {

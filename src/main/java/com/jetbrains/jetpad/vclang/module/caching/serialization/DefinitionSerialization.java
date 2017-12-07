@@ -129,7 +129,7 @@ class DefinitionSerialization {
     }
     tBuilder.addAllName(fixedNames);
     tBuilder.setIsNotExplicit(!typed.isExplicit());
-    tBuilder.setType(writeType(typed.getType()));
+    if (typed.getType() != null) tBuilder.setType(writeType(typed.getType()));
     for (; link != typed; link = link.getNext()) {
       registerBinding(link);
     }

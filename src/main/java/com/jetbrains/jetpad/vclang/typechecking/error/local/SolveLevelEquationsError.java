@@ -3,29 +3,30 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.LevelEquation;
 
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class SolveLevelEquationsError extends LocalTypeCheckingError {
+public class SolveLevelEquationsError extends TypecheckingError {
   public final Collection<? extends LevelEquation<? extends LevelVariable>> equations;
 
-  public SolveLevelEquationsError(Collection<? extends LevelEquation<? extends LevelVariable>> equations, Abstract.SourceNode cause) {
+  public SolveLevelEquationsError(Collection<? extends LevelEquation<? extends LevelVariable>> equations, Concrete.SourceNode cause) {
     super("Cannot solve equations", cause);
     this.equations = equations;
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
     List<Doc> docs = new ArrayList<>(equations.size());
     StringBuilder builder = new StringBuilder();
-    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0);
+    PrettyPrintVisitor ppv = new PrettyPrintVisitor(builder, 0, !src.isSingleLine());
 
     Set<InferenceLevelVariable> variables = new HashSet<>();
     for (LevelEquation<? extends Variable> equation : equations) {
@@ -58,17 +59,17 @@ public class SolveLevelEquationsError extends LocalTypeCheckingError {
 
     if (variables.size() == 1) {
       InferenceLevelVariable variable = variables.iterator().next();
-      Abstract.SourceNode sourceNode = variable.getSourceNode();
-      if (sourceNode != getCause()) {
-        String position = src.positionOf(sourceNode);
-        docs.add(hang(hList(text("where " + ppv.getInferLevelVarText(variable) + " is defined"), position != null ? text(" at " + position) : empty(), text(" for")), sourceNodeDoc(sourceNode)));
+      Concrete.SourceNode sourceNode = variable.getSourceNode();
+      if (sourceNode.getData() != getCause()) {
+        String position = sourceNode.getData() instanceof SourceInfo ? ((SourceInfo) sourceNode.getData()).positionTextRepresentation() : null;
+        docs.add(hang(hList(text("where " + ppv.getInferLevelVarText(variable) + " is defined"), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src)));
       }
     } else {
       List<Doc> varDocs = new ArrayList<>(variables.size());
       for (InferenceLevelVariable variable : variables) {
-        Abstract.SourceNode sourceNode = variable.getSourceNode();
-        String position = src.positionOf(sourceNode);
-        varDocs.add(hang(hList(text(ppv.getInferLevelVarText(variable)), position != null ? text(" at " + position) : empty(), text(" for")), sourceNodeDoc(sourceNode)));
+        Concrete.SourceNode sourceNode = variable.getSourceNode();
+        String position = sourceNode.getData() instanceof SourceInfo ? ((SourceInfo) sourceNode.getData()).positionTextRepresentation() : null;
+        varDocs.add(hang(hList(text(ppv.getInferLevelVarText(variable)), position != null ? text(" at " + position) : empty(), text(" for")), ppDoc(sourceNode, src)));
       }
       docs.add(hang(text("where variables are defined as follows:"), vList(varDocs)));
     }

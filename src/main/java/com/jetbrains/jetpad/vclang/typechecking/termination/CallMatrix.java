@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
@@ -33,7 +34,7 @@ class CallMatrix extends LabeledCallMatrix {
   }
 
   @Override
-  public Doc getMatrixLabel() {
-    return hang(hList(refDoc(myEnclosingDefinition.getAbstractDefinition()), text(" ->")), termDoc(myCallExpression));
+  public Doc getMatrixLabel(PrettyPrinterConfig ppConfig) {
+    return hang(hList(refDoc(myEnclosingDefinition.getReferable()), text(" ->")), termDoc(myCallExpression, ppConfig));
   }
 }

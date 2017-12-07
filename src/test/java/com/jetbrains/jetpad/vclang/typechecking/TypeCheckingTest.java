@@ -9,93 +9,80 @@ import org.junit.Test;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.FunCall;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class TypeCheckingTest extends TypeCheckingTestCase {
   @Test
   public void typeCheckDefinition() {
-    typeCheckClass(
-        "\\function x : Nat => zero\n" +
-        "\\function y : Nat => x");
+    typeCheckModule(
+        "\\func x : Nat => zero\n" +
+        "\\func y : Nat => x");
   }
 
   @Test
   public void typeCheckDefType() {
-    typeCheckClass(
-        "\\function x : \\Set0 => Nat\n" +
-        "\\function y : x => zero");
+    typeCheckModule(
+        "\\func x : \\Set0 => Nat\n" +
+        "\\func y : x => zero");
   }
 
   @Test
   public void typeCheckInfixDef() {
-    typeCheckClass(
-        "\\function + : Nat -> Nat -> Nat => \\lam x y => x\n" +
-        "\\function * : Nat -> Nat => \\lam x => x + zero");
+    typeCheckModule(
+        "\\func \\infixr 9 + : Nat -> Nat -> Nat => \\lam x y => x\n" +
+        "\\func * : Nat -> Nat => \\lam x => x + zero");
   }
 
   @Test
   public void typeCheckConstructor1() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
-  }
-
-  @Test
-  public void typeCheckConstructor1d() {
-    typeCheckClass(
-        "\\data D (n : Nat) {k : Nat} (m : Nat) | con\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {1} {2} {3} = (D 1 {2} 3).con => idp");
+        "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+        "\\func f : con {1} {2} {3} = con => idp");
   }
 
   @Test
   public void typeCheckConstructor2() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
-  }
-
-  @Test
-  public void typeCheckConstructor2d() {
-    typeCheckClass(
-        "\\data D (n : Nat) {k : Nat} (m : Nat) | con (k = m)\n" +
-        "\\function idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-        "\\function f : con {0} (path (\\lam _ => 1)) = (D 0).con idp => idp");
+        "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+        "\\func f : con {0} (path (\\lam _ => 1)) = con {0} idp => idp");
   }
 
   @Test
   public void testEither() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Either (A B : \\Type0) | inl A | inr B\n" +
-        "\\function fun {A B : \\Type0} (e : Either A B) : \\Set0 => \\elim e\n" +
+        "\\func fun {A B : \\Type0} (e : Either A B) : \\Set0 \\elim e\n" +
         "  | inl _ => Nat\n" +
         "  | inr _ => Nat\n" +
-        "\\function test : fun (inl {Nat} {Nat} 0) => 0");
+        "\\func test : fun (inl {Nat} {Nat} 0) => 0");
   }
 
   @Test
   public void testPMap1() {
-    typeCheckDef("\\function pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
+    typeCheckDef("\\func pmap {A B : \\Type1} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testPMap1Mix() {
-    typeCheckDef("\\function pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
+    typeCheckDef("\\func pmap {A : \\Type1} {B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (f a = f a') => path (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testPMap1Error() {
-    typeCheckDef("\\function pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : (`= {B} (f a) (f a'))" +
-            " => path (\\lam i => f (p @ i))");
+    typeCheckDef(
+      "\\func pmap {A B : \\Type0} {a a' : A} (f : A -> B) (p : a = a') : f a = {B} f a'" +
+      " => path (\\lam i => f (p @ i))");
   }
 
   @Test
   public void testTransport1() {
-    typeCheckDef("\\function transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
-        "coe (\\lam i => B (`@ {\\lam _ => A} {a} {a'} p i)) b right");
+    typeCheckDef(
+      "\\func transport {A : \\Type1} (B : A -> \\Type1) {a a' : A} (p : a = a') (b : B a) : B a' =>\n" +
+      "  coe (\\lam i => B (p @ {\\lam _ => A} {a} {a'} i)) b right");
   }
 
   @Test
@@ -106,18 +93,15 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void universeInference() {
-    typeCheckClass(
-        "\\function\n" +
-        "transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
+    typeCheckModule(
+        "\\func transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a)\n" +
         "  => coe (\\lam i => B (p @ i)) b right\n" +
-        "\n" +
-        "\\function\n" +
-        "foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
+        "\\func foo (A : \\1-Type0) (B : A -> \\Type0) (a a' : A) (p : a = a') => transport B p");
   }
 
   @Test
   public void definitionsWithErrors() {
-    resolveNamesClass(
+    resolveNamesModule(
         "\\class C {\n" +
         "  | A : X\n" +
         "  | a : (\\lam (x : Nat) => Nat) A\n" +
@@ -126,9 +110,9 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void interruptThreadTest() throws InterruptedException {
-    Thread thread = new Thread(() -> typeCheckClass(
-      "\\function ack (m n : Nat) : Nat => \\elim m, n | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
-      "\\function t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)"));
+    Thread thread = new Thread(() -> typeCheckModule(
+      "\\func ack (m n : Nat) : Nat | zero, n => suc n | suc m, zero => ack m 1 | suc m, suc n => ack m (ack (suc m) n)\n" +
+      "\\func t : ack 4 4 = ack 4 4 => path (\\lam _ => ack 4 4)"));
     thread.start();
     thread.interrupt();
     thread.join();
@@ -136,44 +120,59 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void parameters() {
-    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\function f (x : Nat Nat) (p : `= {Nat} x x) => p", 1);
+    FunctionDefinition def = (FunctionDefinition) typeCheckDef("\\func f (x : Nat Nat) (p : x = {Nat} x) => p", 1);
     assertEquals(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(def.getParameters()), Ref(def.getParameters())), def.getResultType());
   }
 
   @Test
   public void constructorExpectedTypeMismatch() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Foo\n" +
         "\\data Bar Nat \\with | suc n => bar (n = n)\n" +
-        "\\function foo : Foo => bar (path (\\lam _ => zero))", 1);
+        "\\func foo : Foo => bar (path (\\lam _ => zero))", 1);
   }
 
   @Test
   public void postfixTest() {
-    typeCheckClass(
-      "\\function \\infix 6 # (n : Nat) : Nat\n" +
+    typeCheckModule(
+      "\\func \\infix 6 # (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
-      "  | suc n => suc (suc (n #`))\n" +
-      "\\function \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "  | suc n => suc (suc (n `#))\n" +
+      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
       "  | zero => n\n" +
       "  | suc m => suc (n $ m)\n" +
-      "\\function f : (1 $ 1 #`) = 3 => path (\\lam _ => 3)");
+      "\\func f : (1 $ 1 `#) = 3 => path (\\lam _ => 3)");
   }
 
   @Test
   public void postfixTest2() {
-    typeCheckClass(
-      "\\function \\infix 4 d (n : Nat) : Nat\n" +
+    typeCheckModule(
+      "\\func \\infix 4 d (n : Nat) : Nat\n" +
       "  | zero => zero\n" +
-      "  | suc n => suc (suc (n d`))\n" +
-      "\\function \\infix 5 $ (n m : Nat) : Nat => \\elim m\n" +
+      "  | suc n => suc (suc (n `d))\n" +
+      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
       "  | zero => n\n" +
       "  | suc m => suc (n $ m)\n" +
-      "\\function f : (1 $ 1 d`) = 4 => path (\\lam _ => 4)");
+      "\\func f : (1 $ 1 `d) = 4 => path (\\lam _ => 4)");
   }
 
   @Test
   public void infixLocal() {
-    typeCheckExpr("\\lam (x # : \\Prop) ($ foo %% : \\Prop -> \\Prop -> \\Prop) => (foo (`# $ x) `#) %% x", null);
+    typeCheckExpr("\\lam (x # : \\Prop) ($ foo %% : \\Prop -> \\Prop -> \\Prop) => %% (foo ($ # x) #) x", null);
+  }
+
+  @Test
+  public void elimGoalTest() {
+    typeCheckModule(
+      "\\func f (n : Nat) : Nat\n" +
+      "  | _ => {?}", 1);
+  }
+
+  @Test
+  public void twoDefinitions() {
+    typeCheckModule(
+      "\\data Nat | zero | suc Nat\n" +
+      "\\func test : Nat => 0", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

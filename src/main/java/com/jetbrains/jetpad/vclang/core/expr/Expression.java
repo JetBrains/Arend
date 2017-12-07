@@ -4,17 +4,21 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.factory.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.Abstract.Precedence;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
+import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -29,11 +33,11 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    Abstract.Expression expr = ToAbstractVisitor.convert(this, new ConcreteExpressionFactory(), EnumSet.of(
+    Concrete.Expression expr = ToAbstractVisitor.convert(this, EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
       ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
-    expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Abstract.Expression.PREC));
+    expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
   }
 
@@ -42,14 +46,24 @@ public abstract class Expression implements ExpectedType {
     return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
   }
 
-  public void prettyPrint(StringBuilder builder, boolean doIndent) {
-    Abstract.Expression expr = ToAbstractVisitor.convert(normalize(NormalizeVisitor.Mode.RNF), new ConcreteExpressionFactory(), EnumSet.of(
-      ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
-      ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM));
-    expr.accept(new PrettyPrintVisitor(builder, 0, doIndent), new Precedence(Abstract.Expression.PREC));
+  public boolean isError() {
+    return isInstance(ErrorExpression.class) && !(cast(ErrorExpression.class).getError() instanceof GoalError);
   }
 
-  public boolean isLessOrEquals(Expression type, Equations equations, Abstract.SourceNode sourceNode) {
+  @Override
+  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    NormalizeVisitor.Mode mode = infoProvider.getNormalizationMode();
+    ToAbstractVisitor
+      .convert(mode == null ? this : normalize(mode), infoProvider.getExpressionFlags())
+      .accept(new PrettyPrintVisitor(builder, 0, !infoProvider.isSingleLine()), new Precedence(Concrete.Expression.PREC));
+  }
+
+  @Override
+  public Doc prettyPrint(PrettyPrinterConfig ppConfig) {
+    return DocFactory.termDoc(this, ppConfig);
+  }
+
+  public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {
     return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
   }
 
@@ -59,7 +73,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression getType() {
-    return accept(GetTypeVisitor.INSTANCE, null);
+    try {
+      return accept(GetTypeVisitor.INSTANCE, null);
+    } catch (IncorrectExpressionException e) {
+      return null;
+    }
   }
 
   public boolean findBinding(Variable binding) {
@@ -152,7 +170,11 @@ public abstract class Expression implements ExpectedType {
     if (normExpr.isInstance(ErrorExpression.class)) {
       return normExpr;
     }
-    PiExpression piExpr = normExpr.cast(PiExpression.class);
+    PiExpression piExpr = normExpr.checkedCast(PiExpression.class);
+    if (piExpr == null) {
+      return null;
+    }
+
     SingleDependentLink link = piExpr.getParameters();
     ExprSubstitution subst = new ExprSubstitution(link, expression);
     link = link.getNext();
@@ -167,7 +189,7 @@ public abstract class Expression implements ExpectedType {
     return clazz.cast(this);
   }
 
-  public <T extends Expression> boolean isInstance(Class<T> clazz) {
+  public boolean isInstance(Class clazz) {
     return clazz.isInstance(this);
   }
 

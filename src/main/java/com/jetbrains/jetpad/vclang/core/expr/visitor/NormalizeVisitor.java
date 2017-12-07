@@ -28,7 +28,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     Expression function = expr;
     while (function.isInstance(AppExpression.class)) {
       args.add(function.cast(AppExpression.class).getArgument());
-      function = function.cast(AppExpression.class).getFunction().accept(this, mode == Mode.NF ? Mode.WHNF : mode);
+      function = function.cast(AppExpression.class).getFunction().accept(this, Mode.WHNF);
     }
     Collections.reverse(args);
 
@@ -268,7 +268,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (expr instanceof FieldCallExpression) {
       Expression thisExpr = ((FieldCallExpression) expr).getExpression().accept(this, Mode.WHNF);
       if (!thisExpr.isInstance(InferenceReferenceExpression.class) || !(thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
-        ClassCallExpression classCall = thisExpr.getType().accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
+        Expression type = thisExpr.getType();
+        ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
         if (classCall != null) {
           Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
           if (impl != null) {
@@ -276,7 +277,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return new FieldCallExpression((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {
@@ -391,7 +392,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.WHNF ? new ProjExpression(newExpr, expr.getField()) : new ProjExpression(expr.getExpression().accept(this, mode), expr.getField());
+      return mode == Mode.WHNF ? ProjExpression.make(newExpr, expr.getField()) : ProjExpression.make(expr.getExpression().accept(this, mode), expr.getField());
     }
   }
 

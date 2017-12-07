@@ -22,18 +22,7 @@ public class ExpressionFactory {
   }
 
   public static Expression FieldCall(ClassField definition, Expression thisExpr) {
-    if (thisExpr.isInstance(NewExpression.class)) {
-      Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
-      assert impl != null;
-      return impl;
-    } else {
-      ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
-      if (errorExpr != null && errorExpr.getExpression() != null) {
-        return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
-      } else {
-        return new FieldCallExpression(definition, thisExpr);
-      }
-    }
+    return FieldCallExpression.make(definition, thisExpr);
   }
 
   public static DataCallExpression Interval() {

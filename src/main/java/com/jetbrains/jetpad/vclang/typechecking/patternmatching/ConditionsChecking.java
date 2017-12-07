@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ConditionsError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -27,10 +28,10 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 
 public class ConditionsChecking {
-  public static boolean check(Body body, List<Clause> clauses, Definition definition, LocalErrorReporter errorReporter) {
+  public static boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     boolean ok;
     if (body instanceof IntervalElim) {
-      ok = checkIntervals((IntervalElim) body, definition, errorReporter);
+      ok = checkIntervals((IntervalElim) body, definition, def, errorReporter);
       for (Clause clause : clauses) {
         if (clause.expression != null && !checkIntervalClause((IntervalElim) body, clause, definition, errorReporter)) {
           ok = false;
@@ -41,7 +42,7 @@ public class ConditionsChecking {
     }
 
     for (Clause clause : clauses) {
-      if (clause.expression != null && !checkClause(clause, null, definition, errorReporter)) {
+      if (!checkClause(clause, null, definition, errorReporter)) {
         ok = false;
       }
     }
@@ -49,17 +50,17 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervals(IntervalElim elim, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
       DependentLink link2 = link.getNext();
       for (int j = i + 1; j < cases.size(); j++) {
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, elim.getParameters(), definition, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, elim.getParameters(), definition, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, elim.getParameters(), definition, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, elim.getParameters(), definition, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
         link2 = link2.getNext();
       }
       link = link.getNext();
@@ -67,7 +68,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {
@@ -87,7 +88,7 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, definition.getAbstractDefinition()));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
       return false;
     } else {
       return true;
@@ -189,7 +190,7 @@ public class ConditionsChecking {
   public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
-      if (clause.expression != null && !checkClause(clause, elimTree, null, errorReporter)) {
+      if (!checkClause(clause, elimTree, null, errorReporter)) {
         ok = false;
       }
     }
@@ -197,6 +198,10 @@ public class ConditionsChecking {
   }
 
   private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
+    if (clause.expression == null || clause.expression.isInstance(ErrorExpression.class)) {
+      return true;
+    }
+
     boolean ok = true;
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;

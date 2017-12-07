@@ -10,8 +10,9 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -104,7 +105,7 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.Expression expr = cApps(cDefCall(con.getAbstractDefinition()), cNat(), cZero(), cZero());
+    Concrete.Expression expr = cApps(cVar(con.getReferable()), cNat(), cZero(), cZero());
 
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
     assertEquals(result.type, DataCall(def, Sort.SET0, Nat()));
@@ -115,11 +116,11 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    Concrete.LocalVariable f = ref("f");
-    Concrete.NameParameter x = cName("x");
-    Concrete.Expression expr = cApps(cVar(f), cApps(cDefCall(con.getAbstractDefinition()), cNat(), cLam(x, cVar(x)), cZero()));
-    Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.getName(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
+    ParsedLocalReferable f = ref("f");
+    ParsedLocalReferable x = ref("x");
+    Concrete.Expression expr = cApps(cVar(f), cApps(cVar(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
+    Map<Referable, Binding> localContext = new HashMap<>();
+    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Nat());
@@ -130,10 +131,10 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    Concrete.LocalVariable f = ref("f");
-    Concrete.Expression expr = cApps(cVar(f), cDefCall(con.getAbstractDefinition()));
-    Map<Abstract.ReferableSourceNode, Binding> localContext = new HashMap<>();
-    localContext.put(f, new TypedBinding(f.getName(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
+    ParsedLocalReferable f = ref("f");
+    Concrete.Expression expr = cApps(cVar(f), cVar(con.getReferable()));
+    Map<Referable, Binding> localContext = new HashMap<>();
+    localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
     CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));
@@ -141,23 +142,23 @@ public class DataTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
-      "\\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-      "\\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
+      "\\func f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
+      "\\func g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
 
   @Test
   public void truncatedDataElimOk() {
-    typeCheckClass(
+    typeCheckModule(
       "\\truncated \\data S : \\Set | base | loop I { | left => base | right => base }\n"+
-      "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
+      "\\func f (x : S) : Nat | base => 0 | loop _ => 0");
   }
 
   @Test
   public void truncatedDataElimError() {
-    typeCheckClass(
+    typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
+      "\\func f (x : S) : Nat | base => 0 | loop _ => 0", 1);
   }
 }

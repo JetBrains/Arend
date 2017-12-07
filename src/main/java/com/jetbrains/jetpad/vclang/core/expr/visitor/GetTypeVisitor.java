@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
+import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    return expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
+    Expression result = expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
+    if (result == null) {
+      throw new IncorrectExpressionException("Expression " + expr.getFunction() + " does not have a pi type, but is applied to " + expr.getArgument());
+    }
+    return result;
   }
 
   @Override
@@ -74,11 +79,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    Expression expr1 = null;
-    if (expr.getExpression() != null) {
-      expr1 = expr.getExpression().accept(this, null);
-    }
-    return new ErrorExpression(expr1, expr.getError());
+    return expr.getExpression() == null ? expr : expr.getExpression();
   }
 
   @Override
@@ -94,7 +95,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
     }
 
     if (!type.isInstance(SigmaExpression.class)) {
-      return null;
+      throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
     }
     DependentLink params = type.cast(SigmaExpression.class).getParameters();
     if (expr.getField() == 0) {
@@ -103,7 +104,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
     ExprSubstitution subst = new ExprSubstitution();
     for (int i = 0; i < expr.getField(); i++) {
-      subst.add(params, new ProjExpression(expr.getExpression(), i));
+      subst.add(params, ProjExpression.make(expr.getExpression(), i));
       params = params.getNext();
     }
     return params.getTypeExpr().subst(subst);
@@ -116,8 +117,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLet(LetExpression expr, Void params) {
-    Expression type = expr.getExpression().accept(this, null);
-    return type.isInstance(ErrorExpression.class) ? type : type.subst(expr.getClausesSubstitution());
+    return expr.getExpression().accept(this, null).subst(expr.getClausesSubstitution());
   }
 
   @Override

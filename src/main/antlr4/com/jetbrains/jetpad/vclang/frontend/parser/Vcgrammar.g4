@@ -2,27 +2,31 @@ grammar Vcgrammar;
 
 statements : statement* EOF;
 
-statement : definition                                                            # statDef
-          | nsCmd nsCmdRoot ('.' fieldAcc)* (hidingOpt '(' id (',' id)* ')')?     # statCmd
+statement : definition                                                      # statDef
+          | nsCmd atomFieldsAcc nsUsing? ('\\hiding' '(' ID (',' ID)* ')')? # statCmd
           ;
 
-hidingOpt : '\\hiding'  # withHiding
-          |             # withoutHiding
+nsCmd : '\\open'                        # openCmd
+      | '\\import'                      # importCmd
+      ;
+
+nsUsing : USING? '(' nsId? (',' nsId)* ')';
+
+nsId : ID ('\\as' precedence ID)?;
+
+classStat : '|' precedence ID tele* ':' expr  # classField
+          | '|' ID tele* '=>' expr            # classImplement
+          | definition                        # classDefinition
           ;
 
-nsCmdRoot : MODULE_PATH | id;
-
-classStat : '|' precedence id ':' expr  # classField
-          | '|' id '=>' expr            # classImplement
-          | statement                   # classStatement
-          ;
-
-definition  : '\\function' precedence id tele* (':' expr)? functionBody where?                                  # defFunction
-            | isTruncated '\\data' precedence id tele* (':' expr)? dataBody                                     # defData
-            | '\\class' id tele* ('\\extends' atomFieldsAcc (',' atomFieldsAcc)*)? ('{' classStat* '}')? where? # defClass
-            | '\\view' id '\\on' expr '\\by' id '{' classViewField* '}'                                         # defClassView
-            | defaultInst '\\instance' id tele* '=>' expr                                                       # defInstance
+definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                                      # defFunction
+            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                                   # defData
+            | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? ('{' classStat* '}')? where?  # defClass
+            | '\\view' precedence ID '\\on' expr '\\by' ID '{' classViewField* '}'                                  # defClassView
+            | '\\instance' ID tele* ':' classCall coClauses where?                                                  # defInstance
             ;
+
+classCall : atomFieldsAcc; // TODO[classes]: add arguments
 
 functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim
@@ -34,69 +38,77 @@ dataBody : elim constructorClause*                      # dataClauses
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '=>' '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
+elim : '\\with' | '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
 
-isTruncated : '\\truncated' # truncated
-            |               # notTruncated
-            ;
-
-defaultInst :             # noDefault
-            | '\\default' # withDefault
-            ;
-
-classViewField : id ('=>' precedence id)? ;
+classViewField : ID ('=>' precedence ID)? ;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-nsCmd : '\\open'                        # openCmd
-      | '\\export'                      # exportCmd
-      ;
-
 pattern : atomPattern             # patternAtom
-        | prefix atomPatternOrID* # patternConstructor
+        | ID atomPatternOrID*     # patternConstructor
         ;
 
-atomPattern : '(' pattern ')'     # patternExplicit
+atomPattern : '(' pattern? ')'    # patternExplicit
             | '{' pattern '}'     # patternImplicit
-            | '()'                # patternEmpty
             | '_'                 # patternAny
             ;
 
 atomPatternOrID : atomPattern     # patternOrIDAtom
-                | prefix          # patternID
+                | ID              # patternID
                 ;
 
-constructor : precedence id tele* (elim? '{' clause? ('|' clause)* '}')?;
+constructor : precedence ID tele* (elim? '{' clause? ('|' clause)* '}')?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
            ;
 
-associativity : '\\infix'               # nonAssoc
-              | '\\infixl'              # leftAssoc
-              | '\\infixr'              # rightAssoc
+associativity : '\\infix'               # nonAssocInfix
+              | '\\infixl'              # leftAssocInfix
+              | '\\infixr'              # rightAssocInfix
+              | '\\fix'                 # nonAssoc
+              | '\\fixl'                # leftAssoc
+              | '\\fixr'                # rightAssoc
               ;
 
-expr0 : binOpLeft* binOpArg postfix*;
-
-expr  : binOpLeft* maybeNew binOpArg implementStatements? postfix*            # binOp
+expr  : NEW? appExpr (implementStatements argument*)?                         # app
       | <assoc=right> expr '->' expr                                          # arr
       | '\\Pi' tele+ '->' expr                                                # pi
       | '\\Sigma' tele+                                                       # sigma
       | '\\lam' tele+ '=>' expr                                               # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                   # let
-      | '\\case' expr0 (',' expr0)* '\\with' '{' clause? ('|' clause)* '}'    # case
+      | '\\case' expr (',' expr)* '\\with' '{' clause? ('|' clause)* '}'      # case
       ;
+
+appExpr : atomFieldsAcc onlyLevelAtom* argument*      # appArgument
+        | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse
+        | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?  # universe
+        | SET maybeLevelAtom?                         # setUniverse
+        ;
+
+argument : atomFieldsAcc                # argumentExplicit
+         | NEW appExpr implementStatements? # argumentNew
+         | universeAtom                 # argumentUniverse
+         | '{' expr '}'                 # argumentImplicit
+         | INFIX                        # argumentInfix
+         | POSTFIX                      # argumentPostfix
+         ;
 
 clauses : ('|' clause)*                 # clausesWithoutBraces
         | '{' clause? ('|' clause)* '}' # clausesWithBraces
         ;
 
-letClause : id tele* typeAnnotation? '=>' expr;
-
-typeAnnotation : ':' expr;
+coClauses : ('|' coClause)*                   # coClausesWithoutBraces
+          | '{' coClause? ('|' coClause)* '}' # coClausesWithBraces
+          ;
 
 clause : pattern (',' pattern)* ('=>' expr)?;
+
+coClause : ID tele* '=>' expr;
+
+letClause : ID tele* typeAnnotation? '=>' expr;
+
+typeAnnotation : ':' expr;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
@@ -109,58 +121,38 @@ levelExpr : levelAtom                     # atomLevel
           | '\\max' levelAtom levelAtom   # maxLevel
           ;
 
-onlyLevelAtom : '\\lp'                          # pOnlyLevel
-              | '\\lh'                          # hOnlyLevel
-              | '(' onlyLevelExpr ')'           # parenOnlyLevel
+onlyLevelAtom : '\\lp'                                                # pOnlyLevel
+              | '\\lh'                                                # hOnlyLevel
+              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
+              | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
 
 maybeLevelAtom : levelAtom  # withLevelAtom
                | '_'        # withoutLevelAtom
                ;
 
-onlyLevelExpr : onlyLevelAtom                             # atomOnlyLevel
-              | '\\levels' maybeLevelAtom maybeLevelAtom  # levelsOnlyLevel
-              | '\\suc' levelAtom                         # sucOnlyLevel
-              | '\\max' levelAtom levelAtom               # maxOnlyLevel
+onlyLevelExpr : onlyLevelAtom                                         # atomOnlyLevel
+              | '\\suc' levelAtom                                     # sucOnlyLevel
+              | '\\max' levelAtom levelAtom                           # maxOnlyLevel
               ;
 
-binOpArg : atomFieldsAcc onlyLevelAtom* argument* # binOpArgument
-         | TRUNCATED_UNIVERSE levelAtom?          # truncatedUniverse
-         | UNIVERSE (levelAtom levelAtom?)?       # universe
-         | SET levelAtom?                         # setUniverse
-         ;
-
-binOpLeft : maybeNew binOpArg implementStatements? postfix* infix;
-
-maybeNew :                              # noNew
-         | '\\new'                      # withNew
-         ;
-
-fieldAcc : id                       # classFieldAcc
+fieldAcc : ID                       # classFieldAcc
          | NUMBER                   # sigmaFieldAcc
          ;
 
 atom  : literal                         # atomLiteral
       | '(' expr (',' expr)* ')'        # tuple
       | NUMBER                          # atomNumber
-      | MODULE_PATH                     # atomModuleCall
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
 
-implementStatements : '{' implementStatement? ('|' implementStatement)* '}';
+implementStatements : '{' coClause? ('|' coClause)* '}';
 
-implementStatement : id '=>' expr;
-
-argument : atomFieldsAcc                # argumentExplicit
-         | universeAtom                 # argumentUniverse
-         | '{' expr '}'                 # argumentImplicit
-         ;
-
-literal : prefix                        # name
+literal : ID                            # name
         | '\\Prop'                      # prop
         | '_'                           # unknown
-        | '{?' id? ('{' expr '}')? '}'  # goal
+        | '{?' ID? ('{' expr '}')? '}'  # goal
         ;
 
 universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
@@ -175,33 +167,24 @@ tele : literal                          # teleLiteral
      ;
 
 typedExpr : expr                        # notTyped
-          | INFIX id* ':' expr          # typedVars
-          | expr INFIX* ':' expr        # typed
+          | expr ':' expr               # typed
           ;
 
-id : PREFIX | INFIX;
-
-prefix : PREFIX | PREFIX_INFIX;
-
-infix : INFIX | INFIX_PREFIX;
-
-postfix : POSTFIX_INFIX | POSTFIX_PREFIX;
-
+USING : '\\using';
+TRUNCATED : '\\truncated';
+NEW : '\\new';
 NUMBER : [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
 TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
 SET : '\\Set' [0-9]*;
 COLON : ':';
 ARROW : '->';
+UNDERSCORE : '_';
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
-fragment INFIX_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]];
-MODULE_PATH : ('::' [a-zA-Z_] [a-zA-Z0-9_']*)+;
-INFIX : INFIX_CHAR+;
-PREFIX : (INFIX_CHAR | [a-zA-Z_]) (INFIX_CHAR | [a-zA-Z0-9_'])*;
-PREFIX_INFIX : '`' INFIX;
-INFIX_PREFIX : '`' PREFIX;
-POSTFIX_INFIX : INFIX '`';
-POSTFIX_PREFIX : PREFIX '`';
+fragment START_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]a-zA-Z_];
+ID : START_CHAR (START_CHAR | [0-9'])*;
+INFIX : '`' ID '`';
+POSTFIX : '`' ID;
 ERROR_CHAR : .;

@@ -2,29 +2,28 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ArgInferenceError extends LocalTypeCheckingError {
+public class ArgInferenceError extends TypecheckingError {
   public final Expression[] candidates;
   public final Expression expected;
   public final Expression actual;
 
-  public ArgInferenceError(String message, Abstract.SourceNode expression, Expression[] candidates) {
-    super(message, expression);
+  public ArgInferenceError(String message, Concrete.SourceNode cause, Expression[] candidates) {
+    super(message, cause);
     this.candidates = candidates;
     this.expected = null;
     this.actual = null;
   }
 
-  public ArgInferenceError(String message, Expression expected, Expression actual, Abstract.SourceNode expression, Expression candidate) {
-    super(message, expression);
+  public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate) {
+    super(message, cause);
     this.candidates = new Expression[1];
     this.candidates[0] = candidate;
     this.expected = expected;
@@ -76,16 +75,16 @@ public class ArgInferenceError extends LocalTypeCheckingError {
   }
 
   @Override
-  public Doc getBodyDoc(SourceInfoProvider src) {
+  public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
       candidates.length == 0
         ? nullDoc()
         : hang(text("Candidates are:"),
-            vList(Arrays.stream(candidates).map(DocFactory::termDoc).collect(Collectors.toList()))),
+            vList(Arrays.stream(candidates).map(expr -> termDoc(expr, ppConfig)).collect(Collectors.toList()))),
       expected == null && actual == null
         ? nullDoc()
         : vList(text("Since types of the candidates are not less than or equal to the expected type"),
-                expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected)),
-                actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual))));
+                expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected, ppConfig)),
+                actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual, ppConfig))));
   }
 }

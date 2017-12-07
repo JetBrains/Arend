@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -89,18 +89,18 @@ public class Sort {
     return new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
-  public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Abstract.SourceNode sourceNode) {
+  public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
     if (sort1.isProp()) {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
         return true;
       }
-      return !sort2.getHLevel().isClosed() && equations.add(sort2.getHLevel(), new Level(-1), Equations.CMP.LE, sourceNode);
+      return sort2.getHLevel().getConstant() == -1 && sort2.getHLevel().getVar() instanceof InferenceLevelVariable && equations.add(new Level(sort2.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode);
     }
     if (sort2.isProp()) {
       if (cmp == Equations.CMP.GE) {
         return true;
       }
-      return !sort1.getHLevel().isClosed() && equations.add(sort1.getHLevel(), new Level(-1), Equations.CMP.LE, sourceNode);
+      return sort1.getHLevel().getConstant() == -1 && sort1.getHLevel().getVar() instanceof InferenceLevelVariable && equations.add(new Level(sort1.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode);
     }
     return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
   }
@@ -113,7 +113,7 @@ public class Sort {
     return subst.isEmpty() || myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static Sort generateInferVars(Equations equations, Abstract.SourceNode sourceNode) {
+  public static Sort generateInferVars(Equations equations, Concrete.SourceNode sourceNode) {
     InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
     InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, sourceNode);
     equations.addVariable(pl);

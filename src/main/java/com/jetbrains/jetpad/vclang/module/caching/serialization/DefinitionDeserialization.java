@@ -125,7 +125,7 @@ class DefinitionDeserialization {
     for (String name : proto.getNameList()) {
       unfixedNames.add(name.isEmpty() ? null : name);
     }
-    Type type = readType(proto.getType());
+    Type type = proto.getType() != null ? readType(proto.getType()) : null;
     SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);
@@ -274,8 +274,8 @@ class DefinitionDeserialization {
     return new SigmaExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
   }
 
-  private ProjExpression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {
-    return new ProjExpression(readExpr(proto.getExpression()), proto.getField());
+  private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {
+    return ProjExpression.make(readExpr(proto.getExpression()), proto.getField());
   }
 
   private NewExpression readNew(ExpressionProtos.Expression.New proto) throws DeserializationError {
@@ -303,7 +303,7 @@ class DefinitionDeserialization {
     return new CaseExpression(parameters, type, elimTree, arguments);
   }
 
-  private FieldCallExpression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
-    return new FieldCallExpression(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
+  private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
+    return FieldCallExpression.make(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
   }
 }

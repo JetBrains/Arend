@@ -20,38 +20,35 @@ import static org.junit.Assert.assertEquals;
 public class DataIndicesTest extends TypeCheckingTestCase {
   @Test
   public void vectorTest() {
-    typeCheckClass(
-      "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
+    typeCheckModule(
+      "\\data Vector (n : Nat) (A : \\Set0) \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
       "\n" +
-      "\\function \\infixl 6\n" +
-      "+ (x y : Nat) : Nat => \\elim x\n" +
+      "\\func \\infixl 6 + (x y : Nat) : Nat \\elim x\n" +
       "  | zero => y\n" +
       "  | suc x' => suc (x' + y)\n" +
       "\n" +
-      "\\function\n" +
-      "+^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A => \\elim n, xs\n" +
+      "\\func \\infixr 9 +^ {n m : Nat} {A : \\Set0} (xs : Vector n A) (ys : Vector m A) : Vector (n + m) A \\elim n, xs\n" +
       "  | zero, vnil => ys\n" +
-      "  | suc n', `:^ x xs' => x :^ xs' +^ ys\n" +
+      "  | suc n', :^ x xs' => x :^ xs' +^ ys\n" +
       "\n" +
-      "\\function\n" +
-      "vnil-vconcat {n : Nat} {A : \\Set0} (xs : Vector n A) : vnil +^ xs = xs => path (\\lam _ => xs)");
+      "\\func vnil-vconcat {n : Nat} {A : \\Set0} (xs : Vector n A) : vnil +^ xs = xs => path (\\lam _ => xs)");
   }
 
   @Test
   public void vectorTest2() {
-    typeCheckClass(
-      "\\data Vector (n : Nat) (A : \\Set0) => \\elim n\n" +
+    typeCheckModule(
+      "\\data Vector (n : Nat) (A : \\Set0) \\elim n\n" +
       "  | zero  => vnil\n" +
       "  | suc n => \\infixr 5 :^ A (Vector n A)\n" +
-      "\\function id {n : Nat} (A : \\Set0) (v : Vector n A) => v\n" +
-      "\\function test => id Nat vnil");
+      "\\func id {n : Nat} (A : \\Set0) (v : Vector n A) => v\n" +
+      "\\func test => id Nat vnil");
   }
 
   @Test
   public void constructorTypeTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data NatVec Nat \\with\n" +
         "  | zero  => nil\n" +
         "  | suc n => cons Nat (NatVec n)");
@@ -65,11 +62,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void toAbstractTest() {
-    TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
-        "\\function f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("(Fin (suc (suc n))).fsuc ((Fin (suc n)).fsuc x)", ((LeafElimTree) ((FunctionDefinition) result.getDefinition("f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
+        "\\func f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
+    assertEquals("fsuc {suc n} (fsuc {n} x)", ((LeafElimTree) ((FunctionDefinition) result.getDefinition("f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
   }
 }

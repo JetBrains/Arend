@@ -2,51 +2,38 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalTypeCheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 
 public class TestLocalErrorReporter implements LocalErrorReporter {
   private final ErrorReporter errorReporter;
-  private final Abstract.Definition fakeDef = new Abstract.Definition() {
-    @Nonnull
-    @Override
-    public Abstract.Precedence getPrecedence() {
-      return Abstract.Precedence.DEFAULT;
-    }
-
-    @Override
-    public Abstract.Definition getParentDefinition() {
-      return null;
-    }
-
-    @Override
-    public boolean isStatic() {
-      return true;
-    }
-
-    @Override
-    public <P, R> R accept(AbstractDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return null;
-    }
-
-    @Override
-    public String getName() {
-      return "testDefinition";
-    }
-  };
+  private final GlobalReferable fakeDef;
 
   public TestLocalErrorReporter(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
+    fakeDef = new GlobalReferable() {
+      @Nonnull
+      @Override
+      public Precedence getPrecedence() {
+        return Precedence.DEFAULT;
+      }
+
+      @Nonnull
+      @Override
+      public String textRepresentation() {
+        return "testDefinition";
+      }
+    };
   }
 
   @Override
-  public void report(LocalTypeCheckingError localError) {
-    errorReporter.report(new TypeCheckingError(fakeDef, localError));
+  public void report(LocalError localError) {
+    errorReporter.report(new ProxyError(fakeDef, localError));
   }
 
   @Override

@@ -6,55 +6,37 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class Definition implements Variable {
   private ClassDefinition myThisClass;
-  private Abstract.Definition myAbstractDefinition;
-  private Map<Integer, ClassField> myClassifyingFields = Collections.emptyMap();
+  private GlobalReferable myReferable;
   private TypeCheckingStatus myStatus;
 
-  public Definition(Abstract.Definition abstractDef, TypeCheckingStatus status) {
-    myAbstractDefinition = abstractDef;
+  public Definition(GlobalReferable referable, TypeCheckingStatus status) {
+    myReferable = referable;
     myStatus = status;
   }
 
   @Override
   public String getName() {
-    return myAbstractDefinition.getName();
+    return myReferable.textRepresentation();
   }
 
-  public Abstract.Definition getAbstractDefinition() {
-    return myAbstractDefinition;
+  public GlobalReferable getReferable() {
+    return myReferable;
   }
 
   public DependentLink getParameters() {
     return EmptyDependentLink.getInstance();
   }
 
-  public ClassField getClassifyingFieldOfParameter(Integer param) {
-    return myClassifyingFields.get(param);
-  }
-
-  public void setClassifyingFieldOfParameter(Integer param, ClassField field) {
-    if (myClassifyingFields.isEmpty()) {
-      myClassifyingFields = new HashMap<>();
-    }
-    myClassifyingFields.put(param, field);
-  }
-
-  public void setClassifyingFieldsOfParameters(Map<Integer, ClassField> fields) {
-    myClassifyingFields = fields.isEmpty() ? Collections.emptyMap() : fields;
-  }
-
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
 
-  public abstract DefCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
+  public abstract Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
 
   public ClassDefinition getThisClass() {
     return myThisClass;
@@ -76,7 +58,7 @@ public abstract class Definition implements Variable {
     }
 
     public boolean needsTypeChecking() {
-      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
+      return this != NO_ERRORS;
     }
   }
 
@@ -90,19 +72,22 @@ public abstract class Definition implements Variable {
 
   @Override
   public String toString() {
-    return myAbstractDefinition.toString();
+    return myReferable.toString();
   }
 
-  public static Definition newDefinition(Abstract.Definition definition) {
-    if (definition instanceof Abstract.DataDefinition) {
-      return new DataDefinition((Abstract.DataDefinition) definition);
+  public static Definition newDefinition(Concrete.Definition definition) {
+    if (definition instanceof Concrete.DataDefinition) {
+      return new DataDefinition(definition.getData());
     }
-    if (definition instanceof Abstract.FunctionDefinition || definition instanceof Abstract.ClassViewInstance) {
-      return new FunctionDefinition(definition);
+    if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
+      return new FunctionDefinition(definition.getData());
     }
-    if (definition instanceof Abstract.ClassDefinition) {
-      return new ClassDefinition((Abstract.ClassDefinition) definition);
+    if (definition instanceof Concrete.ClassDefinition) {
+      return new ClassDefinition(definition.getData());
     }
-    return null;
+    if (definition instanceof Concrete.ClassView) {
+      return new ClassDefinition(definition.getData()); // TODO[classes]
+    }
+    throw new IllegalStateException();
   }
 }

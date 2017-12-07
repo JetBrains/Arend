@@ -1,32 +1,31 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.error.ErrorClassifier;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
-import com.jetbrains.jetpad.vclang.frontend.resolving.HasOpens;
-import com.jetbrains.jetpad.vclang.frontend.resolving.OneshotSourceInfoCollector;
+import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheScope;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.Abstract;
-import com.jetbrains.jetpad.vclang.term.AbstractDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.SourceInfoProvider;
-import com.jetbrains.jetpad.vclang.typechecking.TypecheckedReporter;
+import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.typechecking.error.TypeCheckingError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TerminationCheckError;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -35,61 +34,64 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
-  protected final Map<SourceIdT, Map<String, Abstract.Definition>> definitionIds = new HashMap<>();
-
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
 
   // Modules
   protected final ModuleTracker moduleTracker;
-  protected final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
+  protected final CacheModuleScopeProvider<SourceIdT> moduleScopeProvider;
+  private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
   private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
 
-  private final SourceInfoProvider<SourceIdT> srcInfoProvider;
-  private final CacheManager<SourceIdT> cacheManager;
+  private final PrettyPrinterConfig myPrettyPrinterConfig = new PrettyPrinterConfig() {};
+  protected final CacheSourceInfoProvider<SourceIdT> srcInfoProvider;
+  private CacheManager<SourceIdT> cacheManager;
 
   // Typechecking
-  private final boolean useCache;
-  private final TypecheckerState state;
-  Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
+  private TypecheckerState state;
+  private Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
 
 
-  public BaseCliFrontend(Storage<SourceIdT> storage, boolean recompile) {
-    useCache = !recompile;
+  public BaseCliFrontend() {
+    moduleTracker = new ModuleTracker();
+    moduleScopeProvider = new CacheModuleScopeProvider<>(moduleTracker);
+    srcInfoProvider = new CacheSourceInfoProvider<>(moduleTracker.sourceInfoProvider);
+  }
 
-    moduleTracker = new ModuleTracker(storage);
-    srcInfoProvider = moduleTracker.sourceInfoCollector.sourceInfoProvider;
+  protected void initialize(Storage<SourceIdT> storage) {
+    if (cacheManager != null) {
+      throw new IllegalStateException();
+    }
 
-    cacheManager = new CacheManager<>(createPersistenceProvider(), storage, moduleTracker, srcInfoProvider);
+    moduleTracker.setSourceSupplier(storage);
+    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), EmptyModuleScopeProvider.INSTANCE, moduleScopeProvider, srcInfoProvider, moduleTracker);
+    moduleScopeProvider.initialise(storage, cacheManager);
     state = cacheManager.getTypecheckerState();
   }
 
-  class ModuleTracker extends BaseModuleLoader<SourceIdT> implements SourceVersionTracker<SourceIdT> {
-    private final DefinitionIdsCollector defIdCollector = new DefinitionIdsCollector();
-    private final OneshotSourceInfoCollector<SourceIdT> sourceInfoCollector = new OneshotSourceInfoCollector<>();
+  class ModuleTracker extends LoadingModuleScopeProvider<SourceIdT> implements SourceVersionTracker<SourceIdT> {
+    private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
 
-    ModuleTracker(Storage<SourceIdT> storage) {
-      super(storage, errorReporter);
+    ModuleTracker() {
+      super(errorReporter);
     }
 
     @Override
     protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
-      if (!definitionIds.containsKey(module)) {
-        definitionIds.put(module, new HashMap<>());
-      }
-      defIdCollector.visitClass(result.definition, definitionIds.get(module));
-      sourceInfoCollector.visitModule(module, result.definition);
+      super.loadingSucceeded(module, result);
+      sourceInfoProvider.registerModule(result.group, module);
       loadedSources.put(module, result);
       System.out.println("[Loaded] " + displaySource(module, false));
     }
 
     @Override
     protected void loadingFailed(SourceIdT module) {
+      super.loadingFailed(module);
       moduleResults.put(module, ModuleResult.NOT_LOADED);
       System.out.println("[Failed] " + displaySource(module, false));
     }
 
     @Override
-    public Abstract.ClassDefinition load(SourceIdT sourceId) {
+    public ChildGroup load(SourceIdT sourceId) {
       assert !loadedSources.containsKey(sourceId);
       ModuleResult moduleResult = moduleResults.get(sourceId);
       if (moduleResult != null) {
@@ -99,138 +101,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       return super.load(sourceId);
     }
 
-    @Override
-    public Abstract.ClassDefinition load(ModulePath modulePath) {
-      return load(locateModule(modulePath));
-    }
-
-    public SourceIdT locateModule(ModulePath modulePath) {
-      SourceIdT sourceId = myStorage.locateModule(modulePath);
-      if (sourceId == null) throw new IllegalStateException();
-      return sourceId;
-    }
-
     public boolean isAvailable(SourceIdT sourceId) {
-      return myStorage.isAvailable(sourceId);
+      return mySourceSupplier.isAvailable(sourceId);
     }
 
     @Override
     public long getCurrentVersion(@Nonnull SourceIdT sourceId) {
       return loadedSources.get(sourceId).version;
     }
-
-    @Override
-    public boolean ensureLoaded(@Nonnull SourceIdT sourceId, long version) {
-      SourceSupplier.LoadResult result = loadedSources.get(sourceId);
-      if (result == null) throw new IllegalStateException("Cache manager trying to load a new module");
-      return result.version == version;
-    }
   }
 
-  static class DefinitionIdsCollector implements AbstractDefinitionVisitor<Map<String, Abstract.Definition>, Void> {
-
-    @Override
-    public Void visitFunction(Abstract.FunctionDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        definition.accept(this, params);
-      }
-      return null;
-    }
-
-    @Override
-    public Void visitClassField(Abstract.ClassField def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      return null;
-    }
-
-    @Override
-    public Void visitData(Abstract.DataDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      for (Abstract.ConstructorClause clause : def.getConstructorClauses()) {
-        for (Abstract.Constructor constructor : clause.getConstructors()) {
-          constructor.accept(this, params);
-        }
-      }
-      return null;
-    }
-
-    @Override
-    public Void visitConstructor(Abstract.Constructor def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      return null;
-    }
-
-    @Override
-    public Void visitClass(Abstract.ClassDefinition def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      for (Abstract.Definition definition : def.getGlobalDefinitions()) {
-        definition.accept(this, params);
-      }
-      for (Abstract.Definition definition : def.getInstanceDefinitions()) {
-        definition.accept(this, params);
-      }
-      for (Abstract.ClassField field : def.getFields()) {
-        field.accept(this, params);
-      }
-
-      return null;
-    }
-
-    @Override
-    public Void visitImplement(Abstract.Implementation def, Map<String, Abstract.Definition> params) {
-      return null;
-    }
-
-    @Override
-    public Void visitClassView(Abstract.ClassView def, Map<String, Abstract.Definition> params) {
-      return null;
-    }
-
-    @Override
-    public Void visitClassViewField(Abstract.ClassViewField def, Map<String, Abstract.Definition> params) {
-      return null;
-    }
-
-    @Override
-    public Void visitClassViewInstance(Abstract.ClassViewInstance def, Map<String, Abstract.Definition> params) {
-      params.put(getIdFor(def), def);
-      return null;
-    }
-
-
-    static String getIdFor(Abstract.Definition definition) {
-      if (definition instanceof Concrete.Definition) {
-        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
-        if (pos != null) {
-          return pos.line + ";" + pos.column;
-        }
-      }
-      return null;
-    }
-  }
-
-  protected Abstract.ClassDefinition loadPrelude() {
-    SourceIdT sourceId = moduleTracker.locateModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    Abstract.ClassDefinition prelude = moduleTracker.load(sourceId);
-    assert errorReporter.getErrorList().isEmpty();
-    boolean cacheLoaded;
-    try {
-      cacheLoaded = cacheManager.loadCache(sourceId, prelude);
-    } catch (CacheLoadingException e) {
-      cacheLoaded = false;
-    }
-    if (!cacheLoaded) {
+  private void loadPrelude() {
+    CacheScope prelude = moduleScopeProvider.forCacheModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    if (prelude == null) {
       throw new IllegalStateException("Prelude cache is not available");
     }
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, new DummyErrorReporter(), new Prelude.UpdatePreludeReporter(state), new DependencyListener() {}).typecheckModules(Collections.singletonList(prelude));
-    return prelude;
+
+    Prelude.initialise(prelude.root, state);
   }
 
 
-  protected abstract StaticNamespaceProvider getStaticNsProvider();
-  protected abstract DynamicNamespaceProvider getDynamicNsProvider();
-  protected abstract PersistenceProvider<SourceIdT> createPersistenceProvider();
+  protected abstract ModuleCacheIdProvider<SourceIdT> createModuleUriProvider();
   protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
 
 
@@ -255,81 +146,43 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
   private void typeCheckSources(Set<SourceIdT> sources) {
-    final Set<Abstract.ClassDefinition> modulesToTypeCheck = new LinkedHashSet<>();
+    final Set<Group> modulesToTypeCheck = new LinkedHashSet<>();
     for (SourceIdT source : sources) {
-      final Abstract.ClassDefinition definition;
+      final Group group;
       SourceSupplier.LoadResult result = loadedSources.get(source);
       if (result == null){
-        definition = moduleTracker.load(source);
-        if (definition == null) {
+        group = moduleTracker.load(source);
+        if (group == null) {
           continue;
         }
 
-        if (useCache) {
-          try {
-            cacheManager.loadCache(source, definition);
-          } catch (CacheLoadingException e) {
-            //e.printStackTrace();
-          }
+        try {
+          cacheManager.loadCache(source);
+        } catch (CacheLoadingException e) {
+          //e.printStackTrace();
         }
 
         flushErrors();
       } else {
-        definition = result.definition;
+        group = result.group;
       }
-      modulesToTypeCheck.add(definition);
+      modulesToTypeCheck.add(group);
     }
 
     System.out.println("--- Checking ---");
 
-    class ResultTracker extends ErrorClassifier implements DependencyListener, TypecheckedReporter {
-      ResultTracker() {
-        super(errorReporter);
-      }
+    new MyTypechecking(state).typecheckModules(modulesToTypeCheck);
+  }
 
-      @Override
-      protected void reportedError(GeneralError error) {
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.ERRORS);
-      }
-
-      @Override
-      protected void reportedGoal(GeneralError error) {
-        updateSourceResult(srcInfoProvider.sourceOf(sourceDefinitionOf(error)), ModuleResult.GOALS);
-      }
-
-      @Override
-      public void alreadyTypechecked(Abstract.Definition definition) {
-        Definition.TypeCheckingStatus status = state.getTypechecked(definition).status();
-        if (status != Definition.TypeCheckingStatus.NO_ERRORS) {
-          updateSourceResult(srcInfoProvider.sourceOf(definition), status != Definition.TypeCheckingStatus.HAS_ERRORS ? ModuleResult.ERRORS : ModuleResult.UNKNOWN);
-        }
-      }
-
-      @Override
-      public void typecheckingFailed(Abstract.Definition definition) {
-        flushErrors();
-      }
-
-      private Abstract.Definition sourceDefinitionOf(GeneralError error) {
-        if (error instanceof TypeCheckingError) {
-          return ((TypeCheckingError) error).definition;
-        } else if (error instanceof TerminationCheckError) {
-          return ((TerminationCheckError) error).definition;
-        } else {
-          throw new IllegalStateException("Non-typechecking error reported to typechecking reporter");
-        }
-      }
-
-      private void updateSourceResult(SourceIdT source, ModuleResult result) {
-        ModuleResult prevResult = moduleResults.get(source);
-        if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-          moduleResults.put(source, result);
-        }
-      }
+  private class MyTypechecking extends Typechecking {
+    MyTypechecking(TypecheckerState state) {
+      super(state, ConcreteReferableProvider.INSTANCE, errorReporter);
     }
-    ResultTracker resultTracker = new ResultTracker();
 
-    new Typechecking(state, getStaticNsProvider(), getDynamicNsProvider(), HasOpens.GET, resultTracker, resultTracker, resultTracker).typecheckModules(modulesToTypeCheck);
+    @Override
+    public void typecheckingFinished(Definition definition) {
+      flushErrors();
+    }
   }
 
 
@@ -422,8 +275,27 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
   private void flushErrors() {
     for (GeneralError error : errorReporter.getErrorList()) {
-      System.out.println(DocStringBuilder.build(error.getDoc(srcInfoProvider)));
+      ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
+      if (moduleResult != null) {
+        for (GlobalReferable referable : error.getAffectedDefinitions()) {
+          if (referable instanceof SourceIdReference) {
+            //noinspection unchecked
+            updateSourceResult((SourceIdT) ((SourceIdReference) referable).sourceId, moduleResult);
+          } else {
+            updateSourceResult(srcInfoProvider.sourceOf(referable), moduleResult);
+          }
+        }
+      }
+
+      System.out.println(DocStringBuilder.build(error.getDoc(myPrettyPrinterConfig)));
     }
     errorReporter.getErrorList().clear();
+  }
+
+  private void updateSourceResult(SourceIdT source, ModuleResult result) {
+    ModuleResult prevResult = moduleResults.get(source);
+    if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
+      moduleResults.put(source, result);
+    }
   }
 }

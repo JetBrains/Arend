@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.module.caching;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.*;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -11,7 +11,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -26,7 +25,7 @@ public class CacheManager<SourceIdT extends SourceId> {
   private final Set<SourceIdT> myStubsLoaded = new HashSet<>();
 
   public CacheManager(PersistenceProvider<SourceIdT> persistenceProvider, CacheStorageSupplier<SourceIdT> cacheSupplier,
-                      SourceVersionTracker<SourceIdT> versionTracker, DefinitionLocator<SourceIdT> defLocator) {
+                      DefinitionLocator<SourceIdT> defLocator, SourceVersionTracker<SourceIdT> versionTracker) {
     myPersistenceProvider = persistenceProvider;
     myCacheSupplier = cacheSupplier;
     myVersionTracker = versionTracker;
@@ -43,27 +42,10 @@ public class CacheManager<SourceIdT extends SourceId> {
   }
 
   /**
-   * Load persisted cache for a source.
-   * <p>
-   * Also loads caches for all the dependencies of the requested source.
-   * <p>
-   * It is assumed that abstract source of this module is available, as well as abstract sources of all the modules
-   * that this one refers to (which is probably automatically true by the time you have the source of this module
-   * loaded as all the references will have been resolved).
-   *
-   * @param sourceId  ID of the source to load cache of
-   * @param module    root class (module) loaded from the provided source
-   *
-   * @return <code>true</code> if loading succeeded;
-   *         <code>false</code> otherwise.
-   * @throws CacheLoadingException if an <code>IOException</code> occurs.
+   * Normally, {@link com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider} will call this
+   * method, so you don't have to.
    */
-  public boolean loadCache(@Nonnull SourceIdT sourceId, @Nonnull Abstract.ClassDefinition module) throws CacheLoadingException {
-    if (!sourceId.equals(myDefLocator.sourceOf(module))) throw new IllegalArgumentException();
-    return loadCache(sourceId);
-  }
-
-  private boolean loadCache(@Nonnull SourceIdT sourceId) throws CacheLoadingException {
+  public boolean loadCache(@Nonnull SourceIdT sourceId) throws CacheLoadingException {
     if (myStubsLoaded.contains(sourceId)) return true;
 
     LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState = myTcState.getLocal(sourceId);
@@ -90,10 +72,6 @@ public class CacheManager<SourceIdT extends SourceId> {
   }
 
   private void readModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState, ModuleProtos.Module moduleProto) throws CacheLoadingException {
-    if (!myVersionTracker.ensureLoaded(sourceId, moduleProto.getVersion())) {
-      throw new CacheLoadingException(sourceId, "Source has changed");
-    }
-
     try {
       DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
       defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);
@@ -112,10 +90,10 @@ public class CacheManager<SourceIdT extends SourceId> {
       for (ModuleProtos.Module.DefinitionReference proto : refDefProtos) {
         final SourceIdT targetSourceId;
         if (!proto.getSourceUrl().isEmpty()) {
-          URI uri = URI.create(proto.getSourceUrl());
-          targetSourceId = myPersistenceProvider.getModuleId(uri);
+          String moduleCacheId = proto.getSourceUrl();
+          targetSourceId = myPersistenceProvider.getModuleId(moduleCacheId);
           if (targetSourceId == null) {
-            throw new CacheLoadingException(sourceId, "Unresolvable source URI: " + uri);
+            throw new CacheLoadingException(sourceId, "Unresolvable module ID: " + moduleCacheId);
           }
           boolean targetLoaded = loadCache(targetSourceId);
           if (!targetLoaded) {
@@ -124,7 +102,7 @@ public class CacheManager<SourceIdT extends SourceId> {
         } else {
           targetSourceId = sourceId;
         }
-        Abstract.Definition absDef = myPersistenceProvider.getFromId(targetSourceId, proto.getDefinitionId());
+        GlobalReferable absDef = myPersistenceProvider.getFromId(targetSourceId, proto.getDefinitionId());
         Definition typechecked = myTcState.getLocal(targetSourceId).getTypechecked(absDef);
         if (typechecked == null) {
           throw new CacheLoadingException(sourceId, "Referred definition was not in cache");
@@ -210,15 +188,15 @@ public class CacheManager<SourceIdT extends SourceId> {
       List<ModuleProtos.Module.DefinitionReference> out = new ArrayList<>();
       for (Definition calltarget : myCalltargets.keySet()) {
         ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
-        SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getAbstractDefinition());
+        SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getReferable());
         if (!mySourceId.equals(targetSourceId)) {
           boolean targetPersisted = persistCache(targetSourceId);
           if (!targetPersisted) {
             throw new CachePersistenceException(mySourceId, "Dependency does not support persistence " + targetSourceId);
           }
-          entry.setSourceUrl(myPersistenceProvider.getUri(targetSourceId).toString());
+          entry.setSourceUrl(myPersistenceProvider.getCacheId(targetSourceId));
         }
-        entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getAbstractDefinition()));
+        entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getReferable()));
         out.add(entry.build());
       }
       return out;

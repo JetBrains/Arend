@@ -14,8 +14,9 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
@@ -26,21 +27,21 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
-  private final Abstract.SourceNode mySourceNode;
+  private final Concrete.SourceNode mySourceNode;
   private Equations.CMP myCMP;
 
-  private CompareVisitor(Equations equations, Equations.CMP cmp, Abstract.SourceNode sourceNode) {
+  public CompareVisitor(Equations equations, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
     myEquations = equations;
     mySourceNode = sourceNode;
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Abstract.SourceNode sourceNode) {
+  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
   }
 
-  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Abstract.SourceNode sourceNode) {
+  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Concrete.SourceNode sourceNode) {
     return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(tree1, tree2);
   }
 
@@ -81,26 +82,44 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return ok;
   }
 
-  private Boolean compare(Expression expr1, Expression expr2) {
-    if (// expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class) ||
-           expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition()) {
-      Equations equations = myEquations;
-      myEquations = DummyEquations.getInstance();
-      boolean ok = // expr1.isInstance(AppExpression.class) ? visitApp(expr1.cast(AppExpression.class), expr2.cast(AppExpression.class)) :
-        visitDefCall(expr1.cast(FunCallExpression.class), expr2.cast(FunCallExpression.class));
-      myEquations = equations;
-      if (ok) {
-        return true;
-      }
+  private static boolean isAppLam(Expression expr) {
+    while (expr.isInstance(AppExpression.class)) {
+      expr = expr.cast(AppExpression.class).getFunction();
+    }
+    return expr.isInstance(LamExpression.class);
+  }
+
+  public boolean nonNormalizingCompare(Expression expr1, Expression expr2) {
+    // Optimization for let clause calls
+    if (expr1.isInstance(ReferenceExpression.class) && expr2.isInstance(ReferenceExpression.class) && expr1.cast(ReferenceExpression.class).getBinding() == expr2.cast(ReferenceExpression.class).getBinding()) {
+      return true;
     }
 
-    expr1 = expr1.normalize(NormalizeVisitor.Mode.WHNF);
-    expr2 = expr2.normalize(NormalizeVisitor.Mode.WHNF);
+    // Another optimization
+    if (expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition()
+      || expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class) && !isAppLam(expr1) && !isAppLam(expr2)
+      || expr1.isInstance(FieldCallExpression.class) && expr2.isInstance(FieldCallExpression.class) && expr1.cast(FieldCallExpression.class).getDefinition() == expr2.cast(FieldCallExpression.class).getDefinition()
+      || expr1.isInstance(ProjExpression.class) && expr2.isInstance(ProjExpression.class) && expr1.cast(ProjExpression.class).getField() == expr2.cast(ProjExpression.class).getField()) {
+      Equations.CMP origCMP = myCMP;
+      myCMP = Equations.CMP.EQ;
+      Equations equations = myEquations;
+      myEquations = DummyEquations.getInstance();
 
+      boolean ok = expr1.accept(this, expr2);
+
+      myEquations = equations;
+      myCMP = origCMP;
+      return ok;
+    }
+
+    return false;
+  }
+
+  public boolean normalizedCompare(Expression expr1, Expression expr2) {
     Expression stuck1 = expr1.getStuckExpression();
     Expression stuck2 = expr2.getStuckExpression();
-    if (stuck1 != null && stuck1.isInstance(ErrorExpression.class) && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
-      stuck2 != null && stuck2.isInstance(ErrorExpression.class) && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
+    if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
+      stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
     }
 
@@ -157,9 +176,19 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return myEquations.add(expr1, expr2.subst(getSubstitution()), origCMP, variable.getSourceNode(), variable);
   }
 
+  public Boolean compare(Expression expr1, Expression expr2) {
+    return nonNormalizingCompare(expr1, expr2) || normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF));
+  }
+
   private Boolean compareUnit(ClassCallExpression type1, Expression expr2, boolean correctOrder) {
+    Expression type2 = expr2.getType();
+    if (type2 == null || !type2.isInstance(ClassCallExpression.class)) {
+      return false;
+    }
+    ClassDefinition classDef2 = type2.cast(ClassCallExpression.class).getDefinition();
+
     for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
-      if (correctOrder ? !compare(entry.getValue(), FieldCall(entry.getKey(), expr2)) : !compare(FieldCall(entry.getKey(), expr2), entry.getValue())) {
+      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue())))) {
         return false;
       }
     }
@@ -169,7 +198,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : type1.getDefinition().getImplemented()) {
-      if (correctOrder ? !compare(entry.getValue().term, FieldCall(entry.getKey(), expr2)) : !compare(FieldCall(entry.getKey(), expr2), entry.getValue().term)) {
+      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().term, FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue().term)))) {
         return false;
       }
     }
@@ -361,7 +390,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
-    return false;
+    return expr1.getSubstExpression() != null && expr1.getSubstExpression().accept(this, expr2);
   }
 
   private Boolean visitLam(LamExpression expr1, Expression expr2, boolean correctOrder) {
@@ -452,7 +481,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitError(ErrorExpression expr1, Expression expr2) {
-    return false;
+    return expr1.getError() instanceof GoalError && expr2.isInstance(ErrorExpression.class) && expr1.getError().equals(expr2.cast(ErrorExpression.class).getError());
   }
 
   @Override
@@ -461,31 +490,29 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   private Boolean visitTuple(TupleExpression expr1, Expression expr2, boolean correctOrder) {
-    Boolean ok;
     if (expr2.isInstance(TupleExpression.class)) {
       TupleExpression tuple2 = expr2.cast(TupleExpression.class);
       if (expr1.getFields().size() != tuple2.getFields().size()) {
-        ok = false;
+        return false;
       } else {
-        ok = true;
         for (int i = 0; i < expr1.getFields().size(); i++) {
           if (correctOrder ? !compare(expr1.getFields().get(i), tuple2.getFields().get(i)) : !compare(tuple2.getFields().get(i), expr1.getFields().get(i))) {
-            ok = false;
-            break;
+            return false;
           }
         }
       }
     } else {
-      ok = compareTupleEta(expr1, expr2, correctOrder);
+      Expression type2 = expr2.getType();
+      return type2 != null && compare(expr1.getSigmaType(), type2) && compareTupleEta(expr1, expr2, correctOrder);
     }
 
-    return ok;
+    return true;
   }
 
   private Boolean compareTupleEta(TupleExpression tuple1, Expression expr2, boolean correctOrder) {
     int i = 0;
     for (Expression field : tuple1.getFields()) {
-      if (correctOrder ? !compare(field, new ProjExpression(expr2, i++)) : !compare(new ProjExpression(expr2, i++), field)) {
+      if (correctOrder ? !compare(field, ProjExpression.make(expr2, i++)) : !compare(ProjExpression.make(expr2, i++), field)) {
         return false;
       }
     }

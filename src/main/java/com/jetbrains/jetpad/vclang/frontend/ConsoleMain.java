@@ -1,30 +1,21 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleDynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleModuleNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.namespace.SimpleStaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.frontend.resolving.NamespaceProviders;
 import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.LibStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.caching.ModuleCacheIdProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.NullStorage;
-import com.jetbrains.jetpad.vclang.naming.NameResolver;
-import com.jetbrains.jetpad.vclang.naming.namespace.DynamicNamespaceProvider;
-import com.jetbrains.jetpad.vclang.naming.namespace.Namespace;
-import com.jetbrains.jetpad.vclang.naming.namespace.StaticNamespaceProvider;
-import com.jetbrains.jetpad.vclang.term.Abstract;
 import org.apache.commons.cli.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 
 public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
   private static final Options cmdOptions = new Options();
@@ -38,14 +29,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
 
   private final StorageManager storageManager;
 
-  public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir, boolean recompile) throws IOException {
-    this(new StorageManager(libDir, sourceDir, cacheDir), recompile);
-  }
-
-  private ConsoleMain(StorageManager storageManager, boolean recompile) {
-    super(storageManager.storage, recompile);
-    this.storageManager = storageManager;
-    storageManager.nameResolver.setModuleResolver(moduleTracker);
+  public ConsoleMain(Path libDir, Path sourceDir, Path cacheDir) throws IOException {
+    this.storageManager = new StorageManager(libDir, sourceDir, cacheDir);
+    initialize(storageManager.storage);
   }
 
   @Override
@@ -63,47 +49,22 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
   }
 
   @Override
-  protected StaticNamespaceProvider getStaticNsProvider() {
-      return storageManager.staticNsProvider;
+  protected ModuleCacheIdProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> createModuleUriProvider() {
+    return new MyModuleCacheIdProvider();
   }
 
-  @Override
-  protected DynamicNamespaceProvider getDynamicNsProvider() {
-    return storageManager.dynamicNsProvider;
-  }
-
-  @Override
-  protected PersistenceProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> createPersistenceProvider() {
-    return new MyPersistenceProvider();
-  }
-
-  @Override
-  protected Abstract.ClassDefinition loadPrelude() {
-    Abstract.ClassDefinition prelude = super.loadPrelude();
-    Namespace preludeNamespace = getStaticNsProvider().forDefinition(prelude);
-    if (storageManager.libStorage != null) storageManager.libStorage.setPreludeNamespace(preludeNamespace);
-    storageManager.projectStorage.setPreludeNamespace(preludeNamespace);
-    storageManager.moduleNsProvider.registerModule(PreludeStorage.PRELUDE_MODULE_PATH, prelude);
-    return prelude;
-  }
-
-  private static class StorageManager {
+  private class StorageManager {
     final FileStorage projectStorage;
     final LibStorage libStorage;
     final PreludeStorage preludeStorage;
-
-    final SimpleModuleNamespaceProvider moduleNsProvider = new SimpleModuleNamespaceProvider();
-    final StaticNamespaceProvider staticNsProvider = new SimpleStaticNamespaceProvider();
-    final DynamicNamespaceProvider dynamicNsProvider = new SimpleDynamicNamespaceProvider();
-    final NameResolver nameResolver = new NameResolver(new NamespaceProviders(moduleNsProvider, staticNsProvider, dynamicNsProvider));
 
     private final CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId> nonProjectCompositeStorage;
     public final CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId> storage;
 
     StorageManager(Path libDir, Path projectDir, Path cacheDir) throws IOException {
-      projectStorage = new FileStorage(projectDir, cacheDir, nameResolver, moduleNsProvider);
-      libStorage = libDir != null ? new LibStorage(libDir, nameResolver, moduleNsProvider) : null;
-      preludeStorage = new PreludeStorage(nameResolver);
+      projectStorage = new FileStorage(projectDir, cacheDir, moduleTracker, moduleScopeProvider);
+      libStorage = libDir != null ? new LibStorage(libDir, moduleTracker, moduleScopeProvider) : null;
+      preludeStorage = new PreludeStorage(moduleTracker);
 
       nonProjectCompositeStorage = new CompositeStorage<>(libStorage != null ? libStorage : new NullStorage<>(), preludeStorage);
       storage = new CompositeStorage<>(projectStorage, nonProjectCompositeStorage);
@@ -123,99 +84,51 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     }
   }
 
-  class MyPersistenceProvider implements PersistenceProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
+  private class MyModuleCacheIdProvider implements ModuleCacheIdProvider<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
     @Override
-    public URI getUri(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId) {
-      try {
-        final String scheme;
-        final String root;
-        final Path relPath;
-        final String query;
-
-        if (sourceId.source1 != null) {  // Project source
-          scheme = "file";
-          root = "";
-          relPath = sourceId.source1.getRelativeFilePath();
-          query = "";
-        } else {
-          if (sourceId.source2 == null) throw new IllegalStateException();
-          if (sourceId.source2.source1 != null) {  // Lib source
-            scheme = "lib";
-            root = sourceId.source2.source1.getLibraryName();
-            relPath = sourceId.source2.source1.fileSourceId.getRelativeFilePath();
-            query = "";
-          } else {  // Prelude source
-            if (sourceId.source2.source2 == null) throw new IllegalStateException();
-            scheme = "prelude";
-            root = "";
-            relPath = Paths.get("");
-            query = null;
-          }
+    public @Nonnull String getCacheId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId) {
+      if (sourceId.source1 != null) {  // Project source
+        return "file:" + sourceId.source1.getModulePath();
+      } else {
+        if (sourceId.source2 == null) throw new IllegalStateException();
+        if (sourceId.source2.source1 != null) {  // Lib source
+          return "lib:" + sourceId.source2.source1.getLibraryName() + " " + sourceId.source2.source1.fileSourceId.getModulePath();
+        } else {  // Prelude source
+          return "prelude";
         }
-
-
-        return new URI(scheme, root, Paths.get("/").resolve(relPath).toUri().getPath(), query, null);
-      } catch (URISyntaxException e) {
-        throw new IllegalStateException();
       }
     }
 
     @Override
-    public CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId getModuleId(URI sourceUri) {
-      if ("file".equals(sourceUri.getScheme())) {
-        if (sourceUri.getAuthority() != null) return null;
+    public @Nullable CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId getModuleId(String cacheId) {
+      if (cacheId.startsWith("file:")) {
         try {
-          Path path = Paths.get(new URI("file", null, sourceUri.getPath(), null));
-          ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
-          if (modulePath == null) return null;
-
+          ModulePath modulePath = new ModulePath(Arrays.asList(cacheId.substring(5).split("\\.")));
           FileStorage.SourceId fileSourceId = storageManager.projectStorage.locateModule(modulePath);
           return fileSourceId != null ? storageManager.idForProjectSource(fileSourceId) : null;
-        } catch (URISyntaxException | NumberFormatException e) {
+        } catch (NumberFormatException e) {
           return null;
         }
-      } else if ("lib".equals(sourceUri.getScheme())) {
+      } else if (cacheId.startsWith("lib:")) {
         if (storageManager.libStorage == null) return null;
         try {
-          String libName = sourceUri.getAuthority();
-          if (libName == null) return null;
-          Path path = Paths.get(new URI("file", null, sourceUri.getPath(), null));
-          ModulePath modulePath = FileStorage.modulePath(path.getRoot().relativize(path));
-          if (modulePath == null) return null;
-
+          cacheId = cacheId.substring(4);
+          int index = cacheId.indexOf(' ');
+          if (index == -1) return null;
+          String libName = cacheId.substring(0, index);
+          ModulePath modulePath = new ModulePath(Arrays.asList(cacheId.substring(index + 1).split("\\.")));
           LibStorage.SourceId libSourceId = storageManager.libStorage.locateModule(libName, modulePath);
           return libSourceId != null ? storageManager.idForLibSource(libSourceId) : null;
-        } catch (URISyntaxException | NumberFormatException e) {
+        } catch (NumberFormatException e) {
           return null;
         }
-      } else if ("prelude".equals(sourceUri.getScheme())) {
-        if (sourceUri.getAuthority() != null/* || !sourceUri.getPath().equals("/")*/) return null;
+      } else if (cacheId.equals("prelude")) {
         return storageManager.idForPreludeSource(storageManager.preludeStorage.preludeSourceId);
       } else {
         return null;
       }
     }
 
-    @Override
-    public String getIdFor(Abstract.Definition definition) {
-      if (definition instanceof Concrete.Definition) {
-        Concrete.Position pos = ((Concrete.Definition) definition).getPosition();
-        if (pos != null) {
-          return pos.line + ";" + pos.column;
-        }
-      }
-      return null;
-    }
-
-    @Override
-    public Abstract.Definition getFromId(CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId sourceId, String id) {
-      Map<String, Abstract.Definition> sourceMap = definitionIds.get(sourceId);
-      if (sourceMap == null) {
-        return null;
-      } else {
-        return sourceMap.get(id);
-      }
-    }
   }
 
 
@@ -235,13 +148,35 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
         String cacheDirStr = cmdLine.getOptionValue("c");
         Path cacheDir = sourceDir.resolve(cacheDirStr != null ? cacheDirStr : ".cache");
 
-        boolean recompile = cmdLine.hasOption("recompile");
+        if (cmdLine.hasOption("recompile")) {
+          deleteCache(cacheDir);
+        }
 
-        new ConsoleMain(libDir, sourceDir, cacheDir, recompile).run(sourceDir, cmdLine.getArgList());
+        new ConsoleMain(libDir, sourceDir, cacheDir).run(sourceDir, cmdLine.getArgList());
       }
     } catch (ParseException e) {
       System.err.println(e.getMessage());
     }
+  }
+
+  private static void deleteCache(Path cacheDir) throws IOException {
+    if (!Files.exists(cacheDir)) {
+      return;
+    }
+
+    Files.walkFileTree(cacheDir, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        if (file.getFileName().toString().endsWith(FileStorage.SERIALIZED_EXTENSION)) {
+          try {
+            Files.delete(file);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
   }
 
   private static void printHelp() {

@@ -1,0 +1,67 @@
+package com.jetbrains.jetpad.vclang.frontend.term.group;
+
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+public class ClassViewGroup implements ChildGroup {
+  private final ConcreteGlobalReferable myReference;
+  private final List<ConcreteGlobalReferable> myFields;
+  private final ChildGroup myParent;
+
+  public ClassViewGroup(ConcreteGlobalReferable reference, List<ConcreteGlobalReferable> fields, ChildGroup parent) {
+    myReference = reference;
+    myFields = fields;
+    myParent = parent;
+  }
+
+  @Nonnull
+  @Override
+  public GlobalReferable getReferable() {
+    return myReference;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Group> getSubgroups() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends NamespaceCommand> getNamespaceCommands() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends InternalReferable> getConstructors() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Group> getDynamicSubgroups() {
+    return Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends InternalReferable> getFields() {
+    return Collections.emptyList();
+  }
+
+  @Nullable
+  @Override
+  public ChildGroup getParentGroup() {
+    return myParent;
+  }
+}

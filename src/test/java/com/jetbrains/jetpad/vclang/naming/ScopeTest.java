@@ -12,19 +12,19 @@ public class ScopeTest extends TypeCheckingTestCase {
 
   @Test
   public void openExportTestError() {
-    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } \\open B } \\function y => A.x", 1);
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\open B } \\func y => A.x", 1);
   }
 
   @Ignore
   @Test
   public void staticClassExportTest() {
-    resolveNamesClass("\\class A \\where { \\function x => 0 } \\class B \\where { \\export A } \\function y => B.x");
+    resolveNamesModule("\\class A \\where { \\func x => 0 } \\class B \\where { \\export A } \\func y => B.x");
   }
 
   @Ignore
   @Test
   public void nonStaticClassExportTestError() {
-    resolveNamesClass("\\class Test { \\class A \\where { \\function x => 0 } } \\where { \\class B \\where { \\export A } \\function y => B.x }", 1);
+    resolveNamesModule("\\class Test { \\class A \\where { \\func x => 0 } } \\where { \\class B \\where { \\export A } \\func y => B.x }", 1);
   }
 
   @Test
@@ -33,38 +33,67 @@ public class ScopeTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void openAbstractTestError() {
-    resolveNamesClass("\\class Test { \\function y => x } \\where { \\class A { | x : Nat } \\open A }", 1);
+  public void fieldsAreOpen() {
+    resolveNamesModule("\\class Test { \\func y => x } \\where { \\class A { | x : Nat } }");
   }
 
   @Test
-  public void openAbstractTestError2() {
-    resolveNamesClass("\\class Test { \\function z => y } \\where { \\class A { | x : Nat \\function y => x } \\open A }", 1);
+  public void dynamicsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat \\func y => x } }", 1);
+  }
+
+  @Test
+  public void staticsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat } \\where { \\func y => 0 } }", 1);
+  }
+
+  @Test
+  public void openStatics() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat } \\where { \\func y => 0 } \\open A }");
+  }
+
+  @Test
+  public void openDynamics() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat \\func y => x } \\open A }");
   }
 
   @Test
   public void whereError() {
-    resolveNamesClass(
-        "\\function f (x : Nat) => x \\where\n" +
-        "  \\function b => x", 1);
+    resolveNamesModule(
+        "\\func f (x : Nat) => x \\where\n" +
+        "  \\func b => x", 1);
   }
 
   @Test
   public void whereNoOpenFunctionError() {
-    resolveNamesClass(
-        "\\function f => x \\where\n" +
-        "  \\function b => 0 \\where\n" +
-        "    \\function x => 0", 1);
+    resolveNamesModule(
+        "\\func f => x \\where\n" +
+        "  \\func b => 0 \\where\n" +
+        "    \\func x => 0", 1);
   }
 
   @Ignore
   @Test
   public void export2TestError() {
-    resolveNamesClass("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => x", 1);
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\export B } \\func y => x", 1);
   }
 
   @Test
-  public void notInScopeTest() {
-    resolveNamesClass("\\class A { \\function x => 0 } \\function y : Nat => x", 1);
+  public void dynamicFunctionTest() {
+    resolveNamesModule("\\class A { \\func x => 0 } \\func y : Nat => x", 1);
+  }
+
+  @Test
+  public void dynamicFunctionOpenTest() {
+    resolveNamesModule("\\class A { \\func x => 0 } \\func y : Nat => x \\open A");
+  }
+
+  @Test
+  public void duplicateInternalName() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\data D | x Nat", 1);
   }
 }

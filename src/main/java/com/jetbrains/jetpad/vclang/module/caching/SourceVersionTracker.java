@@ -6,5 +6,4 @@ import javax.annotation.Nonnull;
 
 public interface SourceVersionTracker<SourceIdT extends SourceId> {
   long getCurrentVersion(@Nonnull SourceIdT sourceId);
-  boolean ensureLoaded(@Nonnull SourceIdT sourceId, long version);
 }

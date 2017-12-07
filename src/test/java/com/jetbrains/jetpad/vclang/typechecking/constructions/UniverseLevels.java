@@ -11,49 +11,49 @@ import static org.junit.Assert.assertEquals;
 public class UniverseLevels extends TypeCheckingTestCase {
   @Test
   public void dataExpansion() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
-      "\\function f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
-      "\\function test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
+      "\\func f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
+      "\\func test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 
   @Test
   public void allowedInArgs() {
-    typeCheckClass("\\function f (A : \\Type -> \\Type) => 0");
+    typeCheckModule("\\func f (A : \\Type -> \\Type) => 0");
   }
 
   @Test
   public void allowedInResultType() {
-    typeCheckClass("\\function g : \\Type -> \\Type => \\lam X => X");
+    typeCheckModule("\\func g : \\Type -> \\Type => \\lam X => X");
   }
 
   @Test
   public void allowedAsExpression() {
-    typeCheckClass("\\function f => \\Type");
+    typeCheckModule("\\func f => \\Type");
   }
 
   @Test
   public void equalityOfTypes() {
-    typeCheckClass("\\function f (A B : \\Type) => A = B");
+    typeCheckModule("\\func f (A B : \\Type) => A = B");
   }
 
   @Test
   public void callPolyFromOmega() {
-     typeCheckClass(
-         "\\function f (A : \\Type) => A\n" +
-         "\\function g (A : \\Type) => f A");
+     typeCheckModule(
+         "\\func f (A : \\Type) => A\n" +
+         "\\func g (A : \\Type) => f A");
   }
 
   @Test
   public void typeOmegaResult() {
-    typeCheckClass("\\function f (A : \\Type) : \\Type => A");
+    typeCheckModule("\\func f (A : \\Type) : \\Type => A");
   }
 
   @Test
   public void callNonPolyFromOmega() {
-    typeCheckClass(
-        "\\function f (A : \\Type0) => 0\n" +
-        "\\function g (A : \\Type) => f A", 1);
+    typeCheckModule(
+        "\\func f (A : \\Type0) => 0\n" +
+        "\\func g (A : \\Type) => f A", 1);
   }
 
   @Test
@@ -72,15 +72,15 @@ public class UniverseLevels extends TypeCheckingTestCase {
   }
 
   @Test
-  public void functionMaxTest() {
-    typeCheckClass(
+  public void func() {
+    typeCheckModule(
       "\\data Foo (A : \\Type) : \\Type | foo A\n" +
-      "\\function bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
+      "\\func bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
   }
 
   @Test
   public void dataMaxTest() {
-    typeCheckClass(
+    typeCheckModule(
       "\\data Foo (A : \\Type) : \\Type | foo A\n" +
       "\\data Bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) | bar (Foo A)");
   }

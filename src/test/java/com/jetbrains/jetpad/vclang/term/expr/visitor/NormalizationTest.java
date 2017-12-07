@@ -18,8 +18,9 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.frontend.Concrete;
+import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -36,13 +37,13 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest extends TypeCheckingTestCase {
-  // \function (+) (x y : Nat) : Nat => elim x | zero => y | suc x' => suc (x' + y)
+  // \func + (x y : Nat) : Nat => \elim x | zero => y | suc x' => suc (x' + y)
   private final FunctionDefinition plus;
-  // \function (*) (x y : Nat) : Nat => elim x | zero => zero | suc x' => y + x' * y
+  // \func * (x y : Nat) : Nat => \elim x | zero => zero | suc x' => y + x' * y
   private final FunctionDefinition mul;
-  // \function fac (x : Nat) : Nat => elim x | zero => suc zero | suc x' => suc x' * fac x'
+  // \func fac (x : Nat) : Nat => \elim x | zero => suc zero | suc x' => suc x' * fac x'
   private final FunctionDefinition fac;
-  // \function nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
+  // \func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
 
   public NormalizationTest() throws IOException {
@@ -216,18 +217,22 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    Concrete.LetClause x = clet("x", cZero());
-    Concrete.LetClause y = clet("y", cSuc());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cLet(clets(y), cApps(cVar(y), cVar(x)))), null);
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    Concrete.LetClause xClause = clet(x, cZero());
+    Concrete.LetClause yClause = clet(y, cSuc());
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    Concrete.LetClause x = clet("x", cSuc());
-    Concrete.LetClause y = clet("y", cZero());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cLet(clets(y), cApps(cVar(x), cVar(y)))), null);
+    ParsedLocalReferable x = ref("x");
+    ParsedLocalReferable y = ref("y");
+    Concrete.LetClause xClause = clet(x, cSuc());
+    Concrete.LetClause yClause = clet(y, cZero());
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -250,18 +255,19 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    Concrete.LocalVariable y = ref("y");
-    Concrete.LetClause x = clet("x", cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(x), cApps(cVar(x), cZero())), null);
+    ParsedLocalReferable y = ref("y");
+    ParsedLocalReferable x = ref("x");
+    Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
+    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    TypeCheckingTestCase.TypeCheckClassResult result = typeCheckClass(
+    TypeCheckModuleResult result = typeCheckModule(
         "\\data D | d Nat\n" +
-        "\\function test (x : D) : Nat => \\elim x | _ => 0");
+        "\\func test (x : D) : Nat | _ => 0");
     FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
     assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
@@ -274,9 +280,9 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConditionNormalization() {
-    typeCheckClass(
+    typeCheckModule(
         "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
-        "\\function only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+        "\\func only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
     );
   }
 
@@ -405,18 +411,18 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void testAppProj() {
     SingleDependentLink x = singleParam("x", Nat());
-    Expression expr = Apps(new ProjExpression(Tuple(new SigmaExpression(Sort.SET0, param("_", Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
+    Expression expr = Apps(ProjExpression.make(Tuple(new SigmaExpression(Sort.SET0, param("_", Pi(Nat(), Nat()))), Lam(x, Ref(x))), 0), Zero());
     assertEquals(Zero(), expr.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void testConCallEta() {
-    TypeCheckClassResult result = typeCheckClass(
-        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+    TypeCheckModuleResult result = typeCheckModule(
+        "\\func \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
-        "\\function f (n : Nat) (x : Fin n) => fsuc $ x");
+        "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
     Expression term = ((LeafElimTree) f.getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);

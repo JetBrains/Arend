@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.UniverseExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,14 +22,9 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
 
-  public DataDefinition(Abstract.DataDefinition abstractDef) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public DataDefinition(GlobalReferable referable) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myConstructors = new ArrayList<>();
-  }
-
-  @Override
-  public Abstract.DataDefinition getAbstractDefinition() {
-    return (Abstract.DataDefinition) super.getAbstractDefinition();
   }
 
   public Sort getSort() {
@@ -73,9 +68,9 @@ public class DataDefinition extends Definition {
     return myConstructors;
   }
 
-  public Constructor getConstructor(Abstract.Constructor abstractCon) {
+  public Constructor getConstructor(GlobalReferable referable) {
     for (Constructor constructor : myConstructors) {
-      if (constructor.getAbstractDefinition().equals(abstractCon)) {
+      if (constructor.getReferable().equals(referable)) {
         return constructor;
       }
     }

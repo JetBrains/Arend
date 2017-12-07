@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Abstract;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -27,22 +27,28 @@ public class ClassDefinition extends Definition {
 
   private final Set<ClassDefinition> mySuperClasses;
   private final LinkedHashSet<ClassField> myFields;
+  private final List<ClassField> myPersonalFields;
   private final Map<ClassField, Implementation> myImplemented;
+  private ClassField myCoercingField;
   private Sort mySort;
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(Abstract.ClassDefinition abstractDef) {
-    super(abstractDef, TypeCheckingStatus.HEADER_HAS_ERRORS);
+  public ClassDefinition(GlobalReferable referable) {
+    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     mySuperClasses = new HashSet<>();
     myFields = new LinkedHashSet<>();
+    myPersonalFields = new ArrayList<>();
     myImplemented = new HashMap<>();
     mySort = Sort.PROP;
   }
 
-  @Override
-  public Abstract.ClassDefinition getAbstractDefinition() {
-    return (Abstract.ClassDefinition) super.getAbstractDefinition();
+  public ClassField getCoercingField() {
+    return myCoercingField;
+  }
+
+  public void setCoercingField(ClassField coercingField) {
+    myCoercingField = coercingField;
   }
 
   public void updateSorts() {
@@ -61,7 +67,8 @@ public class ClassDefinition extends Definition {
 
       DependentLink thisParam = ExpressionFactory.parameter("this", thisClass);
       Expression expr = baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF);
-      Sort sort = expr.getType().toSort();
+      Expression type = expr.getType();
+      Sort sort = type == null ? null : type.toSort();
       if (sort != null) {
         mySort = mySort.max(sort);
       }
@@ -96,8 +103,16 @@ public class ClassDefinition extends Definition {
     return myFields;
   }
 
+  public List<? extends ClassField> getPersonalFields() {
+    return myPersonalFields;
+  }
+
   public void addField(ClassField field) {
     myFields.add(field);
+  }
+
+  public void addPersonalField(ClassField field) {
+    myPersonalFields.add(field);
   }
 
   public void addFields(Collection<? extends ClassField> fields) {

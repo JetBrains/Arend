@@ -9,34 +9,30 @@
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
     | path (\Pi (i : I) -> A i)
 
-\function \infix 1
-= {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
+\func \infix 1 = {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
-\function \infixl 9
-@ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i => \elim p, i
+\func \infixl 9 @ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \elim p, i
     | _, left => a
     | _, right => a'
     | path f, i => f i
 
-\function
-coe (A : I -> \Type) (a : A left) (i : I) : A i => \elim i
+\func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
     | left => a
 
-\function
-iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type => \elim i
+\func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
     | left => A
     | right => B
 
 \data TrP (A : \Type)
     | inP A
-    | truncP (a a' : TrP A) (i : I) => \elim i {
+    | truncP (a a' : TrP A) (i : I) \elim i {
         | left  => a
         | right => a'
     }
 
 \data TrS (A : \Type)
     | inS A
-    | truncS (a a' : TrS A) (p p' : a = a') (i j : I) => \elim i, j {
+    | truncS (a a' : TrS A) (p p' : a = a') (i j : I) \elim i, j {
         | i, left  => p @ i
         | i, right => p' @ i
         | left,  _ => a
