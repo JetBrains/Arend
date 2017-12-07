@@ -43,6 +43,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.ImplicitArgsInference;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInference;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
@@ -341,18 +342,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private Result checkResult(ExpectedType expectedType, Result result, Concrete.Expression expression) {
-    if (result == null || expectedType == null || !(expectedType instanceof Expression)) {
+  private Result checkResult(ExpectedType expectedType, Result result, Concrete.Expression expr) {
+    if (result == null || expectedType == null) {
       return result;
-    } else {
-      return compare(result, (Expression) expectedType, expression) ? result : null;
     }
-  }
 
-  public boolean compare(Result result, Expression expectedType, Concrete.Expression expr) {
-    CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.LE, expr);
-    if (cmpVisitor.nonNormalizingCompare(result.type, expectedType)) {
-      return true;
+    CompareVisitor cmpVisitor = new CompareVisitor(DummyEquations.getInstance(), Equations.CMP.LE, expr);
+    if (expectedType instanceof Expression && cmpVisitor.nonNormalizingCompare(result.type, (Expression) expectedType)) {
+      return result;
     }
 
     result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
@@ -362,23 +359,40 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ClassField coercingField = classCall.getDefinition().getCoercingField();
       if (coercingField != null) {
         Expression actualType = coercingField.getBaseType(classCall.getSortArgument()).subst(coercingField.getThisParameter(), result.expression);
-        if (cmpVisitor.compare(actualType, expectedType)) {
-          result.expression = OfTypeExpression.make(FieldCallExpression.make(coercingField, result.expression), actualType, expectedType);
-          return true;
+        boolean ok = false;
+        if (expectedType instanceof Expression && cmpVisitor.compare(actualType, (Expression) expectedType)) {
+          ok = true;
+        } else if (expectedType == ExpectedType.OMEGA) {
+          actualType = actualType.normalize(NormalizeVisitor.Mode.WHNF);
+          if (actualType.isInstance(UniverseExpression.class)) {
+            ok = true;
+          }
+        }
+        if (ok) {
+          result.expression = FieldCallExpression.make(coercingField, result.expression);
+          if (expectedType instanceof Expression) {
+            result.expression = OfTypeExpression.make(result.expression, actualType, (Expression) expectedType);
+          }
+          result.type = actualType;
+          return result;
         }
       }
     }
 
-    expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-    if (cmpVisitor.normalizedCompare(result.type, expectedType)) {
-      result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
-      return true;
-    }
+    if (expectedType instanceof Expression) {
+      expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType)) {
+        result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
+        return result;
+      }
 
-    if (!result.type.isError()) {
-      myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+      if (!result.type.isError()) {
+        myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+      }
+      return null;
+    } else {
+      return result;
     }
-    return false;
   }
 
   private Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
@@ -621,7 +635,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
         Result result = new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
-        if (expectedType != null && !compare(result, expectedType, expr)) {
+        if (expectedType != null && checkResult(expectedType, result, expr) == null) {
           return null;
         }
         return result;
@@ -717,7 +731,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (bodyResult == null) return null;
       Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
       if (actualLink != null) {
-        if (!compare(new Result(null, new PiExpression(sort, actualLink, bodyResult.type)), expectedType, expr)) {
+        if (checkResult(expectedType, new Result(null, new PiExpression(sort, actualLink, bodyResult.type)), expr) == null) {
           return null;
         }
       }

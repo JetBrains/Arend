@@ -20,8 +20,8 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C (A : \\Set) {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\function f (c : C) : c => Nat\n" +
-      "\\function g (n : f (\\new C { | A => Nat | a => 0 })) => 1");
+      "\\function f (c : C { A => Nat }) : c => 1\n" +
+      "\\function g : f (\\new C { | A => Nat | a => 0 }) = 1 => path (\\lam _ => 1)");
   }
 
   @Test
