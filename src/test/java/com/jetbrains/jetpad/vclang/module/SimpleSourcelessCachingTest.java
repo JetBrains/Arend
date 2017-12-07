@@ -15,10 +15,10 @@ public class SimpleSourcelessCachingTest extends SourcelessCachingTestCase {
   @Test
   public void removeSource() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\1-Type1 => \\Set0");
+        "\\func a : \\1-Type1 => \\Set0");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" +
         "\\import A\n" +
-        "\\function b : \\1-Type1 => A.a");
+        "\\func b : \\1-Type1 => A.a");
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass);
@@ -39,10 +39,10 @@ public class SimpleSourcelessCachingTest extends SourcelessCachingTestCase {
   @Test
   public void removeSourceWithError() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\Set0 => \\Set0");  // There is an error here
+        "\\func a : \\Set0 => \\Set0");  // There is an error here
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" +
         "\\import A\n" +
-        "\\function b : \\1-Type1 => A.a");
+        "\\func b : \\1-Type1 => A.a");
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass, 2);
@@ -66,10 +66,10 @@ public class SimpleSourcelessCachingTest extends SourcelessCachingTestCase {
   @Test
   public void removeSourceErrorInReferrer() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\1-Type1 => \\Set0");
+        "\\func a : \\1-Type1 => \\Set0");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" +
         "\\import A\n" +
-        "\\function b : \\Set0 => A.a");  // There is an error here
+        "\\func b : \\Set0 => A.a");  // There is an error here
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass, 1);
@@ -99,10 +99,10 @@ public class SimpleSourcelessCachingTest extends SourcelessCachingTestCase {
   // as the cache of B does not contain any references into A indeed, but it is still an inconsistency.
   public void persistDependencyWhenReferrerHasErrorInHeader() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\1-Type1 => \\Set0");
+        "\\func a : \\1-Type1 => \\Set0");
     MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "" +
         "\\import A\n" +
-        "\\function b : \\Set0 => A.a");  // There is an error here
+        "\\func b : \\Set0 => A.a");  // There is an error here
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass, 1);

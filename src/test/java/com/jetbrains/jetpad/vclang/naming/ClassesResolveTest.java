@@ -13,7 +13,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class C { | A : \\Set }\n" +
       "\\class D { | B : \\Set }\n" +
-      "\\function f => \\new D { A => \\Prop }");
+      "\\func f => \\new D { A => \\Prop }");
   }
 
   @Test

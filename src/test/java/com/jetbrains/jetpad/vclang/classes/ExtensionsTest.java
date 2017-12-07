@@ -20,7 +20,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
-        "\\function f (b : B) : \\Sigma (x : b.A) (x = b.a') => (b.a, b.p)");
+        "\\func f (b : B) : \\Sigma (x : b.A) (x = b.a') => (b.a, b.p)");
   }
 
   @Test
@@ -34,7 +34,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
-        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
+        "\\func f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
   }
 
   @Test
@@ -48,7 +48,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "  | p : undefined_variable = a'\n" +
         "}\n" +
-        "\\function f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+        "\\func f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
-        "\\function f => \\new B { A => Nat | a' => 0 }", 1);
+        "\\func f => \\new B { A => Nat | a' => 0 }", 1);
   }
 
   @Test
@@ -74,7 +74,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
-        "\\function f : \\Sigma (1 = 1) (0 = 0) =>\n" +
+        "\\func f : \\Sigma (1 = 1) (0 = 0) =>\n" +
         "  \\let b => \\new B { A => Nat | a => 1 | a' => 0 }" +
         "  \\in  (path (\\lam _ => b.a), path (\\lam _ => b.a'))");
   }
@@ -89,9 +89,9 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
-        "\\function f (a : C) => a.a\n" +
-        "\\function g : 3 = 3 => path (\\lam _ => f (\\new B { A => Nat | a' => 2 | a => 3 }))\n" +
-        "\\function h (b : B { A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
+        "\\func f (a : C) => a.a\n" +
+        "\\func g : 3 = 3 => path (\\lam _ => f (\\new B { A => Nat | a' => 2 | a => 3 }))\n" +
+        "\\func h (b : B { A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
   }
 
   @Test
@@ -155,8 +155,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C {\n" +
         "  | p : b = c\n" +
         "}\n" +
-        "\\function f (d : D { S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
-        "\\function g => \\new D { S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
+        "\\func f (d : D { S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
+        "\\func g => \\new D { S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
   }
 
   @Test
@@ -172,7 +172,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
+        "\\func x => \\new X\n" +
         "\\class B \\extends x.A");
   }
 
@@ -182,7 +182,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
+        "\\func x => \\new X\n" +
         "\\class B \\extends x.C", 1);
   }
 
@@ -192,12 +192,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
-        "    \\function n : Nat => 0\n" +
+        "    \\func n : Nat => 0\n" +
         "  }\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
+        "\\func x => \\new X\n" +
         "\\class B \\extends x.A {\n" +
-        "  \\function my : Nat => n\n" +
+        "  \\func my : Nat => n\n" +
         "}");
   }
 
@@ -206,12 +206,12 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class X {\n" +
         "  \\class A \\where {\n" +
-        "    \\function n : Nat => 0\n" +
+        "    \\func n : Nat => 0\n" +
         "  }\n" +
         "}\n" +
-        "\\function x => \\new X\n" +
+        "\\func x => \\new X\n" +
         "\\class B \\extends x.A {\n" +
-        "  \\function my : Nat => x.A.n\n" +
+        "  \\func my : Nat => x.A.n\n" +
         "}");
   }
 
@@ -244,8 +244,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class X {\n" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x1 => \\new X\n" +
-        "\\function x2 => \\new X\n" +
+        "\\func x1 => \\new X\n" +
+        "\\func x2 => \\new X\n" +
         "\\class B \\extends x1.A, x2.A");
   }
 
@@ -256,8 +256,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | n : Nat" +
         "  \\class A\n" +
         "}\n" +
-        "\\function x1 => \\new X { n => 1 }\n" +
-        "\\function x2 => \\new X { n => 2 }\n" +
+        "\\func x1 => \\new X { n => 1 }\n" +
+        "\\func x2 => \\new X { n => 2 }\n" +
         "\\class B \\extends x1.A, x2.A", 1);
   }
 

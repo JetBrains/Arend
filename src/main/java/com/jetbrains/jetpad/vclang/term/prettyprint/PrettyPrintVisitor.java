@@ -788,7 +788,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitFunction(final Concrete.FunctionDefinition def, Void ignored) {
-    myBuilder.append("\\function\n");
+    myBuilder.append("\\func ");
     printIndent();
     prettyPrintNameWithPrecedence(def.getData());
     myBuilder.append(" ");

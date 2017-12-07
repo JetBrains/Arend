@@ -33,9 +33,9 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
         "  | B : A -> \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by A { B => C }\n" +
-        "\\function f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
-        "\\function g => \\new X' { A => Nat | C => \\lam _ => Nat }\n" +
-        "\\function p : f = g => path (\\lam _ => f)");
+        "\\func f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
+        "\\func g => \\new X' { A => Nat | C => \\lam _ => Nat }\n" +
+        "\\func p : f = g => path (\\lam _ => f)");
   }
 
   @Test
@@ -56,8 +56,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\default \\instance Nat-X : X' | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
       "\\instance D-X : X' | A => D | B => \\lam _ => f\n" +
-      "\\function g {x : X' { A => Nat }} => \\Prop\n" +
-      "\\function f => g\n" +
+      "\\func g {x : X' { A => Nat }} => \\Prop\n" +
+      "\\func f => g\n" +
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
@@ -71,8 +71,8 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\instance Nat-X : X' | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
       "\\default \\instance D-X : X' | A => D | B => \\lam _ => f\n" +
-      "\\function g {x : X' { A => Nat }} => \\Prop\n" +
-      "\\function f : \\Set0 => g\n" +
+      "\\func g {x : X' { A => Nat }} => \\Prop\n" +
+      "\\func f : \\Set0 => g\n" +
       "\\class X {\n" +
       "  | A : \\Type0\n" +
       "  | B : A -> \\Type0\n" +
@@ -105,7 +105,7 @@ public class TypeClassesTypeChecking extends TypeCheckingTestCase {
       "\\data D | c\n" +
       "\\default \\instance D-Y : Y | A => D | B => \\lam n => D -> D\n" +
       "\\default \\instance D-Z : Z | A => D | C => \\lam n => D -> D\n" +
-      "\\function f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
-      "\\function g => f c", 1);
+      "\\func f {A : \\Type0} {y : Y { A => A } } (a : A) => B a\n" +
+      "\\func g => f c", 1);
   }
 }

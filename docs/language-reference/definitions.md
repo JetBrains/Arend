@@ -4,7 +4,7 @@ There are three kinds of definitions in Arend.
 Function
 =========
 
-Use the `\function` keyword.
+Use the `\func` keyword.
 
 
 Data

@@ -164,14 +164,14 @@ public class ParserTest extends NameResolverTestCase {
   public void parseCase() {
     parseModule(
       "\\data Nat | zero | suc Nat\n" +
-      "\\function f => \\case 2 \\with { zero => zero | suc x' => x' }");
+      "\\func f => \\case 2 \\with { zero => zero | suc x' => x' }");
   }
 
   @Test
   public void parseCaseFail() {
     parseModule(
       "\\data Nat | zero | suc Nat\n" +
-      "\\function f => \\case 2 | zero => zero | suc x' => x'", -1);
+      "\\func f => \\case 2 | zero => zero | suc x' => x'", -1);
   }
 
   @Test
@@ -181,7 +181,7 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void whereFieldError() {
-    parseModule("\\function f => 0 \\where | x : \\Type0", 1);
+    parseModule("\\func f => 0 \\where | x : \\Type0", 1);
   }
 
   @Test
@@ -190,7 +190,7 @@ public class ParserTest extends NameResolverTestCase {
         "\\class X {\n" +
         "  | x : Nat\n" +
         "} \\where {\n" +
-        "  \\function f => 0\n" +
+        "  \\func f => 0\n" +
         "    \\where\n" +
         "      | x => 1\n" +
         "}", 1);
@@ -198,46 +198,46 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void incorrectDefinitionName() {
-    parseDef("\\function | => \\Prop", -1);
+    parseDef("\\func | => \\Prop", -1);
   }
 
   @Test
   public void lineComment() {
-    parseDef("\\function f => -- ^_^ @_@ >.<\n  \\Prop");
+    parseDef("\\func f => -- ^_^ @_@ >.<\n  \\Prop");
   }
 
   @Test
   public void blockComment() {
-    parseDef("\\function f => {- ^_^ @_@ >.< wow!!!-}\n  \\Prop");
+    parseDef("\\func f => {- ^_^ @_@ >.< wow!!!-}\n  \\Prop");
   }
 
   @Test
   public void lineCommentLastLine() {
-    parseDef("\\function f => \\Prop  -- ^_^ @_@ >.< wow!!!");
+    parseDef("\\func f => \\Prop  -- ^_^ @_@ >.< wow!!!");
   }
 
   @Test
   public void elimUnderLetError() {
-    parseDef("\\function test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", 1);
+    parseDef("\\func test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", 1);
   }
 
   @Test
   public void testSide() {
-    parseDef("\\function test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
+    parseDef("\\func test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
   }
 
   @Test
   public void insideBody() {
     parseModule(
-      "\\function test (n : Nat)\n" +
+      "\\func test (n : Nat)\n" +
       "  | zero => \\lam _ -> zero", 1);
   }
 
   private void postfixTest(String name) {
     Group module = resolveNamesModule(
-      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
-      "\\function \\infixl 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => A $ B `" + name + " $ C");
+      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\infixl 5 $ (A B : \\Prop) => A\n" +
+      "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -256,9 +256,9 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixError(String name) {
     resolveNamesModule(
-      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
-      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B `" + name + "", 1);
+      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\func f (A B : \\Prop) => A $ B `" + name + "", 1);
   }
 
   @Test
@@ -270,9 +270,9 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest2(String name) {
     Group module = resolveNamesModule(
-      "\\function \\infix 5 " + name + " (A : \\Prop) => A\n" +
-      "\\function \\infixr 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => A $ B `" + name + " $ C");
+      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\infixr 5 $ (A B : \\Prop) => A\n" +
+      "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -291,9 +291,9 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest3(String name) {
     Group module = resolveNamesModule(
-      "\\function \\infix 6 " + name + " (A : \\Prop) => A\n" +
-      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B `" + name);
+      "\\func \\infix 6 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\func f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -312,9 +312,9 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest4(String name) {
     Group module = resolveNamesModule(
-      "\\function \\infix 4 " + name + " (A : \\Prop) => A\n" +
-      "\\function \\infix 5 $ (A B : \\Prop) => A\n" +
-      "\\function f (A B : \\Prop) => A $ B `" + name);
+      "\\func \\infix 4 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
+      "\\func f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
@@ -333,9 +333,9 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest5(String name1, String name2, String pr1, String pr2) {
     Group module = resolveNamesModule(
-      "\\function " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
-      "\\function " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
-      "\\function f (A : \\Prop) => A `" + name1 + " `" + name2);
+      "\\func " + pr1 + " " + name1 + " (A : \\Prop) => A\n" +
+      "\\func " + pr2 + " " + name2 + " (A : \\Prop) => A\n" +
+      "\\func f (A : \\Prop) => A `" + name1 + " `" + name2);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named1 = it.next().getReferable();
     GlobalReferable named2 = it.next().getReferable();
@@ -366,11 +366,11 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void postfixTest6() {
     Group module = resolveNamesModule(
-      "\\function \\infixr 1 >== (A B : \\Prop) => A\n" +
-      "\\function \\infix 2 ==< (A B : \\Prop) => A\n" +
-      "\\function \\infix 2 qed (A : \\Prop) => A\n" +
-      "\\function g (A : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => g A ==< g B >== g C `qed");
+      "\\func \\infixr 1 >== (A B : \\Prop) => A\n" +
+      "\\func \\infix 2 ==< (A B : \\Prop) => A\n" +
+      "\\func \\infix 2 qed (A : \\Prop) => A\n" +
+      "\\func g (A : \\Prop) => A\n" +
+      "\\func f (A B C : \\Prop) => g A ==< g B >== g C `qed");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable rightP = it.next().getReferable();
     GlobalReferable leftP = it.next().getReferable();
@@ -387,10 +387,10 @@ public class ParserTest extends NameResolverTestCase {
   @Test
   public void infixTest() {
     resolveNamesModule(
-      "\\function \\infixr 1 >== (A B : \\Prop) => A\n" +
-      "\\function \\infix 2 ==< (A B : \\Prop) => A\n" +
-      "\\function \\infix 2 qed (A : \\Prop) => A\n" +
-      "\\function g (A : \\Prop) => A\n" +
-      "\\function f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
+      "\\func \\infixr 1 >== (A B : \\Prop) => A\n" +
+      "\\func \\infix 2 ==< (A B : \\Prop) => A\n" +
+      "\\func \\infix 2 qed (A : \\Prop) => A\n" +
+      "\\func g (A : \\Prop) => A\n" +
+      "\\func f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
   }
 }

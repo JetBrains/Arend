@@ -139,7 +139,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintPiField(){
-    String s1 = "\\function f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}";
+    String s1 = "\\func f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}";
     testDefinition(s1);
   }
 }

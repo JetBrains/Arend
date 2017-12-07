@@ -16,9 +16,9 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void statusSerialization() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\Set0 => \\Prop\n" +
-        "\\function b1 : \\Set0 => \\Set0\n" +
-        "\\function b2 : \\Set0 => b1");
+        "\\func a : \\Set0 => \\Prop\n" +
+        "\\func b1 : \\Set0 => \\Set0\n" +
+        "\\func b2 : \\Set0 => b1");
     ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
@@ -39,8 +39,8 @@ public class SimpleCachingTest extends CachingTestCase {
 
   @Test
   public void circularDependencies() {
-    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\import B() \\function a (n : Nat) : Nat | zero => zero | suc n => B.b n");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function b (n : Nat) : Nat | zero => zero | suc n => A.a n");
+    MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\import B() \\func a (n : Nat) : Nat | zero => zero | suc n => B.b n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\func b (n : Nat) : Nat | zero => zero | suc n => A.a n");
 
     Group aClass = moduleLoader.load(a);
     typecheck(aClass);
@@ -52,8 +52,8 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void errorInBody() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
-        "\\function a : \\Set0 => b\n" +
-        "\\function b : \\Set0 => {?}");
+        "\\func a : \\Set0 => b\n" +
+        "\\func b : \\Set0 => {?}");
     ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 1);
@@ -75,8 +75,8 @@ public class SimpleCachingTest extends CachingTestCase {
   public void errorInHeader() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "" +
         "\\data D\n" +
-        "\\function a (d : D) \\with\n" +
-        "\\function b : \\Set0 => (\\lam x y => x) \\Prop a");
+        "\\func a (d : D) \\with\n" +
+        "\\func b : \\Set0 => (\\lam x y => x) \\Prop a");
     ChildGroup aClass = moduleLoader.load(a);
 
     typecheck(aClass, 2);
@@ -118,7 +118,7 @@ public class SimpleCachingTest extends CachingTestCase {
   @Test
   public void dependencySourceChanged() {
     MemoryStorage.SourceId a = storage.add(ModulePath.moduleName("A"), "\\data D\n");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function f : \\Type0 => A.D\n");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\func f : \\Type0 => A.D\n");
     Group bClass = moduleLoader.load(b);
     typecheck(bClass);
 
@@ -136,8 +136,8 @@ public class SimpleCachingTest extends CachingTestCase {
 
   @Test
   public void dependencySourceChangedWithUnload() {
-    storage.add(ModulePath.moduleName("A"), "" + "\\function a : \\Set0 => \\Prop");
-    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\function b : \\Set0 => A.a");
+    storage.add(ModulePath.moduleName("A"), "" + "\\func a : \\Set0 => \\Prop");
+    MemoryStorage.SourceId b = storage.add(ModulePath.moduleName("B"), "\\import A() \\func b : \\Set0 => A.a");
 
     Group bClass = moduleLoader.load(b);
     typecheck(bClass);

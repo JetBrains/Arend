@@ -17,7 +17,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
-        "\\function g => f");
+        "\\func g => f");
   }
 
   @Test
@@ -28,7 +28,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | f : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
-        "\\function g => f");
+        "\\func g => f");
   }
 
   @Test
@@ -40,7 +40,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | h : \\Type0\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f }\n" +
-        "\\function g => h", 1);
+        "\\func g => h", 1);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  }\n" +
         "  \\view Z' \\on Z \\by T { f }\n" +
         "}\n" +
-        "\\function g => f", 1);
+        "\\func g => f", 1);
   }
 
   @Test
@@ -86,7 +86,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | z : X.Z\n" +
         "}\n" +
         "\\view Y' \\on Y \\by T { z }\n" +
-        "\\function g => f", 1);
+        "\\func g => f", 1);
   }
 
   @Test
@@ -97,7 +97,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | f : \\Type1\n" +
         "}\n" +
         "\\view Y \\on X \\by T { f => g }\n" +
-        "\\function h => \\new Y { T => \\Type0 | g => \\Type0 }");
+        "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
@@ -108,7 +108,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | f : \\Type1\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f => g }\n" +
-        "\\function h => \\new X' { T => \\Type0 | g => \\Type0 }");
+        "\\func h => \\new X' { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
@@ -119,7 +119,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | f : \\Type1\n" +
         "}\n" +
         "\\view X' \\on X \\by T { f => g }\n" +
-        "\\function h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
+        "\\func h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
   }
 
   @Test
@@ -144,7 +144,7 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
         "  | T : \\Type0\n" +
         "  | f : \\Type0\n" +
         "}\n" +
-        "\\function f => 0\n" +
+        "\\func f => 0\n" +
         "\\view X' \\on X \\by T { f }", 1);
   }
 

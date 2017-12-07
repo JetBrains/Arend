@@ -54,7 +54,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
 
   @Test
   public void loadSimpleModule() {
-    storage.add(moduleName("A"), "\\function f => 0");
+    storage.add(moduleName("A"), "\\func f => 0");
     Group result = load(storage.locateModule(moduleName("A")));
     assertThat(errorList, containsErrors(0));
     assertThat(result, is(notNullValue()));
@@ -64,7 +64,7 @@ public class BaseModuleLoaderTest extends VclangTestCase {
   @Test
   public void loadModuleTwice() {
     ModulePath modulePath = moduleName("A");
-    storage.add(modulePath, "\\function f => 0");
+    storage.add(modulePath, "\\func f => 0");
 
     MemoryStorage.SourceId source1 = storage.locateModule(modulePath);
     Group result1 = load(source1);
@@ -83,8 +83,8 @@ public class BaseModuleLoaderTest extends VclangTestCase {
 
   @Test
   public void loadTwoModules() {
-    storage.add(moduleName("A"), "\\function f => 0");
-    storage.add(moduleName("B"), "\\function g => 0");
+    storage.add(moduleName("A"), "\\func f => 0");
+    storage.add(moduleName("B"), "\\func g => 0");
 
     load(storage.locateModule(moduleName("A")));
     load(storage.locateModule(moduleName("B")));

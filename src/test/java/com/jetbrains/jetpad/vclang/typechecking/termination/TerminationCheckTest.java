@@ -25,17 +25,17 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test31_1() {
-    typeCheckModule("\\function \\infixl 9 ++ (a b : Nat) : Nat => \\elim a | suc a' => suc (a' ++ b) | zero => b", 0);
+    typeCheckModule("\\func \\infixl 9 ++ (a b : Nat) : Nat => \\elim a | suc a' => suc (a' ++ b) | zero => b", 0);
   }
 
   @Test
   public void test31_2() {
-    typeCheckModule("\\function \\infixl 9 + (a b : Nat) : Nat => \\elim a | suc a' => suc (suc a' + b) | zero => b", 1);
+    typeCheckModule("\\func \\infixl 9 + (a b : Nat) : Nat => \\elim a | suc a' => suc (suc a' + b) | zero => b", 1);
   }
 
   private static final String minus =
-    "\\function \\infix 9 - (x y : Nat) : Nat => \\elim x | zero => zero | suc x' => x' - p y\n" +
-      "\\where \\function p (z : Nat) : Nat | zero => zero | suc z' => z'\n";
+    "\\func \\infix 9 - (x y : Nat) : Nat => \\elim x | zero => zero | suc x' => x' - p y\n" +
+      "\\where \\func p (z : Nat) : Nat | zero => zero | suc z' => z'\n";
 
   private static final String list =
     "\\data List (A : \\Type0) | nil | \\infixr 5 :-: A (List A)\n";
@@ -47,14 +47,14 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test33() {
-    typeCheckModule(minus + "\\function \\infix 9 / (x y : Nat) : Nat => div' x (-.p x - y)\n" +
-      "\\where \\function div' (x : Nat) (y' : Nat) : Nat =>\n" +
+    typeCheckModule(minus + "\\func \\infix 9 / (x y : Nat) : Nat => div' x (-.p x - y)\n" +
+      "\\where \\func div' (x : Nat) (y' : Nat) : Nat =>\n" +
       "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''))\n", 2);
   }
 
   @Test
   public void test34_2() {
-    typeCheckModule("\\function ack (x y : Nat) : Nat\n" +
+    typeCheckModule("\\func ack (x y : Nat) : Nat\n" +
       "| zero, y => suc y\n" +
       "| suc x', zero => ack x' (suc zero)\n" +
       "| suc x', suc y' => ack (suc x') y'", 0);
@@ -62,7 +62,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_1() {
-    typeCheckModule(list + "\\function flatten {A : \\Type0} (l : List (List A)) : List A => \\elim l\n" +
+    typeCheckModule(list + "\\func flatten {A : \\Type0} (l : List (List A)) : List A => \\elim l\n" +
       "| nil => nil\n" +
       "| :-: nil xs => flatten xs\n" +
       "| :-: (:-: y ys) xs => y :-: flatten (ys :-: xs)", 0);
@@ -70,23 +70,23 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test36_2() {
-    typeCheckModule(list + "\\function f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | :-: x xs => g x xs\n" +
-      "\\function g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | :-: x xs => x :-: g xs ls", 0);
+    typeCheckModule(list + "\\func f {A : \\Type0} (l : List (List A)) : List A => \\elim l | nil => nil | :-: x xs => g x xs\n" +
+      "\\func g {A : \\Type0} (l : List A) (ls : List (List A)) : List A => \\elim l | nil => f ls | :-: x xs => x :-: g xs ls", 0);
   }
 
   @Test
   public void test38_1() {
-    typeCheckModule(list + "\\function zip1 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+    typeCheckModule(list + "\\func zip1 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip2 l2 xs\n" +
-      "\\function zip2 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+      "\\func zip2 {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip1 l2 xs\n", 0);
   }
 
   @Test
   public void test38_2() {
-    typeCheckModule(list + "\\function zip-bad {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
+    typeCheckModule(list + "\\func zip-bad {A : \\Type0} (l1 l2 : List A) : List A => \\elim l1\n" +
       "| nil => l2\n" +
       "| :-: x xs => x :-: zip-bad l2 xs", 1);
   }
@@ -94,7 +94,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   @Test
   public void test310() {
     typeCheckModule("\\data ord | O | S (_ : ord) | Lim (_ : Nat -> ord)\n" +
-      "\\function addord (x y : ord) : ord => \\elim x\n" +
+      "\\func addord (x y : ord) : ord => \\elim x\n" +
       "| O => y\n" +
       "| S x' => S (addord x' y)\n" +
       "| Lim f => Lim (\\lam z => addord (f z) y)", 0);
@@ -102,15 +102,15 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
 
   @Test
   public void test312_2() {
-    typeCheckModule("\\function h (x y : Nat) : Nat\n" +
+    typeCheckModule("\\func h (x y : Nat) : Nat\n" +
       "| zero, zero => zero\n" +
       "| zero, suc y' => h zero y'\n" +
       "| suc x', y' => h x' y'\n" +
-      "\\function f (x y : Nat) : Nat\n" +
+      "\\func f (x y : Nat) : Nat\n" +
       "| zero, _ => zero\n" +
       "| suc x', zero => zero\n" +
       "| suc x', suc y' => h (g x' (suc y')) (f (suc (suc (suc x'))) y')\n" +
-      "\\function g (x y : Nat) : Nat\n" +
+      "\\func g (x y : Nat) : Nat\n" +
       "| zero, _ => zero\n" +
       "| suc x', zero => zero\n" +
       "| suc x', suc y' => h (f (suc x') (suc y')) (g x' (suc (suc y')))", 2);
@@ -120,52 +120,52 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   public void selfCallInType() {
     typeCheckModule(
       "\\data D Nat | con\n" +
-      "\\function f (x : Nat) (y : D (f x con)) : Nat => x", 1);
+      "\\func f (x : Nat) (y : D (f x con)) : Nat => x", 1);
   }
 
   @Test
   public void headerCycle() {
     typeCheckModule(
-      "\\function he1 : he2 = he2 => path (\\lam _ => he2)\n" +
-      "\\function he2 : he1 = he1 => path (\\lam _ => he1)\n", 1);
+      "\\func he1 : he2 = he2 => path (\\lam _ => he2)\n" +
+      "\\func he2 : he1 = he1 => path (\\lam _ => he1)\n", 1);
   }
 
   @Test
   public void headerNoCycle() {
     typeCheckModule(
-      "\\function he1 (n : Nat) : Nat | zero => 0 | suc n => he2 n @ right\n" +
-      "\\function he2 (n : Nat) : he1 n = he1 n | zero => path (\\lam _ => he1 0) | suc n => path (\\lam _ => he1 (suc n))");
+      "\\func he1 (n : Nat) : Nat | zero => 0 | suc n => he2 n @ right\n" +
+      "\\func he2 (n : Nat) : he1 n = he1 n | zero => path (\\lam _ => he1 0) | suc n => path (\\lam _ => he1 (suc n))");
   }
 
   @Test
   public void twoErrors() {
     typeCheckModule(
       "\\data D Nat | con\n" +
-      "\\function f (x : Nat) (y : D (f x con)) : Nat => x\n" +
-      "\\function g : Nat => f 0 con", 2);
+      "\\func f (x : Nat) (y : D (f x con)) : Nat => x\n" +
+      "\\func g : Nat => f 0 con", 2);
   }
 
   @Test
   public void threeMutualRecursiveFunctions() {
     typeCheckModule(
-      "\\function f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
-      "\\function g (n : Nat) (x : h n = h n -> Nat) : \\Set0 => Nat\n" +
-      "\\function h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)");
+      "\\func f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
+      "\\func g (n : Nat) (x : h n = h n -> Nat) : \\Set0 => Nat\n" +
+      "\\func h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)");
   }
 
   @Test
   public void threeMutualRecursiveFunctionsWithoutType() {
     typeCheckModule(
-      "\\function f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
-      "\\function g (n : Nat) (x : h n = h n -> Nat) => Nat\n" +
-      "\\function h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)", 2);
+      "\\func f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
+      "\\func g (n : Nat) (x : h n = h n -> Nat) => Nat\n" +
+      "\\func h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)", 2);
   }
 
   @Test
   public void nonMonomialCallMatrixTest() {
     typeCheckModule(
       "\\data Int : \\Set0 | pos Nat | neg Nat { zero => pos zero }\n" +
-      "\\function \\infixl 6 +$ (n m : Int) : Int => \\elim n\n" +
+      "\\func \\infixl 6 +$ (n m : Int) : Int => \\elim n\n" +
       "  | pos zero => m\n" +
       "  | pos (suc n) => pos n +$ m\n" +
       "  | neg zero => m\n" +

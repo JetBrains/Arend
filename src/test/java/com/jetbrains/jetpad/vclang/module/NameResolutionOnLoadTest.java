@@ -13,13 +13,13 @@ import static org.junit.Assert.assertThat;
 
 public class NameResolutionOnLoadTest extends StorageTestCase {
   private void setupSources() {
-    storage.add(moduleName("A"), "\\import B() \\function a => B.b");
-    storage.add(moduleName("B"), "\\function b => x\n \\function x => 0");
-    storage.add(moduleName("B", "C"), "\\import B.C.E() \\function c => B.C.E.e");
-    storage.add(moduleName("B", "C", "E"), "\\import B.C.F() \\function e => B.C.F.f");
-    storage.add(moduleName("B", "C", "F"), "\\function f => 0");
-    storage.add(moduleName("X"), "\\import Y() \\function f => Y.f");
-    storage.add(moduleName("Y"), "\\import X() \\function f => X.f");
+    storage.add(moduleName("A"), "\\import B() \\func a => B.b");
+    storage.add(moduleName("B"), "\\func b => x\n \\func x => 0");
+    storage.add(moduleName("B", "C"), "\\import B.C.E() \\func c => B.C.E.e");
+    storage.add(moduleName("B", "C", "E"), "\\import B.C.F() \\func e => B.C.F.f");
+    storage.add(moduleName("B", "C", "F"), "\\func f => 0");
+    storage.add(moduleName("X"), "\\import Y() \\func f => Y.f");
+    storage.add(moduleName("Y"), "\\import X() \\func f => X.f");
   }
 
   @Test
@@ -80,7 +80,7 @@ public class NameResolutionOnLoadTest extends StorageTestCase {
 
   @Test
   public void duplicateNamesOnTopLevel() {
-    storage.add(moduleName("Test"), "\\function a => 0 \n \\function a => 0");
+    storage.add(moduleName("Test"), "\\func a => 0 \n \\func a => 0");
     moduleLoader.load(storage.locateModule(moduleName("Test")));
   }
 }

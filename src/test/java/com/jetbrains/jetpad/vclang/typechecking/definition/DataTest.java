@@ -144,21 +144,21 @@ public class DataTest extends TypeCheckingTestCase {
   public void constructorTest() {
     typeCheckModule(
       "\\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
-      "\\function f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-      "\\function g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
+      "\\func f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
+      "\\func g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
   }
 
   @Test
   public void truncatedDataElimOk() {
     typeCheckModule(
       "\\truncated \\data S : \\Set | base | loop I { | left => base | right => base }\n"+
-      "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
+      "\\func f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0");
   }
 
   @Test
   public void truncatedDataElimError() {
     typeCheckModule(
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
-      "\\function f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
+      "\\func f (x : S) : Nat => \\elim x | base => 0 | loop _ => 0", 1);
   }
 }

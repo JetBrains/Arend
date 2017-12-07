@@ -24,19 +24,19 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicStaticCallError() {
     typeCheckModule(
         "\\class A \\where {\n" +
-        "  \\function f => 0\n" +
+        "  \\func f => 0\n" +
         "}\n" +
-        "\\function h (a : A) => a.f", 1);
+        "\\func h (a : A) => a.f", 1);
   }
 
   @Test
   public void dynamicStaticCallError2() {
     typeCheckModule(
         "\\class A \\where {\n" +
-        "  \\function f => 0\n" +
+        "  \\func f => 0\n" +
         "}\n" +
-        "\\function g (a : A) => A.f\n" +
-        "\\function h (a : A) => a.f", 1);
+        "\\func g (a : A) => A.f\n" +
+        "\\func h (a : A) => a.f", 1);
   }
 
   @Test
@@ -44,9 +44,9 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
-        "  \\function g => B.f\n" +
+        "  \\func g => B.f\n" +
         "}");
   }
 
@@ -54,10 +54,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void staticInnerFunctionCall() {
     typeCheckModule(
         "\\class A {\n" +
-        "  \\function g => B.f\n" +
+        "  \\func g => B.f\n" +
         "} \\where {\n" +
         "  \\class B \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
         "}");
   }
@@ -65,8 +65,8 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void staticFromDynamicCall() {
     typeCheckClass(
-        "\\function h : Nat => f",
-        "\\function f => 0");
+        "\\func h : Nat => f",
+        "\\func f => 0");
   }
 
   @Test
@@ -74,9 +74,9 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class A {\n" +
         "  \\class B {\n" +
-        "    \\function h : Nat => f\n" +
+        "    \\func h : Nat => f\n" +
         "  } \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
         "}");
   }
@@ -84,15 +84,15 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void dynamicFromAbstractCall() {
     typeCheckClass(
-        "\\function f => 0\n" +
+        "\\func f => 0\n" +
         "| h : f = 0\n", "", 1);
   }
 
   @Test
   public void dynamicFromDynamicCall() {
     typeCheckClass(
-        "\\function f => 0\n" +
-        "\\function h (_ : f = 0) => 0", "");
+        "\\func f => 0\n" +
+        "\\func h (_ : f = 0) => 0", "");
   }
 
   @Test
@@ -100,19 +100,19 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class A {\n" +
         "  \\data D | con\n" +
-        "  \\function x (_ : con = con) => 0\n" +
+        "  \\func x (_ : con = con) => 0\n" +
         "}\n" +
-        "\\function test (a : A) => a.x\n");
+        "\\func test (a : A) => a.x\n");
   }
 
   @Test
   public void dynamicDoubleInnerFunctionCall111() {
     typeCheckModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "  \\class B {\n" +
         "    \\class C {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -122,11 +122,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall011() {
     resolveNamesModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "} \\where {\n" +
         "  \\class B {\n" +
         "    \\class C {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -136,10 +136,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall101() {
     typeCheckModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "  \\class B \\where {\n" +
         "    \\class C {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -149,11 +149,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall001() {
     resolveNamesModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "} \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\class C {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -163,10 +163,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall110() {
     typeCheckModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "  \\class B {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -176,11 +176,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall010() {
     resolveNamesModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "} \\where {\n" +
         "  \\class B {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -190,10 +190,10 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall100() {
     typeCheckModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -203,11 +203,11 @@ public class ClassesTest extends TypeCheckingTestCase {
   public void dynamicDoubleInnerFunctionCall000() {
     resolveNamesModule(
         "\\class A {\n" +
-        "  \\function g => 0\n" +
+        "  \\func g => 0\n" +
         "} \\where {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f : Nat => g\n" +
+        "      \\func f : Nat => g\n" +
         "    }\n" +
         "  }\n" +
         "}");
@@ -220,7 +220,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | f : Nat -> \\Type0\n" +
         "  | g : f 0\n" +
         "}\n" +
-        "\\function h (b : B) : b.f 0 => b.g");
+        "\\func h (b : B) : b.f 0 => b.g");
   }
 
   @Test
@@ -232,7 +232,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    | g : f 0\n" +
         "  }\n" +
         "}\n" +
-        "\\function h (b : B) (a : b.A) : b.f 0 => a.g");
+        "\\func h (b : B) (a : b.A) : b.f 0 => a.g");
   }
 
   @Test
@@ -242,8 +242,8 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\function f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
-        "\\function g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -253,10 +253,10 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\function f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\function f' (a : A) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\function g (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))\n" +
-        "\\function g' (a : A) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
+        "\\func f' (a : A) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))\n" +
+        "\\func g' (a : A) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -265,13 +265,13 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\function f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-        "  \\function g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
+        "  \\func g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\function f' (a : A) => a.f\n" +
-        "\\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\function g' (a : A) => a.g");
+        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
+        "\\func f' (a : A) => a.f\n" +
+        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
+        "\\func g' (a : A) => a.g");
   }
 
   @Test
@@ -280,13 +280,13 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\function f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
-        "  \\function g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
+        "  \\func g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\function f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\function f' (a : A) => a.f\n" +
-        "\\function g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\function g' (a : A) => a.g");
+        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
+        "\\func f' (a : A) => a.f\n" +
+        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
+        "\\func g' (a : A) => a.g");
   }
 
   @Test
@@ -298,13 +298,13 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) => \\elim n\n" +
         "    | zero => con1 (f x x = f x x)\n" +
         "    | suc n => con2 (D n f) (f n x = f n x)\n" +
-        "  \\function f (n : Nat) : D n `+ => \\elim n\n" +
+        "  \\func f (n : Nat) : D n `+ => \\elim n\n" +
         "    | zero => con1 (path (\\lam _ => x + x))\n" +
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
-        "\\function f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
-        "\\function f' (a : A) (n : Nat) => a.f\n" +
-        "\\function g (a : A) (n : Nat) : a.D n `+ => \\elim n\n" +
+        "\\func f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
+        "\\func f' (a : A) (n : Nat) => a.f\n" +
+        "\\func g (a : A) (n : Nat) : a.D n `+ => \\elim n\n" +
         "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
         "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))", "");
   }
@@ -328,20 +328,20 @@ public class ClassesTest extends TypeCheckingTestCase {
   @Test
   public void funCallsTest() {
     TypeCheckModuleResult result = typeCheckModule(
-        "\\function + (x y : Nat) => x\n" +
+        "\\func + (x y : Nat) => x\n" +
         "\\class A {\n" +
-        "  \\function q => p\n" +
+        "  \\func q => p\n" +
         "  \\class C {\n" +
-        "    \\function k => h + (p + q)" +
+        "    \\func k => h + (p + q)" +
         "  } \\where {\n" +
-        "    \\function h => p + q" +
+        "    \\func h => p + q" +
         "  }\n" +
         "} \\where {\n" +
-        "  \\function p => 0\n" +
+        "  \\func p => 0\n" +
         "  \\class B {\n" +
-        "    \\function g => f + p\n" +
+        "    \\func g => f + p\n" +
         "  } \\where {\n" +
-        "    \\function f : Nat => p\n" +
+        "    \\func f : Nat => p\n" +
         "  }\n" +
         "}");
     FunctionDefinition plus = (FunctionDefinition) result.getDefinition("+");
@@ -433,7 +433,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class B {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\function y (b : B) => b.a.x");
+        "\\func y (b : B) => b.a.x");
   }
 
   @Test
@@ -445,7 +445,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class B {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\function y (b : Nat -> B) => (b 0).a.x");
+        "\\func y (b : Nat -> B) => (b 0).a.x");
   }
 
   @Test
@@ -457,7 +457,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class B {\n" +
         "  | a : Nat -> A\n" +
         "}\n" +
-        "\\function y (b : B) => (b.a 1).x");
+        "\\func y (b : B) => (b.a 1).x");
   }
 
   @Test
@@ -469,7 +469,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class B {\n" +
         "  | a : Nat -> A\n" +
         "}\n" +
-        "\\function y (b : Nat -> B) => ((b 0).a 1).x");
+        "\\func y (b : Nat -> B) => ((b 0).a 1).x");
   }
 
   @Test
@@ -477,10 +477,10 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class A {\n" +
         "  \\class B \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
         "}\n" +
-        "\\function y (a : A) => a.B.f");
+        "\\func y (a : A) => a.B.f");
   }
 
   @Test
@@ -489,12 +489,12 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f => 0\n" +
+        "      \\func f => 0\n" +
         "    }\n" +
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\function y (a : A) => a.B.C.f");
+        "\\func y (a : A) => a.B.C.f");
   }
 
   @Test
@@ -503,12 +503,12 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f => 0\n" +
+        "      \\func f => 0\n" +
         "    }\n" +
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\function y (a : A) : \\Set0 => a.B.C");
+        "\\func y (a : A) : \\Set0 => a.B.C");
   }
 
   @Test
@@ -517,11 +517,11 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f => 0\n" +
+        "      \\func f => 0\n" +
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\function y (a : A) : \\Prop => a.B.C");
+        "\\func y (a : A) : \\Prop => a.B.C");
   }
 
   @Test
@@ -530,12 +530,12 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function f => 0\n" +
+        "      \\func f => 0\n" +
         "    }\n" +
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\function y (a : A) : \\Set0 => a.B");
+        "\\func y (a : A) : \\Set0 => a.B");
   }
 
   @Test
@@ -543,17 +543,17 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class D {\n" +
         "  \\class E \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
         "}\n" +
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function d : D => \\new D\n" +
+        "      \\func d : D => \\new D\n" +
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\function y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -562,12 +562,12 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function d => e\n" +
-        "        \\where \\function e => 0\n" +
+        "      \\func d => e\n" +
+        "        \\where \\func e => 0\n" +
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\function y (a : A) => a.B.C.d.e");
+        "\\func y (a : A) => a.B.C.d.e");
   }
 
   @Test
@@ -575,19 +575,19 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class D {\n" +
         "  \\class E \\where {\n" +
-        "    \\function f => 0\n" +
+        "    \\func f => 0\n" +
         "  }\n" +
         "}\n" +
         "\\class A {\n" +
         "  \\class B \\where {\n" +
         "    \\class C \\where {\n" +
-        "      \\function d : D => \\new D\n" +
+        "      \\func d : D => \\new D\n" +
         "        \\where\n" +
-        "          \\function E => 0\n" +
+        "          \\func E => 0\n" +
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\function y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -595,11 +595,11 @@ public class ClassesTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class A {\n" +
         "   | X : \\0-Type \\lp\n" +
-        "   \\function f (x : \\0-Type \\lp) => x\n" +
+        "   \\func f (x : \\0-Type \\lp) => x\n" +
         "   \\data D (x : \\0-Type \\lp)\n" +
         "   \\class B {\n" +
         "       | Y : X -> \\0-Type \\lp\n" +
-        "       \\function g : \\0-Type \\lp => X\n" +
+        "       \\func g : \\0-Type \\lp => X\n" +
         "   }\n" +
         "}");
   }

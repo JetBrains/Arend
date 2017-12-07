@@ -9,18 +9,15 @@ Here is the data type for booleans in Arend:
 
 \data Bool | true | false
 
-\function
-True (b : Bool) : \Prop
+\func True (b : Bool) : \Prop
     | true => Unit
     | false => Empty
 
-\function
-not (b : Bool) : Bool
+\func not (b : Bool) : Bool
     | true => false
     | false => true
 
-\function
-if {A : \Type} (b : Bool) (then else : A) : A => \elim b
+\func if {A : \Type} (b : Bool) (then else : A) : A => \elim b
     | true => then
     | false => else
 ~~~~
@@ -37,11 +34,9 @@ Here is some fine algebra for you reading pleasure:
   | assoc : \Pi (x y z : X) -> op (op x y) z = op x (op y z)
 }
 
-\function
-xor-semigroup => \new Semigroup { X => Bool | op => xor | assoc => {?} }
+\func xor-semigroup => \new Semigroup { X => Bool | op => xor | assoc => {?} }
 
-\function
-and-semigroup => \new Semigroup { X => Bool | op => and | assoc => {?} }
+\func and-semigroup => \new Semigroup { X => Bool | op => and | assoc => {?} }
 
 \class Monoid {
   | S : Semigroup
@@ -50,16 +45,14 @@ and-semigroup => \new Semigroup { X => Bool | op => and | assoc => {?} }
   | runit : \Pi (x : S.X) -> S.op x id = x
 }
 
-\function
-xor-monoid => \new Monoid {
+\func xor-monoid => \new Monoid {
   | S => xor-semigroup
   | id => false
   | lunit => {?}
   | runit => {?}
 }
 
-\function
-and-monoid => \new Monoid {
+\func and-monoid => \new Monoid {
   | S => and-semigroup
   | id => true
   | lunit => {?}
@@ -73,8 +66,7 @@ and-monoid => \new Monoid {
   | rinv : \Pi (x : M.S.X) -> M.S.op x (inv x) = M.id
 }
 
-\function
-xor-group => \new Group {
+\func xor-group => \new Group {
   | M => xor-monoid
   | inv => {?}
   | linv => {?}
@@ -86,8 +78,7 @@ xor-group => \new Group {
   | comm : \Pi (x y : G.M.S.X) -> G.M.S.op x y = G.M.S.op y x
 }
 
-\function
-xor-abelian => \new AbelianGroup {
+\func xor-abelian => \new AbelianGroup {
   | G => xor-group
   | comm => {?}
 }
@@ -100,15 +91,13 @@ xor-abelian => \new AbelianGroup {
   | rdistr : \Pi (x y z : A.G.M.S.X) -> M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)
 }
 
-\function
-xor-ring => \new Ring {
+\func xor-ring => \new Ring {
   | A => xor-abelian
   | M => and-monoid
   | distr => {?}
 }
 
-\function
-mul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id
+\func mul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id
     => {?}
 -}
 ~~~~

@@ -13,47 +13,47 @@ public class UniverseLevels extends TypeCheckingTestCase {
   public void dataExpansion() {
     typeCheckModule(
       "\\data D (A : \\Type) (a : A) | d (B : A -> \\Type2)\n" +
-      "\\function f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
-      "\\function test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
+      "\\func f : \\Pi {A : \\Type} {a : A} -> (A -> \\Type1) -> D A a => \\lam B => d B\n" +
+      "\\func test => f {\\Set0} {\\Prop} (\\lam _ => \\Type0)");
   }
 
   @Test
   public void allowedInArgs() {
-    typeCheckModule("\\function f (A : \\Type -> \\Type) => 0");
+    typeCheckModule("\\func f (A : \\Type -> \\Type) => 0");
   }
 
   @Test
   public void allowedInResultType() {
-    typeCheckModule("\\function g : \\Type -> \\Type => \\lam X => X");
+    typeCheckModule("\\func g : \\Type -> \\Type => \\lam X => X");
   }
 
   @Test
   public void allowedAsExpression() {
-    typeCheckModule("\\function f => \\Type");
+    typeCheckModule("\\func f => \\Type");
   }
 
   @Test
   public void equalityOfTypes() {
-    typeCheckModule("\\function f (A B : \\Type) => A = B");
+    typeCheckModule("\\func f (A B : \\Type) => A = B");
   }
 
   @Test
   public void callPolyFromOmega() {
      typeCheckModule(
-         "\\function f (A : \\Type) => A\n" +
-         "\\function g (A : \\Type) => f A");
+         "\\func f (A : \\Type) => A\n" +
+         "\\func g (A : \\Type) => f A");
   }
 
   @Test
   public void typeOmegaResult() {
-    typeCheckModule("\\function f (A : \\Type) : \\Type => A");
+    typeCheckModule("\\func f (A : \\Type) : \\Type => A");
   }
 
   @Test
   public void callNonPolyFromOmega() {
     typeCheckModule(
-        "\\function f (A : \\Type0) => 0\n" +
-        "\\function g (A : \\Type) => f A", 1);
+        "\\func f (A : \\Type0) => 0\n" +
+        "\\func g (A : \\Type) => f A", 1);
   }
 
   @Test
@@ -72,10 +72,10 @@ public class UniverseLevels extends TypeCheckingTestCase {
   }
 
   @Test
-  public void functionMaxTest() {
+  public void func() {
     typeCheckModule(
       "\\data Foo (A : \\Type) : \\Type | foo A\n" +
-      "\\function bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
+      "\\func bar (A : \\Type \\lp (\\max \\lh 1)) : \\Type \\lp (\\max \\lh 1) => Foo A");
   }
 
   @Test

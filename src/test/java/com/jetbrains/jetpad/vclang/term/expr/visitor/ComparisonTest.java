@@ -168,8 +168,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
 
   @Test
   public void letsNested() {
-    Definition def1 = typeCheckDef("\\function test => \\let x => 0 \\in \\let y => 1 \\in zero");
-    Definition def2 = typeCheckDef("\\function test => \\let | x => 0 | y => 1 \\in zero");
+    Definition def1 = typeCheckDef("\\func test => \\let x => 0 \\in \\let y => 1 \\in zero");
+    Definition def2 = typeCheckDef("\\func test => \\let | x => 0 | y => 1 \\in zero");
     assertEquals(((FunctionDefinition) def1).getBody(), ((FunctionDefinition) def2).getBody());
   }
 

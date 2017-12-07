@@ -215,6 +215,6 @@ public class ExpressionTest extends TypeCheckingTestCase {
 
   @Test
   public void caseNoExpectedError() {
-    typeCheckDef("\\function test => \\case 1 \\with { zero => 0 | suc y => y }", 1);
+    typeCheckDef("\\func test => \\case 1 \\with { zero => 0 | suc y => y }", 1);
   }
 }

@@ -27,7 +27,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends A {\n" +
         "  | a => 0\n" +
         "}\n" +
-        "\\function f (b : B) : b.a = 0 => path (\\lam _ => 0)");
+        "\\func f (b : B) : b.a = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -63,7 +63,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | A => Nat\n" +
         "  | a => 0\n" +
         "}\n" +
-        "\\function f (b : B) : b.a = 0 => path (\\lam _ => 0)");
+        "\\func f (b : B) : b.a = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -75,8 +75,8 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends A {\n" +
         "  | a => 0\n" +
         "}\n" +
-        "\\function f (x : A) => x.a\n" +
-        "\\function g (b : B) : f b = 0 => path (\\lam _ => 0)");
+        "\\func f (x : A) => x.a\n" +
+        "\\func g (b : B) : f b = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -97,7 +97,7 @@ public class ImplementTest extends TypeCheckingTestCase {
   public void implementExistingFunction() {
     resolveNamesModule(
         "\\class A {\n" +
-        "  \\function a => \\Type0\n" +
+        "  \\func a => \\Type0\n" +
         "}\n" +
         "\\class B \\extends A {\n" +
         "  | a => \\Type0\n" +
@@ -114,8 +114,8 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}\n" +
-        "\\function f (x : C) => x.a\n" +
-        "\\function g : f (\\new B { a => 0 }) = 0 => path (\\lam _ => 0)");
+        "\\func f (x : C) => x.a\n" +
+        "\\func g : f (\\new B { a => 0 }) = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -127,7 +127,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends A {\n" +
         "  | a => 0\n" +
         "}\n" +
-        "\\function f => \\new B { a => 1 }", 1);
+        "\\func f => \\new B { a => 1 }", 1);
   }
 
   @Test
@@ -148,7 +148,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | p : b = c\n" +
         "  | f : \\Pi (q : 0 = 0 -> \\Set0) -> q p -> Nat\n" +
         "}\n" +
-        "\\function g => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
+        "\\func g => \\new D { a => 1 | p => path (\\lam _ => 0) | f => \\lam _ _ => 0 }");
   }
 
   @Test
@@ -168,7 +168,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C {\n" +
         "  | a => 1\n" +
         "}\n" +
-        "\\function f => \\new D { c => 2 }");
+        "\\func f => \\new D { c => 2 }");
   }
 
   @Test
@@ -207,7 +207,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | A : \\Type\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\function f => C { A => Nat }");
+        "\\func f => C { A => Nat }");
     assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("C")).getSort());
     assertEquals(new Sort(0, 0), ((FunctionDefinition) result.getDefinition("f")).getResultType().toSort());
   }
@@ -230,7 +230,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C {\n" +
         " | x' => 0\n" +
         "}\n" +
-        "\\function f => D { x => 1 }");
+        "\\func f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
     Expression fType = result.getDefinition("f").getTypeWithParams(fParams, Sort.STD);
     assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
@@ -247,7 +247,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
         "}\n" +
-        "\\function f => A { x => 0 | y => path (\\lam _ => 0) }");
+        "\\func f => A { x => 0 | y => path (\\lam _ => 0) }");
   }
 
   @Test
@@ -270,7 +270,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
         "}\n" +
-        "\\function f => A { y => path (\\lam _ => 0) }", 1);
+        "\\func f => A { y => path (\\lam _ => 0) }", 1);
   }
 
   @Test
@@ -280,7 +280,7 @@ public class ImplementTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : x = 0\n" +
         "}\n" +
-        "\\function f => A { y => path (\\lam _ => 0) | x => 0 }");
+        "\\func f => A { y => path (\\lam _ => 0) | x => 0 }");
   }
 
   @Test

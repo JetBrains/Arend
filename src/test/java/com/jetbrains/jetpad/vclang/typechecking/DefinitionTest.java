@@ -18,14 +18,14 @@ import static org.junit.Assert.*;
 public class DefinitionTest extends TypeCheckingTestCase {
   @Test
   public void function() {
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f : Nat => 0");
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f : Nat => 0");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionUntyped() {
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f => 0");
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f => 0");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.SET0));
@@ -33,7 +33,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
 
   @Test
   public void functionWithArgs() {
-    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\function f (x : Nat) (y : Nat -> Nat) => y");
+    FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
     assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
@@ -46,7 +46,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
-        "\\function test => D", 2);
+        "\\func test => D", 2);
   }
 
   @Test
@@ -54,7 +54,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
-        "\\function test => d", 2);
+        "\\func test => d", 2);
   }
 
   @Test
@@ -95,7 +95,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternConstructorCall() {
     typeCheckModule(
         "\\data D {Nat} \\with | {zero} => d\n" +
-        "\\function test => d");
+        "\\func test => d");
   }
 
   @Test
@@ -128,21 +128,21 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\data D (n m : Nat) | d (n = n) (m = m)\n" +
         "\\data C | c (n m : Nat) (D n m)\n" +
         "\\data E C \\with | c zero (suc zero) (d _ _) => e\n" +
-        "\\function test => e {path (\\lam _ => 0)} {path (\\lam _ => 1)}");
+        "\\func test => e {path (\\lam _ => 0)} {path (\\lam _ => 1)}");
   }
 
   @Test
   public void patternConstructorDefCall() {
     typeCheckModule(
         "\\data D (n m : Nat) => \\elim n, m | suc n, suc m => d (n = n) (m = m)\n" +
-        "\\function test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
+        "\\func test => d (path (\\lam _ => 1)) (path (\\lam _ => 0))");
   }
 
   @Test
   public void patternConstructorDefCallError() {
     typeCheckModule(
         "\\data D Nat \\with | zero => d\n" +
-        "\\function test (n : Nat) : D n => d", 1);
+        "\\func test (n : Nat) : D n => d", 1);
   }
 
   @Test
@@ -150,7 +150,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data E Nat \\with | zero => e\n" +
         "\\data D (n : Nat) (E n) => \\elim n | zero => d\n" +
-        "\\function test => d");
+        "\\func test => d");
   }
 
   @Test
@@ -158,7 +158,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data D (n : Nat) | d (n = n)\n" +
         "\\data C (D 1) \\with | d p => c\n" +
-        "\\function test : C (d (path (\\lam _ => 1))) => c");
+        "\\func test : C (d (path (\\lam _ => 1))) => c");
   }
 
   @Test
@@ -167,7 +167,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
         "\\data E (x : 0 = 0) | e\n" +
         "\\data C (n m : Nat) => \\elim n, m | suc n, suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
-        "\\function test => x (e {path (\\lam _ => 0)})");
+        "\\func test => x (e {path (\\lam _ => 0)})");
   }
 
   @Test
@@ -181,7 +181,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   @Test
   public void patternTypeCheck() {
     typeCheckModule(
-        "\\function f (x : Nat -> Nat) => x 0\n" +
+        "\\func f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0) \\with\n" +
         "  | suc n => foo (f n)", 1);
   }

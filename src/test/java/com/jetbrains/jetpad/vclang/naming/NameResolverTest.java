@@ -42,18 +42,18 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereTest() {
     resolveNamesModule(
-        "\\function f (x : \\Type0) => B.b (a x) \\where {\n" +
-            "  \\function a (x : \\Type0) => x\n" +
+        "\\func f (x : \\Type0) => B.b (a x) \\where {\n" +
+            "  \\func a (x : \\Type0) => x\n" +
             "  \\data D | D1 | D2\n" +
-            "  \\class B \\where { \\data C | cr \\function b (x : \\Type0) => D1 }\n" +
+            "  \\class B \\where { \\data C | cr \\func b (x : \\Type0) => D1 }\n" +
             "}");
   }
 
   @Test
   public void whereTestDefCmd() {
     resolveNamesModule(
-        "\\function f (x : \\Type0) => a \\where {\n" +
-        "  \\class A \\where { \\function a => 0 }\n" +
+        "\\func f (x : \\Type0) => a \\where {\n" +
+        "  \\class A \\where { \\func a => 0 }\n" +
         "  \\open A\n" +
         "}");
   }
@@ -61,9 +61,9 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereOpenFunction() {
     resolveNamesModule(
-        "\\function f => x \\where {\n" +
-        "  \\function b => 0 \\where\n" +
-        "    \\function x => 0\n" +
+        "\\func f => x \\where {\n" +
+        "  \\func b => 0 \\where\n" +
+        "    \\func x => 0\n" +
         "  \\open b(x)\n" +
         "}");
   }
@@ -71,75 +71,75 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void whereNested() {
     resolveNamesModule(
-        "\\function f => x \\where {\n" +
+        "\\func f => x \\where {\n" +
         "  \\data B | b\n" +
-        "  \\function x => a \\where\n" +
-        "    \\function a => b\n" +
+        "  \\func x => a \\where\n" +
+        "    \\func a => b\n" +
         "}");
   }
 
   @Test
   public void whereOuterScope() {
     resolveNamesModule(
-        "\\function f => 0 \\where {\n" +
-        "  \\function g => 0\n" +
-        "  \\function h => g\n" +
+        "\\func f => 0 \\where {\n" +
+        "  \\func g => 0\n" +
+        "  \\func h => g\n" +
         "}");
   }
 
   @Test
   public void whereInSignature() {
     resolveNamesModule(
-        "\\function f : D => d \\where\n" +
+        "\\func f : D => d \\where\n" +
         "  \\data D | d");
   }
 
   @Test
   public void whereAccessOuter() {
     resolveNamesModule(
-        "\\function f => 0 \\where\n" +
-        "  \\function x => 0\n" +
-        "\\function g => f.x");
+        "\\func f => 0 \\where\n" +
+        "  \\func x => 0\n" +
+        "\\func g => f.x");
   }
 
   @Test
   public void whereNonStaticOpen() {
     resolveNamesModule(
-        "\\function f => 0 \\where {\n" +
-        "  \\function x => 0\n" +
-        "  \\function y => x\n" +
+        "\\func f => 0 \\where {\n" +
+        "  \\func x => 0\n" +
+        "  \\func y => x\n" +
         "}\n" +
-        "\\function g => 0 \\where\n" +
+        "\\func g => 0 \\where\n" +
         "  \\open f(y)");
   }
 
   @Test
   public void openTest() {
-    resolveNamesModule("\\class A \\where { \\function x => 0 } \\open A \\function y => x");
+    resolveNamesModule("\\class A \\where { \\func x => 0 } \\open A \\func y => x");
   }
 
   @Test
   public void openTest2() {
-    resolveNamesModule("\\class A \\where { \\function x => 0 } \\function y => x \\open A");
+    resolveNamesModule("\\class A \\where { \\func x => 0 } \\func y => x \\open A");
   }
 
   @Ignore
   @Test
   public void exportTest() {
-    resolveNamesModule("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => A.x");
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\export B } \\func y => A.x");
   }
 
   @Ignore("dynamic call")
   @Test
   public void staticFieldAccCallTest() {
-    resolveNamesModule("\\class A { | x : \\Type0 \\class B \\where { \\function y => x } } \\function f (a : A) => a.B.y");
+    resolveNamesModule("\\class A { | x : \\Type0 \\class B \\where { \\func y => x } } \\func f (a : A) => a.B.y");
   }
 
   @Ignore("export")
   @Test
   public void exportPublicFieldsTest() {
     /*
-    resolveNamesClass("test", "\\class A \\where { \\function x => 0 \\class B \\where { \\function y => x } \\export B } \\function f => A.y");
+    resolveNamesClass("test", "\\class A \\where { \\func x => 0 \\class B \\where { \\func y => x } \\export B } \\func f => A.y");
     assertNotNull(Root.getModule(new NameModuleSourceId("test")));
     Root.getModule(new NameModuleSourceId("test")).namespace;
 
@@ -163,13 +163,13 @@ public class NameResolverTest extends NameResolverTestCase {
         "    \\class B {\n" +
         "      | y : \\Type0\n" +
         "      \\class C \\where {\n" +
-        "        \\function z => x + y\n" +
-        "        \\function w => x\n" +
+        "        \\func z => x + y\n" +
+        "        \\func w => x\n" +
         "      }\n" +
         "      \\export C\n" +
         "    }\n" +
         "    \\class D { \\export B }\n" +
-        "    \\function f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
+        "    \\func f (b : B) : b.C.z = b.z => path (\\lam _ => b.w + b.y)\n" +
         "  }\n" +
         "}");
     assertNotNull(Root.getModule(new NameModuleSourceId("test")));
@@ -206,102 +206,102 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void useExistingTestError() {
-    resolveNamesDef("\\class Test { \\function A => 0 \\function B => A } \\where { \\class A { } }", 1);
+    resolveNamesDef("\\class Test { \\func A => 0 \\func B => A } \\where { \\class A { } }", 1);
   }
 
   @Test
   public void defineExistingStaticTestError() {
-    resolveNamesModule("\\class A { } \\function A => 0", 1);
+    resolveNamesModule("\\class A { } \\func A => 0", 1);
   }
 
   @Test
   public void defineExistingDynamicTestError() {
-    resolveNamesDef("\\class Test { \\class A \\function A => 0 }", 1);
+    resolveNamesDef("\\class Test { \\class A \\func A => 0 }", 1);
   }
 
   @Ignore
   @Test
   public void exportExistingTestError() {
-    resolveNamesModule("\\class A \\where { \\class B \\where { \\function x => 0 } } \\export A \\class B \\where { \\function y => 0 }", 2);
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } } \\export A \\class B \\where { \\func y => 0 }", 2);
   }
 
   @Ignore
   @Test
   public void exportExistingTestError2() {
-    resolveNamesModule("\\class B \\where { \\function y => 0 } \\class A \\where { \\class B \\where { \\function x => 0 } } \\export A", 2);
+    resolveNamesModule("\\class B \\where { \\func y => 0 } \\class A \\where { \\class B \\where { \\func x => 0 } } \\export A", 2);
   }
 
   @Test
   public void openInsideTest() {
-    resolveNamesModule("\\class A \\where { \\class B \\where { \\function x => 0 } \\open B } \\function y => A.x", 1);
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\open B } \\func y => A.x", 1);
   }
 
   @Ignore
   @Test
   public void exportInsideTest() {
-    resolveNamesModule("\\class A \\where { \\class B \\where { \\function x => 0 } \\export B } \\function y => A.x");
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\export B } \\func y => A.x");
   }
 
   @Test
   public void classExtensionWhereTestError() {
     resolveNamesModule(
-        "\\function f => 0 \\where {\n" +
+        "\\func f => 0 \\where {\n" +
         "  \\class A {}\n" +
-        "  \\class A { \\function x => 0 }\n" +
+        "  \\class A { \\func x => 0 }\n" +
         "}", 1);
   }
 
   @Test
   public void multipleDefsWhere() {
     resolveNamesModule(
-        "\\function f => 0 \\where {\n" +
-        "  \\function d => 0\n" +
-        "  \\function d => 1\n" +
+        "\\func f => 0 \\where {\n" +
+        "  \\func d => 0\n" +
+        "  \\func d => 1\n" +
         "}", 1);
   }
 
   @Test
   public void dataConstructor() {
-    resolveNamesModule("\\data D | d \\function f => D.d");
+    resolveNamesModule("\\data D | d \\func f => D.d");
   }
 
   @Test
   public void testPreludeSuc() {
-    resolveNamesDef("\\function test' => suc");
+    resolveNamesDef("\\func test' => suc");
   }
 
   @Test
   public void testPreludeNonExistentMember() {
-    resolveNamesDef("\\function test' => foo", 1);
+    resolveNamesDef("\\func test' => foo", 1);
   }
 
   @Test
   public void openDuplicate() {
     resolveNamesModule(
-        "\\function f => \\Type0\n" +
-        "\\class X \\where { \\function f => \\Type0 }\n" +
+        "\\func f => \\Type0\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
         "\\open X\n" +
-        "\\function g => f");
+        "\\func g => f");
   }
 
   @Test
   public void openDuplicateModule() {
     resolveNamesModule(
-        "\\class X \\where { \\function f => \\Type0 }\n" +
-        "\\class Y \\where { \\function f => \\Type0 }\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\class Y \\where { \\func f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y\n" +
-        "\\function g => f", 1);
+        "\\func g => f", 1);
   }
 
   @Test
   public void openDuplicateModuleHiding() {
     resolveNamesModule(
-        "\\class X \\where { \\function f => \\Type0 }\n" +
-        "\\class Y \\where { \\function f => \\Type0 }\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\class Y \\where { \\func f => \\Type0 }\n" +
         "\\open X\n" +
         "\\open Y \\hiding (f)\n" +
-        "\\function g => f");
+        "\\func g => f");
   }
 
   @Test
@@ -322,7 +322,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\data K\n" +
       "  | k1 \\Prop\n" +
       "  | k2 \\Prop\n" +
-      "\\function crash (k : K) : \\Prop => \\elim k\n" +
+      "\\func crash (k : K) : \\Prop => \\elim k\n" +
       "  | k1 a => a\n" +
       "  | k2 b => a", 1);
   }

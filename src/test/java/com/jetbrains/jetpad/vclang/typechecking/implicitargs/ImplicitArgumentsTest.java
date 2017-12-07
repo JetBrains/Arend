@@ -305,105 +305,105 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void inferUnderPi() {
     typeCheckModule(
-        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
+        "\\func $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\func foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) => f $ a'", 1);
   }
 
   @Test
   public void inferUnderPiExpected() {
     typeCheckModule(
-        "\\function $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
-        "\\function foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
+        "\\func $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
+        "\\func foo (A : \\Type0) (B : A -> \\Type0) (f : \\Pi (a : A) -> B a) (a' : A) : B a' => f $ a'", 1);
   }
 
   @Test
   public void inferPathCon() {
-    typeCheckDef("\\function f : 1 = 1 => path (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path (\\lam _ => 0)", 1);
   }
 
   @Test
   public void inferPathCon0() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} (\\lam _ => 0)", 1);
   }
 
   @Test
   public void inferPathCon1() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {1} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {1} (\\lam _ => 0)", 1);
   }
 
   @Test
   public void inferPathCon2() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {0} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {0} (\\lam _ => 0)", 1);
   }
 
   @Test
   public void inferPathCon3() {
-    typeCheckDef("\\function f : 1 = 1 => path {\\lam _ => Nat} {1} {1} (\\lam _ => 0)", 1);
+    typeCheckDef("\\func f : 1 = 1 => path {\\lam _ => Nat} {1} {1} (\\lam _ => 0)", 1);
   }
 
   @Test
   public void pathWithoutArg() {
-    typeCheckDef("\\function f => path", 1);
+    typeCheckDef("\\func f => path", 1);
   }
 
   @Test
   public void pathWithoutArg1() {
-    typeCheckDef("\\function f : \\Pi {A : I -> \\Type0} {a : A left} {a' : A right} (\\Pi (i : I) -> A i) -> Path A a a' => path", 1);
+    typeCheckDef("\\func f : \\Pi {A : I -> \\Type0} {a : A left} {a' : A right} (\\Pi (i : I) -> A i) -> Path A a a' => path", 1);
   }
 
   @Test
   public void pathWithoutArg2() {
-    typeCheckDef("\\function f => path {\\lam _ => Nat}", 1);
+    typeCheckDef("\\func f => path {\\lam _ => Nat}", 1);
   }
 
   @Test
   public void pathWithoutArg3() {
-    typeCheckDef("\\function f => path {\\lam _ => Nat} {0}", 1);
+    typeCheckDef("\\func f => path {\\lam _ => Nat} {0}", 1);
   }
 
   @Test
   public void pathWithoutArg4() {
-    typeCheckDef("\\function f => path {\\lam _ => Nat} {0} {0}", 1);
+    typeCheckDef("\\func f => path {\\lam _ => Nat} {0} {0}", 1);
   }
 
   @Test
   public void orderTest1() {
     typeCheckModule(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
-        "\\function test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
+        "\\func idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
+        "\\func test {A : \\Type0} (P : A -> \\Type0) {a a' : A} (q : a = a') (pa : P a) (i : I)\n" +
         "  => idpOver (\\lam (j : I) => P (q @ j)) pa @ i\n");
   }
 
   @Test
   public void orderTest2() {
     typeCheckModule(
-        "\\function idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
-        "\\function test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
+        "\\func idpOver (A : I -> \\Type0) (a : A left) : Path A a (coe A a right) => path (coe A a)\n" +
+        "\\func test {A : \\Type0} (P : A -> \\Type0) {a : A} (pa : P a) (i : I)\n" +
         "  => \\lam (a' : A) (q : a = a') => idpOver (\\lam (j : I) => P (q @ j)) pa @ i");
   }
 
   @Test
   public void differentLevels() {
     typeCheckModule(
-        "\\function F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
-        "\\function g (X : \\Type \\lp) => F X (\\lam _ => X = X)");
+        "\\func F (X : \\Type \\lp) (B : X -> \\Type \\lp) => zero\n" +
+        "\\func g (X : \\Type \\lp) => F X (\\lam _ => X = X)");
   }
 
   @Test
   public void piTest() {
-    typeCheckDef("\\function f (A : \\Type \\lp) (B : A -> \\Type \\lp) (f g : \\Pi (x : A) -> B x) => f = g");
+    typeCheckDef("\\func f (A : \\Type \\lp) (B : A -> \\Type \\lp) (f g : \\Pi (x : A) -> B x) => f = g");
   }
 
   @Test
   public void etaExpansionTest() {
     typeCheckModule(
-        "\\function \\infixr 9 $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
+        "\\func \\infixr 9 $ {A B : \\Set0} (f : A -> B) (a : A) => f a\n" +
         "\\data Fin Nat \\with | n => fzero | suc n => fsuc (Fin n)\n" +
-        "\\function unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
+        "\\func unsuc {n : Nat} (x : Fin (suc n)) : Fin n => \\elim n, x\n" +
         "  | _, fzero => fzero\n" +
         "  | zero, fsuc x => fzero\n" +
         "  | suc n, fsuc x => fsuc (unsuc x)\n" +
-        "\\function foo {n : Nat} (x : Fin n) : Nat => \\elim n\n" +
+        "\\func foo {n : Nat} (x : Fin n) : Nat => \\elim n\n" +
         "  | zero => zero\n" +
         "  | suc n' => foo $ unsuc x");
   }
@@ -411,7 +411,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
   @Test
   public void freeVars() {
     typeCheckModule(
-      "\\function f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
-      "\\function h => f (path (\\lam _ x => x))", 1);
+      "\\func f {n : Nat} {g : Nat -> Nat} (p : g = (\\lam x => n)) => 0\n" +
+      "\\func h => f (path (\\lam _ x => x))", 1);
   }
 }

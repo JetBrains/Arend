@@ -10,8 +10,8 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C (A : \\Set) {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\function f (c : C) : \\Set => c\n" +
-      "\\function g (n : f (\\new C { | A => Nat | a => 0 })) => suc n");
+      "\\func f (c : C) : \\Set => c\n" +
+      "\\func g (n : f (\\new C { | A => Nat | a => 0 })) => suc n");
   }
 
   @Test
@@ -20,8 +20,8 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C (A : \\Set) {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\function f (c : C { A => Nat }) : c => 1\n" +
-      "\\function g : f (\\new C { | A => Nat | a => 0 }) = 1 => path (\\lam _ => 1)");
+      "\\func f (c : C { A => Nat }) : c => 1\n" +
+      "\\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => path (\\lam _ => 1)");
   }
 
   @Test
@@ -30,7 +30,7 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C (A : \\Set) {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\function f (c : C) : Nat => c", 1);
+      "\\func f (c : C) : Nat => c", 1);
   }
 
   @Test
@@ -38,8 +38,8 @@ public class CoerceTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (A : \\Set)\n" +
       "\\class D \\extends C { | a : A }\n" +
-      "\\function f (d : D) : \\Set => d\n" +
-      "\\function g (n : f (\\new D { | A => Nat | a => 0 })) => suc n");
+      "\\func f (d : D) : \\Set => d\n" +
+      "\\func g (n : f (\\new D { | A => Nat | a => 0 })) => suc n");
   }
 
   @Test
@@ -48,7 +48,7 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C1 (A : Nat)\n" +
       "\\class C2 (B : \\Set)\n" +
       "\\class D \\extends C1, C2 { | b : B }\n" +
-      "\\function f (d : D) : \\Set => d");
+      "\\func f (d : D) : \\Set => d");
   }
 
   @Test
@@ -57,7 +57,7 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\class C1 (n : Nat)\n" +
       "\\class C2 (B : \\Set)\n" +
       "\\class D (n : Nat) \\extends C2 \\Prop, C1 n { | b : B }\n" +
-      "\\function f (d : D) : d => b d\n" +
-      "\\function g (d : D) : Nat => n d");
+      "\\func f (d : D) : d => b d\n" +
+      "\\func g (d : D) : Nat => n d");
   }
 }

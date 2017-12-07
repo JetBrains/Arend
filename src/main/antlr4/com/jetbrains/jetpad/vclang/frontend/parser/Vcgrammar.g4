@@ -19,7 +19,7 @@ classStat : '|' precedence ID tele* ':' expr  # classField
           | definition                        # classDefinition
           ;
 
-definition  : '\\function' precedence ID tele* (':' expr)? functionBody where?                                      # defFunction
+definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                                      # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                                   # defData
             | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? ('{' classStat* '}')? where?  # defClass
             | '\\view' precedence ID '\\on' expr '\\by' ID '{' classViewField* '}'                                  # defClassView
