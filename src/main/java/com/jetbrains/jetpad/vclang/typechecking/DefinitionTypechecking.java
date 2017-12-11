@@ -680,13 +680,39 @@ class DefinitionTypechecking {
       }
     }
 
-    boolean setCoercingField = def.hasParameter();
     for (Concrete.ClassField field : def.getFields()) {
-      ClassField classField = typecheckClassField(field, typedDef, visitor);
-      if (setCoercingField) {
-        typedDef.setCoercingField(classField);
-        setCoercingField = false;
+      typecheckClassField(field, typedDef, visitor);
+    }
+
+    ClassField coercingField = null;
+    Set<ClassField> coercingFields = null;
+    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+      if (coercingField == null) {
+        coercingField = superClass.getCoercingField();
+      } else {
+        if (superClass.getCoercingField() != null && superClass.getCoercingField() != coercingField) {
+          if (coercingFields == null) {
+            coercingFields = new LinkedHashSet<>();
+            coercingFields.add(coercingField);
+          }
+          coercingFields.add(superClass.getCoercingField());
+        }
       }
+    }
+    if (def.hasParameter() && !typedDef.getPersonalFields().isEmpty()) {
+      if (coercingField == null) {
+        coercingField = typedDef.getPersonalFields().get(0);
+      } else {
+        if (coercingFields == null) {
+          coercingFields = new LinkedHashSet<>();
+          coercingFields.add(coercingField);
+        }
+        coercingFields.add(typedDef.getPersonalFields().get(0));
+      }
+    }
+    typedDef.setCoercingField(coercingField);
+    if (coercingFields != null) {
+      visitor.getErrorReporter().report(new ClassCoerceError(coercingFields, def));
     }
 
     if (!def.getImplementations().isEmpty()) {
@@ -725,7 +751,7 @@ class DefinitionTypechecking {
     typedDef.updateSorts();
   }
 
-  private static ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
+  private static void typecheckClassField(Concrete.ClassField def, ClassDefinition enclosingClass, CheckTypeVisitor visitor) {
     TypedDependentLink thisParameter = createThisParam(enclosingClass);
     visitor.getFreeBindings().add(thisParameter);
     visitor.setThis(enclosingClass, thisParameter);
@@ -738,7 +764,6 @@ class DefinitionTypechecking {
     visitor.getTypecheckingState().record(def.getData(), typedDef);
     enclosingClass.addField(typedDef);
     enclosingClass.addPersonalField(typedDef);
-    return typedDef;
   }
 
   private static boolean implementField(ClassField classField, ClassDefinition.Implementation implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {

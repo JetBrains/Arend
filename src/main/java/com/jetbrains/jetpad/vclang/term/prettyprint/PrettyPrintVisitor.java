@@ -1024,14 +1024,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition def) {
     myBuilder.append("\\class ").append(def.getData().textRepresentation());
     if (!def.getSuperClasses().isEmpty()) {
-      myBuilder.append(" \\extends");
-      int i = def.getSuperClasses().size();
+      myBuilder.append(" \\extends ");
+      boolean first = true;
       for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-        myBuilder.append(" ");
-        visitReference(superClass, new Precedence(Concrete.Expression.PREC));
-        if (--i == 0) {
-          myBuilder.append(",");
+        if (first) {
+          first = false;
+        } else {
+          myBuilder.append(", ");
         }
+        visitReference(superClass, new Precedence(Concrete.Expression.PREC));
       }
     }
   }
