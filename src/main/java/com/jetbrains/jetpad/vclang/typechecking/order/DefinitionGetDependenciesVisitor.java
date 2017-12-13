@@ -120,7 +120,10 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView def, Boolean params) {
+  public Void visitClassSynonym(Concrete.ClassSynonym def, Boolean params) {
+    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
+      myVisitor.visitReference(superClass, null);
+    }
     myVisitor.visitReference(def.getUnderlyingClass(), null);
     return null;
   }

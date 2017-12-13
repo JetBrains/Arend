@@ -23,7 +23,7 @@ public class SimpleInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances(Concrete.ClassView classView) {
+  public Collection<? extends Concrete.Instance> getInstances(Concrete.ClassSynonym classSynonym) {
     if (myInstances == null) {
       myInstances = new HashMap<>();
       for (Referable referable : myScope.getElements()) {
@@ -38,6 +38,6 @@ public class SimpleInstanceProvider implements InstanceProvider {
         }
       }
     }
-    return myInstances.getOrDefault(classView.getData(), Collections.emptyList());
+    return myInstances.getOrDefault(classSynonym.getData(), Collections.emptyList());
   }
 }

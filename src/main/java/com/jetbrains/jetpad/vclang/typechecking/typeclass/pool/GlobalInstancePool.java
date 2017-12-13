@@ -15,7 +15,7 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
     /* TODO[classes]
     DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
     if (classifyingDefCall == null) {

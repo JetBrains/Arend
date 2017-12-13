@@ -134,7 +134,7 @@ public class Prelude {
     }
 
     @Override
-    public void typecheckingFinished(Definition definition) {
+    public void typecheckingFinished(GlobalReferable referable, Definition definition) {
       update(definition);
     }
   }

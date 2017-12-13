@@ -1021,12 +1021,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
   }
 
-  private void prettyPrintClassDefinitionHeader(Concrete.ClassDefinition def) {
+  private void prettyPrintClassDefinitionHeader(Concrete.Definition def, List<Concrete.ReferenceExpression> superClasses) {
     myBuilder.append("\\class ").append(def.getData().textRepresentation());
-    if (!def.getSuperClasses().isEmpty()) {
+    if (!superClasses.isEmpty()) {
       myBuilder.append(" \\extends ");
       boolean first = true;
-      for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
+      for (Concrete.ReferenceExpression superClass : superClasses) {
         if (first) {
           first = false;
         } else {
@@ -1039,7 +1039,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Void ignored) {
-    prettyPrintClassDefinitionHeader(def);
+    prettyPrintClassDefinitionHeader(def, def.getSuperClasses());
 
     Collection<? extends Concrete.ClassField> fields = def.getFields();
     Collection<? extends Concrete.ClassFieldImpl> implementations = def.getImplementations();
@@ -1091,43 +1091,27 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView def, Void params) {
-    myBuilder.append("\\view ").append(def.getData().textRepresentation()).append(" \\on ");
+  public Void visitClassSynonym(Concrete.ClassSynonym def, Void params) {
+    prettyPrintClassDefinitionHeader(def, def.getSuperClasses());
+    myBuilder.append(" => ");
     def.getUnderlyingClass().accept(this, new Precedence(Concrete.Expression.PREC));
-    myBuilder.append(" \\by ").append(def.getClassifyingField().textRepresentation()).append(" {");
 
     if (!def.getFields().isEmpty()) {
-      boolean hasImplemented = false;
-      for (Concrete.ClassViewField field : def.getFields()) {
-        if (!Objects.equals(field.getData().textRepresentation(), field.getUnderlyingField().textRepresentation())) {
-          hasImplemented = true;
-          break;
-        }
-      }
-
-      if (hasImplemented) {
-        myIndent += INDENT;
-        for (Concrete.ClassViewField field : def.getFields()) {
-          myBuilder.append("\n");
-          printIndent();
-          visitClassViewField(field);
-        }
-        myIndent -= INDENT;
+      myBuilder.append(" {");
+      myIndent += INDENT;
+      for (Concrete.ClassFieldSynonym field : def.getFields()) {
         myBuilder.append("\n");
         printIndent();
-      } else {
-        for (Concrete.ClassViewField field : def.getFields()) {
-          myBuilder.append(" ").append(field.getUnderlyingField().textRepresentation());
-        }
-        myBuilder.append(" ");
+        myBuilder.append(field.getUnderlyingField().getReferent().textRepresentation()).append(" => ");
+        prettyPrintNameWithPrecedence(def.getData());
       }
+      myIndent -= INDENT;
+      myBuilder.append("\n");
+      printIndent();
+      myBuilder.append("}");
     }
-    myBuilder.append("}");
-    return null;
-  }
 
-  private void visitClassViewField(Concrete.ClassViewField def) {
-    myBuilder.append(def.getUnderlyingField().textRepresentation()).append(" => ").append(def.getData().textRepresentation());
+    return null;
   }
 
   @Override

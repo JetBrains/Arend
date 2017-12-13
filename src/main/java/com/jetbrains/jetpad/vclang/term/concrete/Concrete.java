@@ -127,24 +127,6 @@ public final class Concrete {
     }
   }
 
-  public static ClassView getUnderlyingClassView(Expression expr) {
-    return null;
-    /* TODO[classes]
-    if (expr instanceof ReferenceExpression) {
-      Referable definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof ClassView) {
-        return (ClassView) definition;
-      }
-    }
-
-    if (expr instanceof ClassExtExpression) {
-      return getUnderlyingClassView(((ClassExtExpression) expr).getBaseClassExpression());
-    } else {
-      return null;
-    }
-    */
-  }
-
   public static abstract class Expression extends SourceNodeImpl {
     public static final byte PREC = -12;
 
@@ -1195,18 +1177,29 @@ public final class Concrete {
     }
   }
 
-  // ClassViews
+  // Class synonyms
 
-  public static class ClassView extends Definition {
+  public static class ClassSynonym extends Definition {
+    private final List<ReferenceExpression> mySuperClasses;
     private final ReferenceExpression myUnderlyingClass;
-    private Referable myClassifyingField;
-    private final List<ClassViewField> myFields;
+    private final List<ClassFieldSynonym> myFields;
 
-    public ClassView(GlobalReferable referable, ReferenceExpression underlyingClass, Referable classifyingField, List<ClassViewField> fields) {
+    public ClassSynonym(ClassReferable referable, List<ReferenceExpression> superClasses, ReferenceExpression underlyingClass, List<ClassFieldSynonym> fields) {
       super(referable);
+      mySuperClasses = superClasses;
       myUnderlyingClass = underlyingClass;
       myFields = fields;
-      myClassifyingField = classifyingField;
+    }
+
+    @Nonnull
+    @Override
+    public ClassReferable getData() {
+      return (ClassReferable) super.getData();
+    }
+
+    @Nonnull
+    public List<ReferenceExpression> getSuperClasses() {
+      return mySuperClasses;
     }
 
     @Nonnull
@@ -1215,53 +1208,35 @@ public final class Concrete {
     }
 
     @Nonnull
-    public Referable getClassifyingField() {
-      return myClassifyingField;
-    }
-
-    public void setClassifyingField(Referable classifyingField) {
-      myClassifyingField = classifyingField;
-    }
-
-    @Nonnull
-    public List<ClassViewField> getFields() {
+    public List<ClassFieldSynonym> getFields() {
       return myFields;
     }
 
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassView(this, params);
+      return visitor.visitClassSynonym(this, params);
     }
   }
 
-  public static class ClassViewField extends ReferableDefinition {
-    private Referable myUnderlyingField;
-    private final ClassView myOwnView;
+  public static class ClassFieldSynonym extends ReferableDefinition {
+    private final ReferenceExpression myUnderlyingField;
+    private final ClassSynonym myClassSynonym;
 
-    public ClassViewField(GlobalReferable referable, Referable underlyingField, ClassView ownView) {
+    public ClassFieldSynonym(GlobalReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
       super(referable);
       myUnderlyingField = underlyingField;
-      myOwnView = ownView;
+      myClassSynonym = classSynonym;
     }
 
     @Nonnull
-    public Referable getUnderlyingField() {
+    public ReferenceExpression getUnderlyingField() {
       return myUnderlyingField;
     }
 
     @Nonnull
-    public ClassView getOwnView() {
-      return myOwnView;
-    }
-
-    public void setUnderlyingField(Referable underlyingField) {
-      myUnderlyingField = underlyingField;
-    }
-
-    @Nonnull
     @Override
-    public Definition getRelatedDefinition() {
-      return myOwnView;
+    public ClassSynonym getRelatedDefinition() {
+      return myClassSynonym;
     }
   }
 

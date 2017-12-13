@@ -22,7 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
@@ -33,6 +32,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
+  /* TODO[classes]
   private static Concrete.ClassView getClassViewFromDefCall(Concrete.Definition definition, int paramIndex) {
     Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
     if (parameters == null) {
@@ -59,6 +59,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
     return null;
   }
+  */
 
   protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();

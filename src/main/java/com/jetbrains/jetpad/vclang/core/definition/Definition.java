@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.core.definition;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.expr.DefCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -82,11 +81,8 @@ public abstract class Definition implements Variable {
     if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
       return new FunctionDefinition(definition.getData());
     }
-    if (definition instanceof Concrete.ClassDefinition) {
+    if (definition instanceof Concrete.ClassDefinition || definition instanceof Concrete.ClassSynonym) {
       return new ClassDefinition(definition.getData());
-    }
-    if (definition instanceof Concrete.ClassView) {
-      return new ClassDefinition(definition.getData()); // TODO[classes]
     }
     throw new IllegalStateException();
   }

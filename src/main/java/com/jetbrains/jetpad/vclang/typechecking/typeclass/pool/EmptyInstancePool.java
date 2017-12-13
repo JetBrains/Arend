@@ -9,7 +9,7 @@ public class EmptyInstancePool implements InstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
     return null;
   }
 }

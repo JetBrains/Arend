@@ -19,12 +19,17 @@ classStat : '|' precedence ID tele* ':' expr  # classField
           | definition                        # classDefinition
           ;
 
-definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                                      # defFunction
-            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                                   # defData
-            | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? ('{' classStat* '}')? where?  # defClass
-            | '\\view' precedence ID '\\on' expr '\\by' ID '{' classViewField* '}'                                  # defClassView
-            | '\\instance' ID tele* ':' classCall coClauses where?                                                  # defInstance
+definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
+            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
+            | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
+            | '\\instance' ID tele* ':' classCall coClauses where?                                      # defInstance
             ;
+
+classBody : '{' classStat* '}'                      # classImpl
+          | '=>' atomFieldsAcc ('{' fieldSyn* '}')? # classSyn
+          ;
+
+fieldSyn : '|' ID '=>' precedence ID;
 
 classCall : atomFieldsAcc; // TODO[classes]: add arguments
 
@@ -39,8 +44,6 @@ dataBody : elim constructorClause*                      # dataClauses
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
 elim : '\\with' | '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
-
-classViewField : ID ('=>' precedence ID)? ;
 
 where : '\\where' ('{' statement* '}' | statement);
 

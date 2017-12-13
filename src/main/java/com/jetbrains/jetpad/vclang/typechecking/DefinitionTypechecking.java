@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -41,7 +42,6 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
@@ -150,6 +150,24 @@ class DefinitionTypechecking {
         }
       }
       return null;
+    } else if (unit.getDefinition() instanceof Concrete.ClassSynonym) {
+      Concrete.ClassSynonym classSyn = (Concrete.ClassSynonym) unit.getDefinition();
+      ClassDefinition classDef = visitor.referableToDefinition(classSyn.getUnderlyingClass().getReferent(), ClassDefinition.class, "Expected a class", classSyn.getUnderlyingClass());
+      if (typechecked == null && classDef != null) {
+        state.record(unit.getDefinition().getData(), classDef);
+      }
+      if (classDef == null && typechecked instanceof ClassDefinition) {
+        classDef = (ClassDefinition) typechecked;
+      }
+      if (classDef != null) {
+        try {
+          typecheckClassSynonym(classSyn, classDef, visitor);
+        } catch (IncorrectExpressionException e) {
+          errorReporter.report(new TypecheckingError(e.getMessage(), unit.getDefinition()));
+        }
+      }
+
+      return null;
     }
 
     LocalInstancePool localInstancePool = new LocalInstancePool();
@@ -230,6 +248,7 @@ class DefinitionTypechecking {
           index++;
         }
 
+        /* TODO[classes]
         if (localInstancePool != null) {
           Concrete.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
           if (classView != null && classView.getClassifyingField() instanceof GlobalReferable) {
@@ -245,6 +264,7 @@ class DefinitionTypechecking {
             }
           }
         }
+        */
 
         list.append(param);
         for (; param.hasNext(); param = param.getNext()) {
@@ -776,6 +796,49 @@ class DefinitionTypechecking {
       return false;
     } else {
       return true;
+    }
+  }
+
+  private static void typecheckClassSynonym(Concrete.ClassSynonym classSyn, ClassDefinition underlyingClass, CheckTypeVisitor visitor) {
+    for (Concrete.ReferenceExpression superClassRef : classSyn.getSuperClasses()) {
+      ClassDefinition superClass = visitor.referableToDefinition(superClassRef.getReferent(), ClassDefinition.class, "Expected a class", superClassRef);
+      if (superClass != null && !underlyingClass.isSubClassOf(superClass)) {
+        visitor.getErrorReporter().report(new SuperClassError(superClassRef.getReferent(), underlyingClass.getReferable(), superClassRef));
+      }
+    }
+
+    for (Concrete.ClassFieldSynonym fieldSyn : classSyn.getFields()) {
+      ClassField underlyingField = visitor.referableToClassField(fieldSyn.getUnderlyingField().getReferent(), fieldSyn.getUnderlyingField());
+      if (underlyingField != null) {
+        visitor.getTypecheckingState().record(fieldSyn.getData(), underlyingField);
+      }
+    }
+
+    Deque<ClassReferable> toVisit = new ArrayDeque<>();
+    toVisit.add(classSyn.getData());
+    Map<ClassField, GlobalReferable> overridden = classSyn.getSuperClasses().isEmpty() ? Collections.emptyMap() : new HashMap<>();
+    Map<ClassField, Set<GlobalReferable>> errorFields = Collections.emptyMap();
+    while (!toVisit.isEmpty()) {
+      ClassReferable classRef = toVisit.pop();
+      for (GlobalReferable fieldRef : classRef.getFieldReferables()) {
+        Definition typecheckedDef = visitor.getTypecheckingState().getTypechecked(fieldRef);
+        if (typecheckedDef instanceof ClassField) {
+          GlobalReferable oldRef = overridden.putIfAbsent((ClassField) typecheckedDef, fieldRef);
+          if (oldRef != null) {
+            if (errorFields.isEmpty()) {
+              errorFields = new LinkedHashMap<>();
+            }
+            Set<GlobalReferable> list = errorFields.computeIfAbsent((ClassField) typecheckedDef, k -> new LinkedHashSet<>());
+            list.add(fieldRef);
+            list.add(oldRef);
+          }
+        }
+      }
+      toVisit.addAll(classRef.getSuperClassReferences());
+    }
+
+    for (Map.Entry<ClassField, Set<GlobalReferable>> entry : errorFields.entrySet()) {
+      visitor.getErrorReporter().report(new ClassFieldSynonymError(entry.getKey().getReferable(), entry.getValue(), classSyn));
     }
   }
 
