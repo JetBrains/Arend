@@ -61,4 +61,12 @@ public class RecursiveTest extends TypeCheckingTestCase {
   public void withoutType() {
     typeCheckDef("\\func f => f", 1);
   }
+
+  @Test
+  public void mutualRecursionError() {
+    typeCheckModule(
+      "\\data D (n : Nat) : \\Type | con1 (f (\\lam (x : Nat) => x)) | con2\n" +
+      "\\func f (n : Nat) : \\Type => D n\n" +
+      "\\func g : f 0 => con2", 2);
+  }
 }

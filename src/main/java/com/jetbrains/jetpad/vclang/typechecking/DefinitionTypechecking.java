@@ -94,7 +94,7 @@ class DefinitionTypechecking {
     if (definition instanceof DataDefinition) {
       try {
         if (!typecheckDataBody((DataDefinition) definition, (Concrete.DataDefinition) def, exprVisitor, false, dataDefinitions)) {
-          definition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+          definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
         }
       } catch (IncorrectExpressionException e) {
         exprVisitor.getErrorReporter().report(new TypecheckingError(e.getMessage(), def));
