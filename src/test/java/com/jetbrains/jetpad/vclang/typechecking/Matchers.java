@@ -2,15 +2,12 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -56,6 +53,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a type mismatch");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> classCoerceError() {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+          if (error instanceof ClassCoerceError) {
+            description.appendText("class coerce duplicate");
+            return true;
+          } else {
+            description.appendText("not a class coerce duplicate");
+            return false;
+          }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a class coerce duplicate");
       }
     };
   }

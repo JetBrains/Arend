@@ -10,17 +10,17 @@ import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
 import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
-  private final Concrete.ClassView myClassView;
-  private final boolean isView;
+  private final Concrete.ClassSynonym myClassSyn;
+  private final boolean isSyn;
 
-  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassView classView, boolean isView, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassSynonym classSyn, boolean isSyn, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
-    myClassView = classView;
-    this.isView = isView;
+    myClassSyn = classSyn;
+    this.isSyn = isSyn;
   }
 
-  public Concrete.ClassView getClassView() {
-    return myClassView;
+  public Concrete.ClassSynonym getClassSynonym() {
+    return myClassSyn;
   }
 
   @Override
@@ -34,6 +34,6 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression) {
-    return pool.getInstance(classifyingExpression, myClassView, isView);
+    return pool.getInstance(classifyingExpression, myClassSyn, isSyn);
   }
 }

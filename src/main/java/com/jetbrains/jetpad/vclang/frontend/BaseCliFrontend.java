@@ -180,7 +180,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     @Override
-    public void typecheckingFinished(Definition definition) {
+    public void typecheckingFinished(GlobalReferable referable, Definition definition) {
       flushErrors();
     }
   }

@@ -167,8 +167,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefData((DefDataContext) ctx, parent);
     } else if (ctx instanceof DefClassContext) {
       return visitDefClass((DefClassContext) ctx, parent);
-    } else if (ctx instanceof DefClassViewContext) {
-      return visitDefClassView((DefClassViewContext) ctx, parent);
     } else if (ctx instanceof DefInstanceContext) {
       return visitDefInstance((DefInstanceContext) ctx, parent);
     } else {
@@ -348,35 +346,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     Position position = tokenPosition(ctx.getStart());
     return new Concrete.NamePattern(position, null);
-  }
-
-  private ClassViewGroup visitDefClassView(DefClassViewContext ctx, ChildGroup parent) {
-    List<Concrete.ClassViewField> fields = new ArrayList<>(ctx.classViewField().size());
-
-    Concrete.Expression expr = visitExpr(ctx.expr());
-    if (!(expr instanceof Concrete.ReferenceExpression)) {
-      myErrorReporter.report(new ParserError((Position) expr.getData(), "Expected a class"));
-      throw new ParseException();
-    }
-
-    ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(ctx.start), ctx.ID(0).getText(), Precedence.DEFAULT);
-    Concrete.ClassView classView = new Concrete.ClassView(reference, (Concrete.ReferenceExpression) expr, new NamedUnresolvedReference(tokenPosition(ctx.ID(1).getSymbol()), ctx.ID(1).getText()), fields);
-    reference.setDefinition(classView);
-
-    List<ConcreteGlobalReferable> fieldReferences = new ArrayList<>(ctx.classViewField().size());
-    for (ClassViewFieldContext classViewFieldContext : ctx.classViewField()) {
-      fieldReferences.add(visitClassViewField(classViewFieldContext, classView));
-    }
-
-    return new ClassViewGroup(reference, fieldReferences, parent);
-  }
-
-  private ConcreteGlobalReferable visitClassViewField(ClassViewFieldContext ctx, Concrete.ClassView classView) {
-    String underlyingField = ctx.ID(0).getText();
-    ConcreteGlobalReferable reference = new ConcreteGlobalReferable(tokenPosition(ctx.ID(0).getSymbol()), ctx.ID().size() > 1 ? ctx.ID(1).getText() : underlyingField, visitPrecedence(ctx.precedence()));
-    Concrete.ClassViewField result = new Concrete.ClassViewField(reference, new NamedUnresolvedReference(tokenPosition(ctx.ID(0).getSymbol()), underlyingField), classView);
-    reference.setDefinition(result);
-    return reference;
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent) {
@@ -583,11 +552,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
+    WhereContext where = ctx.where();
+
     List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
-    List<Concrete.ClassField> fields = new ArrayList<>();
-    List<Concrete.ClassFieldImpl> implementations = ctx.classStat().isEmpty() ? Collections.emptyList() : new ArrayList<>();
-    List<Group> staticSubgroups = new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
+    List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     for (ClassCallContext classCallCtx : ctx.classCall()) {
       List<String> superClass = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
@@ -599,29 +569,53 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<InternalConcreteGlobalReferable> fieldReferences = new ArrayList<>();
     ConcreteClassReferable reference = new ConcreteClassReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), fieldReferences, superClasses, parent);
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
-    reference.setDefinition(classDefinition);
+    Concrete.Definition classDefinition;
+    ClassGroup resultGroup = null;
+    if (ctx.classBody() instanceof ClassSynContext) {
+      List<Concrete.ClassFieldSynonym> fieldSynonyms = new ArrayList<>();
+      classDefinition = new Concrete.ClassSynonym(reference, superClasses, null, fieldSynonyms);
 
-    Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), classDefinition);
-    if (firstField != null) {
-      fields.add(firstField);
-      classDefinition.setHasParameter();
+      if (!ctx.tele().isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.tele(0).start), "Class synonyms cannot have parameters"));
+      }
+
+      for (FieldSynContext fieldSyn : ((ClassSynContext) ctx.classBody()).fieldSyn()) {
+        InternalConcreteGlobalReferable fieldSynRef = new InternalConcreteGlobalReferable(tokenPosition(fieldSyn.start), fieldSyn.ID(1).getText(), visitPrecedence(fieldSyn.precedence()), true);
+        Position position = tokenPosition(fieldSyn.ID(0).getSymbol());
+        Concrete.ClassFieldSynonym concreteFieldSyn = new Concrete.ClassFieldSynonym(fieldSynRef, new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, fieldSyn.ID(0).getText())), (Concrete.ClassSynonym) classDefinition);
+        fieldSynRef.setDefinition(concreteFieldSyn);
+        fieldSynonyms.add(concreteFieldSyn);
+        fieldReferences.add(fieldSynRef);
+      }
+    } else {
+      List<Concrete.ClassField> fields = new ArrayList<>();
+      if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
+        implementations = new ArrayList<>();
+      }
+      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
+
+      Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), (Concrete.ClassDefinition) classDefinition);
+      if (firstField != null) {
+        fields.add(firstField);
+        ((Concrete.ClassDefinition) classDefinition).setHasParameter();
+      }
+
+      if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
+        List<Group> dynamicSubgroups = new ArrayList<>();
+        resultGroup = new ClassGroup(reference, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
+        visitInstanceStatements(((ClassImplContext) ctx.classBody()).classStat(), fields, implementations, dynamicSubgroups, (Concrete.ClassDefinition) classDefinition, resultGroup);
+      }
+
+      for (Concrete.ClassField field : fields) {
+        fieldReferences.add((InternalConcreteGlobalReferable) field.getData());
+      }
     }
 
-    ClassGroup resultGroup;
-    if (!ctx.classStat().isEmpty()) {
-      List<Group> dynamicSubgroups = new ArrayList<>();
-      resultGroup = new ClassGroup(reference, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
-      visitInstanceStatements(ctx.classStat(), fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
-    } else {
+    reference.setDefinition(classDefinition);
+    if (resultGroup == null) {
       resultGroup = new ClassGroup(reference, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
-
-    for (Concrete.ClassField field : fields) {
-      fieldReferences.add((InternalConcreteGlobalReferable) field.getData());
-    }
-
-    visitWhere(ctx.where(), staticSubgroups, namespaceCommands, resultGroup);
+    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup);
     return resultGroup;
   }
 

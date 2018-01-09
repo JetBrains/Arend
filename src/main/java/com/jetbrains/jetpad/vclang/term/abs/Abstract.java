@@ -141,6 +141,8 @@ public final class Abstract {
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
     boolean hasParameter();
+    @Nullable Reference getUnderlyingClass();
+    @Nonnull Collection<? extends ClassFieldSynonym> getFieldSynonyms();
   }
 
   public interface Constructor extends EliminatedExpressionsHolder {
@@ -152,6 +154,11 @@ public final class Abstract {
   public interface ClassField extends ParametersHolder {
     @Nonnull GlobalReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
+  }
+
+  public interface ClassFieldSynonym extends SourceNode {
+    /* @Nonnull */ @Nullable GlobalReferable getReferable();
+    /* @Nonnull */ @Nullable Reference getUnderlyingField();
   }
 
   public interface InstanceDefinition extends Definition, ParametersHolder {

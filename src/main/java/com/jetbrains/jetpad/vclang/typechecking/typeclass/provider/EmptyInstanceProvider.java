@@ -15,7 +15,7 @@ public class EmptyInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances(Concrete.ClassView classView) {
+  public Collection<? extends Concrete.Instance> getInstances(Concrete.ClassSynonym classSynonym) {
     return Collections.emptyList();
   }
 }

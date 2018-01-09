@@ -86,7 +86,7 @@ public class Typechecking implements DependencyListener {
 
   }
 
-  public void typecheckingFinished(Definition definition) {
+  public void typecheckingFinished(GlobalReferable referable, Definition definition) {
 
   }
 
@@ -100,7 +100,7 @@ public class Typechecking implements DependencyListener {
       }
     } else {
       typecheckingStarted(referable);
-      typecheckingFinished(typechecked);
+      typecheckingFinished(referable, typechecked);
     }
 
     for (Group subgroup : group.getSubgroups()) {
@@ -126,11 +126,11 @@ public class Typechecking implements DependencyListener {
           }
 
           if (!unit1.isHeader()) {
-            typecheckingStarted(typechecked.getReferable());
+            typecheckingStarted(definition.getData());
             if (Typecheckable.hasHeader(definition)) {
               mySuspensions.remove(definition.getData());
             }
-            typecheckingFinished(typechecked);
+            typecheckingFinished(definition.getData(), typechecked);
           }
         }
         myErrorReporter.report(new CycleError(cycle));
@@ -160,7 +160,7 @@ public class Typechecking implements DependencyListener {
       Definition typechecked = Definition.newDefinition(unit.getDefinition());
       myState.record(unit.getDefinition().getData(), typechecked);
       myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
-      typecheckingFinished(typechecked);
+      typecheckingFinished(unit.getDefinition().getData(), typechecked);
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
     }
@@ -278,7 +278,7 @@ public class Typechecking implements DependencyListener {
     }
 
     for (Definition result : results) {
-      typecheckingFinished(result);
+      typecheckingFinished(result.getReferable(), result);
     }
   }
 
@@ -302,6 +302,6 @@ public class Typechecking implements DependencyListener {
       }
     }
 
-    typecheckingFinished(typechecked);
+    typecheckingFinished(unit.getDefinition().getData(), typechecked);
   }
 }

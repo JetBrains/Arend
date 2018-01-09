@@ -27,7 +27,7 @@ public class DesugarVisitor implements ConcreteDefinitionVisitor<Void, Void> {
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView def, Void params) {
+  public Void visitClassSynonym(Concrete.ClassSynonym def, Void params) {
     return null;
   }
 

@@ -4,21 +4,17 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<Scope, Void> {
@@ -167,40 +163,25 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   @Override
-  public Void visitClassView(Concrete.ClassView def, Scope parentScope) {
-    new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter)).visitReference(def.getUnderlyingClass(), null);
-    if (!(def.getUnderlyingClass().getReferent() instanceof GlobalReferable)) {
-      if (!(def.getUnderlyingClass().getReferent() instanceof UnresolvedReference)) {
-        myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class", def.getUnderlyingClass().getReferent(), def)));
-      }
-      return null;
+  public Void visitClassSynonym(Concrete.ClassSynonym def, Scope parentScope) {
+    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(def.getData(), myErrorReporter);
+    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(parentScope, Collections.emptyList(), localErrorReporter);
+    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
+      visitor.visitReference(superClass, null);
     }
+    visitor.visitReference(def.getUnderlyingClass(), null);
 
-    /*
-    GlobalReferable underlyingClass = (GlobalReferable) def.getUnderlyingClass().getReferent();
-    Referable classifyingField = def.getClassifyingField();
-    if (classifyingField instanceof UnresolvedReference) { // TODO[classes]: Rewrite this using resolve method of UnresolvedReference
-      Namespace dynamicNamespace = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass);
-      GlobalReferable resolvedClassifyingField = dynamicNamespace.resolveName(classifyingField.textRepresentation());
-      if (resolvedClassifyingField == null) {
-        // myErrorReporter.report(new ProxyError(def.getData(), new NotInScopeError(classifyingField)));
-        return null;
-      }
-      def.setClassifyingField(resolvedClassifyingField);
-    }
-
-    for (Concrete.ClassViewField viewField : def.getFields()) {
-      Referable underlyingField = viewField.getUnderlyingField();
-      if (underlyingField instanceof UnresolvedReference) { // TODO[classes]: Rewrite this using resolve method of UnresolvedReference
-        GlobalReferable classField = myNameResolver.nsProviders.dynamics.forReferable(underlyingClass).resolveName(underlyingField.textRepresentation());
-        if (classField != null) {
-          viewField.setUnderlyingField(classField);
-        } else {
-          myErrorReporter.report(new ProxyError(def.getData(), new NoSuchFieldError(underlyingField.textRepresentation(), def)));
+    if (def.getUnderlyingClass().getReferent() instanceof ClassReferable) {
+      if (!def.getFields().isEmpty()) {
+        visitor = new ExpressionResolveNameVisitor(new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent()), Collections.emptyList(), localErrorReporter);
+        for (Concrete.ClassFieldSynonym fieldSyn : def.getFields()) {
+          visitor.visitReference(fieldSyn.getUnderlyingField(), null);
         }
       }
+    } else {
+      myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class view", def.getUnderlyingClass().getReferent(), def)));
+      def.getFields().clear();
     }
-    */
 
     return null;
   }

@@ -52,10 +52,6 @@ public class Ordering {
   */
 
   public void doOrder(Concrete.Definition definition) {
-    if (definition instanceof Concrete.ClassView) { // TODO[classes]: Typecheck class views
-      return;
-    }
-
     Typecheckable typecheckable = new Typecheckable(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckable)) {
       doOrderRecursively(typecheckable);
@@ -77,6 +73,7 @@ public class Ordering {
   }
 
   private void collectInstances(InstanceProvider instanceProvider, Stack<GlobalReferable> referables, Set<GlobalReferable> result) {
+    /* TODO[classes]
     while (!referables.isEmpty()) {
       GlobalReferable referable = referables.pop();
       if (result.contains(referable)) {
@@ -85,17 +82,17 @@ public class Ordering {
       result.add(referable);
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-      if (definition instanceof Concrete.ClassViewField) {
-        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassViewField) definition).getOwnView())) {
+      if (definition instanceof Concrete.ClassSynonymField) {
+        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassSynonymField) definition).getRelatedDefinition())) {
           referables.push(instance.getData());
         }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter parameter : parameters) {
-            Concrete.ClassView classView = Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
-            if (classView != null) {
-              for (Concrete.Instance instance : instanceProvider.getInstances(classView)) {
+            Concrete.ClassSynonym classSynonym = Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
+            if (classSynonym != null) {
+              for (Concrete.Instance instance : instanceProvider.getInstances(classSynonym)) {
                 referables.push(instance.getData());
               }
             }
@@ -103,6 +100,7 @@ public class Ordering {
         }
       }
     }
+    */
   }
 
   private OrderResult doOrderRecursively(Typecheckable typecheckable) {

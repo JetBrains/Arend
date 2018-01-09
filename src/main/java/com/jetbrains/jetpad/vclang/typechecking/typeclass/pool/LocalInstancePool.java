@@ -9,21 +9,21 @@ import java.util.List;
 public class LocalInstancePool implements InstancePool {
   static private class Pair {
     final Expression key;
-    final Concrete.ClassView classView;
+    final Concrete.ClassSynonym classSyn;
     final Expression value;
 
-    public Pair(Expression key, Concrete.ClassView classView, Expression value) {
+    public Pair(Expression key, Concrete.ClassSynonym classSyn, Expression value) {
       this.key = key;
-      this.classView = classView;
+      this.classSyn = classSyn;
       this.value = value;
     }
   }
 
   private final List<Pair> myPool = new ArrayList<>();
 
-  private Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView) {
+  private Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn) {
     for (Pair pair : myPool) {
-      if (pair.key.equals(classifyingExpression) && pair.classView == classView) {
+      if (pair.key.equals(classifyingExpression) && pair.classSyn == classSyn) {
         return pair.value;
       }
     }
@@ -31,12 +31,12 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
     if (isView) {
-      return getInstance(classifyingExpression, classView);
+      return getInstance(classifyingExpression, classSyn);
     } else {
       for (Pair pair : myPool) {
-        if (pair.key.equals(classifyingExpression) && pair.classView.getUnderlyingClass().getReferent() == classView.getUnderlyingClass().getReferent()) {
+        if (pair.key.equals(classifyingExpression) && pair.classSyn.getUnderlyingClass().getReferent() == classSyn.getUnderlyingClass().getReferent()) {
           return pair.value;
         }
       }
@@ -44,12 +44,12 @@ public class LocalInstancePool implements InstancePool {
     }
   }
 
-  public Expression addInstance(Expression classifyingExpression, Concrete.ClassView classView, Expression instance) {
-    Expression oldInstance = getInstance(classifyingExpression, classView);
+  public Expression addInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, Expression instance) {
+    Expression oldInstance = getInstance(classifyingExpression, classSyn);
     if (oldInstance != null) {
       return oldInstance;
     } else {
-      myPool.add(new Pair(classifyingExpression, classView, instance));
+      myPool.add(new Pair(classifyingExpression, classSyn, instance));
       return null;
     }
   }

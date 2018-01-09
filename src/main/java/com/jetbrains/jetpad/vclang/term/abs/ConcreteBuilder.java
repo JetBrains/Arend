@@ -127,7 +127,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.ClassDefinition visitClass(Abstract.ClassDefinition def) {
+  public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassFieldImpl> implementations;
     try {
       implementations = buildImplementations(def.getClassFieldImpls());
@@ -136,29 +136,52 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       implementations = Collections.emptyList();
     }
 
-    List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
-
-    for (Abstract.ClassField field : def.getClassFields()) {
-      Abstract.Expression resultType = field.getResultType();
-      if (resultType == null) {
-        myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(field.getReferable())));
-      } else {
-        try {
-          List<? extends Abstract.Parameter> parameters = field.getParameters();
-          Concrete.Expression type = resultType.accept(this, null);
-          if (!parameters.isEmpty()) {
-            type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
-          }
-
-          classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
-        } catch (AbstractExpressionError.Exception e) {
-          myErrorReporter.report(new ProxyError(myDefinition, e.error));
-        }
-      }
+    Abstract.Reference underlyingClass = def.getUnderlyingClass();
+    if (underlyingClass != null && !implementations.isEmpty()) {
+      myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have implementations", implementations.get(0))));
+    }
+    if (underlyingClass != null && def.hasParameter()) {
+      myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have parameters", def)));
     }
 
-    return classDef;
+    if (underlyingClass == null) {
+      List<Concrete.ClassField> classFields = new ArrayList<>();
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
+
+      for (Abstract.ClassField field : def.getClassFields()) {
+        Abstract.Expression resultType = field.getResultType();
+        if (resultType == null) {
+          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(field.getReferable())));
+        } else {
+          try {
+            List<? extends Abstract.Parameter> parameters = field.getParameters();
+            Concrete.Expression type = resultType.accept(this, null);
+            if (!parameters.isEmpty()) {
+              type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
+            }
+
+            classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
+          } catch (AbstractExpressionError.Exception e) {
+            myErrorReporter.report(new ProxyError(myDefinition, e.error));
+          }
+        }
+      }
+
+      return classDef;
+    } else {
+      List<Concrete.ClassFieldSynonym> fields = new ArrayList<>();
+      Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
+      for (Abstract.ClassFieldSynonym fieldSyn : def.getFieldSynonyms()) {
+        GlobalReferable referable = fieldSyn.getReferable();
+        Abstract.Reference underlyingField = fieldSyn.getUnderlyingField();
+        if (referable != null && underlyingField != null) {
+          fields.add(new Concrete.ClassFieldSynonym(referable, buildReference(underlyingField), classDef));
+        } else {
+          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldSyn)));
+        }
+      }
+      return classDef;
+    }
   }
 
   @Override

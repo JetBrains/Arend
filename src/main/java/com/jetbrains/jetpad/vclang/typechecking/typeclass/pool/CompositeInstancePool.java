@@ -14,9 +14,9 @@ public class CompositeInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassView classView, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
     for (InstancePool pool : myPools) {
-      Expression expr = pool.getInstance(classifyingExpression, classView, isView);
+      Expression expr = pool.getInstance(classifyingExpression, classSyn, isView);
       if (expr != null) {
         return expr;
       }

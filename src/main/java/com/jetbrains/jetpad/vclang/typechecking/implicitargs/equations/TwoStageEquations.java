@@ -1,12 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
@@ -16,7 +14,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SimpleLevelSubstitution;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -67,12 +64,14 @@ public class TwoStageEquations implements Equations {
       if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
         // expr1 == view field call
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall1.getDefinition()) {
+        /* TODO[classes]
+        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall1.getDefinition()) {
           Expression stuck2 = expr2.getStuckExpression();
           if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr2);
           }
         }
+        */
       }
 
       // expr2 == field call
@@ -80,12 +79,14 @@ public class TwoStageEquations implements Equations {
       if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
         // expr2 == view field call
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassView().getClassifyingField()) == fieldCall2.getDefinition()) {
+        /* TODO[classes]
+        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall2.getDefinition()) {
           Expression stuck1 = expr1.getStuckExpression();
           if (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class) || stuck1.cast(InferenceReferenceExpression.class).getVariable() == null) {
             result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr1);
           }
         }
+        */
       }
 
       if (result != null) {
