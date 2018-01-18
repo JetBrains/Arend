@@ -20,9 +20,9 @@ public class DependencyCollector implements DependencyListener {
     myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
   }
 
-  public void update(GlobalReferable definition) {
+  public Set<? extends GlobalReferable> update(GlobalReferable definition) {
     if (myState.getTypechecked(definition) == null) {
-      return;
+      return Collections.emptySet();
     }
 
     Set<GlobalReferable> updated = new HashSet<>();
@@ -54,5 +54,7 @@ public class DependencyCollector implements DependencyListener {
     for (GlobalReferable updatedDef : updated) {
       myState.reset(updatedDef);
     }
+
+    return updated;
   }
 }
