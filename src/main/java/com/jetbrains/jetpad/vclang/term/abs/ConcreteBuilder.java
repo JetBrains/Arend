@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.abs;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
+import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
@@ -29,6 +30,30 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   public static Concrete.Definition convert(Abstract.Definition definition, ErrorReporter errorReporter) {
     return definition.accept(new ConcreteBuilder(errorReporter, definition.getReferable()));
+  }
+
+  public static List<Concrete.Parameter> convertParams(List<? extends Abstract.Parameter> parameters) {
+    CountingErrorReporter cer = new CountingErrorReporter();
+    List<Concrete.Parameter> result;
+    try {
+      ConcreteBuilder cb = new ConcreteBuilder(cer, null);
+      result = cb.buildParameters(parameters);
+    } catch (AbstractExpressionError.Exception e) {
+      return null;
+    }
+    if (cer.getErrorsNumber() == 0) return result; else return null;
+  }
+
+  public static Concrete.Expression convertExpression(Abstract.Expression expression) {
+    CountingErrorReporter cer = new CountingErrorReporter();
+    Concrete.Expression result;
+    try {
+      ConcreteBuilder cb = new ConcreteBuilder(cer, null);
+      result = expression.accept(cb, null);
+    } catch (AbstractExpressionError.Exception e) {
+      return null;
+    }
+    if (cer.getErrorsNumber() == 0) return result; else return null;
   }
 
   // Definition
