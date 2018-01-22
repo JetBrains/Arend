@@ -39,6 +39,12 @@ public class Typechecking implements DependencyListener {
   private final ConcreteProvider myConcreteProvider;
   private boolean myTypecheckingHeaders = false;
 
+  public static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+
+  public static void setDefaultCancellationIndicator() {
+    CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+  }
+
   public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener) {
     myState = state;
     myErrorReporter = errorReporter;
