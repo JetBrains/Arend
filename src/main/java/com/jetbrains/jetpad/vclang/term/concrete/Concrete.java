@@ -200,6 +200,14 @@ public final class Concrete {
       this.fixity = fixity;
       this.isExplicit = isExplicit;
     }
+
+    public boolean isReference() {
+      return isExplicit && expression instanceof Concrete.ReferenceExpression;
+    }
+
+    public boolean isInfixReference() {
+      return isReference() && ((ReferenceExpression) expression).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) expression).getReferent()).getPrecedence().isInfix;
+    }
   }
 
   public static class BinOpSequenceExpression extends Expression {

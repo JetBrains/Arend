@@ -474,7 +474,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     int i = 1;
     for (; i < elems.size(); i++) {
-      if (elems.get(i).fixity == Fixity.UNKNOWN || elems.get(i).fixity == Fixity.NONFIX) {
+      if (!elems.get(i).isReference() || !elems.get(i).isExplicit || elems.get(i).fixity == Fixity.NONFIX || elems.get(i).fixity == Fixity.UNKNOWN && !elems.get(i).isInfixReference()) {
         lhs = new Concrete.AppExpression(lhs.getData(), lhs, new Concrete.Argument(elems.get(i).expression, elems.get(i).isExplicit));
       } else {
         break;
@@ -493,7 +493,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     // TODO[pretty]
     List<BinOpSequenceElem> ops = new ArrayList<>();
     for (; i < elems.size(); i++) {
-      if (elems.get(i).fixity != Fixity.UNKNOWN && elems.get(i).fixity != Fixity.NONFIX || !elems.get(i).isExplicit) {
+      if (!elems.get(i).isExplicit || elems.get(i).fixity == Fixity.INFIX || elems.get(i).fixity == Fixity.POSTFIX || elems.get(i).isInfixReference()) {
         ops.add(elems.get(i));
       } else {
         break;
