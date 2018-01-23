@@ -57,17 +57,21 @@ public class Typechecking implements DependencyListener {
     this(state, concreteProvider, errorReporter, (def1, header, def2) -> {});
   }
 
-  public void typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
+  public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
     Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, false);
 
     try {
       for (Concrete.Definition definition : definitions) {
         ordering.doOrder(definition);
       }
-    } catch (ComputationInterruptedException ignored) { }
+    } catch (ComputationInterruptedException ignored) {
+      return false;
+    }
+
+    return true;
   }
 
-  public void typecheckModules(final Collection<? extends Group> modules) {
+  public boolean typecheckModules(final Collection<? extends Group> modules) {
     /* TODO[classes]
     InstanceNamespaceProvider instanceNamespaceProvider = new InstanceNamespaceProvider(myErrorReporter);
     NameResolver nameResolver = new NameResolver(new NamespaceProviders(null, myStaticNsProvider, myDynamicNsProvider));
@@ -83,7 +87,11 @@ public class Typechecking implements DependencyListener {
       for (Group group : modules) {
         orderGroup(group, ordering);
       }
-    } catch (ComputationInterruptedException ignored) { }
+    } catch (ComputationInterruptedException ignored) {
+      return false;
+    }
+
+    return true;
   }
 
   public enum Recursion { NO, IN_HEADER, IN_BODY }
