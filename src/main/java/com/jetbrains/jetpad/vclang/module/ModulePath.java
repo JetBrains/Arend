@@ -18,4 +18,8 @@ public class ModulePath extends LongName {
   public static ModulePath moduleName(String... module) {
     return new ModulePath(Arrays.asList(module));
   }
+
+  public static ModulePath fromString(String path) {
+    return moduleName(path.split("\\."));
+  }
 }

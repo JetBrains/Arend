@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.util.FileUtils;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -23,9 +24,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class FileStorage implements Storage<FileStorage.SourceId> {
-  public static final String EXTENSION = ".vc";
-  public static final String SERIALIZED_EXTENSION = ".vcc";
-
   public static ModulePath modulePath(Path path) {
     assert !path.isAbsolute();
     List<String> names = new ArrayList<>();
@@ -41,19 +39,6 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
   private static long getLastModifiedTime(Path file) throws IOException {
     return Files.getLastModifiedTime(file).toMillis();
   }
-
-  private static Path baseFile(Path root, ModulePath modulePath) {
-    return root.resolve(Paths.get("", modulePath.toArray()));
-  }
-
-  public static Path sourceFile(Path base) {
-    return base.resolveSibling(base.getFileName() + EXTENSION);
-  }
-
-  public static Path cacheFile(Path base) {
-    return base.resolveSibling(base.getFileName() + SERIALIZED_EXTENSION);
-  }
-
 
   private final ModuleRegistry myModuleRegistry;
   private final ModuleScopeProvider myModuleScopeProvider;
@@ -78,12 +63,12 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     private Path sourceFileForSource(SourceId sourceId) {
-      return sourceFile(baseFile(myRoot, sourceId.getModulePath()));
+      return FileUtils.sourceFile(myRoot, sourceId.getModulePath());
     }
 
     @Override
     public SourceId locateModule(@Nonnull ModulePath modulePath) {
-      Path sourceFile = sourceFile(baseFile(myRoot, modulePath));
+      Path sourceFile = FileUtils.sourceFile(myRoot, modulePath);
       if (Files.exists(sourceFile)) {
         return new SourceId(modulePath);
       }
@@ -135,7 +120,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     private Path cacheFileForSource(SourceId sourceId) {
-      return cacheFile(baseFile(myRoot, sourceId.getModulePath()));
+      return FileUtils.cacheFile(myRoot, sourceId.getModulePath());
     }
 
     @Override
@@ -166,7 +151,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
     }
 
     public SourceId locateModule(ModulePath modulePath) {
-      Path cacheFile = cacheFile(baseFile(myRoot, modulePath));
+      Path cacheFile = FileUtils.cacheFile(myRoot, modulePath);
       if (Files.exists(cacheFile)) {
         return new SourceId(modulePath);
       }
@@ -245,7 +230,7 @@ public class FileStorage implements Storage<FileStorage.SourceId> {
 
     @Override
     public String toString() {
-      return sourceFile(baseFile(mySourceSupplier.myRoot, myModulePath)).toString();
+      return FileUtils.sourceFile(mySourceSupplier.myRoot, myModulePath).toString();
     }
   }
 

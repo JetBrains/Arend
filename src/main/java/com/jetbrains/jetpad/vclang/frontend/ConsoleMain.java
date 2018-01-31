@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.module.caching.ModuleCacheIdProvider;
 import com.jetbrains.jetpad.vclang.module.source.CompositeSourceSupplier;
 import com.jetbrains.jetpad.vclang.module.source.CompositeStorage;
 import com.jetbrains.jetpad.vclang.module.source.NullStorage;
+import com.jetbrains.jetpad.vclang.util.FileUtils;
 import org.apache.commons.cli.*;
 
 import javax.annotation.Nonnull;
@@ -15,7 +16,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
 
 public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId> {
   private static final Options cmdOptions = new Options();
@@ -103,7 +103,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     public @Nullable CompositeStorage<FileStorage.SourceId, CompositeStorage<LibStorage.SourceId, PreludeStorage.SourceId>.SourceId>.SourceId getModuleId(String cacheId) {
       if (cacheId.startsWith("file:")) {
         try {
-          ModulePath modulePath = new ModulePath(Arrays.asList(cacheId.substring(5).split("\\.")));
+          ModulePath modulePath = ModulePath.fromString(cacheId.substring(5));
           FileStorage.SourceId fileSourceId = storageManager.projectStorage.locateModule(modulePath);
           return fileSourceId != null ? storageManager.idForProjectSource(fileSourceId) : null;
         } catch (NumberFormatException e) {
@@ -116,7 +116,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
           int index = cacheId.indexOf(' ');
           if (index == -1) return null;
           String libName = cacheId.substring(0, index);
-          ModulePath modulePath = new ModulePath(Arrays.asList(cacheId.substring(index + 1).split("\\.")));
+          ModulePath modulePath = ModulePath.fromString(cacheId.substring(index + 1));
           LibStorage.SourceId libSourceId = storageManager.libStorage.locateModule(libName, modulePath);
           return libSourceId != null ? storageManager.idForLibSource(libSourceId) : null;
         } catch (NumberFormatException e) {
@@ -148,9 +148,9 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
         String cacheDirStr = cmdLine.getOptionValue("c");
         Path cacheDir = sourceDir.resolve(cacheDirStr != null ? cacheDirStr : ".cache");
 
-        if (cmdLine.hasOption("recompile")) {
-          deleteCache(cacheDir);
-        }
+        // if (cmdLine.hasOption("recompile")) { // TODO[cache]
+        //   deleteCache(cacheDir);
+        // }
 
         new ConsoleMain(libDir, sourceDir, cacheDir).run(sourceDir, cmdLine.getArgList());
       }
@@ -167,7 +167,7 @@ public class ConsoleMain extends BaseCliFrontend<CompositeStorage<FileStorage.So
     Files.walkFileTree(cacheDir, new SimpleFileVisitor<Path>() {
       @Override
       public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        if (file.getFileName().toString().endsWith(FileStorage.SERIALIZED_EXTENSION)) {
+        if (file.getFileName().toString().endsWith(FileUtils.SERIALIZED_EXTENSION)) {
           try {
             Files.delete(file);
           } catch (IOException e) {
