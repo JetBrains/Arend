@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
-import com.jetbrains.jetpad.vclang.frontend.storage.FileStorage;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
@@ -26,6 +25,7 @@ import com.jetbrains.jetpad.vclang.term.Prelude;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.util.FileUtils;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -126,11 +126,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
 
   private void requestFileTypechecking(Path path) {
-    String fileName = path.getFileName().toString();
-    if (!fileName.endsWith(FileStorage.EXTENSION)) return;
-
-    Path sourcePath = path.resolveSibling(fileName.substring(0, fileName.length() - FileStorage.EXTENSION.length()));
-    ModulePath modulePath = FileStorage.modulePath(sourcePath);
+    ModulePath modulePath = FileUtils.modulePath(path, FileUtils.EXTENSION);
     if (modulePath == null) {
       System.err.println("[Not found] " + path + " is an illegal module path");
       return;
@@ -218,7 +214,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-            if (path.getFileName().toString().endsWith(FileStorage.EXTENSION)) {
+            if (path.getFileName().toString().endsWith(FileUtils.EXTENSION)) {
               requestFileTypechecking(sourceDir.relativize(path));
             }
             return FileVisitResult.CONTINUE;

@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.library;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 
 import javax.annotation.Nonnull;
@@ -11,18 +10,27 @@ import javax.annotation.Nonnull;
  */
 public interface Library {
   /**
-   * Loads the library.
-   * All dependencies of the library must be loaded before calling this method.
+   * Gets the name of the library.
    *
-   * @param errorReporter   a reporter for all errors that occur during loading process.
+   * @return the name of this library.
+   */
+  @Nonnull
+  String getName();
+
+  /**
+   * Loads the library and its dependencies.
+   * This method must register all of the library's dependencies using {@link LibraryManager#registerDependency}
+   * Do not invoke this method directly; use {@link LibraryManager#loadLibrary(Library)} instead.
+   *
+   * @param libraryManager  a library manager containing the information necessary for the loading.
    *
    * @return true if loading succeeded, false otherwise.
    */
-  boolean load(ErrorReporter errorReporter);
+  boolean load(LibraryManager libraryManager);
 
   /**
    * Unloads the library.
-   * All libraries depending on this one must be unloaded before calling this method.
+   * Do not invoke this method directly; use {@link LibraryManager#unloadLibrary(Library)} instead.
    */
   void unload();
 

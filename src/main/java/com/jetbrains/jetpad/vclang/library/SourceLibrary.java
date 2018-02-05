@@ -5,27 +5,41 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.source.Source;
+import com.jetbrains.jetpad.vclang.source.SourceLoader;
+import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a library which can load cached modules (see {@link #getCacheSource})
  * as well as ordinary modules (see {@link #getRawSource}).
  */
 public abstract class SourceLibrary implements Library {
+  private final String myName;
   private final TypecheckerState myTypecheckerState;
   private Map<ModulePath, Set<GlobalReferable>> myModules;
 
   /**
    * Creates a new {@code SourceLibrary}
    *
+   * @param name              the name of this library.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  protected SourceLibrary(TypecheckerState typecheckerState) {
+  protected SourceLibrary(String name, TypecheckerState typecheckerState) {
+    myName = name;
     myTypecheckerState = typecheckerState;
+  }
+
+  @Nonnull
+  @Override
+  public String getName() {
+    return myName;
   }
 
   /**
@@ -36,7 +50,7 @@ public abstract class SourceLibrary implements Library {
    * @return the raw source corresponding to the given path or null if the source is not found.
    */
   @Nullable
-  abstract Source getRawSource(ModulePath modulePath);
+  public abstract Source getRawSource(ModulePath modulePath);
 
   /**
    * Gets the cache source (that is, the source containing typechecked data) for a given module path.
@@ -46,15 +60,7 @@ public abstract class SourceLibrary implements Library {
    * @return the cache source corresponding to the given path or null if the source is not found.
    */
   @Nullable
-  abstract Source getCacheSource(ModulePath modulePath);
-
-  /**
-   * Gets the list of modules in this library.
-   *
-   * @return the list of modules.
-   */
-  @Nonnull
-  abstract Collection<? extends ModulePath> getModules();
+  public abstract Source getCacheSource(ModulePath modulePath);
 
   /**
    * Gets the underlying typechecker state of this library.
@@ -112,6 +118,15 @@ public abstract class SourceLibrary implements Library {
   }
 
   /**
+   * Sets the group for the specified module.
+   * This method is usually invoked during loading of the library.
+   *
+   * @param modulePath  the path to the module.
+   * @param group       the group of the module.
+   */
+  public void setModuleGroup(ModulePath modulePath, Group group) { }
+
+  /**
    * Registers a definition in the specified module.
    * The module must be registered before this method is invoked.
    * This method is usually invoked during loading of the library.
@@ -161,21 +176,43 @@ public abstract class SourceLibrary implements Library {
     return myModules.get(modulePath);
   }
 
+  /**
+   * Loads the header of this library.
+   *
+   * @param errorReporter a reporter for all errors that occur during loading process.
+   *
+   * @return loaded library header, or null if some error occurred.
+   */
+  @Nullable
+  protected abstract LibraryHeader loadHeader(ErrorReporter errorReporter);
+
   @Override
-  public boolean load(ErrorReporter errorReporter) {
+  public boolean load(LibraryManager libraryManager) {
     if (isLoaded()) {
       return true;
     }
 
     myModules = new HashMap<>();
-    SourceLoader loader = new SourceLoader(this, errorReporter);
-    for (ModulePath modulePath : getModules()) {
-      if (!loader.load(modulePath)) {
+    LibraryHeader header = loadHeader(libraryManager.getErrorReporter());
+    if (header == null) {
+      return false;
+    }
+
+    for (LibraryDependency dependency : header.dependencies) {
+      Library loadedDependency = libraryManager.loadLibrary(dependency.name);
+      if (loadedDependency == null) {
+        return false;
+      }
+      libraryManager.registerDependency(this, loadedDependency);
+    }
+
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager.getErrorReporter());
+    for (ModulePath module : header.modules) {
+      if (!sourceLoader.load(module)) {
         unload();
         return false;
       }
     }
-
     return true;
   }
 
@@ -197,5 +234,20 @@ public abstract class SourceLibrary implements Library {
   @Override
   public boolean isLoaded() {
     return myModules != null;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    SourceLibrary that = (SourceLibrary) o;
+
+    return myName.equals(that.myName);
+  }
+
+  @Override
+  public int hashCode() {
+    return myName.hashCode();
   }
 }

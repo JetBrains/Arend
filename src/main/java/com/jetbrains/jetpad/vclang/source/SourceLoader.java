@@ -1,14 +1,14 @@
-package com.jetbrains.jetpad.vclang.library;
+package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
-import com.jetbrains.jetpad.vclang.source.Source;
 
 /**
  * Contains all necessary information for source loading.
  */
-public class SourceLoader {
+public final class SourceLoader {
   private final SourceLibrary myLibrary;
   private final ErrorReporter myErrorReporter;
 

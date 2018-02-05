@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.library.SourceLoader;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.DefinitionStateDeserialization;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.DefinitionStateSerialization;

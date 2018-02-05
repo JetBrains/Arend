@@ -19,23 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class FileStorage implements Storage<FileStorage.SourceId> {
-  public static ModulePath modulePath(Path path) {
-    assert !path.isAbsolute();
-    List<String> names = new ArrayList<>();
-    for (Path elem : path) {
-      String name = elem.toString();
-      if (!name.matches("[a-zA-Z_][a-zA-Z0-9_']*")) return null;
-      names.add(name);
-    }
-
-    return new ModulePath(names);
-  }
-
   private static long getLastModifiedTime(Path file) throws IOException {
     return Files.getLastModifiedTime(file).toMillis();
   }
