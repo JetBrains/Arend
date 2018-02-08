@@ -26,11 +26,11 @@ public class GZIPFileSourceLibrary extends UnmodifiableSourceLibrary {
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
    *
-   * @param basePath          a path from which files will be taken.
    * @param name              the name of this library.
+   * @param basePath          a path from which files will be taken.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public GZIPFileSourceLibrary(Path basePath, String name, TypecheckerState typecheckerState) {
+  public GZIPFileSourceLibrary(String name, Path basePath, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     myBasePath = basePath;
   }
@@ -44,11 +44,12 @@ public class GZIPFileSourceLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
+    // TODO[library]: load header from a config file instead.
     List<ModulePath> modules = new ArrayList<>();
     try {
       Files.walkFileTree(myBasePath, new SimpleFileVisitor<Path>() {
         @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
           if (file.getFileName().toString().endsWith(FileUtils.SERIALIZED_EXTENSION)) {
             ModulePath modulePath = FileUtils.modulePath(myBasePath.relativize(file), FileUtils.SERIALIZED_EXTENSION);
             if (modulePath != null) {

@@ -1,8 +1,13 @@
 package com.jetbrains.jetpad.vclang.library;
 
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Collection;
 
 /**
  * Represents a library which can be loaded from some external source such as a file system.
@@ -40,6 +45,32 @@ public interface Library {
    * @return true if the library is loaded, false otherwise.
    */
   boolean isLoaded();
+
+  /**
+   * Gets the underling typechecker state of this library.
+   *
+   * @return the typechecker state.
+   */
+  @Nonnull
+  TypecheckerState getTypecheckerState();
+
+  /**
+   * Gets the list of loaded modules of this library.
+   *
+   * @return the list of loaded modules.
+   */
+  @Nonnull
+  Collection<? extends ModulePath> getLoadedModules();
+
+  /**
+   * Gets the group of a module.
+   *
+   * @param modulePath  the path to a module.
+   *
+   * @return the group of a module or null if the module is not found.
+   */
+  @Nullable
+  Group getModuleGroup(ModulePath modulePath);
 
   /**
    * Provides a module scope provider that can be used to get scopes of modules in this library.

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.module.caching.sourceless;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.SimpleGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 
@@ -24,7 +25,7 @@ public class CacheScope {
 
     CachedSubScope scope = ensureScope(path);
     if (scope.here == null) {
-      scope.here = new CachedDefinitionStub(precedence, path.get(path.size() - 1), parent);
+      scope.here = new SimpleGlobalReferable(precedence, path.get(path.size() - 1), parent);
     }
 
     if (parent != null) {
@@ -61,35 +62,6 @@ public class CacheScope {
     @Override
     public Scope resolveNamespace(String name, boolean resolveModules) {
       return sub.get(name);
-    }
-  }
-
-  private class CachedDefinitionStub implements GlobalReferable {
-    private final Precedence myPrecedence;
-    private final String myName;
-    private final GlobalReferable myTypecheckable;
-
-    private CachedDefinitionStub(Precedence precedence, String name, GlobalReferable typecheckable) {
-      myPrecedence = precedence;
-      myName = name;
-      myTypecheckable = typecheckable == null ? this : typecheckable;
-    }
-
-    @Nonnull
-    @Override
-    public Precedence getPrecedence() {
-      return myPrecedence;
-    }
-
-    @Nonnull
-    @Override
-    public String textRepresentation() {
-      return myName;
-    }
-
-    @Override
-    public GlobalReferable getTypecheckable() {
-      return myTypecheckable;
     }
   }
 }
