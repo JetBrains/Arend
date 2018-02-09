@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 class DefinitionDeserialization {
-  private final CalltargetProvider.Typed myCalltargetProvider;
+  private final CallTargetProvider.Typed myCalltargetProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
 
-  DefinitionDeserialization(CalltargetProvider.Typed calltargetProvider) {
+  DefinitionDeserialization(CallTargetProvider.Typed calltargetProvider) {
     myCalltargetProvider = calltargetProvider;
   }
 

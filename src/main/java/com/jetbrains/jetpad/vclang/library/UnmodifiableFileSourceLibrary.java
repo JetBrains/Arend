@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class GZIPFileSourceLibrary extends UnmodifiableSourceLibrary {
+public class UnmodifiableFileSourceLibrary extends UnmodifiableSourceLibrary {
   private final Path myBasePath;
 
   /**
@@ -30,7 +30,7 @@ public class GZIPFileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param basePath          a path from which files will be taken.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public GZIPFileSourceLibrary(String name, Path basePath, TypecheckerState typecheckerState) {
+  public UnmodifiableFileSourceLibrary(String name, Path basePath, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     myBasePath = basePath;
   }

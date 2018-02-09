@@ -83,7 +83,7 @@ public class CacheManager<SourceIdT extends SourceId> {
     }
   }
 
-  class ReadCalltargets implements CalltargetProvider {
+  class ReadCalltargets implements CallTargetProvider {
     private final List<Definition> myCalltargets = new ArrayList<>();
 
     ReadCalltargets(SourceIdT sourceId, List<ModuleProtos.Module.DefinitionReference> refDefProtos) throws CacheLoadingException {
@@ -159,7 +159,7 @@ public class CacheManager<SourceIdT extends SourceId> {
 
   private ModuleProtos.Module writeModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState) throws CachePersistenceException {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
-    final WriteCalltargets calltargets = new WriteCalltargets(sourceId);
+    final WriteCallTargets calltargets = new WriteCallTargets(sourceId);
     // Serialize the module first in order to populate the call-target registry
     DefinitionStateSerialization defStateSerialization = new DefinitionStateSerialization(myPersistenceProvider, calltargets);
     out.setDefinitionState(defStateSerialization.writeDefinitionState(localState));
@@ -167,26 +167,25 @@ public class CacheManager<SourceIdT extends SourceId> {
     // now write the call-target registry
     out.addAllReferredDefinition(calltargets.write());
 
-    out.setVersion(myVersionTracker.getCurrentVersion(sourceId));
     return out.build();
   }
 
-  class WriteCalltargets implements CalltargetIndexProvider {
-    private final LinkedHashMap<Definition, Integer> myCalltargets = new LinkedHashMap<>();
+  class WriteCallTargets implements CallTargetIndexProvider {
+    private final LinkedHashMap<Definition, Integer> myCallTargets = new LinkedHashMap<>();
     private final SourceId mySourceId;
 
-    WriteCalltargets(SourceId sourceId) {
+    WriteCallTargets(SourceId sourceId) {
       mySourceId = sourceId;
     }
 
     @Override
     public int getDefIndex(Definition definition) {
-      return myCalltargets.computeIfAbsent(definition, k -> myCalltargets.size());
+      return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size());
     }
 
     private List<ModuleProtos.Module.DefinitionReference> write() throws CachePersistenceException {
       List<ModuleProtos.Module.DefinitionReference> out = new ArrayList<>();
-      for (Definition calltarget : myCalltargets.keySet()) {
+      for (Definition calltarget : myCallTargets.keySet()) {
         ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
         SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getReferable());
         if (!mySourceId.equals(targetSourceId)) {

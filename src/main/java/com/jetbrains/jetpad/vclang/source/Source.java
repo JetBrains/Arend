@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.source;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 import javax.annotation.Nonnull;
@@ -41,13 +40,4 @@ public interface Source {
    * @return true if the source can be loaded and/or persisted, false otherwise.
    */
   boolean isAvailable();
-
-  /**
-   * Persists the source.
-   *
-   * @param errorReporter a reporter for all errors that occur during persisting process.
-   *
-   * @return true if the operation is successful, false otherwise
-   */
-  boolean persist(ErrorReporter errorReporter);
 }

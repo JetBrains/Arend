@@ -94,8 +94,8 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CalltargetProvider calltargetProvider) throws DeserializationError {
-    CalltargetProvider.Typed typedCalltargetProvider = new CalltargetProvider.Typed(calltargetProvider);
+  public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CallTargetProvider callTargetProvider) throws DeserializationError {
+    CallTargetProvider.Typed typedCalltargetProvider = new CallTargetProvider.Typed(callTargetProvider);
 
     for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
       String id = entry.getKey();
@@ -128,7 +128,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+  private void fillInClassDefinition(DefinitionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     for (int classFieldRef : classProto.getFieldRefList()) {
       classDef.addField(calltargetProvider.getCalltarget(classFieldRef, ClassField.class));
     }
@@ -160,7 +160,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+  private void fillInDataDefinition(DefinitionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
 
@@ -197,7 +197,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private ClauseBase readClause(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Clause clause) throws DeserializationError {
+  private ClauseBase readClause(DefinitionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Clause clause) throws DeserializationError {
     return new ClauseBase(readPatterns(defDeserializer, calltargetProvider, clause.getPatternList(), new LinkList()).getPatternList(), defDeserializer.readExpr(clause.getExpression()));
   }
 
@@ -221,7 +221,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     }
   }
 
-  private Patterns readPatterns(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.Pattern> protos, LinkList list) throws DeserializationError {
+  private Patterns readPatterns(DefinitionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.Pattern> protos, LinkList list) throws DeserializationError {
     List<Pattern> patterns = new ArrayList<>(protos.size());
     for (DefinitionProtos.Definition.Pattern proto : protos) {
       patterns.add(readPattern(defDeserializer, calltargetProvider, proto, list));
@@ -229,7 +229,7 @@ public class DefinitionStateDeserialization<SourceIdT extends SourceId> {
     return new Patterns(patterns);
   }
 
-  private Pattern readPattern(DefinitionDeserialization defDeserializer, CalltargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Pattern proto, LinkList list) throws DeserializationError {
+  private Pattern readPattern(DefinitionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Pattern proto, LinkList list) throws DeserializationError {
     switch (proto.getKindCase()) {
       case BINDING:
         DependentLink param = defDeserializer.readParameter(proto.getBinding().getVar());

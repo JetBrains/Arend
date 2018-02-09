@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 class DefinitionSerialization {
-  private final CalltargetIndexProvider myCalltargetIndexProvider;
+  private final CallTargetIndexProvider myCallTargetIndexProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final Map<Binding, Integer> myBindingsMap = new HashMap<>();
   private final SerializeVisitor myVisitor = new SerializeVisitor();
 
-  DefinitionSerialization(CalltargetIndexProvider calltargetIndexProvider) {
-    myCalltargetIndexProvider = calltargetIndexProvider;
+  DefinitionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
+    myCallTargetIndexProvider = callTargetIndexProvider;
   }
 
 
@@ -170,7 +170,7 @@ class DefinitionSerialization {
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
 
       for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
-        branchBuilder.putClauses(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+        branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
       }
 
       builder.setBranch(branchBuilder);
@@ -192,7 +192,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
       ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
-      builder.setFunRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
@@ -204,7 +204,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
       ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
-      builder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDataTypeArguments()) {
@@ -219,7 +219,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitDataCall(DataCallExpression expr, Void params) {
       ExpressionProtos.Expression.DataCall.Builder builder = ExpressionProtos.Expression.DataCall.newBuilder();
-      builder.setDataRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setDataRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Expression arg : expr.getDefCallArguments()) {
@@ -230,11 +230,11 @@ class DefinitionSerialization {
 
     private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {
       ExpressionProtos.Expression.ClassCall.Builder builder = ExpressionProtos.Expression.ClassCall.newBuilder();
-      builder.setClassRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setClassRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-        builder.putFieldSet(myCalltargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
+        builder.putFieldSet(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
       }
       builder.setSort(writeSort(expr.getSort()));
       return builder.build();
@@ -362,7 +362,7 @@ class DefinitionSerialization {
     @Override
     public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
       ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
-      builder.setFieldRef(myCalltargetIndexProvider.getDefIndex(expr.getDefinition()));
+      builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
       builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
       builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
       builder.setExpression(expr.getExpression().accept(this, null));

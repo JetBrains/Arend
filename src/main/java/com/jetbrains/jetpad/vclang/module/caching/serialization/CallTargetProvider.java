@@ -2,13 +2,13 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
-public interface CalltargetProvider {
+public interface CallTargetProvider {
   Definition getCalltarget(int index);
 
   class Typed {
-    private final CalltargetProvider myProvider;
+    private final CallTargetProvider myProvider;
 
-    public Typed(CalltargetProvider provider) {
+    public Typed(CallTargetProvider provider) {
       myProvider = provider;
     }
 

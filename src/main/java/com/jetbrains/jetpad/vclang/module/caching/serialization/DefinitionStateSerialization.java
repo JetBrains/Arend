@@ -23,11 +23,11 @@ import java.util.Map;
 
 public class DefinitionStateSerialization {
   private final PersistenceProvider<? extends SourceId> myPersistenceProvider;
-  private final CalltargetIndexProvider myCalltargetIndexProvider;
+  private final CallTargetIndexProvider myCallTargetIndexProvider;
 
-  public DefinitionStateSerialization(PersistenceProvider<? extends SourceId> persistenceProvider, CalltargetIndexProvider calltargetIndexProvider) {
+  public DefinitionStateSerialization(PersistenceProvider<? extends SourceId> persistenceProvider, CallTargetIndexProvider callTargetIndexProvider) {
     myPersistenceProvider = persistenceProvider;
-    myCalltargetIndexProvider = calltargetIndexProvider;
+    myCallTargetIndexProvider = callTargetIndexProvider;
   }
 
   public ModuleProtos.Module.DefinitionState writeDefinitionState(LocalizedTypecheckerState<? extends SourceId>.LocalTypecheckerState state) {
@@ -68,10 +68,10 @@ public class DefinitionStateSerialization {
     }
 
     if (definition.getThisClass() != null) {
-      out.setThisClassRef(myCalltargetIndexProvider.getDefIndex(definition.getThisClass()));
+      out.setThisClassRef(myCallTargetIndexProvider.getDefIndex(definition.getThisClass()));
     }
 
-    final DefinitionSerialization defSerializer = new DefinitionSerialization(myCalltargetIndexProvider);
+    final DefinitionSerialization defSerializer = new DefinitionSerialization(myCallTargetIndexProvider);
 
     if (definition instanceof ClassDefinition) {
       // type cannot possibly have errors
@@ -100,25 +100,25 @@ public class DefinitionStateSerialization {
     }
 
     for (ClassField classField : definition.getFields()) {
-      builder.addFieldRef(myCalltargetIndexProvider.getDefIndex(classField));
+      builder.addFieldRef(myCallTargetIndexProvider.getDefIndex(classField));
     }
     for (Map.Entry<ClassField, ClassDefinition.Implementation> impl : definition.getImplemented()) {
       DefinitionProtos.Definition.ClassData.Implementation.Builder iBuilder = DefinitionProtos.Definition.ClassData.Implementation.newBuilder();
       iBuilder.setThisParam(defSerializer.writeParameter(impl.getValue().thisParam));
       iBuilder.setTerm(defSerializer.writeExpr(impl.getValue().term));
-      builder.putImplementations(myCalltargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
+      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
     if (definition.getEnclosingThisField() != null) {
-      builder.setEnclosingThisFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
+      builder.setEnclosingThisFieldRef(myCallTargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
     }
 
     for (ClassDefinition classDefinition : definition.getSuperClasses()) {
-      builder.addSuperClassRef(myCalltargetIndexProvider.getDefIndex(classDefinition));
+      builder.addSuperClassRef(myCallTargetIndexProvider.getDefIndex(classDefinition));
     }
 
     if (definition.getCoercingField() != null) {
-      builder.setCoercingFieldRef(myCalltargetIndexProvider.getDefIndex(definition.getCoercingField()));
+      builder.setCoercingFieldRef(myCallTargetIndexProvider.getDefIndex(definition.getCoercingField()));
     } else {
       builder.setCoercingFieldRef(-1);
     }
@@ -178,7 +178,7 @@ public class DefinitionStateSerialization {
       builder.setEmpty(DefinitionProtos.Definition.Pattern.Empty.newBuilder());
     } else if (pattern instanceof ConstructorPattern) {
       DefinitionProtos.Definition.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.Pattern.ConstructorRef.newBuilder();
-      pBuilder.setConstructorRef(myCalltargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
+      pBuilder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
       for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
         pBuilder.addPattern(writePattern(defSerializer, patternArgument));
       }
