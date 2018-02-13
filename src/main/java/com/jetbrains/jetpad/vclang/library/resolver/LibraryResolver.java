@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 /**
  * Resolves library's name.
  */
-public interface LibraryNameResolver {
+public interface LibraryResolver {
   /**
    * Resolves library's name.
    *

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
+import com.jetbrains.jetpad.vclang.library.resolver.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.DefinitionDeserialization;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationError;
@@ -102,7 +103,7 @@ public abstract class StreamCacheSource implements PersistableSource {
   }
 
   @Override
-  public boolean persist(PersistableSourceLibrary library, ErrorReporter errorReporter) {
+  public boolean persist(PersistableSourceLibrary library, DefinitionLocator definitionLocator, ErrorReporter errorReporter) {
     try (OutputStream outputStream = getOutputStream(errorReporter)) {
       if (outputStream == null) {
         return false;
@@ -115,7 +116,7 @@ public abstract class StreamCacheSource implements PersistableSource {
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(currentModulePath, library, errorReporter).writeModule(group);
+      ModuleProtos.Module module = new ModuleSerialization(currentModulePath, definitionLocator, library, errorReporter).writeModule(group);
       if (module == null) {
         return false;
       }

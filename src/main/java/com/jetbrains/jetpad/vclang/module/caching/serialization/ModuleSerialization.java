@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.module.caching.serialization;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
+import com.jetbrains.jetpad.vclang.library.resolver.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
@@ -15,12 +16,14 @@ import java.util.List;
 
 public class ModuleSerialization {
   private final ModulePath myCurrentModule;
+  private final DefinitionLocator myLocator;
   private final PersistableSourceLibrary myLibrary;
   private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
 
-  public ModuleSerialization(ModulePath currentModule, PersistableSourceLibrary library, ErrorReporter errorReporter) {
+  public ModuleSerialization(ModulePath currentModule, DefinitionLocator definitionLocator, PersistableSourceLibrary library, ErrorReporter errorReporter) {
     myCurrentModule = currentModule;
+    myLocator = definitionLocator;
     myLibrary = library;
     myState = library.getTypecheckerState();
     myErrorReporter = errorReporter;
@@ -39,8 +42,14 @@ public class ModuleSerialization {
     for (Definition callTarget : callTargetsIndexProvider.getCallTargets()) {
       ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
       GlobalReferable targetReferable = callTarget.getReferable();
-      ModulePath targetModulePath = myLibrary.getDefinitionModule(targetReferable); // TODO[library]: Get the appropriate library from some sort of GlobalReferable -> Library resolver.
-      LongName targetName = myLibrary.getDefinitionFullName(targetReferable);
+      PersistableSourceLibrary library = myLocator.resolve(targetReferable);
+      if (library == null) {
+        myErrorReporter.report(LocationError.definition(targetReferable));
+        return null;
+      }
+
+      ModulePath targetModulePath = library.getDefinitionModule(targetReferable);
+      LongName targetName = library.getDefinitionFullName(targetReferable);
       if (targetModulePath == null || targetName == null) {
         myErrorReporter.report(LocationError.definition(targetReferable));
         return null;
