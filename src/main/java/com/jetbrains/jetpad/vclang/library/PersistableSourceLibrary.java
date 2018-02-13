@@ -30,8 +30,10 @@ public abstract class PersistableSourceLibrary extends SourceLibrary {
    *
    * @param referable a definition.
    *
-   * @return the module of the definition.
+   * @return the module of the definition
+   *         or null if either the definition does not belong to this library or some error occurred.
    */
+  @Nullable
   public abstract ModulePath getDefinitionModule(GlobalReferable referable);
 
   /**
@@ -39,7 +41,9 @@ public abstract class PersistableSourceLibrary extends SourceLibrary {
    *
    * @param referable a definition.
    *
-   * @return the long name of the definition.
+   * @return the long name of the definition
+   *         or null if either the definition does not belong to this library or some error occurred.
    */
+  @Nullable
   public abstract LongName getDefinitionFullName(GlobalReferable referable);
 }

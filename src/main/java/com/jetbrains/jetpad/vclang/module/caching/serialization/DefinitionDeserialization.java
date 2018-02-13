@@ -1,309 +1,276 @@
 package com.jetbrains.jetpad.vclang.module.caching.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
-import com.jetbrains.jetpad.vclang.core.context.param.*;
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.Body;
+import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
-import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.type.Type;
-import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
-import com.jetbrains.jetpad.vclang.core.sort.Level;
-import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.pattern.*;
+import com.jetbrains.jetpad.vclang.module.caching.LocalizedTypecheckerState;
+import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
+import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class DefinitionDeserialization {
-  private final CallTargetProvider.Typed myCalltargetProvider;
-  private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
+public class DefinitionDeserialization<SourceIdT extends SourceId> {
+  private final PersistenceProvider<SourceIdT> myPersistenceProvider;
+  private final SourceIdT mySourceId;
 
-  DefinitionDeserialization(CallTargetProvider.Typed calltargetProvider) {
-    myCalltargetProvider = calltargetProvider;
+  public DefinitionDeserialization(SourceIdT sourceId, PersistenceProvider<SourceIdT> persistenceProvider) {
+    mySourceId = sourceId;
+    myPersistenceProvider = persistenceProvider;
   }
 
+  public void readStubs(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+    for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
+      String id = entry.getKey();
+      DefinitionProtos.Definition defProto = entry.getValue();
 
-  // Bindings
+      myPersistenceProvider.registerCachedDefinition(mySourceId, id, null);
+      final GlobalReferable abstractDef = getAbstract(id);
+      final Definition def;
+      switch (defProto.getDefinitionDataCase()) {
+        case CLASS:
+          ClassDefinition classDef = new ClassDefinition(abstractDef);
+          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+            myPersistenceProvider.registerCachedDefinition(mySourceId, fieldProto.getName(), abstractDef);
+            GlobalReferable absField = getAbstract(fieldProto.getName());
+            ClassField res = new ClassField(absField, classDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            state.record(absField, res);
+          }
+          def = classDef;
+          break;
+        case DATA:
+          DataDefinition dataDef = new DataDefinition(abstractDef);
+          for (String constructorId : defProto.getData().getConstructorsMap().keySet()) {
+            myPersistenceProvider.registerCachedDefinition(mySourceId, constructorId, abstractDef);
+            GlobalReferable absConstructor = getAbstract(constructorId);
+            Constructor res = new Constructor(absConstructor, dataDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            state.record(absConstructor, res);
+          }
+          def = dataDef;
+          break;
+        case FUNCTION:
+          def = new FunctionDefinition(getAbstract(id));
+          break;
+        default:
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
+      }
 
-  private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
-  }
-
-  private class RollbackBindings implements AutoCloseable {
-    private final int myTargetSize;
-
-    private RollbackBindings(int targetSize) {
-      myTargetSize = targetSize;
+      def.setStatus(readTcStatus(defProto));
+      state.record(abstractDef, def);
     }
+  }
 
-    @Override
-    public void close() {
-      for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
-        myBindings.remove(i);
+  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
+    switch (defProto.getStatus()) {
+      case HEADER_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
+      case BODY_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
+      case HEADER_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
+      case BODY_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+      case HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HAS_ERRORS;
+      case NO_ERRORS:
+        return Definition.TypeCheckingStatus.NO_ERRORS;
+      default:
+        throw new IllegalStateException("Unknown typechecking state");
+    }
+  }
+
+  public void fillInDefinitions(ModuleProtos.Module.DefinitionState in, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, CallTargetProvider callTargetProvider) throws DeserializationError {
+    CallTargetProvider.Typed typedCalltargetProvider = new CallTargetProvider.Typed(callTargetProvider);
+
+    for (Map.Entry<String, DefinitionProtos.Definition> entry : in.getDefinitionMap().entrySet()) {
+      String id = entry.getKey();
+      DefinitionProtos.Definition defProto = entry.getValue();
+
+      final Definition def = getTypechecked(state, id);
+
+      final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(typedCalltargetProvider);
+
+      if (defProto.getThisClassRef() != 0) {
+        def.setThisClass(typedCalltargetProvider.getCalltarget(defProto.getThisClassRef(), ClassDefinition.class));
+      }
+
+      switch (defProto.getDefinitionDataCase()) {
+        case CLASS:
+          ClassDefinition classDef = (ClassDefinition) def;
+          fillInClassDefinition(defDeserializer, typedCalltargetProvider, defProto.getClass_(), classDef, state);
+          break;
+        case DATA:
+          DataDefinition dataDef = (DataDefinition) def;
+          fillInDataDefinition(defDeserializer, typedCalltargetProvider, defProto.getData(), dataDef, state);
+          break;
+        case FUNCTION:
+          FunctionDefinition functionDef = (FunctionDefinition) def;
+          fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
+          break;
+        default:
+          throw new DeserializationError("Unknown Definition kind: " + defProto.getDefinitionDataCase());
       }
     }
   }
 
-  private void registerBinding(Binding binding) {
-    myBindings.add(binding);
-  }
+  private void fillInClassDefinition(ExpressionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+    for (int classFieldRef : classProto.getFieldRefList()) {
+      classDef.addField(calltargetProvider.getCalltarget(classFieldRef, ClassField.class));
+    }
+    for (Map.Entry<Integer, DefinitionProtos.Definition.ClassData.Implementation> entry : classProto.getImplementationsMap().entrySet()) {
+      TypedDependentLink thisParam = (TypedDependentLink) defDeserializer.readParameter(entry.getValue().getThisParam());
+      ClassDefinition.Implementation impl = new ClassDefinition.Implementation(thisParam, defDeserializer.readExpr(entry.getValue().getTerm()));
+      classDef.implementField(calltargetProvider.getCalltarget(entry.getKey(), ClassField.class), impl);
+    }
+    classDef.setSort(defDeserializer.readSort(classProto.getSort()));
+    if (classProto.getCoercingFieldRef() != -1) {
+      classDef.setCoercingField(calltargetProvider.getCalltarget(classProto.getCoercingFieldRef(), ClassField.class));
+    }
 
-  Type readType(ExpressionProtos.Type proto) throws DeserializationError {
-    Expression expr = readExpr(proto.getExpr());
-    return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
-  }
+    for (int superClassRef : classProto.getSuperClassRefList()) {
+      ClassDefinition superClass = calltargetProvider.getCalltarget(superClassRef, ClassDefinition.class);
+      classDef.addSuperClass(superClass);
+    }
+    if (classProto.getEnclosingThisFieldRef() != 0) {
+      classDef.setEnclosingThisField(calltargetProvider.getCalltarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
+    }
 
-  private Variable readBindingRef(int index) throws DeserializationError {
-    if (index == 0) {
-      return null;
-    } else {
-      Variable binding = myBindings.get(index - 1);
-      if (binding == null) {
-        throw new DeserializationError("Trying to read a reference to an unregistered binding");
+    for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
+      ClassField field = getTypechecked(state, fieldProto.getName());
+      field.setThisParameter((TypedDependentLink) defDeserializer.readParameter(fieldProto.getThisParam()));
+      if (fieldProto.hasType()) {
+        field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
       }
-      return binding;
+      classDef.addPersonalField(field);
     }
   }
 
-  // Sorts and levels
+  private void fillInDataDefinition(ExpressionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state) throws DeserializationError {
+    dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
+    dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
 
-  private Level readLevel(LevelProtos.Level proto) throws DeserializationError {
-    Variable var;
-    switch (proto.getVariable()) {
-      case NO_VAR:
-        var = null;
-        break;
-      case PLVL:
-        var = LevelVariable.PVAR;
-        break;
-      case HLVL:
-        var = LevelVariable.HVAR;
-        break;
-      default: throw new DeserializationError("Unrecognized level variable");
-    }
-
-    int constant = proto.getConstant();
-    if (var == null && constant == -10) {
-      return Level.INFINITY;
-    } else {
-      return new Level((LevelVariable) var, constant, proto.getMaxConstant());
-    }
-  }
-
-  Sort readSort(LevelProtos.Sort proto) throws DeserializationError {
-    return new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel()));
-  }
-
-
-  // Parameters
-
-  DependentLink readParameters(List<ExpressionProtos.Telescope> protos) throws DeserializationError {
-    LinkList list = new LinkList();
-    for (ExpressionProtos.Telescope proto : protos) {
-      List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
-      for (String name : proto.getNameList()) {
-        unfixedNames.add(name.isEmpty() ? null : name);
+    for (Map.Entry<String, DefinitionProtos.Definition.DataData.Constructor> entry : dataProto.getConstructorsMap().entrySet()) {
+      DefinitionProtos.Definition.DataData.Constructor constructorProto = entry.getValue();
+      Constructor constructor = getTypechecked(state, entry.getKey());
+      if (constructorProto.getPatternCount() > 0) {
+        constructor.setPatterns(readPatterns(defDeserializer, calltargetProvider, constructorProto.getPatternList(), new LinkList()));
       }
-      Type type = readType(proto.getType());
-      DependentLink tele = ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
-      for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
-        registerBinding(link);
-      }
-      list.append(tele);
-    }
-    return list.getFirst();
-  }
-
-  SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationError {
-    List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
-    for (String name : proto.getNameList()) {
-      unfixedNames.add(name.isEmpty() ? null : name);
-    }
-    Type type = proto.getType() != null ? readType(proto.getType()) : null;
-    SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
-    for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
-      registerBinding(link);
-    }
-    return tele;
-  }
-
-  DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationError {
-    Type type = readType(proto.getType());
-    DependentLink link;
-    if (proto.hasType()) {
-      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
-    } else {
-      link = new UntypedDependentLink(proto.getName(), EmptyDependentLink.getInstance());
-    }
-    registerBinding(link);
-    return link;
-  }
-
-
-  // Expressions and ElimTrees
-
-  ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationError {
-    DependentLink parameters = readParameters(proto.getParamList());
-    switch (proto.getKindCase()) {
-      case BRANCH: {
-        Map<Constructor, ElimTree> children = new HashMap<>();
-        for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
-          children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
+      if (constructorProto.getClauseCount() > 0) {
+        List<ClauseBase> clauses = new ArrayList<>(constructorProto.getClauseCount());
+        for (DefinitionProtos.Definition.Clause clause : constructorProto.getClauseList()) {
+          clauses.add(readClause(defDeserializer, calltargetProvider, clause));
         }
-        return new BranchElimTree(parameters, children);
+        constructor.setClauses(clauses);
       }
-      case LEAF:
-        return new LeafElimTree(parameters, readExpr(proto.getLeaf().getExpr()));
-      default:
-        throw new DeserializationError("Unknown ElimTreeNode kind: " + proto.getKindCase());
+      constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
+      if (constructorProto.hasConditions()) {
+        constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
+      }
+      dataDef.addConstructor(constructor);
+    }
+
+    if (dataProto.getMatchesOnInterval()) {
+      dataDef.setMatchesOnInterval();
+    }
+
+    int index = 0;
+    for (Boolean isCovariant : dataProto.getCovariantParameterList()) {
+      if (isCovariant) {
+        dataDef.setCovariant(index);
+      }
+      index++;
     }
   }
 
-  Expression readExpr(ExpressionProtos.Expression proto) throws DeserializationError {
+  private ClauseBase readClause(ExpressionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Clause clause) throws DeserializationError {
+    return new ClauseBase(readPatterns(defDeserializer, calltargetProvider, clause.getPatternList(), new LinkList()).getPatternList(), defDeserializer.readExpr(clause.getExpression()));
+  }
+
+  private Body readBody(ExpressionDeserialization defDeserializer, DefinitionProtos.Body proto) throws DeserializationError {
     switch (proto.getKindCase()) {
-      case APP:
-        return readApp(proto.getApp());
-      case FUN_CALL:
-        return readFunCall(proto.getFunCall());
-      case CON_CALL:
-        return readConCall(proto.getConCall());
-      case DATA_CALL:
-        return readDataCall(proto.getDataCall());
-      case CLASS_CALL:
-        return readClassCall(proto.getClassCall());
-      case REFERENCE:
-        return readReference(proto.getReference());
-      case LAM:
-        return readLam(proto.getLam());
-      case PI:
-        return readPi(proto.getPi());
-      case UNIVERSE:
-        return readUniverse(proto.getUniverse());
-      case ERROR:
-        return readError(proto.getError());
-      case TUPLE:
-        return readTuple(proto.getTuple());
-      case SIGMA:
-        return readSigma(proto.getSigma());
-      case PROJ:
-        return readProj(proto.getProj());
-      case NEW:
-        return readNew(proto.getNew());
-      case LET:
-        return readLet(proto.getLet());
-      case CASE:
-        return readCase(proto.getCase());
-      case FIELD_CALL:
-        return readFieldCall(proto.getFieldCall());
+      case ELIM_TREE:
+        return defDeserializer.readElimTree(proto.getElimTree());
+      case INTERVAL_ELIM:
+        DependentLink parameters = defDeserializer.readParameters(proto.getIntervalElim().getParamList());
+        List<Pair<Expression, Expression>> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
+        for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
+          cases.add(new Pair<>(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
+        }
+        ElimTree elimTree = null;
+        if (proto.getIntervalElim().hasOtherwise()) {
+          elimTree = defDeserializer.readElimTree(proto.getIntervalElim().getOtherwise());
+        }
+        return new IntervalElim(parameters, cases, elimTree);
       default:
-        throw new DeserializationError("Unknown Expression kind: " + proto.getKindCase());
+        throw new DeserializationError("Unknown body kind: " + proto.getKindCase());
     }
   }
 
-  List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationError {
-    List<Expression> result = new ArrayList<>(protos.size());
-    for (ExpressionProtos.Expression proto : protos) {
-      result.add(readExpr(proto));
+  private Patterns readPatterns(ExpressionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, List<DefinitionProtos.Definition.Pattern> protos, LinkList list) throws DeserializationError {
+    List<Pattern> patterns = new ArrayList<>(protos.size());
+    for (DefinitionProtos.Definition.Pattern proto : protos) {
+      patterns.add(readPattern(defDeserializer, calltargetProvider, proto, list));
     }
-    return result;
+    return new Patterns(patterns);
   }
 
-
-  private AppExpression readApp(ExpressionProtos.Expression.App proto) throws DeserializationError {
-    return new AppExpression(readExpr(proto.getFunction()), readExpr(proto.getArgument()));
-  }
-
-  private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
-    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
-  }
-
-  private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
-    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
-        readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
-  }
-
-  private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationError {
-    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
-  }
-
-  private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
-      fieldSet.put(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
+  private Pattern readPattern(ExpressionDeserialization defDeserializer, CallTargetProvider.Typed calltargetProvider, DefinitionProtos.Definition.Pattern proto, LinkList list) throws DeserializationError {
+    switch (proto.getKindCase()) {
+      case BINDING:
+        DependentLink param = defDeserializer.readParameter(proto.getBinding().getVar());
+        list.append(param);
+        return new BindingPattern(param);
+      case EMPTY:
+        return EmptyPattern.INSTANCE;
+      case CONSTRUCTOR:
+        return new ConstructorPattern(
+          new ConCallExpression(
+            calltargetProvider.getCalltarget(proto.getConstructor().getConstructorRef(), Constructor.class),
+            defDeserializer.readSort(proto.getConstructor().getSortArgument()),
+            defDeserializer.readExprList(proto.getConstructor().getDataTypeArgumentList()),
+            Collections.emptyList()
+          ), readPatterns(defDeserializer, calltargetProvider, proto.getConstructor().getPatternList(), list));
+      default:
+        throw new DeserializationError("Unknown Pattern kind: " + proto.getKindCase());
     }
-    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()));
   }
 
-  private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {
-    return new ReferenceExpression((Binding)readBindingRef(proto.getBindingRef()));
-  }
-
-  private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationError {
-    return new LamExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
-  }
-
-  private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationError {
-    return new PiExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getCodomain()));
-  }
-
-  private UniverseExpression readUniverse(ExpressionProtos.Expression.Universe proto) throws DeserializationError {
-    return new UniverseExpression(readSort(proto.getSort()));
-  }
-
-  private ErrorExpression readError(ExpressionProtos.Expression.Error proto) throws DeserializationError {
-    final Expression expr;
-    if (proto.hasExpression()) {
-      expr = readExpr(proto.getExpression());
-    } else {
-      expr = null;
+  private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationError {
+    functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
+    if (functionProto.hasType()) {
+      functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     }
-    return new ErrorExpression(expr, null);
-  }
-
-  private TupleExpression readTuple(ExpressionProtos.Expression.Tuple proto) throws DeserializationError {
-    return new TupleExpression(readExprList(proto.getFieldList()), readSigma(proto.getType()));
-  }
-
-  private SigmaExpression readSigma(ExpressionProtos.Expression.Sigma proto) throws DeserializationError {
-    return new SigmaExpression(new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readParameters(proto.getParamList()));
-  }
-
-  private Expression readProj(ExpressionProtos.Expression.Proj proto) throws DeserializationError {
-    return ProjExpression.make(readExpr(proto.getExpression()), proto.getField());
-  }
-
-  private NewExpression readNew(ExpressionProtos.Expression.New proto) throws DeserializationError {
-    return new NewExpression(readClassCall(proto.getClassCall()));
-  }
-
-  private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationError {
-    List<LetClause> clauses = new ArrayList<>();
-    for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(cProto.getName(), readExpr(cProto.getExpression()));
-      registerBinding(clause);
-      clauses.add(clause);
+    if (functionProto.hasBody()) {
+      functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
     }
-    return new LetExpression(clauses, readExpr(proto.getExpression()));
   }
 
-  private CaseExpression readCase(ExpressionProtos.Expression.Case proto) throws DeserializationError {
-    List<Expression> arguments = new ArrayList<>(proto.getArgumentCount());
-    ElimTree elimTree = readElimTree(proto.getElimTree());
-    DependentLink parameters = readParameters(proto.getParamList());
-    Expression type = readExpr(proto.getResultType());
-    for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
-      arguments.add(readExpr(argument));
+
+  private GlobalReferable getAbstract(String id) {
+    return myPersistenceProvider.getFromId(mySourceId, id);
+  }
+
+  private <DefinitionT extends Definition> DefinitionT getTypechecked(LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState state, String id) throws DeserializationError {
+    try {
+      //noinspection unchecked
+      return (DefinitionT) state.getTypechecked(getAbstract(id));
+    } catch (ClassCastException ignored) {
+      throw new DeserializationError("Stored Definition data does not match its kind");
     }
-    return new CaseExpression(parameters, type, elimTree, arguments);
-  }
-
-  private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
-    return FieldCallExpression.make(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
   }
 }

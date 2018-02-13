@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
-import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
+import com.jetbrains.jetpad.vclang.library.resolver.LibraryNameResolver;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,13 +13,13 @@ import java.util.Set;
  * Contains all necessary information for library loading.
  */
 public final class LibraryManager {
-  private final LibraryResolver myLibraryResolver;
+  private final LibraryNameResolver myLibraryNameResolver;
   private final ErrorReporter myErrorReporter;
   private final Map<Library, Set<Library>> myReverseDependencies = new HashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
 
-  public LibraryManager(LibraryResolver libraryResolver, ErrorReporter errorReporter) {
-    myLibraryResolver = libraryResolver;
+  public LibraryManager(LibraryNameResolver libraryNameResolver, ErrorReporter errorReporter) {
+    myLibraryNameResolver = libraryNameResolver;
     myErrorReporter = errorReporter;
   }
 
@@ -46,7 +46,7 @@ public final class LibraryManager {
    * @return the loaded library if loading succeeded, null otherwise.
    */
   public Library loadLibrary(String libraryName) {
-    Library library = myLibraryResolver.resolve(libraryName);
+    Library library = myLibraryNameResolver.resolve(libraryName);
     if (library == null) {
       myErrorReporter.report(LibraryError.notFound(libraryName));
       return null;
@@ -98,7 +98,7 @@ public final class LibraryManager {
    * @param libraryName  the name of the library to unload.
    */
   public void unloadLibrary(String libraryName) {
-    Library library = myLibraryResolver.resolve(libraryName);
+    Library library = myLibraryNameResolver.resolve(libraryName);
     if (library == null) {
       myErrorReporter.report(LibraryError.notFound(libraryName));
     } else {

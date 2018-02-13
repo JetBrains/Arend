@@ -73,7 +73,7 @@ public class CacheManager<SourceIdT extends SourceId> {
 
   private void readModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState, ModuleProtos.Module moduleProto) throws CacheLoadingException {
     try {
-      DefinitionStateDeserialization<SourceIdT> defStateDeserialization = new DefinitionStateDeserialization<>(sourceId, myPersistenceProvider);
+      DefinitionDeserialization<SourceIdT> defStateDeserialization = new DefinitionDeserialization<>(sourceId, myPersistenceProvider);
       defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);
       myStubsLoaded.add(sourceId);
       ReadCalltargets calltargets = new ReadCalltargets(sourceId, moduleProto.getReferredDefinitionList());
@@ -161,7 +161,7 @@ public class CacheManager<SourceIdT extends SourceId> {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
     final WriteCallTargets calltargets = new WriteCallTargets(sourceId);
     // Serialize the module first in order to populate the call-target registry
-    DefinitionStateSerialization defStateSerialization = new DefinitionStateSerialization(myPersistenceProvider, calltargets);
+    DefinitionSerialization defStateSerialization = new DefinitionSerialization(myPersistenceProvider, calltargets);
     out.setDefinitionState(defStateSerialization.writeDefinitionState(localState));
     localState.sync();
     // now write the call-target registry
