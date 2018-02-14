@@ -65,7 +65,7 @@ public abstract class SourceLibrary extends LibraryBase {
   /**
    * Loads the header of this library.
    *
-   * @param errorReporter a reporter for all errors that occur during loading process.
+   * @param errorReporter a reporter for all errors that occur during the loading process.
    *
    * @return loaded library header, or null if some error occurred.
    */
@@ -78,7 +78,7 @@ public abstract class SourceLibrary extends LibraryBase {
    * @param modulePath  the path to the loaded module.
    * @param group       the group of the loaded module.
    */
-  protected void onModuleLoaded(ModulePath modulePath, Group group) {
+  public void onModuleLoaded(ModulePath modulePath, Group group) {
 
   }
 
@@ -101,7 +101,7 @@ public abstract class SourceLibrary extends LibraryBase {
       libraryManager.registerDependency(this, loadedDependency);
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager.getErrorReporter());
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
     for (ModulePath module : header.modules) {
       if (!sourceLoader.load(module)) {
         unload();

@@ -73,7 +73,16 @@ public interface Library {
   Group getModuleGroup(ModulePath modulePath);
 
   /**
-   * Provides a module scope provider that can be used to get scopes of modules in this library.
+   * Checks if this library contains a specified module.
+   *
+   * @param modulePath  the path to a module.
+   *
+   * @return true if the library contains the module, false otherwise.
+   */
+  boolean containsModule(ModulePath modulePath);
+
+  /**
+   * Gets a module scope provider that can be used to get scopes of modules in this library.
    * This method may be invoked only after the library is successfully loaded.
    *
    * @return a scope provider for modules in this library.

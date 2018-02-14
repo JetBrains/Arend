@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,17 +11,30 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Contains all necessary information for library loading.
+ * Contains all necessary information for the library loading.
  */
 public final class LibraryManager {
   private final LibraryResolver myLibraryResolver;
+  private final ModuleScopeProvider myModuleScopeProvider;
   private final ErrorReporter myErrorReporter;
   private final Map<Library, Set<Library>> myReverseDependencies = new HashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
 
-  public LibraryManager(LibraryResolver libraryResolver, ErrorReporter errorReporter) {
+  /**
+   * Constructs new {@code LibraryManager}.
+   *
+   * @param libraryResolver     a library resolver.
+   * @param moduleScopeProvider a module scope provider for the whole project.
+   * @param errorReporter       an error reporter for all errors that occur during the loading process.
+   */
+  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter errorReporter) {
     myLibraryResolver = libraryResolver;
+    myModuleScopeProvider = moduleScopeProvider;
     myErrorReporter = errorReporter;
+  }
+
+  public ModuleScopeProvider getModuleScopeProvider() {
+    return myModuleScopeProvider;
   }
 
   public ErrorReporter getErrorReporter() {

@@ -4,16 +4,17 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class SimpleCallTargetIndexProvider implements CallTargetIndexProvider {
   private final LinkedHashMap<Definition, Integer> myCallTargets = new LinkedHashMap<>();
 
   @Override
   public int getDefIndex(Definition definition) {
-    return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size());
+    return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size() + 1);
   }
 
-  public Collection<? extends Definition> getCallTargets() {
-    return myCallTargets.keySet();
+  public Collection<? extends Map.Entry<Definition, Integer>> getCallTargets() {
+    return myCallTargets.entrySet();
   }
 }

@@ -55,9 +55,9 @@ message Definition {
         Sort sort = 7;
 
         message Field {
-            string name = 3;
-            SingleParameter this_param = 1;
-            Expression type = 2;
+            int32 index = 1;
+            SingleParameter this_param = 2;
+            Expression type = 3;
         }
 
         message Implementation {
@@ -68,15 +68,16 @@ message Definition {
     message DataData {
         repeated Telescope param = 2;
         Sort sort = 7;
-        map<string, Constructor> constructors = 3;
+        repeated Constructor constructor = 3;
         bool matches_on_interval = 5;
         repeated bool covariant_parameter = 8;
 
         message Constructor {
-            repeated Pattern pattern = 5;
-            repeated Telescope param = 2;
-            repeated Clause clause = 6;
-            Body conditions = 4;
+            int32 index = 1;
+            repeated Pattern pattern = 2;
+            repeated Telescope param = 3;
+            repeated Clause clause = 4;
+            Body conditions = 5;
         }
     }
     message FunctionData {

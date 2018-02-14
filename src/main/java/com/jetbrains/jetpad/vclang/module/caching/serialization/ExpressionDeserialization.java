@@ -154,7 +154,7 @@ class ExpressionDeserialization {
       case BRANCH: {
         Map<Constructor, ElimTree> children = new HashMap<>();
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
-          children.put(myCalltargetProvider.getCalltarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
+          children.put(myCalltargetProvider.getCallTarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }
         return new BranchElimTree(parameters, children);
       }
@@ -220,24 +220,24 @@ class ExpressionDeserialization {
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationError {
-    return new FunCallExpression(myCalltargetProvider.getCalltarget(proto.getFunRef(), FunctionDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+    return new FunCallExpression(myCalltargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationError {
-    return new ConCallExpression(myCalltargetProvider.getCalltarget(proto.getConstructorRef(), Constructor.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
+    return new ConCallExpression(myCalltargetProvider.getCallTarget(proto.getConstructorRef(), Constructor.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationError {
-    return new DataCallExpression(myCalltargetProvider.getCalltarget(proto.getDataRef(), DataDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+    return new DataCallExpression(myCalltargetProvider.getCallTarget(proto.getDataRef(), DataDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationError {
     Map<ClassField, Expression> fieldSet = new HashMap<>();
     for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
-      fieldSet.put(myCalltargetProvider.getCalltarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
+      fieldSet.put(myCalltargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
     }
-    return new ClassCallExpression(myCalltargetProvider.getCalltarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()));
+    return new ClassCallExpression(myCalltargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class), new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()));
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationError {
@@ -304,6 +304,6 @@ class ExpressionDeserialization {
   }
 
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationError {
-    return FieldCallExpression.make(myCalltargetProvider.getCalltarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
+    return FieldCallExpression.make(myCalltargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class), readExpr(proto.getExpression()));
   }
 }

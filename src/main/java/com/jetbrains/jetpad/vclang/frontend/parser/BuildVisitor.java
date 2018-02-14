@@ -470,7 +470,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
-    DataGroup resultGroup = new DataGroup(reference, constructors, Collections.emptyList(), Collections.emptyList(), parent);
+    DataGroup resultGroup = new DataGroup(reference, constructors, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
     return resultGroup;
   }

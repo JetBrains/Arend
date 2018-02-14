@@ -12,8 +12,6 @@ import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -24,23 +22,6 @@ public class DefinitionSerialization {
 
   public DefinitionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
     myCallTargetIndexProvider = callTargetIndexProvider;
-  }
-
-  static String getNameIdFor(GlobalReferable referable, String name) {
-    Precedence precedence = referable.getPrecedence();
-    char fixityChar = precedence.isInfix ? 'i' : 'n';
-    final char assocChr;
-    switch (precedence.associativity) {
-      case LEFT_ASSOC:
-        assocChr = 'l';
-        break;
-      case RIGHT_ASSOC:
-        assocChr = 'r';
-        break;
-      default:
-        assocChr = 'n';
-    }
-    return "" + fixityChar + assocChr + precedence.priority + ';' + name;
   }
 
   DefinitionProtos.Definition writeDefinition(Definition definition) {
@@ -94,7 +75,7 @@ public class DefinitionSerialization {
 
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
-      fBuilder.setName(getNameIdFor(field.getReferable(), field.getReferable().textRepresentation()));
+      fBuilder.setIndex(myCallTargetIndexProvider.getDefIndex(field));
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
       Expression baseType = field.getBaseType(Sort.STD);
       if (baseType != null) fBuilder.setType(defSerializer.writeExpr(baseType));
@@ -137,6 +118,7 @@ public class DefinitionSerialization {
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
+      cBuilder.setIndex(myCallTargetIndexProvider.getDefIndex(constructor));
       if (constructor.getPatterns() != null) {
         for (Pattern pattern : constructor.getPatterns().getPatternList()) {
           cBuilder.addPattern(writePattern(defSerializer, pattern));
@@ -150,7 +132,7 @@ public class DefinitionSerialization {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
 
-      builder.putConstructors(getNameIdFor(constructor.getReferable(), constructor.getReferable().textRepresentation()), cBuilder.build());
+      builder.addConstructor(cBuilder.build());
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());

@@ -61,7 +61,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  protected void onModuleLoaded(ModulePath modulePath, Group group) {
+  public void onModuleLoaded(ModulePath modulePath, Group group) {
     myGroups.put(modulePath, group);
     myModuleScopeProvider.registerModule(modulePath, group);
   }
@@ -76,5 +76,10 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   @Override
   public Group getModuleGroup(ModulePath modulePath) {
     return myGroups.get(modulePath);
+  }
+
+  @Override
+  public boolean containsModule(ModulePath modulePath) {
+    return myGroups.containsKey(modulePath);
   }
 }

@@ -8,17 +8,47 @@ import "Definition.proto";
 
 
 message Module {
-    DefinitionState definition_state = 1;
-    InstanceState instance_state = 2;
-    repeated DefinitionReference referred_definition = 3;
-    message DefinitionReference {
-        string source_url = 1;
-        string definition_id = 2;
-    }
+    Group group = 1;
+    repeated ModuleCallTargets module_call_targets = 2;
+}
 
-    message DefinitionState {
-        map<string, Definition> definition = 1;
-    }
-    message InstanceState {
+message ModuleCallTargets {
+    repeated string name = 1;
+    map<string, CallTargetTree> call_target_tree = 2;
+}
+
+message CallTargetTree {
+    int32 index = 2;
+    map<string, CallTargetTree> subtree = 3;
+}
+
+message Group {
+    Referable referable = 1;
+    repeated Group subgroup = 2;
+    repeated Group dynamic_subgroup = 3;
+    repeated InternalReferable internal_referable = 4;
+}
+
+message Referable {
+    string name = 1;
+    Precedence precedence = 2;
+    Definition definition = 3;
+    int32 index = 4;
+}
+
+message InternalReferable {
+    Referable referable = 1;
+    bool visible = 2;
+}
+
+message Precedence {
+    Assoc assoc = 1;
+    int32 priority = 2;
+    bool infix = 3;
+
+    enum Assoc {
+        LEFT = 0;
+        RIGHT = 1;
+        NON_ASSOC = 2;
     }
 }

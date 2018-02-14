@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,20 +15,24 @@ import java.util.Map;
  */
 public final class SourceLoader {
   private final SourceLibrary myLibrary;
-  private final ErrorReporter myErrorReporter;
+  private final LibraryManager myLibraryManager;
   private final Map<ModulePath, Boolean> myLoadedModules = new HashMap<>();
 
-  public SourceLoader(SourceLibrary library, ErrorReporter errorReporter) {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
     myLibrary = library;
-    myErrorReporter = errorReporter;
+    myLibraryManager = libraryManager;
   }
 
   public SourceLibrary getLibrary() {
     return myLibrary;
   }
 
+  public ModuleScopeProvider getModuleScopeProvider() {
+    return myLibraryManager.getModuleScopeProvider();
+  }
+
   public ErrorReporter getErrorReporter() {
-    return myErrorReporter;
+    return myLibraryManager.getErrorReporter();
   }
 
   public boolean load(ModulePath modulePath) {
@@ -42,7 +48,7 @@ public final class SourceLoader {
 
     boolean ok;
     if (!cacheSourceIsAvailable && !rawSourceIsAvailable) {
-      myErrorReporter.report(new ModuleNotFoundError(modulePath));
+      getErrorReporter().report(new ModuleNotFoundError(modulePath));
       ok = false;
     } else {
       if (cacheSourceIsAvailable && rawSourceIsAvailable && cacheSource.getTimeStamp() < rawSource.getTimeStamp()) {

@@ -1,7 +1,10 @@
 package com.jetbrains.jetpad.vclang.module.caching;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.module.caching.serialization.*;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.CallTargetProvider;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.DefinitionDeserialization;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationError;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.ModuleProtos;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
@@ -11,15 +14,16 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class CacheManager<SourceIdT extends SourceId> {
   private final PersistenceProvider<SourceIdT> myPersistenceProvider;
   private final CacheStorageSupplier<SourceIdT> myCacheSupplier;
-  private final SourceVersionTracker<SourceIdT> myVersionTracker;
-  private final DefinitionLocator<SourceIdT> myDefLocator;
 
   private final LocalizedTypecheckerState<SourceIdT> myTcState;
   private final Set<SourceIdT> myStubsLoaded = new HashSet<>();
@@ -28,8 +32,6 @@ public class CacheManager<SourceIdT extends SourceId> {
                       DefinitionLocator<SourceIdT> defLocator, SourceVersionTracker<SourceIdT> versionTracker) {
     myPersistenceProvider = persistenceProvider;
     myCacheSupplier = cacheSupplier;
-    myVersionTracker = versionTracker;
-    myDefLocator = defLocator;
     myTcState = new LocalizedTypecheckerState<>(defLocator);
   }
 
@@ -112,7 +114,7 @@ public class CacheManager<SourceIdT extends SourceId> {
     }
 
     @Override
-    public Definition getCalltarget(int index) {
+    public Definition getCallTarget(int index) {
       return myCalltargets.get(index);
     }
   }
@@ -145,7 +147,6 @@ public class CacheManager<SourceIdT extends SourceId> {
     try {
       try {
         GZIPOutputStream compressedCacheStream = new GZIPOutputStream(cacheStream);
-        writeModule(sourceId, localState).writeTo(compressedCacheStream);
         compressedCacheStream.close();
       } catch (IOException e) {
         throw new CachePersistenceException(sourceId, e);
@@ -155,50 +156,5 @@ public class CacheManager<SourceIdT extends SourceId> {
       throw e;
     }
     return true;
-  }
-
-  private ModuleProtos.Module writeModule(SourceIdT sourceId, LocalizedTypecheckerState<SourceIdT>.LocalTypecheckerState localState) throws CachePersistenceException {
-    ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
-    final WriteCallTargets calltargets = new WriteCallTargets(sourceId);
-    // Serialize the module first in order to populate the call-target registry
-    DefinitionSerialization defStateSerialization = new DefinitionSerialization(myPersistenceProvider, calltargets);
-    out.setDefinitionState(defStateSerialization.writeDefinitionState(localState));
-    localState.sync();
-    // now write the call-target registry
-    out.addAllReferredDefinition(calltargets.write());
-
-    return out.build();
-  }
-
-  class WriteCallTargets implements CallTargetIndexProvider {
-    private final LinkedHashMap<Definition, Integer> myCallTargets = new LinkedHashMap<>();
-    private final SourceId mySourceId;
-
-    WriteCallTargets(SourceId sourceId) {
-      mySourceId = sourceId;
-    }
-
-    @Override
-    public int getDefIndex(Definition definition) {
-      return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size());
-    }
-
-    private List<ModuleProtos.Module.DefinitionReference> write() throws CachePersistenceException {
-      List<ModuleProtos.Module.DefinitionReference> out = new ArrayList<>();
-      for (Definition calltarget : myCallTargets.keySet()) {
-        ModuleProtos.Module.DefinitionReference.Builder entry = ModuleProtos.Module.DefinitionReference.newBuilder();
-        SourceIdT targetSourceId = myDefLocator.sourceOf(calltarget.getReferable());
-        if (!mySourceId.equals(targetSourceId)) {
-          boolean targetPersisted = persistCache(targetSourceId);
-          if (!targetPersisted) {
-            throw new CachePersistenceException(mySourceId, "Dependency does not support persistence " + targetSourceId);
-          }
-          entry.setSourceUrl(myPersistenceProvider.getCacheId(targetSourceId));
-        }
-        entry.setDefinitionId(myPersistenceProvider.getIdFor(calltarget.getReferable()));
-        out.add(entry.build());
-      }
-      return out;
-    }
   }
 }

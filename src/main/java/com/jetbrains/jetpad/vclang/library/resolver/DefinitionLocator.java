@@ -15,5 +15,5 @@ public interface DefinitionLocator {
    *         or null if the definition does not belong to a {@link PersistableSourceLibrary}.
    */
   @Nullable
-  PersistableSourceLibrary resolve(GlobalReferable referable);
+  PersistableSourceLibrary locate(GlobalReferable referable);
 }
