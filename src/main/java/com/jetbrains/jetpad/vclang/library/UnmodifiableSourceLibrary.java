@@ -6,8 +6,8 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvide
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.SimpleGlobalReferable;
 import com.jetbrains.jetpad.vclang.source.Source;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.util.LongName;
 

@@ -55,7 +55,7 @@ message Definition {
         Sort sort = 7;
 
         message Field {
-            int32 index = 1;
+            Referable referable = 1;
             SingleParameter this_param = 2;
             Expression type = 3;
         }
@@ -73,7 +73,7 @@ message Definition {
         repeated bool covariant_parameter = 8;
 
         message Constructor {
-            int32 index = 1;
+            Referable referable = 1;
             repeated Pattern pattern = 2;
             repeated Telescope param = 3;
             repeated Clause clause = 4;
@@ -93,6 +93,24 @@ message Definition {
         BODY_NEEDS_TYPE_CHECKING = 3;
         HAS_ERRORS = 4;
         NO_ERRORS = 5;
+    }
+}
+
+message Referable {
+    string name = 1;
+    Precedence precedence = 2;
+    int32 index = 4;
+}
+
+message Precedence {
+    Assoc assoc = 1;
+    int32 priority = 2;
+    bool infix = 3;
+
+    enum Assoc {
+        LEFT = 0;
+        RIGHT = 1;
+        NON_ASSOC = 2;
     }
 }
 

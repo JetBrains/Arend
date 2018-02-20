@@ -1,10 +1,10 @@
-package com.jetbrains.jetpad.vclang.frontend.term.group;
+package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.ChildNamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.Precedence;

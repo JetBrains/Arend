@@ -12,6 +12,8 @@ import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -75,7 +77,7 @@ public class DefinitionSerialization {
 
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
-      fBuilder.setIndex(myCallTargetIndexProvider.getDefIndex(field));
+      fBuilder.setReferable(writeReferable(field));
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
       Expression baseType = field.getBaseType(Sort.STD);
       if (baseType != null) fBuilder.setType(defSerializer.writeExpr(baseType));
@@ -118,7 +120,7 @@ public class DefinitionSerialization {
 
     for (Constructor constructor : definition.getConstructors()) {
       DefinitionProtos.Definition.DataData.Constructor.Builder cBuilder = DefinitionProtos.Definition.DataData.Constructor.newBuilder();
-      cBuilder.setIndex(myCallTargetIndexProvider.getDefIndex(constructor));
+      cBuilder.setReferable(writeReferable(constructor));
       if (constructor.getPatterns() != null) {
         for (Pattern pattern : constructor.getPatterns().getPatternList()) {
           cBuilder.addPattern(writePattern(defSerializer, pattern));
@@ -213,5 +215,32 @@ public class DefinitionSerialization {
       throw new IllegalStateException();
     }
     return bodyBuilder.build();
+  }
+
+  private DefinitionProtos.Referable writeReferable(Definition definition) {
+    DefinitionProtos.Referable.Builder builder = DefinitionProtos.Referable.newBuilder();
+    GlobalReferable referable = definition.getReferable();
+    builder.setName(referable.textRepresentation());
+    builder.setPrecedence(writePrecedence(referable.getPrecedence()));
+    builder.setIndex(myCallTargetIndexProvider.getDefIndex(definition));
+    return builder.build();
+  }
+
+  static DefinitionProtos.Precedence writePrecedence(Precedence precedence) {
+    DefinitionProtos.Precedence.Builder builder = DefinitionProtos.Precedence.newBuilder();
+    switch (precedence.associativity) {
+      case LEFT_ASSOC:
+        builder.setAssoc(DefinitionProtos.Precedence.Assoc.LEFT);
+        break;
+      case RIGHT_ASSOC:
+        builder.setAssoc(DefinitionProtos.Precedence.Assoc.RIGHT);
+        break;
+      case NON_ASSOC:
+        builder.setAssoc(DefinitionProtos.Precedence.Assoc.NON_ASSOC);
+        break;
+    }
+    builder.setPriority(precedence.priority);
+    builder.setInfix(precedence.isInfix);
+    return builder.build();
   }
 }

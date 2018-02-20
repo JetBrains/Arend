@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.junit.Ignore;
 import org.junit.Test;
 

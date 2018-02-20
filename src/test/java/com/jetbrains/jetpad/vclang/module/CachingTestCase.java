@@ -6,7 +6,7 @@ import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
 import com.jetbrains.jetpad.vclang.module.caching.CacheManager;
 import com.jetbrains.jetpad.vclang.module.caching.CachePersistenceException;
 import com.jetbrains.jetpad.vclang.module.caching.PersistenceProvider;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import org.junit.Before;

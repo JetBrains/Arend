@@ -5,15 +5,17 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteClassReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.InternalConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
-import com.jetbrains.jetpad.vclang.frontend.term.group.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.*;
+import com.jetbrains.jetpad.vclang.term.Fixity;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.*;
 import com.jetbrains.jetpad.vclang.util.Pair;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -602,7 +604,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
-        resultGroup = new ClassGroup(reference, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
+        resultGroup = new ClassGroup(reference, fieldReferences, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
         visitInstanceStatements(((ClassImplContext) ctx.classBody()).classStat(), fields, implementations, dynamicSubgroups, (Concrete.ClassDefinition) classDefinition, resultGroup);
       }
 
@@ -613,7 +615,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     reference.setDefinition(classDefinition);
     if (resultGroup == null) {
-      resultGroup = new ClassGroup(reference, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
+      resultGroup = new ClassGroup(reference, fieldReferences, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup);
     return resultGroup;

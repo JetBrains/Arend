@@ -8,9 +8,9 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

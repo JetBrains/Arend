@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.module.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

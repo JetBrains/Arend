@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProv
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import org.junit.Before;

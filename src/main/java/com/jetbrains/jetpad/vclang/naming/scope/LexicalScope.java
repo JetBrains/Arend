@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

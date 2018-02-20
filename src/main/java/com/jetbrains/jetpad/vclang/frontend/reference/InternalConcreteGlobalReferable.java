@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 

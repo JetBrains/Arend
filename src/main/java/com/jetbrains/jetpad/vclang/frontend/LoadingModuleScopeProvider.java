@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvide
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

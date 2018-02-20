@@ -5,9 +5,9 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 public interface CallTargetProvider {
   Definition getCallTarget(int index);
 
-  default <DefinitionT extends Definition> DefinitionT getCallTarget(int index, Class<DefinitionT> cls) throws DeserializationError {
+  default <DefinitionT extends Definition> DefinitionT getCallTarget(int index, Class<DefinitionT> cls) throws DeserializationException {
     Definition def = getCallTarget(index);
-    if (!cls.isInstance(def)) throw new DeserializationError("Class mismatch");
+    if (!cls.isInstance(def)) throw new DeserializationException("Class mismatch");
     return cls.cast(def);
   }
 }

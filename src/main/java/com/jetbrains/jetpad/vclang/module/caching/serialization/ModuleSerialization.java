@@ -7,8 +7,7 @@ import com.jetbrains.jetpad.vclang.library.resolver.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
-import com.jetbrains.jetpad.vclang.term.Group;
-import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.util.LongName;
 
@@ -21,8 +20,8 @@ public class ModuleSerialization {
   private final DefinitionLocator myLocator;
   private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
-  private final SimpleCallTargetIndexProvider myCallTargetsIndexProvider = new SimpleCallTargetIndexProvider();
-  private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetsIndexProvider);
+  private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
+  private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
 
   public ModuleSerialization(DefinitionLocator definitionLocator, TypecheckerState state, ErrorReporter errorReporter) {
@@ -39,7 +38,7 @@ public class ModuleSerialization {
 
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
-    for (Map.Entry<Definition, Integer> entry : myCallTargetsIndexProvider.getCallTargets()) {
+    for (Map.Entry<Definition, Integer> entry : myCallTargetIndexProvider.getCallTargets()) {
       if (myCurrentDefinitions.contains(entry.getValue())) {
         continue;
       }
@@ -74,7 +73,7 @@ public class ModuleSerialization {
       ModuleProtos.ModuleCallTargets.Builder builder = ModuleProtos.ModuleCallTargets.newBuilder();
       builder.addAllName(entry.getKey().toList());
       for (Map.Entry<String, CallTargetTree> treeEntry : entry.getValue().entrySet()) {
-        builder.putCallTargetTree(treeEntry.getKey(), writeCallTargetTree(treeEntry.getValue()));
+        builder.addCallTargetTree(writeCallTargetTree(treeEntry.getKey(), treeEntry.getValue()));
       }
       out.addModuleCallTargets(builder.build());
     }
@@ -85,9 +84,22 @@ public class ModuleSerialization {
   private ModuleProtos.Group writeGroup(Group group) {
     ModuleProtos.Group.Builder builder = ModuleProtos.Group.newBuilder();
 
+    // Write referable
     GlobalReferable referable = group.getReferable();
-    builder.setReferable(writeReferable(referable));
+    DefinitionProtos.Referable.Builder refBuilder = DefinitionProtos.Referable.newBuilder();
+    refBuilder.setName(referable.textRepresentation());
+    refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
+    Definition typechecked = myState.getTypechecked(referable);
+    if (typechecked != null && typechecked.status().headerIsOK()) {
+      builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
+      int index = myCallTargetIndexProvider.getDefIndex(typechecked);
+      refBuilder.setIndex(index);
+      myCurrentDefinitions.add(index);
+    }
+    builder.setReferable(refBuilder.build());
+
+    // Write subgroups
     for (Group subgroup : group.getSubgroups()) {
       builder.addSubgroup(writeGroup(subgroup));
     }
@@ -95,53 +107,16 @@ public class ModuleSerialization {
       builder.addDynamicSubgroup(writeGroup(subgroup));
     }
     for (Group.InternalReferable internalReferable : group.getConstructors()) {
-      builder.addInternalReferable(writeInternalReferable(internalReferable));
+      if (!internalReferable.isVisible()) {
+        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(internalReferable.getReferable())));
+      }
     }
     for (Group.InternalReferable internalReferable : group.getFields()) {
-      builder.addInternalReferable(writeInternalReferable(internalReferable));
+      if (!internalReferable.isVisible()) {
+        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(internalReferable.getReferable())));
+      }
     }
 
-    return builder.build();
-  }
-
-  private ModuleProtos.Referable writeReferable(GlobalReferable referable) {
-    ModuleProtos.Referable.Builder builder = ModuleProtos.Referable.newBuilder();
-    builder.setName(referable.textRepresentation());
-    builder.setPrecedence(writePrecedence(referable.getPrecedence()));
-
-    Definition typechecked = myState.getTypechecked(referable);
-    if (typechecked != null && typechecked.status().headerIsOK()) {
-      builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
-      int index = myCallTargetsIndexProvider.getDefIndex(typechecked);
-      builder.setIndex(index);
-      myCurrentDefinitions.add(index);
-    }
-
-    return builder.build();
-  }
-
-  private ModuleProtos.InternalReferable writeInternalReferable(Group.InternalReferable internalReferable) {
-    ModuleProtos.InternalReferable.Builder builder = ModuleProtos.InternalReferable.newBuilder();
-    builder.setReferable(writeReferable(internalReferable.getReferable()));
-    builder.setVisible(internalReferable.isVisible());
-    return builder.build();
-  }
-
-  private ModuleProtos.Precedence writePrecedence(Precedence precedence) {
-    ModuleProtos.Precedence.Builder builder = ModuleProtos.Precedence.newBuilder();
-    switch (precedence.associativity) {
-      case LEFT_ASSOC:
-        builder.setAssoc(ModuleProtos.Precedence.Assoc.LEFT);
-        break;
-      case RIGHT_ASSOC:
-        builder.setAssoc(ModuleProtos.Precedence.Assoc.RIGHT);
-        break;
-      case NON_ASSOC:
-        builder.setAssoc(ModuleProtos.Precedence.Assoc.NON_ASSOC);
-        break;
-    }
-    builder.setPriority(precedence.priority);
-    builder.setInfix(precedence.isInfix);
     return builder.build();
   }
 
@@ -154,11 +129,12 @@ public class ModuleSerialization {
     }
   }
 
-  private ModuleProtos.CallTargetTree writeCallTargetTree(CallTargetTree tree) {
+  private ModuleProtos.CallTargetTree writeCallTargetTree(String name, CallTargetTree tree) {
     ModuleProtos.CallTargetTree.Builder builder = ModuleProtos.CallTargetTree.newBuilder();
+    builder.setName(name);
     builder.setIndex(tree.index);
     for (Map.Entry<String, CallTargetTree> entry : tree.subtreeMap.entrySet()) {
-      builder.putSubtree(entry.getKey(), writeCallTargetTree(entry.getValue()));
+      builder.addSubtree(writeCallTargetTree(entry.getKey(), entry.getValue()));
     }
     return builder.build();
   }

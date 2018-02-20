@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.frontend.parser;
 import com.jetbrains.jetpad.vclang.error.*;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
-import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
@@ -11,8 +10,9 @@ import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.FileGroup;
 import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nonnull;

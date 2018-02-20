@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.caching;
 
-import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationError;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationException;
 import com.jetbrains.jetpad.vclang.module.error.ModuleLoadingException;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 
@@ -11,8 +11,8 @@ public class CacheLoadingException extends ModuleLoadingException {
     super(module, message);
   }
 
-  public CacheLoadingException(SourceId module, DeserializationError deserializationError) {
-    this(module, "Corrupted cache: " + deserializationError.getMessage());
+  public CacheLoadingException(SourceId module, DeserializationException deserializationException) {
+    this(module, "Corrupted cache: " + deserializationException.getMessage());
   }
 
   public CacheLoadingException(SourceId module, IOException ioError) {

@@ -1,8 +1,6 @@
-package com.jetbrains.jetpad.vclang.frontend.term.group;
+package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

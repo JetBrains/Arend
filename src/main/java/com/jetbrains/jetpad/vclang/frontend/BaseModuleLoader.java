@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.source.ModuleLoader;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 public class BaseModuleLoader<SourceIdT extends SourceId> implements ModuleLoader<SourceIdT> {
   protected SourceSupplier<SourceIdT> mySourceSupplier;

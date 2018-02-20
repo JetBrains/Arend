@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.module.caching;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.CallTargetProvider;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.DefinitionDeserialization;
-import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationError;
+import com.jetbrains.jetpad.vclang.module.caching.serialization.DeserializationException;
 import com.jetbrains.jetpad.vclang.module.caching.serialization.ModuleProtos;
 import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -79,9 +79,9 @@ public class CacheManager<SourceIdT extends SourceId> {
       defStateDeserialization.readStubs(moduleProto.getDefinitionState(), localState);
       myStubsLoaded.add(sourceId);
       ReadCalltargets calltargets = new ReadCalltargets(sourceId, moduleProto.getReferredDefinitionList());
-      defStateDeserialization.fillInDefinitions(moduleProto.getDefinitionState(), localState, calltargets);
-    } catch (DeserializationError deserializationError) {
-      throw new CacheLoadingException(sourceId, deserializationError);
+      defStateDeserialization.fillInDefinition(moduleProto.getDefinitionState(), localState, calltargets);
+    } catch (DeserializationException deserializationException) {
+      throw new CacheLoadingException(sourceId, deserializationException);
     }
   }
 

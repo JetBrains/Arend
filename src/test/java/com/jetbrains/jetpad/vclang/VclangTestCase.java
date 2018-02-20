@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvide
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

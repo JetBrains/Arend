@@ -14,41 +14,19 @@ message Module {
 
 message ModuleCallTargets {
     repeated string name = 1;
-    map<string, CallTargetTree> call_target_tree = 2;
+    repeated CallTargetTree call_target_tree = 2;
 }
 
 message CallTargetTree {
+    string name = 1;
     int32 index = 2;
-    map<string, CallTargetTree> subtree = 3;
+    repeated CallTargetTree subtree = 3;
 }
 
 message Group {
     Referable referable = 1;
-    repeated Group subgroup = 2;
-    repeated Group dynamic_subgroup = 3;
-    repeated InternalReferable internal_referable = 4;
-}
-
-message Referable {
-    string name = 1;
-    Precedence precedence = 2;
-    Definition definition = 3;
-    int32 index = 4;
-}
-
-message InternalReferable {
-    Referable referable = 1;
-    bool visible = 2;
-}
-
-message Precedence {
-    Assoc assoc = 1;
-    int32 priority = 2;
-    bool infix = 3;
-
-    enum Assoc {
-        LEFT = 0;
-        RIGHT = 1;
-        NON_ASSOC = 2;
-    }
+    Definition definition = 2;
+    repeated Group subgroup = 3;
+    repeated Group dynamic_subgroup = 4;
+    repeated int32 invisible_internal_referable = 5;
 }

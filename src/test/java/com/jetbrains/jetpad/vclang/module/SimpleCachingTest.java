@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.module;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.module.caching.CacheLoadingException;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.term;
+package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;

@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheMana
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
 import com.jetbrains.jetpad.vclang.term.DefinitionLocator;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.term.provider.CacheIdProvider;
 
 import javax.annotation.Nonnull;

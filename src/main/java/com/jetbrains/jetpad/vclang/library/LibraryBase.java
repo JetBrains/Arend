@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
@@ -38,23 +38,22 @@ public abstract class LibraryBase implements Library {
 
   @Override
   public void unload() {
-    TypecheckerState typecheckerState = getTypecheckerState();
     for (ModulePath modulePath : getLoadedModules()) {
       Group group = getModuleGroup(modulePath);
       if (group != null) {
-        unloadGroup(typecheckerState, group);
+        unloadGroup(group);
       }
     }
     myLoaded = false;
   }
 
-  private void unloadGroup(TypecheckerState typecheckerState, Group group) {
-    typecheckerState.reset(group.getReferable());
+  private void unloadGroup(Group group) {
+    myTypecheckerState.reset(group.getReferable());
     for (Group subgroup : group.getSubgroups()) {
-      unloadGroup(typecheckerState, subgroup);
+      unloadGroup(subgroup);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      unloadGroup(typecheckerState, subgroup);
+      unloadGroup(subgroup);
     }
   }
 
