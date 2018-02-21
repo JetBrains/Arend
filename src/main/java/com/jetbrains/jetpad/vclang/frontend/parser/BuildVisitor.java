@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.InternalConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
 import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
@@ -28,10 +27,10 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.frontend.parser.VcgrammarParser.*;
 
 public class BuildVisitor extends VcgrammarBaseVisitor {
-  private final SourceId myModule;
+  private final ModulePath myModule;
   private final ErrorReporter myErrorReporter;
 
-  public BuildVisitor(SourceId module, ErrorReporter errorReporter) {
+  public BuildVisitor(ModulePath module, ErrorReporter errorReporter) {
     myModule = module;
     myErrorReporter = errorReporter;
   }
@@ -157,7 +156,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   public FileGroup visitStatements(StatementsContext ctx) {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
-    FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule.getModulePath()), subgroups, namespaceCommands);
+    FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule), subgroups, namespaceCommands);
     visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup);
     return parentGroup;
   }

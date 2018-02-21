@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -8,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
@@ -23,7 +23,7 @@ public class ScopeFactory {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(PreludeStorage.PRELUDE_MODULE_PATH);
+      Scope preludeScope = moduleScopeProvider.forModule(Prelude.MODULE_PATH);
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
@@ -55,7 +55,7 @@ public class ScopeFactory {
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
-      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope(), EmptyModuleScopeProvider.INSTANCE) : parentScope;
+      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope() /* TODO[scopes]: may be null? */, EmptyModuleScopeProvider.INSTANCE) : parentScope;
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;
       } else {
@@ -160,7 +160,7 @@ public class ScopeFactory {
     }
 
     // Replace the scope with class fields in class extensions
-    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) { // TODO[scopes]: always false?
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder) {
         return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());

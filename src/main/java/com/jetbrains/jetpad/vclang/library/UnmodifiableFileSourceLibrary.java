@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
-import com.jetbrains.jetpad.vclang.source.FileCacheSource;
-import com.jetbrains.jetpad.vclang.source.GZIPStreamCacheSource;
+import com.jetbrains.jetpad.vclang.source.FileBinarySource;
+import com.jetbrains.jetpad.vclang.source.GZIPStreamBinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.util.FileUtils;
@@ -37,8 +37,8 @@ public class UnmodifiableFileSourceLibrary extends UnmodifiableSourceLibrary {
 
   @Nullable
   @Override
-  public Source getCacheSource(ModulePath modulePath) {
-    return new GZIPStreamCacheSource(new FileCacheSource(myBasePath, modulePath));
+  public Source getBinarySource(ModulePath modulePath) {
+    return new GZIPStreamBinarySource(new FileBinarySource(myBasePath, modulePath));
   }
 
   @Nullable

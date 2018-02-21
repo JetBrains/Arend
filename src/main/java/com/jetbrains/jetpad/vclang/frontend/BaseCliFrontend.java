@@ -4,125 +4,56 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
+import com.jetbrains.jetpad.vclang.library.LibraryManager;
+import com.jetbrains.jetpad.vclang.library.resolver.SimpleLibraryResolver;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.caching.*;
-import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheScope;
-import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.module.caching.sourceless.SourcelessCacheManager;
-import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
-import com.jetbrains.jetpad.vclang.module.source.Storage;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.resolving.SimpleSourceInfoProvider;
-import com.jetbrains.jetpad.vclang.term.Prelude;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.source.GZIPStreamBinarySource;
+import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.term.group.Group;
-import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
+import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.util.FileUtils;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
-public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
+public abstract class BaseCliFrontend {
   protected final ListErrorReporter errorReporter = new ListErrorReporter();
 
-  // Modules
-  protected final ModuleTracker moduleTracker;
-  protected final CacheModuleScopeProvider<SourceIdT> moduleScopeProvider;
-  private final Map<SourceIdT, SourceSupplier.LoadResult> loadedSources = new HashMap<>();
-  private final Set<SourceIdT> requestedSources = new LinkedHashSet<>();
-
-  private final PrettyPrinterConfig myPrettyPrinterConfig = new PrettyPrinterConfig() {};
-  protected final CacheSourceInfoProvider<SourceIdT> srcInfoProvider;
-  private CacheManager<SourceIdT> cacheManager;
+  // Libraries
+  private final SimpleLibraryResolver myLibraryResolver = new SimpleLibraryResolver();
+  private final ModuleScopeProvider myModuleScopeProvider = null; // TODO
+  private final LibraryManager myLibraryManager = new LibraryManager(myLibraryResolver, myModuleScopeProvider, System.err::println);
+  private final Set<ModulePath> requestedModules = new LinkedHashSet<>();
 
   // Typechecking
-  private TypecheckerState state;
-  private Map<SourceIdT, ModuleResult> moduleResults = new LinkedHashMap<>();
-
-
-  public BaseCliFrontend() {
-    moduleTracker = new ModuleTracker();
-    moduleScopeProvider = new CacheModuleScopeProvider<>(moduleTracker);
-    srcInfoProvider = new CacheSourceInfoProvider<>(moduleTracker.sourceInfoProvider);
-  }
-
-  protected void initialize(Storage<SourceIdT> storage) {
-    if (cacheManager != null) {
-      throw new IllegalStateException();
-    }
-
-    moduleTracker.setSourceSupplier(storage);
-    cacheManager = new SourcelessCacheManager<>(storage, createModuleUriProvider(), EmptyModuleScopeProvider.INSTANCE, moduleScopeProvider, srcInfoProvider, moduleTracker);
-    moduleScopeProvider.initialise(storage, cacheManager);
-    state = cacheManager.getTypecheckerState();
-  }
-
-  class ModuleTracker extends LoadingModuleScopeProvider<SourceIdT> implements SourceVersionTracker<SourceIdT> {
-    private final SimpleSourceInfoProvider<SourceIdT> sourceInfoProvider = new SimpleSourceInfoProvider<>();
-
-    ModuleTracker() {
-      super(errorReporter);
-    }
-
-    @Override
-    protected void loadingSucceeded(SourceIdT module, SourceSupplier.LoadResult result) {
-      super.loadingSucceeded(module, result);
-      sourceInfoProvider.registerModule(result.group, module);
-      loadedSources.put(module, result);
-      System.out.println("[Loaded] " + displaySource(module, false));
-    }
-
-    @Override
-    protected void loadingFailed(SourceIdT module) {
-      super.loadingFailed(module);
-      moduleResults.put(module, ModuleResult.NOT_LOADED);
-      System.out.println("[Failed] " + displaySource(module, false));
-    }
-
-    @Override
-    public ChildGroup load(SourceIdT sourceId) {
-      assert !loadedSources.containsKey(sourceId);
-      ModuleResult moduleResult = moduleResults.get(sourceId);
-      if (moduleResult != null) {
-        assert moduleResult == ModuleResult.NOT_LOADED;
-        return null;
-      }
-      return super.load(sourceId);
-    }
-
-    public boolean isAvailable(SourceIdT sourceId) {
-      return mySourceSupplier.isAvailable(sourceId);
-    }
-
-    @Override
-    public long getCurrentVersion(@Nonnull SourceIdT sourceId) {
-      return loadedSources.get(sourceId).version;
-    }
-  }
+  private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
+  private final Map<ModulePath, ModuleResult> myModuleResults = new LinkedHashMap<>();
 
   private void loadPrelude() {
+    TypecheckerState typecheckerState
+    Source source = new GZIPStreamBinarySource(new FileCacheSource(myBasePath, modulePath));
     CacheScope prelude = moduleScopeProvider.forCacheModule(PreludeStorage.PRELUDE_MODULE_PATH);
     if (prelude == null) {
       throw new IllegalStateException("Prelude cache is not available");
     }
 
-    Prelude.initialise(prelude.root, state);
+    Prelude.initialise(prelude.root, myTypecheckerState);
   }
 
 
-  protected abstract ModuleCacheIdProvider<SourceIdT> createModuleUriProvider();
-  protected abstract String displaySource(SourceIdT source, boolean modulePathOnly);
+  protected abstract String displaySource(ModulePath module, boolean modulePathOnly);
 
 
   private void requestFileTypechecking(Path path) {
@@ -136,7 +67,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       System.err.println("[Not found] " + path + " is not available");
       return;
     }
-    requestedSources.add(sourceId);
+    requestedModules.add(sourceId);
   }
 
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
@@ -167,7 +98,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
 
     System.out.println("--- Checking ---");
 
-    new MyTypechecking(state).typecheckModules(modulesToTypeCheck);
+    new MyTypechecking(myTypecheckerState).typecheckModules(modulesToTypeCheck);
   }
 
   private class MyTypechecking extends Typechecking {
@@ -213,7 +144,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
       try {
         Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
           @Override
-          public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
+          public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) {
             if (path.getFileName().toString().endsWith(FileUtils.EXTENSION)) {
               requestFileTypechecking(sourceDir.relativize(path));
             }
@@ -221,7 +152,7 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
           }
 
           @Override
-          public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
+          public FileVisitResult visitFileFailed(Path path, IOException e) {
             System.err.println(e.getMessage());
             return FileVisitResult.CONTINUE;
           }
@@ -236,21 +167,21 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
     }
 
     // Typecheck those sources
-    typeCheckSources(requestedSources);
+    typeCheckSources(requestedModules);
     flushErrors();
 
     // Output nice per-module typechecking results
     int numWithErrors = 0;
-    for (Map.Entry<SourceIdT, ModuleResult> entry : moduleResults.entrySet()) {
-      if (!requestedSources.contains(entry.getKey())) {
+    for (Map.Entry<SourceIdT, ModuleResult> entry : myModuleResults.entrySet()) {
+      if (!requestedModules.contains(entry.getKey())) {
         ModuleResult result = entry.getValue();
         reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
         if (result == ModuleResult.ERRORS) numWithErrors += 1;
       }
     }
     // Explicitly requested sources go last
-    for (SourceIdT source : requestedSources) {
-      ModuleResult result = moduleResults.get(source);
+    for (SourceIdT source : requestedModules) {
+      ModuleResult result = myModuleResults.get(source);
       reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
       if (result == ModuleResult.ERRORS) numWithErrors += 1;
     }
@@ -283,15 +214,15 @@ public abstract class BaseCliFrontend<SourceIdT extends SourceId> {
         }
       }
 
-      System.out.println(DocStringBuilder.build(error.getDoc(myPrettyPrinterConfig)));
+      System.out.println(error);
     }
     errorReporter.getErrorList().clear();
   }
 
   private void updateSourceResult(SourceIdT source, ModuleResult result) {
-    ModuleResult prevResult = moduleResults.get(source);
+    ModuleResult prevResult = myModuleResults.get(source);
     if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-      moduleResults.put(source, result);
+      myModuleResults.put(source, result);
     }
   }
 }

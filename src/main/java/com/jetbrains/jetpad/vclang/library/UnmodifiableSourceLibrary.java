@@ -72,6 +72,13 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     return myGroups.keySet();
   }
 
+  @Override
+  public void unload() {
+    super.unload();
+    myGroups.clear();
+    myModuleScopeProvider.clear();
+  }
+
   @Nullable
   @Override
   public Group getModuleGroup(ModulePath modulePath) {

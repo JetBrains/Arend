@@ -25,7 +25,7 @@ public final class LibraryManager {
    *
    * @param libraryResolver     a library resolver.
    * @param moduleScopeProvider a module scope provider for the whole project.
-   * @param errorReporter       an error reporter for all errors that occur during the loading process.
+   * @param errorReporter       an error reporter for all errors related to loading and unloading of libraries.
    */
   public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter errorReporter) {
     myLibraryResolver = libraryResolver;

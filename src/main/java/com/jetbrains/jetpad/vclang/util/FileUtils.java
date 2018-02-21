@@ -20,7 +20,7 @@ public class FileUtils {
     return base.resolveSibling(base.getFileName() + FileUtils.EXTENSION);
   }
 
-  public static Path cacheFile(Path root, ModulePath modulePath) {
+  public static Path binaryFile(Path root, ModulePath modulePath) {
     Path base = baseFile(root, modulePath);
     return base.resolveSibling(base.getFileName() + FileUtils.SERIALIZED_EXTENSION);
   }

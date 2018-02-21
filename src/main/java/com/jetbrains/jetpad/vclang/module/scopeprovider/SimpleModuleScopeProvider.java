@@ -25,6 +25,10 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
     myMap.remove(path);
   }
 
+  public void clear() {
+    myMap.clear();
+  }
+
   @Override
   public boolean isRegistered(ModulePath modulePath) {
     return myMap.containsKey(modulePath);

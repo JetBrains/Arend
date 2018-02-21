@@ -14,10 +14,26 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Represents a library which can load cached modules (see {@link #getCacheSource})
+ * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
  * as well as ordinary modules (see {@link #getRawSource}).
  */
 public abstract class SourceLibrary extends LibraryBase {
+  private boolean myRecompile = false;
+
+  /**
+   * Sets a flag so that this library will be recompiled during the loading.
+   */
+  public void setRecompile() {
+    myRecompile = true;
+  }
+
+  /**
+   * Sets a flag so that this library will not be recompiled during the loading.
+   */
+  public void setNoRecompile() {
+    myRecompile = false;
+  }
+
   /**
    * Creates a new {@code SourceLibrary}
    *
@@ -38,14 +54,14 @@ public abstract class SourceLibrary extends LibraryBase {
   public abstract Source getRawSource(ModulePath modulePath);
 
   /**
-   * Gets the cache source (that is, the source containing typechecked data) for a given module path.
+   * Gets the binary source (that is, the source containing typechecked data) for a given module path.
    *
    * @param modulePath  a path to the source.
    *
-   * @return the cache source corresponding to the given path or null if the source is not found.
+   * @return the binary source corresponding to the given path or null if the source is not found.
    */
   @Nullable
-  public abstract Source getCacheSource(ModulePath modulePath);
+  public abstract Source getBinarySource(ModulePath modulePath);
 
   /**
    * Generates a {@link GlobalReferable} for a given definition.
@@ -101,7 +117,7 @@ public abstract class SourceLibrary extends LibraryBase {
       libraryManager.registerDependency(this, loadedDependency);
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, myRecompile);
     for (ModulePath module : header.modules) {
       if (!sourceLoader.load(module)) {
         unload();

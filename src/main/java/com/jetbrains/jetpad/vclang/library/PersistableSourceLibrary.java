@@ -23,7 +23,7 @@ public abstract class PersistableSourceLibrary extends SourceLibrary {
 
   @Nullable
   @Override
-  public abstract PersistableSource getCacheSource(ModulePath modulePath);
+  public abstract PersistableSource getBinarySource(ModulePath modulePath);
 
   /**
    * Gets the module to which a specified definition belongs.

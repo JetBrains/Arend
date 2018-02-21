@@ -17,10 +17,12 @@ public final class SourceLoader {
   private final SourceLibrary myLibrary;
   private final LibraryManager myLibraryManager;
   private final Map<ModulePath, Boolean> myLoadedModules = new HashMap<>();
+  private final boolean myRecompile;
 
-  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager, boolean recompile) {
     myLibrary = library;
     myLibraryManager = libraryManager;
+    myRecompile = recompile;
   }
 
   public SourceLibrary getLibrary() {
@@ -36,28 +38,30 @@ public final class SourceLoader {
   }
 
   public boolean load(ModulePath modulePath) {
-    Boolean isLoaded = myLoadedModules.get(modulePath);
+    Boolean isLoaded = myLoadedModules.putIfAbsent(modulePath, true);
     if (isLoaded != null) {
       return isLoaded;
     }
 
-    Source cacheSource = myLibrary.getCacheSource(modulePath);
+    Source binarySource = myLibrary.getBinarySource(modulePath);
     Source rawSource = myLibrary.getRawSource(modulePath);
-    boolean cacheSourceIsAvailable = cacheSource != null && cacheSource.isAvailable();
+    boolean binarySourceIsAvailable = binarySource != null && binarySource.isAvailable();
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
 
     boolean ok;
-    if (!cacheSourceIsAvailable && !rawSourceIsAvailable) {
+    if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
       getErrorReporter().report(new ModuleNotFoundError(modulePath));
       ok = false;
     } else {
-      if (cacheSourceIsAvailable && rawSourceIsAvailable && cacheSource.getTimeStamp() < rawSource.getTimeStamp()) {
-        cacheSourceIsAvailable = false;
+      if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
+        binarySourceIsAvailable = false;
       }
-      ok = cacheSourceIsAvailable && cacheSource.load(this) || rawSourceIsAvailable && rawSource.load(this);
+      ok = binarySourceIsAvailable && binarySource.load(this) || rawSourceIsAvailable && rawSource.load(this);
     }
 
-    myLoadedModules.put(modulePath, ok);
+    if (!ok) {
+      myLoadedModules.put(modulePath, false);
+    }
     return ok;
   }
 }

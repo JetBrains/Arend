@@ -1,14 +1,14 @@
 package com.jetbrains.jetpad.vclang.frontend.parser;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 
 public class Position implements SourceInfo {
-  public final SourceId module;
+  public final ModulePath module;
   public final int line;
   public final int column;
 
-  public Position(SourceId module, int line, int column) {
+  public Position(ModulePath module, int line, int column) {
     this.module = module;
     this.line = line;
     this.column = column + 1;
