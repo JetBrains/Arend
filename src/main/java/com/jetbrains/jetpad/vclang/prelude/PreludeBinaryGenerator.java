@@ -11,7 +11,7 @@ import java.util.Collections;
 public class PreludeBinaryGenerator {
   public static void main(String[] args) {
     TypecheckerState typecheckerState = new SimpleTypecheckerState();
-    PreludeFileFakeLibrary library = new PreludeFileFakeLibrary(typecheckerState);
+    PreludeFileLibrary library = new PreludeFileLibrary(typecheckerState);
     PersistableSource binarySource = library.getBinarySource(Prelude.MODULE_PATH);
     assert binarySource != null;
 
@@ -26,8 +26,10 @@ public class PreludeBinaryGenerator {
       }
     }
 
-    new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println).loadLibrary(library);
-    new Prelude.PreludeTypechecking(typecheckerState).typecheckModules(Collections.singleton(library.getModuleGroup(Prelude.MODULE_PATH)));
-    binarySource.persist(library, ref -> library, System.err::println);
+    LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println);
+    if (manager.loadLibrary(library)) {
+      new Prelude.PreludeTypechecking(typecheckerState).typecheckModules(Collections.singleton(library.getModuleGroup(Prelude.MODULE_PATH)));
+      binarySource.persist(library, ref -> library, System.err::println);
+    }
   }
 }

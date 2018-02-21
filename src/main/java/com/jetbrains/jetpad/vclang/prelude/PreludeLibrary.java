@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.prelude;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.LibraryHeader;
+import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
@@ -21,18 +22,20 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * A base class for fake libraries which are used to load prelude.
+ * A base class for prelude libraries.
+ * This class guarantees that prelude is loaded exactly once,
+ * so all instances of this class use the same definitions, which are stored in {@link Prelude}.
  */
-public abstract class PreludeFakeLibrary extends PersistableSourceLibrary {
-  private Group myGroup;
-  private Scope myScope;
+public abstract class PreludeLibrary extends PersistableSourceLibrary {
+  private static Group myGroup;
+  private static Scope myScope;
 
   /**
-   * Creates a new {@code PreludeFakeLibrary}
+   * Creates a new {@code PreludeLibrary}
    *
    * @param typecheckerState the underling typechecker state of this library.
    */
-  protected PreludeFakeLibrary(TypecheckerState typecheckerState) {
+  protected PreludeLibrary(TypecheckerState typecheckerState) {
     super(typecheckerState);
   }
 
@@ -43,6 +46,24 @@ public abstract class PreludeFakeLibrary extends PersistableSourceLibrary {
     }
     myGroup = group;
     myScope = CachingScope.make(LexicalScope.opened(group));
+  }
+
+  @Override
+  public boolean load(LibraryManager libraryManager) {
+    synchronized (PreludeLibrary.class) {
+      if (myScope == null) {
+        if (super.load(libraryManager)) {
+          Prelude.initialize(myScope, getTypecheckerState());
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    Prelude.fillInTypecheckerState(getTypecheckerState());
+    setLoaded();
+    return true;
   }
 
   @Nullable
@@ -69,17 +90,10 @@ public abstract class PreludeFakeLibrary extends PersistableSourceLibrary {
     return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList());
   }
 
-  @Override
-  public void unload() {
-    super.unload();
-    myGroup = null;
-    myScope = null;
-  }
-
   @Nonnull
   @Override
   public String getName() {
-    return "PreludeFakeLibrary";
+    return "prelude";
   }
 
   @Nonnull
@@ -91,7 +105,7 @@ public abstract class PreludeFakeLibrary extends PersistableSourceLibrary {
   @Nonnull
   @Override
   public Collection<? extends ModulePath> getLoadedModules() {
-    return myGroup == null ? Collections.emptyList() : Collections.singletonList(Prelude.MODULE_PATH);
+    return isLoaded() ? Collections.singletonList(Prelude.MODULE_PATH) : Collections.emptyList();
   }
 
   @Nullable

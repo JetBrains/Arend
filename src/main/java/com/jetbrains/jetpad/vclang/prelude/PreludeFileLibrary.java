@@ -7,15 +7,15 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import javax.annotation.Nullable;
 
 /**
- * A fake library which is used to load and persist prelude from and to a file.
+ * A library which is used to load and persist prelude from and to a file.
  */
-public class PreludeFileFakeLibrary extends PreludeFakeLibrary {
+public class PreludeFileLibrary extends PreludeLibrary {
   /**
-   * Creates a new {@code PreludeFileFakeLibrary}
+   * Creates a new {@code PreludeFileLibrary}
    *
    * @param typecheckerState the underling typechecker state of this library.
    */
-  protected PreludeFileFakeLibrary(TypecheckerState typecheckerState) {
+  PreludeFileLibrary(TypecheckerState typecheckerState) {
     super(typecheckerState);
   }
 

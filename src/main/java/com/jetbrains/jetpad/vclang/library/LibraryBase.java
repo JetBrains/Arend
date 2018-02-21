@@ -36,6 +36,10 @@ public abstract class LibraryBase implements Library {
     return true;
   }
 
+  protected void setLoaded() {
+    myLoaded = true;
+  }
+
   @Override
   public void unload() {
     for (ModulePath modulePath : getLoadedModules()) {

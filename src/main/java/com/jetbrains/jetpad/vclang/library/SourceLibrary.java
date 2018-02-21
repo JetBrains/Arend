@@ -21,6 +21,15 @@ public abstract class SourceLibrary extends LibraryBase {
   private boolean myRecompile = false;
 
   /**
+   * Creates a new {@code SourceLibrary}
+   *
+   * @param typecheckerState  the underling typechecker state of this library.
+   */
+  protected SourceLibrary(TypecheckerState typecheckerState) {
+    super(typecheckerState);
+  }
+
+  /**
    * Sets a flag so that this library will be recompiled during the loading.
    */
   public void setRecompile() {
@@ -32,15 +41,6 @@ public abstract class SourceLibrary extends LibraryBase {
    */
   public void setNoRecompile() {
     myRecompile = false;
-  }
-
-  /**
-   * Creates a new {@code SourceLibrary}
-   *
-   * @param typecheckerState  the underling typechecker state of this library.
-   */
-  protected SourceLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
   }
 
   /**

@@ -126,8 +126,33 @@ public class Prelude {
     }
   }
 
+  public static void fillInTypecheckerState(TypecheckerState state) {
+    state.record(NAT.getReferable(), NAT);
+    state.record(ZERO.getReferable(), ZERO);
+    state.record(SUC.getReferable(), SUC);
+    state.record(INTERVAL.getReferable(), INTERVAL);
+    state.record(LEFT.getReferable(), LEFT);
+    state.record(RIGHT.getReferable(), RIGHT);
+    state.record(PATH.getReferable(), PATH);
+    state.record(PATH_CON.getReferable(), PATH_CON);
+    state.record(PATH_INFIX.getReferable(), PATH_INFIX);
+    state.record(AT.getReferable(), AT);
+    state.record(COERCE.getReferable(), COERCE);
+    state.record(ISO.getReferable(), ISO);
+
+    state.record(PROP_TRUNC.getReferable(), PROP_TRUNC);
+    for (Constructor constructor : PROP_TRUNC.getConstructors()) {
+      state.record(constructor.getReferable(), constructor);
+    }
+
+    state.record(SET_TRUNC.getReferable(), PROP_TRUNC);
+    for (Constructor constructor : SET_TRUNC.getConstructors()) {
+      state.record(constructor.getReferable(), constructor);
+    }
+  }
+
   // TODO[prelude]: This works only because currently the prelude namespace is flat.
-  public static void initialise(Scope scope, TypecheckerState state) {
+  public static void initialize(Scope scope, TypecheckerState state) {
     for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((GlobalReferable) scope.resolveName(name)));
     }

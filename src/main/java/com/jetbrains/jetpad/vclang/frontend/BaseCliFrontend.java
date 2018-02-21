@@ -4,19 +4,12 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.parser.SourceIdReference;
-import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.resolver.SimpleLibraryResolver;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.caching.*;
-import com.jetbrains.jetpad.vclang.module.caching.sourceless.CacheScope;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.module.source.SourceSupplier;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.prelude.Prelude;
-import com.jetbrains.jetpad.vclang.source.GZIPStreamBinarySource;
-import com.jetbrains.jetpad.vclang.source.Source;
+import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -41,20 +34,7 @@ public abstract class BaseCliFrontend {
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
   private final Map<ModulePath, ModuleResult> myModuleResults = new LinkedHashMap<>();
 
-  private void loadPrelude() {
-    TypecheckerState typecheckerState
-    Source source = new GZIPStreamBinarySource(new FileCacheSource(myBasePath, modulePath));
-    CacheScope prelude = moduleScopeProvider.forCacheModule(PreludeStorage.PRELUDE_MODULE_PATH);
-    if (prelude == null) {
-      throw new IllegalStateException("Prelude cache is not available");
-    }
-
-    Prelude.initialise(prelude.root, myTypecheckerState);
-  }
-
-
   protected abstract String displaySource(ModulePath module, boolean modulePathOnly);
-
 
   private void requestFileTypechecking(Path path) {
     ModulePath modulePath = FileUtils.modulePath(path, FileUtils.EXTENSION);
@@ -136,7 +116,9 @@ public abstract class BaseCliFrontend {
   }
 
   public void run(final Path sourceDir, Collection<String> argFiles) {
-    loadPrelude();
+    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
+      return;
+    }
 
     // Collect sources for which typechecking was requested
     if (argFiles.isEmpty()) {
