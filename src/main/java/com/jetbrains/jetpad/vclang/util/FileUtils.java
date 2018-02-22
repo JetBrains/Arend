@@ -50,4 +50,14 @@ public class FileUtils {
 
     return new ModulePath(names);
   }
+
+  public static ModulePath modulePath(String path) {
+    ModulePath modulePath = ModulePath.fromString(path);
+    for (String name : modulePath.toList()) {
+      if (!name.matches(MODULE_NAME_REGEX)) {
+        return null;
+      }
+    }
+    return modulePath;
+  }
 }

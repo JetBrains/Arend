@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.SimpleGlobalReferable;
-import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -18,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Provides an implementation of {@link Library#getModuleScopeProvider} in which the scopes are fixed after loading.
+ * Represents a library which cannot be modified after loading.
  */
 public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   private final String myName;
@@ -42,12 +41,6 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     return myName;
   }
 
-  @Nullable
-  @Override
-  public final Source getRawSource(ModulePath modulePath) {
-    return null;
-  }
-
   @Nonnull
   @Override
   protected GlobalReferable generateReferable(ModulePath modulePath, LongName name, Precedence precedence, GlobalReferable typecheckable) {
@@ -61,9 +54,13 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
     myGroups.put(modulePath, group);
-    myModuleScopeProvider.registerModule(modulePath, group);
+    if (group == null) {
+      myModuleScopeProvider.unregisterModule(modulePath);
+    } else {
+      myModuleScopeProvider.registerModule(modulePath, group);
+    }
   }
 
   @Nonnull

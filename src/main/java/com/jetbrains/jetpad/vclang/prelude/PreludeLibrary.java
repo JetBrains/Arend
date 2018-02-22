@@ -40,12 +40,12 @@ public abstract class PreludeLibrary extends PersistableSourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
     }
     myGroup = group;
-    myScope = CachingScope.make(LexicalScope.opened(group));
+    myScope = group == null ? null : CachingScope.make(LexicalScope.opened(group));
   }
 
   @Override

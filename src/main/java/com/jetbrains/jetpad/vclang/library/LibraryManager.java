@@ -19,6 +19,7 @@ public final class LibraryManager {
   private final ErrorReporter myErrorReporter;
   private final Map<Library, Set<Library>> myReverseDependencies = new HashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
+  private final Set<Library> myFailedLibraries = new HashSet<>();
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -79,20 +80,31 @@ public final class LibraryManager {
   public boolean loadLibrary(Library library) {
     if (myLoadingLibraries.contains(library)) {
       myErrorReporter.report(LibraryError.cyclic(myLoadingLibraries.stream().map(Library::getName)));
+      myFailedLibraries.add(library);
       return false;
     }
-    myLoadingLibraries.add(library);
 
     if (myReverseDependencies.containsKey(library)) {
       return true;
     }
 
-    boolean result = library.load(this);
-    if (result) {
-      myReverseDependencies.put(library, new HashSet<>());
+    if (myFailedLibraries.contains(library)) {
+      return false;
     }
-    myLoadingLibraries.remove(library);
-    return result;
+
+    myLoadingLibraries.add(library);
+
+    try {
+      boolean result = library.load(this);
+      if (result) {
+        myReverseDependencies.put(library, new HashSet<>());
+      } else {
+        myFailedLibraries.add(library);
+      }
+      return result;
+    } finally {
+      myLoadingLibraries.remove(library);
+    }
   }
 
   /**

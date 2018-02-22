@@ -28,7 +28,6 @@ public abstract class BaseCliFrontend {
   private final SimpleLibraryResolver myLibraryResolver = new SimpleLibraryResolver();
   private final ModuleScopeProvider myModuleScopeProvider = null; // TODO
   private final LibraryManager myLibraryManager = new LibraryManager(myLibraryResolver, myModuleScopeProvider, System.err::println);
-  private final Set<ModulePath> requestedModules = new LinkedHashSet<>();
 
   // Typechecking
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
@@ -36,35 +35,21 @@ public abstract class BaseCliFrontend {
 
   protected abstract String displaySource(ModulePath module, boolean modulePathOnly);
 
-  private void requestFileTypechecking(Path path) {
-    ModulePath modulePath = FileUtils.modulePath(path, FileUtils.EXTENSION);
-    if (modulePath == null) {
-      System.err.println("[Not found] " + path + " is an illegal module path");
-      return;
-    }
-    SourceIdT sourceId = moduleTracker.locateModule(modulePath);
-    if (sourceId == null || !moduleTracker.isAvailable(sourceId)) {
-      System.err.println("[Not found] " + path + " is not available");
-      return;
-    }
-    requestedModules.add(sourceId);
-  }
-
   private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
 
-  private void typeCheckSources(Set<SourceIdT> sources) {
+  private void typeCheckModules(Collection<ModulePath> modules) {
     final Set<Group> modulesToTypeCheck = new LinkedHashSet<>();
-    for (SourceIdT source : sources) {
+    for (ModulePath module : modules) {
       final Group group;
-      SourceSupplier.LoadResult result = loadedSources.get(source);
+      SourceSupplier.LoadResult result = loadedSources.get(module);
       if (result == null){
-        group = moduleTracker.load(source);
+        group = moduleTracker.load(module);
         if (group == null) {
           continue;
         }
 
         try {
-          cacheManager.loadCache(source);
+          cacheManager.loadCache(module);
         } catch (CacheLoadingException e) {
           //e.printStackTrace();
         }
@@ -115,20 +100,50 @@ public abstract class BaseCliFrontend {
     }
   }
 
-  public void run(final Path sourceDir, Collection<String> argFiles) {
+  public void run(Path sourceDir, Collection<String> argFiles) {
     if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
       return;
     }
 
+    /*
+    List<ModulePath> modules = new ArrayList<>();
+    if (mySourceBasePath != null || myBinaryBasePath != null) {
+      try {
+        Path path = mySourceBasePath != null ? mySourceBasePath : myBinaryBasePath;
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            if (file.getFileName().toString().endsWith(mySourceBasePath != null ? FileUtils.EXTENSION : FileUtils.SERIALIZED_EXTENSION)) {
+              ModulePath modulePath = FileUtils.modulePath(path.relativize(file), FileUtils.SERIALIZED_EXTENSION);
+              if (modulePath != null) {
+                modules.add(modulePath);
+              }
+            }
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        errorReporter.report(new ExceptionError(e, getName()));
+        return null;
+      }
+    }
+    */
+
     // Collect sources for which typechecking was requested
+    LinkedHashSet<ModulePath> requestedModules = new ArrayList<>();
     if (argFiles.isEmpty()) {
-      if (sourceDir == null) return;
       try {
         Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) {
             if (path.getFileName().toString().endsWith(FileUtils.EXTENSION)) {
-              requestFileTypechecking(sourceDir.relativize(path));
+              path = sourceDir.relativize(path);
+              ModulePath modulePath = FileUtils.modulePath(path, FileUtils.EXTENSION);
+              if (modulePath == null) {
+                printModuleNotFoundError(path);
+              } else {
+                requestedModules.add(modulePath);
+              }
             }
             return FileVisitResult.CONTINUE;
           }
@@ -143,13 +158,24 @@ public abstract class BaseCliFrontend {
         System.err.println(e.getMessage());
       }
     } else {
+      String separator = FileSystems.getDefault().getSeparator();
       for (String fileName : argFiles) {
-        requestFileTypechecking(Paths.get(fileName));
+        ModulePath modulePath;
+        if (fileName.endsWith(FileUtils.EXTENSION) || fileName.contains(separator)) {
+          modulePath = FileUtils.modulePath(Paths.get(fileName), FileUtils.EXTENSION);
+        } else {
+          modulePath = FileUtils.modulePath(fileName);
+        }
+        if (modulePath == null) {
+          printModuleNotFoundError(fileName);
+        } else {
+          requestedModules.add(modulePath);
+        }
       }
     }
 
     // Typecheck those sources
-    typeCheckSources(requestedModules);
+    typeCheckModules(requestedModules);
     flushErrors();
 
     // Output nice per-module typechecking results
@@ -180,6 +206,10 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
       }
     }
+  }
+
+  private static void printModuleNotFoundError(Object module) {
+    System.err.println("[Not found] " + module + " is an illegal module path");
   }
 
   private void flushErrors() {

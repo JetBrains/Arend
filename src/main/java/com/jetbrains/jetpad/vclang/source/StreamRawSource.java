@@ -56,6 +56,7 @@ public abstract class StreamRawSource implements Source {
 
       VcgrammarParser.StatementsContext tree = parser.statements();
       if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
+        sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
         return false;
       }
 
@@ -73,6 +74,7 @@ public abstract class StreamRawSource implements Source {
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath));
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
       return false;
     }
   }

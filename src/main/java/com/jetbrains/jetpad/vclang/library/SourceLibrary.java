@@ -12,13 +12,15 @@ import com.jetbrains.jetpad.vclang.util.LongName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.EnumSet;
 
 /**
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
  * as well as ordinary modules (see {@link #getRawSource}).
  */
 public abstract class SourceLibrary extends LibraryBase {
-  private boolean myRecompile = false;
+  public enum Flag { RECOMPILE, PARTIAL_LOAD }
+  private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
 
   /**
    * Creates a new {@code SourceLibrary}
@@ -30,17 +32,17 @@ public abstract class SourceLibrary extends LibraryBase {
   }
 
   /**
-   * Sets a flag so that this library will be recompiled during the loading.
+   * Adds a flag.
    */
-  public void setRecompile() {
-    myRecompile = true;
+  public void addFlag(Flag flag) {
+    myFlags.add(flag);
   }
 
   /**
-   * Sets a flag so that this library will not be recompiled during the loading.
+   * Removes a flag.
    */
-  public void setNoRecompile() {
-    myRecompile = false;
+  public void removeFlag(Flag flag) {
+    myFlags.remove(flag);
   }
 
   /**
@@ -92,9 +94,9 @@ public abstract class SourceLibrary extends LibraryBase {
    * Invoked by a source after it is loaded.
    *
    * @param modulePath  the path to the loaded module.
-   * @param group       the group of the loaded module.
+   * @param group       the group of the loaded module or null if the module failed to load.
    */
-  public void onModuleLoaded(ModulePath modulePath, Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
 
   }
 
@@ -117,9 +119,9 @@ public abstract class SourceLibrary extends LibraryBase {
       libraryManager.registerDependency(this, loadedDependency);
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, myRecompile);
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, myFlags.contains(Flag.RECOMPILE));
     for (ModulePath module : header.modules) {
-      if (!sourceLoader.load(module)) {
+      if (!sourceLoader.load(module) && !myFlags.contains(Flag.PARTIAL_LOAD)) {
         unload();
         return false;
       }
