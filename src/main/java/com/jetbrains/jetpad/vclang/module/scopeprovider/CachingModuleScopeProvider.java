@@ -19,6 +19,14 @@ public class CachingModuleScopeProvider implements ModuleScopeProvider {
     myModuleScopeProvider = moduleScopeProvider;
   }
 
+  public void reset(ModulePath modulePath) {
+    myScopes.remove(modulePath);
+  }
+
+  public void reset() {
+    myScopes.clear();
+  }
+
   @Nullable
   @Override
   public Scope forModule(@Nonnull ModulePath module) {

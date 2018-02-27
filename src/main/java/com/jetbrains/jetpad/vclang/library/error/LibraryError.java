@@ -34,6 +34,10 @@ public class LibraryError extends GeneralError {
     return new LibraryError("Cannot unload a library while loading other libraries: ", libraryNames);
   }
 
+  public static LibraryError illegalName(String libraryName) {
+    return new LibraryError("Illegal library name or path", Stream.of(libraryName));
+  }
+
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     List<LineDoc> libraryDocs = libraryNames.map(DocFactory::text).collect(Collectors.toList());

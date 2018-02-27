@@ -5,19 +5,16 @@ import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Contains all necessary information for the library loading.
  */
-public final class LibraryManager {
+public class LibraryManager {
   private final LibraryResolver myLibraryResolver;
-  private final ModuleScopeProvider myModuleScopeProvider;
+  private ModuleScopeProvider myModuleScopeProvider;
   private final ErrorReporter myErrorReporter;
-  private final Map<Library, Set<Library>> myReverseDependencies = new HashMap<>();
+  private final Map<Library, Set<Library>> myReverseDependencies = new LinkedHashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
   private final Set<Library> myFailedLibraries = new HashSet<>();
 
@@ -38,6 +35,10 @@ public final class LibraryManager {
     return myModuleScopeProvider;
   }
 
+  public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
+    myModuleScopeProvider = moduleScopeProvider;
+  }
+
   public ErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
@@ -51,6 +52,15 @@ public final class LibraryManager {
    */
   public boolean isRegistered(Library library) {
     return myReverseDependencies.containsKey(library);
+  }
+
+  /**
+   * Gets a set of libraries registered in this library manager.
+   *
+   * @return the set of registered libraries.
+   */
+  public Collection<? extends Library> getRegisteredLibraries() {
+    return myReverseDependencies.keySet();
   }
 
   /**
@@ -80,7 +90,6 @@ public final class LibraryManager {
   public boolean loadLibrary(Library library) {
     if (myLoadingLibraries.contains(library)) {
       myErrorReporter.report(LibraryError.cyclic(myLoadingLibraries.stream().map(Library::getName)));
-      myFailedLibraries.add(library);
       return false;
     }
 
@@ -93,9 +102,11 @@ public final class LibraryManager {
     }
 
     myLoadingLibraries.add(library);
+    beforeLibraryLoading(library);
+    boolean result = false;
 
     try {
-      boolean result = library.load(this);
+      result = library.load(this);
       if (result) {
         myReverseDependencies.put(library, new HashSet<>());
       } else {
@@ -104,7 +115,27 @@ public final class LibraryManager {
       return result;
     } finally {
       myLoadingLibraries.remove(library);
+      afterLibraryLoading(library, result);
     }
+  }
+
+  /**
+   * Invoked before a library begins to load.
+   *
+   * @param library     the loaded library.
+   */
+  protected void beforeLibraryLoading(Library library) {
+
+  }
+
+  /**
+   * Invoked after a library is loaded.
+   *
+   * @param library     the loaded library.
+   * @param successful  true if the library was successfully loaded, false otherwise.
+   */
+  protected void afterLibraryLoading(Library library, boolean successful) {
+
   }
 
   /**

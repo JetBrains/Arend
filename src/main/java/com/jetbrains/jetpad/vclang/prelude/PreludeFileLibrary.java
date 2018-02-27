@@ -5,6 +5,8 @@ import com.jetbrains.jetpad.vclang.source.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * A library which is used to load and persist prelude from and to a file.
@@ -35,5 +37,10 @@ public class PreludeFileLibrary extends PreludeLibrary {
       return null;
     }
     return new GZIPStreamBinarySource(new FileBinarySource(PreludeResourceSource.BASE_PATH, Prelude.MODULE_PATH));
+  }
+
+  @Override
+  public Collection<? extends ModulePath> getUpdatedModules() {
+    return Collections.singleton(Prelude.MODULE_PATH);
   }
 }

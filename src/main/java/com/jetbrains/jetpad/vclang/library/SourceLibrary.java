@@ -2,17 +2,21 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.serialization.DefinitionContextProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.source.PersistableSource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
+import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.util.LongName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.EnumSet;
+import java.util.*;
 
 /**
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
@@ -21,14 +25,17 @@ import java.util.EnumSet;
 public abstract class SourceLibrary extends LibraryBase {
   public enum Flag { RECOMPILE, PARTIAL_LOAD }
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
+  private final DefinitionContextProvider myContextProvider;
 
   /**
    * Creates a new {@code SourceLibrary}
    *
    * @param typecheckerState  the underling typechecker state of this library.
+   * @param contextProvider   a definition context provider.
    */
-  protected SourceLibrary(TypecheckerState typecheckerState) {
+  protected SourceLibrary(TypecheckerState typecheckerState, DefinitionContextProvider contextProvider) {
     super(typecheckerState);
+    myContextProvider = contextProvider;
   }
 
   /**
@@ -63,7 +70,7 @@ public abstract class SourceLibrary extends LibraryBase {
    * @return the binary source corresponding to the given path or null if the source is not found.
    */
   @Nullable
-  public abstract Source getBinarySource(ModulePath modulePath);
+  public abstract PersistableSource getBinarySource(ModulePath modulePath);
 
   /**
    * Generates a {@link GlobalReferable} for a given definition.
@@ -128,5 +135,37 @@ public abstract class SourceLibrary extends LibraryBase {
     }
 
     return super.load(libraryManager);
+  }
+
+  public Collection<? extends ModulePath> getUpdatedModules() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
+    Collection<? extends ModulePath> updatedModules = getUpdatedModules();
+    List<Group> groups = new ArrayList<>(updatedModules.size());
+    for (ModulePath module : updatedModules) {
+      Group group = getModuleGroup(module);
+      if (group != null) {
+        groups.add(group);
+      }
+    }
+
+    boolean result = typechecking.typecheckModules(groups);
+    for (ModulePath updatedModule : updatedModules) {
+      persistModule(updatedModule, errorReporter);
+    }
+    return result;
+  }
+
+  public boolean persistModule(ModulePath modulePath, ErrorReporter errorReporter) {
+    PersistableSource source = getBinarySource(modulePath);
+    if (source == null) {
+      errorReporter.report(new PersistingError(modulePath));
+      return false;
+    } else {
+      return source.persist(this, myContextProvider, errorReporter);
+    }
   }
 }

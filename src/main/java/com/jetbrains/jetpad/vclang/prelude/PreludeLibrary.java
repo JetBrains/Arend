@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.prelude;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.LibraryHeader;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
-import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
+import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
@@ -26,7 +26,7 @@ import java.util.Collections;
  * This class guarantees that prelude is loaded exactly once,
  * so all instances of this class use the same definitions, which are stored in {@link Prelude}.
  */
-public abstract class PreludeLibrary extends PersistableSourceLibrary {
+public abstract class PreludeLibrary extends SourceLibrary {
   private static Group myGroup;
   private static Scope myScope;
 
@@ -36,7 +36,7 @@ public abstract class PreludeLibrary extends PersistableSourceLibrary {
    * @param typecheckerState the underling typechecker state of this library.
    */
   protected PreludeLibrary(TypecheckerState typecheckerState) {
-    super(typecheckerState);
+    super(typecheckerState, new PreludeDefinitionContextProvider());
   }
 
   @Override
@@ -64,18 +64,6 @@ public abstract class PreludeLibrary extends PersistableSourceLibrary {
     Prelude.fillInTypecheckerState(getTypecheckerState());
     setLoaded();
     return true;
-  }
-
-  @Nullable
-  @Override
-  public ModulePath getDefinitionModule(GlobalReferable referable) {
-    return Prelude.MODULE_PATH;
-  }
-
-  @Nullable
-  @Override
-  public LongName getDefinitionFullName(GlobalReferable referable) {
-    return new LongName(Collections.singletonList(referable.textRepresentation()));
   }
 
   @Nonnull

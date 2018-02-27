@@ -1,15 +1,12 @@
 package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
-import com.jetbrains.jetpad.vclang.library.resolver.DefinitionLocator;
+import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
-import com.jetbrains.jetpad.vclang.module.serialization.DeserializationException;
-import com.jetbrains.jetpad.vclang.module.serialization.ModuleDeserialization;
-import com.jetbrains.jetpad.vclang.module.serialization.ModuleProtos;
-import com.jetbrains.jetpad.vclang.module.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.module.serialization.*;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
+import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nullable;
@@ -32,7 +29,7 @@ public abstract class StreamBinarySource implements PersistableSource {
   /**
    * Gets an output stream to which the source will be persisted.
    *
-   * @return an input stream from which the source will be loaded or null if some error occurred.
+   * @return an input stream from which the source will be loaded or null if the source does not support persisting.
    */
   @Nullable
   protected abstract OutputStream getOutputStream() throws IOException;
@@ -66,20 +63,21 @@ public abstract class StreamBinarySource implements PersistableSource {
   }
 
   @Override
-  public boolean persist(PersistableSourceLibrary library, DefinitionLocator definitionLocator, ErrorReporter errorReporter) {
+  public boolean persist(SourceLibrary library, DefinitionContextProvider contextProvider, ErrorReporter errorReporter) {
     try (OutputStream outputStream = getOutputStream()) {
+      ModulePath currentModulePath = getModulePath();
       if (outputStream == null) {
+        errorReporter.report(new PersistingError(currentModulePath));
         return false;
       }
 
-      ModulePath currentModulePath = getModulePath();
       Group group = library.getModuleGroup(currentModulePath);
       if (group == null) {
         errorReporter.report(LocationError.module(currentModulePath));
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(definitionLocator, library.getTypecheckerState(), errorReporter).writeModule(group);
+      ModuleProtos.Module module = new ModuleSerialization(contextProvider, library.getTypecheckerState(), errorReporter).writeModule(group);
       if (module == null) {
         return false;
       }

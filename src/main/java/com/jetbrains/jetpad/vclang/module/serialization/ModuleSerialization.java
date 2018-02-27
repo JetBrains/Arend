@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.module.serialization;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.library.PersistableSourceLibrary;
-import com.jetbrains.jetpad.vclang.library.resolver.DefinitionLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
@@ -17,15 +15,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class ModuleSerialization {
-  private final DefinitionLocator myLocator;
+  private final DefinitionContextProvider myContextProvider;
   private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
   private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
   private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
 
-  public ModuleSerialization(DefinitionLocator definitionLocator, TypecheckerState state, ErrorReporter errorReporter) {
-    myLocator = definitionLocator;
+  public ModuleSerialization(DefinitionContextProvider contextProvider, TypecheckerState state, ErrorReporter errorReporter) {
+    myContextProvider = contextProvider;
     myState = state;
     myErrorReporter = errorReporter;
   }
@@ -44,14 +42,8 @@ public class ModuleSerialization {
       }
 
       GlobalReferable targetReferable = entry.getKey().getReferable();
-      PersistableSourceLibrary library = myLocator.locate(targetReferable);
-      if (library == null) {
-        myErrorReporter.report(LocationError.definition(targetReferable));
-        return null;
-      }
-
-      ModulePath targetModulePath = library.getDefinitionModule(targetReferable);
-      LongName targetName = library.getDefinitionFullName(targetReferable);
+      ModulePath targetModulePath = myContextProvider.getDefinitionModule(targetReferable);
+      LongName targetName = myContextProvider.getDefinitionFullName(targetReferable);
       if (targetModulePath == null || targetName == null) {
         myErrorReporter.report(LocationError.definition(targetReferable));
         return null;

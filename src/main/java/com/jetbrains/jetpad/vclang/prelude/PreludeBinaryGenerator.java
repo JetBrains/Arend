@@ -7,8 +7,6 @@ import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import java.util.Collections;
-
 public class PreludeBinaryGenerator {
   public static void main(String[] args) {
     TypecheckerState typecheckerState = new SimpleTypecheckerState();
@@ -29,8 +27,7 @@ public class PreludeBinaryGenerator {
 
     LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println);
     if (manager.loadLibrary(library)) {
-      new Prelude.PreludeTypechecking(typecheckerState).typecheckModules(Collections.singleton(library.getModuleGroup(Prelude.MODULE_PATH)));
-      binarySource.persist(library, ref -> library, System.err::println);
+      library.typecheck(new Prelude.PreludeTypechecking(typecheckerState), System.err::println);
     }
   }
 }

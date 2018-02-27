@@ -31,7 +31,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
    * @param typecheckerState  the underling typechecker state of this library.
    */
   protected UnmodifiableSourceLibrary(String name, TypecheckerState typecheckerState) {
-    super(typecheckerState);
+    super(typecheckerState, contextProvider /* TODO[library]: some simple context provider that returns the information stored in the referable */);
     myName = name;
   }
 
