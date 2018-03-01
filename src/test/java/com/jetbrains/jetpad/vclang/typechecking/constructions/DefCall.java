@@ -11,7 +11,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
@@ -959,7 +959,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\func inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
     Iterator<? extends Group> it = cd.getSubgroups().iterator();
     it.next();
-    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
     typeCheckModule(cd);
   }

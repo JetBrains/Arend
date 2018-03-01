@@ -71,21 +71,21 @@ public class ModuleDeserialization {
   }
 
   @Nonnull
-  public Group readGroup(ModuleProtos.Group groupProto) throws DeserializationException {
-    return readGroup(groupProto, null);
+  public Group readGroup(ModuleProtos.Group groupProto, ModulePath modulePath) throws DeserializationException {
+    return readGroup(groupProto, null, modulePath);
   }
 
   @Nonnull
-  private Group readGroup(ModuleProtos.Group groupProto, ChildGroup parent) throws DeserializationException {
+  private Group readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<GlobalReferable> fieldReferables;
-    GlobalReferable referable;
+    LocatedReferable referable;
     if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
       fieldReferables = Collections.emptyList();
-      referable = new SimpleGlobalReferable(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), null);
+      referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), modulePath);
     } else {
       fieldReferables = new ArrayList<>();
-      referable = new SimpleClassReferable(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), new ArrayList<>(), fieldReferables);
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), new ArrayList<>(), fieldReferables, modulePath);
     }
 
     Definition def;
@@ -130,27 +130,27 @@ public class ModuleDeserialization {
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());
       group = new ClassGroup((ClassReferable) referable, internalReferables, dynamicGroups, subgroups, Collections.emptyList(), parent);
       for (ModuleProtos.Group subgroup : groupProto.getDynamicSubgroupList()) {
-        dynamicGroups.add(readGroup(subgroup, group));
+        dynamicGroups.add(readGroup(subgroup, group, modulePath));
       }
     } else {
       throw new IllegalStateException();
     }
 
     for (ModuleProtos.Group subgroup : groupProto.getSubgroupList()) {
-      subgroups.add(readGroup(subgroup, group));
+      subgroups.add(readGroup(subgroup, group, modulePath));
     }
 
     return group;
   }
 
-  private Definition readDefinition(DefinitionProtos.Definition defProto, GlobalReferable referable) throws DeserializationException {
+  private Definition readDefinition(DefinitionProtos.Definition defProto, LocatedReferable referable) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
-        ClassDefinition classDef = new ClassDefinition(referable);
+        ClassDefinition classDef = new ClassDefinition((ClassReferable) referable);
         for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
           DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-          GlobalReferable absField = new SimpleGlobalReferable(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable);
+          LocatedReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
           ClassField res = new ClassField(absField, classDef);
           res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           myState.record(absField, res);
@@ -162,7 +162,7 @@ public class ModuleDeserialization {
         DataDefinition dataDef = new DataDefinition(referable);
         for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
           DefinitionProtos.Referable conReferable = constructor.getReferable();
-          GlobalReferable absConstructor = new SimpleGlobalReferable(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable);
+          LocatedReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
           Constructor res = new Constructor(absConstructor, dataDef);
           res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           myState.record(absConstructor, res);

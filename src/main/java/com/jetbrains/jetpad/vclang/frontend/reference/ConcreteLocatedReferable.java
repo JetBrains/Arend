@@ -2,28 +2,27 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferableImpl;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 
-public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
+public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo {
   private final Position myPosition;
-  private final String myName;
   private Concrete.ReferableDefinition myDefinition;
-  private final Precedence myPrecedence;
 
-  public ConcreteGlobalReferable(Position position, @Nonnull String name, Precedence precedence) {
+  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, LocatedReferable parent, boolean isTypecheckable) {
+    super(precedence, name, parent, isTypecheckable);
     myPosition = position;
-    myName = name;
-    myPrecedence = precedence;
   }
 
-  @Nonnull
-  @Override
-  public Precedence getPrecedence() {
-    return myPrecedence;
+  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, ModulePath modulePath) {
+    super(precedence, name, modulePath);
+    myPosition = position;
   }
 
   public Concrete.ReferableDefinition getDefinition() {
@@ -40,12 +39,6 @@ public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
     myDefinition = definition;
   }
 
-  @Nonnull
-  @Override
-  public String textRepresentation() {
-    return myName;
-  }
-
   @Override
   public String moduleTextRepresentation() {
     return myPosition == null ? null : myPosition.moduleTextRepresentation();
@@ -54,10 +47,5 @@ public class ConcreteGlobalReferable implements GlobalReferable, SourceInfo {
   @Override
   public String positionTextRepresentation() {
     return myPosition == null ? null : myPosition.positionTextRepresentation();
-  }
-
-  @Override
-  public String toString() {
-    return myName;
   }
 }

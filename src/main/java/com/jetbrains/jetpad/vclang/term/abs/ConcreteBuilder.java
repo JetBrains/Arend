@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -21,9 +22,9 @@ import java.util.List;
 
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
   private final ErrorReporter myErrorReporter;
-  private final GlobalReferable myDefinition;
+  private final LocatedReferable myDefinition;
 
-  private ConcreteBuilder(ErrorReporter errorReporter, GlobalReferable definition) {
+  private ConcreteBuilder(ErrorReporter errorReporter, LocatedReferable definition) {
     myErrorReporter = errorReporter;
     myDefinition = definition;
   }
@@ -227,7 +228,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       implementations = Collections.emptyList();
     }
 
-    return new Concrete.Instance(myDefinition, parameters, buildReference(def.getResultClass()), implementations);
+    Abstract.Reference resultClass = def.getResultClass();
+    if (resultClass == null) {
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def));
+    }
+    return new Concrete.Instance(myDefinition, parameters, buildReference(resultClass), implementations);
   }
 
   private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {

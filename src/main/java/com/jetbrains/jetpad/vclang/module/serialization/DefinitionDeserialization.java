@@ -11,8 +11,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.SimpleClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
@@ -69,7 +68,7 @@ public class DefinitionDeserialization {
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
-      ((SimpleClassReferable) classDef.getReferable()).getSuperClassReferences().add((ClassReferable) superClass.getReferable());
+      ((ClassReferableImpl) classDef.getReferable()).getSuperClassReferences().add(superClass.getReferable());
     }
     if (classProto.getEnclosingThisFieldRef() != 0) {
       classDef.setEnclosingThisField(myCallTargetProvider.getCallTarget(classProto.getEnclosingThisFieldRef(), ClassField.class));

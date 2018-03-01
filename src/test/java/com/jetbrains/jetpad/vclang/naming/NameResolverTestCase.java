@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -69,11 +69,11 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesDefGroup(text, 0);
   }
 
-  ConcreteGlobalReferable resolveNamesDef(String text, int errors) {
-    return (ConcreteGlobalReferable) resolveNamesDefGroup(text, errors).getReferable();
+  ConcreteLocatedReferable resolveNamesDef(String text, int errors) {
+    return (ConcreteLocatedReferable) resolveNamesDefGroup(text, errors).getReferable();
   }
 
-  protected ConcreteGlobalReferable resolveNamesDef(String text) {
+  protected ConcreteLocatedReferable resolveNamesDef(String text) {
     return resolveNamesDef(text, 0);
   }
 

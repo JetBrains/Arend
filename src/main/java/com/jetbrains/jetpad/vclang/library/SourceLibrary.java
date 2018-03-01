@@ -2,19 +2,14 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.serialization.DefinitionContextProvider;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.source.PersistableSource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
-import com.jetbrains.jetpad.vclang.util.LongName;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -25,17 +20,14 @@ import java.util.*;
 public abstract class SourceLibrary extends LibraryBase {
   public enum Flag { RECOMPILE, PARTIAL_LOAD }
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
-  private final DefinitionContextProvider myContextProvider;
 
   /**
    * Creates a new {@code SourceLibrary}
    *
    * @param typecheckerState  the underling typechecker state of this library.
-   * @param contextProvider   a definition context provider.
    */
-  protected SourceLibrary(TypecheckerState typecheckerState, DefinitionContextProvider contextProvider) {
+  protected SourceLibrary(TypecheckerState typecheckerState) {
     super(typecheckerState);
-    myContextProvider = contextProvider;
   }
 
   /**
@@ -71,21 +63,6 @@ public abstract class SourceLibrary extends LibraryBase {
    */
   @Nullable
   public abstract PersistableSource getBinarySource(ModulePath modulePath);
-
-  /**
-   * Generates a {@link GlobalReferable} for a given definition.
-   * This may be a new instance or an instance representing some existing definition.
-   * This method is invoked at most once for every definition.
-   *
-   * @param modulePath    the module of the definition.
-   * @param name          the full name of the definition inside its module.
-   * @param precedence    the precedence of the definition.
-   * @param typecheckable the typecheckable corresponding to this definition or null if the definition is itself typecheckable.
-   *
-   * @return generated {@link GlobalReferable}.
-   */
-  @Nonnull
-  protected abstract GlobalReferable generateReferable(ModulePath modulePath, LongName name, Precedence precedence, GlobalReferable typecheckable);
 
   /**
    * Loads the header of this library.
@@ -165,7 +142,7 @@ public abstract class SourceLibrary extends LibraryBase {
       errorReporter.report(new PersistingError(modulePath));
       return false;
     } else {
-      return source.persist(this, myContextProvider, errorReporter);
+      return source.persist(this, errorReporter);
     }
   }
 }

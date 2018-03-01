@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
-import com.jetbrains.jetpad.vclang.module.serialization.*;
+import com.jetbrains.jetpad.vclang.module.serialization.DeserializationException;
+import com.jetbrains.jetpad.vclang.module.serialization.ModuleDeserialization;
+import com.jetbrains.jetpad.vclang.module.serialization.ModuleProtos;
+import com.jetbrains.jetpad.vclang.module.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.group.Group;
@@ -52,7 +55,7 @@ public abstract class StreamBinarySource implements PersistableSource {
 
     try {
       ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
-      Group group = moduleDeserialization.readGroup(moduleProto.getGroup());
+      Group group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
       sourceLoader.getLibrary().onModuleLoaded(modulePath, group);
       return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider(), module -> !sourceLoader.getLibrary().containsModule(module) || sourceLoader.load(module), sourceLoader.getErrorReporter());
     } catch (DeserializationException e) {
@@ -63,7 +66,7 @@ public abstract class StreamBinarySource implements PersistableSource {
   }
 
   @Override
-  public boolean persist(SourceLibrary library, DefinitionContextProvider contextProvider, ErrorReporter errorReporter) {
+  public boolean persist(SourceLibrary library, ErrorReporter errorReporter) {
     try (OutputStream outputStream = getOutputStream()) {
       ModulePath currentModulePath = getModulePath();
       if (outputStream == null) {
@@ -77,7 +80,7 @@ public abstract class StreamBinarySource implements PersistableSource {
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(contextProvider, library.getTypecheckerState(), errorReporter).writeModule(group);
+      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group);
       if (module == null) {
         return false;
       }

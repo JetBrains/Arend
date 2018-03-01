@@ -4,26 +4,21 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.util.LongName;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ModuleSerialization {
-  private final DefinitionContextProvider myContextProvider;
   private final TypecheckerState myState;
   private final ErrorReporter myErrorReporter;
   private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
   private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
 
-  public ModuleSerialization(DefinitionContextProvider contextProvider, TypecheckerState state, ErrorReporter errorReporter) {
-    myContextProvider = contextProvider;
+  public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
     myState = state;
     myErrorReporter = errorReporter;
   }
@@ -42,16 +37,16 @@ public class ModuleSerialization {
       }
 
       GlobalReferable targetReferable = entry.getKey().getReferable();
-      ModulePath targetModulePath = myContextProvider.getDefinitionModule(targetReferable);
-      LongName targetName = myContextProvider.getDefinitionFullName(targetReferable);
-      if (targetModulePath == null || targetName == null) {
+      List<String> longName = new ArrayList<>();
+      ModulePath targetModulePath = targetReferable instanceof LocatedReferable ? ((LocatedReferable) targetReferable).getLocation(longName) : null;
+      if (targetModulePath == null || longName.isEmpty()) {
         myErrorReporter.report(LocationError.definition(targetReferable));
         return null;
       }
 
       Map<String, CallTargetTree> map = moduleCallTargets.computeIfAbsent(targetModulePath, k -> new HashMap<>());
       CallTargetTree tree = null;
-      for (String name : targetName.toList()) {
+      for (String name : longName) {
         tree = map.computeIfAbsent(name, k -> new CallTargetTree(0));
         map = tree.subtreeMap;
       }

@@ -3,12 +3,8 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.SimpleGlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.util.LongName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,7 +27,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
    * @param typecheckerState  the underling typechecker state of this library.
    */
   protected UnmodifiableSourceLibrary(String name, TypecheckerState typecheckerState) {
-    super(typecheckerState, contextProvider /* TODO[library]: some simple context provider that returns the information stored in the referable */);
+    super(typecheckerState);
     myName = name;
   }
 
@@ -39,12 +35,6 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   @Override
   public String getName() {
     return myName;
-  }
-
-  @Nonnull
-  @Override
-  protected GlobalReferable generateReferable(ModulePath modulePath, LongName name, Precedence precedence, GlobalReferable typecheckable) {
-    return new SimpleGlobalReferable(precedence, name.getLastName(), typecheckable);
   }
 
   @Nonnull

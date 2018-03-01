@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.ChildNamespaceCommand;
@@ -88,13 +87,13 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
 
   public static class SimpleNameRenaming implements NameRenaming {
     private final Referable myReference;
-    private final ConcreteGlobalReferable myReferable;
     private final Precedence myPrecedence;
+    private final String myName;
 
-    public SimpleNameRenaming(Referable reference, ConcreteGlobalReferable referable, Precedence precedence) {
+    public SimpleNameRenaming(Referable reference, Precedence precedence, String name) {
       myReference = reference;
-      myReferable = referable;
       myPrecedence = precedence;
+      myName = name;
     }
 
     @Nonnull
@@ -105,8 +104,8 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
 
     @Nullable
     @Override
-    public ConcreteGlobalReferable getNewReferable() {
-      return myReferable;
+    public String getName() {
+      return myName;
     }
 
     @Nullable

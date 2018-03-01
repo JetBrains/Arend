@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
@@ -92,7 +92,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private Definition typeCheckDef(ConcreteGlobalReferable reference, int errors) {
+  private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
     new Typechecking(state, ConcreteReferableProvider.INSTANCE, errorReporter).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
     return state.getTypechecked(reference);
