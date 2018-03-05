@@ -15,8 +15,8 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider
 import com.jetbrains.jetpad.vclang.module.scopeprovider.LocatingModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
-import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -82,28 +82,6 @@ public abstract class BaseCliFrontend {
     @Override
     public void typecheckingFinished(GlobalReferable referable, Definition definition) {
       flushErrors();
-    }
-  }
-
-  private void reportTypeCheckResult(ModulePath modulePath, ModuleResult result) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("[").append(resultChar(result)).append("]");
-    builder.append(" ").append(modulePath);
-    System.out.println(builder);
-  }
-
-  private static char resultChar(ModuleResult result) {
-    switch (result) {
-      case NOT_LOADED:
-        return '✗';
-      case OK:
-        return ' ';
-      case GOALS:
-        return '◯';
-      case ERRORS:
-        return '✗';
-      default:
-        return '·';
     }
   }
 
@@ -243,7 +221,7 @@ public abstract class BaseCliFrontend {
       requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, libraryDependencies, myTypecheckerState));
     }
 
-    // Load libraries
+    // Load and typecheck libraries
     if (requestedLibraries.isEmpty()) {
       System.out.println("Nothing to load");
       return cmdLine;
@@ -255,69 +233,32 @@ public abstract class BaseCliFrontend {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
       }
       myLibraryManager.loadLibrary(library);
-    }
 
-    // Typecheck libraries
-    typeCheckModules(requestedModules);
-    flushErrors();
-
-    // Output nice per-module typechecking results
-    int numWithErrors = 0;
-    for (Map.Entry<SourceIdT, ModuleResult> entry : myModuleResults.entrySet()) {
-      if (!requestedModules.contains(entry.getKey())) {
-        ModuleResult result = entry.getValue();
-        reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
-        if (result == ModuleResult.ERRORS) numWithErrors += 1;
+      if (!library.needsTypechecking()) {
+        continue;
       }
-    }
-    // Explicitly requested sources go last
-    for (SourceIdT source : requestedModules) {
-      ModuleResult result = myModuleResults.get(source);
-      reportTypeCheckResult(source, result == null ? ModuleResult.OK : result);
-      if (result == ModuleResult.ERRORS) numWithErrors += 1;
-    }
-    System.out.println("--- Done ---");
-    if (numWithErrors > 0) {
-      System.out.println("Number of modules with errors: " + numWithErrors);
-    }
 
-    // Persist cache
-    for (SourceIdT module : cacheManager.getCachedModules()) {
-      try {
-        cacheManager.persistCache(module);
-      } catch (CachePersistenceException e) {
-        e.printStackTrace();
-      }
-    }
-  }
+      System.out.println("--- Typechecking " + library.getName() + " ---");
+      library.typecheck(new MyTypechecking(), myErrorReporter);
+      flushErrors();
 
-  private void typeCheckModules(Collection<ModulePath> modules) {
-    final Set<Group> modulesToTypeCheck = new LinkedHashSet<>();
-    for (ModulePath module : modules) {
-      final Group group;
-      SourceSupplier.LoadResult result = loadedSources.get(module);
-      if (result == null){
-        group = moduleTracker.load(module);
-        if (group == null) {
-          continue;
+      // Output nice per-module typechecking results
+      int numWithErrors = 0;
+      for (Map.Entry<ModulePath, ModuleResult> entry : myModuleResults.entrySet()) {
+        if (!requestedModules.contains(entry.getKey())) {
+          ModuleResult result = entry.getValue();
+          reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
+          if (result == ModuleResult.ERRORS) numWithErrors += 1;
         }
-
-        try {
-          cacheManager.loadCache(module);
-        } catch (CacheLoadingException e) {
-          //e.printStackTrace();
-        }
-
-        flushErrors();
-      } else {
-        group = result.group;
       }
-      modulesToTypeCheck.add(group);
+
+      if (numWithErrors > 0) {
+        System.out.println("Number of modules with errors: " + numWithErrors);
+      }
+      System.out.println("--- Done ---");
     }
 
-    System.out.println("--- Checking ---");
-
-    new MyTypechecking().typecheckModules(modulesToTypeCheck);
+    return cmdLine;
   }
 
   private void flushErrors() {
@@ -325,11 +266,8 @@ public abstract class BaseCliFrontend {
       ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
       if (moduleResult != null) {
         for (GlobalReferable referable : error.getAffectedDefinitions()) {
-          if (referable instanceof SourceIdReference) {
-            //noinspection unchecked
-            updateSourceResult((SourceIdT) ((SourceIdReference) referable).sourceId, moduleResult);
-          } else {
-            updateSourceResult(srcInfoProvider.sourceOf(referable), moduleResult);
+          if (referable instanceof LocatedReferable) {
+            updateSourceResult(((LocatedReferable) referable).getLocation(null), moduleResult);
           }
         }
       }
@@ -339,10 +277,32 @@ public abstract class BaseCliFrontend {
     myErrorReporter.getErrorList().clear();
   }
 
-  private void updateSourceResult(SourceIdT source, ModuleResult result) {
-    ModuleResult prevResult = myModuleResults.get(source);
+  private void updateSourceResult(ModulePath module, ModuleResult result) {
+    ModuleResult prevResult = myModuleResults.get(module);
     if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
-      myModuleResults.put(source, result);
+      myModuleResults.put(module, result);
+    }
+  }
+
+  private void reportTypeCheckResult(ModulePath modulePath, ModuleResult result) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("[").append(resultChar(result)).append("]");
+    builder.append(" ").append(modulePath);
+    System.out.println(builder);
+  }
+
+  private static char resultChar(ModuleResult result) {
+    switch (result) {
+      case NOT_LOADED:
+        return '✗';
+      case OK:
+        return ' ';
+      case GOALS:
+        return '◯';
+      case ERRORS:
+        return '✗';
+      default:
+        return '·';
     }
   }
 }

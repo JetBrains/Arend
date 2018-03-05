@@ -20,7 +20,7 @@ public class FileRawSource extends StreamRawSource {
    * @param modulePath  a path to the source.
    */
   public FileRawSource(Path basePath, ModulePath modulePath) {
-    myFile = FileUtils.binaryFile(basePath, modulePath);
+    myFile = FileUtils.sourceFile(basePath, modulePath);
     myModulePath = modulePath;
   }
 

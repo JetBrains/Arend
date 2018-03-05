@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.prelude;
 
+import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.PersistableSource;
 import com.jetbrains.jetpad.vclang.source.Source;
@@ -18,6 +19,24 @@ public class PreludeResourceLibrary extends PreludeLibrary {
    */
   public PreludeResourceLibrary(TypecheckerState typecheckerState) {
     super(typecheckerState);
+  }
+
+  @Override
+  public boolean load(LibraryManager libraryManager) {
+    synchronized (PreludeLibrary.class) {
+      if (getPreludeScope() == null) {
+        if (super.load(libraryManager)) {
+          Prelude.initialize(getPreludeScope(), getTypecheckerState());
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    Prelude.fillInTypecheckerState(getTypecheckerState());
+    setLoaded();
+    return true;
   }
 
   @Nullable

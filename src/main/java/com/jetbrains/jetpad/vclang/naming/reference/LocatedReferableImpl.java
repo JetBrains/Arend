@@ -53,7 +53,9 @@ public class LocatedReferableImpl implements LocatedReferable {
     } else {
       modulePath = (ModulePath) myParent;
     }
-    fullName.add(myName);
+    if (fullName != null) {
+      fullName.add(myName);
+    }
     return modulePath;
   }
 

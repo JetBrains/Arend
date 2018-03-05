@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.prelude;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.LibraryHeader;
-import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
@@ -35,31 +34,21 @@ public abstract class PreludeLibrary extends SourceLibrary {
     super(typecheckerState);
   }
 
+  public static Group getPreludeGroup() {
+    return myGroup;
+  }
+
+  public static Scope getPreludeScope() {
+    return myScope;
+  }
+
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
     }
     myGroup = group;
     myScope = group == null ? null : CachingScope.make(LexicalScope.opened(group));
-  }
-
-  @Override
-  public boolean load(LibraryManager libraryManager) {
-    synchronized (PreludeLibrary.class) {
-      if (myScope == null) {
-        if (super.load(libraryManager)) {
-          Prelude.initialize(myScope, getTypecheckerState());
-          return true;
-        } else {
-          return false;
-        }
-      }
-    }
-
-    Prelude.fillInTypecheckerState(getTypecheckerState());
-    setLoaded();
-    return true;
   }
 
   @Nullable

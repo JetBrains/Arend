@@ -47,6 +47,7 @@ dependencies {
 }
 
 def pathToMain = 'com.jetbrains.jetpad.vclang.frontend'
+def pathToPrelude = 'com.jetbrains.jetpad.vclang.prelude'
 
 task jarDep(type: Jar) {
     description 'Assembles a jar archive containing the main classes and all dependencies.'
@@ -75,7 +76,7 @@ task copyPrelude(type:Copy) {
 task prelude(type:JavaExec) {
     description 'Builds the prelude cache.'
     group 'Build'
-    main = "${pathToMain}.PreludeCacheGenerator"
+    main = "${pathToPrelude}.PreludeBinaryGenerator"
     classpath = sourceSets.main.runtimeClasspath
     args = [preludeOutputDir]
 }

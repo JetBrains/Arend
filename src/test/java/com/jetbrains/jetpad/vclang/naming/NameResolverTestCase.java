@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
-import com.jetbrains.jetpad.vclang.frontend.storage.PreludeStorage;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
@@ -55,7 +55,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
-    Scope preludeScope = moduleScopeProvider.forModule(PreludeStorage.PRELUDE_MODULE_PATH);
+    Scope preludeScope = moduleScopeProvider.forModule(Prelude.MODULE_PATH);
     Scope parentScope = new SingletonScope(group.getReferable());
     if (preludeScope != null) {
       parentScope = new MergeScope(parentScope, preludeScope);

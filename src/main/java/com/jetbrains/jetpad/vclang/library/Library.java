@@ -93,6 +93,13 @@ public interface Library {
   ModuleScopeProvider getModuleScopeProvider();
 
   /**
+   * Checks if this library needs typechecking.
+   *
+   * @return true if the typechecking is needed, false otherwise.
+   */
+  boolean needsTypechecking();
+
+  /**
    * Typechecks updated modules of this library and persists results.
    *
    * @param typechecking  a context for typechecking.

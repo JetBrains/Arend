@@ -44,7 +44,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
     myGroups.put(modulePath, group);
     if (group == null) {
       myModuleScopeProvider.unregisterModule(modulePath);

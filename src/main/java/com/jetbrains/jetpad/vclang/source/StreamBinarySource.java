@@ -43,24 +43,24 @@ public abstract class StreamBinarySource implements PersistableSource {
     ModuleProtos.Module moduleProto;
     try (InputStream inputStream = getInputStream()) {
       if (inputStream == null) {
-        sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
+        sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
         return false;
       }
       moduleProto = ModuleProtos.Module.parseFrom(inputStream);
     } catch (IOException e) {
       sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
       return false;
     }
 
     try {
       ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
       Group group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, group);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, group, false);
       return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider(), module -> !sourceLoader.getLibrary().containsModule(module) || sourceLoader.load(module), sourceLoader.getErrorReporter());
     } catch (DeserializationException e) {
       sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
       return false;
     }
   }

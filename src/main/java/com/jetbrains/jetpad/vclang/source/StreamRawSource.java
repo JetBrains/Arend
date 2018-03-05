@@ -56,7 +56,7 @@ public abstract class StreamRawSource implements Source {
 
       VcgrammarParser.StatementsContext tree = parser.statements();
       if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
-        sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
+        sourceLoader.getLibrary().onModuleLoaded(modulePath, null, true);
         return false;
       }
 
@@ -68,13 +68,13 @@ public abstract class StreamRawSource implements Source {
         }
       }
 
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, result);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, result, true);
       result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath));
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, null);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, null, true);
       return false;
     }
   }

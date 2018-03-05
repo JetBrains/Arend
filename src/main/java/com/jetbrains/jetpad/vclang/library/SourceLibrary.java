@@ -79,8 +79,9 @@ public abstract class SourceLibrary extends LibraryBase {
    *
    * @param modulePath  the path to the loaded module.
    * @param group       the group of the loaded module or null if the module failed to load.
+   * @param isRaw       true if the module was loaded from a raw source, false otherwise.
    */
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
 
   }
 
@@ -119,8 +120,17 @@ public abstract class SourceLibrary extends LibraryBase {
   }
 
   @Override
+  public boolean needsTypechecking() {
+    return !getUpdatedModules().isEmpty();
+  }
+
+  @Override
   public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
     Collection<? extends ModulePath> updatedModules = getUpdatedModules();
+    if (updatedModules.isEmpty()) {
+      return true;
+    }
+
     List<Group> groups = new ArrayList<>(updatedModules.size());
     for (ModulePath module : updatedModules) {
       Group group = getModuleGroup(module);
