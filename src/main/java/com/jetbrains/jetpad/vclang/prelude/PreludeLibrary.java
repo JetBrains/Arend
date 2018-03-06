@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -43,7 +44,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
     }

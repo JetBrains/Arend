@@ -11,16 +11,16 @@ import javax.annotation.Nonnull;
 /**
  * Provides a basic implementation of some of the methods of {@link Library}.
  */
-public abstract class LibraryBase implements Library {
+public abstract class BaseLibrary implements Library {
   private final TypecheckerState myTypecheckerState;
   private boolean myLoaded = false;
 
   /**
-   * Creates a new {@code LibraryBase}
+   * Creates a new {@code BaseLibrary}
    *
    * @param typecheckerState  the underling typechecker state of this library.
    */
-  protected LibraryBase(TypecheckerState typecheckerState) {
+  protected BaseLibrary(TypecheckerState typecheckerState) {
     myTypecheckerState = typecheckerState;
   }
 

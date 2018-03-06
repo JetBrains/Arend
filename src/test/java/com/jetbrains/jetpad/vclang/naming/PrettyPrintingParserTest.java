@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
@@ -28,18 +27,18 @@ import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
-  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
 
-  private void testExpr(Concrete.Expression expected, Expression expr) throws UnsupportedEncodingException {
+  private void testExpr(Concrete.Expression expected, Expression expr) {
     testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 
-  private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) throws UnsupportedEncodingException {
+  private void testDef(Concrete.FunctionDefinition expected, Concrete.FunctionDefinition def) {
     StringBuilder builder = new StringBuilder();
     def.accept(new PrettyPrintVisitor(builder, 0), null);
 
@@ -62,7 +61,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void prettyPrintingParserLamApp() throws UnsupportedEncodingException {
+  public void prettyPrintingParserLamApp() {
     // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
     ParsedLocalReferable cx = ref("x");
     ParsedLocalReferable cy = ref("y");
@@ -74,7 +73,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void prettyPrintingParserPi() throws UnsupportedEncodingException {
+  public void prettyPrintingParserPi() {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
     ParsedLocalReferable x = ref("x");
     ParsedLocalReferable y = ref("y");
@@ -86,7 +85,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void prettyPrintingParserPiImplicit() throws UnsupportedEncodingException {
+  public void prettyPrintingParserPiImplicit() {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
     ParsedLocalReferable cx = ref("x");
     ParsedLocalReferable cy = ref("y");
@@ -106,21 +105,21 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void prettyPrintingParserFunDef() throws UnsupportedEncodingException {
+  public void prettyPrintingParserFunDef() {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
     ParsedLocalReferable x = ref("x");
     ParsedLocalReferable A = ref("A");
     ParsedLocalReferable t = ref("t");
     ParsedLocalReferable y = ref("y");
     ParsedLocalReferable z = ref("z");
-    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT);
+    ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }
 
   @Test
-  public void prettyPrintPiLam() throws UnsupportedEncodingException {
+  public void prettyPrintPiLam() {
     // A : \Type
     // a : A
     // D : (A -> A) -> A -> A
@@ -141,7 +140,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void prettyPrintCase() throws UnsupportedEncodingException {
+  public void prettyPrintCase() {
     TypedSingleDependentLink x = singleParam("x", Nat());
     HashMap<Constructor, ElimTree> myMap = new HashMap<>();
     myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));

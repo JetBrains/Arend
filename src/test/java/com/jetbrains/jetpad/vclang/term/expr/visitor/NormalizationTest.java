@@ -21,11 +21,11 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +46,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   // \func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
   private final FunctionDefinition nelim;
 
-  public NormalizationTest() throws IOException {
+  public NormalizationTest() {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
     plus = new FunctionDefinition(null);
@@ -265,10 +265,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data D | d Nat\n" +
         "\\func test (x : D) : Nat | _ => 0");
-    FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
+    FunctionDefinition test = (FunctionDefinition) getDefinition(result, "test");
     assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -417,16 +417,16 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConCallEta() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\func \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
-    FunctionDefinition f = (FunctionDefinition) result.getDefinition("f");
+    FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
     Expression term = ((LeafElimTree) f.getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);
-    assertEquals(result.getDefinition("fsuc"), conCall.getDefinition());
+    assertEquals(getDefinition(result, "fsuc"), conCall.getDefinition());
     assertEquals(1, conCall.getDefCallArguments().size());
     assertEquals(f.getParameters().getNext(), conCall.getDefCallArguments().get(0).cast(ReferenceExpression.class).getBinding());
   }

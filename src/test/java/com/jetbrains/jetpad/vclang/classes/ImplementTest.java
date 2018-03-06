@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -188,7 +189,7 @@ public class ImplementTest extends TypeCheckingTestCase {
 
   @Test
   public void universe() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class C {\n" +
         "  | A : \\Set1\n" +
         "  | a : A\n" +
@@ -196,25 +197,25 @@ public class ImplementTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | A => Nat\n" +
         "}");
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
-    assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("B")).getSort());
+    assertEquals(new Sort(2, 1), ((ClassDefinition) getDefinition(result, "C")).getSort());
+    assertEquals(new Sort(0, 0), ((ClassDefinition) getDefinition(result, "B")).getSort());
   }
 
   @Test
   public void universeClassExt() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class C {\n" +
         "  | A : \\Type\n" +
         "  | a : A\n" +
         "}\n" +
         "\\func f => C { A => Nat }");
-    assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("C")).getSort());
-    assertEquals(new Sort(0, 0), ((FunctionDefinition) result.getDefinition("f")).getResultType().toSort());
+    assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition(result, "C")).getSort());
+    assertEquals(new Sort(0, 0), ((FunctionDefinition) getDefinition(result, "f")).getResultType().toSort());
   }
 
   @Test
   public void universeMultiple() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class A {\n" +
         "  | X : \\Set1\n" +
         "  | Y : \\Set0\n" +
@@ -232,11 +233,11 @@ public class ImplementTest extends TypeCheckingTestCase {
         "}\n" +
         "\\func f => D { x => 1 }");
     List<DependentLink> fParams = new ArrayList<>();
-    Expression fType = result.getDefinition("f").getTypeWithParams(fParams, Sort.STD);
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("A")).getSort());
-    assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
-    assertEquals(new Sort(2, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
-    assertEquals(new Sort(0, 0), ((ClassDefinition) result.getDefinition("D")).getSort());
+    Expression fType = getDefinition(result, "f").getTypeWithParams(fParams, Sort.STD);
+    assertEquals(new Sort(2, 1), ((ClassDefinition) getDefinition(result, "A")).getSort());
+    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "B")).getSort());
+    assertEquals(new Sort(2, 1), ((ClassDefinition) getDefinition(result, "C")).getSort());
+    assertEquals(new Sort(0, 0), ((ClassDefinition) getDefinition(result, "D")).getSort());
     assertEquals(Universe(Sort.PROP), fromPiParameters(fType, fParams));
   }
 

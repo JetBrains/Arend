@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
-import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.PreludeLibrary;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TestLocalErrorReporter;
@@ -36,7 +36,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   }
 
   protected Concrete.Expression resolveNamesExpr(String text, @SuppressWarnings("SameParameterValue") int errors) {
-    return resolveNamesExpr(CachingScope.make(ScopeFactory.forGroup(null, moduleScopeProvider)), new ArrayList<>(), text, errors);
+    return resolveNamesExpr(PreludeLibrary.getPreludeScope(), new ArrayList<>(), text, errors);
   }
 
   protected Concrete.Expression resolveNamesExpr(Scope parentScope, @SuppressWarnings("SameParameterValue") String text) {
@@ -45,7 +45,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   protected Concrete.Expression resolveNamesExpr(Map<Referable, Binding> context, String text) {
     List<Referable> names = new ArrayList<>(context.keySet());
-    return resolveNamesExpr(CachingScope.make(ScopeFactory.forGroup(null, moduleScopeProvider)), names, text, 0);
+    return resolveNamesExpr(PreludeLibrary.getPreludeScope(), names, text, 0);
   }
 
   protected Concrete.Expression resolveNamesExpr(String text) {
@@ -55,11 +55,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
-    Scope preludeScope = moduleScopeProvider.forModule(Prelude.MODULE_PATH);
-    Scope parentScope = new SingletonScope(group.getReferable());
-    if (preludeScope != null) {
-      parentScope = new MergeScope(parentScope, preludeScope);
-    }
+    Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), PreludeLibrary.getPreludeScope());
     new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, CachingScope.make(LexicalScope.insideOf(group, parentScope)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
     return group;
@@ -79,7 +75,8 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
 
   private void resolveNamesModule(ChildGroup group, int errors) {
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, CachingScope.make(ScopeFactory.forGroup(group, moduleScopeProvider)), ConcreteReferableProvider.INSTANCE);
+    Scope scope = CachingScope.make(ScopeFactory.forGroup(group, libraryManager.getModuleScopeProvider()));
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, scope, ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
   }
 

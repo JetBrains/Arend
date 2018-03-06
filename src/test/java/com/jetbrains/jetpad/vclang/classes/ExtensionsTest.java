@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.classes;
 
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -268,13 +269,13 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void universe() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
         "\\class B \\extends C");
-    assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("C")).getSort());
-    assertEquals(new Sort(1, 1), ((ClassDefinition) result.getDefinition("B")).getSort());
+    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "C")).getSort());
+    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "B")).getSort());
   }
 }

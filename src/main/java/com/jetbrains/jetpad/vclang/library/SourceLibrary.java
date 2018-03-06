@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.source.PersistableSource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -17,7 +18,7 @@ import java.util.*;
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
  * as well as ordinary modules (see {@link #getRawSource}).
  */
-public abstract class SourceLibrary extends LibraryBase {
+public abstract class SourceLibrary extends BaseLibrary {
   public enum Flag { RECOMPILE, PARTIAL_LOAD }
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
 
@@ -81,7 +82,7 @@ public abstract class SourceLibrary extends LibraryBase {
    * @param group       the group of the loaded module or null if the module failed to load.
    * @param isRaw       true if the module was loaded from a raw source, false otherwise.
    */
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
 
   }
 

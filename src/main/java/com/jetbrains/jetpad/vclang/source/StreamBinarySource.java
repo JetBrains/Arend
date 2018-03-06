@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.module.serialization.ModuleProtos;
 import com.jetbrains.jetpad.vclang.module.serialization.ModuleSerialization;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nullable;
@@ -55,7 +56,7 @@ public abstract class StreamBinarySource implements PersistableSource {
 
     try {
       ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
-      Group group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
+      ChildGroup group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
       sourceLoader.getLibrary().onModuleLoaded(modulePath, group, false);
       return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider(), module -> !sourceLoader.getLibrary().containsModule(module) || sourceLoader.load(module), sourceLoader.getErrorReporter());
     } catch (DeserializationException e) {

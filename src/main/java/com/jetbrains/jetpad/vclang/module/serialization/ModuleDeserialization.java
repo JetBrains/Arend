@@ -57,7 +57,11 @@ public class ModuleDeserialization {
       if (!(referable instanceof GlobalReferable)) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      myCallTargetProvider.putCallTarget(callTargetTree.getIndex(), myState.getTypechecked((GlobalReferable) referable));
+      Definition callTarget = myState.getTypechecked((GlobalReferable) referable);
+      if (callTarget == null) {
+        throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
+      }
+      myCallTargetProvider.putCallTarget(callTargetTree.getIndex(), callTarget);
     }
 
     Scope subscope = scope.resolveNamespace(callTargetTree.getName(), true);
@@ -71,12 +75,12 @@ public class ModuleDeserialization {
   }
 
   @Nonnull
-  public Group readGroup(ModuleProtos.Group groupProto, ModulePath modulePath) throws DeserializationException {
+  public ChildGroup readGroup(ModuleProtos.Group groupProto, ModulePath modulePath) throws DeserializationException {
     return readGroup(groupProto, null, modulePath);
   }
 
   @Nonnull
-  private Group readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
+  private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
     List<GlobalReferable> fieldReferables;
     LocatedReferable referable;

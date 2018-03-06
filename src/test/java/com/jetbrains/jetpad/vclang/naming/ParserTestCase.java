@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.*;
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends VclangTestCase {
-  private static final ModulePath MODULE_PATH = new ModulePath("$TestCase$");
+  protected static final ModulePath MODULE_PATH = new ModulePath("$TestCase$");
 
   private VcgrammarParser _parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
@@ -66,7 +66,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
     FileGroup group = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitStatements(tree) : null;
     if (group != null) {
-      group.setModuleScopeProvider(moduleScopeProvider);
+      group.setModuleScopeProvider(libraryManager.getModuleScopeProvider());
     }
     assertThat(errorList, containsErrors(errors));
     return group;

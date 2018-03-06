@@ -20,7 +20,7 @@ public class PreludeFileLibrary extends PreludeLibrary {
    *
    * @param typecheckerState the underling typechecker state of this library.
    */
-  PreludeFileLibrary(Path binaryPath, TypecheckerState typecheckerState) {
+  public PreludeFileLibrary(Path binaryPath, TypecheckerState typecheckerState) {
     super(typecheckerState);
     myBinaryPath = binaryPath;
   }
@@ -37,7 +37,7 @@ public class PreludeFileLibrary extends PreludeLibrary {
   @Nullable
   @Override
   public PersistableSource getBinarySource(ModulePath modulePath) {
-    if (!modulePath.equals(Prelude.MODULE_PATH)) {
+    if (myBinaryPath == null || !modulePath.equals(Prelude.MODULE_PATH)) {
       return null;
     }
     return new GZIPStreamBinarySource(new FileBinarySource(myBinaryPath.resolve(PreludeResourceSource.BASE_PATH), Prelude.MODULE_PATH));

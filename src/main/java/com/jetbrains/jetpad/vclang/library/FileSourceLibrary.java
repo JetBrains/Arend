@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
-import com.jetbrains.jetpad.vclang.term.group.Group;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
@@ -67,7 +67,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
     super.onModuleLoaded(modulePath, group, isRaw);
     if (isRaw) {
       myUpdatedModules.add(modulePath);

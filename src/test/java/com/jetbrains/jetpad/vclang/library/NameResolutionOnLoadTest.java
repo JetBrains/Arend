@@ -1,8 +1,9 @@
-package com.jetbrains.jetpad.vclang.module;
+package com.jetbrains.jetpad.vclang.library;
 
-import com.jetbrains.jetpad.vclang.StorageTestCase;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.source.Source;
+import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import org.junit.Test;
 
@@ -10,22 +11,26 @@ import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-public class NameResolutionOnLoadTest extends StorageTestCase {
+public class NameResolutionOnLoadTest extends LibraryTestCase {
   private void setupSources() {
-    storage.add(moduleName("A"), "\\import B() \\func a => B.b");
-    storage.add(moduleName("B"), "\\func b => x\n \\func x => 0");
-    storage.add(moduleName("B", "C"), "\\import B.C.E() \\func c => B.C.E.e");
-    storage.add(moduleName("B", "C", "E"), "\\import B.C.F() \\func e => B.C.F.f");
-    storage.add(moduleName("B", "C", "F"), "\\func f => 0");
-    storage.add(moduleName("X"), "\\import Y() \\func f => Y.f");
-    storage.add(moduleName("Y"), "\\import X() \\func f => X.f");
+    library.addModule(moduleName("A"), "\\import B() \\func a => B.b");
+    library.addModule(moduleName("B"), "\\func b => x\n \\func x => 0");
+    library.addModule(moduleName("B", "C"), "\\import B.C.E() \\func c => B.C.E.e");
+    library.addModule(moduleName("B", "C", "E"), "\\import B.C.F() \\func e => B.C.F.f");
+    library.addModule(moduleName("B", "C", "F"), "\\func f => 0");
+    library.addModule(moduleName("X"), "\\import Y() \\func f => Y.f");
+    library.addModule(moduleName("Y"), "\\import X() \\func f => X.f");
   }
 
   @Test
   public void trivialResolution() {
     setupSources();
-    Scope moduleB = moduleLoader.load(storage.locateModule(moduleName("B"))).getGroupScope();
+    Source source = library.getRawSource(moduleName("B"));
+    assertThat(source, is(notNullValue()));
+    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
 
@@ -36,9 +41,12 @@ public class NameResolutionOnLoadTest extends StorageTestCase {
   @Test
   public void trivialResolutionThatLoads() {
     setupSources();
-    Scope moduleA = moduleLoader.load(storage.locateModule(moduleName("A"))).getGroupScope();
+    Source source = library.getRawSource(moduleName("A"));
+    assertThat(source, is(notNullValue()));
+    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    Scope moduleA = library.getModuleScopeProvider().forModule(moduleName("A"));
 
-    Scope moduleB = moduleScopeProvider.forModule(moduleName("B"));
+    Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
     assertThat(moduleB, is(notNullValue()));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleA, "a")).getDefinition()).getBody()).getTerm();
@@ -50,9 +58,12 @@ public class NameResolutionOnLoadTest extends StorageTestCase {
   @Test
   public void resolutionThatLoadsMultipleModules() {
     setupSources();
-    Scope moduleBC = moduleLoader.load(storage.locateModule(moduleName("B", "C"))).getGroupScope();
-    Scope moduleBCE = moduleScopeProvider.forModule(moduleName("B", "C", "E"));
-    Scope moduleBCF = moduleScopeProvider.forModule(moduleName("B", "C", "F"));
+    Source source = library.getRawSource(moduleName("B", "C"));
+    assertThat(source, is(notNullValue()));
+    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    Scope moduleBC = library.getModuleScopeProvider().forModule(moduleName("B", "C"));
+    Scope moduleBCE = library.getModuleScopeProvider().forModule(moduleName("B", "C", "E"));
+    Scope moduleBCF = library.getModuleScopeProvider().forModule(moduleName("B", "C", "F"));
 
     Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleBC, "c")).getDefinition()).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
@@ -66,8 +77,11 @@ public class NameResolutionOnLoadTest extends StorageTestCase {
   @Test
   public void mutuallyRecursiveModules() {
     setupSources();
-    Scope moduleX = moduleLoader.load(storage.locateModule(moduleName("X"))).getGroupScope();
-    Scope moduleY = moduleScopeProvider.forModule(moduleName("Y"));
+    Source source = library.getRawSource(moduleName("X"));
+    assertThat(source, is(notNullValue()));
+    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    Scope moduleX = library.getModuleScopeProvider().forModule(moduleName("X"));
+    Scope moduleY = library.getModuleScopeProvider().forModule(moduleName("Y"));
 
     Concrete.ReferenceExpression defCall1 = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleX, "f")).getDefinition()).getBody()).getTerm();
     assertThat(defCall1.getReferent(), is(notNullValue()));
@@ -80,7 +94,7 @@ public class NameResolutionOnLoadTest extends StorageTestCase {
 
   @Test
   public void duplicateNamesOnTopLevel() {
-    storage.add(moduleName("Test"), "\\func a => 0 \n \\func a => 0");
-    moduleLoader.load(storage.locateModule(moduleName("Test")));
+    library.addModule(moduleName("Test"), "\\func a => 0 \n \\func a => 0");
+    libraryManager.loadLibrary(library);
   }
 }

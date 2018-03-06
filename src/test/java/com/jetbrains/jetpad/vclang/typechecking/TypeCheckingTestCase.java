@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
@@ -26,29 +25,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
-  @SuppressWarnings("StaticNonFinalField")
-  private static SimpleTypecheckerState PRELUDE_TYPECHECKER_STATE = null;
-
-  private TypecheckerState state = new SimpleTypecheckerState();
-
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
-
-  public TypeCheckingTestCase() {
-    typeCheckPrelude();
-  }
-
-  private void typeCheckPrelude() {
-    if (PRELUDE_TYPECHECKER_STATE == null) {
-      PRELUDE_TYPECHECKER_STATE = new SimpleTypecheckerState();
-      new Prelude.PreludeTypechecking(PRELUDE_TYPECHECKER_STATE).typecheckModules(Collections.singletonList(prelude));
-    }
-
-    state = new SimpleTypecheckerState(PRELUDE_TYPECHECKER_STATE);
-  }
 
 
   CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
-    CheckTypeVisitor visitor = new CheckTypeVisitor(state, context, localErrorReporter, null);
+    CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, context, localErrorReporter, null);
     visitor.getFreeBindings().addAll(context.values());
     CheckTypeVisitor.Result result = visitor.finalCheckExpr(expression, expectedType, false);
     assertThat(errorList, containsErrors(errors));
@@ -93,9 +74,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, errorReporter).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
+    new Typechecking(typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
     assertThat(errorList, containsErrors(errors));
-    return state.getTypechecked(reference);
+    return typecheckerState.getTypechecked(reference);
   }
 
   protected Definition typeCheckDef(String text, int errors) {
@@ -107,53 +88,38 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
-  private TypecheckerState typeCheckModule(Group group, int errors) {
-    new Typechecking(state, ConcreteReferableProvider.INSTANCE, localErrorReporter).typecheckModules(Collections.singletonList(group));
+  private void typeCheckModule(Group group, int errors) {
+    new Typechecking(typecheckerState, ConcreteReferableProvider.INSTANCE, localErrorReporter).typecheckModules(Collections.singletonList(group));
     assertThat(errorList, containsErrors(errors));
-    return state;
   }
 
 
-  protected class TypeCheckModuleResult {
-    public final TypecheckerState typecheckerState;
-    public final ChildGroup group;
-
-    public TypeCheckModuleResult(TypecheckerState typecheckerState, ChildGroup group) {
-      this.typecheckerState = typecheckerState;
-      this.group = group;
-    }
-
-    public Definition getDefinition(String path) {
-      GlobalReferable ref = get(group.getGroupScope(), path);
-      return ref != null ? typecheckerState.getTypechecked(ref) : null;
-    }
-
-    public Definition getDefinition() {
-      return typecheckerState.getTypechecked(group.getReferable());
-    }
+  public Definition getDefinition(ChildGroup group, String path) {
+    GlobalReferable ref = get(group.getGroupScope(), path);
+    return ref != null ? typecheckerState.getTypechecked(ref) : null;
   }
 
-  protected TypeCheckModuleResult typeCheckModule(ChildGroup group) {
-    TypecheckerState state = typeCheckModule(group, 0);
-    return new TypeCheckModuleResult(state, group);
+  protected void typeCheckModule(ChildGroup group) {
+    typeCheckModule(group, 0);
   }
 
-  protected TypeCheckModuleResult typeCheckModule(String text, int errors) {
-    ChildGroup module = resolveNamesModule(text);
-    TypecheckerState state = typeCheckModule(module, errors);
-    return new TypeCheckModuleResult(state, module);
+  protected ChildGroup typeCheckModule(String text, int errors) {
+    ChildGroup group = resolveNamesModule(text);
+    typeCheckModule(group, errors);
+    return group;
   }
 
-  protected TypeCheckModuleResult typeCheckModule(String text) {
+  protected ChildGroup typeCheckModule(String text) {
     return typeCheckModule(text, 0);
   }
 
-  protected TypeCheckModuleResult typeCheckClass(String instance, String global, int errors) {
+  protected ChildGroup typeCheckClass(String instance, String global, int errors) {
     ChildGroup group = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
-    return new TypeCheckModuleResult(typeCheckModule(group, errors), group);
+    typeCheckModule(group, errors);
+    return group;
   }
 
-  protected TypeCheckModuleResult typeCheckClass(String instance, String global) {
+  protected ChildGroup typeCheckClass(String instance, String global) {
     return typeCheckClass(instance, global, 0);
   }
 }

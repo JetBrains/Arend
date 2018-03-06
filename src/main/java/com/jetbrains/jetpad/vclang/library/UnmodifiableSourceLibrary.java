@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.term.group.Group;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
@@ -18,7 +18,7 @@ import java.util.Map;
 public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   private final String myName;
   private final SimpleModuleScopeProvider myModuleScopeProvider = new SimpleModuleScopeProvider();
-  private final Map<ModulePath, Group> myGroups = new HashMap<>();
+  private final Map<ModulePath, ChildGroup> myGroups = new HashMap<>();
 
   /**
    * Creates a new {@code UnmodifiableSourceLibrary}
@@ -44,7 +44,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable Group group, boolean isRaw) {
+  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
     myGroups.put(modulePath, group);
     if (group == null) {
       myModuleScopeProvider.unregisterModule(modulePath);
@@ -68,7 +68,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
 
   @Nullable
   @Override
-  public Group getModuleGroup(ModulePath modulePath) {
+  public ChildGroup getModuleGroup(ModulePath modulePath) {
     return myGroups.get(modulePath);
   }
 
