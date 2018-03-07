@@ -55,11 +55,12 @@ public class ScopeFactory {
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
-      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope(), EmptyModuleScopeProvider.INSTANCE) : parentScope;
+      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope(), EmptyModuleScopeProvider.INSTANCE) : parentScope.getGlobalSubscope();
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;
       } else {
-        return Scope.Utils.resolveNamespace(scope, ((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
+        scope = Scope.Utils.resolveNamespace(scope, ((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
+        return scope == null ? EmptyScope.INSTANCE : scope;
       }
     }
 
