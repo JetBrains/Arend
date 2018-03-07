@@ -64,13 +64,16 @@ public class ModuleDeserialization {
       myCallTargetProvider.putCallTarget(callTargetTree.getIndex(), callTarget);
     }
 
-    Scope subscope = scope.resolveNamespace(callTargetTree.getName(), true);
-    if (subscope == null) {
-      throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
-    }
+    List<ModuleProtos.CallTargetTree> subtreeList = callTargetTree.getSubtreeList();
+    if (!subtreeList.isEmpty()) {
+      Scope subscope = scope.resolveNamespace(callTargetTree.getName(), true);
+      if (subscope == null) {
+        throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
+      }
 
-    for (ModuleProtos.CallTargetTree tree : callTargetTree.getSubtreeList()) {
-      fillInCallTargetTree(tree, subscope, module);
+      for (ModuleProtos.CallTargetTree tree : subtreeList) {
+        fillInCallTargetTree(tree, subscope, module);
+      }
     }
   }
 
@@ -108,27 +111,28 @@ public class ModuleDeserialization {
     if (def == null || def instanceof FunctionDefinition) {
       group = new StaticGroup(referable, subgroups, Collections.emptyList(), parent);
     } else if (def instanceof DataDefinition) {
-      List<Constructor> constructors = ((DataDefinition) def).getConstructors();
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
         invisibleRefs.add(myCallTargetProvider.getCallTarget(index));
       }
-      List<Group.InternalReferable> internalReferables = new ArrayList<>(constructors.size());
-      for (Constructor constructor : constructors) {
-        internalReferables.add(new SimpleInternalReferable(constructor.getReferable(), invisibleRefs.contains(constructor)));
+      List<Group.InternalReferable> internalReferables = new ArrayList<>();
+      for (DefinitionProtos.Definition.DataData.Constructor constructor : groupProto.getDefinition().getData().getConstructorList()) {
+        Definition conDef = myCallTargetProvider.getCallTarget(constructor.getReferable().getIndex());
+        internalReferables.add(new SimpleInternalReferable(conDef.getReferable(), invisibleRefs.contains(conDef)));
       }
 
       group = new DataGroup(referable, internalReferables, subgroups, Collections.emptyList(), parent);
     } else if (def instanceof ClassDefinition) {
-      List<? extends ClassField> fields = ((ClassDefinition) def).getPersonalFields();
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
         invisibleRefs.add(myCallTargetProvider.getCallTarget(index));
       }
-      List<Group.InternalReferable> internalReferables = new ArrayList<>(fields.size());
-      for (ClassField field : fields) {
-        internalReferables.add(new SimpleInternalReferable(field.getReferable(), invisibleRefs.contains(field)));
-        fieldReferables.add(field.getReferable());
+      List<Group.InternalReferable> internalReferables = new ArrayList<>();
+      for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
+        Definition fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex());
+        GlobalReferable fieldReferable = fieldDef.getReferable();
+        internalReferables.add(new SimpleInternalReferable(fieldReferable, invisibleRefs.contains(fieldDef)));
+        fieldReferables.add(fieldReferable);
       }
 
       List<Group> dynamicGroups = new ArrayList<>(groupProto.getDynamicSubgroupCount());

@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.naming.reference.LibraryReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -37,6 +39,8 @@ public class ExceptionError extends GeneralError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig src) {
-    return DocFactory.text(exception.getLocalizedMessage());
+    StringWriter stringWriter = new StringWriter();
+    exception.printStackTrace(new PrintWriter(stringWriter));
+    return DocFactory.text(stringWriter.toString());
   }
 }

@@ -218,6 +218,12 @@ public abstract class BaseCliFrontend {
       }
     }
     if (!requestedModules.isEmpty()) {
+      try {
+        Files.createDirectories(outDir);
+      } catch (IOException e) {
+        e.printStackTrace();
+        outDir = null;
+      }
       requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, libraryDependencies, myTypecheckerState));
     }
 

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class FileBinarySource extends StreamBinarySource {
   private final Path myFile;
@@ -41,7 +42,7 @@ public class FileBinarySource extends StreamBinarySource {
   @Nullable
   @Override
   protected OutputStream getOutputStream() throws IOException {
-    return Files.newOutputStream(myFile);
+    return Files.newOutputStream(myFile, StandardOpenOption.CREATE);
   }
 
   @Override

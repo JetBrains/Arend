@@ -106,10 +106,10 @@ public class LibraryManager {
     boolean result = false;
 
     try {
+      myReverseDependencies.put(library, new HashSet<>());
       result = library.load(this);
-      if (result) {
-        myReverseDependencies.put(library, new HashSet<>());
-      } else {
+      if (!result) {
+        myReverseDependencies.remove(library);
         myFailedLibraries.add(library);
       }
       return result;
