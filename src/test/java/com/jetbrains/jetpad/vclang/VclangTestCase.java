@@ -42,11 +42,12 @@ public abstract class VclangTestCase {
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, System.err::println);
+    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, errorReporter);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
     libraryManager.loadLibrary(preludeLibrary);
-    preludeLibrary.typecheck(typechecking, System.err::println);
+    preludeLibrary.typecheck(typechecking, errorReporter);
+    errorList.clear();
   }
 
   public GlobalReferable get(Scope scope, String path) {

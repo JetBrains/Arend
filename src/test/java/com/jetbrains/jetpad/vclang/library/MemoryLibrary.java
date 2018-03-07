@@ -44,7 +44,7 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   }
 
   public void updateModule(ModulePath module, String text, boolean updateVersion) {
-    myRawSources.put(module, new MemoryRawSource(module, text, myBinarySources.get(module).getTimeStamp() + (updateVersion ? 1 : 0)));
+    myRawSources.put(module, new MemoryRawSource(module, text, updateVersion ? 1 : 0));
   }
 
   public void removeRawSource(ModulePath module) {
@@ -52,6 +52,6 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   }
 
   public void removeBinarySource(ModulePath module) {
-    myBinarySources.remove(module);
+    myBinarySources.put(module, new MemoryBinarySource(module));
   }
 }

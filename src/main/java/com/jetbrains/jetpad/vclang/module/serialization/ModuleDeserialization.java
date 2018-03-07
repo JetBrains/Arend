@@ -105,7 +105,7 @@ public class ModuleDeserialization {
     List<Group> subgroups = new ArrayList<>(groupProto.getSubgroupCount());
 
     ChildGroup group;
-    if (def instanceof FunctionDefinition) {
+    if (def == null || def instanceof FunctionDefinition) {
       group = new StaticGroup(referable, subgroups, Collections.emptyList(), parent);
     } else if (def instanceof DataDefinition) {
       List<Constructor> constructors = ((DataDefinition) def).getConstructors();

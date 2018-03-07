@@ -3,11 +3,17 @@ package com.jetbrains.jetpad.vclang.naming;
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.FileGroup;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.antlr.v4.runtime.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertThat;
 
@@ -53,7 +59,12 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   ChildGroup parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, null) : null;
+    List<Group> subgroups = new ArrayList<>(1);
+    FileGroup fileGroup = new FileGroup(new ModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
+    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup) : null;
+    if (definition != null) {
+      subgroups.add(definition);
+    }
     assertThat(errorList, containsErrors(errors));
     return definition;
   }

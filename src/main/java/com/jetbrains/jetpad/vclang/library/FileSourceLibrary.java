@@ -3,24 +3,18 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   private final Path mySourceBasePath;
   private final Path myBinaryBasePath;
   private final List<ModulePath> myModules;
   private final List<LibraryDependency> myDependencies;
-  private final Set<ModulePath> myUpdatedModules = new LinkedHashSet<>();
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
@@ -67,33 +61,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
-    super.onModuleLoaded(modulePath, group, isRaw);
-    if (isRaw) {
-      myUpdatedModules.add(modulePath);
-    }
-  }
-
-  @Override
-  public Collection<? extends ModulePath> getUpdatedModules() {
-    return myUpdatedModules;
-  }
-
-  public void updateModule(ModulePath module) {
-    myUpdatedModules.add(module);
-  }
-
-  public void updateModules(Collection<? extends ModulePath> modules) {
-    myUpdatedModules.addAll(modules);
-  }
-
-  @Override
-  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
-    if (super.typecheck(typechecking, errorReporter)) {
-      myUpdatedModules.clear();
-      return true;
-    } else {
-      return false;
-    }
+  public boolean supportsPersisting() {
+    return myBinaryBasePath != null;
   }
 }

@@ -13,7 +13,6 @@ import java.io.OutputStream;
 public class MemoryBinarySource extends StreamBinarySource {
   private final ModulePath myModulePath;
   private ByteArrayOutputStream myOutputStream;
-  private long myTimeStamp;
 
   public MemoryBinarySource(ModulePath modulePath) {
     myModulePath = modulePath;
@@ -42,7 +41,7 @@ public class MemoryBinarySource extends StreamBinarySource {
 
   @Override
   public long getTimeStamp() {
-    return myTimeStamp;
+    return 0;
   }
 
   @Override

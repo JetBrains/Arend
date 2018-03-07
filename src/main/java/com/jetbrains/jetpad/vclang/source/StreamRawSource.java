@@ -61,6 +61,8 @@ public abstract class StreamRawSource implements Source {
       }
 
       FileGroup result = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
+      sourceLoader.getLibrary().onModuleLoaded(modulePath, result, true);
+      result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
 
       for (NamespaceCommand command : result.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
@@ -68,8 +70,6 @@ public abstract class StreamRawSource implements Source {
         }
       }
 
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, result, true);
-      result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
       return true;
     } catch (IOException e) {

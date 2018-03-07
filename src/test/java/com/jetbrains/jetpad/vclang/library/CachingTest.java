@@ -14,8 +14,7 @@ import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class CachingTest extends LibraryTestCase {
   @Test
@@ -39,6 +38,9 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.unloadLibrary(library);
 
     assertTrue(libraryManager.loadLibrary(library));
+    aClass = library.getModuleGroup(moduleName("A"));
+    assertThat(aClass, is(notNullValue()));
+
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(b1Status)));
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(b2Status)));
@@ -99,7 +101,10 @@ public class CachingTest extends LibraryTestCase {
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
 
     libraryManager.loadLibrary(library);
+    aGroup = library.getModuleGroup(moduleName("A"));
+    assertThat(aGroup, is(notNullValue()));
     library.typecheck(typechecking, errorReporter);
+
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(notNullValue()));
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(notNullValue()));
@@ -143,9 +148,10 @@ public class CachingTest extends LibraryTestCase {
 
     library.updateModule(moduleName("A"), "\\data D'", true);
     libraryManager.loadLibrary(library);
-    assertThat(errorList, is(empty()));
-    library.typecheck(typechecking, errorReporter);
     assertThat(errorList, is(not(empty())));
+    errorList.clear();
+    library.typecheck(typechecking, errorReporter);
+    assertThat(errorList, is(empty()));
   }
 
   @Test
@@ -161,8 +167,7 @@ public class CachingTest extends LibraryTestCase {
     library.removeRawSource(moduleName("A"));
 
     assertTrue(libraryManager.loadLibrary(library));
-    library.typecheck(typechecking, errorReporter);
-    assertThat(errorList, is(empty()));
+    assertThat(errorList, is(not(empty())));
   }
 
   @Test
@@ -228,7 +233,7 @@ public class CachingTest extends LibraryTestCase {
 
     Source sourceA = library.getBinarySource(moduleName("A"));
     assertThat(sourceA, is(notNullValue()));
-    assertTrue(sourceA.isAvailable());
+    assertFalse(sourceA.isAvailable());
     Source sourceB = library.getBinarySource(moduleName("B"));
     assertThat(sourceB, is(notNullValue()));
     assertTrue(sourceB.isAvailable());

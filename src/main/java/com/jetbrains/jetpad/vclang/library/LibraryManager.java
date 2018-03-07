@@ -182,5 +182,7 @@ public class LibraryManager {
     for (Library dependency : dependencies) {
       unloadLibrary(dependency);
     }
+
+    library.unload();
   }
 }

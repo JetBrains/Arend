@@ -577,7 +577,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Precedence prec = visitPrecedence(ctx.precedence());
     ConcreteClassReferable reference = parent instanceof FileGroup
       ? new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, myModule)
-      : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, (ModulePath) parent.getReferable());
+      : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, (LocatedReferable) parent.getReferable());
     Concrete.Definition classDefinition;
     ClassGroup resultGroup = null;
     if (ctx.classBody() instanceof ClassSynContext) {

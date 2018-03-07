@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.prelude;
 
+import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -23,6 +26,19 @@ public class PreludeFileLibrary extends PreludeLibrary {
   public PreludeFileLibrary(Path binaryPath, TypecheckerState typecheckerState) {
     super(typecheckerState);
     myBinaryPath = binaryPath;
+  }
+
+  @Override
+  public boolean load(LibraryManager libraryManager) {
+    synchronized (PreludeLibrary.class) {
+      if (getPreludeScope() == null) {
+        return super.load(libraryManager);
+      }
+    }
+
+    Prelude.fillInTypecheckerState(getTypecheckerState());
+    setLoaded();
+    return true;
   }
 
   @Nullable
@@ -46,5 +62,24 @@ public class PreludeFileLibrary extends PreludeLibrary {
   @Override
   public Collection<? extends ModulePath> getUpdatedModules() {
     return Collections.singleton(Prelude.MODULE_PATH);
+  }
+
+  @Override
+  public boolean supportsPersisting() {
+    return myBinaryPath != null;
+  }
+
+  @Override
+  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
+    if (super.typecheck(typechecking, errorReporter)) {
+      synchronized (PreludeLibrary.class) {
+        if (Prelude.INTERVAL == null) {
+          Prelude.initialize(getPreludeScope(), getTypecheckerState());
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 }

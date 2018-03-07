@@ -50,4 +50,9 @@ public class PreludeResourceLibrary extends PreludeLibrary {
   public PersistableSource getBinarySource(ModulePath modulePath) {
     return new PreludeResourceSource();
   }
+
+  @Override
+  public boolean supportsPersisting() {
+    return false;
+  }
 }
