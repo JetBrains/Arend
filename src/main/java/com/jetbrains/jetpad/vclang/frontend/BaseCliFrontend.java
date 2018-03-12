@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
 import com.jetbrains.jetpad.vclang.library.resolver.SearchingModuleLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.CachingModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.LocatingModuleScopeProvider;
@@ -48,11 +49,12 @@ public abstract class BaseCliFrontend {
 
     @Override
     protected void beforeLibraryLoading(Library library) {
-      System.out.println("--- Loading " + library.getName() + " ---");
+      System.out.println("[LOADING] " + library.getName());
     }
 
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
+      System.err.flush();
       System.out.println((successful ? "[LOADED] " : "[FAILED] ") + library.getName());
     }
   }
@@ -245,17 +247,17 @@ public abstract class BaseCliFrontend {
       }
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
+      List<ModulePath> modules = new ArrayList<>(library.getUpdatedModules());
+      myModuleResults.clear();
       library.typecheck(new MyTypechecking(), myErrorReporter);
       flushErrors();
 
       // Output nice per-module typechecking results
       int numWithErrors = 0;
-      for (Map.Entry<ModulePath, ModuleResult> entry : myModuleResults.entrySet()) {
-        if (!requestedModules.contains(entry.getKey())) {
-          ModuleResult result = entry.getValue();
-          reportTypeCheckResult(entry.getKey(), result == ModuleResult.OK ? ModuleResult.UNKNOWN : result);
-          if (result == ModuleResult.ERRORS) numWithErrors += 1;
-        }
+      for (ModulePath module : modules) {
+        ModuleResult result = myModuleResults.get(module);
+        reportTypeCheckResult(module, result == null ? ModuleResult.OK : result);
+        if (result == ModuleResult.ERRORS) numWithErrors += 1;
       }
 
       if (numWithErrors > 0) {
@@ -278,7 +280,12 @@ public abstract class BaseCliFrontend {
         }
       }
 
-      System.out.println(error);
+      if (error instanceof ExceptionError) {
+        System.err.println(error);
+        System.err.flush();
+      } else {
+        System.out.println(error);
+      }
     }
     myErrorReporter.getErrorList().clear();
   }

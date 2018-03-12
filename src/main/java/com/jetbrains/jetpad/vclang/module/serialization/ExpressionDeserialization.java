@@ -134,10 +134,9 @@ class ExpressionDeserialization {
   }
 
   DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationException {
-    Type type = readType(proto.getType());
     DependentLink link;
     if (proto.hasType()) {
-      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), type, EmptyDependentLink.getInstance());
+      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readType(proto.getType()), EmptyDependentLink.getInstance());
     } else {
       link = new UntypedDependentLink(proto.getName(), EmptyDependentLink.getInstance());
     }

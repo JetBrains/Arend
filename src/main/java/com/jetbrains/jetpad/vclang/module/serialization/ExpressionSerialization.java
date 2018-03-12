@@ -21,11 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class ExpressionSerialization {
+class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProtos.Expression> {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
   private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final Map<Binding, Integer> myBindingsMap = new HashMap<>();
-  private final SerializeVisitor myVisitor = new SerializeVisitor();
 
   ExpressionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
     myCallTargetIndexProvider = callTargetIndexProvider;
@@ -154,7 +153,7 @@ class ExpressionSerialization {
   // Types, Expressions and ElimTrees
 
   ExpressionProtos.Expression writeExpr(Expression expr) {
-    return expr.accept(myVisitor, null);
+    return expr.accept(this, null);
   }
 
   ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
@@ -163,7 +162,7 @@ class ExpressionSerialization {
 
     if (elimTree instanceof LeafElimTree) {
       ExpressionProtos.ElimTree.Leaf.Builder leafBuilder = ExpressionProtos.ElimTree.Leaf.newBuilder();
-      leafBuilder.setExpr(((LeafElimTree) elimTree).getExpression().accept(myVisitor, null));
+      leafBuilder.setExpr(((LeafElimTree) elimTree).getExpression().accept(this, null));
       builder.setLeaf(leafBuilder);
     } else {
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
@@ -180,193 +179,191 @@ class ExpressionSerialization {
   }
 
 
-  private class SerializeVisitor implements ExpressionVisitor<Void, ExpressionProtos.Expression> {
-    @Override
-    public ExpressionProtos.Expression visitApp(AppExpression expr, Void params) {
-      ExpressionProtos.Expression.App.Builder builder = ExpressionProtos.Expression.App.newBuilder();
-      builder.setFunction(expr.getFunction().accept(this, null));
-      builder.setArgument(expr.getArgument().accept(this, null));
-      return ExpressionProtos.Expression.newBuilder().setApp(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitApp(AppExpression expr, Void params) {
+    ExpressionProtos.Expression.App.Builder builder = ExpressionProtos.Expression.App.newBuilder();
+    builder.setFunction(expr.getFunction().accept(this, null));
+    builder.setArgument(expr.getArgument().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setApp(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
-      ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
-      builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      for (Expression arg : expr.getDefCallArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
-      return ExpressionProtos.Expression.newBuilder().setFunCall(builder).build();
+  @Override
+  public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
+    ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
+    builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    for (Expression arg : expr.getDefCallArguments()) {
+      builder.addArgument(arg.accept(this, null));
     }
+    return ExpressionProtos.Expression.newBuilder().setFunCall(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
-      ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
-      builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      for (Expression arg : expr.getDataTypeArguments()) {
-        builder.addDatatypeArgument(arg.accept(this, null));
-      }
-      for (Expression arg : expr.getDefCallArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
-      return ExpressionProtos.Expression.newBuilder().setConCall(builder).build();
+  @Override
+  public ExpressionProtos.Expression visitConCall(ConCallExpression expr, Void params) {
+    ExpressionProtos.Expression.ConCall.Builder builder = ExpressionProtos.Expression.ConCall.newBuilder();
+    builder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    for (Expression arg : expr.getDataTypeArguments()) {
+      builder.addDatatypeArgument(arg.accept(this, null));
     }
-
-    @Override
-    public ExpressionProtos.Expression visitDataCall(DataCallExpression expr, Void params) {
-      ExpressionProtos.Expression.DataCall.Builder builder = ExpressionProtos.Expression.DataCall.newBuilder();
-      builder.setDataRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      for (Expression arg : expr.getDefCallArguments()) {
-        builder.addArgument(arg.accept(this, null));
-      }
-      return ExpressionProtos.Expression.newBuilder().setDataCall(builder).build();
+    for (Expression arg : expr.getDefCallArguments()) {
+      builder.addArgument(arg.accept(this, null));
     }
+    return ExpressionProtos.Expression.newBuilder().setConCall(builder).build();
+  }
 
-    private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {
-      ExpressionProtos.Expression.ClassCall.Builder builder = ExpressionProtos.Expression.ClassCall.newBuilder();
-      builder.setClassRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-        builder.putFieldSet(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
-      }
-      builder.setSort(writeSort(expr.getSort()));
-      return builder.build();
+  @Override
+  public ExpressionProtos.Expression visitDataCall(DataCallExpression expr, Void params) {
+    ExpressionProtos.Expression.DataCall.Builder builder = ExpressionProtos.Expression.DataCall.newBuilder();
+    builder.setDataRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    for (Expression arg : expr.getDefCallArguments()) {
+      builder.addArgument(arg.accept(this, null));
     }
+    return ExpressionProtos.Expression.newBuilder().setDataCall(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitClassCall(ClassCallExpression expr, Void params) {
-      return ExpressionProtos.Expression.newBuilder().setClassCall(writeClassCall(expr)).build();
+  private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {
+    ExpressionProtos.Expression.ClassCall.Builder builder = ExpressionProtos.Expression.ClassCall.newBuilder();
+    builder.setClassRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      builder.putFieldSet(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
     }
+    builder.setSort(writeSort(expr.getSort()));
+    return builder.build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitReference(ReferenceExpression expr, Void params) {
-      ExpressionProtos.Expression.Reference.Builder builder = ExpressionProtos.Expression.Reference.newBuilder();
-      builder.setBindingRef(writeBindingRef(expr.getBinding()));
-      return ExpressionProtos.Expression.newBuilder().setReference(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitClassCall(ClassCallExpression expr, Void params) {
+    return ExpressionProtos.Expression.newBuilder().setClassCall(writeClassCall(expr)).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-      throw new IllegalStateException();
-    }
+  @Override
+  public ExpressionProtos.Expression visitReference(ReferenceExpression expr, Void params) {
+    ExpressionProtos.Expression.Reference.Builder builder = ExpressionProtos.Expression.Reference.newBuilder();
+    builder.setBindingRef(writeBindingRef(expr.getBinding()));
+    return ExpressionProtos.Expression.newBuilder().setReference(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
-      ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
-      builder.setResultSort(writeSort(expr.getResultSort()));
-      builder.setParam(writeSingleParameter(expr.getParameters()));
-      builder.setBody(expr.getBody().accept(this, null));
-      return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
-      ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
-      builder.setResultSort(LevelProtos.Sort.newBuilder(writeSort(expr.getResultSort())));
-      builder.setParam(writeSingleParameter(expr.getParameters()));
-      builder.setCodomain(expr.getCodomain().accept(this, null));
-      return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
+    ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
+    builder.setResultSort(writeSort(expr.getResultSort()));
+    builder.setParam(writeSingleParameter(expr.getParameters()));
+    builder.setBody(expr.getBody().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitUniverse(UniverseExpression expr, Void params) {
-      ExpressionProtos.Expression.Universe.Builder builder = ExpressionProtos.Expression.Universe.newBuilder();
-      builder.setSort(writeSort(expr.getSort()));
-      return ExpressionProtos.Expression.newBuilder().setUniverse(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
+    ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
+    builder.setResultSort(LevelProtos.Sort.newBuilder(writeSort(expr.getResultSort())));
+    builder.setParam(writeSingleParameter(expr.getParameters()));
+    builder.setCodomain(expr.getCodomain().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
-      ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
-      if (expr.getExpression() != null) {
-        builder.setExpression(expr.getExpression().accept(this, null));
-      }
-      return ExpressionProtos.Expression.newBuilder().setError(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitUniverse(UniverseExpression expr, Void params) {
+    ExpressionProtos.Expression.Universe.Builder builder = ExpressionProtos.Expression.Universe.newBuilder();
+    builder.setSort(writeSort(expr.getSort()));
+    return ExpressionProtos.Expression.newBuilder().setUniverse(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitTuple(TupleExpression expr, Void params) {
-      ExpressionProtos.Expression.Tuple.Builder builder = ExpressionProtos.Expression.Tuple.newBuilder();
-      for (Expression field : expr.getFields()) {
-        builder.addField(field.accept(this, null));
-      }
-      builder.setType(writeSigma(expr.getSigmaType()));
-      return ExpressionProtos.Expression.newBuilder().setTuple(builder).build();
-    }
-
-    private ExpressionProtos.Expression.Sigma writeSigma(SigmaExpression sigma) {
-      ExpressionProtos.Expression.Sigma.Builder builder = ExpressionProtos.Expression.Sigma.newBuilder();
-      builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getSort().getPLevel())).build());
-      builder.setHLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getSort().getHLevel())).build());
-      builder.addAllParam(writeParameters(sigma.getParameters()));
-      return builder.build();
-    }
-
-    @Override
-    public ExpressionProtos.Expression visitSigma(SigmaExpression expr, Void params) {
-      return ExpressionProtos.Expression.newBuilder().setSigma(writeSigma(expr)).build();
-    }
-
-    @Override
-    public ExpressionProtos.Expression visitProj(ProjExpression expr, Void params) {
-      ExpressionProtos.Expression.Proj.Builder builder = ExpressionProtos.Expression.Proj.newBuilder();
+  @Override
+  public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
+    ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
+    if (expr.getExpression() != null) {
       builder.setExpression(expr.getExpression().accept(this, null));
-      builder.setField(expr.getField());
-      return ExpressionProtos.Expression.newBuilder().setProj(builder).build();
     }
+    return ExpressionProtos.Expression.newBuilder().setError(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitNew(NewExpression expr, Void params) {
-      ExpressionProtos.Expression.New.Builder builder = ExpressionProtos.Expression.New.newBuilder();
-      builder.setClassCall(writeClassCall(expr.getExpression()));
-      return ExpressionProtos.Expression.newBuilder().setNew(builder).build();
+  @Override
+  public ExpressionProtos.Expression visitTuple(TupleExpression expr, Void params) {
+    ExpressionProtos.Expression.Tuple.Builder builder = ExpressionProtos.Expression.Tuple.newBuilder();
+    for (Expression field : expr.getFields()) {
+      builder.addField(field.accept(this, null));
     }
+    builder.setType(writeSigma(expr.getSigmaType()));
+    return ExpressionProtos.Expression.newBuilder().setTuple(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
-      ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
-      for (LetClause letClause : letExpression.getClauses()) {
-        builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
-          .setName(letClause.getName())
-          .setExpression(writeExpr(letClause.getExpression())));
-        registerBinding(letClause);
-      }
-      builder.setExpression(letExpression.getExpression().accept(this, null));
-      return ExpressionProtos.Expression.newBuilder().setLet(builder).build();
-    }
+  private ExpressionProtos.Expression.Sigma writeSigma(SigmaExpression sigma) {
+    ExpressionProtos.Expression.Sigma.Builder builder = ExpressionProtos.Expression.Sigma.newBuilder();
+    builder.setPLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getSort().getPLevel())).build());
+    builder.setHLevel(LevelProtos.Level.newBuilder(writeLevel(sigma.getSort().getHLevel())).build());
+    builder.addAllParam(writeParameters(sigma.getParameters()));
+    return builder.build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
-      ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
-      builder.setElimTree(writeElimTree(expr.getElimTree()));
-      builder.addAllParam(writeParameters(expr.getParameters()));
-      builder.setResultType(writeExpr(expr.getResultType()));
-      for (Expression argument : expr.getArguments()) {
-        builder.addArgument(writeExpr(argument));
-      }
-      return ExpressionProtos.Expression.newBuilder().setCase(builder).build();
-    }
+  @Override
+  public ExpressionProtos.Expression visitSigma(SigmaExpression expr, Void params) {
+    return ExpressionProtos.Expression.newBuilder().setSigma(writeSigma(expr)).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitOfType(OfTypeExpression expr, Void params) {
-      throw new IllegalStateException();
-    }
+  @Override
+  public ExpressionProtos.Expression visitProj(ProjExpression expr, Void params) {
+    ExpressionProtos.Expression.Proj.Builder builder = ExpressionProtos.Expression.Proj.newBuilder();
+    builder.setExpression(expr.getExpression().accept(this, null));
+    builder.setField(expr.getField());
+    return ExpressionProtos.Expression.newBuilder().setProj(builder).build();
+  }
 
-    @Override
-    public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-      ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
-      builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
-      builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
-      builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-      builder.setExpression(expr.getExpression().accept(this, null));
-      return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
+  @Override
+  public ExpressionProtos.Expression visitNew(NewExpression expr, Void params) {
+    ExpressionProtos.Expression.New.Builder builder = ExpressionProtos.Expression.New.newBuilder();
+    builder.setClassCall(writeClassCall(expr.getExpression()));
+    return ExpressionProtos.Expression.newBuilder().setNew(builder).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
+    ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
+    for (LetClause letClause : letExpression.getClauses()) {
+      builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
+        .setName(letClause.getName())
+        .setExpression(writeExpr(letClause.getExpression())));
+      registerBinding(letClause);
     }
+    builder.setExpression(letExpression.getExpression().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setLet(builder).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
+    ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
+    builder.setElimTree(writeElimTree(expr.getElimTree()));
+    builder.addAllParam(writeParameters(expr.getParameters()));
+    builder.setResultType(writeExpr(expr.getResultType()));
+    for (Expression argument : expr.getArguments()) {
+      builder.addArgument(writeExpr(argument));
+    }
+    return ExpressionProtos.Expression.newBuilder().setCase(builder).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitOfType(OfTypeExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    ExpressionProtos.Expression.FieldCall.Builder builder = ExpressionProtos.Expression.FieldCall.newBuilder();
+    builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
+    builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
+    builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    builder.setExpression(expr.getExpression().accept(this, null));
+    return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
   }
 }

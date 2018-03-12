@@ -42,6 +42,7 @@ public class FileBinarySource extends StreamBinarySource {
   @Nullable
   @Override
   protected OutputStream getOutputStream() throws IOException {
+    Files.createDirectories(myFile.getParent());
     return Files.newOutputStream(myFile, StandardOpenOption.CREATE);
   }
 

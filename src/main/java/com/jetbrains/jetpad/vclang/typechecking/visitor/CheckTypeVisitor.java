@@ -930,7 +930,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       Result result = checkExpr(expr.getFields().get(i), null);
       if (result == null) return null;
       fields.add(result.expression);
-      list.append(ExpressionFactory.parameter(null, new TypeExpression(result.type, getSortOf(result.type.getType()))));
+      list.append(ExpressionFactory.parameter(null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, getSortOf(result.type.getType()))));
     }
 
     Sort sortArgument = Sort.generateInferVars(myEquations, expr);
@@ -1007,7 +1007,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     for (Concrete.Expression expression : abstractExprs) {
       Result exprResult = checkExpr(expression, null);
       if (exprResult == null) return null;
-      list.append(ExpressionFactory.parameter(null, new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
+      list.append(ExpressionFactory.parameter(null, exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
       expressions.add(exprResult.expression);
     }
 
@@ -1325,7 +1325,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
       ExprSubstitution substitution = new ExprSubstitution();
       for (LetClause clause : clauses) {
-        substitution.add(clause, clause.getExpression());
+        substitution.add(clause, clause.getExpression().subst(substitution));
       }
       return new Result(new LetExpression(clauses, result.expression), result.type.subst(substitution));
     }

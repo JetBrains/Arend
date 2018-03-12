@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.module.serialization;
 
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
@@ -14,7 +12,6 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
 import java.util.*;
-import java.util.function.Function;
 
 public class ModuleDeserialization {
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
@@ -25,16 +22,11 @@ public class ModuleDeserialization {
     myState = state;
   }
 
-  public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider, Function<ModulePath, Boolean> moduleLoader, ErrorReporter errorReporter) throws DeserializationException {
+  public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider) throws DeserializationException {
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-      if (!moduleLoader.apply(module)) {
-        return false;
-      }
-
       Scope scope = moduleScopeProvider.forModule(module);
       if (scope == null) {
-        errorReporter.report(new ModuleNotFoundError(module));
         return false;
       }
 
@@ -88,11 +80,11 @@ public class ModuleDeserialization {
     List<GlobalReferable> fieldReferables;
     LocatedReferable referable;
     if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
-      fieldReferables = Collections.emptyList();
-      referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), modulePath);
-    } else {
       fieldReferables = new ArrayList<>();
       referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), new ArrayList<>(), fieldReferables, modulePath);
+    } else {
+      fieldReferables = Collections.emptyList();
+      referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), modulePath);
     }
 
     Definition def;

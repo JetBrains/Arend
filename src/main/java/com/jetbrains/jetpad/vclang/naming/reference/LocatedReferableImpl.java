@@ -10,7 +10,7 @@ import java.util.List;
 public class LocatedReferableImpl implements LocatedReferable {
   private final Precedence myPrecedence;
   private final String myName;
-  private final Object myParent;
+  private final LocatedReferable myParent;
   private final boolean myTypecheckable;
 
   public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, boolean isTypecheckable) {
@@ -23,7 +23,7 @@ public class LocatedReferableImpl implements LocatedReferable {
   public LocatedReferableImpl(Precedence precedence, String name, ModulePath parent) {
     myPrecedence = precedence;
     myName = name;
-    myParent = parent;
+    myParent = new ModuleReferable(parent);
     myTypecheckable = true;
   }
 
@@ -40,19 +40,14 @@ public class LocatedReferableImpl implements LocatedReferable {
   }
 
   @Override
-  public GlobalReferable getTypecheckable() {
-    return myTypecheckable ? this : (GlobalReferable) myParent;
+  public LocatedReferable getTypecheckable() {
+    return myTypecheckable ? this : myParent;
   }
 
   @Nullable
   @Override
   public ModulePath getLocation(List<? super String> fullName) {
-    ModulePath modulePath;
-    if (myParent instanceof LocatedReferable) {
-      modulePath = ((LocatedReferable) myParent).getLocation(fullName);
-    } else {
-      modulePath = (ModulePath) myParent;
-    }
+    ModulePath modulePath = myParent.getLocation(fullName);
     if (fullName != null) {
       fullName.add(myName);
     }
