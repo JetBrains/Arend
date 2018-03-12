@@ -110,7 +110,7 @@ public class ModuleDeserialization {
       List<Group.InternalReferable> internalReferables = new ArrayList<>();
       for (DefinitionProtos.Definition.DataData.Constructor constructor : groupProto.getDefinition().getData().getConstructorList()) {
         Definition conDef = myCallTargetProvider.getCallTarget(constructor.getReferable().getIndex());
-        internalReferables.add(new SimpleInternalReferable(conDef.getReferable(), invisibleRefs.contains(conDef)));
+        internalReferables.add(new SimpleInternalReferable(conDef.getReferable(), !invisibleRefs.contains(conDef)));
       }
 
       group = new DataGroup(referable, internalReferables, subgroups, Collections.emptyList(), parent);
@@ -123,7 +123,7 @@ public class ModuleDeserialization {
       for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
         Definition fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex());
         GlobalReferable fieldReferable = fieldDef.getReferable();
-        internalReferables.add(new SimpleInternalReferable(fieldReferable, invisibleRefs.contains(fieldDef)));
+        internalReferables.add(new SimpleInternalReferable(fieldReferable, !invisibleRefs.contains(fieldDef)));
         fieldReferables.add(fieldReferable);
       }
 
