@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
@@ -74,8 +75,8 @@ public class Constructor extends Definition implements Function {
   }
 
   public DependentLink getDataTypeParameters() {
-    assert myParameters != null && myDataType.status().headerIsOK();
-    return myPatterns == null ? myDataType.getParameters() : myPatterns.getFirstBinding();
+    assert myParameters != null;
+    return myDataType.status().headerIsOK() ? (myPatterns == null ? myDataType.getParameters() : myPatterns.getFirstBinding()) : EmptyDependentLink.getInstance();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {

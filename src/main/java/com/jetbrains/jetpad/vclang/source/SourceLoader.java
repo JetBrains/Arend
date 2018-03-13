@@ -56,7 +56,7 @@ public final class SourceLoader {
       if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
         binarySourceIsAvailable = false;
       }
-      ok = binarySourceIsAvailable && binarySource.load(this) || rawSourceIsAvailable && rawSource.load(this);
+      ok = binarySourceIsAvailable ? binarySource.load(this) : rawSource.load(this);
     }
 
     if (!ok) {

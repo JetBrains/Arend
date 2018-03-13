@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.PreludeLibrary;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
@@ -23,7 +24,7 @@ public class ScopeFactory {
     ChildGroup parentGroup = group == null ? null : group.getParentGroup();
     Scope parentScope;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(Prelude.MODULE_PATH);
+      Scope preludeScope = PreludeLibrary.getPreludeScope();
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }

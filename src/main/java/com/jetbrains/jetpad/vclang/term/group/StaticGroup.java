@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.group;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -9,12 +9,12 @@ import java.util.Collections;
 import java.util.List;
 
 public class StaticGroup implements ChildGroup {
-  private final GlobalReferable myReferable;
+  private final LocatedReferable myReferable;
   private final List<Group> myStaticGroups;
   private final List<SimpleNamespaceCommand> myNamespaceCommands;
   private final ChildGroup myParent;
 
-  public StaticGroup(GlobalReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  public StaticGroup(LocatedReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
     myReferable = referable;
     myStaticGroups = staticGroups;
     myNamespaceCommands = namespaceCommands;
@@ -23,7 +23,7 @@ public class StaticGroup implements ChildGroup {
 
   @Nonnull
   @Override
-  public GlobalReferable getReferable() {
+  public LocatedReferable getReferable() {
     return myReferable;
   }
 

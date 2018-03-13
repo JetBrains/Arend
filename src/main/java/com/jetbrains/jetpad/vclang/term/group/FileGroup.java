@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
@@ -13,7 +13,7 @@ import java.util.List;
 public class FileGroup extends StaticGroup {
   private Scope myScope = EmptyScope.INSTANCE;
 
-  public FileGroup(GlobalReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands) {
+  public FileGroup(LocatedReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands) {
     super(referable, staticGroups, namespaceCommands, null);
   }
 

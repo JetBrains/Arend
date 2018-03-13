@@ -14,22 +14,28 @@ import javax.annotation.Nullable;
  */
 public class LoadingModuleScopeProvider implements ModuleScopeProvider {
   private final SourceLoader mySourceLoader;
+  private final ModulePath myCurrentModule;
 
-  public LoadingModuleScopeProvider(SourceLoader sourceLoader) {
+  public LoadingModuleScopeProvider(SourceLoader sourceLoader, ModulePath currentModule) {
     mySourceLoader = sourceLoader;
+    myCurrentModule = currentModule;
   }
 
   @Nullable
   @Override
   public Scope forModule(@Nonnull ModulePath module) {
-    // If the module belongs to the loading library, load the module first.
-    if (mySourceLoader.getLibrary().containsModule(module) && !mySourceLoader.load(module)) {
+    Scope scope = mySourceLoader.getModuleScopeProvider().forModule(module);
+    if (scope != null) {
+      return scope;
+    }
+
+    if (!mySourceLoader.load(module)) {
       return null;
     }
 
-    Scope scope = mySourceLoader.getModuleScopeProvider().forModule(module);
+    scope = mySourceLoader.getModuleScopeProvider().forModule(module);
     if (scope == null) {
-      mySourceLoader.getErrorReporter().report(new ModuleNotFoundError(module));
+      mySourceLoader.getErrorReporter().report(new ModuleNotFoundError(module, myCurrentModule));
     }
     return scope;
   }

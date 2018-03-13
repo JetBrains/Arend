@@ -6,7 +6,10 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.InternalConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.NamedUnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -349,7 +352,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, ChildGroup parent) {
     return parent instanceof FileGroup
       ? new ConcreteLocatedReferable(position, name, precedence, myModule)
-      : new ConcreteLocatedReferable(position, name, precedence, (LocatedReferable) parent.getReferable(), true);
+      : new ConcreteLocatedReferable(position, name, precedence, parent.getReferable(), true);
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent) {
@@ -577,7 +580,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Precedence prec = visitPrecedence(ctx.precedence());
     ConcreteClassReferable reference = parent instanceof FileGroup
       ? new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, myModule)
-      : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, (LocatedReferable) parent.getReferable());
+      : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, parent.getReferable());
     Concrete.Definition classDefinition;
     ClassGroup resultGroup = null;
     if (ctx.classBody() instanceof ClassSynContext) {

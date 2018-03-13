@@ -426,9 +426,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     LevelSubstitution substitution = myEquations.solve(expr);
     if (returnExpectedType) {
       if (result == null) {
-        result = new Result(null, null);
+        result = new Result(null, (Expression) expectedType);
+      } else {
+        result.type = (Expression) expectedType;
       }
-      result.type = (Expression) expectedType;
     }
     if (!substitution.isEmpty()) {
       if (result.expression != null) {

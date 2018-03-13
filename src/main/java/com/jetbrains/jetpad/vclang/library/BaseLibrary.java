@@ -51,7 +51,7 @@ public abstract class BaseLibrary implements Library {
     myLoaded = false;
   }
 
-  private void unloadGroup(Group group) {
+  public void unloadGroup(Group group) {
     myTypecheckerState.reset(group.getReferable());
     for (Group subgroup : group.getSubgroups()) {
       unloadGroup(subgroup);

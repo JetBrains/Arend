@@ -39,10 +39,10 @@ public abstract class BaseCliFrontend {
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
-  private final LibraryManager myLibraryManager = new MyLibraryManager(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, System.err::println);
+  private final LibraryManager myLibraryManager = new MyLibraryManager(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, myErrorReporter);
   private final CachingModuleScopeProvider myModuleScopeProvider = new CachingModuleScopeProvider(new LocatingModuleScopeProvider(new SearchingModuleLocator(myLibraryManager)));
 
-  private static class MyLibraryManager extends LibraryManager {
+  private class MyLibraryManager extends LibraryManager {
     MyLibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter errorReporter) {
       super(libraryResolver, moduleScopeProvider, errorReporter);
     }
@@ -54,6 +54,7 @@ public abstract class BaseCliFrontend {
 
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
+      flushErrors();
       System.err.flush();
       System.out.println((successful ? "[LOADED] " : "[FAILED] ") + library.getName());
     }
@@ -237,6 +238,7 @@ public abstract class BaseCliFrontend {
 
     boolean recompile = cmdLine.hasOption("recompile");
     for (SourceLibrary library : requestedLibraries) {
+      myModuleResults.clear();
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
       }
@@ -248,7 +250,6 @@ public abstract class BaseCliFrontend {
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
       List<ModulePath> modules = new ArrayList<>(library.getUpdatedModules());
-      myModuleResults.clear();
       library.typecheck(new MyTypechecking(), myErrorReporter);
       flushErrors();
 
@@ -280,7 +281,7 @@ public abstract class BaseCliFrontend {
         }
       }
 
-      if (error instanceof ExceptionError) {
+      if (error instanceof ExceptionError || error.getAffectedDefinitions().isEmpty()) {
         System.err.println(error);
         System.err.flush();
       } else {
