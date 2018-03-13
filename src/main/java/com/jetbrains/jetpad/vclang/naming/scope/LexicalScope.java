@@ -67,7 +67,7 @@ public class LexicalScope implements Scope {
 
     Scope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myIgnoreOpens) {
+      if (myIgnoreOpens && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
         break;
       }
 
@@ -195,7 +195,7 @@ public class LexicalScope implements Scope {
     Scope cachingScope = null;
     cmdLoop:
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myIgnoreOpens) {
+      if (myIgnoreOpens && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
         break;
       }
 
