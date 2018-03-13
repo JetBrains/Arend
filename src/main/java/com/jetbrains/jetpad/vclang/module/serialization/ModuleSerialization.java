@@ -23,7 +23,7 @@ public class ModuleSerialization {
     myErrorReporter = errorReporter;
   }
 
-  public ModuleProtos.Module writeModule(Group group) {
+  public ModuleProtos.Module writeModule(Group group, ModulePath modulePath) {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
 
     // Serialize the group structure first in order to populate the call target tree
@@ -40,7 +40,7 @@ public class ModuleSerialization {
       List<String> longName = new ArrayList<>();
       ModulePath targetModulePath = targetReferable instanceof LocatedReferable ? ((LocatedReferable) targetReferable).getLocation(longName) : null;
       if (targetModulePath == null || longName.isEmpty()) {
-        myErrorReporter.report(LocationError.definition(targetReferable));
+        myErrorReporter.report(LocationError.definition(targetReferable, modulePath));
         return null;
       }
 

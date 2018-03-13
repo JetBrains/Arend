@@ -68,20 +68,20 @@ public abstract class StreamBinarySource implements PersistableSource {
 
   @Override
   public boolean persist(SourceLibrary library, ErrorReporter errorReporter) {
+    ModulePath currentModulePath = getModulePath();
+    Group group = library.getModuleGroup(currentModulePath);
+    if (group == null) {
+      errorReporter.report(LocationError.module(currentModulePath));
+      return false;
+    }
+
     try (OutputStream outputStream = getOutputStream()) {
-      ModulePath currentModulePath = getModulePath();
       if (outputStream == null) {
         errorReporter.report(new PersistingError(currentModulePath));
         return false;
       }
 
-      Group group = library.getModuleGroup(currentModulePath);
-      if (group == null) {
-        errorReporter.report(LocationError.module(currentModulePath));
-        return false;
-      }
-
-      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group);
+      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group, currentModulePath);
       if (module == null) {
         return false;
       }

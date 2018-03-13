@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.source.error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +17,6 @@ public class PersistingError extends GeneralError {
 
   @Override
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(new ModuleReferable(modulePath));
+    return Collections.emptyList();
   }
 }

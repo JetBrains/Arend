@@ -37,7 +37,7 @@ public final class SourceLoader {
     return myLibraryManager.getErrorReporter();
   }
 
-  public boolean load(ModulePath modulePath) {
+  private boolean load(ModulePath modulePath, boolean tryLoad) {
     Boolean isLoaded = myLoadedModules.putIfAbsent(modulePath, true);
     if (isLoaded != null) {
       return isLoaded;
@@ -50,6 +50,10 @@ public final class SourceLoader {
 
     boolean ok;
     if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
+      if (tryLoad) {
+        return false;
+      }
+
       getErrorReporter().report(new ModuleNotFoundError(modulePath));
       ok = false;
     } else {
@@ -63,5 +67,13 @@ public final class SourceLoader {
       myLoadedModules.put(modulePath, false);
     }
     return ok;
+  }
+
+  public boolean load(ModulePath modulePath) {
+    return load(modulePath, false);
+  }
+
+  public boolean tryLoad(ModulePath modulePath) {
+    return load(modulePath, true);
   }
 }

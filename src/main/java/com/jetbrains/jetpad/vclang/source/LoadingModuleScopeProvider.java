@@ -24,16 +24,8 @@ public class LoadingModuleScopeProvider implements ModuleScopeProvider {
   @Nullable
   @Override
   public Scope forModule(@Nonnull ModulePath module) {
+    mySourceLoader.tryLoad(module);
     Scope scope = mySourceLoader.getModuleScopeProvider().forModule(module);
-    if (scope != null) {
-      return scope;
-    }
-
-    if (!mySourceLoader.load(module)) {
-      return null;
-    }
-
-    scope = mySourceLoader.getModuleScopeProvider().forModule(module);
     if (scope == null) {
       mySourceLoader.getErrorReporter().report(new ModuleNotFoundError(module, myCurrentModule));
     }

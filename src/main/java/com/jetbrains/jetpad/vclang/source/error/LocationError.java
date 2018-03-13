@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.source.error;
 
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
@@ -11,29 +12,38 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
+
 public class LocationError extends GeneralError {
   public final GlobalReferable referable;
+  public final ModulePath modulePath;
 
-  private LocationError(GlobalReferable referable, String message) {
+  private LocationError(String message, GlobalReferable referable, ModulePath modulePath) {
     super(Level.ERROR, message);
     this.referable = referable;
+    this.modulePath = modulePath;
   }
 
-  public static LocationError definition(GlobalReferable referable) {
-    return new LocationError(referable, "Cannot locate definition: ");
+  public static LocationError definition(GlobalReferable referable, ModulePath modulePath) {
+    return new LocationError("Cannot locate definition: ", referable, modulePath);
   }
 
   public static LocationError module(ModulePath modulePath) {
-    return new LocationError(new ModuleReferable(modulePath), "Cannot locate module: ");
+    return new LocationError("Cannot locate the module", null, modulePath);
   }
 
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return DocFactory.hList(super.getHeaderDoc(src), DocFactory.refDoc(referable));
+    return referable == null ? super.getHeaderDoc(src) : DocFactory.hList(super.getHeaderDoc(src), DocFactory.refDoc(referable));
+  }
+
+  @Override
+  public Doc getBodyDoc(PrettyPrinterConfig src) {
+    return hList(text("While persisting: "), refDoc(new ModuleReferable(modulePath)));
   }
 
   @Override
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(referable);
+    return Collections.emptyList();
   }
 }
