@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.prelude;
 
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
-import com.jetbrains.jetpad.vclang.source.PersistableSource;
+import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -13,7 +13,7 @@ public class PreludeBinaryGenerator {
   public static void main(String[] args) {
     TypecheckerState typecheckerState = new SimpleTypecheckerState();
     PreludeFileLibrary library = new PreludeFileLibrary(Paths.get(args[0]), typecheckerState);
-    PersistableSource binarySource = library.getBinarySource(Prelude.MODULE_PATH);
+    BinarySource binarySource = library.getBinarySource(Prelude.MODULE_PATH);
     assert binarySource != null;
 
     if (args.length >= 2 && args[1].equals("--recompile")) {

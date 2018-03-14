@@ -21,7 +21,9 @@ import java.io.OutputStream;
 /**
  * Represents a source that loads a binary module from an {@link InputStream} and persists it to an {@link OutputStream}.
  */
-public abstract class StreamBinarySource implements PersistableSource {
+public abstract class StreamBinarySource implements BinarySource {
+  private ModuleProtos.Module myModuleProto;
+
   /**
    * Gets an input stream from which the source will be loaded.
    *
@@ -39,27 +41,44 @@ public abstract class StreamBinarySource implements PersistableSource {
   protected abstract OutputStream getOutputStream() throws IOException;
 
   @Override
-  public boolean load(SourceLoader sourceLoader) {
-    ModulePath modulePath = getModulePath();
+  public boolean loadDependencyInfo(SourceLoader sourceLoader) {
     try (InputStream inputStream = getInputStream()) {
       if (inputStream == null) {
         return false;
       }
 
-      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(inputStream);
+      myModuleProto = ModuleProtos.Module.parseFrom(inputStream);
+      for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
+        ModulePath module = new ModulePath(moduleCallTargets.getNameList());
+        if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinaryDependencyInfo(module)) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (IOException e) {
+      sourceLoader.getErrorReporter().report(new ExceptionError(e, getModulePath()));
+      return false;
+    }
+  }
+
+  @Override
+  public boolean load(SourceLoader sourceLoader) {
+    ModulePath modulePath = getModulePath();
+    try {
       ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
-      ChildGroup group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
+      ChildGroup group = moduleDeserialization.readGroup(myModuleProto.getGroup(), modulePath);
       sourceLoader.getLibrary().onModuleLoaded(modulePath, group, false);
 
-      for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
+      for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
         if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinary(module)) {
           return false;
         }
       }
 
-      return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider());
-    } catch (IOException | DeserializationException e) {
+      return moduleDeserialization.readModule(myModuleProto, sourceLoader.getModuleScopeProvider());
+    } catch (DeserializationException e) {
       sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
       sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
       return false;

@@ -54,7 +54,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
 
   @Nullable
   @Override
-  public PersistableSource getBinarySource(ModulePath modulePath) {
+  public BinarySource getBinarySource(ModulePath modulePath) {
     return myBinaryBasePath == null ? null : new GZIPStreamBinarySource(new FileBinarySource(myBinaryBasePath, modulePath));
   }
 

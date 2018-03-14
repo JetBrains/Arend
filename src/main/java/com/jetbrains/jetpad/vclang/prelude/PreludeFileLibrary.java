@@ -52,7 +52,7 @@ public class PreludeFileLibrary extends PreludeLibrary {
 
   @Nullable
   @Override
-  public PersistableSource getBinarySource(ModulePath modulePath) {
+  public BinarySource getBinarySource(ModulePath modulePath) {
     if (myBinaryPath == null || !modulePath.equals(Prelude.MODULE_PATH)) {
       return null;
     }

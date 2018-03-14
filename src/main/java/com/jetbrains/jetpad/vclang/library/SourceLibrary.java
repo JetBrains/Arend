@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.source.PersistableSource;
+import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
@@ -63,7 +63,7 @@ public abstract class SourceLibrary extends BaseLibrary {
    * @return the binary source corresponding to the given path or null if the source is not found.
    */
   @Nullable
-  public abstract PersistableSource getBinarySource(ModulePath modulePath);
+  public abstract BinarySource getBinarySource(ModulePath modulePath);
 
   /**
    * Loads the header of this library.
@@ -164,7 +164,7 @@ public abstract class SourceLibrary extends BaseLibrary {
   }
 
   public boolean persistModule(ModulePath modulePath, ErrorReporter errorReporter) {
-    PersistableSource source = getBinarySource(modulePath);
+    BinarySource source = getBinarySource(modulePath);
     if (source == null) {
       errorReporter.report(new PersistingError(modulePath));
       return false;

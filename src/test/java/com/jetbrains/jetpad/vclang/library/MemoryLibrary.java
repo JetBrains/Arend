@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.source.PersistableSource;
+import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class MemoryLibrary extends UnmodifiableSourceLibrary {
   private final Map<ModulePath, MemoryRawSource> myRawSources = new LinkedHashMap<>();
-  private final Map<ModulePath, PersistableSource> myBinarySources = new LinkedHashMap<>();
+  private final Map<ModulePath, BinarySource> myBinarySources = new LinkedHashMap<>();
 
   protected MemoryLibrary(TypecheckerState typecheckerState) {
     super("test_library", typecheckerState);
@@ -28,7 +28,7 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
 
   @Nullable
   @Override
-  public PersistableSource getBinarySource(ModulePath modulePath) {
+  public BinarySource getBinarySource(ModulePath modulePath) {
     return myBinarySources.get(modulePath);
   }
 

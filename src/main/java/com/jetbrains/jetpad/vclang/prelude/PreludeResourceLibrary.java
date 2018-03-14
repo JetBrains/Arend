@@ -2,8 +2,8 @@ package com.jetbrains.jetpad.vclang.prelude;
 
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.GZIPStreamBinarySource;
-import com.jetbrains.jetpad.vclang.source.PersistableSource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -48,7 +48,7 @@ public class PreludeResourceLibrary extends PreludeLibrary {
 
   @Nullable
   @Override
-  public PersistableSource getBinarySource(ModulePath modulePath) {
+  public BinarySource getBinarySource(ModulePath modulePath) {
     return new GZIPStreamBinarySource(new PreludeResourceSource());
   }
 
