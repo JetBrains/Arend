@@ -39,35 +39,30 @@ public abstract class StreamBinarySource implements PersistableSource {
   protected abstract OutputStream getOutputStream() throws IOException;
 
   @Override
-  public LoadingResult load(SourceLoader sourceLoader) {
+  public boolean load(SourceLoader sourceLoader) {
     ModulePath modulePath = getModulePath();
-    ModuleProtos.Module moduleProto;
     try (InputStream inputStream = getInputStream()) {
       if (inputStream == null) {
-        return LoadingResult.TRY_ANOTHER;
+        return false;
       }
-      moduleProto = ModuleProtos.Module.parseFrom(inputStream);
-    } catch (IOException e) {
-      sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
-      return LoadingResult.TRY_ANOTHER;
-    }
 
-    for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
-      ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-      if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinary(module)) {
-        return LoadingResult.TRY_ANOTHER;
-      }
-    }
-
-    try {
+      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(inputStream);
       ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
       ChildGroup group = moduleDeserialization.readGroup(moduleProto.getGroup(), modulePath);
       sourceLoader.getLibrary().onModuleLoaded(modulePath, group, false);
-      return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider()) ? LoadingResult.OK : LoadingResult.FAIL;
-    } catch (DeserializationException e) {
+
+      for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
+        ModulePath module = new ModulePath(moduleCallTargets.getNameList());
+        if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinary(module)) {
+          return false;
+        }
+      }
+
+      return moduleDeserialization.readModule(moduleProto, sourceLoader.getModuleScopeProvider());
+    } catch (IOException | DeserializationException e) {
       sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
       sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
-      return LoadingResult.FAIL;
+      return false;
     }
   }
 

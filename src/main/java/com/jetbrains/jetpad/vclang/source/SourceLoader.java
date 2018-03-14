@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Contains all necessary information for source loading.
@@ -16,7 +16,7 @@ import java.util.Map;
 public final class SourceLoader {
   private final SourceLibrary myLibrary;
   private final LibraryManager myLibraryManager;
-  private final Map<ModulePath, Boolean> myLoadedModules = new HashMap<>();
+  private final Set<ModulePath> myLoadedModules = new HashSet<>();
   private final boolean myRecompile;
 
   public SourceLoader(SourceLibrary library, LibraryManager libraryManager, boolean recompile) {
@@ -38,9 +38,8 @@ public final class SourceLoader {
   }
 
   private boolean load(ModulePath modulePath, boolean binaryOnly) {
-    Boolean isLoaded = myLoadedModules.putIfAbsent(modulePath, true);
-    if (isLoaded != null) {
-      return isLoaded;
+    if (!myLoadedModules.add(modulePath)) {
+      return true;
     }
 
     Source binarySource = myLibrary.getBinarySource(modulePath);
@@ -48,28 +47,21 @@ public final class SourceLoader {
     boolean binarySourceIsAvailable = binarySource != null && binarySource.isAvailable();
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
 
-    Source.LoadingResult result;
+    boolean result;
     if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
       getErrorReporter().report(new ModuleNotFoundError(modulePath));
-      result = Source.LoadingResult.FAIL;
+      result = false;
     } else {
       if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
         binarySourceIsAvailable = false;
       }
-      result = binarySourceIsAvailable ? binarySource.load(this) : Source.LoadingResult.TRY_ANOTHER;
-      if (!binaryOnly && result == Source.LoadingResult.TRY_ANOTHER && rawSourceIsAvailable) {
-        result = rawSource.load(this);
-      }
+      result = binarySourceIsAvailable ? binarySource.load(this) : !binaryOnly && rawSource.load(this);
     }
 
-    if (result != Source.LoadingResult.OK) {
-      if (binaryOnly) {
-        myLoadedModules.remove(modulePath);
-      } else {
-        myLoadedModules.put(modulePath, false);
-      }
+    if (!result) {
+      myLoadedModules.remove(modulePath);
     }
-    return result == Source.LoadingResult.OK;
+    return result;
   }
 
   public boolean load(ModulePath modulePath) {

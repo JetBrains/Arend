@@ -29,7 +29,7 @@ public abstract class StreamRawSource implements Source {
   protected abstract InputStream getInputStream() throws IOException;
 
   @Override
-  public LoadingResult load(SourceLoader sourceLoader) {
+  public boolean load(SourceLoader sourceLoader) {
     ModulePath modulePath = getModulePath();
     ErrorReporter errorReporter = sourceLoader.getErrorReporter();
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
@@ -56,7 +56,7 @@ public abstract class StreamRawSource implements Source {
 
       VcgrammarParser.StatementsContext tree = parser.statements();
       if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
-        return LoadingResult.TRY_ANOTHER;
+        return false;
       }
 
       FileGroup result = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
@@ -65,19 +65,19 @@ public abstract class StreamRawSource implements Source {
       for (NamespaceCommand command : result.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
-          if (sourceLoader.getLibrary().containsModule(module)) {
-            sourceLoader.load(module);
+          if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.load(module)) {
+            return false;
           }
         }
       }
 
       result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
-      return LoadingResult.OK;
+      return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath));
       sourceLoader.getLibrary().onModuleLoaded(modulePath, null, true);
-      return LoadingResult.FAIL;
+      return false;
     }
   }
 }

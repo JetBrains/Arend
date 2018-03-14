@@ -26,24 +26,6 @@ public class DefinitionDeserialization {
     myCallTargetProvider = callTargetProvider;
   }
 
-  public void fillInDefinitionWithErrors(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
-    def.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    if (defProto.getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.DATA) {
-      for (DefinitionProtos.Definition.DataData.Constructor constructorProto : defProto.getData().getConstructorList()) {
-        Constructor constructor = myCallTargetProvider.getCallTarget(constructorProto.getReferable().getIndex(), Constructor.class);
-        constructor.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-        ((DataDefinition) def).addConstructor(constructor);
-      }
-    } else
-    if (defProto.getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
-      for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
-        ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
-        field.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-        ((ClassDefinition) def).addPersonalField(field);
-      }
-    }
-  }
-
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider);
 

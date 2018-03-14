@@ -9,8 +9,6 @@ import java.io.File;
  * Represents a persisted module.
  */
 public interface Source {
-  enum LoadingResult { OK, FAIL, TRY_ANOTHER }
-
   /**
    * Gets the path to this source.
    *
@@ -26,7 +24,7 @@ public interface Source {
    *
    * @return true if loading succeeded, false otherwise.
    */
-  LoadingResult load(SourceLoader sourceLoader);
+  boolean load(SourceLoader sourceLoader);
 
   /**
    * Gets the timestamp for this source.

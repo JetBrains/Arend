@@ -23,13 +23,11 @@ public class ModuleDeserialization {
   }
 
   public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider) throws DeserializationException {
-    boolean ok = true;
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
       if (scope == null) {
-        ok = false;
-        break;
+        throw new DeserializationException("Cannot find module: " + module);
       }
 
       for (ModuleProtos.CallTargetTree callTargetTree : moduleCallTargets.getCallTargetTreeList()) {
@@ -39,11 +37,7 @@ public class ModuleDeserialization {
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
-      if (ok) {
-        defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
-      } else {
-        defDeserialization.fillInDefinitionWithErrors(pair.proj1, pair.proj2);
-      }
+      defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
     myDefinitions.clear();
     return true;
