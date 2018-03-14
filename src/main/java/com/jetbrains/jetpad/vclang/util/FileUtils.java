@@ -2,10 +2,13 @@ package com.jetbrains.jetpad.vclang.util;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FileUtils {
   public static final String EXTENSION = ".vc";
@@ -77,5 +80,39 @@ public class FileUtils {
 
   public static Path getCurrentDirectory() {
     return Paths.get(System.getProperty("user.dir"));
+  }
+
+  public static void printIllegalModuleName(String module) {
+    System.err.println("[ERROR] " + module + " is an illegal module path");
+  }
+
+  public static Set<ModulePath> getModules(Path path, String ext) {
+    Set<ModulePath> modules = new LinkedHashSet<>();
+    try {
+      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+          if (file.getFileName().toString().endsWith(ext)) {
+            file = path.relativize(file);
+            ModulePath modulePath = FileUtils.modulePath(file, ext);
+            if (modulePath == null) {
+              printIllegalModuleName(file.toString());
+            } else {
+              modules.add(modulePath);
+            }
+          }
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path path, IOException e) {
+          e.printStackTrace();
+          return FileVisitResult.CONTINUE;
+        }
+      });
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return modules;
   }
 }

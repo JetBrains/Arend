@@ -37,7 +37,7 @@ public final class SourceLoader {
     return myLibraryManager.getErrorReporter();
   }
 
-  private boolean load(ModulePath modulePath, boolean tryLoad) {
+  private boolean load(ModulePath modulePath, boolean binaryOnly) {
     Boolean isLoaded = myLoadedModules.putIfAbsent(modulePath, true);
     if (isLoaded != null) {
       return isLoaded;
@@ -48,32 +48,35 @@ public final class SourceLoader {
     boolean binarySourceIsAvailable = binarySource != null && binarySource.isAvailable();
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
 
-    boolean ok;
+    Source.LoadingResult result;
     if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
-      if (tryLoad) {
-        return false;
-      }
-
       getErrorReporter().report(new ModuleNotFoundError(modulePath));
-      ok = false;
+      result = Source.LoadingResult.FAIL;
     } else {
       if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
         binarySourceIsAvailable = false;
       }
-      ok = binarySourceIsAvailable ? binarySource.load(this) : rawSource.load(this);
+      result = binarySourceIsAvailable ? binarySource.load(this) : Source.LoadingResult.TRY_ANOTHER;
+      if (!binaryOnly && result == Source.LoadingResult.TRY_ANOTHER && rawSourceIsAvailable) {
+        result = rawSource.load(this);
+      }
     }
 
-    if (!ok) {
-      myLoadedModules.put(modulePath, false);
+    if (result != Source.LoadingResult.OK) {
+      if (binaryOnly) {
+        myLoadedModules.remove(modulePath);
+      } else {
+        myLoadedModules.put(modulePath, false);
+      }
     }
-    return ok;
+    return result == Source.LoadingResult.OK;
   }
 
   public boolean load(ModulePath modulePath) {
     return load(modulePath, false);
   }
 
-  public boolean tryLoad(ModulePath modulePath) {
+  public boolean loadBinary(ModulePath modulePath) {
     return load(modulePath, true);
   }
 }

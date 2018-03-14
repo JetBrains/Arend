@@ -8,10 +8,8 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.module.ModulePath.moduleName;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class NameResolutionOnLoadTest extends LibraryTestCase {
   private void setupSources() {
@@ -29,7 +27,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
     setupSources();
     Source source = library.getRawSource(moduleName("B"));
     assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
@@ -43,7 +41,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
     setupSources();
     Source source = library.getRawSource(moduleName("A"));
     assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Scope moduleA = library.getModuleScopeProvider().forModule(moduleName("A"));
 
     Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
@@ -60,7 +58,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
     setupSources();
     Source source = library.getRawSource(moduleName("B", "C"));
     assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Scope moduleBC = library.getModuleScopeProvider().forModule(moduleName("B", "C"));
     Scope moduleBCE = library.getModuleScopeProvider().forModule(moduleName("B", "C", "E"));
     Scope moduleBCF = library.getModuleScopeProvider().forModule(moduleName("B", "C", "F"));
@@ -79,7 +77,7 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
     setupSources();
     Source source = library.getRawSource(moduleName("X"));
     assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Scope moduleX = library.getModuleScopeProvider().forModule(moduleName("X"));
     Scope moduleY = library.getModuleScopeProvider().forModule(moduleName("Y"));
 

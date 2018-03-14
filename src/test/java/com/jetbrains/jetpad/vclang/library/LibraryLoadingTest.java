@@ -27,14 +27,14 @@ public class LibraryLoadingTest extends LibraryTestCase {
     library.addModule(modulePath, "\\func f => 0");
     Source source1 = library.getRawSource(modulePath);
     assertThat(source1, is(notNullValue()));
-    assertTrue(source1.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source1.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Group result1 = library.getModuleGroup(modulePath);
     assertThat(result1, is(notNullValue()));
 
     library.addModule(modulePath, "\\func g => 0");
     Source source2 = library.getRawSource(modulePath);
     assertThat(source2, is(notNullValue()));
-    assertTrue(source2.load(new SourceLoader(library, libraryManager, false)));
+    assertThat(source2.load(new SourceLoader(library, libraryManager, false)), equalTo(Source.LoadingResult.OK));
     Group result2 = library.getModuleGroup(modulePath);
     assertThat(result2, is(notNullValue()));
 

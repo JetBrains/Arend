@@ -98,9 +98,4 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   public ChildGroup getModuleGroup(ModulePath modulePath) {
     return myGroups.get(modulePath);
   }
-
-  @Override
-  public boolean containsModule(ModulePath modulePath) {
-    return myGroups.containsKey(modulePath);
-  }
 }

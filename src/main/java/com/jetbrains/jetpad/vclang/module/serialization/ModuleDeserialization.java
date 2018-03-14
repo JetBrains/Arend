@@ -46,7 +46,7 @@ public class ModuleDeserialization {
       }
     }
     myDefinitions.clear();
-    return ok;
+    return true;
   }
 
   private void fillInCallTargetTree(ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {

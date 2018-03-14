@@ -116,6 +116,16 @@ public abstract class SourceLibrary extends BaseLibrary {
     return super.load(libraryManager);
   }
 
+  @Override
+  public boolean containsModule(ModulePath modulePath) {
+    Source source = getRawSource(modulePath);
+    if (source != null && source.isAvailable()) {
+      return true;
+    }
+    source = getBinarySource(modulePath);
+    return source != null && source.isAvailable();
+  }
+
   public Collection<? extends ModulePath> getUpdatedModules() {
     return Collections.emptyList();
   }

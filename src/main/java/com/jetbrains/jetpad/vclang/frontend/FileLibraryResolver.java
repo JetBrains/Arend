@@ -7,14 +7,14 @@ import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.error.MultipleLibraries;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
-import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.util.FileUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class FileLibraryResolver implements LibraryResolver {
@@ -29,29 +29,8 @@ public class FileLibraryResolver implements LibraryResolver {
     myErrorReporter = errorReporter;
   }
 
-  private static List<ModulePath> getModuleList(Path path, String ext) {
-    List<ModulePath> modules = new ArrayList<>();
-    try {
-      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-          if (file.getFileName().toString().endsWith(ext)) {
-            ModulePath modulePath = FileUtils.modulePath(path.relativize(file), ext);
-            if (modulePath != null) {
-              modules.add(modulePath);
-            }
-          }
-          return FileVisitResult.CONTINUE;
-        }
-      });
-    } catch (IOException e) {
-      System.err.println(e.getLocalizedMessage());
-    }
-    return modules;
-  }
-
   private FileSourceLibrary getLibrary(Path basePath, String libName) {
-    return new FileSourceLibrary(libName, null, basePath, getModuleList(basePath, FileUtils.SERIALIZED_EXTENSION), Collections.emptyList(), myTypecheckerState);
+    return new FileSourceLibrary(libName, null, basePath, FileUtils.getModules(basePath, FileUtils.SERIALIZED_EXTENSION), true, Collections.emptyList(), myTypecheckerState);
   }
 
   private static Path findLibrary(Path libDir, String libName) {

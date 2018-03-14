@@ -25,8 +25,9 @@ import com.jetbrains.jetpad.vclang.util.FileUtils;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public abstract class BaseCliFrontend {
@@ -114,10 +115,6 @@ public abstract class BaseCliFrontend {
 
   protected void addCommandOptions(Options cmdOptions) {}
 
-  private static void printIllegalModuleName(String module) {
-    System.err.println("[ERROR] " + module + " is an illegal module path");
-  }
-
   public CommandLine run(String[] args) {
     if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
       return null;
@@ -168,37 +165,16 @@ public abstract class BaseCliFrontend {
 
     // Collect modules and libraries for which typechecking was requested
     Collection<String> argFiles = cmdLine.getArgList();
-    List<ModulePath> requestedModules = new ArrayList<>();
+    Set<ModulePath> requestedModules;
     List<SourceLibrary> requestedLibraries = new ArrayList<>();
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
-        try {
-          Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) {
-              if (path.getFileName().toString().endsWith(FileUtils.EXTENSION)) {
-                path = sourceDir.relativize(path);
-                ModulePath modulePath = FileUtils.modulePath(path, FileUtils.EXTENSION);
-                if (modulePath == null) {
-                  printIllegalModuleName(path.toString());
-                } else {
-                  requestedModules.add(modulePath);
-                }
-              }
-              return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path path, IOException e) {
-              System.err.println(e.getMessage());
-              return FileVisitResult.CONTINUE;
-            }
-          });
-        } catch (IOException e) {
-          System.err.println(e.getMessage());
-        }
+        requestedModules = FileUtils.getModules(sourceDir, FileUtils.EXTENSION);
+      } else {
+        requestedModules = Collections.emptySet();
       }
     } else {
+      requestedModules = new LinkedHashSet<>();
       for (String fileName : argFiles) {
         if (fileName.endsWith(FileUtils.LIBRARY_EXTENSION)) {
           SourceLibrary library = myLibraryResolver.registerLibrary(Paths.get(fileName));
@@ -213,7 +189,7 @@ public abstract class BaseCliFrontend {
             modulePath = FileUtils.modulePath(fileName);
           }
           if (modulePath == null) {
-            printIllegalModuleName(fileName);
+            FileUtils.printIllegalModuleName(fileName);
           } else {
             requestedModules.add(modulePath);
           }
@@ -227,7 +203,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, libraryDependencies, myTypecheckerState));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, argFiles.isEmpty(), libraryDependencies, myTypecheckerState));
     }
 
     // Load and typecheck libraries

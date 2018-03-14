@@ -9,12 +9,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   private final Path mySourceBasePath;
   private final Path myBinaryBasePath;
-  private final List<ModulePath> myModules;
+  private final Set<ModulePath> myModules;
   private final List<LibraryDependency> myDependencies;
+  private final boolean myComplete;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
@@ -23,14 +25,16 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param sourceBasePath    a path to the directory with raw source files.
    * @param binaryBasePath    a path to the directory with binary source files.
    * @param modules           the list of modules of this library.
+   * @param isComplete        true if {@code modules} contains all modules of this library, false otherwise.
    * @param dependencies      the list of dependencies of this library.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, List<ModulePath> modules, List<LibraryDependency> dependencies, TypecheckerState typecheckerState) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
     myModules = modules;
+    myComplete = isComplete;
     myDependencies = dependencies;
   }
 
@@ -63,5 +67,20 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Override
   public boolean supportsPersisting() {
     return myBinaryBasePath != null;
+  }
+
+  @Override
+  public boolean containsModule(ModulePath modulePath) {
+    if (myComplete) {
+      return myModules.contains(modulePath);
+    }
+
+    Source source = getRawSource(modulePath);
+    if (source != null) {
+      return source.isAvailable();
+    }
+
+    source = getBinarySource(modulePath);
+    return source != null && source.isAvailable();
   }
 }
