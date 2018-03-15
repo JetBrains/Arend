@@ -140,7 +140,7 @@ public abstract class SourceLibrary extends BaseLibrary {
   }
 
   @Override
-  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
+  public boolean typecheck(Typechecking typechecking) {
     Collection<? extends ModulePath> updatedModules = getUpdatedModules();
     if (updatedModules.isEmpty()) {
       return true;
@@ -154,13 +154,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
     }
 
-    boolean result = typechecking.typecheckModules(groups);
-    if (supportsPersisting()) {
-      for (ModulePath updatedModule : updatedModules) {
-        persistModule(updatedModule, errorReporter);
-      }
-    }
-    return result;
+    return typechecking.typecheckModules(groups);
   }
 
   public boolean persistModule(ModulePath modulePath, ErrorReporter errorReporter) {

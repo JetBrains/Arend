@@ -34,9 +34,7 @@ public abstract class BaseCliFrontend {
   // Typechecking
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
-  private final Map<ModulePath, ModuleResult> myModuleResults = new LinkedHashMap<>();
-
-  private enum ModuleResult { UNKNOWN, OK, GOALS, NOT_LOADED, ERRORS }
+  private final Map<ModulePath, Error.Level> myModuleResults = new LinkedHashMap<>();
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
@@ -50,14 +48,14 @@ public abstract class BaseCliFrontend {
 
     @Override
     protected void beforeLibraryLoading(Library library) {
-      System.out.println("[LOADING] " + library.getName());
+      System.out.println("[INFO] Loading library " + library.getName());
     }
 
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
       flushErrors();
       System.err.flush();
-      System.out.println((successful ? "[LOADED] " : "[FAILED] ") + library.getName());
+      System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName());
     }
   }
 
@@ -166,7 +164,7 @@ public abstract class BaseCliFrontend {
     // Collect modules and libraries for which typechecking was requested
     Collection<String> argFiles = cmdLine.getArgList();
     Set<ModulePath> requestedModules;
-    List<SourceLibrary> requestedLibraries = new ArrayList<>();
+    List<UnmodifiableSourceLibrary> requestedLibraries = new ArrayList<>();
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
         requestedModules = FileUtils.getModules(sourceDir, FileUtils.EXTENSION);
@@ -177,7 +175,7 @@ public abstract class BaseCliFrontend {
       requestedModules = new LinkedHashSet<>();
       for (String fileName : argFiles) {
         if (fileName.endsWith(FileUtils.LIBRARY_EXTENSION)) {
-          SourceLibrary library = myLibraryResolver.registerLibrary(Paths.get(fileName));
+          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(Paths.get(fileName));
           if (library != null) {
             requestedLibraries.add(library);
           }
@@ -213,7 +211,7 @@ public abstract class BaseCliFrontend {
     }
 
     boolean recompile = cmdLine.hasOption("recompile");
-    for (SourceLibrary library : requestedLibraries) {
+    for (UnmodifiableSourceLibrary library : requestedLibraries) {
       myModuleResults.clear();
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
@@ -225,22 +223,38 @@ public abstract class BaseCliFrontend {
       }
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
-      List<ModulePath> modules = new ArrayList<>(library.getUpdatedModules());
-      library.typecheck(new MyTypechecking(), myErrorReporter);
+      List<ModulePath> modulesToPersist = new ArrayList<>();
+      Collection<? extends ModulePath> modules = library.getUpdatedModules();
+      library.typecheck(new MyTypechecking());
       flushErrors();
 
       // Output nice per-module typechecking results
       int numWithErrors = 0;
+      int numWithGoals = 0;
       for (ModulePath module : modules) {
-        ModuleResult result = myModuleResults.get(module);
-        reportTypeCheckResult(module, result == null ? ModuleResult.OK : result);
-        if (result == ModuleResult.ERRORS) numWithErrors += 1;
+        Error.Level result = myModuleResults.get(module);
+        reportTypeCheckResult(module, result);
+        if (result == Error.Level.ERROR) numWithErrors++;
+        if (result == Error.Level.GOAL) numWithGoals++;
+        if (result == null) {
+          modulesToPersist.add(module);
+        }
       }
 
       if (numWithErrors > 0) {
         System.out.println("Number of modules with errors: " + numWithErrors);
       }
+      if (numWithGoals > 0) {
+        System.out.println("Number of modules with goals: " + numWithGoals);
+      }
       System.out.println("--- Done ---");
+
+      library.clearUpdateModules();
+
+      // Persist modules without errors
+      for (ModulePath module : modulesToPersist) {
+        library.persistModule(module, System.err::println);
+      }
     }
 
     return cmdLine;
@@ -248,12 +262,9 @@ public abstract class BaseCliFrontend {
 
   private void flushErrors() {
     for (GeneralError error : myErrorReporter.getErrorList()) {
-      ModuleResult moduleResult = error.level == Error.Level.ERROR ? ModuleResult.ERRORS : error.level == Error.Level.GOAL ? ModuleResult.GOALS : null;
-      if (moduleResult != null) {
-        for (GlobalReferable referable : error.getAffectedDefinitions()) {
-          if (referable instanceof LocatedReferable) {
-            updateSourceResult(((LocatedReferable) referable).getLocation(null), moduleResult);
-          }
+      for (GlobalReferable referable : error.getAffectedDefinitions()) {
+        if (referable instanceof LocatedReferable) {
+          updateSourceResult(((LocatedReferable) referable).getLocation(null), error.level);
         }
       }
 
@@ -267,29 +278,28 @@ public abstract class BaseCliFrontend {
     myErrorReporter.getErrorList().clear();
   }
 
-  private void updateSourceResult(ModulePath module, ModuleResult result) {
-    ModuleResult prevResult = myModuleResults.get(module);
+  private void updateSourceResult(ModulePath module, Error.Level result) {
+    Error.Level prevResult = myModuleResults.get(module);
     if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
       myModuleResults.put(module, result);
     }
   }
 
-  private void reportTypeCheckResult(ModulePath modulePath, ModuleResult result) {
+  private void reportTypeCheckResult(ModulePath modulePath, Error.Level result) {
     StringBuilder builder = new StringBuilder();
     builder.append("[").append(resultChar(result)).append("]");
     builder.append(" ").append(modulePath);
     System.out.println(builder);
   }
 
-  private static char resultChar(ModuleResult result) {
+  private static char resultChar(Error.Level result) {
+    if (result == null) {
+      return ' ';
+    }
     switch (result) {
-      case NOT_LOADED:
-        return '✗';
-      case OK:
-        return ' ';
-      case GOALS:
+      case GOAL:
         return '◯';
-      case ERRORS:
+      case ERROR:
         return '✗';
       default:
         return '·';

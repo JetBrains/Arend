@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.library;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.group.Group;
@@ -103,9 +102,8 @@ public interface Library {
    * Typechecks updated modules of this library and persists results.
    *
    * @param typechecking  a context for typechecking.
-   * @param errorReporter a reporter for errors related to persisting.
    *
    * @return true if the typechecking is successful, false otherwise.
    */
-  boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter);
+  boolean typecheck(Typechecking typechecking);
 }

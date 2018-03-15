@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.prelude;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
@@ -65,13 +64,18 @@ public class PreludeFileLibrary extends PreludeLibrary {
   }
 
   @Override
+  public boolean needsTypechecking() {
+    return true;
+  }
+
+  @Override
   public boolean supportsPersisting() {
     return myBinaryPath != null;
   }
 
   @Override
-  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
-    if (super.typecheck(typechecking, errorReporter)) {
+  public boolean typecheck(Typechecking typechecking) {
+    if (super.typecheck(typechecking)) {
       synchronized (PreludeLibrary.class) {
         if (Prelude.INTERVAL == null) {
           Prelude.initialize(getPreludeScope(), getTypecheckerState());

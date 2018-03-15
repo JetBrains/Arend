@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -83,14 +82,19 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
     myUpdatedModules.addAll(modules);
   }
 
-  @Override
-  public boolean typecheck(Typechecking typechecking, ErrorReporter errorReporter) {
-    if (super.typecheck(typechecking, errorReporter)) {
-      myUpdatedModules.clear();
-      return true;
-    } else {
-      return false;
+  public void clearUpdateModules() {
+    myUpdatedModules.clear();
+  }
+
+  public boolean persistUpdateModules(ErrorReporter errorReporter) {
+    boolean ok = true;
+    for (ModulePath module : myUpdatedModules) {
+      if (!persistModule(module, errorReporter)) {
+        ok = false;
+      }
     }
+    myUpdatedModules.clear();
+    return ok;
   }
 
   @Nullable

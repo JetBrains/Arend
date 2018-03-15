@@ -29,7 +29,9 @@ public class PreludeBinaryGenerator {
 
     LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println);
     if (manager.loadLibrary(library)) {
-      library.typecheck(new Prelude.PreludeTypechecking(typecheckerState), System.err::println);
+      if (library.typecheck(new Prelude.PreludeTypechecking(typecheckerState))) {
+        library.persistModule(Prelude.MODULE_PATH, System.err::println);
+      }
     }
   }
 }

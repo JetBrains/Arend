@@ -13,7 +13,7 @@ public abstract class Error {
   public final String message;
   public final Level level;
 
-  public enum Level { ERROR, GOAL, WARNING, INFO }
+  public enum Level { INFO, WARNING, GOAL, ERROR }
 
   public Error(@Nonnull Level level, String message) {
     this.level = level;

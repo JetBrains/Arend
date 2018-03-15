@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.frontend;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.FileSourceLibrary;
 import com.jetbrains.jetpad.vclang.library.Library;
-import com.jetbrains.jetpad.vclang.library.SourceLibrary;
+import com.jetbrains.jetpad.vclang.library.UnmodifiableSourceLibrary;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.error.MultipleLibraries;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
@@ -54,7 +54,7 @@ public class FileLibraryResolver implements LibraryResolver {
     myLibDirs.addAll(libDirs);
   }
 
-  public SourceLibrary registerLibrary(Path libPath) {
+  public UnmodifiableSourceLibrary registerLibrary(Path libPath) {
     String libName = FileUtils.libraryName(libPath.getFileName().toString());
     if (libName != null) {
       libPath = libPath.getParent();

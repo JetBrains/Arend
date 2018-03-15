@@ -46,7 +46,7 @@ public abstract class VclangTestCase {
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
     libraryManager.loadLibrary(preludeLibrary);
-    preludeLibrary.typecheck(typechecking, errorReporter);
+    preludeLibrary.typecheck(typechecking);
     errorList.clear();
   }
 
