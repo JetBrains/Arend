@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 

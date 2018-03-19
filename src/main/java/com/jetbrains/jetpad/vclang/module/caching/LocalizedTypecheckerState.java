@@ -8,12 +8,13 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements TypecheckerState {
   private final DefinitionLocator<SourceIdT> myDefLocator;
-  private final Map<SourceIdT, LocalTypecheckerState> myStates = new HashMap<>();
+  public final Map<SourceIdT, LocalTypecheckerState> myStates = new HashMap<>();
 
   public LocalizedTypecheckerState(DefinitionLocator<SourceIdT> defLocator) {
     myDefLocator = defLocator;
@@ -31,6 +32,14 @@ public class LocalizedTypecheckerState<SourceIdT extends SourceId> implements Ty
 
   public Set<SourceIdT> getCachedModules() {
     return myStates.keySet();
+  }
+
+  public Set<GlobalReferable> getAllReferables() {
+    Set<GlobalReferable> result = new HashSet<>();
+    for (SourceIdT sId : getCachedModules()) {
+      result.addAll(myStates.get(sId).myDefinitions.keySet());
+    }
+    return result;
   }
 
   public LocalTypecheckerState getLocal(@Nonnull SourceIdT sourceId) {

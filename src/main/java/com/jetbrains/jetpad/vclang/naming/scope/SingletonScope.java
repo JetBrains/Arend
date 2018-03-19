@@ -29,6 +29,12 @@ public class SingletonScope implements Scope {
 
   @Nullable
   @Override
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
+    return myReferable.textRepresentation().equals(name) ? EmptyScope.INSTANCE : null;
+  }
+
+  @Nullable
+  @Override
   public Referable find(Predicate<Referable> pred) {
     return pred.test(myReferable) ? myReferable : null;
   }

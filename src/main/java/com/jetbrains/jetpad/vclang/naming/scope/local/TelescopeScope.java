@@ -53,6 +53,12 @@ public class TelescopeScope implements Scope {
     return ref != null ? ref : myParent.resolveName(name);
   }
 
+  @Nullable
+  @Override
+  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
+    return myParent.resolveNamespace(name, resolveModuleNames);
+  }
+
   @Nonnull
   @Override
   public Scope getGlobalSubscope() {
