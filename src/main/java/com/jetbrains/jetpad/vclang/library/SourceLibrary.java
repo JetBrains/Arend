@@ -92,7 +92,7 @@ public abstract class SourceLibrary extends BaseLibrary {
       return true;
     }
 
-    LibraryHeader header = loadHeader(libraryManager.getErrorReporter());
+    LibraryHeader header = loadHeader(libraryManager.getLibraryErrorReporter());
     if (header == null) {
       return false;
     }

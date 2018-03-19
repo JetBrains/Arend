@@ -7,11 +7,11 @@ import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
-import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.prelude.PreludeLibrary;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.List;
 
 public class ScopeFactory {
-  public static @Nonnull Scope forGroup(@Nullable ChildGroup group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
-    ChildGroup parentGroup = group == null ? null : group.getParentGroup();
+  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
+    ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
       Scope preludeScope = PreludeLibrary.getPreludeScope();

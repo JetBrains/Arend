@@ -2,19 +2,15 @@ package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.ListErrorReporter;
 import com.jetbrains.jetpad.vclang.library.*;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
-import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
-import com.jetbrains.jetpad.vclang.library.resolver.SearchingModuleLocator;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.CachingModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.LocatingModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
@@ -38,12 +34,11 @@ public abstract class BaseCliFrontend {
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
-  private final LibraryManager myLibraryManager = new MyLibraryManager(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, myErrorReporter);
-  private final CachingModuleScopeProvider myModuleScopeProvider = new CachingModuleScopeProvider(new LocatingModuleScopeProvider(new SearchingModuleLocator(myLibraryManager)));
+  private final LibraryManager myLibraryManager = new MyLibraryManager();
 
   private class MyLibraryManager extends LibraryManager {
-    MyLibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter errorReporter) {
-      super(libraryResolver, moduleScopeProvider, errorReporter);
+    MyLibraryManager() {
+      super(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, myErrorReporter, System.err::println);
     }
 
     @Override
@@ -60,15 +55,11 @@ public abstract class BaseCliFrontend {
   }
 
   public BaseCliFrontend() {
-    myLibraryManager.setModuleScopeProvider(myModuleScopeProvider);
+    myLibraryManager.setModuleScopeProvider(new CachingModuleScopeProvider(new LocatingModuleScopeProvider(myLibraryManager)));
   }
 
   public LibraryManager getLibraryManager() {
     return myLibraryManager;
-  }
-
-  public CachingModuleScopeProvider getModuleScopeProvider() {
-    return myModuleScopeProvider;
   }
 
   public TypecheckerState getTypecheckerState() {
@@ -82,7 +73,7 @@ public abstract class BaseCliFrontend {
     }
 
     @Override
-    public void typecheckingFinished(GlobalReferable referable, Definition definition) {
+    public void typecheckingFinished(LocatedReferable referable, Definition definition) {
       flushErrors();
     }
   }
@@ -233,6 +224,9 @@ public abstract class BaseCliFrontend {
       int numWithGoals = 0;
       for (ModulePath module : modules) {
         Error.Level result = myModuleResults.get(module);
+        if (result == null && library.getModuleGroup(module) == null) {
+          result = Error.Level.ERROR;
+        }
         reportTypeCheckResult(module, result);
         if (result == Error.Level.ERROR) numWithErrors++;
         if (result == Error.Level.GOAL) numWithGoals++;

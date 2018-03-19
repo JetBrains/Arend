@@ -17,7 +17,7 @@ public class LocalErrorReporterCounter implements LocalErrorReporter {
   @Override
   public void report(GeneralError error) {
     myErrorReporter.report(error);
-    if (myLevel == null || error.getLevel().equals(myLevel)) {
+    if (myLevel == null || error.level.equals(myLevel)) {
       myCount++;
     }
   }
@@ -25,7 +25,7 @@ public class LocalErrorReporterCounter implements LocalErrorReporter {
   @Override
   public void report(LocalError localError) {
     myErrorReporter.report(localError);
-    if (myLevel == null || localError.getLevel().equals(myLevel)) {
+    if (myLevel == null || localError.level.equals(myLevel)) {
       myCount++;
     }
   }

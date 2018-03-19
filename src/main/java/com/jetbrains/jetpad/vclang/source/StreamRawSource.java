@@ -31,7 +31,7 @@ public abstract class StreamRawSource implements Source {
   @Override
   public boolean load(SourceLoader sourceLoader) {
     ModulePath modulePath = getModulePath();
-    ErrorReporter errorReporter = sourceLoader.getErrorReporter();
+    ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 

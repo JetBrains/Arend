@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -164,7 +165,7 @@ public class Prelude {
     }
 
     @Override
-    public void typecheckingFinished(GlobalReferable referable, Definition definition) {
+    public void typecheckingFinished(LocatedReferable referable, Definition definition) {
       update(definition);
     }
   }

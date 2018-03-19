@@ -57,7 +57,7 @@ public abstract class StreamBinarySource implements BinarySource {
 
       return true;
     } catch (IOException e) {
-      sourceLoader.getErrorReporter().report(new ExceptionError(e, getModulePath()));
+      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath()));
       return false;
     }
   }
@@ -79,7 +79,7 @@ public abstract class StreamBinarySource implements BinarySource {
 
       return moduleDeserialization.readModule(myModuleProto, sourceLoader.getModuleScopeProvider());
     } catch (DeserializationException e) {
-      sourceLoader.getErrorReporter().report(new ExceptionError(e, modulePath));
+      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, modulePath));
       sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
       return false;
     }

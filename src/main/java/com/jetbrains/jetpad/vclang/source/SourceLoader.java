@@ -36,8 +36,12 @@ public final class SourceLoader {
     return myLibraryManager.getModuleScopeProvider();
   }
 
-  public ErrorReporter getErrorReporter() {
-    return myLibraryManager.getErrorReporter();
+  public ErrorReporter getTypecheckingErrorReporter() {
+    return myLibraryManager.getTypecheckingErrorReporter();
+  }
+
+  public ErrorReporter getLibraryErrorReporter() {
+    return myLibraryManager.getLibraryErrorReporter();
   }
 
   /**
@@ -57,7 +61,7 @@ public final class SourceLoader {
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
 
     if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
-      getErrorReporter().report(new ModuleNotFoundError(modulePath));
+      getLibraryErrorReporter().report(new ModuleNotFoundError(modulePath));
       return false;
     }
 
@@ -106,7 +110,7 @@ public final class SourceLoader {
     }
 
     if (!rawSourceIsAvailable) {
-      getErrorReporter().report(new ModuleNotFoundError(modulePath));
+      getLibraryErrorReporter().report(new ModuleNotFoundError(modulePath));
       return false;
     }
 

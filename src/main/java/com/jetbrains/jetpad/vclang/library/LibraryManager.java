@@ -13,7 +13,8 @@ import java.util.*;
 public class LibraryManager {
   private final LibraryResolver myLibraryResolver;
   private ModuleScopeProvider myModuleScopeProvider;
-  private final ErrorReporter myErrorReporter;
+  private final ErrorReporter myTypecheckingErrorReporter;
+  private final ErrorReporter myLibraryErrorReporter;
   private final Map<Library, Set<Library>> myReverseDependencies = new LinkedHashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
   private final Set<Library> myFailedLibraries = new HashSet<>();
@@ -21,14 +22,16 @@ public class LibraryManager {
   /**
    * Constructs new {@code LibraryManager}.
    *
-   * @param libraryResolver     a library resolver.
-   * @param moduleScopeProvider a module scope provider for the whole project.
-   * @param errorReporter       an error reporter for all errors related to loading and unloading of libraries.
+   * @param libraryResolver           a library resolver.
+   * @param moduleScopeProvider       a module scope provider for the whole project.
+   * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
+   * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
    */
-  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter errorReporter) {
+  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
     myLibraryResolver = libraryResolver;
     myModuleScopeProvider = moduleScopeProvider;
-    myErrorReporter = errorReporter;
+    myTypecheckingErrorReporter = typecheckingErrorReporter;
+    myLibraryErrorReporter = libraryErrorReporter;
   }
 
   public ModuleScopeProvider getModuleScopeProvider() {
@@ -39,8 +42,12 @@ public class LibraryManager {
     myModuleScopeProvider = moduleScopeProvider;
   }
 
-  public ErrorReporter getErrorReporter() {
-    return myErrorReporter;
+  public ErrorReporter getTypecheckingErrorReporter() {
+    return myTypecheckingErrorReporter;
+  }
+
+  public ErrorReporter getLibraryErrorReporter() {
+    return myLibraryErrorReporter;
   }
 
   /**
@@ -73,7 +80,7 @@ public class LibraryManager {
   public Library loadLibrary(String libraryName) {
     Library library = myLibraryResolver.resolve(libraryName);
     if (library == null) {
-      myErrorReporter.report(LibraryError.notFound(libraryName));
+      myLibraryErrorReporter.report(LibraryError.notFound(libraryName));
       return null;
     }
 
@@ -89,7 +96,7 @@ public class LibraryManager {
    */
   public boolean loadLibrary(Library library) {
     if (myLoadingLibraries.contains(library)) {
-      myErrorReporter.report(LibraryError.cyclic(myLoadingLibraries.stream().map(Library::getName)));
+      myLibraryErrorReporter.report(LibraryError.cyclic(myLoadingLibraries.stream().map(Library::getName)));
       return false;
     }
 
@@ -157,7 +164,7 @@ public class LibraryManager {
   public void unloadLibrary(String libraryName) {
     Library library = myLibraryResolver.resolve(libraryName);
     if (library == null) {
-      myErrorReporter.report(LibraryError.notFound(libraryName));
+      myLibraryErrorReporter.report(LibraryError.notFound(libraryName));
     } else {
       unloadLibrary(library);
     }
@@ -170,7 +177,7 @@ public class LibraryManager {
    */
   public void unloadLibrary(Library library) {
     if (!myLoadingLibraries.isEmpty()) {
-      myErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
+      myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
       return;
     }
 
