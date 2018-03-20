@@ -49,10 +49,10 @@ public interface NamespaceCommand extends PrettyPrintable {
       List<LineDoc> renamingDocs = new ArrayList<>(openedReferences.size());
       for (NameRenaming renaming : openedReferences) {
         LineDoc renamingDoc = refDoc(renaming.getOldReference());
-        Referable newRef = renaming.getNewReferable();
-        if (newRef != null) {
+        String newName = renaming.getName();
+        if (newName != null) {
           Precedence precedence = renaming.getPrecedence();
-          renamingDoc = hList(renamingDoc, text(" \\as " + (precedence == null ? "" : precedence)), refDoc(newRef));
+          renamingDoc = hList(renamingDoc, text(" \\as " + (precedence == null ? "" : precedence)), text(newName));
         }
         renamingDocs.add(renamingDoc);
       }

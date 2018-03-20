@@ -7,6 +7,6 @@ import javax.annotation.Nullable;
 
 public interface NameRenaming {
   @Nonnull Referable getOldReference();
-  @Nullable Referable getNewReferable();
   @Nullable Precedence getPrecedence();
+  @Nullable String getName();
 }

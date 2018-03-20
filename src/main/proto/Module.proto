@@ -1,25 +1,32 @@
 syntax = "proto3";
 
 package vclang.compiled;
-option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
+option java_package = "com.jetbrains.jetpad.vclang.module.serialization";
 option java_outer_classname = "ModuleProtos";
 
 import "Definition.proto";
 
 
 message Module {
-    int64 version = 4;
-    DefinitionState definition_state = 1;
-    InstanceState instance_state = 2;
-    repeated DefinitionReference referred_definition = 3;
-    message DefinitionReference {
-        string source_url = 1;
-        string definition_id = 2;
-    }
+    Group group = 1;
+    repeated ModuleCallTargets module_call_targets = 2;
+}
 
-    message DefinitionState {
-        map<string, Definition> definition = 1;
-    }
-    message InstanceState {
-    }
+message ModuleCallTargets {
+    repeated string name = 1;
+    repeated CallTargetTree call_target_tree = 2;
+}
+
+message CallTargetTree {
+    string name = 1;
+    int32 index = 2;
+    repeated CallTargetTree subtree = 3;
+}
+
+message Group {
+    Referable referable = 1;
+    Definition definition = 2;
+    repeated Group subgroup = 3;
+    repeated Group dynamic_subgroup = 4;
+    repeated int32 invisible_internal_referable = 5;
 }

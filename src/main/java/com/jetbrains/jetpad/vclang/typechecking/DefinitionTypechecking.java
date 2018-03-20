@@ -111,7 +111,7 @@ class DefinitionTypechecking {
     Definition typechecked = state.getTypechecked(unit.getDefinition().getData());
 
     if (unit.getDefinition() instanceof Concrete.ClassDefinition) {
-      ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(unit.getDefinition().getData());
+      ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(((Concrete.ClassDefinition) unit.getDefinition()).getData());
       if (typechecked == null) {
         state.record(unit.getDefinition().getData(), definition);
       }

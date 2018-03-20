@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -913,8 +914,14 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ReferableDefinition {
-    public Definition(GlobalReferable referable) {
+    public Definition(LocatedReferable referable) {
       super(referable);
+    }
+
+    @Nonnull
+    @Override
+    public LocatedReferable getData() {
+      return (LocatedReferable) super.getData();
     }
 
     @Nonnull
@@ -1048,7 +1055,7 @@ public final class Concrete {
     private final Expression myResultType;
     private final FunctionBody myBody;
 
-    public FunctionDefinition(GlobalReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(LocatedReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
       myParameters = parameters;
       myResultType = resultType;
@@ -1083,7 +1090,7 @@ public final class Concrete {
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
 
-    public DataDefinition(GlobalReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
+    public DataDefinition(LocatedReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(referable);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
@@ -1253,7 +1260,7 @@ public final class Concrete {
     private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public Instance(GlobalReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(LocatedReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myArguments = arguments;
       myClassView = classRef;

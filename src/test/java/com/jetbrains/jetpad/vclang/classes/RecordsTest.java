@@ -6,7 +6,8 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -176,65 +177,65 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => 0 }");
-    assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.SET0), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition(result, "Point")).getSort());
+    assertEquals(Universe(Sort.SET0), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest2() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => 0 | y => 1 }");
-    assertEquals(Sort.SET0, ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(Sort.PROP), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition(result, "Point")).getSort());
+    assertEquals(Universe(Sort.PROP), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest3() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { x => Nat }");
-    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition(result, "Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest4() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
         "\\func C => Point { x => Nat }");
-    assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) getDefinition(result, "Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest5() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { x => \\Type2 }");
-    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) result.getDefinition("Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), result.getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition(result, "Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordConstructorsTest() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\func test (p : A) => p.y");
-    FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
     Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
-    Constructor foo = ((DataDefinition) result.getDefinition("A.Foo")).getConstructor("foo");
+    Constructor foo = ((DataDefinition) getDefinition(result, "A.Foo")).getConstructor("foo");
 
     ConCallExpression arg2 = arguments.get(2).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(1, arg2.getDataTypeArguments().size());
@@ -251,27 +252,27 @@ public class RecordsTest extends TypeCheckingTestCase {
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters())), domArguments.get(1));
     assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
   }
 
   @Test
   public void recordConstructorsParametersTest() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo (p : x = x) | foo (p = p)\n" +
         "  \\func y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
         "}\n" +
         "\\func test (q : A) => q.y");
-    FunctionDefinition testFun = (FunctionDefinition) result.getDefinition("test");
-    Expression xCall = FieldCall((ClassField) result.getDefinition("A.x"), Ref(testFun.getParameters()));
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
+    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
-    DataDefinition Foo = (DataDefinition) result.getDefinition("A.Foo");
+    DataDefinition Foo = (DataDefinition) getDefinition(result, "A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);

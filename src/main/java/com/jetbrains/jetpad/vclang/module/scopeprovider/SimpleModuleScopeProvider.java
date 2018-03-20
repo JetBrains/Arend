@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.module.ModuleRegistry;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,6 +23,10 @@ public class SimpleModuleScopeProvider implements ModuleScopeProvider, ModuleReg
   @Override
   public void unregisterModule(ModulePath path) {
     myMap.remove(path);
+  }
+
+  public void clear() {
+    myMap.clear();
   }
 
   @Override

@@ -18,7 +18,7 @@ public class CountingErrorReporter implements ErrorReporter {
 
   @Override
   public void report(GeneralError error) {
-    if (myLevel == null || myLevel == error.getLevel()) {
+    if (myLevel == null || myLevel == error.level) {
       ++myCounter;
     }
   }

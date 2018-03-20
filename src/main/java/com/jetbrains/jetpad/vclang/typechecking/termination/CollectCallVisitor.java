@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.BindingPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.ProcessDefCallsVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 

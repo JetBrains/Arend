@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vclang.compiled;
-option java_package = "com.jetbrains.jetpad.vclang.module.caching.serialization";
+option java_package = "com.jetbrains.jetpad.vclang.module.serialization";
 option java_outer_classname = "LevelProtos";
 
 

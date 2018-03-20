@@ -11,11 +11,11 @@ import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.util.Pair;
@@ -144,8 +144,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, zero, suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable dataDef = it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    LocatedReferable dataDef = (LocatedReferable) it.next().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -198,8 +198,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, (), k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable dataDef = it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    LocatedReferable dataDef = (LocatedReferable) it.next().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);
@@ -219,8 +219,8 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (d : D) (k : Nat)\n" +
       "  | suc n, (), suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
-    GlobalReferable dataDef = it.next().getReferable();
-    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    LocatedReferable dataDef = (LocatedReferable) it.next().getReferable();
+    Concrete.FunctionDefinition funDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     DataDefinition data = new DataDefinition(dataDef);
     data.setParameters(EmptyDependentLink.getInstance());
     data.setSort(Sort.STD);

@@ -11,7 +11,8 @@ import com.jetbrains.jetpad.vclang.core.expr.SigmaExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -24,40 +25,40 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class GetTypeTest extends TypeCheckingTestCase {
-  private static void testType(Expression expected, TypeCheckModuleResult result) {
-    assertEquals(expected, ((FunctionDefinition) result.getDefinition("test")).getResultType());
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) result.getDefinition("test")).getBody()).getExpression().getType());
+  private void testType(Expression expected, ChildGroup result) {
+    assertEquals(expected, ((FunctionDefinition) getDefinition(result, "test")).getResultType());
+    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) getDefinition(result, "test")).getBody()).getExpression().getType());
   }
 
   @Test
   public void constructorTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\func test => cons 0 nil");
-    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.SET0, Nat()), result);
+    ChildGroup result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\func test => cons 0 nil");
+    testType(DataCall((DataDefinition) getDefinition(result, "List"), Sort.SET0, Nat()), result);
   }
 
   @Test
   public void nilConstructorTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\func test => List.nil {Nat}");
-    testType(DataCall((DataDefinition) result.getDefinition("List"), Sort.SET0, Nat()), result);
+    ChildGroup result = typeCheckModule("\\data List (A : \\1-Type0) | nil | cons A (List A) \\func test => List.nil {Nat}");
+    testType(DataCall((DataDefinition) getDefinition(result, "List"), Sort.SET0, Nat()), result);
   }
 
   @Test
   public void classExtTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\class Test { | A : \\Type0 | a : A } \\func test => Test { A => Nat }");
-    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), result.getDefinition("Test").getTypeWithParams(new ArrayList<>(), Sort.STD));
-    assertEquals(Universe(Sort.SET0), result.getDefinition("test").getTypeWithParams(new ArrayList<>(), Sort.SET0));
+    ChildGroup result = typeCheckModule("\\class Test { | A : \\Type0 | a : A } \\func test => Test { A => Nat }");
+    assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), getDefinition(result, "Test").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Universe(Sort.SET0), getDefinition(result, "test").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     testType(Universe(Sort.SET0), result);
   }
 
   @Test
   public void lambdaTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\func test => \\lam (f : Nat -> Nat) => f 0");
+    ChildGroup result = typeCheckModule("\\func test => \\lam (f : Nat -> Nat) => f 0");
     testType(Pi(Pi(Nat(), Nat()), Nat()), result);
   }
 
   @Test
   public void lambdaTest2() {
-    TypeCheckModuleResult result = typeCheckModule("\\func test => \\lam (A : \\Type0) (x : A) => x");
+    ChildGroup result = typeCheckModule("\\func test => \\lam (A : \\Type0) (x : A) => x");
     SingleDependentLink A = singleParam("A", Universe(new Level(0), new Level(LevelVariable.HVAR)));
     Expression expectedType = Pi(A, Pi(singleParam("x", Ref(A)), Ref(A)));
     testType(expectedType, result);
@@ -65,20 +66,20 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldAccTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => (p 0).f");
-    SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) result.getDefinition("C"), Sort.SET0)));
+    ChildGroup result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => (p 0).f");
+    SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) getDefinition(result, "C"), Sort.SET0)));
     Expression type = FunCall(Prelude.PATH_INFIX, Sort.SET0,
         Nat(),
         Zero(),
-        FieldCall((ClassField) result.getDefinition("C.x"), Apps(Ref(p), Zero())));
+        FieldCall((ClassField) getDefinition(result, "C.x"), Apps(Ref(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
-    Expression testType = result.getDefinition("test").getTypeWithParams(testParams, Sort.SET0);
+    Expression testType = getDefinition(result, "test").getTypeWithParams(testParams, Sort.SET0);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), fromPiParameters(testType, testParams).normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void tupleTest() {
-    TypeCheckModuleResult result = typeCheckModule("\\func test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
+    ChildGroup result = typeCheckModule("\\func test : \\Sigma (x y : Nat) (x = y) => (0, 0, path (\\lam _ => 0))");
     DependentLink xy = parameter(true, vars("x", "y"), Nat());
     testType(new SigmaExpression(Sort.PROP, params(xy, paramExpr(FunCall(Prelude.PATH_INFIX, Sort.SET0, Nat(), Ref(xy), Ref(xy.getNext()))))), result);
   }
@@ -94,9 +95,9 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void patternConstructor1() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data C Nat \\with | zero => c1 | suc n => c2 Nat");
-    DataDefinition data = (DataDefinition) result.getDefinition("C");
+    DataDefinition data = (DataDefinition) getDefinition(result, "C");
     List<DependentLink> c1Params = new ArrayList<>();
     Expression c1Type = data.getConstructor("c1").getTypeWithParams(c1Params, Sort.SET0);
     assertEquals(DataCall(data, Sort.SET0, Zero()), c1Type);
@@ -111,11 +112,11 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void patternConstructor2() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data Vec (A : \\Set0) (n : Nat) \\elim n | zero => Nil | suc n => Cons A (Vec A n)" +
         "\\data D (n : Nat) (Vec Nat n) \\elim n | zero => dzero | suc n => done");
-    DataDefinition vec = (DataDefinition) result.getDefinition("Vec");
-    DataDefinition d = (DataDefinition) result.getDefinition("D");
+    DataDefinition vec = (DataDefinition) getDefinition(result, "Vec");
+    DataDefinition d = (DataDefinition) getDefinition(result, "D");
     List<DependentLink> dzeroParams = new ArrayList<>();
     Expression dzeroType = d.getConstructor("dzero").getTypeWithParams(dzeroParams, Sort.SET0);
     assertEquals(
@@ -140,11 +141,11 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void patternConstructor3() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data D | d \\Type0\n" +
         "\\data C D \\with | d A => c A");
-    DataDefinition d = (DataDefinition) result.getDefinition("D");
-    DataDefinition c = (DataDefinition) result.getDefinition("C");
+    DataDefinition d = (DataDefinition) getDefinition(result, "D");
+    DataDefinition c = (DataDefinition) getDefinition(result, "C");
     DependentLink A = c.getConstructor("c").getDataTypeParameters();
     List<DependentLink> cParams = new ArrayList<>();
     Expression cType = c.getConstructor("c").getTypeWithParams(cParams, Sort.SET0);
@@ -156,10 +157,10 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void patternConstructorDep() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data Box (n : Nat) | box\n" +
         "\\data D (n : Nat) (Box n) \\elim n | zero => d");
-    DataDefinition d = (DataDefinition) result.getDefinition("D");
+    DataDefinition d = (DataDefinition) getDefinition(result, "D");
     List<DependentLink> dParams = new ArrayList<>();
     Expression dType = d.getConstructor("d").getTypeWithParams(dParams, Sort.SET0);
     assertEquals(

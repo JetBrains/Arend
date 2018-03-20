@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
@@ -82,7 +83,7 @@ public abstract class Definition implements Variable {
       return new FunctionDefinition(definition.getData());
     }
     if (definition instanceof Concrete.ClassDefinition || definition instanceof Concrete.ClassSynonym) {
-      return new ClassDefinition(definition.getData());
+      return new ClassDefinition((ClassReferable) definition.getData());
     }
     throw new IllegalStateException();
   }

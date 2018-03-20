@@ -2,27 +2,23 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.VclangTestCase;
 import com.jetbrains.jetpad.vclang.frontend.parser.*;
-import com.jetbrains.jetpad.vclang.frontend.term.group.FileGroup;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.module.source.SourceId;
-import com.jetbrains.jetpad.vclang.term.ChildGroup;
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
+import com.jetbrains.jetpad.vclang.term.group.FileGroup;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.antlr.v4.runtime.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertThat;
 
 public abstract class ParserTestCase extends VclangTestCase {
-  private static final SourceId SOURCE_ID = new SourceId() {
-    @Override
-    public ModulePath getModulePath() {
-      return ModulePath.moduleName(toString());
-    }
-    @Override
-    public String toString() {
-      return "$TestCase$";
-    }
-  };
+  protected static final ModulePath MODULE_PATH = new ModulePath("$TestCase$");
 
   private VcgrammarParser _parse(String text) {
     ANTLRInputStream input = new ANTLRInputStream(text);
@@ -31,7 +27,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     lexer.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(MODULE_PATH, line, pos), msg));
       }
     });
 
@@ -41,7 +37,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     parser.addErrorListener(new BaseErrorListener() {
       @Override
       public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-        errorReporter.report(new ParserError(new Position(SOURCE_ID, line, pos), msg));
+        errorReporter.report(new ParserError(new Position(MODULE_PATH, line, pos), msg));
       }
     });
     // parser.addErrorListener(new DiagnosticErrorListener());
@@ -52,7 +48,7 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   Concrete.Expression parseExpr(String text, int errors) {
     VcgrammarParser.ExprContext ctx = _parse(text).expr();
-    Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitExpr(ctx) : null;
+    Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitExpr(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return expr;
   }
@@ -63,7 +59,12 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   ChildGroup parseDef(String text, int errors) {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
-    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitDefinition(ctx, null) : null;
+    List<Group> subgroups = new ArrayList<>(1);
+    FileGroup fileGroup = new FileGroup(new ModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
+    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup) : null;
+    if (definition != null) {
+      subgroups.add(definition);
+    }
     assertThat(errorList, containsErrors(errors));
     return definition;
   }
@@ -74,9 +75,9 @@ public abstract class ParserTestCase extends VclangTestCase {
 
   protected ChildGroup parseModule(String text, int errors) {
     VcgrammarParser.StatementsContext tree = _parse(text).statements();
-    FileGroup group = errorList.isEmpty() ? new BuildVisitor(SOURCE_ID, errorReporter).visitStatements(tree) : null;
+    FileGroup group = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitStatements(tree) : null;
     if (group != null) {
-      group.setModuleScopeProvider(moduleScopeProvider);
+      group.setModuleScopeProvider(libraryManager.getModuleScopeProvider());
     }
     assertThat(errorList, containsErrors(errors));
     return group;

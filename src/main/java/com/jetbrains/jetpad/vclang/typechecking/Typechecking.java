@@ -8,8 +8,9 @@ import com.jetbrains.jetpad.vclang.error.CompositeErrorReporter;
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
@@ -100,12 +101,12 @@ public class Typechecking implements DependencyListener {
 
   }
 
-  public void typecheckingFinished(GlobalReferable referable, Definition definition) {
+  public void typecheckingFinished(LocatedReferable referable, Definition definition) {
 
   }
 
   private void orderGroup(Group group, Ordering ordering) {
-    GlobalReferable referable = group.getReferable();
+    LocatedReferable referable = group.getReferable();
     Definition typechecked = getTypechecked(referable);
     if (typechecked == null) {
       Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
@@ -292,7 +293,7 @@ public class Typechecking implements DependencyListener {
     }
 
     for (Definition result : results) {
-      typecheckingFinished(result.getReferable(), result);
+      typecheckingFinished((LocatedReferable) result.getReferable(), result);
     }
   }
 

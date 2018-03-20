@@ -7,24 +7,18 @@ import javax.annotation.Nonnull;
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
   private final Precedence myPrecedence;
-  private final Referable myNewReferable;
+  private final String myName;
 
-  public RedirectingReferableImpl(Referable originalReferable, Precedence precedence, Referable newRef) {
+  public RedirectingReferableImpl(Referable originalReferable, Precedence precedence, String name) {
     myOriginalReferable = originalReferable;
     myPrecedence = precedence;
-    myNewReferable = newRef;
+    myName = name;
   }
 
   @Nonnull
   @Override
   public Referable getOriginalReferable() {
     return myOriginalReferable;
-  }
-
-  @Nonnull
-  @Override
-  public Referable getNewReferable() {
-    return myNewReferable;
   }
 
   @Override
@@ -41,6 +35,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Nonnull
   @Override
   public String textRepresentation() {
-    return myNewReferable.textRepresentation();
+    return myName;
   }
 }

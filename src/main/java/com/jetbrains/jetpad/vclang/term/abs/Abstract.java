@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.term.abs;
 
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -118,7 +119,7 @@ public final class Abstract {
   // Definition
 
   public interface Definition extends SourceNode {
-    @Nonnull GlobalReferable getReferable();
+    @Nonnull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 

@@ -15,7 +15,8 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.term.Prelude;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -153,11 +154,11 @@ public class ElimTest extends TypeCheckingTestCase {
 
   @Test
   public void elim8() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
         "\\data D | d Nat Nat\n" +
         "\\func test (x : D) : Nat | d zero zero => 0 | d _ _ => 1");
-    FunctionDefinition test = (FunctionDefinition) result.getDefinition("test");
-    Constructor d = (Constructor) result.getDefinition("d");
+    FunctionDefinition test = (FunctionDefinition) getDefinition(result, "test");
+    Constructor d = (Constructor) getDefinition(result, "d");
     Binding binding = new TypedBinding("y", Nat());
     Expression call1 = ConCall(d, Sort.SET0, Collections.emptyList(), Zero(), Ref(binding));
     Expression call2 = ConCall(d, Sort.SET0, Collections.emptyList(), Suc(Zero()), Ref(binding));
@@ -313,14 +314,14 @@ public class ElimTest extends TypeCheckingTestCase {
 
   @Test
   public void testElimTranslationSubst3() {
-    TypeCheckModuleResult result = typeCheckModule(
+    ChildGroup result = typeCheckModule(
       "\\data D | A | B | C\n" +
       "\\func f (n m : D) : D \\elim m\n" +
       " | A => n\n" +
       " | _ => n"
     );
-    FunctionDefinition def = (FunctionDefinition) result.getDefinition("f");
-    DataDefinition dataDef = (DataDefinition) result.getDefinition("D");
+    FunctionDefinition def = (FunctionDefinition) getDefinition(result, "f");
+    DataDefinition dataDef = (DataDefinition) getDefinition(result, "D");
     DependentLink nParam = def.getParameters().subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 1);
     Map<Constructor, ElimTree> children = new HashMap<>();
     children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));

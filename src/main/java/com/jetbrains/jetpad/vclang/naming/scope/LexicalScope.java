@@ -1,9 +1,10 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
+import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -93,8 +94,9 @@ public class LexicalScope implements Scope {
           oldRef = ((UnresolvedReference) oldRef).resolve(scope);
         }
         if (!(oldRef instanceof ErrorReference)) {
-          Referable newRef = renaming.getNewReferable();
-          elements.add(newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef);
+          String name = renaming.getName();
+          Precedence prec = renaming.getPrecedence();
+          elements.add(name != null && prec != null ? new RedirectingReferableImpl(oldRef, prec, name) : oldRef);
         }
       }
 
@@ -216,14 +218,14 @@ public class LexicalScope implements Scope {
       }
 
       for (NameRenaming renaming : opened) {
-        Referable newRef = renaming.getNewReferable();
+        String newName = renaming.getName();
         Referable oldRef = renaming.getOldReference();
-        if ((newRef != null ? newRef : oldRef).textRepresentation().equals(name)) {
+        if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
           if (resolveRef) {
             if (oldRef instanceof UnresolvedReference) {
               oldRef = ((UnresolvedReference) oldRef).resolve(scope);
             }
-            return newRef != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newRef) : oldRef;
+            return newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
           } else {
             return scope.resolveNamespace(name, true);
           }

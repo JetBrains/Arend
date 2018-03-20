@@ -2,13 +2,15 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
-import com.jetbrains.jetpad.vclang.term.Group;
+import com.jetbrains.jetpad.vclang.term.NameRenaming;
+import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
@@ -214,6 +216,38 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, scope);
+    }
+
+    for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
+      List<String> path = namespaceCommand.getPath();
+      Scope curScope = scope;
+      for (int i = 0; i < path.size(); i++) {
+        curScope = curScope.resolveNamespace(path.get(i), true);
+        if (curScope == null) {
+          myErrorReporter.report(new ProxyError(group.getReferable(), new NotInScopeError(namespaceCommand, i == 0 ? null : new LongUnresolvedReference(namespaceCommand, path.subList(0, i)), path.get(i))));
+          break;
+        }
+      }
+
+      if (curScope != null) {
+        for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
+          Referable ref = renaming.getOldReference();
+          if (ref instanceof UnresolvedReference) {
+            ref = ((UnresolvedReference) ref).resolve(curScope);
+          }
+          if (ref instanceof ErrorReference) {
+            myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
+          }
+        }
+        for (Referable ref : namespaceCommand.getHiddenReferences()) {
+          if (ref instanceof UnresolvedReference) {
+            ref = ((UnresolvedReference) ref).resolve(curScope);
+          }
+          if (ref instanceof ErrorReference) {
+            myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
+          }
+        }
+      }
     }
 
     for (Group subgroup : group.getSubgroups()) {

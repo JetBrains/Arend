@@ -1,11 +1,11 @@
 package com.jetbrains.jetpad.vclang.naming;
 
-import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteGlobalReferable;
+import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.term.Group;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -241,7 +241,7 @@ public class ParserTest extends NameResolverTestCase {
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1)))), cVar(refs.get(2)));
@@ -276,7 +276,7 @@ public class ParserTest extends NameResolverTestCase {
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(d), cApps(cVar(named), cVar(refs.get(1))), cVar(refs.get(2))));
@@ -297,7 +297,7 @@ public class ParserTest extends NameResolverTestCase {
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(d), cVar(refs.get(0)), cApps(cVar(named), cVar(refs.get(1))));
@@ -318,7 +318,7 @@ public class ParserTest extends NameResolverTestCase {
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named = it.next().getReferable();
     GlobalReferable d = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named), cApps(cVar(d), cVar(refs.get(0)), cVar(refs.get(1))));
@@ -339,7 +339,7 @@ public class ParserTest extends NameResolverTestCase {
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     GlobalReferable named1 = it.next().getReferable();
     GlobalReferable named2 = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     Referable refA = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList().get(0);
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
     Concrete.Expression expectedTerm = cApps(cVar(named2), cApps(cVar(named1), cVar(refA)));
@@ -376,7 +376,7 @@ public class ParserTest extends NameResolverTestCase {
     GlobalReferable leftP = it.next().getReferable();
     GlobalReferable qed = it.next().getReferable();
     GlobalReferable g = it.next().getReferable();
-    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteGlobalReferable) it.next().getReferable()).getDefinition();
+    Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
     List<? extends Referable> refs = ((Concrete.TelescopeParameter) function.getParameters().get(0)).getReferableList();
 
     Concrete.Expression actualTerm = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
