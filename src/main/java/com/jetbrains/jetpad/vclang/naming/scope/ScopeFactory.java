@@ -56,7 +56,13 @@ public class ScopeFactory {
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
-      Scope scope = ((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT ? new ImportedScope(parentScope.getImportedSubscope() /* TODO[scopes]: may be null? */, EmptyModuleScopeProvider.INSTANCE) : parentScope.getGlobalSubscope();
+      Scope scope;
+      if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
+        ImportedScope importedScope = parentScope.getImportedSubscope();
+        scope = importedScope == null ? EmptyScope.INSTANCE : new ImportedScope(importedScope, EmptyModuleScopeProvider.INSTANCE);
+      } else {
+        scope = parentScope.getGlobalSubscope();
+      }
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;
       } else {
@@ -126,6 +132,14 @@ public class ScopeFactory {
       }
     }
 
+    // Replace the scope with class fields in class extensions
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
+      Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
+      if (parentParent instanceof Abstract.ClassReferenceHolder && sourceNode.equals(((Abstract.ClassFieldImpl) parentSourceNode).getImplementation())) {
+        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());
+      }
+    }
+
     // Extend the scope with parameters
     if (parentSourceNode instanceof Abstract.ParametersHolder) {
       List<? extends Abstract.Parameter> parameters = ((Abstract.ParametersHolder) parentSourceNode).getParameters();
@@ -159,14 +173,6 @@ public class ScopeFactory {
         clauses1 = new ArrayList<>(clauses);
       }
       return new LetScope(parentScope, clauses1);
-    }
-
-    // Replace the scope with class fields in class extensions
-    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) { // TODO[scopes]: always false?
-      Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
-      if (parentParent instanceof Abstract.ClassReferenceHolder) {
-        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());
-      }
     }
 
     // Extend the scope with patterns

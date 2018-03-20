@@ -16,6 +16,7 @@ public final class Abstract {
   private Abstract() {}
 
   public interface SourceNode {
+    @Nonnull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
   }
 
