@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.library.error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LibraryReferable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
@@ -31,11 +32,15 @@ public class LibraryError extends GeneralError {
   }
 
   public static LibraryError unloadDuringLoading(Stream<String> libraryNames) {
-    return new LibraryError("Cannot unload a library while loading other libraries: ", libraryNames);
+    return new LibraryError("Cannot unload a library while loading other libraries", libraryNames);
   }
 
   public static LibraryError illegalName(String libraryName) {
     return new LibraryError("Illegal library name or path", Stream.of(libraryName));
+  }
+
+  public static LibraryError moduleNotFound(ModulePath modulePath, String libraryName) {
+    return new LibraryError("Module '" + modulePath + "' is not found in library", Stream.of(libraryName));
   }
 
   @Override

@@ -42,7 +42,7 @@ public abstract class VclangTestCase {
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, errorReporter);
+    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, errorReporter, errorReporter);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
     libraryManager.loadLibrary(preludeLibrary);
