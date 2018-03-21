@@ -227,7 +227,7 @@ public class LexicalScope implements Scope {
             }
             return newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
           } else {
-            return scope.resolveNamespace(name, true);
+            return scope.resolveNamespace(oldRef.textRepresentation(), true);
           }
         }
       }
