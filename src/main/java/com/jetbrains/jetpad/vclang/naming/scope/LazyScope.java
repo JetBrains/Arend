@@ -55,6 +55,13 @@ public class LazyScope implements Scope {
     return myScope.getGlobalSubscope();
   }
 
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    updateScope();
+    return myScope.getGlobalSubscopeWithoutOpens();
+  }
+
   @Nullable
   @Override
   public ImportedScope getImportedSubscope() {

@@ -54,6 +54,12 @@ public class LetScope implements Scope {
     return myParent.getGlobalSubscope();
   }
 
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    return myParent.getGlobalSubscopeWithoutOpens();
+  }
+
   @Nullable
   @Override
   public ImportedScope getImportedSubscope() {

@@ -57,6 +57,13 @@ public class CachingScope implements Scope {
     return namespace == EMPTY_SCOPE ? null : namespace;
   }
 
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    Scope result = myScope.getGlobalSubscopeWithoutOpens();
+    return result == myScope ? this : result;
+  }
+
   @Nullable
   @Override
   public ImportedScope getImportedSubscope() {

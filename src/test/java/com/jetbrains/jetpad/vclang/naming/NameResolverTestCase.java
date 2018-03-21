@@ -80,7 +80,6 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     assertThat(errorList, containsErrors(errors));
   }
 
-  // FIXME[tests] should be package-private
   protected ChildGroup resolveNamesModule(String text, int errors) {
     ChildGroup group = parseModule(text);
     resolveNamesModule(group, errors);

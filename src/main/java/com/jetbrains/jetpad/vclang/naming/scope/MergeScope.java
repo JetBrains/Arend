@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class MergeScope implements Scope {
@@ -60,6 +63,16 @@ public class MergeScope implements Scope {
       }
     }
     return null;
+  }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    List<Scope> scopes = new ArrayList<>(myScopes.size());
+    for (Scope scope : myScopes) {
+      scopes.add(scope.getGlobalSubscopeWithoutOpens());
+    }
+    return new MergeScope(scopes);
   }
 
   @Nullable

@@ -39,6 +39,10 @@ public interface Scope {
     return this;
   }
 
+  default @Nonnull Scope getGlobalSubscopeWithoutOpens() {
+    return this;
+  }
+
   default @Nullable ImportedScope getImportedSubscope() {
     return null;
   }

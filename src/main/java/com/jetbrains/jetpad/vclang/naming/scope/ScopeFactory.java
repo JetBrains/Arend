@@ -61,7 +61,7 @@ public class ScopeFactory {
         ImportedScope importedScope = parentScope.getImportedSubscope();
         scope = importedScope == null ? EmptyScope.INSTANCE : new ImportedScope(importedScope, EmptyModuleScopeProvider.INSTANCE);
       } else {
-        scope = parentScope.getGlobalSubscope();
+        scope = parentScope.getGlobalSubscopeWithoutOpens();
       }
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;

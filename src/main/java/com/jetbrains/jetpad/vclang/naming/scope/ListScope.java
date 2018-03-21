@@ -3,7 +3,10 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class ListScope implements Scope {
@@ -33,5 +36,17 @@ public class ListScope implements Scope {
       }
     }
     return null;
+  }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscope() {
+    return EmptyScope.INSTANCE;
+  }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    return EmptyScope.INSTANCE;
   }
 }

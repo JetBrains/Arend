@@ -270,6 +270,12 @@ public class LexicalScope implements Scope {
     return result instanceof Scope ? (Scope) result : null;
   }
 
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    return myIgnoreOpens ? this : new LexicalScope(myParent, myGroup, true);
+  }
+
   @Nullable
   @Override
   public ImportedScope getImportedSubscope() {

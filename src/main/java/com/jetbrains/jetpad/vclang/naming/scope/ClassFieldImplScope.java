@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
@@ -51,5 +52,17 @@ public class ClassFieldImplScope implements Scope {
   public Scope resolveNamespace(String name, boolean resolveModuleNames) {
     Referable referable = resolveName(name);
     return referable instanceof ClassReferable ? new ClassFieldImplScope((ClassReferable) referable) : null;
+  }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscope() {
+    return EmptyScope.INSTANCE;
+  }
+
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    return EmptyScope.INSTANCE;
   }
 }

@@ -65,6 +65,12 @@ public class TelescopeScope implements Scope {
     return myParent.getGlobalSubscope();
   }
 
+  @Nonnull
+  @Override
+  public Scope getGlobalSubscopeWithoutOpens() {
+    return myParent.getGlobalSubscopeWithoutOpens();
+  }
+
   @Nullable
   @Override
   public ImportedScope getImportedSubscope() {
