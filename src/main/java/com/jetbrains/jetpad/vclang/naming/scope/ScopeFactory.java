@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -59,7 +58,7 @@ public class ScopeFactory {
       Scope scope;
       if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
         ImportedScope importedScope = parentScope.getImportedSubscope();
-        scope = importedScope == null ? EmptyScope.INSTANCE : new ImportedScope(importedScope, EmptyModuleScopeProvider.INSTANCE);
+        scope = importedScope == null ? EmptyScope.INSTANCE : importedScope;
       } else {
         scope = parentScope.getGlobalSubscopeWithoutOpens();
       }
@@ -176,7 +175,7 @@ public class ScopeFactory {
     }
 
     // Extend the scope with patterns
-    if (parentSourceNode instanceof Abstract.Clause && sourceNode instanceof Abstract.Expression) {
+    if (parentSourceNode instanceof Abstract.Clause) {
       return new PatternScope(parentScope, ((Abstract.Clause) parentSourceNode).getPatterns());
     }
 
