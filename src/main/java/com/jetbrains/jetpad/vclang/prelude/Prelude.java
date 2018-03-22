@@ -19,13 +19,13 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
-import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.Collections;
@@ -160,8 +160,8 @@ public class Prelude {
   }
 
   public static class PreludeTypechecking extends Typechecking {
-    public PreludeTypechecking(TypecheckerState state) {
-      super(state, ConcreteReferableProvider.INSTANCE, DummyErrorReporter.INSTANCE);
+    public PreludeTypechecking(TypecheckerState state, ConcreteProvider concreteProvider) {
+      super(state, concreteProvider, DummyErrorReporter.INSTANCE);
     }
 
     @Override

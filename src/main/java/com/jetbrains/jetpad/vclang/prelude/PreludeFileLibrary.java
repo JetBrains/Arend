@@ -1,20 +1,16 @@
 package com.jetbrains.jetpad.vclang.prelude;
 
-import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * A library which is used to load and persist prelude from and to a file.
  */
-public class PreludeFileLibrary extends PreludeLibrary {
+public class PreludeFileLibrary extends PreludeTypecheckingLibrary {
   private final Path myBinaryPath;
 
   /**
@@ -25,19 +21,6 @@ public class PreludeFileLibrary extends PreludeLibrary {
   public PreludeFileLibrary(Path binaryPath, TypecheckerState typecheckerState) {
     super(typecheckerState);
     myBinaryPath = binaryPath;
-  }
-
-  @Override
-  public boolean load(LibraryManager libraryManager) {
-    synchronized (PreludeLibrary.class) {
-      if (getPreludeScope() == null) {
-        return super.load(libraryManager);
-      }
-    }
-
-    Prelude.fillInTypecheckerState(getTypecheckerState());
-    setLoaded();
-    return true;
   }
 
   @Nullable
@@ -59,31 +42,7 @@ public class PreludeFileLibrary extends PreludeLibrary {
   }
 
   @Override
-  public Collection<? extends ModulePath> getUpdatedModules() {
-    return Collections.singleton(Prelude.MODULE_PATH);
-  }
-
-  @Override
-  public boolean needsTypechecking() {
-    return true;
-  }
-
-  @Override
   public boolean supportsPersisting() {
     return myBinaryPath != null;
-  }
-
-  @Override
-  public boolean typecheck(Typechecking typechecking) {
-    if (super.typecheck(typechecking)) {
-      synchronized (PreludeLibrary.class) {
-        if (Prelude.INTERVAL == null) {
-          Prelude.initialize(getPreludeScope(), getTypecheckerState());
-        }
-      }
-      return true;
-    } else {
-      return false;
-    }
   }
 }

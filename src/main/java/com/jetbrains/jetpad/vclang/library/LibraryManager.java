@@ -192,4 +192,13 @@ public class LibraryManager {
 
     library.unload();
   }
+
+  /**
+   * Unloads all libraries.
+   */
+  public void unload() {
+    while (!myReverseDependencies.isEmpty()) {
+      unloadLibrary(myReverseDependencies.keySet().iterator().next());
+    }
+  }
 }

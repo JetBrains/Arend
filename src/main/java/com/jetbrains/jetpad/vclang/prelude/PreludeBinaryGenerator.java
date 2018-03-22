@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.prelude;
 
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.source.BinarySource;
@@ -29,7 +30,7 @@ public class PreludeBinaryGenerator {
 
     LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println, System.err::println);
     if (manager.loadLibrary(library)) {
-      if (library.typecheck(new Prelude.PreludeTypechecking(typecheckerState))) {
+      if (library.typecheck(new Prelude.PreludeTypechecking(typecheckerState, ConcreteReferableProvider.INSTANCE))) {
         library.persistModule(Prelude.MODULE_PATH, System.err::println);
       }
     }

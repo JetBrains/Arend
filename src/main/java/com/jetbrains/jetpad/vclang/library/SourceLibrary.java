@@ -7,12 +7,10 @@ import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.EnumSet;
 
 /**
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
@@ -126,35 +124,8 @@ public abstract class SourceLibrary extends BaseLibrary {
     return source != null && source.isAvailable();
   }
 
-  public Collection<? extends ModulePath> getUpdatedModules() {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public boolean needsTypechecking() {
-    return !getUpdatedModules().isEmpty();
-  }
-
   public boolean supportsPersisting() {
     return true;
-  }
-
-  @Override
-  public boolean typecheck(Typechecking typechecking) {
-    Collection<? extends ModulePath> updatedModules = getUpdatedModules();
-    if (updatedModules.isEmpty()) {
-      return true;
-    }
-
-    List<Group> groups = new ArrayList<>(updatedModules.size());
-    for (ModulePath module : updatedModules) {
-      Group group = getModuleGroup(module);
-      if (group != null) {
-        groups.add(group);
-      }
-    }
-
-    return typechecking.typecheckModules(groups);
   }
 
   public boolean persistModule(ModulePath modulePath, ErrorReporter errorReporter) {

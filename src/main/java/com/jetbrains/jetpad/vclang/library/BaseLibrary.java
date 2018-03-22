@@ -5,8 +5,13 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Provides a basic implementation of some of the methods of {@link Library}.
@@ -73,6 +78,33 @@ public abstract class BaseLibrary implements Library {
       Group group = getModuleGroup(module);
       return group == null ? null : LexicalScope.opened(group);
     };
+  }
+
+  public Collection<? extends ModulePath> getUpdatedModules() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public boolean needsTypechecking() {
+    return !getUpdatedModules().isEmpty();
+  }
+
+  @Override
+  public boolean typecheck(Typechecking typechecking) {
+    Collection<? extends ModulePath> updatedModules = getUpdatedModules();
+    if (updatedModules.isEmpty()) {
+      return true;
+    }
+
+    List<Group> groups = new ArrayList<>(updatedModules.size());
+    for (ModulePath module : updatedModules) {
+      Group group = getModuleGroup(module);
+      if (group != null) {
+        groups.add(group);
+      }
+    }
+
+    return typechecking.typecheckModules(groups);
   }
 
   @Override
