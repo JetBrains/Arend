@@ -71,6 +71,16 @@ public class LibraryManager {
   }
 
   /**
+   * Gets the library with the given name.
+   *
+   * @param libraryName the name of a library.
+   * @return the library with the given name.
+   */
+  public Library getLibrary(String libraryName) {
+    return myLibraryResolver.resolve(libraryName);
+  }
+
+  /**
    * Loads a library together with its dependencies and registers them in this library manager.
    *
    * @param libraryName  the name of the library to load.
