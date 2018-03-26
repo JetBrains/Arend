@@ -20,6 +20,10 @@ import java.util.List;
 
 public class ScopeFactory {
   public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
+    return forGroup(group, moduleScopeProvider, null);
+  }
+
+  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
@@ -28,10 +32,10 @@ public class ScopeFactory {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
 
-      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
+      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider, elementsScope);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, elementsScope);
     }
     return LexicalScope.insideOf(group, parentScope);
   }

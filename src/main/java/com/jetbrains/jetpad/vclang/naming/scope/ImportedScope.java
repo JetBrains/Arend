@@ -9,19 +9,18 @@ import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class ImportedScope implements Scope {
   private final Tree myExpectedNamesTree;
   private final ModuleScopeProvider myProvider;
+  private final Scope myElemntsScope;
 
-  public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider) {
+  public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider, @Nullable Scope elementsScope) {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
+    myElemntsScope = elementsScope;
 
     for (NamespaceCommand command : group.getNamespaceCommands()) {
       if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
@@ -30,14 +29,24 @@ public class ImportedScope implements Scope {
     }
   }
 
-  public ImportedScope(ImportedScope scope, ModuleScopeProvider provider) {
-    myExpectedNamesTree = scope.myExpectedNamesTree;
-    myProvider = provider;
-  }
-
-  private ImportedScope(Tree tree, ModuleScopeProvider provider) {
+  private ImportedScope(Tree tree, ModuleScopeProvider provider, Scope elementsScope) {
     myExpectedNamesTree = tree;
     myProvider = provider;
+    myElemntsScope = elementsScope;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Referable> getElements() {
+    if (myElemntsScope != null) {
+      return myElemntsScope.getElements();
+    }
+
+    List<Referable> result = new ArrayList<>();
+    for (Triple triple : myExpectedNamesTree.map.values()) {
+      result.add(triple.referable);
+    }
+    return result;
   }
 
   @Nullable
@@ -70,7 +79,7 @@ public class ImportedScope implements Scope {
       return null;
     }
 
-    Scope scope2 = new ImportedScope(triple.tree, myProvider);
+    Scope scope2 = new ImportedScope(triple.tree, myProvider, myElemntsScope == null ? null : myElemntsScope.resolveNamespace(name, true));
     if (triple.modulePath == null) {
       return scope2;
     }

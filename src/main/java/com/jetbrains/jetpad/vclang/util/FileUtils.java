@@ -45,6 +45,10 @@ public class FileUtils {
     return name.matches(MODULE_NAME_REGEX);
   }
 
+  public static boolean isModuleName(String name) {
+    return name.matches(MODULE_NAME_REGEX);
+  }
+
   public static ModulePath modulePath(Path path, String ext) {
     assert !path.isAbsolute();
 
