@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.term.abs;
 
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
@@ -90,14 +89,14 @@ public final class Abstract {
   }
 
   public interface BinOpSequenceElem extends SourceNode {
-    /* @Nonnull */ @Nullable Expression getExpression();
+    @Nonnull Expression getExpression();
     @Nonnull Fixity getFixity();
     boolean isExplicit();
   }
 
   public interface Argument extends SourceNode {
     boolean isExplicit();
-    /* @Nonnull */ @Nullable Expression getExpression();
+    @Nonnull Expression getExpression();
   }
 
   public interface ClassFieldImpl extends ParametersHolder {
@@ -148,18 +147,18 @@ public final class Abstract {
   }
 
   public interface Constructor extends EliminatedExpressionsHolder {
-    @Nonnull GlobalReferable getReferable();
+    @Nonnull LocatedReferable getReferable();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 
   public interface ClassField extends ParametersHolder {
-    @Nonnull GlobalReferable getReferable();
+    @Nonnull LocatedReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }
 
   public interface ClassFieldSynonym extends SourceNode {
-    /* @Nonnull */ @Nullable GlobalReferable getReferable();
+    /* @Nonnull */ @Nullable LocatedReferable getReferable();
     /* @Nonnull */ @Nullable Reference getUnderlyingField();
   }
 

@@ -198,7 +198,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       List<Concrete.ClassFieldSynonym> fields = new ArrayList<>();
       Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
       for (Abstract.ClassFieldSynonym fieldSyn : def.getFieldSynonyms()) {
-        GlobalReferable referable = fieldSyn.getReferable();
+        LocatedReferable referable = fieldSyn.getReferable();
         Abstract.Reference underlyingField = fieldSyn.getUnderlyingField();
         if (referable != null && underlyingField != null) {
           fields.add(new Concrete.ClassFieldSynonym(referable, buildReference(underlyingField), classDef));

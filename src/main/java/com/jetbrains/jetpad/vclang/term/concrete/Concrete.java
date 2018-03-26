@@ -886,15 +886,15 @@ public final class Concrete {
   }
 
   public static abstract class ReferableDefinition implements SourceNode {
-    private final GlobalReferable myReferable;
+    private final LocatedReferable myReferable;
 
-    public ReferableDefinition(GlobalReferable referable) {
+    public ReferableDefinition(LocatedReferable referable) {
       myReferable = referable;
     }
 
     @Nonnull
     @Override
-    public GlobalReferable getData() {
+    public LocatedReferable getData() {
       return myReferable;
     }
 
@@ -916,12 +916,6 @@ public final class Concrete {
   public static abstract class Definition extends ReferableDefinition {
     public Definition(LocatedReferable referable) {
       super(referable);
-    }
-
-    @Nonnull
-    @Override
-    public LocatedReferable getData() {
-      return (LocatedReferable) super.getData();
     }
 
     @Nonnull
@@ -991,7 +985,7 @@ public final class Concrete {
     private final ClassDefinition myParentClass;
     private final Expression myResultType;
 
-    public ClassField(GlobalReferable referable, ClassDefinition parentClass, Expression resultType) {
+    public ClassField(LocatedReferable referable, ClassDefinition parentClass, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
       myResultType = resultType;
@@ -1162,7 +1156,7 @@ public final class Concrete {
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
 
-    public Constructor(GlobalReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
+    public Constructor(LocatedReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
       super(referable);
       myDataType = dataType;
       myParameters = parameters;
@@ -1237,7 +1231,7 @@ public final class Concrete {
     private final ReferenceExpression myUnderlyingField;
     private final ClassSynonym myClassSynonym;
 
-    public ClassFieldSynonym(GlobalReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
+    public ClassFieldSynonym(LocatedReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
       super(referable);
       myUnderlyingField = underlyingField;
       myClassSynonym = classSynonym;
