@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.term.group;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
-import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.ChildNamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
@@ -17,17 +16,15 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
   private final Position myPosition;
   private final Kind myKind;
   private final List<String> myPath;
-  private final List<ModuleReferable> myImportedPath;
   private final boolean myUsing;
   private final List<SimpleNameRenaming> myOpenedReferences;
   private final List<Referable> myHiddenReferences;
   private final ChildGroup myParent;
 
-  public SimpleNamespaceCommand(Position position, Kind kind, List<String> path, List<ModuleReferable> importedPath, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<Referable> hiddenReferences, ChildGroup parent) {
+  public SimpleNamespaceCommand(Position position, Kind kind, List<String> path, boolean isUsing, List<SimpleNameRenaming> openedReferences, List<Referable> hiddenReferences, ChildGroup parent) {
     myPosition = position;
     myKind = kind;
     myPath = path;
-    myImportedPath = importedPath;
     myUsing = isUsing;
     myOpenedReferences = openedReferences;
     myHiddenReferences = hiddenReferences;
@@ -44,12 +41,6 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
   @Override
   public List<String> getPath() {
     return myPath;
-  }
-
-  @Nonnull
-  @Override
-  public List<ModuleReferable> getImportedPath() {
-    return myImportedPath;
   }
 
   @Override

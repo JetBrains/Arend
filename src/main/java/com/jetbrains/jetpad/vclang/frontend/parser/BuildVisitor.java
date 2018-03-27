@@ -185,16 +185,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       throw new ParseException();
     }
 
-    List<ModuleReferable> referenceList;
-    if (kind == NamespaceCommand.Kind.IMPORT) {
-      referenceList = new ArrayList<>(path.size());
-      for (int i = 1; i <= path.size(); i++) {
-        referenceList.add(new ModuleReferable(new ModulePath(path.subList(0, i))));
-      }
-    } else {
-      referenceList = Collections.emptyList();
-    }
-
     List<SimpleNamespaceCommand.SimpleNameRenaming> openedReferences;
     if (ctx.nsUsing() == null) {
       openedReferences = Collections.emptyList();
@@ -213,7 +203,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       hiddenReferences.add(new NamedUnresolvedReference(tokenPosition(id.getSymbol()), id.getText()));
     }
 
-    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, path, referenceList, ctx.nsUsing() == null || ctx.nsUsing().USING() != null, openedReferences, hiddenReferences, parent);
+    return new SimpleNamespaceCommand(tokenPosition(ctx.start), kind, path, ctx.nsUsing() == null || ctx.nsUsing().USING() != null, openedReferences, hiddenReferences, parent);
   }
 
   @Override

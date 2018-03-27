@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.term;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.DocStringBuilder;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
@@ -21,27 +21,28 @@ public interface NamespaceCommand extends PrettyPrintable {
   enum Kind { OPEN, IMPORT }
   @Nonnull Kind getKind();
   @Nonnull List<String> getPath();
-  @Nonnull List<? extends ModuleReferable> getImportedPath();
   boolean isUsing();
   @Nonnull Collection<? extends NameRenaming> getOpenedReferences();
   @Nonnull Collection<? extends Referable> getHiddenReferences();
 
   @Override
   default void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    List<String> path = getPath();
+    if (path.isEmpty()) {
+      return;
+    }
+
     List<LineDoc> docs = new ArrayList<>();
     switch (getKind()) {
       case OPEN: docs.add(text("\\open")); break;
       case IMPORT: docs.add(text("\\import")); break;
     }
 
-    Collection<? extends GlobalReferable> importedPath = getImportedPath();
-    LineDoc referenceDoc;
-    if (importedPath.isEmpty()) {
-      Collection<? extends String> path = getPath();
-      referenceDoc = text(path.isEmpty() ? "_" : String.join(".", path));
-    } else {
-      referenceDoc = hSep(text("."), importedPath.stream().map(DocFactory::refDoc).collect(Collectors.toList()));
+    List<LineDoc> docPath = new ArrayList<>(path.size());
+    for (int i = 1; i <= path.size(); i++) {
+      docPath.add(refDoc(new ModuleReferable(new ModulePath(path.subList(0, i)))));
     }
+    LineDoc referenceDoc = hSep(text("."), docPath);
 
     Collection<? extends NameRenaming> openedReferences = getOpenedReferences();
     boolean using = isUsing();

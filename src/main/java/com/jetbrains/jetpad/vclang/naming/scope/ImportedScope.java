@@ -15,16 +15,16 @@ import java.util.function.Predicate;
 public class ImportedScope implements Scope {
   private final Tree myExpectedNamesTree;
   private final ModuleScopeProvider myProvider;
-  private final Scope myElemntsScope;
+  private final Scope myElementsScope;
 
   public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider, @Nullable Scope elementsScope) {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
-    myElemntsScope = elementsScope;
+    myElementsScope = elementsScope;
 
     for (NamespaceCommand command : group.getNamespaceCommands()) {
       if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myExpectedNamesTree.addPath(command.getImportedPath());
+        myExpectedNamesTree.addPath(command.getPath());
       }
     }
   }
@@ -32,14 +32,14 @@ public class ImportedScope implements Scope {
   private ImportedScope(Tree tree, ModuleScopeProvider provider, Scope elementsScope) {
     myExpectedNamesTree = tree;
     myProvider = provider;
-    myElemntsScope = elementsScope;
+    myElementsScope = elementsScope;
   }
 
   @Nonnull
   @Override
   public Collection<? extends Referable> getElements() {
-    if (myElemntsScope != null) {
-      return myElemntsScope.getElements();
+    if (myElementsScope != null) {
+      return myElementsScope.getElements();
     }
 
     List<Referable> result = new ArrayList<>();
@@ -79,7 +79,7 @@ public class ImportedScope implements Scope {
       return null;
     }
 
-    Scope scope2 = new ImportedScope(triple.tree, myProvider, myElemntsScope == null ? null : myElemntsScope.resolveNamespace(name, true));
+    Scope scope2 = new ImportedScope(triple.tree, myProvider, myElementsScope == null ? null : myElementsScope.resolveNamespace(name, true));
     if (triple.modulePath == null) {
       return scope2;
     }
@@ -109,15 +109,18 @@ public class ImportedScope implements Scope {
   private static class Tree {
     final Map<String, Triple> map = new LinkedHashMap<>();
 
-    void addPath(Collection<? extends ModuleReferable> path) {
+    void addPath(List<String> path) {
       if (path.isEmpty()) {
         return;
       }
 
       Tree tree = this;
-      for (Iterator<? extends ModuleReferable> it = path.iterator(); it.hasNext(); ) {
-        ModuleReferable key = it.next();
-        tree = tree.map.computeIfAbsent(key.path.getLastName(), k -> new Triple(key, it.hasNext() ? null : key.path, new Tree())).tree;
+      for (int i = 0; i < path.size(); i++) {
+        final int finalI = i + 1;
+        tree = tree.map.computeIfAbsent(path.get(i), k -> {
+          ModulePath modulePath = new ModulePath(path.subList(0, finalI));
+          return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree());
+        }).tree;
       }
     }
   }
