@@ -146,7 +146,7 @@ public class Prelude {
       state.record(constructor.getReferable(), constructor);
     }
 
-    state.record(SET_TRUNC.getReferable(), PROP_TRUNC);
+    state.record(SET_TRUNC.getReferable(), SET_TRUNC);
     for (Constructor constructor : SET_TRUNC.getConstructors()) {
       state.record(constructor.getReferable(), constructor);
     }
