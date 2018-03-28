@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class LocatedReferableImpl implements LocatedReferable {
   private final Precedence myPrecedence;
@@ -46,12 +45,14 @@ public class LocatedReferableImpl implements LocatedReferable {
 
   @Nullable
   @Override
-  public ModulePath getLocation(List<? super String> fullName) {
-    ModulePath modulePath = myParent.getLocation(fullName);
-    if (fullName != null) {
-      fullName.add(myName);
-    }
-    return modulePath;
+  public ModulePath getLocation() {
+    return myParent instanceof ModuleReferable ? ((ModuleReferable) myParent).path : myParent == null ? null : myParent.getLocation();
+  }
+
+  @Nullable
+  @Override
+  public LocatedReferable getLocatedReferableParent() {
+    return myParent;
   }
 
   @Override

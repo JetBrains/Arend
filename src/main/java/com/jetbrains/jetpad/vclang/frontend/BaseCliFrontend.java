@@ -258,7 +258,7 @@ public abstract class BaseCliFrontend {
     for (GeneralError error : myErrorReporter.getErrorList()) {
       for (GlobalReferable referable : error.getAffectedDefinitions()) {
         if (referable instanceof LocatedReferable) {
-          updateSourceResult(((LocatedReferable) referable).getLocation(null), error.level);
+          updateSourceResult(((LocatedReferable) referable).getLocation(), error.level);
         }
       }
 

@@ -38,7 +38,7 @@ public class ModuleSerialization {
 
       GlobalReferable targetReferable = entry.getKey().getReferable();
       List<String> longName = new ArrayList<>();
-      ModulePath targetModulePath = targetReferable instanceof LocatedReferable ? ((LocatedReferable) targetReferable).getLocation(longName) : null;
+      ModulePath targetModulePath = targetReferable instanceof LocatedReferable ? LocatedReferable.Helper.getLocation((LocatedReferable) targetReferable, longName) : null;
       if (targetModulePath == null || longName.isEmpty()) {
         myErrorReporter.report(LocationError.definition(targetReferable, modulePath));
         return null;
