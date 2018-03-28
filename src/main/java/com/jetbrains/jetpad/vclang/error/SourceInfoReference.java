@@ -1,17 +1,19 @@
 package com.jetbrains.jetpad.vclang.error;
 
+import com.jetbrains.jetpad.vclang.naming.reference.DataContainer;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
 
-public class SourceInfoReference implements SourceInfo, Referable {
+public class SourceInfoReference implements SourceInfo, Referable, DataContainer {
   private final SourceInfo mySourceInfo;
 
   public SourceInfoReference(SourceInfo sourceInfo) {
     mySourceInfo = sourceInfo;
   }
 
-  public SourceInfo getSourceInfo() {
+  @Override
+  public SourceInfo getData() {
     return mySourceInfo;
   }
 
