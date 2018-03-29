@@ -73,7 +73,12 @@ public abstract class BaseCliFrontend {
     }
 
     @Override
-    public void typecheckingFinished(LocatedReferable referable, Definition definition) {
+    public void typecheckingBodyFinished(LocatedReferable referable, Definition definition) {
+      flushErrors();
+    }
+
+    @Override
+    public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
       flushErrors();
     }
   }

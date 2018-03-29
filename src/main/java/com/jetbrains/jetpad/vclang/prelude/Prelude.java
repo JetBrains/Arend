@@ -165,7 +165,7 @@ public class Prelude {
     }
 
     @Override
-    public void typecheckingFinished(LocatedReferable referable, Definition definition) {
+    public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
       update(definition);
     }
   }

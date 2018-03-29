@@ -97,11 +97,27 @@ public class Typechecking implements DependencyListener {
 
   public enum Recursion { NO, IN_HEADER, IN_BODY }
 
-  public void typecheckingStarted(GlobalReferable definition) {
+  public void typecheckingHeaderStarted(LocatedReferable definition) {
 
   }
 
-  public void typecheckingFinished(LocatedReferable referable, Definition definition) {
+  public void typecheckingBodyStarted(LocatedReferable definition) {
+
+  }
+
+  public void typecheckingUnitStarted(LocatedReferable definition) {
+
+  }
+
+  public void typecheckingHeaderFinished(LocatedReferable referable, Definition definition) {
+
+  }
+
+  public void typecheckingBodyFinished(LocatedReferable referable, Definition definition) {
+
+  }
+
+  public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
 
   }
 
@@ -114,8 +130,8 @@ public class Typechecking implements DependencyListener {
         ordering.doOrder((Concrete.Definition) def);
       }
     } else {
-      typecheckingStarted(referable);
-      typecheckingFinished(referable, typechecked);
+      typecheckingUnitStarted(referable);
+      typecheckingUnitFinished(referable, typechecked);
     }
 
     for (Group subgroup : group.getSubgroups()) {
@@ -141,20 +157,16 @@ public class Typechecking implements DependencyListener {
           }
 
           if (!unit1.isHeader()) {
-            typecheckingStarted(definition.getData());
+            typecheckingUnitStarted(definition.getData());
             if (Typecheckable.hasHeader(definition)) {
               mySuspensions.remove(definition.getData());
             }
-            typecheckingFinished(definition.getData(), typechecked);
+            typecheckingUnitFinished(definition.getData(), typechecked);
           }
         }
         myErrorReporter.report(new CycleError(cycle));
         return;
       }
-    }
-
-    for (TypecheckingUnit unit : scc.getUnits()) {
-      typecheckingStarted(unit.getDefinition().getData());
     }
 
     boolean ok = typecheckHeaders(scc);
@@ -171,11 +183,11 @@ public class Typechecking implements DependencyListener {
 
   public void unitFound(TypecheckingUnit unit, Recursion recursion) {
     if (recursion == Recursion.IN_HEADER) {
-      typecheckingStarted(unit.getDefinition().getData());
+      typecheckingUnitStarted(unit.getDefinition().getData());
       Definition typechecked = Definition.newDefinition(unit.getDefinition());
       myState.record(unit.getDefinition().getData(), typechecked);
       myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
-      typecheckingFinished(unit.getDefinition().getData(), typechecked);
+      typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
     }
@@ -210,6 +222,8 @@ public class Typechecking implements DependencyListener {
     }
 
     if (numberOfHeaders == 1) {
+      typecheckingHeaderStarted(unit.getDefinition().getData());
+
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), localErrorReporter, null);
@@ -218,6 +232,8 @@ public class Typechecking implements DependencyListener {
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), visitor);
       }
+
+      typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
       return typechecked.status().headerIsOK();
     }
 
@@ -229,7 +245,10 @@ public class Typechecking implements DependencyListener {
 
       myErrorReporter.report(new CycleError(cycle));
       for (Concrete.Definition definition : cycle) {
-        myState.record(definition.getData(), Definition.newDefinition(definition));
+        typecheckingHeaderStarted(definition.getData());
+        Definition typechecked = Definition.newDefinition(definition);
+        myState.record(definition.getData(), typechecked);
+        typecheckingHeaderFinished(definition.getData(), typechecked);
       }
       return false;
     }
@@ -261,8 +280,9 @@ public class Typechecking implements DependencyListener {
       }
     }
 
-    List<Definition> results = new ArrayList<>(definitions.size());
     for (Concrete.Definition definition : definitions) {
+      typecheckingBodyStarted(definition.getData());
+
       Definition def = myState.getTypechecked(definition.getData());
       CheckTypeVisitor visitor = mySuspensions.remove(definition.getData());
       if (headersAreOK && visitor != null) {
@@ -273,7 +293,7 @@ public class Typechecking implements DependencyListener {
         }
       }
 
-      results.add(def);
+      typecheckingBodyFinished(definition.getData(), def);
     }
 
     if (!functionDefinitions.isEmpty()) {
@@ -291,14 +311,10 @@ public class Typechecking implements DependencyListener {
         }
       }
     }
-
-    for (Definition result : results) {
-      typecheckingFinished((LocatedReferable) result.getReferable(), result);
-    }
   }
 
   private void typecheck(TypecheckingUnit unit, boolean recursive) {
-    typecheckingStarted(unit.getDefinition().getData());
+    typecheckingUnitStarted(unit.getDefinition().getData());
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter);
     unit.getDefinition().accept(new DesugarVisitor(myErrorReporter), null);
@@ -317,6 +333,6 @@ public class Typechecking implements DependencyListener {
       }
     }
 
-    typecheckingFinished(unit.getDefinition().getData(), typechecked);
+    typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
   }
 }
