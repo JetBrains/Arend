@@ -14,7 +14,7 @@ public class IdReferableConverter implements ReferableConverter {
   }
 
   @Override
-  public LocatedReferable toDataLocatedReferable(LocatedReferable referable) {
+  public LocatedReferable toDataLocatedReferable(LocatedReferable referable, boolean isTypecheckable) {
     return referable;
   }
 }
