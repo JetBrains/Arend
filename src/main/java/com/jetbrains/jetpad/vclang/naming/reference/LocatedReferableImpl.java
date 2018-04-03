@@ -43,6 +43,11 @@ public class LocatedReferableImpl implements LocatedReferable {
     return myTypecheckable ? this : myParent;
   }
 
+  @Override
+  public boolean isTypecheckable() {
+    return myTypecheckable;
+  }
+
   @Nullable
   @Override
   public ModulePath getLocation() {

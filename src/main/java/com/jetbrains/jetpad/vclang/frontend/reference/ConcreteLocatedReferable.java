@@ -33,6 +33,10 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
     return myDefinition.getRelatedDefinition().getData();
   }
 
+  public boolean isTypecheckable() {
+    return myDefinition.getRelatedDefinition() == myDefinition;
+  }
+
   public void setDefinition(Concrete.ReferableDefinition definition) {
     assert myDefinition == null;
     myDefinition = definition;

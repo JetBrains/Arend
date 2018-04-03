@@ -11,6 +11,10 @@ public interface GlobalReferable extends Referable {
     return this;
   }
 
+  default boolean isTypecheckable() {
+    return true;
+  }
+
   default boolean isModule() {
     return false;
   }

@@ -5,5 +5,5 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 public interface ReferableConverter {
   Referable toDataReferable(Referable referable);
-  LocatedReferable toDataLocatedReferable(LocatedReferable referable, boolean isTypecheckable);
+  LocatedReferable toDataLocatedReferable(LocatedReferable referable);
 }
