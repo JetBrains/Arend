@@ -24,10 +24,14 @@ public class ScopeFactory {
   }
 
   public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope) {
+    return forGroup(group, moduleScopeProvider, elementsScope, true);
+  }
+
+  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
-      Scope preludeScope = moduleScopeProvider.forModule(Prelude.MODULE_PATH);
+      Scope preludeScope = prelude ? moduleScopeProvider.forModule(Prelude.MODULE_PATH) : null;
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
