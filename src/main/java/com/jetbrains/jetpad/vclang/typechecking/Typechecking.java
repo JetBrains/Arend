@@ -9,6 +9,9 @@ import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
@@ -38,6 +41,7 @@ public class Typechecking implements DependencyListener {
   private final ErrorReporter myErrorReporter;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
+  private final ReferableConverter myReferableConverter;
   private boolean myTypecheckingHeaders = false;
 
   public static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
@@ -46,16 +50,17 @@ public class Typechecking implements DependencyListener {
     CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
   }
 
-  public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener) {
+  public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener, ReferableConverter referableConverter) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
     myInstanceProviderSet = new InstanceProviderSet();
     myConcreteProvider = concreteProvider;
+    myReferableConverter = referableConverter;
   }
 
   public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
-    this(state, concreteProvider, errorReporter, (def1, header, def2) -> {});
+    this(state, concreteProvider, errorReporter, (def1, header, def2) -> {}, IdReferableConverter.INSTANCE);
   }
 
   public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
@@ -97,41 +102,42 @@ public class Typechecking implements DependencyListener {
 
   public enum Recursion { NO, IN_HEADER, IN_BODY }
 
-  public void typecheckingHeaderStarted(LocatedReferable definition) {
+  public void typecheckingHeaderStarted(TCReferable definition) {
 
   }
 
-  public void typecheckingBodyStarted(LocatedReferable definition) {
+  public void typecheckingBodyStarted(TCReferable definition) {
 
   }
 
-  public void typecheckingUnitStarted(LocatedReferable definition) {
+  public void typecheckingUnitStarted(TCReferable definition) {
 
   }
 
-  public void typecheckingHeaderFinished(LocatedReferable referable, Definition definition) {
+  public void typecheckingHeaderFinished(TCReferable referable, Definition definition) {
 
   }
 
-  public void typecheckingBodyFinished(LocatedReferable referable, Definition definition) {
+  public void typecheckingBodyFinished(TCReferable referable, Definition definition) {
 
   }
 
-  public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
+  public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
 
   }
 
   private void orderGroup(Group group, Ordering ordering) {
     LocatedReferable referable = group.getReferable();
-    Definition typechecked = getTypechecked(referable);
+    TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
+    Definition typechecked = tcReferable == null ? null : getTypechecked(tcReferable);
     if (typechecked == null) {
       Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
       if (def instanceof Concrete.Definition) {
         ordering.doOrder((Concrete.Definition) def);
       }
     } else {
-      typecheckingUnitStarted(referable);
-      typecheckingUnitFinished(referable, typechecked);
+      typecheckingUnitStarted(tcReferable);
+      typecheckingUnitFinished(tcReferable, typechecked);
     }
 
     for (Group subgroup : group.getSubgroups()) {
@@ -193,7 +199,7 @@ public class Typechecking implements DependencyListener {
     }
   }
 
-  public final Definition getTypechecked(GlobalReferable definition) {
+  public final Definition getTypechecked(TCReferable definition) {
     Definition typechecked = myState.getTypechecked(definition);
     if (typechecked == null || typechecked.status().needsTypeChecking()) {
       return null;
@@ -203,7 +209,7 @@ public class Typechecking implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(GlobalReferable def1, boolean header, GlobalReferable def2) {
+  public void dependsOn(TCReferable def1, boolean header, TCReferable def2) {
     myDependencyListener.dependsOn(def1, header, def2);
   }
 

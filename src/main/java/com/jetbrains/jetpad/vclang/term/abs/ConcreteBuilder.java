@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -24,9 +21,9 @@ import java.util.List;
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
   private final ReferableConverter myReferableConverter;
   private final ErrorReporter myErrorReporter;
-  private final LocatedReferable myDefinition;
+  private final TCReferable myDefinition;
 
-  private ConcreteBuilder(ReferableConverter referableConverter, ErrorReporter errorReporter, LocatedReferable definition) {
+  private ConcreteBuilder(ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition) {
     myReferableConverter = referableConverter;
     myErrorReporter = errorReporter;
     myDefinition = definition;
@@ -175,7 +172,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
@@ -199,7 +196,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return classDef;
     } else {
       List<Concrete.ClassFieldSynonym> fields = new ArrayList<>();
-      Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
+      Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
       for (Abstract.ClassFieldSynonym fieldSyn : def.getFieldSynonyms()) {
         LocatedReferable referable = fieldSyn.getReferable();
         Abstract.Reference underlyingField = fieldSyn.getUnderlyingField();

@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
@@ -150,7 +150,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     } else {
       if (fun instanceof Concrete.ReferenceExpression) {
         Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
-        result = defCall.getReferent() instanceof GlobalReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((GlobalReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
+        result = defCall.getReferent() instanceof TCReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((TCReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
       } else {
         result = myVisitor.checkExpr(fun, null);
       }

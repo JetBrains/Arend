@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 
@@ -8,13 +8,13 @@ import java.util.Collection;
 import java.util.List;
 
 public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, Void> {
-  private final Collection<GlobalReferable> myDependencies;
+  private final Collection<TCReferable> myDependencies;
 
-  public CollectDefCallsVisitor(Collection<GlobalReferable> dependencies) {
+  public CollectDefCallsVisitor(Collection<TCReferable> dependencies) {
     myDependencies = dependencies;
   }
 
-  public Collection<GlobalReferable> getDependencies() {
+  public Collection<TCReferable> getDependencies() {
     return myDependencies;
   }
 
@@ -27,8 +27,8 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof GlobalReferable) {
-      myDependencies.add((GlobalReferable) expr.getReferent());
+    if (expr.getReferent() instanceof TCReferable) {
+      myDependencies.add((TCReferable) expr.getReferent());
     }
     return null;
   }

@@ -7,17 +7,11 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 
-public class ClassReferableImpl extends LocatedReferableImpl implements ClassReferable {
-  private final List<ClassReferable> mySuperClassReferences;
-  private final List<? extends GlobalReferable> myFieldReferables;
+public class ClassReferableImpl extends LocatedReferableImpl implements TCClassReferable {
+  private final List<TCClassReferable> mySuperClassReferences;
+  private final List<? extends TCReferable> myFieldReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, List<ClassReferable> superClassReferences, List<? extends GlobalReferable> fieldReferables, LocatedReferable parent) {
-    super(precedence, name, parent, true);
-    mySuperClassReferences = superClassReferences;
-    myFieldReferables = fieldReferables;
-  }
-
-  public ClassReferableImpl(Precedence precedence, String name, List<ClassReferable> superClassReferences, List<? extends GlobalReferable> fieldReferables, ModulePath parent) {
+  public ClassReferableImpl(Precedence precedence, String name, List<TCClassReferable> superClassReferences, List<? extends TCReferable> fieldReferables, ModulePath parent) {
     super(precedence, name, parent);
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;
@@ -25,13 +19,13 @@ public class ClassReferableImpl extends LocatedReferableImpl implements ClassRef
 
   @Nonnull
   @Override
-  public List<ClassReferable> getSuperClassReferences() {
+  public List<TCClassReferable> getSuperClassReferences() {
     return mySuperClassReferences;
   }
 
   @Nonnull
   @Override
-  public Collection<? extends GlobalReferable> getFieldReferables() {
+  public Collection<? extends TCReferable> getFieldReferables() {
     return myFieldReferables;
   }
 }

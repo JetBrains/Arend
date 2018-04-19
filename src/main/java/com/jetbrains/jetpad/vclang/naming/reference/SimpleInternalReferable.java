@@ -3,16 +3,16 @@ package com.jetbrains.jetpad.vclang.naming.reference;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 
 public class SimpleInternalReferable implements Group.InternalReferable {
-  private final GlobalReferable myReferable;
+  private final LocatedReferable myReferable;
   private final boolean myVisible;
 
-  public SimpleInternalReferable(GlobalReferable referable, boolean isVisible) {
+  public SimpleInternalReferable(LocatedReferable referable, boolean isVisible) {
     myReferable = referable;
     myVisible = isVisible;
   }
 
   @Override
-  public GlobalReferable getReferable() {
+  public LocatedReferable getReferable() {
     return myReferable;
   }
 

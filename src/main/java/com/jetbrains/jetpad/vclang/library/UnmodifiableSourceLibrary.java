@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.SimpleModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
@@ -89,7 +90,7 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   public boolean persistUpdateModules(ErrorReporter errorReporter) {
     boolean ok = true;
     for (ModulePath module : myUpdatedModules) {
-      if (!persistModule(module, errorReporter)) {
+      if (!persistModule(module, IdReferableConverter.INSTANCE, errorReporter)) {
         ok = false;
       }
     }

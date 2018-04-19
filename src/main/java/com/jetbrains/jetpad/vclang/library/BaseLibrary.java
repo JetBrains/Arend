@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -57,13 +59,18 @@ public abstract class BaseLibrary implements Library {
   }
 
   public void unloadGroup(Group group) {
-    myTypecheckerState.reset(group.getReferable());
+    unloadDefinition(group.getReferable());
     for (Group subgroup : group.getSubgroups()) {
       unloadGroup(subgroup);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
       unloadGroup(subgroup);
     }
+  }
+
+  public void unloadDefinition(LocatedReferable referable) {
+    assert referable instanceof TCReferable;
+    myTypecheckerState.reset((TCReferable) referable);
   }
 
   @Override

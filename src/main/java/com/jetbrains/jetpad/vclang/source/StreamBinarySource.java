@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.module.serialization.DeserializationException
 import com.jetbrains.jetpad.vclang.module.serialization.ModuleDeserialization;
 import com.jetbrains.jetpad.vclang.module.serialization.ModuleProtos;
 import com.jetbrains.jetpad.vclang.module.serialization.ModuleSerialization;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
@@ -86,7 +87,7 @@ public abstract class StreamBinarySource implements BinarySource {
   }
 
   @Override
-  public boolean persist(SourceLibrary library, ErrorReporter errorReporter) {
+  public boolean persist(SourceLibrary library, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     ModulePath currentModulePath = getModulePath();
     Group group = library.getModuleGroup(currentModulePath);
     if (group == null) {
@@ -100,7 +101,7 @@ public abstract class StreamBinarySource implements BinarySource {
         return false;
       }
 
-      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group, currentModulePath);
+      ModuleProtos.Module module = new ModuleSerialization(library.getTypecheckerState(), errorReporter).writeModule(group, currentModulePath, referableConverter);
       if (module == null) {
         return false;
       }

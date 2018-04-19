@@ -5,18 +5,18 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import java.util.List;
 
 public abstract class Definition implements Variable {
   private ClassDefinition myThisClass;
-  private GlobalReferable myReferable;
+  private TCReferable myReferable;
   private TypeCheckingStatus myStatus;
 
-  public Definition(GlobalReferable referable, TypeCheckingStatus status) {
+  public Definition(TCReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
     myStatus = status;
   }
@@ -26,7 +26,7 @@ public abstract class Definition implements Variable {
     return myReferable.textRepresentation();
   }
 
-  public GlobalReferable getReferable() {
+  public TCReferable getReferable() {
     return myReferable;
   }
 
@@ -83,7 +83,7 @@ public abstract class Definition implements Variable {
       return new FunctionDefinition(definition.getData());
     }
     if (definition instanceof Concrete.ClassDefinition || definition instanceof Concrete.ClassSynonym) {
-      return new ClassDefinition((ClassReferable) definition.getData());
+      return new ClassDefinition((TCClassReferable) definition.getData());
     }
     throw new IllegalStateException();
   }

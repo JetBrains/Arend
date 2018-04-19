@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -34,7 +34,7 @@ public class ClassDefinition extends Definition {
 
   private ClassField myEnclosingThisField = null;
 
-  public ClassDefinition(ClassReferable referable) {
+  public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     mySuperClasses = new HashSet<>();
     myFields = new LinkedHashSet<>();
@@ -44,8 +44,8 @@ public class ClassDefinition extends Definition {
   }
 
   @Override
-  public ClassReferable getReferable() {
-    return (ClassReferable) super.getReferable();
+  public TCClassReferable getReferable() {
+    return (TCClassReferable) super.getReferable();
   }
 
   public ClassField getCoercingField() {

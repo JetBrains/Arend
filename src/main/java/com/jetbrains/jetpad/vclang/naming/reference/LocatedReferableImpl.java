@@ -6,13 +6,14 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class LocatedReferableImpl implements LocatedReferable {
+public class LocatedReferableImpl implements TCReferable {
   private final Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
   private final boolean myTypecheckable;
 
   public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, boolean isTypecheckable) {
+    assert isTypecheckable || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -39,8 +40,8 @@ public class LocatedReferableImpl implements LocatedReferable {
   }
 
   @Override
-  public LocatedReferable getTypecheckable() {
-    return myTypecheckable ? this : myParent;
+  public TCReferable getTypecheckable() {
+    return myTypecheckable ? this : (TCReferable) myParent;
   }
 
   @Override

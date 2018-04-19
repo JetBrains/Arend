@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
@@ -72,7 +72,7 @@ public class Ordering {
     return ok;
   }
 
-  private void collectInstances(InstanceProvider instanceProvider, Stack<GlobalReferable> referables, Set<GlobalReferable> result) {
+  private void collectInstances(InstanceProvider instanceProvider, Stack<TCReferable> referables, Set<TCReferable> result) {
     /* TODO[classes]
     while (!referables.isEmpty()) {
       GlobalReferable referable = referables.pop();
@@ -129,20 +129,20 @@ public class Ordering {
       }
     }
 
-    Stack<GlobalReferable> dependenciesWithoutInstances = new Stack<>(); // TODO[classes]: Replace stack with a set
+    Stack<TCReferable> dependenciesWithoutInstances = new Stack<>(); // TODO[classes]: Replace stack with a set
     if (enclosingClass != null) {
       dependenciesWithoutInstances.add(enclosingClass.getData());
     }
 
     Typechecking.Recursion recursion = Typechecking.Recursion.NO;
     definition.accept(new DefinitionGetDependenciesVisitor(dependenciesWithoutInstances), typecheckable.isHeader());
-    Collection<GlobalReferable> dependencies;
+    Collection<TCReferable> dependencies;
     InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getData());
     if (instanceProvider == null) {
       dependencies = dependenciesWithoutInstances;
     } else {
       dependencies = new LinkedHashSet<>();
-      collectInstances(instanceProvider, dependenciesWithoutInstances, (Set<GlobalReferable>) dependencies);
+      collectInstances(instanceProvider, dependenciesWithoutInstances, (Set<TCReferable>) dependencies);
     }
     if (typecheckable.isHeader() && dependencies.contains(definition.getData())) {
       myStack.pop();
@@ -150,8 +150,8 @@ public class Ordering {
       return OrderResult.RECURSION_ERROR;
     }
 
-    for (GlobalReferable referable : dependencies) {
-      GlobalReferable tcReferable = referable.getTypecheckable();
+    for (TCReferable referable : dependencies) {
+      TCReferable tcReferable = referable.getTypecheckable();
       if (tcReferable.equals(definition.getData())) {
         if (referable.equals(tcReferable)) {
           recursion = Typechecking.Recursion.IN_BODY;

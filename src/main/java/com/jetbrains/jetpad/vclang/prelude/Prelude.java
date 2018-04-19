@@ -20,8 +20,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -155,7 +154,7 @@ public class Prelude {
   // TODO[prelude]: This works only because currently the prelude namespace is flat.
   public static void initialize(Scope scope, TypecheckerState state) {
     for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
-      update(state.getTypechecked((GlobalReferable) scope.resolveName(name)));
+      update(state.getTypechecked((TCReferable) scope.resolveName(name)));
     }
   }
 
@@ -165,7 +164,7 @@ public class Prelude {
     }
 
     @Override
-    public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
+    public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
       update(definition);
     }
   }

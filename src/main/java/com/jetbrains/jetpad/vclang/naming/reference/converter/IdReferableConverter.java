@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.reference.converter;
 
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 public class IdReferableConverter implements ReferableConverter {
   public static final IdReferableConverter INSTANCE = new IdReferableConverter();
@@ -14,7 +15,7 @@ public class IdReferableConverter implements ReferableConverter {
   }
 
   @Override
-  public LocatedReferable toDataLocatedReferable(LocatedReferable referable) {
-    return referable;
+  public TCReferable toDataLocatedReferable(LocatedReferable referable) {
+    return referable instanceof TCReferable ? (TCReferable) referable : null;
   }
 }

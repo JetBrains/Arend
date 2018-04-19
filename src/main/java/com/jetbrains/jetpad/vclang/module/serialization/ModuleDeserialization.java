@@ -46,10 +46,10 @@ public class ModuleDeserialization {
   private void fillInCallTargetTree(ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
     if (callTargetTree.getIndex() > 0) {
       Referable referable = scope.resolveName(callTargetTree.getName());
-      if (!(referable instanceof GlobalReferable)) {
+      if (!(referable instanceof TCReferable)) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      Definition callTarget = myState.getTypechecked((GlobalReferable) referable);
+      Definition callTarget = myState.getTypechecked((TCReferable) referable);
       if (callTarget == null) {
         throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
       }
@@ -77,7 +77,7 @@ public class ModuleDeserialization {
   @Nonnull
   private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
-    List<GlobalReferable> fieldReferables;
+    List<TCReferable> fieldReferables;
     LocatedReferable referable;
     if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
       fieldReferables = new ArrayList<>();
@@ -93,8 +93,8 @@ public class ModuleDeserialization {
 
     Definition def;
     if (groupProto.hasDefinition()) {
-      def = readDefinition(groupProto.getDefinition(), referable);
-      myState.record(referable, def);
+      def = readDefinition(groupProto.getDefinition(), (TCReferable) referable);
+      myState.record((TCReferable) referable, def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
     } else {
@@ -126,7 +126,7 @@ public class ModuleDeserialization {
       List<Group.InternalReferable> internalReferables = new ArrayList<>();
       for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
         Definition fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex());
-        GlobalReferable fieldReferable = fieldDef.getReferable();
+        TCReferable fieldReferable = fieldDef.getReferable();
         internalReferables.add(new SimpleInternalReferable(fieldReferable, !invisibleRefs.contains(fieldDef)));
         fieldReferables.add(fieldReferable);
       }
@@ -147,14 +147,14 @@ public class ModuleDeserialization {
     return group;
   }
 
-  private Definition readDefinition(DefinitionProtos.Definition defProto, LocatedReferable referable) throws DeserializationException {
+  private Definition readDefinition(DefinitionProtos.Definition defProto, TCReferable referable) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
-        ClassDefinition classDef = new ClassDefinition((ClassReferable) referable);
+        ClassDefinition classDef = new ClassDefinition((TCClassReferable) referable);
         for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
           DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-          LocatedReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
+          TCReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
           ClassField res = new ClassField(absField, classDef);
           res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           myState.record(absField, res);
@@ -166,7 +166,7 @@ public class ModuleDeserialization {
         DataDefinition dataDef = new DataDefinition(referable);
         for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
           DefinitionProtos.Referable conReferable = constructor.getReferable();
-          LocatedReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
+          TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
           Constructor res = new Constructor(absConstructor, dataDef);
           res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           myState.record(absConstructor, res);

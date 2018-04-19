@@ -72,7 +72,7 @@ public abstract class StreamRawSource implements Source {
       }
 
       result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
-      new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
+      new DefinitionResolveNameVisitor(errorReporter).resolveGroup(result, null, result.getGroupScope(), ConcreteReferableProvider.INSTANCE);
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath));

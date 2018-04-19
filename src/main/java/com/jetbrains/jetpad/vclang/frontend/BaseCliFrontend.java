@@ -13,6 +13,8 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider
 import com.jetbrains.jetpad.vclang.module.scopeprovider.LocatingModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -73,12 +75,12 @@ public abstract class BaseCliFrontend {
     }
 
     @Override
-    public void typecheckingBodyFinished(LocatedReferable referable, Definition definition) {
+    public void typecheckingBodyFinished(TCReferable referable, Definition definition) {
       flushErrors();
     }
 
     @Override
-    public void typecheckingUnitFinished(LocatedReferable referable, Definition definition) {
+    public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
       flushErrors();
     }
   }
@@ -252,7 +254,7 @@ public abstract class BaseCliFrontend {
 
       // Persist modules without errors
       for (ModulePath module : modulesToPersist) {
-        library.persistModule(module, System.err::println);
+        library.persistModule(module, IdReferableConverter.INSTANCE, System.err::println);
       }
     }
 

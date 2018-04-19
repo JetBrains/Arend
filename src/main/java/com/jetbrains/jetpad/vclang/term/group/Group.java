@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.group;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
@@ -19,7 +18,7 @@ public interface Group {
   @Nonnull Collection<? extends InternalReferable> getFields();
 
   interface InternalReferable {
-    GlobalReferable getReferable();
+    LocatedReferable getReferable();
     boolean isVisible();
   }
 }

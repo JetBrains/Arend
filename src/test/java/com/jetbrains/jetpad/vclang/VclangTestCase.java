@@ -8,8 +8,8 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.library.Library;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.EmptyModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.prelude.PreludeFileLibrary;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
@@ -50,9 +50,9 @@ public abstract class VclangTestCase {
     errorList.clear();
   }
 
-  public GlobalReferable get(Scope scope, String path) {
+  public TCReferable get(Scope scope, String path) {
     Referable referable = Scope.Utils.resolveName(scope, Arrays.asList(path.split("\\.")));
-    return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
+    return referable instanceof TCReferable ? (TCReferable) referable : null;
   }
 
   @SafeVarargs

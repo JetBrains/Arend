@@ -555,7 +555,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (!(expr.getReferent() instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
-    TResult result = expr.getReferent() instanceof GlobalReferable ? myTypeCheckingDefCall.typeCheckDefCall((GlobalReferable) expr.getReferent(), expr) : getLocalVar(expr);
+    TResult result = expr.getReferent() instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) expr.getReferent(), expr) : getLocalVar(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }
@@ -1100,7 +1100,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
-    Definition definition = referable instanceof GlobalReferable ? myState.getTypechecked((GlobalReferable) referable) : null;
+    Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
     if (clazz.isInstance(definition)) {
       return clazz.cast(definition);
     }

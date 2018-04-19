@@ -43,6 +43,10 @@ public class LibraryError extends GeneralError {
     return new LibraryError("Module '" + modulePath + "' is not found in library", Stream.of(libraryName));
   }
 
+  public static LibraryError incorrectLibrary(String libraryName) {
+    return new LibraryError("Unknown library type", Stream.of(libraryName));
+  }
+
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     List<LineDoc> libraryDocs = libraryNames.map(DocFactory::text).collect(Collectors.toList());
