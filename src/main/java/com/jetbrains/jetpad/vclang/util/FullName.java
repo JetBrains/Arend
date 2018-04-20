@@ -35,4 +35,9 @@ public class FullName {
   public int hashCode() {
     return Objects.hash(modulePath, longName);
   }
+
+  @Override
+  public String toString() {
+    return modulePath + "::" + longName;
+  }
 }

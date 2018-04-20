@@ -10,7 +10,7 @@ import java.util.Map;
 public class CachingConcreteProvider implements ConcreteProvider {
   private ConcreteProvider myProvider;
   private final Map<GlobalReferable, Concrete.ReferableDefinition> myCache = new HashMap<>();
-  private final static Concrete.ReferableDefinition NULL_INSTANCE = new Concrete.Definition(null) {
+  public final static Concrete.ReferableDefinition NULL_DEFINITION = new Concrete.Definition(null) {
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return null;
@@ -31,14 +31,11 @@ public class CachingConcreteProvider implements ConcreteProvider {
 
   @Override
   public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {
-    Concrete.ReferableDefinition definition = myCache.get(referable);
-    if (definition != null) {
-      return definition == NULL_INSTANCE ? null : definition;
-    }
-
-    definition = myProvider.getConcrete(referable);
-    myCache.put(referable, definition == null ? NULL_INSTANCE : definition);
-    return definition;
+    Concrete.ReferableDefinition definition = myCache.computeIfAbsent(referable, ref -> {
+      Concrete.ReferableDefinition def = myProvider.getConcrete(ref);
+      return def == null ? NULL_DEFINITION : def;
+    });
+    return definition == NULL_DEFINITION ? null : definition;
   }
 
   public void setTypecheckable(GlobalReferable referable, Concrete.ReferableDefinition typecheckable) {
