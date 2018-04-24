@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.error.doc.Doc;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LibraryReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
@@ -26,10 +25,6 @@ public class ExceptionError extends GeneralError {
 
   public ExceptionError(Exception exception, ModulePath modulePath) {
     this(exception, new ModuleReferable(modulePath));
-  }
-
-  public ExceptionError(Exception exception, String libraryName) {
-    this(exception, new LibraryReferable(libraryName));
   }
 
   @Override

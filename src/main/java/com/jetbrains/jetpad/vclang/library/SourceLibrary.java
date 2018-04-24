@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.source.SourceLoader;
@@ -128,13 +129,13 @@ public abstract class SourceLibrary extends BaseLibrary {
     return true;
   }
 
-  public boolean persistModule(ModulePath modulePath, ErrorReporter errorReporter) {
+  public boolean persistModule(ModulePath modulePath, ReferableConverter referableConverter, ErrorReporter errorReporter) {
     BinarySource source = getBinarySource(modulePath);
     if (source == null) {
       errorReporter.report(new PersistingError(modulePath));
       return false;
     } else {
-      return source.persist(this, errorReporter);
+      return source.persist(this, referableConverter, errorReporter);
     }
   }
 }

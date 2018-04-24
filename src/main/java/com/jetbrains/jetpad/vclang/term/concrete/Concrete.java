@@ -3,10 +3,10 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -886,15 +886,15 @@ public final class Concrete {
   }
 
   public static abstract class ReferableDefinition implements SourceNode {
-    private final LocatedReferable myReferable;
+    private final TCReferable myReferable;
 
-    public ReferableDefinition(LocatedReferable referable) {
+    public ReferableDefinition(TCReferable referable) {
       myReferable = referable;
     }
 
     @Nonnull
     @Override
-    public LocatedReferable getData() {
+    public TCReferable getData() {
       return myReferable;
     }
 
@@ -914,7 +914,7 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ReferableDefinition {
-    public Definition(LocatedReferable referable) {
+    public Definition(TCReferable referable) {
       super(referable);
     }
 
@@ -938,7 +938,7 @@ public final class Concrete {
     private final List<ClassFieldImpl> myImplementations;
     private boolean myHasParameter;
 
-    public ClassDefinition(ClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations, boolean hasParameter) {
+    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations, boolean hasParameter) {
       super(referable);
       mySuperClasses = superClasses;
       myFields = fields;
@@ -956,8 +956,8 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public ClassReferable getData() {
-      return (ClassReferable) super.getData();
+    public TCClassReferable getData() {
+      return (TCClassReferable) super.getData();
     }
 
     @Nonnull
@@ -985,7 +985,7 @@ public final class Concrete {
     private final ClassDefinition myParentClass;
     private final Expression myResultType;
 
-    public ClassField(LocatedReferable referable, ClassDefinition parentClass, Expression resultType) {
+    public ClassField(TCReferable referable, ClassDefinition parentClass, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
       myResultType = resultType;
@@ -1049,7 +1049,7 @@ public final class Concrete {
     private final Expression myResultType;
     private final FunctionBody myBody;
 
-    public FunctionDefinition(LocatedReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
       myParameters = parameters;
       myResultType = resultType;
@@ -1084,7 +1084,7 @@ public final class Concrete {
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
 
-    public DataDefinition(LocatedReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
+    public DataDefinition(TCReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(referable);
       myParameters = parameters;
       myEliminatedReferences = eliminatedReferences;
@@ -1156,7 +1156,7 @@ public final class Concrete {
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
 
-    public Constructor(LocatedReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
+    public Constructor(TCReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
       super(referable);
       myDataType = dataType;
       myParameters = parameters;
@@ -1193,7 +1193,7 @@ public final class Concrete {
     private final ReferenceExpression myUnderlyingClass;
     private final List<ClassFieldSynonym> myFields;
 
-    public ClassSynonym(ClassReferable referable, List<ReferenceExpression> superClasses, ReferenceExpression underlyingClass, List<ClassFieldSynonym> fields) {
+    public ClassSynonym(TCClassReferable referable, List<ReferenceExpression> superClasses, ReferenceExpression underlyingClass, List<ClassFieldSynonym> fields) {
       super(referable);
       mySuperClasses = superClasses;
       myUnderlyingClass = underlyingClass;
@@ -1202,8 +1202,8 @@ public final class Concrete {
 
     @Nonnull
     @Override
-    public ClassReferable getData() {
-      return (ClassReferable) super.getData();
+    public TCClassReferable getData() {
+      return (TCClassReferable) super.getData();
     }
 
     @Nonnull
@@ -1231,7 +1231,7 @@ public final class Concrete {
     private final ReferenceExpression myUnderlyingField;
     private final ClassSynonym myClassSynonym;
 
-    public ClassFieldSynonym(LocatedReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
+    public ClassFieldSynonym(TCReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
       super(referable);
       myUnderlyingField = underlyingField;
       myClassSynonym = classSynonym;
@@ -1254,7 +1254,7 @@ public final class Concrete {
     private final ReferenceExpression myClassView;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public Instance(LocatedReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(TCReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myArguments = arguments;
       myClassView = classRef;

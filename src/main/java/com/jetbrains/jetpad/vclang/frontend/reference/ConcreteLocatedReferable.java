@@ -3,8 +3,8 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferableImpl;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
@@ -14,7 +14,7 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   private final Position myPosition;
   private Concrete.ReferableDefinition myDefinition;
 
-  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, LocatedReferable parent, boolean isTypecheckable) {
+  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, TCReferable parent, boolean isTypecheckable) {
     super(precedence, name, parent, isTypecheckable);
     myPosition = position;
   }
@@ -29,8 +29,12 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   }
 
   @Override
-  public LocatedReferable getTypecheckable() {
+  public TCReferable getTypecheckable() {
     return myDefinition.getRelatedDefinition().getData();
+  }
+
+  public boolean isTypecheckable() {
+    return myDefinition.getRelatedDefinition() == myDefinition;
   }
 
   public void setDefinition(Concrete.ReferableDefinition definition) {

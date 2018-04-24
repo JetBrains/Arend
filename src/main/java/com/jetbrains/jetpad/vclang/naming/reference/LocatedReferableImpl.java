@@ -5,15 +5,15 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
-public class LocatedReferableImpl implements LocatedReferable {
+public class LocatedReferableImpl implements TCReferable {
   private final Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
   private final boolean myTypecheckable;
 
   public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, boolean isTypecheckable) {
+    assert isTypecheckable || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
@@ -40,18 +40,25 @@ public class LocatedReferableImpl implements LocatedReferable {
   }
 
   @Override
-  public LocatedReferable getTypecheckable() {
-    return myTypecheckable ? this : myParent;
+  public TCReferable getTypecheckable() {
+    return myTypecheckable ? this : (TCReferable) myParent;
+  }
+
+  @Override
+  public boolean isTypecheckable() {
+    return myTypecheckable;
   }
 
   @Nullable
   @Override
-  public ModulePath getLocation(List<? super String> fullName) {
-    ModulePath modulePath = myParent.getLocation(fullName);
-    if (fullName != null) {
-      fullName.add(myName);
-    }
-    return modulePath;
+  public ModulePath getLocation() {
+    return myParent instanceof ModuleReferable ? ((ModuleReferable) myParent).path : myParent == null ? null : myParent.getLocation();
+  }
+
+  @Nullable
+  @Override
+  public LocatedReferable getLocatedReferableParent() {
+    return myParent;
   }
 
   @Override

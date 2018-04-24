@@ -7,8 +7,8 @@ import com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory;
 import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
@@ -95,7 +95,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   public Definition getDefinition(ChildGroup group, String path) {
-    GlobalReferable ref = get(group.getGroupScope(), path);
+    TCReferable ref = get(group.getGroupScope(), path);
     return ref != null ? typecheckerState.getTypechecked(ref) : null;
   }
 

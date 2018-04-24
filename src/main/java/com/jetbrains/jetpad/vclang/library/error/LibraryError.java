@@ -5,10 +5,10 @@ import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LibraryReferable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,6 +43,10 @@ public class LibraryError extends GeneralError {
     return new LibraryError("Module '" + modulePath + "' is not found in library", Stream.of(libraryName));
   }
 
+  public static LibraryError incorrectLibrary(String libraryName) {
+    return new LibraryError("Unknown library type", Stream.of(libraryName));
+  }
+
   @Override
   public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
     List<LineDoc> libraryDocs = libraryNames.map(DocFactory::text).collect(Collectors.toList());
@@ -53,6 +57,6 @@ public class LibraryError extends GeneralError {
 
   @Override
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return libraryNames.map(LibraryReferable::new).collect(Collectors.toList());
+    return Collections.emptyList();
   }
 }

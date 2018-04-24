@@ -23,9 +23,10 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
@@ -814,13 +815,13 @@ class DefinitionTypechecking {
       }
     }
 
-    Deque<ClassReferable> toVisit = new ArrayDeque<>();
+    Deque<TCClassReferable> toVisit = new ArrayDeque<>();
     toVisit.add(classSyn.getData());
     Map<ClassField, GlobalReferable> overridden = classSyn.getSuperClasses().isEmpty() ? Collections.emptyMap() : new HashMap<>();
     Map<ClassField, Set<GlobalReferable>> errorFields = Collections.emptyMap();
     while (!toVisit.isEmpty()) {
-      ClassReferable classRef = toVisit.pop();
-      for (GlobalReferable fieldRef : classRef.getFieldReferables()) {
+      TCClassReferable classRef = toVisit.pop();
+      for (TCReferable fieldRef : classRef.getFieldReferables()) {
         Definition typecheckedDef = visitor.getTypecheckingState().getTypechecked(fieldRef);
         if (typecheckedDef instanceof ClassField) {
           GlobalReferable oldRef = overridden.putIfAbsent((ClassField) typecheckedDef, fieldRef);

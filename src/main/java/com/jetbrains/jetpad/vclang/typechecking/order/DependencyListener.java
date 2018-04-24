@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 public interface DependencyListener {
-  void dependsOn(GlobalReferable def1, boolean header, GlobalReferable def2);
+  void dependsOn(TCReferable def1, boolean header, TCReferable def2);
 }

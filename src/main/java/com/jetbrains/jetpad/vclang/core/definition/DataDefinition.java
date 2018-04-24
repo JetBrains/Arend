@@ -8,7 +8,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,7 +23,7 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
 
-  public DataDefinition(LocatedReferable referable) {
+  public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myConstructors = new ArrayList<>();
   }

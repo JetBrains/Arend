@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 import java.util.List;
 
@@ -15,12 +15,12 @@ public class ClassField extends Definition {
   private TypedDependentLink myThisParameter;
   private Expression myType;
 
-  public ClassField(GlobalReferable referable, ClassDefinition thisClass) {
+  public ClassField(TCReferable referable, ClassDefinition thisClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     setThisClass(thisClass);
   }
 
-  public ClassField(GlobalReferable referable, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
+  public ClassField(TCReferable referable, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
     super(referable, TypeCheckingStatus.NO_ERRORS);
     myThisParameter = thisParameter;
     myType = type;

@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
@@ -245,7 +246,7 @@ public class CachingTest extends LibraryTestCase {
     typechecking.typecheckModules(groups);
     assertThat(errorList, hasSize(1));
     errorList.clear();
-    library.persistModule(moduleName("B"), errorReporter);
+    library.persistModule(moduleName("B"), IdReferableConverter.INSTANCE, errorReporter);
     assertThat(errorList, is(empty()));
 
     Source sourceA = library.getBinarySource(moduleName("A"));

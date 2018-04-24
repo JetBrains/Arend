@@ -1,6 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
@@ -10,7 +10,7 @@ import java.util.Collection;
 public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisitor<Boolean, Void> {
   private final CollectDefCallsVisitor myVisitor;
 
-  DefinitionGetDependenciesVisitor(Collection<GlobalReferable> dependencies) {
+  DefinitionGetDependenciesVisitor(Collection<TCReferable> dependencies) {
     myVisitor = new CollectDefCallsVisitor(dependencies);
   }
 
@@ -77,8 +77,8 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
   private void visitPattern(Concrete.Pattern pattern) {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-      if (conPattern.getConstructor() instanceof GlobalReferable) {
-        myVisitor.getDependencies().add((GlobalReferable) conPattern.getConstructor());
+      if (conPattern.getConstructor() instanceof TCReferable) {
+        myVisitor.getDependencies().add((TCReferable) conPattern.getConstructor());
       }
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
@@ -138,8 +138,8 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
 
     def.getClassReference().accept(myVisitor, null);
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-      if (classFieldImpl.getImplementedField() instanceof GlobalReferable) {
-        myVisitor.getDependencies().add((GlobalReferable) classFieldImpl.getImplementedField());
+      if (classFieldImpl.getImplementedField() instanceof TCReferable) {
+        myVisitor.getDependencies().add((TCReferable) classFieldImpl.getImplementedField());
       }
       classFieldImpl.getImplementation().accept(myVisitor, null);
     }

@@ -8,9 +8,12 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.IncorrectReferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.NotAvailableDefinitionError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 public class TypeCheckingDefCall {
@@ -35,7 +38,7 @@ public class TypeCheckingDefCall {
     myThisBinding = thisBinding;
   }
 
-  private Definition getTypeCheckedDefinition(GlobalReferable definition, Concrete.Expression expr) {
+  private Definition getTypeCheckedDefinition(TCReferable definition, Concrete.Expression expr) {
     /* TODO[classes]: I'm not sure what to do with this. Maybe eliminate class views and their fields during name resolving
     while (definition instanceof Concrete.ClassView) {
       definition = (GlobalReferable) ((Concrete.ClassView) definition).getUnderlyingClass().getReferent();
@@ -60,7 +63,7 @@ public class TypeCheckingDefCall {
     }
   }
 
-  public CheckTypeVisitor.TResult typeCheckDefCall(GlobalReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
+  public CheckTypeVisitor.TResult typeCheckDefCall(TCReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
     Definition typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (typeCheckedDefinition == null) {
       return null;

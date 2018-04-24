@@ -4,10 +4,8 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
@@ -21,23 +19,25 @@ import java.util.Collections;
 import java.util.List;
 
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
+  private final ReferableConverter myReferableConverter;
   private final ErrorReporter myErrorReporter;
-  private final LocatedReferable myDefinition;
+  private final TCReferable myDefinition;
 
-  private ConcreteBuilder(ErrorReporter errorReporter, LocatedReferable definition) {
+  private ConcreteBuilder(ReferableConverter referableConverter, ErrorReporter errorReporter, TCReferable definition) {
+    myReferableConverter = referableConverter;
     myErrorReporter = errorReporter;
     myDefinition = definition;
   }
 
-  public static Concrete.Definition convert(Abstract.Definition definition, ErrorReporter errorReporter) {
-    return definition.accept(new ConcreteBuilder(errorReporter, definition.getReferable()));
+  public static Concrete.Definition convert(ReferableConverter referableConverter, Abstract.Definition definition, ErrorReporter errorReporter) {
+    return definition.accept(new ConcreteBuilder(referableConverter, errorReporter, referableConverter.toDataLocatedReferable(definition.getReferable())));
   }
 
-  public static List<Concrete.Parameter> convertParams(List<? extends Abstract.Parameter> parameters) {
+  public static List<Concrete.Parameter> convertParams(ReferableConverter referableConverter, List<? extends Abstract.Parameter> parameters) {
     CountingErrorReporter cer = new CountingErrorReporter();
     List<Concrete.Parameter> result;
     try {
-      ConcreteBuilder cb = new ConcreteBuilder(cer, null);
+      ConcreteBuilder cb = new ConcreteBuilder(referableConverter, cer, null);
       result = cb.buildParameters(parameters);
     } catch (AbstractExpressionError.Exception e) {
       return null;
@@ -45,11 +45,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (cer.getErrorsNumber() == 0) return result; else return null;
   }
 
-  public static Concrete.Expression convertExpression(Abstract.Expression expression) {
+  public static Concrete.Expression convertExpression(ReferableConverter referableConverter, Abstract.Expression expression) {
     CountingErrorReporter cer = new CountingErrorReporter();
     Concrete.Expression result;
     try {
-      ConcreteBuilder cb = new ConcreteBuilder(cer, null);
+      ConcreteBuilder cb = new ConcreteBuilder(referableConverter, cer, null);
       result = expression.accept(cb, null);
     } catch (AbstractExpressionError.Exception e) {
       return null;
@@ -78,7 +78,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(new ProxyError(myDefinition, e.error));
-      Object data = term == null ? def.getReferable() : term.getData();
+      Object data = term == null ? myReferableConverter.toDataLocatedReferable(def.getReferable()) : term.getData();
       body = new Concrete.TermFunctionBody(data, new Concrete.InferHoleExpression(data));
     }
 
@@ -139,7 +139,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       try {
         List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
         for (Abstract.Constructor constructor : absConstructors) {
-          constructors.add(new Concrete.Constructor(constructor.getReferable(), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+          constructors.add(new Concrete.Constructor(myReferableConverter.toDataLocatedReferable(constructor.getReferable()), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
         }
 
         Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
@@ -172,12 +172,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
         if (resultType == null) {
-          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(field.getReferable())));
+          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(myReferableConverter.toDataLocatedReferable(field.getReferable()))));
         } else {
           try {
             List<? extends Abstract.Parameter> parameters = field.getParameters();
@@ -186,7 +186,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField(field.getReferable(), classDef, type));
+            classFields.add(new Concrete.ClassField(myReferableConverter.toDataLocatedReferable(field.getReferable()), classDef, type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(new ProxyError(myDefinition, e.error));
           }
@@ -196,12 +196,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return classDef;
     } else {
       List<Concrete.ClassFieldSynonym> fields = new ArrayList<>();
-      Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((ClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
+      Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
       for (Abstract.ClassFieldSynonym fieldSyn : def.getFieldSynonyms()) {
         LocatedReferable referable = fieldSyn.getReferable();
         Abstract.Reference underlyingField = fieldSyn.getUnderlyingField();
         if (referable != null && underlyingField != null) {
-          fields.add(new Concrete.ClassFieldSynonym(referable, buildReference(underlyingField), classDef));
+          fields.add(new Concrete.ClassFieldSynonym(myReferableConverter.toDataLocatedReferable(referable), buildReference(underlyingField), classDef));
         } else {
           myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldSyn)));
         }
@@ -271,12 +271,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Abstract.Expression type = parameter.getType();
     if (type == null) {
       if (referableList.size() == 1) {
-        return new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), referableList.iterator().next());
+        return new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), myReferableConverter.toDataReferable(referableList.get(0)));
       } else {
         throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a single variable", parameter.getData()));
       }
     } else {
-      return referableList.isEmpty() ? new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), type.accept(this, null)) : new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), referableList, type.accept(this, null));
+      if (referableList.isEmpty()) {
+        return new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), type.accept(this, null));
+      } else {
+        List<Referable> dataReferableList = new ArrayList<>(referableList.size());
+        for (Referable referable : referableList) {
+          dataReferableList.add(myReferableConverter.toDataReferable(referable));
+        }
+        return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, type.accept(this, null));
+      }
     }
   }
 
@@ -317,7 +325,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         if (!pattern.getArguments().isEmpty()) {
           myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Unexpected argument", args.iterator().next())));
         }
-        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), reference);
+        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference));
       }
     }
   }
@@ -524,7 +532,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(clause.getReferable())));
       } else {
         Abstract.Expression resultType = clause.getResultType();
-        clauses.add(new Concrete.LetClause(clause.getReferable(), buildParameters(clause.getParameters()), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+        clauses.add(new Concrete.LetClause(myReferableConverter.toDataReferable(clause.getReferable()), buildParameters(clause.getParameters()), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
       }
     }
     return new Concrete.LetExpression(data, clauses, expression.accept(this, null));

@@ -3,8 +3,9 @@ package com.jetbrains.jetpad.vclang.module.serialization;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.source.error.LocationError;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -23,11 +24,11 @@ public class ModuleSerialization {
     myErrorReporter = errorReporter;
   }
 
-  public ModuleProtos.Module writeModule(Group group, ModulePath modulePath) {
+  public ModuleProtos.Module writeModule(Group group, ModulePath modulePath, ReferableConverter referableConverter) {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
 
     // Serialize the group structure first in order to populate the call target tree
-    out.setGroup(writeGroup(group));
+    out.setGroup(writeGroup(group, referableConverter));
 
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
@@ -36,9 +37,9 @@ public class ModuleSerialization {
         continue;
       }
 
-      GlobalReferable targetReferable = entry.getKey().getReferable();
+      TCReferable targetReferable = entry.getKey().getReferable();
       List<String> longName = new ArrayList<>();
-      ModulePath targetModulePath = targetReferable instanceof LocatedReferable ? ((LocatedReferable) targetReferable).getLocation(longName) : null;
+      ModulePath targetModulePath = LocatedReferable.Helper.getLocation(targetReferable, longName);
       if (targetModulePath == null || longName.isEmpty()) {
         myErrorReporter.report(LocationError.definition(targetReferable, modulePath));
         return null;
@@ -68,16 +69,16 @@ public class ModuleSerialization {
     return out.build();
   }
 
-  private ModuleProtos.Group writeGroup(Group group) {
+  private ModuleProtos.Group writeGroup(Group group, ReferableConverter referableConverter) {
     ModuleProtos.Group.Builder builder = ModuleProtos.Group.newBuilder();
 
     // Write referable
-    GlobalReferable referable = group.getReferable();
+    LocatedReferable referable = group.getReferable();
     DefinitionProtos.Referable.Builder refBuilder = DefinitionProtos.Referable.newBuilder();
     refBuilder.setName(referable.textRepresentation());
     refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
-    Definition typechecked = myState.getTypechecked(referable);
+    Definition typechecked = myState.getTypechecked(referableConverter.toDataLocatedReferable(referable));
     if (typechecked != null && typechecked.status().headerIsOK()) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
@@ -88,19 +89,19 @@ public class ModuleSerialization {
 
     // Write subgroups
     for (Group subgroup : group.getSubgroups()) {
-      builder.addSubgroup(writeGroup(subgroup));
+      builder.addSubgroup(writeGroup(subgroup, referableConverter));
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      builder.addDynamicSubgroup(writeGroup(subgroup));
+      builder.addDynamicSubgroup(writeGroup(subgroup, referableConverter));
     }
     for (Group.InternalReferable internalReferable : group.getConstructors()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(internalReferable.getReferable())));
+        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
       }
     }
     for (Group.InternalReferable internalReferable : group.getFields()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(internalReferable.getReferable())));
+        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
       }
     }
 

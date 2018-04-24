@@ -13,7 +13,7 @@ import com.jetbrains.jetpad.vclang.core.pattern.Patterns;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class Constructor extends Definition implements Function {
   private Body myConditions;
   private List<ClauseBase> myClauses;
 
-  public Constructor(GlobalReferable referable, DataDefinition dataType) {
+  public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myDataType = dataType;
     myParameters = null;

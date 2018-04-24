@@ -76,8 +76,13 @@ public class LibraryManager {
    * @param libraryName the name of a library.
    * @return the library with the given name.
    */
-  public Library getLibrary(String libraryName) {
-    return myLibraryResolver.resolve(libraryName);
+  public Library getRegisteredLibrary(String libraryName) {
+    for (Library library : getRegisteredLibraries()) {
+      if (library.getName().equals(libraryName)) {
+        return library;
+      }
+    }
+    return null;
   }
 
   /**
@@ -172,7 +177,7 @@ public class LibraryManager {
    * @param libraryName  the name of the library to unload.
    */
   public void unloadLibrary(String libraryName) {
-    Library library = myLibraryResolver.resolve(libraryName);
+    Library library = getRegisteredLibrary(libraryName);
     if (library == null) {
       myLibraryErrorReporter.report(LibraryError.notFound(libraryName));
     } else {
