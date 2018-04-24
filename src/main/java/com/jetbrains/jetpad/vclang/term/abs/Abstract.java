@@ -89,14 +89,14 @@ public final class Abstract {
   }
 
   public interface BinOpSequenceElem extends SourceNode {
-    @Nonnull Expression getExpression();
+    /* @Nonnull */ @Nullable Expression getExpression();
     @Nonnull Fixity getFixity();
     boolean isExplicit();
   }
 
   public interface Argument extends SourceNode {
     boolean isExplicit();
-    @Nonnull Expression getExpression();
+    /* @Nonnull */ @Nullable Expression getExpression();
   }
 
   public interface ClassFieldImpl extends ParametersHolder {

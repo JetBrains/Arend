@@ -9,8 +9,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
-import com.jetbrains.jetpad.vclang.term.Fixity;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -149,24 +147,10 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     BinOpParser parser = new BinOpParser(myErrorReporter);
 
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      Concrete.ReferenceExpression reference = elem.expression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.expression : null;
-      Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
       elem.expression.accept(this, null);
-      if (precedence == null && reference != null && reference.getReferent() instanceof GlobalReferable) {
-        precedence = ((GlobalReferable) reference.getReferent()).getPrecedence();
-      }
-
-      if (reference != null && (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX || elem.fixity == Fixity.UNKNOWN && precedence != null && precedence.isInfix)) {
-        if (precedence == null) {
-          precedence = Precedence.DEFAULT;
-        }
-        parser.push(reference, precedence, elem.fixity == Fixity.POSTFIX);
-      } else {
-        parser.push(elem.expression, elem.isExplicit);
-      }
     }
 
-    expr.replace(parser.rollUp());
+    expr.replace(parser.parse(expr));
     return null;
   }
 

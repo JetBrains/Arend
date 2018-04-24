@@ -1,8 +1,10 @@
 package com.jetbrains.jetpad.vclang.naming;
 
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -29,6 +31,27 @@ public class BinOpParser {
       this.expression = expression;
       this.precedence = precedence;
     }
+  }
+
+  public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
+    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
+      Concrete.ReferenceExpression reference = elem.expression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.expression : null;
+      Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
+      if (precedence == null && reference != null && reference.getReferent() instanceof GlobalReferable) {
+        precedence = ((GlobalReferable) reference.getReferent()).getPrecedence();
+      }
+
+      if (reference != null && (elem.fixity == Fixity.INFIX || elem.fixity == Fixity.POSTFIX || elem.fixity == Fixity.UNKNOWN && precedence != null && precedence.isInfix)) {
+        if (precedence == null) {
+          precedence = Precedence.DEFAULT;
+        }
+        push(reference, precedence, elem.fixity == Fixity.POSTFIX);
+      } else {
+        push(elem.expression, elem.isExplicit);
+      }
+    }
+
+    return rollUp();
   }
 
   public void push(Concrete.Expression expression, boolean isExplicit) {
