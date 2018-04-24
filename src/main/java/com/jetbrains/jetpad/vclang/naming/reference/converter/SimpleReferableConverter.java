@@ -3,14 +3,13 @@ package com.jetbrains.jetpad.vclang.naming.reference.converter;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.util.FullName;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Function;
 
 public class SimpleReferableConverter implements ReferableConverter {
-  private final Map<FullName, TCReferable> myMap = new HashMap<>();
+  private final Map<LocatedReferable, TCReferable> myMap = new WeakHashMap<>();
 
   @Override
   public Referable toDataReferable(Referable referable) {
@@ -19,15 +18,15 @@ public class SimpleReferableConverter implements ReferableConverter {
 
   @Override
   public TCReferable toDataLocatedReferable(LocatedReferable referable) {
-    return referable == null ? null : myMap.get(new FullName(referable));
+    return referable == null ? null : myMap.get(referable);
   }
 
-  public TCReferable computeIfAbsent(LocatedReferable referable, Function<? super FullName, ? extends TCReferable> tcReferable) {
-    return myMap.computeIfAbsent(new FullName(referable), tcReferable);
+  public TCReferable computeIfAbsent(LocatedReferable referable, Function<? super LocatedReferable, ? extends TCReferable> tcReferable) {
+    return myMap.computeIfAbsent(referable, tcReferable);
   }
 
   public TCReferable remove(LocatedReferable referable) {
-    return myMap.remove(new FullName(referable));
+    return myMap.remove(referable);
   }
 
   public void clear() {
