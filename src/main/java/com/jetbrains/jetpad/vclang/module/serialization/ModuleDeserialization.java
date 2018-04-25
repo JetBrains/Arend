@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.*;
@@ -16,10 +17,12 @@ import java.util.*;
 public class ModuleDeserialization {
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
   private final TypecheckerState myState;
+  private final ReferableConverter myReferableConverter;
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
 
-  public ModuleDeserialization(TypecheckerState state) {
+  public ModuleDeserialization(TypecheckerState state, ReferableConverter referableConverter) {
     myState = state;
+    myReferableConverter = referableConverter;
   }
 
   public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider) throws DeserializationException {
@@ -45,11 +48,14 @@ public class ModuleDeserialization {
 
   private void fillInCallTargetTree(ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
     if (callTargetTree.getIndex() > 0) {
-      Referable referable = scope.resolveName(callTargetTree.getName());
-      if (!(referable instanceof TCReferable)) {
+      Referable referable1 = scope.resolveName(callTargetTree.getName());
+      TCReferable referable = myReferableConverter == null
+        ? (referable1 instanceof TCReferable ? (TCReferable) referable1 : null)
+        : (referable1 instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable1) : null);
+      if (referable == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
-      Definition callTarget = myState.getTypechecked((TCReferable) referable);
+      Definition callTarget = myState.getTypechecked(referable);
       if (callTarget == null) {
         throw new DeserializationException("Definition '" + callTargetTree.getName() + "' was not typechecked");
       }
@@ -69,6 +75,95 @@ public class ModuleDeserialization {
     }
   }
 
+  public void readDefinitions(ModuleProtos.Group groupProto, Group group) throws DeserializationException {
+    if (groupProto.hasDefinition()) {
+      LocatedReferable referable = group.getReferable();
+      TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
+      if (tcReferable == null) {
+        throw new DeserializationException("Cannot locate '" + referable + "'");
+      }
+
+      Definition def = readDefinition(groupProto.getDefinition(), tcReferable, false);
+      myState.record(tcReferable, def);
+      myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
+      myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
+
+      Collection<? extends Group.InternalReferable> fields = group.getFields();
+      if (!fields.isEmpty()) {
+        Map<String, DefinitionProtos.Definition.ClassData.Field> fieldMap = new HashMap<>();
+        for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
+          fieldMap.put(field.getReferable().getName(), field);
+        }
+
+        for (Group.InternalReferable field : fields) {
+          LocatedReferable fieldRef = field.getReferable();
+          TCReferable absField = myReferableConverter.toDataLocatedReferable(fieldRef);
+          DefinitionProtos.Definition.ClassData.Field fieldProto = fieldMap.get(fieldRef.textRepresentation());
+          if (fieldProto == null || absField == null) {
+            throw new DeserializationException("Cannot locate '" + fieldRef + "'");
+          }
+
+          assert def instanceof ClassDefinition;
+          ClassField res = new ClassField(absField, (ClassDefinition) def);
+          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          myState.record(absField, res);
+          myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
+        }
+      }
+
+      Collection<? extends Group.InternalReferable> constructors = group.getConstructors();
+      if (!constructors.isEmpty()) {
+        Map<String, DefinitionProtos.Definition.DataData.Constructor> constructorMap = new HashMap<>();
+        for (DefinitionProtos.Definition.DataData.Constructor constructor : groupProto.getDefinition().getData().getConstructorList()) {
+          constructorMap.put(constructor.getReferable().getName(), constructor);
+        }
+
+        for (Group.InternalReferable constructor : constructors) {
+          LocatedReferable constructorRef = constructor.getReferable();
+          TCReferable absConstructor = myReferableConverter.toDataLocatedReferable(constructorRef);
+          DefinitionProtos.Definition.DataData.Constructor constructorProto = constructorMap.get(constructorRef.textRepresentation());
+          if (constructorProto == null || absConstructor == null) {
+            throw new DeserializationException("Cannot locate '" + constructorRef + "'");
+          }
+
+          assert def instanceof DataDefinition;
+          Constructor res = new Constructor(absConstructor, (DataDefinition) def);
+          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          myState.record(absConstructor, res);
+          myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
+        }
+      }
+    }
+
+    Collection<? extends Group> subgroups = group.getSubgroups();
+    if (!groupProto.getSubgroupList().isEmpty() && !subgroups.isEmpty()) {
+      Map<String, ModuleProtos.Group> subgroupMap = new HashMap<>();
+      for (ModuleProtos.Group subgroup : groupProto.getSubgroupList()) {
+        subgroupMap.put(subgroup.getReferable().getName(), subgroup);
+      }
+      for (Group subgroup : subgroups) {
+        ModuleProtos.Group subgroupProto = subgroupMap.get(subgroup.getReferable().textRepresentation());
+        if (subgroupProto != null) {
+          readDefinitions(subgroupProto, subgroup);
+        }
+      }
+    }
+
+    Collection<? extends Group> dynSubgroups = group.getSubgroups();
+    if (!groupProto.getDynamicSubgroupList().isEmpty() && !dynSubgroups.isEmpty()) {
+      Map<String, ModuleProtos.Group> subgroupMap = new HashMap<>();
+      for (ModuleProtos.Group subgroup : groupProto.getDynamicSubgroupList()) {
+        subgroupMap.put(subgroup.getReferable().getName(), subgroup);
+      }
+      for (Group subgroup : dynSubgroups) {
+        ModuleProtos.Group subgroupProto = subgroupMap.get(subgroup.getReferable().textRepresentation());
+        if (subgroupProto != null) {
+          readDefinitions(subgroupProto, subgroup);
+        }
+      }
+    }
+  }
+
   @Nonnull
   public ChildGroup readGroup(ModuleProtos.Group groupProto, ModulePath modulePath) throws DeserializationException {
     return readGroup(groupProto, null, modulePath);
@@ -83,7 +178,7 @@ public class ModuleDeserialization {
       fieldReferables = new ArrayList<>();
       referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), new ArrayList<>(), fieldReferables, modulePath);
     } else {
-      fieldReferables = Collections.emptyList();
+      fieldReferables = new ArrayList<>(0);
       if (parent == null) {
         referable = new ModuleReferable(modulePath);
       } else {
@@ -93,7 +188,7 @@ public class ModuleDeserialization {
 
     Definition def;
     if (groupProto.hasDefinition()) {
-      def = readDefinition(groupProto.getDefinition(), (TCReferable) referable);
+      def = readDefinition(groupProto.getDefinition(), (TCReferable) referable, true);
       myState.record((TCReferable) referable, def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
       myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
@@ -147,30 +242,34 @@ public class ModuleDeserialization {
     return group;
   }
 
-  private Definition readDefinition(DefinitionProtos.Definition defProto, TCReferable referable) throws DeserializationException {
+  private Definition readDefinition(DefinitionProtos.Definition defProto, TCReferable referable, boolean fillInternalDefinitions) throws DeserializationException {
     final Definition def;
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
         ClassDefinition classDef = new ClassDefinition((TCClassReferable) referable);
-        for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
-          DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-          TCReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
-          ClassField res = new ClassField(absField, classDef);
-          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-          myState.record(absField, res);
-          myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
+        if (fillInternalDefinitions) {
+          for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
+            DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
+            TCReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
+            ClassField res = new ClassField(absField, classDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            myState.record(absField, res);
+            myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
+          }
         }
         def = classDef;
         break;
       case DATA:
         DataDefinition dataDef = new DataDefinition(referable);
-        for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
-          DefinitionProtos.Referable conReferable = constructor.getReferable();
-          TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
-          Constructor res = new Constructor(absConstructor, dataDef);
-          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-          myState.record(absConstructor, res);
-          myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
+        if (fillInternalDefinitions) {
+          for (DefinitionProtos.Definition.DataData.Constructor constructor : defProto.getData().getConstructorList()) {
+            DefinitionProtos.Referable conReferable = constructor.getReferable();
+            TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
+            Constructor res = new Constructor(absConstructor, dataDef);
+            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            myState.record(absConstructor, res);
+            myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
+          }
         }
         def = dataDef;
         break;

@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
-import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
@@ -23,7 +22,7 @@ import java.util.Collections;
  * so all instances of this class use the same definitions, which are stored in {@link Prelude}.
  */
 public abstract class PreludeLibrary extends SourceLibrary {
-  private static Group myGroup;
+  private static ChildGroup myGroup;
   private static Scope myScope;
 
   /**
@@ -35,7 +34,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
     super(typecheckerState);
   }
 
-  public static Group getPreludeGroup() {
+  public static ChildGroup getPreludeGroup() {
     return myGroup;
   }
 
@@ -78,7 +77,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
 
   @Nullable
   @Override
-  public Group getModuleGroup(ModulePath modulePath) {
+  public ChildGroup getModuleGroup(ModulePath modulePath) {
     return modulePath.equals(Prelude.MODULE_PATH) ? myGroup : null;
   }
 

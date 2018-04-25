@@ -2,7 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
-import com.jetbrains.jetpad.vclang.term.group.Group;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
 
@@ -71,7 +71,7 @@ public interface Library {
    * @return the group of a module or null if the module is not found.
    */
   @Nullable
-  Group getModuleGroup(ModulePath modulePath);
+  ChildGroup getModuleGroup(ModulePath modulePath);
 
   /**
    * Checks if this library contains a specified module.

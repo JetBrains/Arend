@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.source;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
+import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
 import com.jetbrains.jetpad.vclang.module.serialization.DeserializationException;
@@ -66,14 +67,28 @@ public abstract class StreamBinarySource implements BinarySource {
   @Override
   public boolean load(SourceLoader sourceLoader) {
     ModulePath modulePath = getModulePath();
+    SourceLibrary library = sourceLoader.getLibrary();
     try {
-      ModuleDeserialization moduleDeserialization = new ModuleDeserialization(sourceLoader.getLibrary().getTypecheckerState());
-      ChildGroup group = moduleDeserialization.readGroup(myModuleProto.getGroup(), modulePath);
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, group, false);
+      ReferableConverter referableConverter = library.getReferableConverter();
+      ModuleDeserialization moduleDeserialization = new ModuleDeserialization(library.getTypecheckerState(), referableConverter);
+
+      ChildGroup group;
+      if (referableConverter == null) {
+        group = moduleDeserialization.readGroup(myModuleProto.getGroup(), modulePath);
+      } else {
+        group = library.getModuleGroup(modulePath);
+        if (group == null) {
+          sourceLoader.getLibraryErrorReporter().report(LibraryError.moduleNotFound(modulePath, library.getName()));
+          library.onModuleLoaded(modulePath, null, false);
+          return false;
+        }
+        moduleDeserialization.readDefinitions(myModuleProto.getGroup(), group);
+      }
+      library.onModuleLoaded(modulePath, group, false);
 
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
-        if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinary(module)) {
+        if (library.containsModule(module) && !sourceLoader.loadBinary(module)) {
           return false;
         }
       }
@@ -81,7 +96,7 @@ public abstract class StreamBinarySource implements BinarySource {
       return moduleDeserialization.readModule(myModuleProto, sourceLoader.getModuleScopeProvider());
     } catch (DeserializationException e) {
       sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, modulePath));
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, null, false);
+      library.onModuleLoaded(modulePath, null, false);
       return false;
     }
   }

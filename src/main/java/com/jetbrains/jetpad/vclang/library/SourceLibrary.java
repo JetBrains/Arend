@@ -85,6 +85,16 @@ public abstract class SourceLibrary extends BaseLibrary {
 
   }
 
+  /**
+   * Gets a referable converter which is used in loading of mixed source.
+   *
+   * @return a referable converter or null if the library does not support mixed sources.
+   */
+  @Nullable
+  public ReferableConverter getReferableConverter() {
+    return null;
+  }
+
   @Override
   public boolean load(LibraryManager libraryManager) {
     if (isLoaded()) {
