@@ -8,6 +8,7 @@ import "Definition.proto";
 
 
 message Module {
+    bool complete = 3;
     Group group = 1;
     repeated ModuleCallTargets module_call_targets = 2;
 }

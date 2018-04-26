@@ -18,6 +18,7 @@ public class ModuleSerialization {
   private final SimpleCallTargetIndexProvider myCallTargetIndexProvider = new SimpleCallTargetIndexProvider();
   private final DefinitionSerialization myDefinitionSerialization = new DefinitionSerialization(myCallTargetIndexProvider);
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
+  private boolean myComplete;
 
   public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
     myState = state;
@@ -28,7 +29,9 @@ public class ModuleSerialization {
     ModuleProtos.Module.Builder out = ModuleProtos.Module.newBuilder();
 
     // Serialize the group structure first in order to populate the call target tree
+    myComplete = true;
     out.setGroup(writeGroup(group, referableConverter));
+    out.setComplete(myComplete);
 
     // Now write the call target tree
     Map<ModulePath, Map<String, CallTargetTree>> moduleCallTargets = new HashMap<>();
@@ -78,12 +81,17 @@ public class ModuleSerialization {
     refBuilder.setName(referable.textRepresentation());
     refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
-    Definition typechecked = myState.getTypechecked(referableConverter.toDataLocatedReferable(referable));
+    TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
+    Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
     if (typechecked != null && typechecked.status().headerIsOK()) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
+    } else {
+      if (tcReferable != null) {
+        myComplete = false;
+      }
     }
     builder.setReferable(refBuilder.build());
 

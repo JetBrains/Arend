@@ -15,11 +15,11 @@ import java.util.stream.Collectors;
 
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.*;
 
-public class ModuleError extends GeneralError {
+public class ModuleInSeveralLibrariesError extends GeneralError {
   public ModulePath modulePath;
   public List<Library> libraries;
 
-  public ModuleError(ModulePath modulePath, List<Library> libraries) {
+  public ModuleInSeveralLibrariesError(ModulePath modulePath, List<Library> libraries) {
     super(Level.WARNING, "Module '" + modulePath + "' is contained in several libraries: ");
     this.modulePath = modulePath;
     this.libraries = libraries;

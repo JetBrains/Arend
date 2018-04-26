@@ -70,11 +70,19 @@ public final class SourceLoader {
     }
 
     if (binarySourceIsAvailable) {
+      boolean tryRaw = rawSourceIsAvailable && myLibrary.supportsMixedSources();
+      boolean rawIsLoaded = tryRaw && rawSource.load(this);
+
       myLoadingBinaryModules.put(modulePath, binarySource);
       if (binarySource.loadDependencyInfo(this)) {
         return loadBinary(modulePath);
       }
       myLoadingBinaryModules.remove(modulePath);
+
+      if (tryRaw) {
+        myLoadedModules.put(modulePath, SourceType.RAW);
+        return rawIsLoaded;
+      }
     }
 
     if (rawSourceIsAvailable) {

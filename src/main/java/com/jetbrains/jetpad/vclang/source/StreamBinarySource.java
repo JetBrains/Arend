@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.source;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
+import com.jetbrains.jetpad.vclang.library.error.PartialModuleError;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
 import com.jetbrains.jetpad.vclang.module.serialization.DeserializationException;
@@ -50,6 +51,11 @@ public abstract class StreamBinarySource implements BinarySource {
       }
 
       myModuleProto = ModuleProtos.Module.parseFrom(inputStream);
+      if (!myModuleProto.getComplete() && !sourceLoader.getLibrary().supportsMixedSources()) {
+        sourceLoader.getLibraryErrorReporter().report(new PartialModuleError(getModulePath()));
+        return false;
+      }
+
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
         if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadBinaryDependencyInfo(module)) {
