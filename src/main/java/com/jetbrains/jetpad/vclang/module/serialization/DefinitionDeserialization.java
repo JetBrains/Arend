@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.ArrayList;
@@ -21,20 +22,25 @@ import java.util.Map;
 
 public class DefinitionDeserialization {
   private final CallTargetProvider myCallTargetProvider;
+  private final DependencyListener myDependencyListener;
 
-  public DefinitionDeserialization(CallTargetProvider callTargetProvider) {
+  public DefinitionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener) {
     myCallTargetProvider = callTargetProvider;
+    myDependencyListener = dependencyListener;
   }
 
   public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
-    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider);
+    final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
 
     if (defProto.getThisClassRef() != 0) {
-      def.setThisClass(myCallTargetProvider.getCallTarget(defProto.getThisClassRef(), ClassDefinition.class));
+      ClassDefinition thisClass = myCallTargetProvider.getCallTarget(defProto.getThisClassRef(), ClassDefinition.class);
+      def.setThisClass(thisClass);
+      myDependencyListener.dependsOn(def.getReferable(), defProto.getDefinitionDataCase() != DefinitionProtos.Definition.DefinitionDataCase.CLASS, thisClass.getReferable());
     }
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
+        defDeserializer.setIsHeader(false);
         ClassDefinition classDef = (ClassDefinition) def;
         fillInClassDefinition(defDeserializer, defProto.getClass_(), classDef);
         break;
@@ -87,6 +93,7 @@ public class DefinitionDeserialization {
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
+    defDeserializer.setIsHeader(false);
 
     for (DefinitionProtos.Definition.DataData.Constructor constructorProto : dataProto.getConstructorList()) {
       Constructor constructor = myCallTargetProvider.getCallTarget(constructorProto.getReferable().getIndex(), Constructor.class);
@@ -178,6 +185,7 @@ public class DefinitionDeserialization {
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     }
+    defDeserializer.setIsHeader(false);
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
     }

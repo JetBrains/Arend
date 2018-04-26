@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.TerminationCheckError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.DummyDependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
@@ -60,7 +61,7 @@ public class Typechecking implements DependencyListener {
   }
 
   public Typechecking(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
-    this(state, concreteProvider, errorReporter, (def1, header, def2) -> {}, IdReferableConverter.INSTANCE);
+    this(state, concreteProvider, errorReporter, DummyDependencyListener.INSTANCE, IdReferableConverter.INSTANCE);
   }
 
   public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {

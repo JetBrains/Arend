@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -25,7 +26,7 @@ public class ModuleDeserialization {
     myReferableConverter = referableConverter;
   }
 
-  public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider) throws DeserializationException {
+  public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
@@ -38,7 +39,7 @@ public class ModuleDeserialization {
       }
     }
 
-    DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider);
+    DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
       defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
