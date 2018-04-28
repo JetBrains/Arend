@@ -109,8 +109,6 @@ public class CachingTest extends LibraryTestCase {
     libraryManager.loadLibrary(library);
     aGroup = library.getModuleGroup(moduleName("A"));
     assertThat(aGroup, is(notNullValue()));
-    library.typecheck(typechecking);
-    library.persistUpdateModules(errorReporter);
 
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(notNullValue()));
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
@@ -168,7 +166,7 @@ public class CachingTest extends LibraryTestCase {
   }
 
   @Test
-  public void removeSource() {
+  public void removeRawSource() {
     library.addModule(moduleName("A"), "\\func a : \\1-Type1 => \\Set0");
     library.addModule(moduleName("B"),
       "\\import A\n" +
@@ -181,6 +179,24 @@ public class CachingTest extends LibraryTestCase {
     library.removeRawSource(moduleName("A"));
 
     assertTrue(libraryManager.loadLibrary(library));
+    assertThat(errorList, is(empty()));
+  }
+
+  @Test
+  public void removeBothSource() {
+    library.addModule(moduleName("A"), "\\func a : \\1-Type1 => \\Set0");
+    library.addModule(moduleName("B"),
+      "\\import A\n" +
+        "\\func b : \\1-Type1 => A.a");
+    libraryManager.loadLibrary(library);
+    library.typecheck(typechecking);
+    library.persistUpdateModules(errorReporter);
+    libraryManager.unloadLibrary(library);
+
+    library.removeRawSource(moduleName("A"));
+    library.removeBinarySource(moduleName("A"));
+
+    assertFalse(libraryManager.loadLibrary(library));
     assertThat(errorList, is(not(empty())));
   }
 
