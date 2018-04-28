@@ -69,8 +69,9 @@ public abstract class BaseLibrary implements Library {
   }
 
   public void unloadDefinition(LocatedReferable referable) {
-    assert referable instanceof TCReferable;
-    myTypecheckerState.reset((TCReferable) referable);
+    if (referable instanceof TCReferable) {
+      myTypecheckerState.reset((TCReferable) referable);
+    }
   }
 
   @Override

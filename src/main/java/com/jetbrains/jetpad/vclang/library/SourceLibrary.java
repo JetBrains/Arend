@@ -89,8 +89,7 @@ public abstract class SourceLibrary extends BaseLibrary {
   }
 
   /**
-   * A mixed source loads both raw and binary sources.
-   * It will use scopes from the raw source and typechecked definitions from binary.
+   * A mixed source loads the binary source, but uses scopes from the raw source, so it should be always loaded.
    *
    * @return true if the library supports mixed sources, false otherwise.
    */
