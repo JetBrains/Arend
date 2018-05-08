@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -96,7 +97,10 @@ public class DefinitionDeserialization {
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
-      ((ClassReferableImpl) classDef.getReferable()).getSuperClassReferences().add(superClass.getReferable());
+      TCClassReferable classRef = classDef.getReferable();
+      if (classRef instanceof ClassReferableImpl) {
+        ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
+      }
     }
     if (classProto.getEnclosingThisFieldRef() != 0) {
       classDef.setEnclosingThisField(myCallTargetProvider.getCallTarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
