@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.prelude;
 
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.GZIPStreamBinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
@@ -50,6 +51,17 @@ public class PreludeResourceLibrary extends PreludeLibrary {
   @Override
   public BinarySource getBinarySource(ModulePath modulePath) {
     return new GZIPStreamBinarySource(new PreludeResourceSource());
+  }
+
+  @Override
+  public boolean hasRawSources() {
+    return false;
+  }
+
+  @Nullable
+  @Override
+  public ReferableConverter getReferableConverter() {
+    return null;
   }
 
   @Override

@@ -14,7 +14,6 @@ import com.jetbrains.jetpad.vclang.module.scopeprovider.LocatingModuleScopeProvi
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -221,7 +220,6 @@ public abstract class BaseCliFrontend {
       }
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
-      List<ModulePath> modulesToPersist = new ArrayList<>();
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
       library.typecheck(new MyTypechecking());
       flushErrors();
@@ -237,9 +235,6 @@ public abstract class BaseCliFrontend {
         reportTypeCheckResult(module, result);
         if (result == Error.Level.ERROR) numWithErrors++;
         if (result == Error.Level.GOAL) numWithGoals++;
-        if (result == null) {
-          modulesToPersist.add(module);
-        }
       }
 
       if (numWithErrors > 0) {
@@ -250,12 +245,9 @@ public abstract class BaseCliFrontend {
       }
       System.out.println("--- Done ---");
 
+      // Persist updated modules
+      library.persistUpdateModules(System.err::println);
       library.clearUpdateModules();
-
-      // Persist modules without errors
-      for (ModulePath module : modulesToPersist) {
-        library.persistModule(module, IdReferableConverter.INSTANCE, System.err::println);
-      }
     }
 
     return cmdLine;

@@ -88,10 +88,9 @@ public class ModuleSerialization {
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
       myCurrentDefinitions.add(index);
-    } else {
-      if (tcReferable != null) {
-        myComplete = false;
-      }
+    }
+    if (tcReferable != null && (typechecked == null || typechecked.status() != Definition.TypeCheckingStatus.NO_ERRORS)) {
+      myComplete = false;
     }
     builder.setReferable(refBuilder.build());
 

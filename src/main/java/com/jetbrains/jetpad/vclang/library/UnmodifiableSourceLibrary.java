@@ -45,15 +45,22 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
-    myGroups.put(modulePath, group);
-    if (group == null) {
-      myModuleScopeProvider.unregisterModule(modulePath);
-    } else {
-      myModuleScopeProvider.registerModule(modulePath, group);
-      if (isRaw) {
+  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+    if (isRaw) {
+      myGroups.put(modulePath, group);
+      if (group == null) {
+        myModuleScopeProvider.unregisterModule(modulePath);
+      } else {
+        myModuleScopeProvider.registerModule(modulePath, group);
         myUpdatedModules.add(modulePath);
       }
+    }
+  }
+
+  @Override
+  public void onBinaryLoaded(ModulePath modulePath, boolean isComplete) {
+    if (isComplete) {
+      myUpdatedModules.remove(modulePath);
     }
   }
 

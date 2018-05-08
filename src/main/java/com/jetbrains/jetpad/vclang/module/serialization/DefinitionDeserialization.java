@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +56,27 @@ public class DefinitionDeserialization {
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
+
+    def.setStatus(readTcStatus(defProto));
+  }
+
+  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
+    switch (defProto.getStatus()) {
+      case HEADER_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
+      case BODY_HAS_ERRORS:
+        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
+      case HEADER_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
+      case BODY_NEEDS_TYPE_CHECKING:
+        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+      case HAS_ERRORS:
+        return Definition.TypeCheckingStatus.HAS_ERRORS;
+      case NO_ERRORS:
+        return Definition.TypeCheckingStatus.NO_ERRORS;
+      default:
+        throw new IllegalStateException("Unknown typechecking state");
+    }
   }
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
@@ -87,6 +109,10 @@ public class DefinitionDeserialization {
         field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
       }
       classDef.addPersonalField(field);
+    }
+
+    for (ClassField field : classDef.getPersonalFields()) {
+      field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 
@@ -124,6 +150,10 @@ public class DefinitionDeserialization {
         dataDef.setCovariant(index);
       }
       index++;
+    }
+
+    for (Constructor constructor : dataDef.getConstructors()) {
+      constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
   }
 

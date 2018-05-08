@@ -18,14 +18,12 @@ public final class SourceLoader {
   private final LibraryManager myLibraryManager;
   private final Map<ModulePath, SourceType> myLoadedModules = new HashMap<>();
   private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
-  private final boolean myRecompile;
 
-  private enum SourceType { RAW, BINARY }
+  private enum SourceType { RAW, BINARY, BINARY_FAIL }
 
-  public SourceLoader(SourceLibrary library, LibraryManager libraryManager, boolean recompile) {
+  public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
     myLibrary = library;
     myLibraryManager = libraryManager;
-    myRecompile = recompile;
   }
 
   public SourceLibrary getLibrary() {
@@ -45,49 +43,7 @@ public final class SourceLoader {
   }
 
   /**
-   * Loads either raw or binary source.
-   *
-   * @param modulePath  a module to load.
-   * @return true if the source was successfully loaded, false otherwise.
-   */
-  public boolean load(ModulePath modulePath) {
-    if (myLoadedModules.containsKey(modulePath)) {
-      return true;
-    }
-
-    BinarySource binarySource = myLibrary.getBinarySource(modulePath);
-    Source rawSource = myLibrary.getRawSource(modulePath);
-    boolean binarySourceIsAvailable = binarySource != null && binarySource.isAvailable();
-    boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
-
-    if (!binarySourceIsAvailable && !rawSourceIsAvailable) {
-      getLibraryErrorReporter().report(new ModuleNotFoundError(modulePath));
-      return false;
-    }
-
-    if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
-      binarySourceIsAvailable = false;
-    }
-
-    if (binarySourceIsAvailable) {
-      myLoadingBinaryModules.put(modulePath, binarySource);
-      if (binarySource.loadDependencyInfo(this)) {
-        return loadBinary(modulePath);
-      }
-      myLoadingBinaryModules.remove(modulePath);
-    }
-
-    if (rawSourceIsAvailable) {
-      myLoadedModules.put(modulePath, SourceType.RAW);
-      return rawSource.load(this);
-    } else {
-      return false;
-    }
-  }
-
-  /**
    * Loads a raw source.
-   * If a binary source is available, does not load anything and returns true immediately.
    *
    * @param modulePath  a module to load.
    * @return true if a binary source is available or if the raw source was successfully loaded, false otherwise.
@@ -97,17 +53,8 @@ public final class SourceLoader {
       return true;
     }
 
-    Source binarySource = myLibrary.getBinarySource(modulePath);
     Source rawSource = myLibrary.getRawSource(modulePath);
-    boolean binarySourceIsAvailable = binarySource != null && binarySource.isAvailable();
     boolean rawSourceIsAvailable = rawSource != null && rawSource.isAvailable();
-
-    if (binarySourceIsAvailable && rawSourceIsAvailable && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
-      binarySourceIsAvailable = false;
-    }
-    if (binarySourceIsAvailable) {
-      return true;
-    }
 
     if (!rawSourceIsAvailable) {
       getLibraryErrorReporter().report(new ModuleNotFoundError(modulePath));
@@ -120,31 +67,37 @@ public final class SourceLoader {
 
   /**
    * Loads a binary source.
-   * This method can be invoked only after {@link #loadBinaryDependencyInfo}.
    *
    * @param modulePath  a module to load.
    * @return true if the source was successfully loaded, false otherwise.
    */
   public boolean loadBinary(ModulePath modulePath) {
+    return preloadBinary(modulePath) && fillInBinary(modulePath);
+  }
+
+  boolean fillInBinary(ModulePath modulePath) {
     BinarySource binarySource = myLoadingBinaryModules.remove(modulePath);
-    if (binarySource == null) {
-      return true;
+    if (binarySource != null && !binarySource.load(this)) {
+      myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
+      return false;
     }
 
-    myLoadedModules.put(modulePath, SourceType.BINARY);
-    return binarySource.load(this);
+    return true;
   }
 
   /**
-   * Loads the dependency info of a binary source.
+   * Loads the structure of the source and its dependencies without filling in actual data.
    *
    * @param modulePath  a module to load.
    * @return true if the source was successfully loaded, false otherwise.
    */
-  public boolean loadBinaryDependencyInfo(ModulePath modulePath) {
+  boolean preloadBinary(ModulePath modulePath) {
     SourceType sourceType = myLoadedModules.get(modulePath);
-    if (sourceType != null) {
+    if (sourceType == SourceType.BINARY || sourceType == SourceType.BINARY_FAIL) {
       return sourceType == SourceType.BINARY;
+    }
+    if (myLibrary.hasRawSources() && sourceType != SourceType.RAW) {
+      return false;
     }
     if (myLoadingBinaryModules.containsKey(modulePath)) {
       return true;
@@ -155,17 +108,21 @@ public final class SourceLoader {
       return false;
     }
 
-    Source rawSource = myLibrary.getRawSource(modulePath);
-    if (rawSource != null && rawSource.isAvailable() && (myRecompile || binarySource.getTimeStamp() < rawSource.getTimeStamp())) {
-      return false;
+    if (myLibrary.hasRawSources()) {
+      Source rawSource = myLibrary.getRawSource(modulePath);
+      if (rawSource != null && rawSource.isAvailable() && binarySource.getTimeStamp() < rawSource.getTimeStamp()) {
+        return false;
+      }
     }
 
+    myLoadedModules.put(modulePath, SourceType.BINARY);
     myLoadingBinaryModules.put(modulePath, binarySource);
-    if (binarySource.loadDependencyInfo(this)) {
-      return true;
-    } else {
+    if (!binarySource.preload(this)) {
+      myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
       myLoadingBinaryModules.remove(modulePath);
       return false;
     }
+
+    return true;
   }
 }

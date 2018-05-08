@@ -43,12 +43,12 @@ public abstract class PreludeLibrary extends SourceLibrary {
   }
 
   @Override
-  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       throw new IllegalStateException();
     }
     myGroup = group;
-    myScope = group == null ? null : CachingScope.make(LexicalScope.opened(group));
+    myScope = CachingScope.make(LexicalScope.opened(group));
   }
 
   @Nullable

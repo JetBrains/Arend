@@ -60,12 +60,12 @@ public abstract class StreamRawSource implements Source {
       }
 
       FileGroup result = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, result, true);
+      sourceLoader.getLibrary().onGroupLoaded(modulePath, result, true);
 
       for (NamespaceCommand command : result.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
-          if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.load(module)) {
+          if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadRaw(module)) {
             return false;
           }
         }
@@ -76,7 +76,7 @@ public abstract class StreamRawSource implements Source {
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath));
-      sourceLoader.getLibrary().onModuleLoaded(modulePath, null, true);
+      sourceLoader.getLibrary().onGroupLoaded(modulePath, null, true);
       return false;
     }
   }

@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
@@ -21,7 +22,7 @@ import java.util.EnumSet;
  * as well as ordinary modules (see {@link #getRawSource}).
  */
 public abstract class SourceLibrary extends BaseLibrary {
-  public enum Flag { RECOMPILE, PARTIAL_LOAD }
+  public enum Flag { RECOMPILE }
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
 
   /**
@@ -78,33 +79,44 @@ public abstract class SourceLibrary extends BaseLibrary {
   protected abstract LibraryHeader loadHeader(ErrorReporter errorReporter);
 
   /**
-   * Invoked by a source after it is loaded.
+   * Invoked by a source after it loads the group of a module.
    *
    * @param modulePath  the path to the loaded module.
-   * @param group       the group of the loaded module or null if the module failed to load.
+   * @param group       the group of the loaded module or null if the group was not loaded.
    * @param isRaw       true if the module was loaded from a raw source, false otherwise.
    */
-  public void onModuleLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
+  public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
 
   }
 
   /**
-   * A mixed source loads the binary source, but uses scopes from the raw source, so it should be always loaded.
+   * Invoked by a binary source after it is loaded.
    *
-   * @return true if the library supports mixed sources, false otherwise.
+   * @param modulePath  the path to the loaded module.
+   * @param isComplete  true if the module was loaded completely, false otherwise.
    */
-  public boolean supportsMixedSources() {
-    return false;
+  public void onBinaryLoaded(ModulePath modulePath, boolean isComplete) {
+
   }
 
   /**
-   * Gets a referable converter which is used in loading of mixed source.
+   * Checks if this library has any raw sources.
+   * Note that currently libraries without raw sources do not work properly with class synonyms.
    *
-   * @return a referable converter or null if the library does not support mixed sources.
+   * @return true if the library has raw sources, false otherwise.
+   */
+  public boolean hasRawSources() {
+    return true;
+  }
+
+  /**
+   * Gets a referable converter which is used during loading of binary sources without raw counterparts.
+   *
+   * @return a referable converter or null if the library does not have raw sources.
    */
   @Nullable
   public ReferableConverter getReferableConverter() {
-    return null;
+    return IdReferableConverter.INSTANCE;
   }
 
   /**
@@ -136,11 +148,19 @@ public abstract class SourceLibrary extends BaseLibrary {
       libraryManager.registerDependency(this, loadedDependency);
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager, myFlags.contains(Flag.RECOMPILE));
-    for (ModulePath module : header.modules) {
-      if (!sourceLoader.load(module) && !myFlags.contains(Flag.PARTIAL_LOAD)) {
-        unload();
-        return false;
+    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+    if (hasRawSources()) {
+      for (ModulePath module : header.modules) {
+        if (!sourceLoader.loadRaw(module)) {
+          unload();
+          return false;
+        }
+      }
+    }
+
+    if (!myFlags.contains(Flag.RECOMPILE)) {
+      for (ModulePath module : header.modules) {
+        sourceLoader.loadBinary(module);
       }
     }
 

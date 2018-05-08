@@ -10,7 +10,7 @@ public abstract class DefCallExpression extends Expression {
   private final Definition myDefinition;
 
   public DefCallExpression(Definition definition) {
-    if(!definition.status().headerIsOK()) {
+    if (definition.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
       throw new IllegalStateException("Reference to a definition with a header error");
     }
     myDefinition = definition;

@@ -16,18 +16,24 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 public class ModuleDeserialization {
+  private final ModuleProtos.Module myModuleProto;
   private final SimpleCallTargetProvider myCallTargetProvider = new SimpleCallTargetProvider();
   private final TypecheckerState myState;
   private final ReferableConverter myReferableConverter;
   private final List<Pair<DefinitionProtos.Definition, Definition>> myDefinitions = new ArrayList<>();
 
-  public ModuleDeserialization(TypecheckerState state, ReferableConverter referableConverter) {
+  public ModuleDeserialization(ModuleProtos.Module moduleProto, TypecheckerState state, ReferableConverter referableConverter) {
+    myModuleProto = moduleProto;
     myState = state;
     myReferableConverter = referableConverter;
   }
 
-  public boolean readModule(ModuleProtos.Module moduleProto, ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
-    for (ModuleProtos.ModuleCallTargets moduleCallTargets : moduleProto.getModuleCallTargetsList()) {
+  public ModuleProtos.Module getModuleProto() {
+    return myModuleProto;
+  }
+
+  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
+    for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
       if (scope == null) {
@@ -44,7 +50,6 @@ public class ModuleDeserialization {
       defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
     myDefinitions.clear();
-    return true;
   }
 
   private void fillInCallTargetTree(ModuleProtos.CallTargetTree callTargetTree, Scope scope, ModulePath module) throws DeserializationException {
@@ -74,6 +79,10 @@ public class ModuleDeserialization {
         fillInCallTargetTree(tree, subscope, module);
       }
     }
+  }
+
+  public void readDefinitions(Group group) throws DeserializationException {
+    readDefinitions(myModuleProto.getGroup(), group);
   }
 
   public void readDefinitions(ModuleProtos.Group groupProto, Group group) throws DeserializationException {
@@ -106,7 +115,7 @@ public class ModuleDeserialization {
 
           assert def instanceof ClassDefinition;
           ClassField res = new ClassField(absField, (ClassDefinition) def);
-          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
           myState.record(absField, res);
           myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
         }
@@ -129,7 +138,7 @@ public class ModuleDeserialization {
 
           assert def instanceof DataDefinition;
           Constructor res = new Constructor(absConstructor, (DataDefinition) def);
-          res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
           myState.record(absConstructor, res);
           myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
         }
@@ -166,8 +175,8 @@ public class ModuleDeserialization {
   }
 
   @Nonnull
-  public ChildGroup readGroup(ModuleProtos.Group groupProto, ModulePath modulePath) throws DeserializationException {
-    return readGroup(groupProto, null, modulePath);
+  public ChildGroup readGroup(ModulePath modulePath) throws DeserializationException {
+    return readGroup(myModuleProto.getGroup(), null, modulePath);
   }
 
   @Nonnull
@@ -253,7 +262,7 @@ public class ModuleDeserialization {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
             TCReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
             ClassField res = new ClassField(absField, classDef);
-            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absField, res);
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
@@ -267,7 +276,7 @@ public class ModuleDeserialization {
             DefinitionProtos.Referable conReferable = constructor.getReferable();
             TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, false);
             Constructor res = new Constructor(absConstructor, dataDef);
-            res.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absConstructor, res);
             myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
           }
@@ -280,7 +289,7 @@ public class ModuleDeserialization {
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
-    def.setStatus(readTcStatus(defProto));
+    def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     return def;
   }
 
@@ -300,24 +309,5 @@ public class ModuleDeserialization {
         throw new DeserializationException("Unknown associativity: " + precedenceProto.getAssoc());
     }
     return new Precedence(assoc, (byte) precedenceProto.getPriority(), precedenceProto.getInfix());
-  }
-
-  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
-    switch (defProto.getStatus()) {
-      case HEADER_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
-      case BODY_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
-      case HEADER_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
-      case BODY_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
-      case HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HAS_ERRORS;
-      case NO_ERRORS:
-        return Definition.TypeCheckingStatus.NO_ERRORS;
-      default:
-        throw new IllegalStateException("Unknown typechecking state");
-    }
   }
 }
