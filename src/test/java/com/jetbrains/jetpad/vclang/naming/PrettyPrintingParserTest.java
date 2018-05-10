@@ -9,7 +9,9 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.CaseExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
@@ -142,19 +144,19 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintCase() {
     TypedSingleDependentLink x = singleParam("x", Nat());
-    HashMap<Constructor, ElimTree> myMap = new HashMap<>();
+    HashMap<Constructor, ElimTree> myMap = new LinkedHashMap<>();
     myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));
     TypedSingleDependentLink y = singleParam("y", Nat());
     myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));
     ElimTree elimTree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
-    CaseExpression cExpr = new CaseExpression(x, Nat(), elimTree, Collections.singletonList(Ref(x)));
+    Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(x, Nat(), elimTree, Collections.singletonList(Ref(x))));
 
     ParsedLocalReferable cx = ref("x");
     ParsedLocalReferable cy = ref("y");
     List<Concrete.FunctionClause> cfc = new ArrayList<>();
-    cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.ZERO.getReferable(), Collections.emptyList())), cZero()));
-    Concrete.CaseExpression ccExpr = cCase(Collections.singletonList(cVar(cx)), cfc);
+    cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));
+    Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(Collections.singletonList(cVar(cx)), cfc));
 
     testExpr(ccExpr, cExpr);
   }

@@ -52,8 +52,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.ReferenceExpression(null, Prelude.NAT.getReferable());
   }
 
-  public static Concrete.ReferenceExpression cZero() {
-    return new Concrete.ReferenceExpression(null, Prelude.ZERO.getReferable());
+  public static Concrete.NumericLiteral cZero() {
+    return new Concrete.NumericLiteral(null, BigInteger.valueOf(0));
   }
 
   public static Concrete.ReferenceExpression cSuc() {

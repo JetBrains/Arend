@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.expr;
 
-import com.google.common.base.Objects;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
@@ -174,22 +173,41 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   private boolean comparePattern(Concrete.Pattern pattern1, Concrete.Pattern pattern2) {
     if (pattern1 instanceof Concrete.NamePattern) {
-      return pattern2 instanceof Concrete.NamePattern && Objects.equal(pattern1, pattern2);
+      if (!(pattern2 instanceof Concrete.NamePattern)) {
+        return false;
+      }
+      mySubstitution.put(((Concrete.NamePattern) pattern1).getReferable(), ((Concrete.NamePattern) pattern2).getReferable());
+      return true;
     }
     if (pattern1 instanceof Concrete.ConstructorPattern) {
-      return pattern2 instanceof Concrete.ConstructorPattern && ((Concrete.ConstructorPattern) pattern1).getConstructor().equals(((Concrete.ConstructorPattern) pattern2).getConstructor());
+      if (!(pattern2 instanceof Concrete.ConstructorPattern)) {
+        return false;
+      }
+
+      Concrete.ConstructorPattern conPattern1 = (Concrete.ConstructorPattern) pattern1;
+      Concrete.ConstructorPattern conPattern2 = (Concrete.ConstructorPattern) pattern2;
+      if (!conPattern1.getConstructor().equals(conPattern2.getConstructor()) || conPattern1.getPatterns().size() != conPattern2.getPatterns().size()) {
+        return false;
+      }
+
+      for (int i = 0; i < conPattern1.getPatterns().size(); i++) {
+        if (!comparePattern(conPattern1.getPatterns().get(i), conPattern2.getPatterns().get(i))) {
+          return false;
+        }
+      }
+
+      return true;
     }
     return pattern1 instanceof Concrete.EmptyPattern && pattern2 instanceof Concrete.EmptyPattern;
   }
 
   private boolean compareClause(Concrete.FunctionClause clause1, Concrete.FunctionClause clause2) {
-    if (!((clause1.getExpression() == null ? clause2.getExpression() == null : compare(clause1.getExpression(), clause2.getExpression())) && clause1.getPatterns().size() == clause2.getPatterns().size())) return false;
     for (int i = 0; i < clause1.getPatterns().size(); i++) {
       if (!comparePattern(clause1.getPatterns().get(i), clause2.getPatterns().get(i))) {
         return false;
       }
     }
-    return true;
+    return (clause1.getExpression() == null ? clause2.getExpression() == null : compare(clause1.getExpression(), clause2.getExpression())) && clause1.getPatterns().size() == clause2.getPatterns().size();
   }
 
   private boolean compareElimCase(Concrete.CaseExpression expr1, Concrete.CaseExpression expr2) {
