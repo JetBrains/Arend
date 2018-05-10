@@ -13,8 +13,8 @@ public class SourceInfoReference implements SourceInfo, Referable, DataContainer
   }
 
   @Override
-  public SourceInfo getData() {
-    return mySourceInfo;
+  public Object getData() {
+    return mySourceInfo instanceof DataContainer ? ((DataContainer) mySourceInfo).getData() : mySourceInfo;
   }
 
   @Override
