@@ -266,7 +266,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return implementations;
   }
 
-  private Concrete.Parameter buildParameter(Abstract.Parameter parameter) {
+  private Concrete.Parameter buildParameter(Abstract.Parameter parameter, boolean isNamed) {
     List<? extends Referable> referableList = parameter.getReferableList();
     Abstract.Expression type = parameter.getType();
     if (type == null) {
@@ -276,7 +276,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a single variable", parameter.getData()));
       }
     } else {
-      if (referableList.isEmpty()) {
+      if (!isNamed && (referableList.isEmpty() || referableList.size() == 1 && referableList.get(0) == null)) {
         return new Concrete.TypeParameter(parameter.getData(), parameter.isExplicit(), type.accept(this, null));
       } else {
         List<Referable> dataReferableList = new ArrayList<>(referableList.size());
@@ -291,7 +291,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   private List<Concrete.Parameter> buildParameters(Collection<? extends Abstract.Parameter> absParameters) {
     List<Concrete.Parameter> parameters = new ArrayList<>(absParameters.size());
     for (Abstract.Parameter absParameter : absParameters) {
-      parameters.add(buildParameter(absParameter));
+      parameters.add(buildParameter(absParameter, true));
     }
     return parameters;
   }
@@ -299,7 +299,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   private List<Concrete.TypeParameter> buildTypeParameters(Collection<? extends Abstract.Parameter> absParameters) {
     List<Concrete.TypeParameter> parameters = new ArrayList<>(absParameters.size());
     for (Abstract.Parameter absParameter : absParameters) {
-      Concrete.Parameter parameter = buildParameter(absParameter);
+      Concrete.Parameter parameter = buildParameter(absParameter, false);
       if (parameter instanceof Concrete.TypeParameter) {
         parameters.add((Concrete.TypeParameter) parameter);
       } else {
@@ -357,7 +357,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.Expression visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, Void params) {
     Concrete.Expression result = expr.accept(this, null);
     for (Abstract.Argument arg : arguments) {
-      result = new Concrete.AppExpression(result.getData(), result, new Concrete.Argument(arg.getExpression().accept(this, null), arg.isExplicit()));
+      Abstract.Expression argExpr = arg.getExpression();
+      if (argExpr != null) {
+        result = new Concrete.AppExpression(result.getData(), result, new Concrete.Argument(arg.getExpression().accept(this, null), arg.isExplicit()));
+      }
     }
     return result;
   }
@@ -456,12 +459,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
     elems.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
     for (Abstract.BinOpSequenceElem elem : sequence) {
-      Concrete.Expression elemExpr = elem.getExpression().accept(this, null);
+      Abstract.Expression arg = elem.getExpression();
+      if (arg == null) {
+        continue;
+      }
+
+      Concrete.Expression elemExpr = arg.accept(this, null);
       Fixity fixity = elem.getFixity();
       boolean isExplicit = elem.isExplicit();
 
       if (!isExplicit && fixity != Fixity.NONFIX || (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) && !(elemExpr instanceof Concrete.ReferenceExpression)) {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Inconsistent model", elem));
+        myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Inconsistent model", elem)));
+        fixity = isExplicit ? Fixity.UNKNOWN : Fixity.NONFIX;
       }
 
       elems.add(new Concrete.BinOpSequenceElem(elemExpr, fixity, isExplicit));
