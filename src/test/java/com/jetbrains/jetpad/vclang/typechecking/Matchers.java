@@ -117,6 +117,26 @@ public class Matchers {
     };
   }
 
+  public static Matcher<? super GeneralError> warning() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error.level == Error.Level.WARNING) {
+          description.appendText("warning");
+          return true;
+        } else {
+          description.appendText("not a warning");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a warning");
+      }
+    };
+  }
+
   public static Matcher<GeneralError> goal(final int contextSize) {
     return new LocalErrorMatcher() {
       @Override

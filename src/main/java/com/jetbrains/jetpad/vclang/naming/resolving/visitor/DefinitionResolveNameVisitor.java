@@ -1,11 +1,14 @@
 package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
+import com.jetbrains.jetpad.vclang.naming.resolving.DuplicateNameChecker;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -213,6 +216,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
+    new DuplicateNameChecker() {
+      @Override
+      public void duplicateName(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));
+      }
+    }.checkGroup(group);
+
     Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
 
     if (def instanceof Concrete.Definition || !group.getNamespaceCommands().isEmpty()) {

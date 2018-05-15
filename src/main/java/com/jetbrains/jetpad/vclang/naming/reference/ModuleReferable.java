@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class ModuleReferable implements LocatedReferable {
   public final ModulePath path;
@@ -40,5 +41,23 @@ public class ModuleReferable implements LocatedReferable {
   @Override
   public LocatedReferable getLocatedReferableParent() {
     return null;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ModuleReferable that = (ModuleReferable) o;
+    return Objects.equals(path, that.path);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(path);
+  }
+
+  @Override
+  public String toString() {
+    return path.toString();
   }
 }

@@ -10,6 +10,8 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -208,22 +210,26 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void useExistingTest() {
+  public void staticDynamicDuplicateError() {
     resolveNamesDef(
       "\\class Test {\n" +
       "  \\func A => 0\n" +
-      "  \\func B => A\n" +
-      "} \\where { \\class A { } }");
+      "} \\where {\n" +
+      "  \\class A { }\n" +
+      "}", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void defineExistingStaticTestError() {
     resolveNamesModule("\\class A { } \\func A => 0", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void defineExistingDynamicTestError() {
     resolveNamesDef("\\class Test { \\class A \\func A => 0 }", 1);
+    assertThatErrorsAre(error());
   }
 
   @Ignore
@@ -247,6 +253,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "  \\open B\n" +
       "}\n" +
       "\\func y => A.x", 1);
+    assertThatErrorsAre(error());
   }
 
   @Ignore
@@ -262,6 +269,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "  \\class A {}\n" +
         "  \\class A { \\func x => 0 }\n" +
         "}", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -271,6 +279,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "  \\func d => 0\n" +
         "  \\func d => 1\n" +
         "}", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -286,6 +295,7 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void testPreludeNonExistentMember() {
     resolveNamesDef("\\func test' => foo", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -305,6 +315,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\open X\n" +
         "\\open Y\n" +
         "\\func g => f", 1);
+    assertThatErrorsAre(warning());
   }
 
   @Test
@@ -327,6 +338,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "    | left => d\n" +
       "    | right => d\n" +
       "  }", 2);
+    assertThatErrorsAre(error(), error());
   }
 
   @Test
@@ -338,16 +350,19 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func crash (k : K) : \\Prop\n" +
       "  | k1 a => a\n" +
       "  | k2 b => a", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void nameResolverLamOpenError() {
     resolveNamesExpr("\\lam (x : Nat) => (\\lam (y : Nat) => \\Pi (z : Nat -> \\Type0) (y : Nat) -> z ((\\lam (y : Nat) => y) y)) y", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void openExportTestError() {
     resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\open B } \\func y => A.x", 1);
+    assertThatErrorsAre(error());
   }
 
   @Ignore
@@ -360,11 +375,13 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void nonStaticClassExportTestError() {
     resolveNamesModule("\\class Test { \\class A \\where { \\func x => 0 } } \\where { \\class B \\where { \\export A } \\func y => B.x }", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void nameResolverPiOpenError() {
     resolveNamesExpr("\\Pi (A : Nat -> \\Type0) (a b : A a) -> A 0", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -375,11 +392,13 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void dynamicsAreNotOpen() {
     resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat \\func y => x } }", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void staticsAreNotOpen() {
     resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat } \\where { \\func y => 0 } }", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -396,26 +415,30 @@ public class NameResolverTest extends NameResolverTestCase {
   public void whereError() {
     resolveNamesModule(
       "\\func f (x : Nat) => x \\where\n" +
-        "  \\func b => x", 1);
+      "  \\func b => x", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void whereNoOpenFunctionError() {
     resolveNamesModule(
       "\\func f => x \\where\n" +
-        "  \\func b => 0 \\where\n" +
-        "    \\func x => 0", 1);
+      "  \\func b => 0 \\where\n" +
+      "    \\func x => 0", 1);
+    assertThatErrorsAre(error());
   }
 
   @Ignore
   @Test
   public void export2TestError() {
     resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\export B } \\func y => x", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
   public void dynamicFunctionTest() {
     resolveNamesModule("\\class A { \\func x => 0 } \\func y : Nat => x", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -427,8 +450,40 @@ public class NameResolverTest extends NameResolverTestCase {
   public void duplicateInternalName() {
     resolveNamesModule(
       "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\data D | x Nat", 1);
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\data D | x Nat", 1);
+    assertThatErrorsAre(warning());
+  }
+
+  @Test
+  public void duplicateFieldName() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  | x : Nat\n" +
+      "}", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void duplicateInternalExternalName() {
+    resolveNamesModule(
+      "\\data D | x Nat\n" +
+      "\\func x => 0");
+  }
+
+  @Test
+  public void classExtensionDuplicateFieldName() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  | f : Nat\n" +
+      "}\n" +
+      "\\class C{\n" +
+      "  \\class B \\extends A {\n" +
+      "    | f : Nat\n" +
+      "  }\n" +
+      "}", 1);
+    assertThatErrorsAre(error());
   }
 }
