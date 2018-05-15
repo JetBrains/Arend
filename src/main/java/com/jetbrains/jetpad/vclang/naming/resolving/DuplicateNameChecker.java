@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,15 +16,23 @@ public abstract class DuplicateNameChecker {
   }
 
   public boolean checkGroup(Group group) {
+    LocatedReferable groupRef = group.getReferable();
+    Collection<? extends ClassReferable> superClasses = groupRef instanceof ClassReferable ? ((ClassReferable) groupRef).getSuperClassReferences() : Collections.emptyList();
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends Group.InternalReferable> fields = group.getFields();
     Collection<? extends Group.InternalReferable> constructors = group.getConstructors();
-    if (subgroups.isEmpty() && dynamicSubgroups.isEmpty() && fields.isEmpty() && constructors.isEmpty()) {
+    if (subgroups.isEmpty() && dynamicSubgroups.isEmpty() && fields.isEmpty() && constructors.isEmpty() && superClasses.isEmpty()) {
       return true;
     }
 
     Map<String, LocatedReferable> referables = new HashMap<>();
+
+    for (ClassReferable superClass : superClasses) {
+      for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
+        referables.put(fieldRef.textRepresentation(), fieldRef);
+      }
+    }
 
     for (Group.InternalReferable internalRef : constructors) {
       checkReference(internalRef.getReferable(), referables, null);
@@ -40,9 +50,9 @@ public abstract class DuplicateNameChecker {
       checkReference(subgroup.getReferable(), referables, null);
     }
 
-    checkSubgroup(dynamicSubgroups, referables, group.getReferable());
+    checkSubgroup(dynamicSubgroups, referables, groupRef);
 
-    checkSubgroup(subgroups, referables, group.getReferable());
+    checkSubgroup(subgroups, referables, groupRef);
 
     return true;
   }

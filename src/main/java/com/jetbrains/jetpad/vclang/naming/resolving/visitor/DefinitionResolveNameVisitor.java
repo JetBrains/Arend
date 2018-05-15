@@ -216,13 +216,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
-    new DuplicateNameChecker() {
-      @Override
-      public void duplicateName(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
-        myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));
-      }
-    }.checkGroup(group);
-
     Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
 
     if (def instanceof Concrete.Definition || !group.getNamespaceCommands().isEmpty()) {
@@ -270,5 +263,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     for (Group subgroup : group.getDynamicSubgroups()) {
       resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope), concreteProvider);
     }
+
+    new DuplicateNameChecker() {
+      @Override
+      public void duplicateName(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));
+      }
+    }.checkGroup(group);
   }
 }

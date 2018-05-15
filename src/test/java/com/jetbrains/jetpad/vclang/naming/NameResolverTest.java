@@ -299,12 +299,41 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void openDuplicate() {
+  public void openDefined() {
     resolveNamesModule(
         "\\func f => \\Type0\n" +
         "\\class X \\where { \\func f => \\Type0 }\n" +
         "\\open X\n" +
         "\\func g => f");
+  }
+
+  @Test
+  public void openUsingDefined() {
+    resolveNamesModule(
+        "\\func f => \\Type0\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\open X(f)\n" +
+        "\\func g => f", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void openRenaming() {
+    resolveNamesModule(
+        "\\func f => \\Type0\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\open X(f \\as f')\n" +
+        "\\func g => f\n" +
+        "\\func g' => f'");
+  }
+
+  @Test
+  public void openRenamingDefined() {
+    resolveNamesModule(
+        "\\func f' => \\Type0\n" +
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\open X(f \\as f')", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -326,6 +355,17 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\open X\n" +
         "\\open Y \\hiding (f)\n" +
         "\\func g => f");
+  }
+
+  @Test
+  public void openUsingDuplicate() {
+    resolveNamesModule(
+        "\\class X \\where { \\func f => \\Type0 }\n" +
+        "\\class Y \\where { \\func f => \\Type0 }\n" +
+        "\\open X(f)\n" +
+        "\\open Y(f)\n" +
+        "\\func g => f", 1);
+    assertThatErrorsAre(error());
   }
 
   @Test
@@ -479,7 +519,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\class A {\n" +
       "  | f : Nat\n" +
       "}\n" +
-      "\\class C{\n" +
+      "\\class C {\n" +
       "  \\class B \\extends A {\n" +
       "    | f : Nat\n" +
       "  }\n" +
