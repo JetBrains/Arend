@@ -26,11 +26,6 @@ public class ModuleReferable implements LocatedReferable {
     return Precedence.DEFAULT;
   }
 
-  @Override
-  public boolean isModule() {
-    return true;
-  }
-
   @Nullable
   @Override
   public ModulePath getLocation() {

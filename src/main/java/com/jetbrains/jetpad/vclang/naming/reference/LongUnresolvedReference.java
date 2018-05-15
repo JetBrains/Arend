@@ -93,7 +93,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     for (int i = 0; i < myPath.size() - 1; i++) {
-      scope = scope.resolveNamespace(myPath.get(i), true);
+      scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         resolved = new ErrorReference(getData(), null, textRepresentation());
         return resolved;

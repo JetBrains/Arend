@@ -50,8 +50,8 @@ public class ConvertingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
-    Scope scope = myScope.resolveNamespace(name, resolveModuleNames);
+  public Scope resolveNamespace(String name) {
+    Scope scope = myScope.resolveNamespace(name);
     return scope == null ? null : new ConvertingScope(myConverter, scope);
   }
 

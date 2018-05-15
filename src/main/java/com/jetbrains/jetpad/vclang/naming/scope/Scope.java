@@ -31,7 +31,7 @@ public interface Scope {
     return find(ref -> Objects.equals(name, ref.textRepresentation()));
   }
 
-  default @Nullable Scope resolveNamespace(String name, boolean resolveModuleNames) {
+  default @Nullable Scope resolveNamespace(String name) {
     return null;
   }
 
@@ -56,7 +56,7 @@ public interface Scope {
         if (i == path.size() - 1) {
           return scope.resolveName(path.get(i));
         } else {
-          scope = scope.resolveNamespace(path.get(i), true);
+          scope = scope.resolveNamespace(path.get(i));
         }
       }
       return null;
@@ -67,7 +67,7 @@ public interface Scope {
         if (scope == null) {
           return null;
         }
-        scope = scope.resolveNamespace(name, true);
+        scope = scope.resolveNamespace(name);
       }
       return scope;
     }

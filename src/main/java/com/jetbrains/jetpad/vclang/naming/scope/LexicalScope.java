@@ -105,10 +105,6 @@ public class LexicalScope implements Scope {
         Collection<? extends Referable> scopeElements = scope.getElements();
         elemLoop:
         for (Referable ref : scopeElements) {
-          if (ref instanceof GlobalReferable && ((GlobalReferable) ref).isModule()) {
-            continue;
-          }
-
           for (Referable hiddenRef : hidden) {
             if (hiddenRef.textRepresentation().equals(ref.textRepresentation())) {
               continue elemLoop;
@@ -173,7 +169,7 @@ public class LexicalScope implements Scope {
     return null;
   }
 
-  private Object resolve(String name, boolean resolveRef, boolean resolveModuleNames) {
+  private Object resolve(String name, boolean resolveRef) {
     if (resolveRef) {
       Object result = resolveInternal(myGroup, name, false);
       if (result != null) {
@@ -227,7 +223,7 @@ public class LexicalScope implements Scope {
             }
             return newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
           } else {
-            return scope.resolveNamespace(oldRef.textRepresentation(), true);
+            return scope.resolveNamespace(oldRef.textRepresentation());
           }
         }
       }
@@ -246,27 +242,27 @@ public class LexicalScope implements Scope {
           }
         }
 
-        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name, false);
+        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name);
         if (result != null) {
-          return result instanceof GlobalReferable && ((GlobalReferable) result).isModule() ? null : result;
+          return result;
         }
       }
     }
 
-    return resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveModuleNames);
+    return resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name);
   }
 
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    Object result = resolve(name, true, true);
+    Object result = resolve(name, true);
     return result instanceof Referable ? (Referable) result : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
-    Object result = resolve(name, false, resolveModuleNames);
+  public Scope resolveNamespace(String name) {
+    Object result = resolve(name, false);
     return result instanceof Scope ? (Scope) result : null;
   }
 

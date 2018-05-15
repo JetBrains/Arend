@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
@@ -39,17 +38,10 @@ public class CachingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
-    if (!resolveModuleNames) {
-      Referable referable = resolveName(name);
-      if (referable == null || referable instanceof GlobalReferable && ((GlobalReferable) referable).isModule()) {
-        return null;
-      }
-    }
-
+  public Scope resolveNamespace(String name) {
     Scope namespace = myNamespaces.get(name);
     if (namespace == null) {
-      namespace = myScope.resolveNamespace(name, true);
+      namespace = myScope.resolveNamespace(name);
       namespace = namespace == null ? EMPTY_SCOPE : make(namespace);
       myNamespaces.put(name, namespace);
     }

@@ -21,11 +21,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
     return myOriginalReferable;
   }
 
-  @Override
-  public boolean isModule() {
-    return myOriginalReferable instanceof GlobalReferable && ((GlobalReferable) myOriginalReferable).isModule();
-  }
-
   @Nonnull
   @Override
   public Precedence getPrecedence() {

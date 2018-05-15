@@ -70,7 +70,7 @@ public class ModuleDeserialization {
 
     List<ModuleProtos.CallTargetTree> subtreeList = callTargetTree.getSubtreeList();
     if (!subtreeList.isEmpty()) {
-      Scope subscope = scope.resolveNamespace(callTargetTree.getName(), true);
+      Scope subscope = scope.resolveNamespace(callTargetTree.getName());
       if (subscope == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }

@@ -44,8 +44,8 @@ public class LetScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name, boolean resolveModuleNames) {
-    return myParent.resolveNamespace(name, resolveModuleNames);
+  public Scope resolveNamespace(String name) {
+    return myParent.resolveNamespace(name);
   }
 
   @Nonnull

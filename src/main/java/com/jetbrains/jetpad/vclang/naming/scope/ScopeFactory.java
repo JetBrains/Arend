@@ -85,7 +85,7 @@ public class ScopeFactory {
         return parentScope;
       }
 
-      Scope scope = parentScope.getGlobalSubscope().resolveNamespace(headRef.getReferent().textRepresentation(), true);
+      Scope scope = parentScope.getGlobalSubscope().resolveNamespace(headRef.getReferent().textRepresentation());
       for (Abstract.Reference reference : ((Abstract.LongReference) parentSourceNode).getTailReferences()) {
         if (scope == null || reference == null) {
           return EmptyScope.INSTANCE;
@@ -93,7 +93,7 @@ public class ScopeFactory {
         if (sourceNode.equals(reference)) {
           return scope;
         }
-        scope = scope.resolveNamespace(reference.getReferent().textRepresentation(), true);
+        scope = scope.resolveNamespace(reference.getReferent().textRepresentation());
       }
 
       return EmptyScope.INSTANCE;

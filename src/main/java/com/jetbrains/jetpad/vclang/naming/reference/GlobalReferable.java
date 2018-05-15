@@ -14,8 +14,4 @@ public interface GlobalReferable extends Referable {
   default boolean isTypecheckable() {
     return true;
   }
-
-  default boolean isModule() {
-    return false;
-  }
 }

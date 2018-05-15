@@ -235,7 +235,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         List<String> path = namespaceCommand.getPath();
         Scope curScope = convertedScope;
         for (int i = 0; i < path.size(); i++) {
-          curScope = curScope.resolveNamespace(path.get(i), true);
+          curScope = curScope.resolveNamespace(path.get(i));
           if (curScope == null) {
             myErrorReporter.report(new ProxyError(group.getReferable(), new NotInScopeError(namespaceCommand, i == 0 ? null : new LongUnresolvedReference(namespaceCommand, path.subList(0, i)), path.get(i))));
             break;
