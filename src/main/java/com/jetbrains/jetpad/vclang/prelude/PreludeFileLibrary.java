@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * A library which is used to load and persist prelude from and to a file.
@@ -29,7 +30,13 @@ public class PreludeFileLibrary extends PreludeTypecheckingLibrary {
     if (!modulePath.equals(Prelude.MODULE_PATH)) {
       return null;
     }
-    return new FileRawSource(PreludeResourceSource.BASE_PATH, Prelude.MODULE_PATH);
+
+    Path preludePath = PreludeResourceSource.BASE_PATH;
+    String vclangPath = System.getenv("VCLANG_PATH");
+    if (vclangPath != null) {
+      preludePath = Paths.get(vclangPath).resolve(preludePath);
+    }
+    return new FileRawSource(preludePath, Prelude.MODULE_PATH);
   }
 
   @Nullable

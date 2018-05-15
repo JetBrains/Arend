@@ -43,10 +43,13 @@ public class NameResolverTest extends NameResolverTestCase {
   public void whereTest() {
     resolveNamesModule(
         "\\func f (x : \\Type0) => B.b (a x) \\where {\n" +
-            "  \\func a (x : \\Type0) => x\n" +
-            "  \\data D | D1 | D2\n" +
-            "  \\class B \\where { \\data C | cr \\func b (x : \\Type0) => D1 }\n" +
-            "}");
+        "  \\func a (x : \\Type0) => x\n" +
+        "  \\data D | D1 | D2\n" +
+        "  \\class B \\where {\n" +
+        "    \\data C | cr\n" +
+        "    \\func b (x : \\Type0) => D1\n" +
+        "  }\n" +
+        "}");
   }
 
   @Test
@@ -205,8 +208,12 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void useExistingTestError() {
-    resolveNamesDef("\\class Test { \\func A => 0 \\func B => A } \\where { \\class A { } }", 1);
+  public void useExistingTest() {
+    resolveNamesDef(
+      "\\class Test {\n" +
+      "  \\func A => 0\n" +
+      "  \\func B => A\n" +
+      "} \\where { \\class A { } }");
   }
 
   @Test
@@ -233,7 +240,13 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void openInsideTest() {
-    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\open B } \\func y => A.x", 1);
+    resolveNamesModule(
+      "\\class A \\where {\n" +
+      "  \\class B \\where\n" +
+      "    \\func x => 0\n" +
+      "  \\open B\n" +
+      "}\n" +
+      "\\func y => A.x", 1);
   }
 
   @Ignore
@@ -325,5 +338,97 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func crash (k : K) : \\Prop\n" +
       "  | k1 a => a\n" +
       "  | k2 b => a", 1);
+  }
+
+  @Test
+  public void nameResolverLamOpenError() {
+    resolveNamesExpr("\\lam (x : Nat) => (\\lam (y : Nat) => \\Pi (z : Nat -> \\Type0) (y : Nat) -> z ((\\lam (y : Nat) => y) y)) y", 1);
+  }
+
+  @Test
+  public void openExportTestError() {
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\open B } \\func y => A.x", 1);
+  }
+
+  @Ignore
+  @Test
+  public void staticClassExportTest() {
+    resolveNamesModule("\\class A \\where { \\func x => 0 } \\class B \\where { \\export A } \\func y => B.x");
+  }
+
+  @Ignore
+  @Test
+  public void nonStaticClassExportTestError() {
+    resolveNamesModule("\\class Test { \\class A \\where { \\func x => 0 } } \\where { \\class B \\where { \\export A } \\func y => B.x }", 1);
+  }
+
+  @Test
+  public void nameResolverPiOpenError() {
+    resolveNamesExpr("\\Pi (A : Nat -> \\Type0) (a b : A a) -> A 0", 1);
+  }
+
+  @Test
+  public void fieldsAreOpen() {
+    resolveNamesModule("\\class Test { \\func y => x } \\where { \\class A { | x : Nat } }");
+  }
+
+  @Test
+  public void dynamicsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat \\func y => x } }", 1);
+  }
+
+  @Test
+  public void staticsAreNotOpen() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat } \\where { \\func y => 0 } }", 1);
+  }
+
+  @Test
+  public void openStatics() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat } \\where { \\func y => 0 } \\open A }");
+  }
+
+  @Test
+  public void openDynamics() {
+    resolveNamesModule("\\class Test { \\func z => y } \\where { \\class A { | x : Nat \\func y => x } \\open A }");
+  }
+
+  @Test
+  public void whereError() {
+    resolveNamesModule(
+      "\\func f (x : Nat) => x \\where\n" +
+        "  \\func b => x", 1);
+  }
+
+  @Test
+  public void whereNoOpenFunctionError() {
+    resolveNamesModule(
+      "\\func f => x \\where\n" +
+        "  \\func b => 0 \\where\n" +
+        "    \\func x => 0", 1);
+  }
+
+  @Ignore
+  @Test
+  public void export2TestError() {
+    resolveNamesModule("\\class A \\where { \\class B \\where { \\func x => 0 } \\export B } \\func y => x", 1);
+  }
+
+  @Test
+  public void dynamicFunctionTest() {
+    resolveNamesModule("\\class A { \\func x => 0 } \\func y : Nat => x", 1);
+  }
+
+  @Test
+  public void dynamicFunctionOpenTest() {
+    resolveNamesModule("\\class A { \\func x => 0 } \\func y : Nat => x \\open A");
+  }
+
+  @Test
+  public void duplicateInternalName() {
+    resolveNamesModule(
+      "\\class A {\n" +
+        "  | x : Nat\n" +
+        "}\n" +
+        "\\data D | x Nat", 1);
   }
 }
