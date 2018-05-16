@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
-import com.jetbrains.jetpad.vclang.naming.resolving.DuplicateNameChecker;
+import com.jetbrains.jetpad.vclang.naming.resolving.NameClashesChecker;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -16,8 +16,10 @@ import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
+import com.jetbrains.jetpad.vclang.util.LongName;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -217,68 +219,65 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
     Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
+    Scope convertedScope = referableConverter == null ? scope : CachingScope.make(new ConvertingScope(referableConverter, scope));
+    if (def instanceof Concrete.Definition) {
+      ((Concrete.Definition) def).accept(this, convertedScope);
+    }
 
-    if (def instanceof Concrete.Definition || !group.getNamespaceCommands().isEmpty()) {
-      Scope convertedScope = referableConverter == null ? scope : CachingScope.make(new ConvertingScope(referableConverter, scope));
-      if (def instanceof Concrete.Definition) {
-        ((Concrete.Definition) def).accept(this, convertedScope);
+    for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
+      LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
+      Scope curScope = reference.resolveNamespace(convertedScope);
+      if (curScope == null) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), reference.getErrorReference().getError()));
       }
 
-      for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
-        LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
-        Scope curScope = reference.resolveNamespace(convertedScope);
-        if (curScope == null) {
-          myErrorReporter.report(new ProxyError(group.getReferable(), reference.getErrorReference().getError()));
+      if (curScope != null) {
+        for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
+          Referable ref = renaming.getOldReference();
+          if (ref instanceof UnresolvedReference) {
+            ref = ((UnresolvedReference) ref).resolve(curScope);
+          }
+          if (ref instanceof ErrorReference) {
+            myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
+          }
         }
 
-        if (curScope != null) {
-          for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
-            Referable ref = renaming.getOldReference();
-            if (ref instanceof UnresolvedReference) {
-              ref = ((UnresolvedReference) ref).resolve(curScope);
-            }
-            if (ref instanceof ErrorReference) {
-              myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
-            }
+        curScope = NamespaceCommandNamespace.makeNamespace(curScope, new NamespaceCommand() {
+          @Nonnull
+          @Override
+          public Kind getKind() {
+                                return namespaceCommand.getKind();
+                                                                  }
+
+          @Nonnull
+          @Override
+          public List<String> getPath() {
+                                        return namespaceCommand.getPath();
+                                                                          }
+
+          @Override
+          public boolean isUsing() {
+                                   return namespaceCommand.isUsing();
+                                                                     }
+
+          @Nonnull
+          @Override
+          public Collection<? extends NameRenaming> getOpenedReferences() {
+            return namespaceCommand.getOpenedReferences();
           }
 
-          curScope = NamespaceCommandNamespace.makeNamespace(curScope, new NamespaceCommand() {
-            @Nonnull
-            @Override
-            public Kind getKind() {
-              return namespaceCommand.getKind();
-            }
-
-            @Nonnull
-            @Override
-            public List<String> getPath() {
-              return namespaceCommand.getPath();
-            }
-
-            @Override
-            public boolean isUsing() {
-              return namespaceCommand.isUsing();
-            }
-
-            @Nonnull
-            @Override
-            public Collection<? extends NameRenaming> getOpenedReferences() {
-              return namespaceCommand.getOpenedReferences();
-            }
-
-            @Nonnull
-            @Override
-            public Collection<? extends Referable> getHiddenReferences() {
-              return Collections.emptyList();
-            }
-          });
-          for (Referable ref : namespaceCommand.getHiddenReferences()) {
-            if (ref instanceof UnresolvedReference) {
-              ref = ((UnresolvedReference) ref).resolve(curScope);
-            }
-            if (ref instanceof ErrorReference) {
-              myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
-            }
+          @Nonnull
+          @Override
+          public Collection<? extends Referable> getHiddenReferences() {
+                                                                       return Collections.emptyList();
+                                                                                                      }
+        });
+        for (Referable ref : namespaceCommand.getHiddenReferences()) {
+          if (ref instanceof UnresolvedReference) {
+            ref = ((UnresolvedReference) ref).resolve(curScope);
+          }
+          if (ref instanceof ErrorReference) {
+            myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
           }
         }
       }
@@ -291,11 +290,21 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope), concreteProvider);
     }
 
-    new DuplicateNameChecker() {
+    new NameClashesChecker() {
       @Override
-      public void duplicateName(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+      public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
         myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));
       }
-    }.checkGroup(group);
+
+      @Override
+      public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()))));
+      }
+
+      @Override
+      public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module")));
+      }
+    }.checkGroup(group, convertedScope);
   }
 }
