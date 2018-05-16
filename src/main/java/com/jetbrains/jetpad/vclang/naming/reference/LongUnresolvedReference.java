@@ -95,16 +95,40 @@ public class LongUnresolvedReference implements UnresolvedReference {
     for (int i = 0; i < myPath.size() - 1; i++) {
       scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
-        resolved = new ErrorReference(getData(), null, textRepresentation());
+        Object data = getData();
+        resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
         return resolved;
       }
     }
 
-    resolved = scope.resolveName(myPath.get(myPath.size() - 1));
+    String name = myPath.get(myPath.size() - 1);
+    resolved = scope.resolveName(name);
     if (resolved == null) {
-      resolved = new ErrorReference(getData(), null, textRepresentation());
+      Object data = getData();
+      resolved = new ErrorReference(data, myPath.size() == 1 ? null : new LongUnresolvedReference(data, myPath.subList(0, myPath.size() - 1)), name);
     }
 
     return resolved;
+  }
+
+  public Scope resolveNamespace(Scope scope) {
+    if (resolved instanceof ErrorReference) {
+      return null;
+    }
+
+    for (int i = 0; i < myPath.size(); i++) {
+      scope = scope.resolveNamespace(myPath.get(i));
+      if (scope == null) {
+        Object data = getData();
+        resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+        return null;
+      }
+    }
+
+    return scope;
+  }
+
+  public ErrorReference getErrorReference() {
+    return resolved instanceof ErrorReference ? (ErrorReference) resolved : null;
   }
 }

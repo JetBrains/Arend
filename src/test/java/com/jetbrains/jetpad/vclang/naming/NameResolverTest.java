@@ -10,8 +10,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -314,7 +313,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\class X \\where { \\func f => \\Type0 }\n" +
         "\\open X(f)\n" +
         "\\func g => f", 1);
-    assertThatErrorsAre(error());
+    assertThatErrorsAre(warning());
   }
 
   @Test
@@ -333,11 +332,11 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\func f' => \\Type0\n" +
         "\\class X \\where { \\func f => \\Type0 }\n" +
         "\\open X(f \\as f')", 1);
-    assertThatErrorsAre(error());
+    assertThatErrorsAre(warning());
   }
 
   @Test
-  public void openDuplicateModule() {
+  public void openDuplicateName() {
     resolveNamesModule(
         "\\class X \\where { \\func f => \\Type0 }\n" +
         "\\class Y \\where { \\func f => \\Type0 }\n" +
@@ -365,7 +364,7 @@ public class NameResolverTest extends NameResolverTestCase {
         "\\open X(f)\n" +
         "\\open Y(f)\n" +
         "\\func g => f", 1);
-    assertThatErrorsAre(error());
+    assertThatErrorsAre(warning());
   }
 
   @Test
@@ -525,5 +524,33 @@ public class NameResolverTest extends NameResolverTestCase {
       "  }\n" +
       "}", 1);
     assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void openHideTest() {
+    resolveNamesModule(
+      "\\class X \\where { \\func f => 0 }\n" +
+      "\\open X(f) \\hiding(f)\n" +
+      "\\func g => f", 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void openRenameHideOldTest() {
+    resolveNamesModule(
+      "\\class X \\where { \\func f => 0 }\n" +
+      "\\open X(f \\as f') \\hiding(f)\n" +
+      "\\func g => f'", 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void openRenameHideNewTest() {
+    resolveNamesModule(
+      "\\class X \\where { \\func f => 0 }\n" +
+      "\\open X(f \\as f') \\hiding(f')\n" +
+      "\\func g => f\n" +
+      "\\func g' => f'", 2);
+    assertThatErrorsAre(notInScope("f"), notInScope("f'"));
   }
 }

@@ -1,9 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.term.NameRenaming;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 
 import javax.annotation.Nonnull;
@@ -72,7 +72,6 @@ public class LexicalScope implements Scope {
         break;
       }
 
-      boolean isUsing = cmd.isUsing();
       Scope scope;
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         scope = getImportedSubscope();
@@ -82,44 +81,7 @@ public class LexicalScope implements Scope {
         }
         scope = cachingScope;
       }
-      scope = Scope.Utils.resolveNamespace(scope, cmd.getPath());
-      Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      if (scope == null || opened.isEmpty() && !isUsing) {
-        continue;
-      }
-
-      for (NameRenaming renaming : opened) {
-        Referable oldRef = renaming.getOldReference();
-        if (oldRef instanceof UnresolvedReference) {
-          oldRef = ((UnresolvedReference) oldRef).resolve(scope);
-        }
-        if (!(oldRef instanceof ErrorReference)) {
-          String name = renaming.getName();
-          Precedence prec = renaming.getPrecedence();
-          elements.add(name != null && prec != null ? new RedirectingReferableImpl(oldRef, prec, name) : oldRef);
-        }
-      }
-
-      if (isUsing) {
-        Collection<? extends Referable> hidden = cmd.getHiddenReferences();
-        Collection<? extends Referable> scopeElements = scope.getElements();
-        elemLoop:
-        for (Referable ref : scopeElements) {
-          for (Referable hiddenRef : hidden) {
-            if (hiddenRef.textRepresentation().equals(ref.textRepresentation())) {
-              continue elemLoop;
-            }
-          }
-
-          for (NameRenaming renaming : opened) {
-            if (renaming.getOldReference().textRepresentation().equals(ref.textRepresentation())) {
-              continue elemLoop;
-            }
-          }
-
-          elements.add(ref);
-        }
-      }
+      elements.addAll(NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd).getElements());
     }
 
     elements.addAll(myParent.getElements());
@@ -191,13 +153,11 @@ public class LexicalScope implements Scope {
     }
 
     Scope cachingScope = null;
-    cmdLoop:
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
       if (myIgnoreOpens && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
         break;
       }
 
-      boolean isUsing = cmd.isUsing();
       Scope scope;
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         scope = getImportedSubscope();
@@ -207,45 +167,11 @@ public class LexicalScope implements Scope {
         }
         scope = cachingScope;
       }
-      scope = Scope.Utils.resolveNamespace(scope, cmd.getPath());
-      Collection<? extends NameRenaming> opened = cmd.getOpenedReferences();
-      if (scope == null || opened.isEmpty() && !isUsing) {
-        continue;
-      }
 
-      for (NameRenaming renaming : opened) {
-        String newName = renaming.getName();
-        Referable oldRef = renaming.getOldReference();
-        if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
-          if (resolveRef) {
-            if (oldRef instanceof UnresolvedReference) {
-              oldRef = ((UnresolvedReference) oldRef).resolve(scope);
-            }
-            return newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
-          } else {
-            return scope.resolveNamespace(oldRef.textRepresentation());
-          }
-        }
-      }
-
-      if (isUsing) {
-        Collection<? extends Referable> hidden = cmd.getHiddenReferences();
-        for (Referable hiddenRef : hidden) {
-          if (hiddenRef.textRepresentation().equals(name)) {
-            continue cmdLoop;
-          }
-        }
-
-        for (NameRenaming renaming : opened) {
-          if (renaming.getOldReference().textRepresentation().equals(name)) {
-            continue cmdLoop;
-          }
-        }
-
-        Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name);
-        if (result != null) {
-          return result;
-        }
+      scope = NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd);
+      Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name);
+      if (result != null) {
+        return result;
       }
     }
 

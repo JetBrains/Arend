@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
-import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
@@ -20,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -225,14 +225,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
 
       for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
-        List<String> path = namespaceCommand.getPath();
-        Scope curScope = convertedScope;
-        for (int i = 0; i < path.size(); i++) {
-          curScope = curScope.resolveNamespace(path.get(i));
-          if (curScope == null) {
-            myErrorReporter.report(new ProxyError(group.getReferable(), new NotInScopeError(namespaceCommand, i == 0 ? null : new LongUnresolvedReference(namespaceCommand, path.subList(0, i)), path.get(i))));
-            break;
-          }
+        LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
+        Scope curScope = reference.resolveNamespace(convertedScope);
+        if (curScope == null) {
+          myErrorReporter.report(new ProxyError(group.getReferable(), reference.getErrorReference().getError()));
         }
 
         if (curScope != null) {
@@ -245,6 +241,37 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
               myErrorReporter.report(new ProxyError(group.getReferable(), ((ErrorReference) ref).getError()));
             }
           }
+
+          curScope = NamespaceCommandNamespace.makeNamespace(curScope, new NamespaceCommand() {
+            @Nonnull
+            @Override
+            public Kind getKind() {
+              return namespaceCommand.getKind();
+            }
+
+            @Nonnull
+            @Override
+            public List<String> getPath() {
+              return namespaceCommand.getPath();
+            }
+
+            @Override
+            public boolean isUsing() {
+              return namespaceCommand.isUsing();
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends NameRenaming> getOpenedReferences() {
+              return namespaceCommand.getOpenedReferences();
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Referable> getHiddenReferences() {
+              return Collections.emptyList();
+            }
+          });
           for (Referable ref : namespaceCommand.getHiddenReferences()) {
             if (ref instanceof UnresolvedReference) {
               ref = ((UnresolvedReference) ref).resolve(curScope);
