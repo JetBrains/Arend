@@ -56,6 +56,8 @@ public class DefinitionSerialization {
       out.setThisClassRef(myCallTargetIndexProvider.getDefIndex(definition.getThisClass()));
     }
 
+    out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
+
     final ExpressionSerialization defSerializer = new ExpressionSerialization(myCallTargetIndexProvider);
 
     if (definition instanceof ClassDefinition) {
@@ -79,6 +81,7 @@ public class DefinitionSerialization {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
       fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
+      fBuilder.setHasTypeClassReference(field.getReferable().getTypeClassReference() != null);
       Expression baseType = field.getBaseType(Sort.STD);
       if (baseType != null) fBuilder.setType(defSerializer.writeExpr(baseType));
       builder.addPersonalField(fBuilder.build());

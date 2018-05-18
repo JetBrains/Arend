@@ -2,17 +2,23 @@ package com.jetbrains.jetpad.vclang.module.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
+import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
+import com.jetbrains.jetpad.vclang.naming.reference.DataLocatedReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -113,6 +119,7 @@ public class DefinitionDeserialization {
         field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
       }
       classDef.addPersonalField(field);
+      setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), field.getBaseType(Sort.STD));
     }
 
     for (ClassField field : classDef.getPersonalFields()) {
@@ -222,6 +229,34 @@ public class DefinitionDeserialization {
     defDeserializer.setIsHeader(false);
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
+    }
+    setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
+  }
+
+  private void setTypeClassReference(TCReferable referable, DependentLink parameters, Expression type) {
+    if (!(referable instanceof DataLocatedReferableImpl)) {
+      return;
+    }
+
+    for (; parameters.hasNext(); parameters = parameters.getNext()) {
+      parameters = parameters.getNextTyped(null);
+      if (parameters.isExplicit()) {
+        return;
+      }
+    }
+
+    while (type instanceof PiExpression) {
+      for (DependentLink link = ((PiExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (link.isExplicit()) {
+          return;
+        }
+      }
+      type = ((PiExpression) type).getCodomain();
+    }
+
+    if (type instanceof ClassCallExpression) {
+      ((DataLocatedReferableImpl) referable).setTypeClassReference(((ClassCallExpression) type).getDefinition().getReferable());
     }
   }
 }

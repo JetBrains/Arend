@@ -16,6 +16,7 @@ message Definition {
         DataData data = 6;
         FunctionData function = 7;
     }
+    bool hasTypeClassReference = 8;
 
     message Clause {
         repeated Pattern pattern = 1;
@@ -58,6 +59,7 @@ message Definition {
             Referable referable = 1;
             SingleParameter this_param = 2;
             Expression type = 3;
+            bool hasTypeClassReference = 4;
         }
 
         message Implementation {

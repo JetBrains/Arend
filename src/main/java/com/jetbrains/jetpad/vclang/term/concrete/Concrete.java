@@ -907,6 +907,8 @@ public final class Concrete {
       builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
+    public abstract <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params);
+
     @Override
     public String toString() {
       return myReferable.textRepresentation();
@@ -930,6 +932,11 @@ public final class Concrete {
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
+    }
   }
 
   public static class ClassDefinition extends Definition {
@@ -1000,6 +1007,11 @@ public final class Concrete {
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassField(this, params);
     }
   }
 
@@ -1184,6 +1196,11 @@ public final class Concrete {
     public DataDefinition getRelatedDefinition() {
       return myDataType;
     }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitConstructor(this, params);
+    }
   }
 
   // Class synonyms
@@ -1246,6 +1263,11 @@ public final class Concrete {
     @Override
     public ClassSynonym getRelatedDefinition() {
       return myClassSynonym;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassFieldSynonym(this, params);
     }
   }
 
