@@ -13,9 +13,12 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<Void, Void> {
+public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<Void, Concrete.Expression> {
   private final Scope myParentScope;
   private final Scope myScope;
   private final List<Referable> myContext;
@@ -28,45 +31,82 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     myErrorReporter = errorReporter;
   }
 
-  @Override
-  public Void visitApp(Concrete.AppExpression expr, Void params) {
-    expr.getFunction().accept(this, null);
-    expr.getArgument().getExpression().accept(this, null);
-    return null;
+  Scope getScope() {
+    return myScope;
   }
 
   @Override
-  public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    Concrete.Expression fun = expr.getFunction().accept(this, null);
+    Concrete.Expression arg = expr.getArgument().getExpression().accept(this, null);
+    return fun == expr.getFunction() && arg == expr.getArgument().getExpression() ? expr : new Concrete.AppExpression(expr.getData(), fun, new Concrete.Argument(arg, expr.getArgument().isExplicit()));
+  }
+
+  @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable referable = expr.getReferent();
-    if (referable instanceof RedirectingReferable) {
+    while (referable instanceof RedirectingReferable) {
       referable = ((RedirectingReferable) referable).getOriginalReferable();
     }
+
+    Concrete.Expression argument = null;
     if (referable instanceof UnresolvedReference) {
+      argument = ((UnresolvedReference) referable).resolveArgument(myScope);
       referable = ((UnresolvedReference) referable).resolve(myScope);
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
       }
+      while (referable instanceof RedirectingReferable) {
+        referable = ((RedirectingReferable) referable).getOriginalReferable();
+      }
     }
+
     expr.setReferent(referable);
-    return null;
+    return argument == null ? expr : new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(argument, false));
   }
 
   @Override
-  public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
-    return null;
+  public Concrete.Expression visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
+    return expr;
   }
 
-  void visitParameters(List<? extends Concrete.Parameter> parameters) {
-    for (Concrete.Parameter parameter : parameters) {
-      visitParameter(parameter);
+  void visitParameters(List<Concrete.Parameter> parameters) {
+    for (int i = 0; i < parameters.size(); i++) {
+      parameters.set(i, visitParameter(parameters.get(i)));
     }
   }
 
-  void visitParameter(Concrete.Parameter parameter) {
+  void visitTypeParameters(List<Concrete.TypeParameter> parameters) {
+    for (int i = 0; i < parameters.size(); i++) {
+      parameters.set(i, (Concrete.TypeParameter) visitParameter(parameters.get(i)));
+    }
+  }
+
+  static ClassReferable getTypeClassReference(Concrete.Expression type) {
+    if (type instanceof Concrete.ReferenceExpression) {
+      Referable ref = ((Concrete.ReferenceExpression) type).getReferent();
+      return ref instanceof ClassReferable ? (ClassReferable) ref : null;
+    } else {
+      return null;
+    }
+  }
+
+  Concrete.Parameter visitParameter(Concrete.Parameter parameter) {
+    Concrete.Parameter result = parameter;
     if (parameter instanceof Concrete.TypeParameter) {
-      ((Concrete.TypeParameter) parameter).getType().accept(this, null);
+      Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
+      Concrete.Expression newType = type.accept(this, null);
+      if (type != newType) {
+        if (parameter instanceof Concrete.TelescopeParameter) {
+          result = new Concrete.TelescopeParameter(parameter.getData(), parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).getReferableList(), newType);
+        } else {
+          result = new Concrete.TypeParameter(parameter.getData(), parameter.getExplicit(), newType);
+        }
+      }
     }
+
     if (parameter instanceof Concrete.TelescopeParameter) {
+      ClassReferable classRef = getTypeClassReference(((Concrete.TelescopeParameter) parameter).getType());
       List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
       for (int i = 0; i < referableList.size(); i++) {
         Referable referable = referableList.get(i);
@@ -77,7 +117,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
               myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
             }
           }
-          myContext.add(referable);
+          myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
         }
       }
     } else
@@ -87,108 +127,114 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
         myContext.add(referable);
       }
     }
+
+    return result;
   }
 
   @Override
-  public Void visitLam(Concrete.LamExpression expr, Void params) {
+  public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters());
-      expr.getBody().accept(this, null);
+      Concrete.Expression body = expr.getBody().accept(this, null);
+      return body == expr.getBody() ? expr : new Concrete.LamExpression(expr.getData(), expr.getParameters(), body);
     }
-    return null;
   }
 
   @Override
-  public Void visitPi(Concrete.PiExpression expr, Void params) {
+  public Concrete.Expression visitPi(Concrete.PiExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters());
-      expr.getCodomain().accept(this, null);
+      visitTypeParameters(expr.getParameters());
+      Concrete.Expression codomain = expr.getCodomain().accept(this, null);
+      return codomain == expr.getCodomain() ? expr : new Concrete.PiExpression(expr.getData(), expr.getParameters(), codomain);
     }
-    return null;
   }
 
   @Override
-  public Void visitUniverse(Concrete.UniverseExpression expr, Void params) {
-    return null;
+  public Concrete.Expression visitUniverse(Concrete.UniverseExpression expr, Void params) {
+    return expr;
   }
 
   @Override
-  public Void visitInferHole(Concrete.InferHoleExpression expr, Void params) {
-    return null;
+  public Concrete.Expression visitInferHole(Concrete.InferHoleExpression expr, Void params) {
+    return expr;
   }
 
   @Override
-  public Void visitGoal(Concrete.GoalExpression expr, Void params) {
+  public Concrete.Expression visitGoal(Concrete.GoalExpression expr, Void params) {
     Concrete.Expression expression = expr.getExpression();
-    if (expression != null) {
-      expression.accept(this, null);
-    }
-    return null;
+    Concrete.Expression newExpression = expression == null ? null : expression.accept(this, null);
+    return newExpression == expression ? expr : new Concrete.GoalExpression(expr.getData(), expr.getName(), newExpression);
   }
 
   @Override
-  public Void visitTuple(Concrete.TupleExpression expr, Void params) {
-    for (Concrete.Expression expression : expr.getFields()) {
-      expression.accept(this, null);
+  public Concrete.Expression visitTuple(Concrete.TupleExpression expr, Void params) {
+    for (int i = 0; i < expr.getFields().size(); i++) {
+      expr.getFields().set(i, expr.getFields().get(i).accept(this, null));
     }
-    return null;
+    return expr;
   }
 
   @Override
-  public Void visitSigma(Concrete.SigmaExpression expr, Void params) {
+  public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters());
+      visitTypeParameters(expr.getParameters());
+      return expr;
     }
-    return null;
   }
 
   @Override
-  public Void visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
+  public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
     BinOpParser parser = new BinOpParser(myErrorReporter);
 
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      elem.expression.accept(this, null);
+    for (int i = 0; i < expr.getSequence().size(); i++) {
+      Concrete.BinOpSequenceElem elem = expr.getSequence().get(i);
+      Concrete.Expression newElem = elem.expression.accept(this, null);
+      if (newElem != elem.expression) {
+        expr.getSequence().set(i, new Concrete.BinOpSequenceElem(newElem, elem.fixity, elem.isExplicit));
+      }
     }
 
-    expr.replace(parser.parse(expr));
-    return null;
+    return parser.parse(expr);
   }
 
-  static  void replaceWithConstructor(Concrete.PatternContainer container, int index, Referable constructor) {
+  static void replaceWithConstructor(Concrete.PatternContainer container, int index, Referable constructor) {
     Concrete.Pattern old = container.getPatterns().get(index);
     Concrete.Pattern newPattern = new Concrete.ConstructorPattern(old.getData(), constructor, Collections.emptyList());
     newPattern.setExplicit(old.isExplicit());
     container.getPatterns().set(index, newPattern);
   }
 
-  void visitClauses(List<? extends Concrete.FunctionClause> clauses) {
-    if (clauses.isEmpty()) {
-      return;
-    }
-    for (Concrete.FunctionClause clause : clauses) {
+  void visitClauses(List<Concrete.FunctionClause> clauses) {
+    for (int i = 0; i < clauses.size(); i++) {
+      Concrete.FunctionClause clause = clauses.get(i);
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
         Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
-        for (int i = 0; i < clause.getPatterns().size(); i++) {
-          Referable constructor = visitPattern(clause.getPatterns().get(i), usedNames);
+        for (int j = 0; j < clause.getPatterns().size(); j++) {
+          Referable constructor = visitPattern(clause.getPatterns().get(j), usedNames);
           if (constructor != null) {
-            replaceWithConstructor(clause, i, constructor);
+            replaceWithConstructor(clause, j, constructor);
           }
-          resolvePattern(clause.getPatterns().get(i));
+          resolvePattern(clause.getPatterns().get(j));
         }
 
-        if (clause.getExpression() != null)
-          clause.getExpression().accept(this, null);
+        Concrete.Expression newExpression = clause.getExpression() == null ? null : clause.getExpression().accept(this, null);
+        if (newExpression != clause.getExpression()) {
+          clauses.set(i, new Concrete.FunctionClause(clause.getData(), clause.getPatterns(), newExpression));
+        }
       }
     }
   }
 
   @Override
-  public Void visitCase(Concrete.CaseExpression expr, Void params) {
-    for (Concrete.Expression expression : expr.getExpressions()) {
-      expression.accept(this, null);
+  public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
+    for (int i = 0; i < expr.getExpressions().size(); i++) {
+      Concrete.Expression newExpression = expr.getExpressions().get(i).accept(this, null);
+      if (newExpression != expr.getExpressions().get(i)) {
+        expr.getExpressions().set(i, newExpression);
+      }
     }
     visitClauses(expr.getClauses());
-    return null;
+    return expr;
   }
 
   GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Concrete.NamePattern> usedNames) {
@@ -249,23 +295,24 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   }
 
   @Override
-  public Void visitProj(Concrete.ProjExpression expr, Void params) {
-    expr.getExpression().accept(this, null);
-    return null;
+  public Concrete.Expression visitProj(Concrete.ProjExpression expr, Void params) {
+    Concrete.Expression newExpression = expr.getExpression().accept(this, null);
+    return newExpression == expr.getExpression() ? expr : new Concrete.ProjExpression(expr.getData(), newExpression, expr.getField());
   }
 
   @Override
-  public Void visitClassExt(Concrete.ClassExtExpression expr, Void params) {
-    expr.getBaseClassExpression().accept(this, null);
-    GlobalReferable classDef = Concrete.getUnderlyingClassDef(expr);
+  public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
+    Concrete.Expression baseClass = expr.getBaseClassExpression().accept(this, null);
+    GlobalReferable classDef = Concrete.getUnderlyingClassDef(baseClass);
     if (classDef instanceof ClassReferable) {
       visitClassFieldImpls(expr.getStatements(), (ClassReferable) classDef);
     }
-    return null;
+    return baseClass == expr.getBaseClassExpression() ? expr : new Concrete.ClassExtExpression(expr.getData(), baseClass, expr.getStatements());
   }
 
-  void visitClassFieldImpls(Collection<? extends Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
-    for (Concrete.ClassFieldImpl impl : classFieldImpls) {
+  void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
+    for (int i = 0; i < classFieldImpls.size(); i++) {
+      Concrete.ClassFieldImpl impl = classFieldImpls.get(i);
       Referable field = impl.getImplementedField();
       if (field instanceof RedirectingReferable) {
         field = ((RedirectingReferable) field).getOriginalReferable();
@@ -273,38 +320,55 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       if (field instanceof UnresolvedReference) {
         impl.setImplementedField(((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef)));
       }
-      impl.getImplementation().accept(this, null);
+
+      Concrete.Expression implementation = impl.getImplementation().accept(this, null);
+      if (implementation != impl.getImplementation()) {
+        classFieldImpls.set(i, new Concrete.ClassFieldImpl(impl.getData(), impl.getImplementedField(), implementation));
+      }
     }
   }
 
   @Override
-  public Void visitNew(Concrete.NewExpression expr, Void params) {
-    expr.getExpression().accept(this, null);
-    return null;
+  public Concrete.Expression visitNew(Concrete.NewExpression expr, Void params) {
+    Concrete.Expression newExpression = expr.getExpression().accept(this, null);
+    return newExpression == expr.getExpression() ? expr : new Concrete.NewExpression(expr.getData(), newExpression);
   }
 
   @Override
-  public Void visitLet(Concrete.LetExpression expr, Void params) {
+  public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      for (Concrete.LetClause clause : expr.getClauses()) {
+      for (int i = 0; i < expr.getClauses().size(); i++) {
+        Concrete.LetClause clause = expr.getClauses().get(i);
         try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
           visitParameters(clause.getParameters());
 
-          if (clause.getResultType() != null) {
-            clause.getResultType().accept(this, null);
+          Concrete.Expression resultType = clause.getResultType() == null ? null : clause.getResultType().accept(this, null);
+          Concrete.Expression term = clause.getTerm().accept(this, null);
+          if (resultType != clause.getResultType() || term != clause.getTerm()) {
+            clause = new Concrete.LetClause(clause.getData(), clause.getParameters(), resultType, term);
+            expr.getClauses().set(i, clause);
           }
-          clause.getTerm().accept(this, null);
         }
-        myContext.add(clause.getData());
+
+        ClassReferable classRef = getTypeClassReference(clause.getResultType());
+        if (classRef != null) {
+          for (Concrete.Parameter parameter : clause.getParameters()) {
+            if (parameter.getExplicit()) {
+              classRef = null;
+              break;
+            }
+          }
+        }
+        myContext.add(classRef == null ? clause.getData() : new TypedRedirectingReferable(clause.getData(), classRef));
       }
 
-      expr.getExpression().accept(this, null);
+      Concrete.Expression newExpression = expr.getExpression().accept(this, null);
+      return newExpression == expr.getExpression() ? expr : new Concrete.LetExpression(expr.getData(), expr.getClauses(), newExpression);
     }
-    return null;
   }
 
   @Override
-  public Void visitNumericLiteral(Concrete.NumericLiteral expr, Void params) {
-    return null;
+  public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, Void params) {
+    return expr;
   }
 }

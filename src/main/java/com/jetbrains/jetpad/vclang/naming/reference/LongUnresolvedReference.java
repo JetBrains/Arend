@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
+import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -109,6 +111,76 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
 
     return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Concrete.Expression resolveArgument(Scope scope) {
+    if (resolved != null) {
+      return null;
+    }
+
+    Scope prevScope = scope;
+    for (int i = 0; i < myPath.size() - 1; i++) {
+      Scope nextScope = scope.resolveNamespace(myPath.get(i));
+      if (nextScope == null) {
+        return resolveField(prevScope, i == 0 ? 0 : i - 1);
+      }
+      prevScope = scope;
+      scope = nextScope;
+    }
+
+    String name = myPath.get(myPath.size() - 1);
+    resolved = scope.resolveName(name);
+    if (resolved == null) {
+      if (myPath.size() == 1) {
+        resolved = new ErrorReference(getData(), null, name);
+      } else {
+        return resolveField(prevScope, myPath.size() - 2);
+      }
+    }
+
+    return null;
+  }
+
+  private Concrete.Expression resolveField(Scope scope, int i) {
+    resolved = scope.resolveName(myPath.get(i));
+    ClassReferable classRef = resolved instanceof GlobalReferable ? ((GlobalReferable) resolved).getTypeClassReference() : null;
+    if (classRef == null) {
+      Object data = getData();
+      resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+      return null;
+    }
+
+    Object data = getData();
+    Concrete.Expression result = new Concrete.ReferenceExpression(data, getReferable());
+    for (i++; i < myPath.size(); i++) {
+      resolved = new ClassFieldImplScope(classRef).resolveName(myPath.get(i));
+      if (resolved == null) {
+        resolved = new ErrorReference(data, classRef, myPath.get(i));
+        return null;
+      }
+      if (i == myPath.size() - 1) {
+        return result;
+      }
+      result = new Concrete.AppExpression(data, new Concrete.ReferenceExpression(data, getReferable()), new Concrete.Argument(result, false));
+
+      classRef = resolved instanceof GlobalReferable ? ((GlobalReferable) resolved).getTypeClassReference() : null;
+      if (classRef == null) {
+        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+        return null;
+      }
+    }
+
+    return result;
+  }
+
+  private Referable getReferable() {
+    Referable ref = resolved;
+    while (ref instanceof RedirectingReferable) {
+      ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    return ref;
   }
 
   public Scope resolveNamespace(Scope scope) {

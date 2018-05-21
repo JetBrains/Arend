@@ -5,33 +5,31 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class RedirectingReferableImpl implements RedirectingReferable {
+public class TypedRedirectingReferable implements RedirectingReferable {
   private final Referable myOriginalReferable;
-  private final Precedence myPrecedence;
-  private final String myName;
+  private final ClassReferable myTypeClassReference;
 
-  public RedirectingReferableImpl(Referable originalReferable, Precedence precedence, String name) {
+  public TypedRedirectingReferable(Referable originalReferable, ClassReferable typeClassReference) {
     myOriginalReferable = originalReferable;
-    myPrecedence = precedence;
-    myName = name;
-  }
-
-  @Nonnull
-  @Override
-  public Referable getOriginalReferable() {
-    return myOriginalReferable;
+    myTypeClassReference = typeClassReference;
   }
 
   @Nonnull
   @Override
   public Precedence getPrecedence() {
-    return myPrecedence != null ? myPrecedence : myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getPrecedence() : Precedence.DEFAULT;
+    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getPrecedence() : Precedence.DEFAULT;
+  }
+
+  @Nonnull
+  @Override
+  public Referable getOriginalReferable() {
+    return myOriginalReferable instanceof RedirectingReferable ? ((RedirectingReferable) myOriginalReferable).getOriginalReferable() : myOriginalReferable;
   }
 
   @Nonnull
   @Override
   public String textRepresentation() {
-    return myName;
+    return myOriginalReferable.textRepresentation();
   }
 
   @Override
@@ -47,6 +45,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypeClassReference() : null;
+    return myTypeClassReference;
   }
 }

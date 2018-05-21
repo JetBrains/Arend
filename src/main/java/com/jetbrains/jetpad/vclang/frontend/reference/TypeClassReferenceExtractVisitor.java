@@ -51,7 +51,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     return fieldRef instanceof GlobalReferable ? ((GlobalReferable) fieldRef).getTypeClassReference() : null;
   }
 
-  private ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
+  public static Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter.getExplicit()) {
         return null;
@@ -67,11 +67,11 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       type = ((Concrete.PiExpression) type).getCodomain();
     }
 
-    if (!(type instanceof Concrete.ReferenceExpression)) {
-      return null;
-    }
+    return type instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) type).getReferent() : null;
+  }
 
-    Referable ref = ((Concrete.ReferenceExpression) type).getReferent();
+  private static ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
+    Referable ref = getTypeReference(parameters, type);
     return ref instanceof ClassReferable ? (ClassReferable) ref : null;
   }
 }

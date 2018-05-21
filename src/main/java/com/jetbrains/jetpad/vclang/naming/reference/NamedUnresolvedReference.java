@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,5 +54,12 @@ public class NamedUnresolvedReference implements UnresolvedReference {
       resolved = new ErrorReference(myData, null, myName);
     }
     return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Concrete.Expression resolveArgument(Scope scope) {
+    resolve(scope);
+    return null;
   }
 }

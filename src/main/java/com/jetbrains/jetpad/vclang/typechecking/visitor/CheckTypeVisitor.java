@@ -988,8 +988,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitBinOpSequence(Concrete.BinOpSequenceExpression expr, ExpectedType expectedType) {
-    assert expr.getSequence().size() == 1;
-    return checkExpr(expr.getSequence().get(0).expression, expectedType);
+    throw new IllegalStateException();
   }
 
   @Override

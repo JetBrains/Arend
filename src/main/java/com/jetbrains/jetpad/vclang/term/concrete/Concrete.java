@@ -225,11 +225,6 @@ public final class Concrete {
       return mySequence;
     }
 
-    public void replace(Expression expression) {
-      mySequence.clear();
-      mySequence.add(new BinOpSequenceElem(expression, Fixity.NONFIX, true));
-    }
-
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOpSequence(this, params);
@@ -990,7 +985,7 @@ public final class Concrete {
 
   public static class ClassField extends ReferableDefinition {
     private final ClassDefinition myParentClass;
-    private final Expression myResultType;
+    private Expression myResultType;
 
     public ClassField(TCReferable referable, ClassDefinition parentClass, Expression resultType) {
       super(referable);
@@ -1001,6 +996,10 @@ public final class Concrete {
     @Nonnull
     public Expression getResultType() {
       return myResultType;
+    }
+
+    public void setResultType(Concrete.Expression resultType) {
+      myResultType = resultType;
     }
 
     @Nonnull
@@ -1022,7 +1021,7 @@ public final class Concrete {
   }
 
   public static class TermFunctionBody extends FunctionBody {
-    private final Expression myTerm;
+    private Expression myTerm;
 
     public TermFunctionBody(Object data, Expression term) {
       super(data);
@@ -1032,6 +1031,10 @@ public final class Concrete {
     @Nonnull
     public Expression getTerm() {
       return myTerm;
+    }
+
+    public void setTerm(Expression term) {
+      myTerm = term;
     }
   }
 
@@ -1051,14 +1054,14 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<? extends FunctionClause> getClauses() {
+    public List<FunctionClause> getClauses() {
       return myClauses;
     }
   }
 
   public static class FunctionDefinition extends Definition {
     private final List<Parameter> myParameters;
-    private final Expression myResultType;
+    private Expression myResultType;
     private final FunctionBody myBody;
 
     public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
@@ -1076,6 +1079,10 @@ public final class Concrete {
     @Nullable
     public Expression getResultType() {
       return myResultType;
+    }
+
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
     }
 
     @Nonnull
@@ -1273,13 +1280,13 @@ public final class Concrete {
 
   public static class Instance extends Definition {
     private final List<Parameter> myArguments;
-    private final ReferenceExpression myClassView;
+    private final ReferenceExpression myClass;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
     public Instance(TCReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myArguments = arguments;
-      myClassView = classRef;
+      myClass = classRef;
       myClassFieldImpls = classFieldImpls;
     }
 
@@ -1290,7 +1297,7 @@ public final class Concrete {
 
     @Nonnull
     public ReferenceExpression getClassReference() {
-      return myClassView;
+      return myClass;
     }
 
     @Nonnull

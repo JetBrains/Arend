@@ -26,7 +26,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     Concrete.Expression expression = parseExpr(text);
     assertThat(expression, is(notNullValue()));
 
-    expression.accept(new ExpressionResolveNameVisitor(parentScope, context, new TestLocalErrorReporter(errorReporter)), null);
+    expression = expression.accept(new ExpressionResolveNameVisitor(parentScope, context, new TestLocalErrorReporter(errorReporter)), null);
     assertThat(errorList, containsErrors(errors));
     return expression;
   }
@@ -56,7 +56,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   ChildGroup resolveNamesDefGroup(String text, int errors) {
     ChildGroup group = parseDef(text);
     Scope parentScope = new MergeScope(new SingletonScope(group.getReferable()), PreludeLibrary.getPreludeScope());
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, null, CachingScope.make(LexicalScope.insideOf(group, parentScope)), ConcreteReferableProvider.INSTANCE);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroupWithTypes(group, null, CachingScope.make(LexicalScope.insideOf(group, parentScope)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
     return group;
   }
@@ -76,7 +76,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
 
   private void resolveNamesModule(ChildGroup group, int errors) {
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, libraryManager.getModuleScopeProvider()));
-    new DefinitionResolveNameVisitor(errorReporter).resolveGroup(group, null, scope, ConcreteReferableProvider.INSTANCE);
+    new DefinitionResolveNameVisitor(errorReporter).resolveGroupWithTypes(group, null, scope, ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
   }
 
