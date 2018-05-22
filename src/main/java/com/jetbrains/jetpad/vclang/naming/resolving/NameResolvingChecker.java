@@ -4,6 +4,9 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -12,7 +15,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-public abstract class NameClashesChecker {
+public abstract class NameResolvingChecker {
   public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
 
   }
@@ -25,7 +28,23 @@ public abstract class NameClashesChecker {
 
   }
 
-  public void checkGroup(Group group, Scope scope) {
+  public void nonTopLevelImport(NamespaceCommand command) {
+
+  }
+
+  public static Scope makeScope(Group group, Scope parentScope) {
+    if (parentScope == null) {
+      return null;
+    }
+
+    if (group.getNamespaceCommands().isEmpty()) {
+      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE), parentScope);
+    } else {
+      return LexicalScope.insideOf(group, parentScope);
+    }
+  }
+
+  public void checkGroup(Group group, Scope scope, boolean isTopLevel) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends ClassReferable> superClasses = groupRef instanceof ClassReferable ? ((ClassReferable) groupRef).getSuperClassReferences() : Collections.emptyList();
     Collection<? extends Group> subgroups = group.getSubgroups();
@@ -60,11 +79,23 @@ public abstract class NameClashesChecker {
 
     checkSubgroup(subgroups, referables, groupRef);
 
+    for (Group subgroup : subgroups) {
+      checkGroup(subgroup, makeScope(subgroup, scope), false);
+    }
+
+    for (Group subgroup : dynamicSubgroups) {
+      checkGroup(subgroup, makeScope(subgroup, scope), false);
+    }
+
     if (namespaceCommands.isEmpty()) {
       return;
     }
 
     for (NamespaceCommand cmd : namespaceCommands) {
+      if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        nonTopLevelImport(cmd);
+      }
+
       for (NameRenaming renaming : cmd.getOpenedReferences()) {
         String name = renaming.getName();
         if (name == null) {

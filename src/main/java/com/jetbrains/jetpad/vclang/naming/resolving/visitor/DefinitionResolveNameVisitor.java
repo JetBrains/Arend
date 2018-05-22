@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
-import com.jetbrains.jetpad.vclang.naming.resolving.NameClashesChecker;
+import com.jetbrains.jetpad.vclang.naming.resolving.NameResolvingChecker;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -276,14 +276,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  private static Scope makeScope(Group group, Scope parentScope) {
-    if (group.getNamespaceCommands().isEmpty()) {
-      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE), parentScope);
-    } else {
-      return LexicalScope.insideOf(group, parentScope);
-    }
-  }
-
   public void resolveGroupWithTypes(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
     myResolveTypeClassReferences = true;
     resolveGroup(group, referableConverter, scope, concreteProvider);
@@ -299,10 +291,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     for (Group subgroup : group.getSubgroups()) {
-      resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope), concreteProvider);
+      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope), concreteProvider);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope), concreteProvider);
+      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope), concreteProvider);
     }
 
     if (myResolveTypeClassReferences) {
@@ -369,7 +361,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    new NameClashesChecker() {
+    new NameResolvingChecker() {
       @Override
       public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
         myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));
@@ -384,6 +376,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
         myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module")));
       }
-    }.checkGroup(group, convertedScope);
+
+      @Override
+      public void nonTopLevelImport(NamespaceCommand command) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(Error.Level.ERROR, "\\import is allowed only on the top level")));
+      }
+    }.checkGroup(group, convertedScope, true);
   }
 }
