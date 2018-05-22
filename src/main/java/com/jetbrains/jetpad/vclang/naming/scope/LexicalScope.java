@@ -56,7 +56,7 @@ public class LexicalScope implements Scope {
     }
     GlobalReferable groupRef = myGroup.getReferable();
     if (groupRef instanceof ClassReferable) {
-      elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef).getElements());
+      elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, false).getElements());
     } else {
       for (Group.InternalReferable field : myGroup.getFields()) {
         elements.add(field.getReferable());
@@ -108,7 +108,7 @@ public class LexicalScope implements Scope {
         }
       }
     } else {
-      Referable referable = new ClassFieldImplScope((ClassReferable) group.getReferable()).resolveName(name);
+      Referable referable = new ClassFieldImplScope((ClassReferable) group.getReferable(), false).resolveName(name);
       return referable instanceof GlobalReferable ? (GlobalReferable) referable : null;
     }
 

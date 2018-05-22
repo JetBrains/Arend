@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
@@ -85,15 +86,16 @@ public class ScopeFactory {
         return parentScope;
       }
 
-      Scope scope = parentScope.getGlobalSubscope().resolveNamespace(headRef.getReferent().textRepresentation());
+      List<String> path = new ArrayList<>();
+      path.add(headRef.getReferent().textRepresentation());
       for (Abstract.Reference reference : ((Abstract.LongReference) parentSourceNode).getTailReferences()) {
-        if (scope == null || reference == null) {
+        if (reference == null) {
           return EmptyScope.INSTANCE;
         }
         if (sourceNode.equals(reference)) {
-          return scope;
+          return new LongUnresolvedReference(sourceNode, path).resolveNamespaceWithArgument(parentScope);
         }
-        scope = scope.resolveNamespace(reference.getReferent().textRepresentation());
+        path.add(reference.getReferent().textRepresentation());
       }
 
       return EmptyScope.INSTANCE;
@@ -143,7 +145,7 @@ public class ScopeFactory {
     if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder && sourceNode.equals(((Abstract.ClassFieldImpl) parentSourceNode).getImplementation())) {
-        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());
+        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference(), true);
       }
     }
 

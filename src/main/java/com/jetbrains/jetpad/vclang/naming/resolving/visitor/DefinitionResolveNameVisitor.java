@@ -243,7 +243,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     if (visitClassReference(visitor, def.getUnderlyingClass(), def.getData())) {
       if (!def.getFields().isEmpty()) {
-        visitor = new ExpressionResolveNameVisitor(new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent()), Collections.emptyList(), localErrorReporter);
+        visitor = new ExpressionResolveNameVisitor(new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), localErrorReporter);
         for (Concrete.ClassFieldSynonym fieldSyn : def.getFields()) {
           visitor.visitReference(fieldSyn.getUnderlyingField(), null);
         }

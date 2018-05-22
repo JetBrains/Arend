@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
 import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
+import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
+import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
@@ -145,7 +147,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   private Concrete.Expression resolveField(Scope scope, int i) {
     resolved = scope.resolveName(myPath.get(i));
-    ClassReferable classRef = resolved instanceof GlobalReferable ? ((GlobalReferable) resolved).getTypeClassReference() : null;
+    ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
       Object data = getData();
       resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
@@ -155,7 +157,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     Object data = getData();
     Concrete.Expression result = new Concrete.ReferenceExpression(data, getReferable());
     for (i++; i < myPath.size(); i++) {
-      resolved = new ClassFieldImplScope(classRef).resolveName(myPath.get(i));
+      resolved = new ClassFieldImplScope(classRef, false).resolveName(myPath.get(i));
       if (resolved == null) {
         resolved = new ErrorReference(data, classRef, myPath.get(i));
         return null;
@@ -165,7 +167,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       }
       result = new Concrete.AppExpression(data, new Concrete.ReferenceExpression(data, getReferable()), new Concrete.Argument(result, false));
 
-      classRef = resolved instanceof GlobalReferable ? ((GlobalReferable) resolved).getTypeClassReference() : null;
+      classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
         resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
         return null;
@@ -194,6 +196,46 @@ public class LongUnresolvedReference implements UnresolvedReference {
         Object data = getData();
         resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
         return null;
+      }
+    }
+
+    return scope;
+  }
+
+  private Scope resolveFieldNamespace(Scope scope, int i) {
+    Referable ref = scope.resolveName(myPath.get(i));
+    ClassReferable classRef = ref instanceof TypedReferable ? ((TypedReferable) ref).getTypeClassReference() : null;
+    if (classRef == null) {
+      return EmptyScope.INSTANCE;
+    }
+
+    for (i++; i < myPath.size(); i++) {
+      ref = new ClassFieldImplScope(classRef, false).resolveName(myPath.get(i));
+      classRef = ref instanceof TypedReferable ? ((TypedReferable) ref).getTypeClassReference() : null;
+      if (classRef == null) {
+        return EmptyScope.INSTANCE;
+      }
+    }
+
+    return new ClassFieldImplScope(classRef, false);
+  }
+
+  public Scope resolveNamespaceWithArgument(Scope scope) {
+    Scope prevScope = scope;
+    for (int i = 0; i < myPath.size(); i++) {
+      Scope nextScope = scope.resolveNamespace(myPath.get(i));
+      if (nextScope == null) {
+        return resolveFieldNamespace(prevScope, i == 0 ? 0 : i - 1);
+      }
+      prevScope = scope;
+      scope = nextScope;
+    }
+
+    Referable ref = prevScope.resolveName(myPath.get(myPath.size() - 1));
+    if (ref instanceof TypedReferable) {
+      ClassReferable classRef = ((TypedReferable) ref).getTypeClassReference();
+      if (classRef != null) {
+        scope = new MergeScope(new ClassFieldImplScope(classRef, false), scope);
       }
     }
 

@@ -1,8 +1,8 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TypedReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteReferableDefinitionVisitor;
 
@@ -48,7 +48,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   @Override
   public ClassReferable visitClassFieldSynonym(Concrete.ClassFieldSynonym def, Void params) {
     Referable fieldRef = def.getUnderlyingField().getReferent();
-    return fieldRef instanceof GlobalReferable ? ((GlobalReferable) fieldRef).getTypeClassReference() : null;
+    return fieldRef instanceof TypedReferable ? ((TypedReferable) fieldRef).getTypeClassReference() : null;
   }
 
   public static Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {

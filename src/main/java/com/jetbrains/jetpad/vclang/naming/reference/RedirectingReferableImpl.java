@@ -47,6 +47,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
-    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypeClassReference() : null;
+    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeClassReference() : null;
   }
 }
