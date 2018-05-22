@@ -153,7 +153,7 @@ public final class Abstract {
   }
 
   public interface ClassField extends ParametersHolder {
-    @Nonnull LocatedReferable getReferable();
+    /* @Nonnull */ @Nullable LocatedReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }
 

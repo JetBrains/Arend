@@ -176,8 +176,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
-        if (resultType == null) {
-          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(myReferableConverter.toDataLocatedReferable(field.getReferable()))));
+        LocatedReferable fieldRef = field.getReferable();
+        if (resultType == null || fieldRef == null) {
+          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldRef == null ? field : myReferableConverter.toDataLocatedReferable(fieldRef))));
         } else {
           try {
             List<? extends Abstract.Parameter> parameters = field.getParameters();
@@ -186,7 +187,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField(myReferableConverter.toDataLocatedReferable(field.getReferable()), classDef, type));
+            classFields.add(new Concrete.ClassField(myReferableConverter.toDataLocatedReferable(fieldRef), classDef, type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(new ProxyError(myDefinition, e.error));
           }
