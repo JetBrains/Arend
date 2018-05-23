@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
@@ -144,8 +145,9 @@ public class ScopeFactory {
     // Replace the scope with class fields in class extensions
     if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
-      if (parentParent instanceof Abstract.ClassReferenceHolder && sourceNode.equals(((Abstract.ClassFieldImpl) parentSourceNode).getImplementation())) {
-        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference(), true);
+      if (parentParent instanceof Abstract.ClassReferenceHolder) {
+        ClassReferable classRef = ((Abstract.ClassReferenceHolder) parentParent).getClassReference();
+        return classRef == null ? EmptyScope.INSTANCE : new ClassFieldImplScope(classRef, true);
       }
     }
 
