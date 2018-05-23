@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming.resolving.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.frontend.reference.TypeClassReferenceExtractVisitor;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
@@ -12,19 +13,19 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<Void, Concrete.Expression> {
+  private final TypeClassReferenceExtractVisitor myTypeClassReferenceExtractVisitor;
   private final Scope myParentScope;
   private final Scope myScope;
   private final List<Referable> myContext;
   private final LocalErrorReporter myErrorReporter;
 
-  public ExpressionResolveNameVisitor(Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter) {
+    myTypeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(concreteProvider);
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
     myContext = context;
@@ -82,25 +83,38 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     }
   }
 
-  static ClassReferable getTypeClassReference(Concrete.Expression type) {
-    if (type instanceof Concrete.ReferenceExpression) {
-      Referable ref = ((Concrete.ReferenceExpression) type).getReferent();
-      return ref instanceof ClassReferable ? (ClassReferable) ref : null;
-    } else {
-      return null;
+  void updateScope(Collection<? extends Concrete.Parameter> parameters) {
+    for (Concrete.Parameter parameter : parameters) {
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        ClassReferable classRef = getTypeClassReference(((Concrete.TelescopeParameter) parameter).getType());
+        for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
+          if (referable != null && !referable.textRepresentation().equals("_")) {
+            myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
+          }
+        }
+      } else
+      if (parameter instanceof Concrete.NameParameter) {
+        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+        if (referable != null && !referable.textRepresentation().equals("_")) {
+          myContext.add(referable);
+        }
+      }
     }
   }
 
+  private ClassReferable getTypeClassReference(Concrete.Expression type) {
+    return myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
+  }
+
   Concrete.Parameter visitParameter(Concrete.Parameter parameter) {
-    Concrete.Parameter result = parameter;
     if (parameter instanceof Concrete.TypeParameter) {
       Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
       Concrete.Expression newType = type.accept(this, null);
       if (type != newType) {
         if (parameter instanceof Concrete.TelescopeParameter) {
-          result = new Concrete.TelescopeParameter(parameter.getData(), parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).getReferableList(), newType);
+          parameter = new Concrete.TelescopeParameter(parameter.getData(), parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).getReferableList(), newType);
         } else {
-          result = new Concrete.TypeParameter(parameter.getData(), parameter.getExplicit(), newType);
+          parameter = new Concrete.TypeParameter(parameter.getData(), parameter.getExplicit(), newType);
         }
       }
     }
@@ -128,7 +142,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
       }
     }
 
-    return result;
+    return parameter;
   }
 
   @Override
@@ -184,6 +198,10 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
 
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
+    if (expr.getSequence().size() == 1) {
+      return expr.getSequence().get(0).expression.accept(this, null);
+    }
+
     BinOpParser parser = new BinOpParser(myErrorReporter);
 
     for (int i = 0; i < expr.getSequence().size(); i++) {

@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.TypeClassReferenceExtractVisitor;
+import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
@@ -12,6 +13,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.resolving.NameResolvingChecker;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -30,10 +32,12 @@ import java.util.stream.Collectors;
 
 public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<Scope, Void> {
   private boolean myResolveTypeClassReferences;
+  private final ConcreteProvider myConcreteProvider;
   private final ErrorReporter myErrorReporter;
 
-  public DefinitionResolveNameVisitor(ErrorReporter errorReporter) {
+  public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
+    myConcreteProvider = concreteProvider;
     myErrorReporter = errorReporter;
   }
 
@@ -41,35 +45,101 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return myErrorReporter;
   }
 
-  private static void resolveTypeClassReference(List<Concrete.Parameter> parameters, Concrete.Expression type, Scope scope) {
-    Referable ref = TypeClassReferenceExtractVisitor.getTypeReference(parameters, type);
-    if (ref instanceof RedirectingReferable) {
+  private void resolveTypeClassReference(List<Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType, GlobalReferable definition) {
+    if (isType) {
+      for (Concrete.Parameter parameter : parameters) {
+        if (parameter.getExplicit()) {
+          return;
+        }
+      }
+
+      Concrete.Expression expr1 = expr;
+      while (expr1 instanceof Concrete.PiExpression) {
+        for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr1).getParameters()) {
+          if (parameter.getExplicit()) {
+            return;
+          }
+        }
+        expr1 = ((Concrete.PiExpression) expr1).getCodomain();
+      }
+    }
+
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, new ArrayList<>(), DummyErrorReporter.INSTANCE);
+    exprVisitor.updateScope(parameters);
+    if (isType) {
+      while (expr instanceof Concrete.PiExpression) {
+        exprVisitor.updateScope(((Concrete.PiExpression) expr).getParameters());
+        expr = ((Concrete.PiExpression) expr).getCodomain();
+      }
+    } else {
+      while (expr instanceof Concrete.LamExpression) {
+        exprVisitor.updateScope(((Concrete.LamExpression) expr).getParameters());
+        expr = ((Concrete.LamExpression) expr).getBody();
+      }
+    }
+
+    while (true) {
+      if (expr instanceof Concrete.AppExpression) {
+        expr = ((Concrete.AppExpression) expr).getFunction();
+      } else if (expr instanceof Concrete.ClassExtExpression) {
+        expr = ((Concrete.ClassExtExpression) expr).getBaseClassExpression();
+      } else {
+        break;
+      }
+    }
+
+    scope = exprVisitor.getScope();
+
+    if (expr instanceof Concrete.BinOpSequenceExpression) {
+      Concrete.BinOpSequenceExpression binOpExpr = (Concrete.BinOpSequenceExpression) expr;
+      for (Concrete.BinOpSequenceElem elem : binOpExpr.getSequence()) {
+        if (elem.expression instanceof Concrete.ReferenceExpression) {
+          Concrete.ReferenceExpression referenceExpression = (Concrete.ReferenceExpression) elem.expression;
+          Referable ref = referenceExpression.getReferent();
+          if (ref instanceof UnresolvedReference) {
+            ref = ((UnresolvedReference) ref).tryResolve(scope);
+            if (ref == null) {
+              return;
+            }
+            referenceExpression.setReferent(ref);
+          }
+        }
+      }
+
+      BinOpParser binOpParser = new BinOpParser(new ProxyErrorReporter(definition, myErrorReporter));
+      expr = binOpParser.parse(binOpExpr);
+      binOpExpr.getSequence().clear();
+      binOpExpr.getSequence().add(new Concrete.BinOpSequenceElem(expr, Fixity.NONFIX, true));
+
+      while (expr instanceof Concrete.AppExpression) {
+        expr = ((Concrete.AppExpression) expr).getFunction();
+      }
+    }
+
+    Referable ref = expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;
+    while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
     if (ref instanceof UnresolvedReference) {
-      if (!parameters.isEmpty() || type instanceof Concrete.PiExpression) {
-        ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, new ArrayList<>(), DummyErrorReporter.INSTANCE);
-        exprVisitor.visitParameters(parameters);
-        while (type instanceof Concrete.PiExpression) {
-          exprVisitor.visitTypeParameters(((Concrete.PiExpression) type).getParameters());
-          type = ((Concrete.PiExpression) type).getCodomain();
-        }
-        scope = exprVisitor.getScope();
-      }
-      ((UnresolvedReference) ref).resolve(scope);
+      ((UnresolvedReference) ref).tryResolve(scope);
     }
   }
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
     if (myResolveTypeClassReferences) {
-      resolveTypeClassReference(def.getParameters(), def.getResultType(), scope);
+      if (def.getBody() instanceof Concrete.TermFunctionBody) {
+        resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false, def.getData());
+      }
+      if (def.getResultType() != null) {
+        resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true, def.getData());
+      }
       return null;
     }
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
 
     Concrete.Expression resultType = def.getResultType();
@@ -109,9 +179,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     Set<Referable> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
+    TypeClassReferenceExtractVisitor typeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(myConcreteProvider);
     for (Concrete.Parameter parameter : parameters) {
       if (parameter instanceof Concrete.TelescopeParameter) {
-        ClassReferable classRef = ExpressionResolveNameVisitor.getTypeClassReference(((Concrete.TelescopeParameter) parameter).getType());
+        ClassReferable classRef = typeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), ((Concrete.TelescopeParameter) parameter).getType());
         for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
           if (referable != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
             context.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
@@ -133,7 +204,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitTypeParameters(def.getParameters());
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
@@ -162,7 +233,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitTypeParameters(def.getParameters());
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
@@ -191,13 +262,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (myResolveTypeClassReferences) {
       for (Concrete.ClassField field : def.getFields()) {
-        resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope);
+        resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true, def.getData());
       }
       return null;
     }
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     visitSuperClasses(exprVisitor, def.getSuperClasses(), def.getData());
 
     for (Concrete.ClassField field : def.getFields()) {
@@ -238,12 +309,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(def.getData(), myErrorReporter);
-    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(parentScope, Collections.emptyList(), localErrorReporter);
+    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, Collections.emptyList(), localErrorReporter);
     visitSuperClasses(visitor, def.getSuperClasses(), def.getData());
 
     if (visitClassReference(visitor, def.getUnderlyingClass(), def.getData())) {
       if (!def.getFields().isEmpty()) {
-        visitor = new ExpressionResolveNameVisitor(new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), localErrorReporter);
+        visitor = new ExpressionResolveNameVisitor(myConcreteProvider, new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), localErrorReporter);
         for (Concrete.ClassFieldSynonym fieldSyn : def.getFields()) {
           visitor.visitReference(fieldSyn.getUnderlyingField(), null);
         }
@@ -259,11 +330,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
     if (myResolveTypeClassReferences) {
-      resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope);
+      resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true, def.getData());
       return null;
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter));
     exprVisitor.visitParameters(def.getParameters());
 
     if (visitClassReference(exprVisitor, def.getClassReference(), def.getData())) {
@@ -276,25 +347,25 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  public void resolveGroupWithTypes(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
+  public void resolveGroupWithTypes(Group group, ReferableConverter referableConverter, Scope scope) {
     myResolveTypeClassReferences = true;
-    resolveGroup(group, referableConverter, scope, concreteProvider);
+    resolveGroup(group, referableConverter, scope);
     myResolveTypeClassReferences = false;
-    resolveGroup(group, referableConverter, scope, concreteProvider);
+    resolveGroup(group, referableConverter, scope);
   }
 
-  public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope, ConcreteProvider concreteProvider) {
-    Concrete.ReferableDefinition def = concreteProvider.getConcrete(group.getReferable());
+  public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope) {
+    Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(group.getReferable());
     Scope convertedScope = referableConverter == null ? scope : CachingScope.make(new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
     }
 
     for (Group subgroup : group.getSubgroups()) {
-      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope), concreteProvider);
+      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope));
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope), concreteProvider);
+      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope));
     }
 
     if (myResolveTypeClassReferences) {

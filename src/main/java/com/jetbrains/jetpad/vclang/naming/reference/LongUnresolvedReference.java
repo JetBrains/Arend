@@ -100,7 +100,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         Object data = getData();
-        resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
         return resolved;
       }
     }
@@ -112,6 +112,15 @@ public class LongUnresolvedReference implements UnresolvedReference {
       resolved = new ErrorReference(data, myPath.size() == 1 ? null : new LongUnresolvedReference(data, myPath.subList(0, myPath.size() - 1)), name);
     }
 
+    return resolved;
+  }
+
+  @Nullable
+  @Override
+  public Referable tryResolve(Scope scope) {
+    if (resolve(scope) instanceof ErrorReference) {
+      resolved = null;
+    }
     return resolved;
   }
 
@@ -150,7 +159,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
       Object data = getData();
-      resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+      resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
       return null;
     }
 
@@ -169,7 +178,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
-        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
         return null;
       }
     }

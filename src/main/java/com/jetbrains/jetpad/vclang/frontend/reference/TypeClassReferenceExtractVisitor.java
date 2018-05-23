@@ -1,15 +1,26 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.TypedReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteReferableDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefinitionVisitor<Void, ClassReferable> {
+  private final ConcreteProvider myConcreteProvider;
+  private int myArguments;
+
+  public TypeClassReferenceExtractVisitor(ConcreteProvider concreteProvider) {
+    myConcreteProvider = concreteProvider;
+  }
+
   @Override
   public ClassReferable visitFunction(Concrete.FunctionDefinition def, Void params) {
     return getTypeClassReference(def.getParameters(), def.getResultType());
@@ -51,31 +62,92 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     return fieldRef instanceof TypedReferable ? ((TypedReferable) fieldRef).getTypeClassReference() : null;
   }
 
-  public static Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
+  private Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter.getExplicit()) {
         return null;
       }
     }
 
-    while (type instanceof Concrete.PiExpression) {
-      for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) type).getParameters()) {
-        if (parameter.getExplicit()) {
+    if (isType) {
+      while (expr instanceof Concrete.PiExpression) {
+        for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr).getParameters()) {
+          if (parameter.getExplicit()) {
+            return null;
+          }
+        }
+        expr = ((Concrete.PiExpression) expr).getCodomain();
+      }
+    } else {
+      while (expr instanceof Concrete.LamExpression) {
+        handleParameters(((Concrete.LamExpression) expr).getParameters());
+        if (myArguments < 0) {
           return null;
         }
+        expr = ((Concrete.LamExpression) expr).getBody();
       }
-      type = ((Concrete.PiExpression) type).getCodomain();
     }
 
-    while (type instanceof Concrete.AppExpression) {
-      type = ((Concrete.AppExpression) type).getFunction();
+    while (expr instanceof Concrete.AppExpression) {
+      expr = ((Concrete.AppExpression) expr).getFunction();
+      myArguments++;
     }
 
-    return type instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) type).getReferent() : null;
+    return expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;
   }
 
-  private static ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
-    Referable ref = getTypeReference(parameters, type);
-    return ref instanceof ClassReferable ? (ClassReferable) ref : null;
+  private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
+    for (Concrete.Parameter parameter : parameters) {
+      if (parameter.getExplicit()) {
+        if (parameter instanceof Concrete.TelescopeParameter) {
+          myArguments -= ((Concrete.TelescopeParameter) parameter).getReferableList().size();
+        } else {
+          myArguments--;
+        }
+        if (myArguments < 0) {
+          return;
+        }
+      }
+    }
+  }
+
+  private ClassReferable findClassReference(Referable referent) {
+    Set<GlobalReferable> visited = null;
+    while (true) {
+      if (referent instanceof ClassReferable) {
+        return (ClassReferable) referent;
+      }
+      if (!(referent instanceof GlobalReferable)) {
+        return null;
+      }
+      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete((GlobalReferable) referent);
+      if (!(definition instanceof Concrete.FunctionDefinition)) {
+        return null;
+      }
+      Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) definition;
+      if (!(function.getBody() instanceof Concrete.TermFunctionBody)) {
+        return null;
+      }
+
+      Concrete.Expression term = ((Concrete.TermFunctionBody) function.getBody()).getTerm();
+      handleParameters(function.getParameters());
+      if (myArguments < 0) {
+        return null;
+      }
+
+      if (visited == null) {
+        visited = new HashSet<>();
+      }
+      if (!visited.add((GlobalReferable) referent)) {
+        return null;
+      }
+
+      referent = getTypeReference(Collections.emptyList(), term, false);
+    }
+  }
+
+  public ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
+    myArguments = 0;
+    return findClassReference(getTypeReference(parameters, type, true));
   }
 }

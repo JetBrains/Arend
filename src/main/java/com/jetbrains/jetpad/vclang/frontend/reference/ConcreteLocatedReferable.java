@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.error.SourceInfo;
+import com.jetbrains.jetpad.vclang.frontend.ConcreteReferableProvider;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
@@ -57,6 +58,6 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
-    return myDefinition.accept(new TypeClassReferenceExtractVisitor(), null);
+    return myDefinition.accept(new TypeClassReferenceExtractVisitor(ConcreteReferableProvider.INSTANCE), null);
   }
 }
