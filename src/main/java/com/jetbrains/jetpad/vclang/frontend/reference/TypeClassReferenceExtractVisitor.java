@@ -67,6 +67,10 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       type = ((Concrete.PiExpression) type).getCodomain();
     }
 
+    while (type instanceof Concrete.AppExpression) {
+      type = ((Concrete.AppExpression) type).getFunction();
+    }
+
     return type instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) type).getReferent() : null;
   }
 

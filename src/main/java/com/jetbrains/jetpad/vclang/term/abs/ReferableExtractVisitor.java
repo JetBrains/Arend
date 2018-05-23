@@ -18,6 +18,11 @@ public class ReferableExtractVisitor extends BaseAbstractExpressionVisitor<Void,
   }
 
   @Override
+  public ClassReferable visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, Void params) {
+    return expr.accept(this, null);
+  }
+
+  @Override
   public ClassReferable visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, Void params) {
     if (referent instanceof UnresolvedReference && myScope != null) {
       referent = ((UnresolvedReference) referent).resolve(myScope);
