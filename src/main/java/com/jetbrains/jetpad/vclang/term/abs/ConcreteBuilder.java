@@ -4,7 +4,10 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -139,7 +142,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       try {
         List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
         for (Abstract.Constructor constructor : absConstructors) {
-          constructors.add(new Concrete.Constructor(myReferableConverter.toDataLocatedReferable(constructor.getReferable()), data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+          TCReferable constructorRef = myReferableConverter.toDataLocatedReferable(constructor.getReferable());
+          if (constructorRef != null) {
+            constructors.add(new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+          } else {
+            myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Internal error: cannot locate constructor", constructor)));
+          }
         }
 
         Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
@@ -176,9 +184,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
-        LocatedReferable fieldRef = field.getReferable();
+        TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(field.getReferable());
         if (resultType == null || fieldRef == null) {
-          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldRef == null ? field : myReferableConverter.toDataLocatedReferable(fieldRef))));
+          myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef)));
         } else {
           try {
             List<? extends Abstract.Parameter> parameters = field.getParameters();
@@ -187,7 +195,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField(myReferableConverter.toDataLocatedReferable(fieldRef), classDef, type));
+            classFields.add(new Concrete.ClassField(fieldRef, classDef, type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(new ProxyError(myDefinition, e.error));
           }
@@ -199,10 +207,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       List<Concrete.ClassFieldSynonym> fields = new ArrayList<>();
       Concrete.ClassSynonym classDef = new Concrete.ClassSynonym((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), buildReference(underlyingClass), fields);
       for (Abstract.ClassFieldSynonym fieldSyn : def.getFieldSynonyms()) {
-        LocatedReferable referable = fieldSyn.getReferable();
+        TCReferable referable = myReferableConverter.toDataLocatedReferable(fieldSyn.getReferable());
         Abstract.Reference underlyingField = fieldSyn.getUnderlyingField();
         if (referable != null && underlyingField != null) {
-          fields.add(new Concrete.ClassFieldSynonym(myReferableConverter.toDataLocatedReferable(referable), buildReference(underlyingField), classDef));
+          fields.add(new Concrete.ClassFieldSynonym(referable, buildReference(underlyingField), classDef));
         } else {
           myErrorReporter.report(new ProxyError(myDefinition, AbstractExpressionError.incomplete(fieldSyn)));
         }

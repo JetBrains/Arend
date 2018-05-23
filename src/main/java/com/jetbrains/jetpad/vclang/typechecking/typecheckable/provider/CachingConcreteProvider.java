@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider;
 
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferableImpl;
+import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 
@@ -10,7 +12,7 @@ import java.util.Map;
 public class CachingConcreteProvider implements ConcreteProvider {
   private ConcreteProvider myProvider;
   private final Map<GlobalReferable, Concrete.ReferableDefinition> myCache = new HashMap<>();
-  public final static Concrete.ReferableDefinition NULL_DEFINITION = new Concrete.Definition(null) {
+  public final static Concrete.ReferableDefinition NULL_DEFINITION = new Concrete.Definition(new LocatedReferableImpl(Precedence.DEFAULT, "_", null, true)) {
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return null;

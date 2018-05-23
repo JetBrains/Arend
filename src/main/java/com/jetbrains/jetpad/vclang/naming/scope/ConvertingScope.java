@@ -28,7 +28,10 @@ public class ConvertingScope implements Scope {
   @Nullable
   @Override
   public Referable find(Predicate<Referable> pred) {
-    return myScope.find(ref -> pred.test(convertReferable(ref)));
+    return myScope.find(ref -> {
+      Referable convertedRef = convertReferable(ref);
+      return convertedRef != null && pred.test(convertedRef);
+    });
   }
 
   @Nonnull
@@ -37,7 +40,10 @@ public class ConvertingScope implements Scope {
     Collection<? extends Referable> elements = myScope.getElements();
     List<Referable> result = new ArrayList<>(elements.size());
     for (Referable element : elements) {
-      result.add(convertReferable(element));
+      Referable ref = convertReferable(element);
+      if (ref != null) {
+        result.add(ref);
+      }
     }
     return result;
   }
