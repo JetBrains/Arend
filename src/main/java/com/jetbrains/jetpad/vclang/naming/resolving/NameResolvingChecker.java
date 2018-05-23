@@ -55,7 +55,10 @@ public abstract class NameResolvingChecker {
 
     for (ClassReferable superClass : superClasses) {
       for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
-        referables.put(fieldRef.textRepresentation(), fieldRef);
+        String name = fieldRef.textRepresentation();
+        if (!name.isEmpty() && !"_".equals(name)) {
+          referables.put(name, fieldRef);
+        }
       }
     }
 
@@ -155,7 +158,12 @@ public abstract class NameResolvingChecker {
   }
 
   private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, LocatedReferable parentReferable) {
-    LocatedReferable oldRef = referables.putIfAbsent(newRef.textRepresentation(), newRef);
+    String name = newRef.textRepresentation();
+    if (name.isEmpty() || "_".equals(name)) {
+      return;
+    }
+
+    LocatedReferable oldRef = referables.putIfAbsent(name, newRef);
     if (oldRef != null) {
       Error.Level level;
       if (parentReferable == null) {
