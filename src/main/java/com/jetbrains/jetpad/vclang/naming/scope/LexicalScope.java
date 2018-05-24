@@ -31,19 +31,26 @@ public class LexicalScope implements Scope {
     return new LexicalScope(EmptyScope.INSTANCE, group, true);
   }
 
+  private void addReferable(Referable referable, List<Referable> elements) {
+    String name =referable.textRepresentation();
+    if (!name.isEmpty() && !"_".equals(name)) {
+      elements.add(referable);
+    }
+  }
+
   private void addSubgroups(Collection<? extends Group> subgroups, List<Referable> elements) {
     for (Group subgroup : subgroups) {
       for (Group.InternalReferable constructor : subgroup.getConstructors()) {
         if (constructor.isVisible()) {
-          elements.add(constructor.getReferable());
+          addReferable(constructor.getReferable(), elements);
         }
       }
       for (Group.InternalReferable field : subgroup.getFields()) {
         if (field.isVisible()) {
-          elements.add(field.getReferable());
+          addReferable(field.getReferable(), elements);
         }
       }
-      elements.add(subgroup.getReferable());
+      addReferable(subgroup.getReferable(), elements);
     }
   }
 
@@ -52,14 +59,14 @@ public class LexicalScope implements Scope {
   public List<Referable> getElements() {
     List<Referable> elements = new ArrayList<>();
     for (Group.InternalReferable constructor : myGroup.getConstructors()) {
-      elements.add(constructor.getReferable());
+      addReferable(constructor.getReferable(), elements);
     }
     GlobalReferable groupRef = myGroup.getReferable();
     if (groupRef instanceof ClassReferable) {
       elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, false).getElements());
     } else {
       for (Group.InternalReferable field : myGroup.getFields()) {
-        elements.add(field.getReferable());
+        addReferable(field.getReferable(), elements);
       }
     }
 
@@ -132,6 +139,10 @@ public class LexicalScope implements Scope {
   }
 
   private Object resolve(String name, boolean resolveRef) {
+    if (name.isEmpty() || "_".equals(name)) {
+      return null;
+    }
+
     if (resolveRef) {
       Object result = resolveInternal(myGroup, name, false);
       if (result != null) {
