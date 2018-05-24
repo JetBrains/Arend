@@ -45,6 +45,10 @@ public class LongUnresolvedReference implements UnresolvedReference {
     }
   }
 
+  public static UnresolvedReference make(Object data, @Nonnull List<String> path) {
+    return path.size() == 1 ? new NamedUnresolvedReference(data, path.get(0)) : new LongUnresolvedReference(data, path);
+  }
+
   public List<String> getPath() {
     return myPath;
   }
@@ -100,7 +104,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         Object data = getData();
-        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
+        resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
         return resolved;
       }
     }
@@ -109,7 +113,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     resolved = scope.resolveName(name);
     if (resolved == null) {
       Object data = getData();
-      resolved = new ErrorReference(data, myPath.size() == 1 ? null : new LongUnresolvedReference(data, myPath.subList(0, myPath.size() - 1)), name);
+      resolved = new ErrorReference(data, myPath.size() == 1 ? null : make(data, myPath.subList(0, myPath.size() - 1)), name);
     }
 
     return resolved;
@@ -159,7 +163,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
       Object data = getData();
-      resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
+      resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
       return null;
     }
 
@@ -178,7 +182,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
-        resolved = new ErrorReference(data, new LongUnresolvedReference(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
+        resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), myPath.get(i + 1));
         return null;
       }
     }
@@ -203,7 +207,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       scope = scope.resolveNamespace(myPath.get(i));
       if (scope == null) {
         Object data = getData();
-        resolved = new ErrorReference(data, i == 0 ? null : new LongUnresolvedReference(data, myPath.subList(0, i)), myPath.get(i));
+        resolved = new ErrorReference(data, i == 0 ? null : make(data, myPath.subList(0, i)), myPath.get(i));
         return null;
       }
     }

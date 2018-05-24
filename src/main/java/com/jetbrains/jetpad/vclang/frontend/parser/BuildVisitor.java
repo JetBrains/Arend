@@ -351,7 +351,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
     Position position = tokenPosition(ctx.classCall().start);
-    reference.setDefinition(new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, new LongUnresolvedReference(position, classPath)), visitCoClauses(ctx.coClauses())));
+    reference.setDefinition(new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, classPath)), visitCoClauses(ctx.coClauses())));
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
@@ -369,22 +369,25 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     throw new IllegalStateException();
   }
 
-  @Override
-  public List<Concrete.ClassFieldImpl> visitCoClausesWithoutBraces(CoClausesWithoutBracesContext ctx) {
-    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(ctx.coClause().size());
-    for (CoClauseContext coClause : ctx.coClause()) {
-      coClauses.add(visitCoClause(coClause));
+  private List<Concrete.ClassFieldImpl> visitCoClauses(List<CoClauseContext> coClausesCtx) {
+    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(coClausesCtx.size());
+    for (CoClauseContext coClause : coClausesCtx) {
+      Concrete.ClassFieldImpl impl = visitCoClause(coClause);
+      if (impl != null) {
+        coClauses.add(impl);
+      }
     }
     return coClauses;
   }
 
   @Override
+  public List<Concrete.ClassFieldImpl> visitCoClausesWithoutBraces(CoClausesWithoutBracesContext ctx) {
+    return visitCoClauses(ctx.coClause());
+  }
+
+  @Override
   public List<Concrete.ClassFieldImpl> visitCoClausesWithBraces(CoClausesWithBracesContext ctx) {
-    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(ctx.coClause().size());
-    for (CoClauseContext coClause : ctx.coClause()) {
-      coClauses.add(visitCoClause(coClause));
-    }
-    return coClauses;
+    return visitCoClauses(ctx.coClause());
   }
 
   private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
@@ -533,7 +536,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           reference.setDefinition(field);
           fields.add(field);
         } else if (statementCtx instanceof ClassImplementContext) {
-          implementations.add(visitClassImplement((ClassImplementContext) statementCtx));
+          Concrete.ClassFieldImpl impl = visitClassImplement((ClassImplementContext) statementCtx);
+          if (impl != null) {
+            implementations.add(impl);
+          }
         } else if (statementCtx instanceof ClassDefinitionContext) {
           subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent));
         } else {
@@ -548,7 +554,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
     WhereContext where = ctx.where();
 
-    List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
+    List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(ctx.classCall().size());
     List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -557,7 +563,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<String> superClass = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
       if (superClass != null) {
         Position position = tokenPosition(classCallCtx.start);
-        superClasses.add(new Concrete.ReferenceExpression(position, new LongUnresolvedReference(position, superClass)));
+        superClasses.add(new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, superClass)));
       }
     }
 
@@ -660,7 +666,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
     }
 
-    return new Concrete.ClassFieldImpl(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText()), term);
+    List<String> path = visitAtomFieldsAccRef(ctx.atomFieldsAcc());
+    return path == null ? null : new Concrete.ClassFieldImpl(tokenPosition(ctx.start), LongUnresolvedReference.make(tokenPosition(ctx.atomFieldsAcc().start), path), term);
   }
 
   @Override
@@ -839,15 +846,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
-    String fieldName = ctx.ID().getText();
-    Position position = tokenPosition(ctx.ID().getSymbol());
+    List<String> path = visitAtomFieldsAccRef(ctx.atomFieldsAcc());
+    if (path == null) {
+      return null;
+    }
+
+    Position position = tokenPosition(ctx.atomFieldsAcc().start);
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     Concrete.Expression term = visitExpr(ctx.expr());
     if (!parameters.isEmpty()) {
       term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
     }
 
-    return new Concrete.ClassFieldImpl(position, new NamedUnresolvedReference(position, fieldName), term);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -1123,11 +1134,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(implCtx.coClause().size());
-      for (CoClauseContext coClause : implCtx.coClause()) {
-        implementStatements.add(visitCoClause(coClause));
-      }
-      expr = new Concrete.ClassExtExpression(tokenPosition(appCtx.start), expr, implementStatements);
+      expr = new Concrete.ClassExtExpression(tokenPosition(appCtx.start), expr, visitCoClauses(implCtx.coClause()));
     }
 
     if (newNode != null) {
