@@ -13,7 +13,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class C { | A : \\Set }\n" +
       "\\class D { | B : \\Set }\n" +
-      "\\func f => \\new D { A => \\Prop }");
+      "\\func f => \\new D { A => \\Prop }", 1);
   }
 
   @Test
@@ -39,34 +39,50 @@ public class ClassesResolveTest extends NameResolverTestCase {
   }
 
   @Test
-  public void clashingNamesSuper() {
+  public void resolveSuperImplement() {
     resolveNamesModule(
-      "\\class C1 { | A : \\Set }\n" +
-      "\\class C2 { | A : \\Set }\n" +
-      "\\class D \\extends C1, C2 { | a : C1.A | b : C2.A }");
+      "\\class A { | x : Nat }\n" +
+      "\\class B \\extends A { | y : Nat }\n" +
+      "\\class C \\extends B { | A => \\new A { x => 0 } }");
   }
 
   @Test
-  public void clashingNamesSuperError() {
+  public void resolveNotSuperImplement() {
     resolveNamesModule(
-      "\\class C1 { | A : \\Set }\n" +
-      "\\class C2 { | A : \\Set }\n" +
-      "\\class D \\extends C1, C2 { | a : A }", 1);
+      "\\class A { | x : Nat }\n" +
+      "\\class B { | y : Nat }\n" +
+      "\\class C \\extends B { | A => \\new A { x => 0 } }", 1);
+  }
+
+  @Test
+  public void clashingNamesSuper() {
+    resolveNamesModule(
+      "\\class X \\where { \\class C1 { | A : \\Set } }\n" +
+      "\\class Y \\where { \\class C2 { | A : \\Set } }\n" +
+      "\\class D \\extends X.C1, Y.C2 { | a : X.C1.A | b : Y.C2.A }");
+  }
+
+  @Test
+  public void clashingNamesSuper2() {
+    resolveNamesModule(
+      "\\class X \\where { \\class C1 { | A : \\Set } }\n" +
+      "\\class Y \\where { \\class C2 { | A : \\Set } }\n" +
+      "\\class D \\extends X.C1, Y.C2 { | a : A }");
   }
 
   @Test
   public void clashingNamesSuperImplement() {
     resolveNamesModule(
-      "\\class C1 { | A : \\Set }\n" +
-      "\\class C2 { | A : \\Set }\n" +
-      "\\class D \\extends C1, C2 { | C1.A => \\Prop | C2.A => \\Prop -> \\Prop }");
+      "\\class X \\where { \\class C1 { | A : \\Set } }\n" +
+      "\\class Y \\where { \\class C2 { | A : \\Set } }\n" +
+      "\\class D \\extends X.C1, Y.C2 { | C1.A => \\Prop | C2.A => \\Prop -> \\Prop }");
   }
 
   @Test
-  public void clashingNamesSuperImplementError() {
+  public void clashingNamesSuperImplement2() {
     resolveNamesModule(
-      "\\class C1 { | A : \\Set }\n" +
-      "\\class C2 { | A : \\Set }\n" +
-      "\\class D \\extends C1, C2 { | A => \\Prop }", 1);
+      "\\class X \\where { \\class C1 { | A : \\Set } }\n" +
+      "\\class Y \\where { \\class C2 { | A : \\Set } }\n" +
+      "\\class D \\extends X.C1, Y.C2 { | A => \\Prop }");
   }
 }

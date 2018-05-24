@@ -1099,6 +1099,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
+    if (referable instanceof ErrorReference) {
+      return null;
+    }
+
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
     if (clazz.isInstance(definition)) {
       return clazz.cast(definition);

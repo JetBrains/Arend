@@ -336,7 +336,11 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
         field = ((RedirectingReferable) field).getOriginalReferable();
       }
       if (field instanceof UnresolvedReference) {
-        impl.setImplementedField(((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true)));
+        Referable newField = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
+        if (newField instanceof ErrorReference) {
+          myErrorReporter.report(((ErrorReference) newField).getError());
+        }
+        impl.setImplementedField(newField);
       }
 
       Concrete.Expression implementation = impl.getImplementation().accept(this, null);

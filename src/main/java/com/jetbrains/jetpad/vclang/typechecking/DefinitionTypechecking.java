@@ -23,10 +23,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
@@ -153,7 +150,12 @@ class DefinitionTypechecking {
       return null;
     } else if (unit.getDefinition() instanceof Concrete.ClassSynonym) {
       Concrete.ClassSynonym classSyn = (Concrete.ClassSynonym) unit.getDefinition();
-      ClassDefinition classDef = visitor.referableToDefinition(classSyn.getUnderlyingClass().getReferent(), ClassDefinition.class, "Expected a class", classSyn.getUnderlyingClass());
+      Referable underlyingClass = classSyn.getUnderlyingClass().getReferent();
+      if (underlyingClass instanceof ErrorReference) {
+        return null;
+      }
+
+      ClassDefinition classDef = visitor.referableToDefinition(underlyingClass, ClassDefinition.class, "Expected a class", classSyn.getUnderlyingClass());
       if (typechecked == null && classDef != null) {
         state.record(unit.getDefinition().getData(), classDef);
       }
@@ -670,31 +672,13 @@ class DefinitionTypechecking {
     Concrete.SourceNode alreadyImplementedSourceNode = null;
 
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
-      CheckTypeVisitor.Result result = visitor.finalCheckExpr(aSuperClass, null, false);
-      if (result == null) {
-        classOk = false;
-        continue;
-      }
+      ClassDefinition superClass = visitor.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
 
-      ClassCallExpression typeCheckedSuperClass = result.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
-      if (typeCheckedSuperClass == null) {
-        errorReporter.report(new TypecheckingError("Parent must be a class", aSuperClass));
-        classOk = false;
-        continue;
-      }
+      typedDef.addFields(superClass.getFields());
+      typedDef.addSuperClass(superClass);
 
-      typedDef.addFields(typeCheckedSuperClass.getDefinition().getFields());
-      typedDef.addSuperClass(typeCheckedSuperClass.getDefinition());
-
-      for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : typeCheckedSuperClass.getDefinition().getImplemented()) {
+      for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : superClass.getImplemented()) {
         if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
-          classOk = false;
-          alreadyImplementedSourceNode = aSuperClass;
-        }
-      }
-
-      for (Map.Entry<ClassField, Expression> entry : typeCheckedSuperClass.getImplementedHere().entrySet()) {
-        if (!implementField(entry.getKey(), new ClassDefinition.Implementation(createThisParam(typedDef), entry.getValue()), typedDef, alreadyImplementFields)) {
           classOk = false;
           alreadyImplementedSourceNode = aSuperClass;
         }
@@ -817,7 +801,7 @@ class DefinitionTypechecking {
 
     Deque<TCClassReferable> toVisit = new ArrayDeque<>();
     toVisit.add(classSyn.getData());
-    Map<ClassField, GlobalReferable> overridden = classSyn.getSuperClasses().isEmpty() ? Collections.emptyMap() : new HashMap<>();
+    Map<ClassField, GlobalReferable> overridden = new HashMap<>();
     Map<ClassField, Set<GlobalReferable>> errorFields = Collections.emptyMap();
     while (!toVisit.isEmpty()) {
       TCClassReferable classRef = toVisit.pop();
@@ -848,7 +832,7 @@ class DefinitionTypechecking {
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, visitor, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    if (!paramsOk) {
+    if (!paramsOk || def.getClassReference().getReferent() instanceof ErrorReference) {
       return;
     }
 

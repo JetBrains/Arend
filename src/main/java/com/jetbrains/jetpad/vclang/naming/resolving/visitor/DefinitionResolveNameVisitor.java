@@ -287,7 +287,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef, GlobalReferable definition) {
     Concrete.Expression newClassRef = exprVisitor.visitReference(classRef, null);
     if (newClassRef != classRef || !(classRef.getReferent() instanceof ClassReferable)) {
-      myErrorReporter.report(new ProxyError(definition, new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef)));
+      LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
+      classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
+      myErrorReporter.report(new ProxyError(definition, error));
       return false;
     } else {
       return true;
@@ -320,7 +322,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       }
     } else {
-      myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a class", def.getUnderlyingClass().getReferent(), def)));
       def.getFields().clear();
     }
 
@@ -340,7 +341,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (visitClassReference(exprVisitor, def.getClassReference(), def.getData())) {
       exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassReference().getReferent());
     } else {
-      myErrorReporter.report(new ProxyError(def.getData(), new WrongReferable("Expected a reference to a class", def.getClassReference().getReferent(), def.getClassReference())));
       def.getClassFieldImpls().clear();
     }
 
@@ -432,7 +432,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    new NameResolvingChecker() {
+    new NameResolvingChecker(false) {
       @Override
       public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
         myErrorReporter.report(new ProxyError(group.getReferable(), new DuplicateNameError(level, ref2, ref1)));

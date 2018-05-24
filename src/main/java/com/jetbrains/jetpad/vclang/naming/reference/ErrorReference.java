@@ -14,6 +14,11 @@ public class ErrorReference implements Referable {
     myError = new NotInScopeError(data, referable, name);
   }
 
+  public ErrorReference(LocalError error, String name) {
+    myText = name;
+    myError = error;
+  }
+
   public LocalError getError() {
     return myError;
   }

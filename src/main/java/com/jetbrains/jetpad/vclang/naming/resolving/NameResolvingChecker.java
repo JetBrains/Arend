@@ -16,6 +16,12 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 
 public abstract class NameResolvingChecker {
+  private final boolean myRecursively;
+
+  protected NameResolvingChecker(boolean recursively) {
+    myRecursively = recursively;
+  }
+
   public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
 
   }
@@ -82,12 +88,14 @@ public abstract class NameResolvingChecker {
 
     checkSubgroup(subgroups, referables, groupRef);
 
-    for (Group subgroup : subgroups) {
-      checkGroup(subgroup, makeScope(subgroup, scope), false);
-    }
+    if (myRecursively) {
+      for (Group subgroup : subgroups) {
+        checkGroup(subgroup, makeScope(subgroup, scope), false);
+      }
 
-    for (Group subgroup : dynamicSubgroups) {
-      checkGroup(subgroup, makeScope(subgroup, scope), false);
+      for (Group subgroup : dynamicSubgroups) {
+        checkGroup(subgroup, makeScope(subgroup, scope), false);
+      }
     }
 
     if (namespaceCommands.isEmpty()) {
