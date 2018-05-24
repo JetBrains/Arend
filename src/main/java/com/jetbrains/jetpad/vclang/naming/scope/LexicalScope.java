@@ -139,7 +139,7 @@ public class LexicalScope implements Scope {
   }
 
   private Object resolve(String name, boolean resolveRef) {
-    if (name.isEmpty() || "_".equals(name)) {
+    if (name == null || name.isEmpty() || "_".equals(name)) {
       return null;
     }
 
