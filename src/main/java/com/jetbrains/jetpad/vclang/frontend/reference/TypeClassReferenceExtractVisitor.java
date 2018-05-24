@@ -70,21 +70,33 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     }
 
     if (isType) {
-      while (expr instanceof Concrete.PiExpression) {
-        for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr).getParameters()) {
-          if (parameter.getExplicit()) {
-            return null;
+      while (true) {
+        if (expr instanceof Concrete.PiExpression) {
+          for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr).getParameters()) {
+            if (parameter.getExplicit()) {
+              return null;
+            }
           }
+          expr = ((Concrete.PiExpression) expr).getCodomain();
+        } else if (expr instanceof Concrete.ClassExtExpression) {
+          expr = ((Concrete.ClassExtExpression) expr).getBaseClassExpression();
+        } else {
+          break;
         }
-        expr = ((Concrete.PiExpression) expr).getCodomain();
       }
     } else {
-      while (expr instanceof Concrete.LamExpression) {
-        handleParameters(((Concrete.LamExpression) expr).getParameters());
-        if (myArguments < 0) {
-          return null;
+      while (true) {
+        if (expr instanceof Concrete.LamExpression) {
+          handleParameters(((Concrete.LamExpression) expr).getParameters());
+          if (myArguments < 0) {
+            return null;
+          }
+          expr = ((Concrete.LamExpression) expr).getBody();
+        } else if (expr instanceof Concrete.ClassExtExpression) {
+          expr = ((Concrete.ClassExtExpression) expr).getBaseClassExpression();
+        } else {
+          break;
         }
-        expr = ((Concrete.LamExpression) expr).getBody();
       }
     }
 

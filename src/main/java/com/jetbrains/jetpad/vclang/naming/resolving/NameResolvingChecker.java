@@ -26,6 +26,10 @@ public abstract class NameResolvingChecker {
 
   }
 
+  public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
+
+  }
+
   public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
 
   }
@@ -58,13 +62,31 @@ public abstract class NameResolvingChecker {
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
 
     Map<String, LocatedReferable> referables = new HashMap<>();
+    Map<String, Pair<LocatedReferable, ClassReferable>> fields = Collections.emptyMap();
 
-    for (ClassReferable superClass : superClasses) {
-      for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
-        String name = fieldRef.textRepresentation();
-        if (!name.isEmpty() && !"_".equals(name)) {
-          referables.put(name, fieldRef);
+    if (!superClasses.isEmpty()) {
+      fields = new HashMap<>();
+
+      Set<ClassReferable> visited = new HashSet<>();
+      visited.add((ClassReferable) groupRef);
+      Deque<ClassReferable> toVisit = new ArrayDeque<>(superClasses);
+      while (!toVisit.isEmpty()) {
+        ClassReferable superClass = toVisit.pop();
+        if (!visited.add(superClass)) {
+          continue;
         }
+
+        for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
+          String name = fieldRef.textRepresentation();
+          if (!name.isEmpty() && !"_".equals(name)) {
+            Pair<LocatedReferable, ClassReferable> oldField = fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
+            if (oldField != null && !superClass.equals(oldField.proj2)) {
+              fieldNamesClash(oldField.proj1, oldField.proj2, fieldRef, superClass, (ClassReferable) groupRef, Error.Level.ERROR);
+            }
+          }
+        }
+
+        toVisit.addAll(superClass.getSuperClassReferences());
       }
     }
 
@@ -73,7 +95,17 @@ public abstract class NameResolvingChecker {
     }
 
     for (Group.InternalReferable internalRef : group.getFields()) {
-      checkReference(internalRef.getReferable(), referables, null);
+      LocatedReferable field = internalRef.getReferable();
+      String name = field.textRepresentation();
+      if (!name.isEmpty() && !"_".equals(name)) {
+        Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
+        if (oldField != null) {
+          assert groupRef instanceof ClassReferable;
+          fieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.ERROR);
+        }
+      }
+
+      checkReference(field, referables, null);
     }
 
     for (Group subgroup : subgroups) {

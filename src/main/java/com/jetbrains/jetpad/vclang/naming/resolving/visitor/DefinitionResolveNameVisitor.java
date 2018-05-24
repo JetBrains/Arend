@@ -439,6 +439,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
 
       @Override
+      public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
+        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Field '" + ref2.textRepresentation() +
+          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()) )));
+      }
+
+      @Override
       public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
         myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()))));
       }

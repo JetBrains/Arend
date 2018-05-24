@@ -161,13 +161,6 @@ public class ExtensionsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void superClassExpression() {
-    typeCheckModule(
-        "\\class A\n" +
-        "\\class B \\extends ((\\lam x => x) A)");
-  }
-
-  @Test
   public void dynamicInheritance() {
     typeCheckModule(
         "\\class X {\n" +
