@@ -10,7 +10,6 @@ import "Level.proto";
 
 message Definition {
     Status status = 1;
-    int32 this_class_ref = 3;
     oneof definition_data {
         ClassData class = 5;
         DataData data = 6;
@@ -49,22 +48,15 @@ message Definition {
     message ClassData {
         repeated int32 super_class_ref = 4;
         repeated Field personal_field = 10;
-        int32 enclosing_this_field_ref = 6;
         repeated int32 field_ref = 8;
-        map<int32, Implementation> implementations = 9;
+        map<int32, Expression> implementations = 12;
         int32 coercing_field_ref = 11;
         Sort sort = 7;
 
         message Field {
             Referable referable = 1;
-            SingleParameter this_param = 2;
             Expression type = 3;
             bool hasTypeClassReference = 4;
-        }
-
-        message Implementation {
-            SingleParameter this_param = 1;
-            Expression term = 2;
         }
     }
     message DataData {

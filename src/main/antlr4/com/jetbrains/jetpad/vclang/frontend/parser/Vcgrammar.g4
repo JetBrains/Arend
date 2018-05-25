@@ -31,7 +31,7 @@ classBody : '{' classStat* '}'                      # classImpl
 
 fieldSyn : '|' ID '=>' precedence ID;
 
-classCall : atomFieldsAcc; // TODO[classes]: add arguments
+classCall : atomFieldsAcc;
 
 functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim

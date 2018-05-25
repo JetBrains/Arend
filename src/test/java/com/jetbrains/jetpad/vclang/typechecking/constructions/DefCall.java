@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.constructions;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
-import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
@@ -48,7 +45,17 @@ public class DefCall extends TypeCheckingTestCase {
 
   private Expression getThisFI(ChildGroup result) {
     FunctionDefinition function = (FunctionDefinition) getDefinition(result, "Test.test");
-    return FieldCall(((ClassDefinition) getDefinition(result, "Test")).getEnclosingThisField(), Ref(function.getParameters()));
+    return FieldCall((ClassField) getDefinition(result, "Test.parent"), Ref(function.getParameters()));
+  }
+
+  private ClassCallExpression makeClassCall(Definition definition, Expression impl) {
+    ClassDefinition classDef = (ClassDefinition) definition;
+    for (ClassField field : classDef.getFields()) {
+      if ("parent".equals(field.getReferable().textRepresentation())) {
+        return new ClassCallExpression(classDef, Sort.SET0, Collections.singletonMap(field, impl), classDef.getSort());
+      }
+    }
+    return null;
   }
 
   @Test
@@ -797,7 +804,7 @@ public class DefCall extends TypeCheckingTestCase {
     ChildGroup result = typeCheckClass(
         "\\class C\n" +
         "\\func test => C", "");
-    test(getDefinition(result, "C").getDefCall(Sort.SET0, Ref(getThis(result)), Collections.emptyList()), result);
+    test(makeClassCall(getDefinition(result, "C"), Ref(getThis(result))), result);
   }
 
   @Test
@@ -807,7 +814,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class Test {\n" +
         "  \\func test => C\n" +
         "}", "");
-    testFI(getDefinition(result, "C").getDefCall(Sort.SET0, getThisFI(result), Collections.emptyList()), result);
+    testFI(makeClassCall(getDefinition(result, "C"), getThisFI(result)), result);
   }
 
   @Test
@@ -841,7 +848,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test => A.B.C", "");
-    test(getDefinition(result, "A.B.C").getDefCall(Sort.SET0, Ref(getThis(result)), Collections.emptyList()), result);
+    test(makeClassCall(getDefinition(result, "A.B.C"), Ref(getThis(result))), result);
   }
 
   @Test
@@ -851,7 +858,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C\n" +
         "}\n" +
         "\\func test (e : E) => e.C");
-    test(getDefinition(result, "E.C").getDefCall(Sort.SET0, Ref(getThis(result)), Collections.emptyList()), result);
+    test(makeClassCall(getDefinition(result, "E.C"), Ref(getThis(result))), result);
   }
 
   @Test
@@ -870,7 +877,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\class C\n" +
         "}\n" +
         "\\func test (e : E) => e.C", "");
-    test(getDefinition(result, "E.C").getDefCall(Sort.SET0, Ref(getThis(result).getNext()), Collections.emptyList()), result);
+    test(makeClassCall(getDefinition(result, "E.C"), Ref(getThis(result).getNext())), result);
   }
 
   @Test
@@ -884,7 +891,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\func test (e : E) => e.A.B.C");
-    test(getDefinition(result, "E.A.B.C").getDefCall(Sort.SET0, Ref(getThis(result)), Collections.emptyList()), result);
+    test(makeClassCall(getDefinition(result, "E.A.B.C"), Ref(getThis(result))), result);
   }
 
   @Test

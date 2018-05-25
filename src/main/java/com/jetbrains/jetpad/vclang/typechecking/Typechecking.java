@@ -24,7 +24,6 @@ import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 import com.jetbrains.jetpad.vclang.typechecking.order.SCC;
 import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.Typecheckable;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
@@ -151,7 +150,7 @@ public class Typechecking implements DependencyListener {
 
   public void sccFound(SCC scc) {
     for (TypecheckingUnit unit : scc.getUnits()) {
-      if (!Typecheckable.hasHeader(unit.getDefinition())) {
+      if (!TypecheckingUnit.hasHeader(unit.getDefinition())) {
         List<Concrete.Definition> cycle = new ArrayList<>();
         for (TypecheckingUnit unit1 : scc.getUnits()) {
           Concrete.Definition definition = unit1.getDefinition();
@@ -165,7 +164,7 @@ public class Typechecking implements DependencyListener {
 
           if (!unit1.isHeader()) {
             typecheckingUnitStarted(definition.getData());
-            if (Typecheckable.hasHeader(definition)) {
+            if (TypecheckingUnit.hasHeader(definition)) {
               mySuspensions.remove(definition.getData());
             }
             typecheckingUnitFinished(definition.getData(), typechecked);
@@ -235,7 +234,7 @@ public class Typechecking implements DependencyListener {
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), localErrorReporter, null);
       unit.getDefinition().accept(new DesugarVisitor(myErrorReporter), null);
-      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition(), unit.getEnclosingClass());
+      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), visitor);
       }

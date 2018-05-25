@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -323,7 +324,8 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassField xField = (ClassField) getDefinition(result, "A.x");
     ClassField aField = (ClassField) getDefinition(result, "B.a");
     ClassField yField = (ClassField) getDefinition(result, "B.y");
-    assertEquals(FieldCall(xField, FieldCall(aField, Ref(yField.getThisParameter()))), yField.getBaseType(Sort.SET0));
+    PiExpression piType = yField.getType(Sort.SET0);
+    assertEquals(FieldCall(xField, FieldCall(aField, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
@@ -371,7 +373,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
     ClassDefinition cClass = (ClassDefinition) getDefinition(result, "A.C");
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = cClass.getEnclosingThisField();
+    ClassField cParent = (ClassField) getDefinition(result, "A.C.parent");
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) getDefinition(result, "A.C.h");
     List<DependentLink> hParams = new ArrayList<>();

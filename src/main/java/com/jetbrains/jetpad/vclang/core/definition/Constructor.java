@@ -127,7 +127,7 @@ public class Constructor extends Definition implements Function {
       }
     }
 
-    return myDataType.getDefCall(sortArgument, null, arguments);
+    return myDataType.getDefCall(sortArgument, arguments);
   }
 
   @Override
@@ -159,13 +159,9 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public ConCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
+  public ConCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
     int dataTypeArgsNumber = DependentLink.Helper.size(getDataTypeParameters());
     List<Expression> dataTypeArgs = new ArrayList<>(dataTypeArgsNumber);
-    if (thisExpr != null) {
-      dataTypeArgs.add(thisExpr);
-      dataTypeArgsNumber--;
-    }
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
     return new ConCallExpression(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
   }

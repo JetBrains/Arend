@@ -26,7 +26,7 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_CLASS_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -246,20 +246,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
     Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
-    Concrete.Expression enclExpr = null;
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
     for (Map.Entry<ClassField, Expression> entry : implHere) {
-      if (entry.getKey().equals(expr.getDefinition().getEnclosingThisField())) {
-        enclExpr = entry.getValue().accept(this, params);
-      } else {
-        statements.add(cImplStatement(entry.getKey().getReferable(), entry.getValue().accept(this, params)));
-      }
+      statements.add(cImplStatement(entry.getKey().getReferable(), entry.getValue().accept(this, params)));
     }
 
     Concrete.Expression defCallExpr = makeReference(expr.getDefinition().getReferable());
-    if (myFlags.contains(Flag.SHOW_CLASS_INSTANCE)) {
-      defCallExpr = new Concrete.AppExpression(null, defCallExpr, new Concrete.Argument(enclExpr, false));
-    }
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

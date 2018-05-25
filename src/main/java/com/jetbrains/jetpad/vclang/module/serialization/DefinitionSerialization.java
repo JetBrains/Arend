@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.core.pattern.BindingPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.EmptyPattern;
@@ -52,10 +53,6 @@ public class DefinitionSerialization {
         throw new IllegalStateException("Unknown typechecking status");
     }
 
-    if (definition.getThisClass() != null) {
-      out.setThisClassRef(myCallTargetIndexProvider.getDefIndex(definition.getThisClass()));
-    }
-
     out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
 
     final ExpressionSerialization defSerializer = new ExpressionSerialization(myCallTargetIndexProvider);
@@ -80,26 +77,18 @@ public class DefinitionSerialization {
     for (ClassField field : definition.getPersonalFields()) {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
-      fBuilder.setThisParam(defSerializer.writeParameter(field.getThisParameter()));
       fBuilder.setHasTypeClassReference(field.getReferable().getTypeClassReference() != null);
-      Expression baseType = field.getBaseType(Sort.STD);
-      if (baseType != null) fBuilder.setType(defSerializer.writeExpr(baseType));
+      fBuilder.setType(defSerializer.writeExpr(field.getType(Sort.STD)));
       builder.addPersonalField(fBuilder.build());
     }
 
     for (ClassField classField : definition.getFields()) {
       builder.addFieldRef(myCallTargetIndexProvider.getDefIndex(classField));
     }
-    for (Map.Entry<ClassField, ClassDefinition.Implementation> impl : definition.getImplemented()) {
-      DefinitionProtos.Definition.ClassData.Implementation.Builder iBuilder = DefinitionProtos.Definition.ClassData.Implementation.newBuilder();
-      iBuilder.setThisParam(defSerializer.writeParameter(impl.getValue().thisParam));
-      iBuilder.setTerm(defSerializer.writeExpr(impl.getValue().term));
-      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), iBuilder.build());
+    for (Map.Entry<ClassField, LamExpression> impl : definition.getImplemented()) {
+      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeExpr(impl.getValue()));
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
-    if (definition.getEnclosingThisField() != null) {
-      builder.setEnclosingThisFieldRef(myCallTargetIndexProvider.getDefIndex(definition.getEnclosingThisField()));
-    }
 
     for (ClassDefinition classDefinition : definition.getSuperClasses()) {
       builder.addSuperClassRef(myCallTargetIndexProvider.getDefIndex(classDefinition));

@@ -88,7 +88,7 @@ public class ConditionsChecking {
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
       return false;
     } else {
       return true;
@@ -162,7 +162,7 @@ public class ConditionsChecking {
         }
       }
 
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, null, defCallArgs1), definition.getDefCall(Sort.STD, null, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
       return true;
@@ -208,7 +208,7 @@ public class ConditionsChecking {
       if (definition == null) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
-        evaluatedExpr1 = definition.getDefCall(Sort.STD, null, pair.proj1);
+        evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
       if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
@@ -216,7 +216,7 @@ public class ConditionsChecking {
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());
         }
-        Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, null, args);
+        Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, args);
         errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }

@@ -197,8 +197,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return true;
     }
 
-    for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : type1.getDefinition().getImplemented()) {
-      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().term, FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue().term)))) {
+    for (Map.Entry<ClassField, LamExpression> entry : type1.getDefinition().getImplemented()) {
+      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue().applyExpression(expr2))))) {
         return false;
       }
     }

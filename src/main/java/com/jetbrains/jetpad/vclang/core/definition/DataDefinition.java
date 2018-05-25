@@ -117,14 +117,7 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public DataCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
-    if (thisExpr == null) {
-      return new DataCallExpression(this, sortArgument, arguments);
-    } else {
-      List<Expression> args = new ArrayList<>(arguments.size() + 1);
-      args.add(thisExpr);
-      args.addAll(arguments);
-      return new DataCallExpression(this, sortArgument, args);
-    }
+  public DataCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
+    return new DataCallExpression(this, sortArgument, arguments);
   }
 }

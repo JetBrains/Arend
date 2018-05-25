@@ -70,7 +70,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
-    return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getSortArgument(), null, newArgs);
+    return newArgs == null ? null : expr.getDefinition().getDefCall(expr.getSortArgument(), newArgs);
   }
 
   @Override

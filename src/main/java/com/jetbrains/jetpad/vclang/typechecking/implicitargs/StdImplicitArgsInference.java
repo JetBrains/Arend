@@ -171,7 +171,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
             args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
             if (args1 != null) {
-              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null);
+              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument());
               if (!args1.isEmpty()) {
                 result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
               }
