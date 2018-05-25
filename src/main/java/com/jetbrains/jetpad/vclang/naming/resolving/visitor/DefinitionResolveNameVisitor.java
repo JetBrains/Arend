@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.frontend.reference.TypeClassReferenceExtractVisitor;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
@@ -440,23 +441,23 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
       @Override
       public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
-        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Field '" + ref2.textRepresentation() +
-          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()) )));
+        myErrorReporter.report(new ProxyError(group.getReferable(), new ReferenceError(level, "Field '" + ref2.textRepresentation() +
+          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()), superClass2 == currentClass ? ref2 : currentClass)));
       }
 
       @Override
       public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
-        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()))));
+        myErrorReporter.report(new ProxyError(group.getReferable(), new NamingError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()), cmd2)));
       }
 
       @Override
       public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
-        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module")));
+        myErrorReporter.report(new ProxyError(group.getReferable(), new NamingError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming)));
       }
 
       @Override
       public void nonTopLevelImport(NamespaceCommand command) {
-        myErrorReporter.report(new ProxyError(group.getReferable(), new LocalError(Error.Level.ERROR, "\\import is allowed only on the top level")));
+        myErrorReporter.report(new ProxyError(group.getReferable(), new NamingError(Error.Level.ERROR, "\\import is allowed only on the top level", command)));
       }
     }.checkGroup(group, convertedScope, true);
   }

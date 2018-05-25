@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
+
 public class ClassesResolveTest extends NameResolverTestCase {
   @Test
   public void resolveParameter() {
@@ -84,5 +86,13 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\class X \\where { \\class C1 { | A : \\Set } }\n" +
       "\\class Y \\where { \\class C2 { | A : \\Set } }\n" +
       "\\class D \\extends X.C1, Y.C2 { | A => \\Prop }");
+  }
+
+  @Test
+  public void clashingNamesSuperCurrent() {
+    resolveNamesModule(
+      "\\class X \\where { \\class C1 { | A : \\Set } \\class C2 \\extends C1 }\n" +
+      "\\class D \\extends X.C2 { | A : \\Prop }", 1);
+    assertThatErrorsAre(warning());
   }
 }

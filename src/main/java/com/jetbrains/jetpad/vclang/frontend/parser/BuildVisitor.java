@@ -188,8 +188,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       openedReferences = new ArrayList<>(ctx.nsUsing().nsId().size());
       for (NsIdContext nsIdCtx : ctx.nsUsing().nsId()) {
-        openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(
-          new NamedUnresolvedReference(tokenPosition(nsIdCtx.ID(0).getSymbol()), nsIdCtx.ID(0).getText()),
+        Position position = tokenPosition(nsIdCtx.ID(0).getSymbol());
+        openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(position,
+          new NamedUnresolvedReference(position, nsIdCtx.ID(0).getText()),
           nsIdCtx.precedence() == null ? null : visitPrecedence(nsIdCtx.precedence()),
           nsIdCtx.ID().size() < 2 ? null : nsIdCtx.ID(1).getText()));
       }

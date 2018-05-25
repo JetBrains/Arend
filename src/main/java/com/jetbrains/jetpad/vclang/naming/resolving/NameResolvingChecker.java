@@ -79,10 +79,11 @@ public abstract class NameResolvingChecker {
         for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
           String name = fieldRef.textRepresentation();
           if (!name.isEmpty() && !"_".equals(name)) {
-            Pair<LocatedReferable, ClassReferable> oldField = fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
-            if (oldField != null && !superClass.equals(oldField.proj2)) {
-              fieldNamesClash(oldField.proj1, oldField.proj2, fieldRef, superClass, (ClassReferable) groupRef, Error.Level.ERROR);
-            }
+            // Pair<LocatedReferable, ClassReferable> oldField =
+              fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
+            // if (oldField != null && !superClass.equals(oldField.proj2)) {
+            //   fieldNamesClash(oldField.proj1, oldField.proj2, fieldRef, superClass, (ClassReferable) groupRef, Error.Level.ERROR);
+            // }
           }
         }
 
@@ -101,7 +102,7 @@ public abstract class NameResolvingChecker {
         Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
         if (oldField != null) {
           assert groupRef instanceof ClassReferable;
-          fieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.ERROR);
+          fieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.WARNING);
         }
       }
 
