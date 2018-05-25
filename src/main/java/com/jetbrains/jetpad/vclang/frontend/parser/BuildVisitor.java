@@ -1209,7 +1209,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     if (errorToken != null) {
-      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessor are not implemented"));
+      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessors can be applied only to identifiers"));
       throw new ParseException();
     }
 

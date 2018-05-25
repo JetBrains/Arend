@@ -11,6 +11,53 @@ public class ClassesResolveTest extends NameResolverTestCase {
   }
 
   @Test
+  public void unknownExtTestError() {
+    resolveNamesModule(
+      "\\class Point { | x : Nat | y : Nat }\n" +
+      "\\func C => Point { x => 0 | z => 0 | y => 0 }", 1);
+  }
+
+  @Test
+  public void parentCallTest() {
+    resolveNamesModule(
+      "\\class M {\n" +
+      "  \\class A {\n" +
+      "    | c : Nat -> Nat -> Nat\n" +
+      "    | f : Nat -> Nat\n" +
+      "  }\n" +
+      "}\n" +
+      "\\func B => M.A {\n" +
+      "  f => \\lam n => c n n\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void mutualRecursionTestError() {
+    resolveNamesModule(
+      "\\class M {\n" +
+        "  \\class Point {\n" +
+        "    | x : Nat\n" +
+        "    | y : Nat\n" +
+        "  }\n" +
+        "}\n" +
+        "\\func test => M.Point {\n" +
+        "  | x => y\n" +
+        "  | y => x\n" +
+        "}", 2);
+  }
+
+  @Test
+  public void splitClassTestError() {
+    resolveNamesModule(
+      "\\class A \\where {\n" +
+      "  \\func x => 0\n" +
+      "}\n" +
+      "\\class A \\where {\n" +
+      "  \\func y => 0\n" +
+      "}", 1);
+  }
+
+  @Test
   public void resolveIncorrect() {
     resolveNamesModule(
       "\\class C { | A : \\Set }\n" +

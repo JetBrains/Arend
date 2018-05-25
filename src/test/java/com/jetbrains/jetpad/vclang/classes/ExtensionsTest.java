@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
 import static org.junit.Assert.assertEquals;
 
 public class ExtensionsTest extends TypeCheckingTestCase {
@@ -270,5 +271,19 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends C");
     assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "C")).getSort());
     assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "B")).getSort());
+  }
+
+  @Test
+  public void recursiveExtendsError() {
+    typeCheckModule("\\class A \\extends A", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void mutualRecursiveExtendsError() {
+    typeCheckModule(
+      "\\class A \\extends B\n" +
+        "\\class B \\extends A", 1);
+    assertThatErrorsAre(error());
   }
 }
