@@ -677,8 +677,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.InferHoleExpression visitUnknown(UnknownContext ctx) {
-    return new Concrete.InferHoleExpression(tokenPosition(ctx.getStart()));
+  public Concrete.HoleExpression visitUnknown(UnknownContext ctx) {
+    return new Concrete.HoleExpression(tokenPosition(ctx.getStart()));
   }
 
   @Override

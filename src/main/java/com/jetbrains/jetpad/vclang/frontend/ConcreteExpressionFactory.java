@@ -140,8 +140,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.GoalExpression(null, name, expression);
   }
 
-  public static Concrete.InferHoleExpression cInferHole() {
-    return new Concrete.InferHoleExpression(null);
+  public static Concrete.HoleExpression cInferHole() {
+    return new Concrete.HoleExpression(null);
   }
 
   public static Concrete.TupleExpression cTuple(List<Concrete.Expression> fields) {

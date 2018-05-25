@@ -634,11 +634,12 @@ class DefinitionTypechecking {
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
-    typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
 
+    // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = visitor.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
 
@@ -653,10 +654,12 @@ class DefinitionTypechecking {
       }
     }
 
+    // Process fields
     for (Concrete.ClassField field : def.getFields()) {
       typecheckClassField(field, typedDef, visitor);
     }
 
+    // TODO[classes]: Process coercing fields?
     ClassField coercingField = null;
     Set<ClassField> coercingFields = null;
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
@@ -688,6 +691,7 @@ class DefinitionTypechecking {
       visitor.getErrorReporter().report(new ClassCoerceError(coercingFields, def));
     }
 
+    // Process implementations
     if (!def.getImplementations().isEmpty()) {
       typedDef.updateSorts();
       for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {

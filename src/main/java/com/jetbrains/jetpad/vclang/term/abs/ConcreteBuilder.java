@@ -82,7 +82,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(new ProxyError(myDefinition, e.error));
       Object data = term == null ? myReferableConverter.toDataLocatedReferable(def.getReferable()) : term.getData();
-      body = new Concrete.TermFunctionBody(data, new Concrete.InferHoleExpression(data));
+      body = new Concrete.TermFunctionBody(data, new Concrete.HoleExpression(data));
     }
 
     List<Concrete.Parameter> parameters;
@@ -425,8 +425,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.InferHoleExpression visitInferHole(@Nullable Object data, Void params) {
-    return new Concrete.InferHoleExpression(data);
+  public Concrete.HoleExpression visitInferHole(@Nullable Object data, Void params) {
+    return new Concrete.HoleExpression(data);
   }
 
   @Override

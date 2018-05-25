@@ -878,7 +878,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   @Override
-  public Result visitInferHole(Concrete.InferHoleExpression expr, ExpectedType expectedType) {
+  public Result visitHole(Concrete.HoleExpression expr, ExpectedType expectedType) {
+    if (expr.getError() != null) {
+      return null;
+    }
+
     if (expectedType instanceof Expression) {
       return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable((Expression) expectedType, expr, getAllBindings()), myEquations), (Expression) expectedType);
     } else {

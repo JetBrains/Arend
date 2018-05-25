@@ -445,8 +445,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitInferHole(Concrete.InferHoleExpression expr, Precedence prec) {
-    myBuilder.append('_');
+  public Void visitHole(Concrete.HoleExpression expr, Precedence prec) {
+    myBuilder.append(expr.getError() == null ? "_" : "{?}");
     return null;
   }
 

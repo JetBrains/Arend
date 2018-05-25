@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -80,11 +81,11 @@ public final class Concrete {
   }
 
   public static class TypeParameter extends Parameter {
-    private final Expression myType;
+    public Expression type;
 
     public TypeParameter(Object data, boolean explicit, Expression type) {
       super(data, explicit);
-      myType = type;
+      this.type = type;
     }
 
     public TypeParameter(boolean explicit, Expression type) {
@@ -93,7 +94,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getType() {
-      return myType;
+      return type;
     }
   }
 
@@ -146,17 +147,17 @@ public final class Concrete {
   }
 
   public static class Argument {
-    private final Expression myExpression;
+    public Expression expression;
     private final boolean myExplicit;
 
     public Argument(Expression expression, boolean explicit) {
-      myExpression = expression;
+      this.expression = expression;
       myExplicit = explicit;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     public boolean isExplicit() {
@@ -166,23 +167,23 @@ public final class Concrete {
 
   public static class AppExpression extends Expression {
     public static final byte PREC = 11;
-    private final Expression myFunction;
-    private final Argument myArgument;
+    public Expression function;
+    public Argument argument;
 
     public AppExpression(Object data, Expression function, Argument argument) {
       super(data);
-      myFunction = function;
-      myArgument = argument;
+      this.function = function;
+      this.argument = argument;
     }
 
     @Nonnull
     public Expression getFunction() {
-      return myFunction;
+      return function;
     }
 
     @Nonnull
     public Argument getArgument() {
-      return myArgument;
+      return argument;
     }
 
     @Override
@@ -192,7 +193,7 @@ public final class Concrete {
   }
 
   public static class BinOpSequenceElem {
-    public final Expression expression;
+    public Expression expression;
     public final Fixity fixity;
     public final boolean isExplicit;
 
@@ -344,18 +345,18 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression {
     public static final byte PREC = 12;
-    private final Expression myBaseClassExpression;
+    public Expression baseClassExpression;
     private final List<ClassFieldImpl> myDefinitions;
 
     public ClassExtExpression(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
       super(data);
-      myBaseClassExpression = baseClassExpression;
+      this.baseClassExpression = baseClassExpression;
       myDefinitions = definitions;
     }
 
     @Nonnull
     public Expression getBaseClassExpression() {
-      return myBaseClassExpression;
+      return baseClassExpression;
     }
 
     @Nonnull
@@ -371,12 +372,12 @@ public final class Concrete {
 
   public static class ClassFieldImpl extends SourceNodeImpl {
     private Referable myImplementedField;
-    private final Expression myExpression;
+    public Expression implementation;
 
-    public ClassFieldImpl(Object data, Referable implementedField, Expression expression) {
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation) {
       super(data);
       myImplementedField = implementedField;
-      myExpression = expression;
+      this.implementation = implementation;
     }
 
     @Nonnull
@@ -390,22 +391,22 @@ public final class Concrete {
 
     @Nonnull
     public Expression getImplementation() {
-      return myExpression;
+      return implementation;
     }
   }
 
   public static class NewExpression extends Expression {
     public static final byte PREC = 11;
-    private final Expression myExpression;
+    public Expression expression;
 
     public NewExpression(Object data, Expression expression) {
       super(data);
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -417,12 +418,12 @@ public final class Concrete {
   public static class GoalExpression extends Expression {
     public static final byte PREC = 12;
     private final String myName;
-    private final Expression myExpression;
+    public Expression expression;
 
     public GoalExpression(Object data, String name, Expression expression) {
       super(data);
       myName = name;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     public String getName() {
@@ -430,7 +431,7 @@ public final class Concrete {
     }
 
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -439,27 +440,46 @@ public final class Concrete {
     }
   }
 
-  public static class InferHoleExpression extends Expression {
+  public static class HoleExpression extends Expression {
     public static final byte PREC = 12;
-    public InferHoleExpression(Object data) {
+
+    public HoleExpression(Object data) {
       super(data);
     }
 
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitInferHole(this, params);
+      return visitor.visitHole(this, params);
+    }
+
+    public LocalError getError() {
+      return null;
+    }
+  }
+
+  public static class ErrorHoleExpression extends HoleExpression {
+    private final LocalError myError;
+
+    public ErrorHoleExpression(Object data, LocalError error) {
+      super(data);
+      myError = error;
+    }
+
+    @Override
+    public LocalError getError() {
+      return myError;
     }
   }
 
   public static class LamExpression extends Expression {
     public static final byte PREC = -5;
     private final List<Parameter> myArguments;
-    private final Expression myBody;
+    public Expression body;
 
     public LamExpression(Object data, List<Parameter> arguments, Expression body) {
       super(data);
       myArguments = arguments;
-      myBody = body;
+      this.body = body;
     }
 
     @Nonnull
@@ -469,7 +489,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getBody() {
-      return myBody;
+      return body;
     }
 
     @Override
@@ -480,14 +500,14 @@ public final class Concrete {
 
   public static class LetClause implements SourceNode {
     private final List<Parameter> myParameters;
-    private final Expression myResultType;
-    private final Expression myTerm;
+    public Expression resultType;
+    public Expression term;
     private final Referable myReferable;
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
       myParameters = parameters;
-      myResultType = resultType;
-      myTerm = term;
+      this.resultType = resultType;
+      this.term = term;
       myReferable = referable;
     }
 
@@ -499,7 +519,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getTerm() {
-      return myTerm;
+      return term;
     }
 
     @Nonnull
@@ -508,7 +528,7 @@ public final class Concrete {
     }
 
     public Expression getResultType() {
-      return myResultType;
+      return resultType;
     }
 
     @Override
@@ -520,12 +540,12 @@ public final class Concrete {
   public static class LetExpression extends Expression {
     public static final byte PREC = -9;
     private final List<LetClause> myClauses;
-    private final Expression myExpression;
+    public Expression expression;
 
     public LetExpression(Object data, List<LetClause> clauses, Expression expression) {
       super(data);
       myClauses = clauses;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
@@ -535,7 +555,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -547,12 +567,12 @@ public final class Concrete {
   public static class PiExpression extends Expression {
     public static final byte PREC = -4;
     private final List<TypeParameter> myParameters;
-    private final Expression myCodomain;
+    public Expression codomain;
 
     public PiExpression(Object data, List<TypeParameter> parameters, Expression codomain) {
       super(data);
       myParameters = parameters;
-      myCodomain = codomain;
+      this.codomain = codomain;
     }
 
     @Nonnull
@@ -562,7 +582,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getCodomain() {
-      return myCodomain;
+      return codomain;
     }
 
     @Override
@@ -640,18 +660,18 @@ public final class Concrete {
 
   public static class ProjExpression extends Expression {
     public static final byte PREC = 12;
-    private final Expression myExpression;
+    public Expression expression;
     private final int myField;
 
     public ProjExpression(Object data, Expression expression, int field) {
       super(data);
-      myExpression = expression;
+      this.expression = expression;
       myField = field;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     public int getField() {
@@ -697,12 +717,12 @@ public final class Concrete {
 
   public static class FunctionClause extends Clause {
     private final List<Pattern> myPatterns;
-    private final Expression myExpression;
+    public Expression expression;
 
     public FunctionClause(Object data, List<Pattern> patterns, Expression expression) {
       super(data);
       myPatterns = patterns;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
@@ -713,7 +733,7 @@ public final class Concrete {
 
     @Nullable
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
   }
 

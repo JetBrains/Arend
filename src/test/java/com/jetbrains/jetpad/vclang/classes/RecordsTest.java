@@ -13,14 +13,30 @@ import java.util.ArrayList;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.hasErrors;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 
 public class RecordsTest extends TypeCheckingTestCase {
   @Test
-  public void resultTypeMismatchTestError() {
+  public void nonDependentImplement() {
+    typeCheckModule(
+        "\\class Point { | x : Nat | y : Nat }\n" +
+        "\\func p => \\new Point { x => 0 | y => 0 }");
+  }
+
+  @Test
+  public void nonDependentImplementError() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => \\lam (t : Nat) => t }", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void dependentImplement() {
+    typeCheckModule(
+        "\\class Point { | X : \\Set | y : X -> Nat }\n" +
+        "\\func p => \\new Point { X => Nat | y => \\lam n => n }");
   }
 
   @Test
@@ -82,7 +98,14 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void newAbstractTestError() {
+  public void newError() {
+    typeCheckModule(
+      "\\class Point { | x : Nat | y : Nat }\n" +
+      "\\func C => \\new Point { x => 0 }", 1);
+  }
+
+  @Test
+  public void newFunctionError() {
     typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +

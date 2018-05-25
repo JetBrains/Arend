@@ -206,7 +206,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
-    exprVisitor.visitTypeParameters(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters());
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
     } else {
@@ -236,7 +236,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
-      exprVisitor.visitTypeParameters(def.getParameters());
+      exprVisitor.visitParameters(def.getParameters());
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
     }
 

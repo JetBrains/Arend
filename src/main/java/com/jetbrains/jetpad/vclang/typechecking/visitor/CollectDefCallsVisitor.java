@@ -66,7 +66,7 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitInferHole(Concrete.InferHoleExpression expr, Void ignore) {
+  public Void visitHole(Concrete.HoleExpression expr, Void ignore) {
     return null;
   }
 
