@@ -125,7 +125,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    return new UniverseExpression(getSort().subst(sortArgument.toLevelSubstitution()));
+    return new UniverseExpression(mySort.subst(sortArgument.toLevelSubstitution()));
   }
 
   @Override

@@ -523,7 +523,7 @@ public class NameResolverTest extends NameResolverTestCase {
       "    | f : Nat\n" +
       "  }\n" +
       "}", 1);
-    assertThatErrorsAre(error());
+    assertThatErrorsAre(warning());
   }
 
   @Test

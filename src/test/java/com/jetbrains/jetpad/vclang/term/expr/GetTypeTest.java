@@ -71,7 +71,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     Expression type = FunCall(Prelude.PATH_INFIX, Sort.SET0,
         Nat(),
         Zero(),
-        FieldCall((ClassField) getDefinition(result, "C.x"), Apps(Ref(p), Zero())));
+        FieldCall((ClassField) getDefinition(result, "C.x"), Sort.PROP, Apps(Ref(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
     Expression testType = getDefinition(result, "test").getTypeWithParams(testParams, Sort.SET0);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), fromPiParameters(testType, testParams).normalize(NormalizeVisitor.Mode.NF));

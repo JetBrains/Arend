@@ -65,7 +65,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     if (expr.getArgument().isInstance(NewExpression.class)) {
       return expr.getArgument().cast(NewExpression.class).getExpression().getImplementation(expr.getDefinition(), expr.getArgument()).accept(this, null);
     } else {
-      return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getArgument().accept(this, null));
+      return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getArgument().accept(this, null));
     }
   }
 

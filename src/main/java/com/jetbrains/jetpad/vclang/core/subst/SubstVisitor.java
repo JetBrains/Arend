@@ -73,7 +73,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (result != null) {
       return new AppExpression(result, expr.getArgument().accept(this, null));
     } else {
-      return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getArgument().accept(this, null));
+      return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
     }
   }
 

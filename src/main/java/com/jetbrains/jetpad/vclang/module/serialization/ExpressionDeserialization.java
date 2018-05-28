@@ -325,6 +325,6 @@ class ExpressionDeserialization {
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {
     ClassField classField = myCallTargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class);
     myDependencyListener.dependsOn(myDefinition, myHeader, classField.getParentClass().getReferable());
-    return FieldCallExpression.make(classField, readExpr(proto.getExpression()));
+    return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
   }
 }

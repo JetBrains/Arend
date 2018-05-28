@@ -21,8 +21,8 @@ public class ExpressionFactory {
     return result;
   }
 
-  public static Expression FieldCall(ClassField definition, Expression thisExpr) {
-    return FieldCallExpression.make(definition, thisExpr);
+  public static Expression FieldCall(ClassField definition, Sort sortArgument, Expression thisExpr) {
+    return FieldCallExpression.make(definition, sortArgument, thisExpr);
   }
 
   public static DataCallExpression Interval() {

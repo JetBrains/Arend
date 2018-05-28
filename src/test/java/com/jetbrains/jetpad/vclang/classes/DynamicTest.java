@@ -323,7 +323,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     ClassField aField = (ClassField) getDefinition(result, "B.a");
     ClassField yField = (ClassField) getDefinition(result, "B.y");
     PiExpression piType = yField.getType(Sort.SET0);
-    assertEquals(FieldCall(xField, FieldCall(aField, Ref(piType.getParameters()))), piType.getCodomain());
+    assertEquals(FieldCall(xField, Sort.PROP, FieldCall(aField, Sort.PROP, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
@@ -384,7 +384,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
     assertEquals(Pi(ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
-    Expression aRef = FieldCall(cParent, Ref(kFunParam));
+    Expression aRef = FieldCall(cParent, Sort.PROP, Ref(kFunParam));
     assertEquals(new LeafElimTree(kFunParam, FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef)))), kFun.getBody());
   }
 
@@ -552,7 +552,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
     assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
   }
 
@@ -566,7 +566,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "}\n" +
         "\\func test (q : A) => q.y");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
-    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters()));
+    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();

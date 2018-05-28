@@ -76,7 +76,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression newExpr = findBindings(expr.getArgument(), false);
-    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), newExpr);
+    return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), newExpr);
   }
 
   @Override

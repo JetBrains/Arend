@@ -48,6 +48,6 @@ public class ClassField extends Definition {
 
   @Override
   public Expression getDefCall(Sort sortArgument, List<Expression> args) {
-    return FieldCallExpression.make(this, args.get(0));
+    return FieldCallExpression.make(this, sortArgument, args.get(0));
   }
 }

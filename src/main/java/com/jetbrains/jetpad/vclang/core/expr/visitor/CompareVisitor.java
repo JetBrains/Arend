@@ -22,8 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
@@ -185,10 +183,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (type2 == null || !type2.isInstance(ClassCallExpression.class)) {
       return false;
     }
-    ClassDefinition classDef2 = type2.cast(ClassCallExpression.class).getDefinition();
+    ClassCallExpression classCall2 = type2.cast(ClassCallExpression.class);
+    Sort sortArgument = classCall2.getSortArgument();
 
     for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
-      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue())))) {
+      if (!(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
         return false;
       }
     }
@@ -198,7 +197,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     for (Map.Entry<ClassField, LamExpression> entry : type1.getDefinition().getImplemented()) {
-      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue().applyExpression(expr2))))) {
+      if (!(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue().applyExpression(expr2))))) {
         return false;
       }
     }

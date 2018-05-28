@@ -72,7 +72,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (expr instanceof FieldCallExpression) {
-      return ExpressionFactory.FieldCall((ClassField) expr.getDefinition(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
     }
 
     if (expr instanceof FunCallExpression) {
@@ -278,7 +278,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return FieldCallExpression.make((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {

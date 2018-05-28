@@ -9,14 +9,16 @@ import java.util.Collections;
 import java.util.List;
 
 public class FieldCallExpression extends DefCallExpression {
+  private final Sort mySortArgument;
   private final Expression myArgument;
 
-  private FieldCallExpression(ClassField definition, Expression argument) {
+  private FieldCallExpression(ClassField definition, Sort sortArgument, Expression argument) {
     super(definition);
+    mySortArgument = sortArgument;
     myArgument = argument;
   }
 
-  public static Expression make(ClassField definition, Expression thisExpr) {
+  public static Expression make(ClassField definition, Sort sortArgument, Expression thisExpr) {
     if (thisExpr.isInstance(NewExpression.class)) {
       Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
       assert impl != null;
@@ -24,9 +26,9 @@ public class FieldCallExpression extends DefCallExpression {
     } else {
       ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
       if (errorExpr != null && errorExpr.getExpression() != null) {
-        return new FieldCallExpression(definition, new ErrorExpression(null, errorExpr.getError()));
+        return new FieldCallExpression(definition, sortArgument, new ErrorExpression(null, errorExpr.getError()));
       } else {
-        return new FieldCallExpression(definition, thisExpr);
+        return new FieldCallExpression(definition, sortArgument, thisExpr);
       }
     }
   }
@@ -42,7 +44,7 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public Sort getSortArgument() {
-    return Sort.PROP; // TODO[classes]
+    return mySortArgument;
   }
 
   @Override

@@ -358,7 +358,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
         }
         if (ok) {
-          result.expression = FieldCallExpression.make(coercingField, result.expression);
+          result.expression = FieldCallExpression.make(coercingField, classCall.getSortArgument(), result.expression);
           if (expectedType instanceof Expression) {
             result.expression = OfTypeExpression.make(result.expression, actualType, (Expression) expectedType);
           }
