@@ -128,6 +128,7 @@ public class DefinitionDeserialization {
         throw new DeserializationException("Missing class field type");
       }
       PiExpression fieldType = checkFieldType(defDeserializer.readExpr(fieldProto.getType()), classDef);
+      field.setType(fieldType);
       classDef.addPersonalField(field);
       setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
     }

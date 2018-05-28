@@ -71,9 +71,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getDefinition());
     if (result != null) {
-      return new AppExpression(result, expr.getExpression().accept(this, null));
+      return new AppExpression(result, expr.getArgument().accept(this, null));
     } else {
-      return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
+      return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getArgument().accept(this, null));
     }
   }
 

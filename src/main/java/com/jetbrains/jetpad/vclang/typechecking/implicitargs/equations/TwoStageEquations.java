@@ -61,8 +61,8 @@ public class TwoStageEquations implements Equations {
 
       // expr1 == field call
       FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
-      if (fieldCall1 != null && fieldCall1.getExpression().isInstance(InferenceReferenceExpression.class)) {
-        variable = fieldCall1.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+      if (fieldCall1 != null && fieldCall1.getArgument().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall1.getArgument().cast(InferenceReferenceExpression.class).getVariable();
         // expr1 == view field call
         /* TODO[classes]
         if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall1.getDefinition()) {
@@ -76,8 +76,8 @@ public class TwoStageEquations implements Equations {
 
       // expr2 == field call
       FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-      if (variable == null && fieldCall2 != null && fieldCall2.getExpression().isInstance(InferenceReferenceExpression.class)) {
-        variable = fieldCall2.getExpression().cast(InferenceReferenceExpression.class).getVariable();
+      if (variable == null && fieldCall2 != null && fieldCall2.getArgument().isInstance(InferenceReferenceExpression.class)) {
+        variable = fieldCall2.getArgument().cast(InferenceReferenceExpression.class).getVariable();
         // expr2 == view field call
         /* TODO[classes]
         if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall2.getDefinition()) {
@@ -355,7 +355,7 @@ public class TwoStageEquations implements Equations {
       if (equation.isInfinity() || equation.getVariable1() != null) {
         basedCycle.add(new LevelEquation<>(equation));
       } else {
-        basedCycle.add(new LevelEquation<>(equation.getVariable2() != null && unBased.contains(equation.getVariable2()) ? null : equation.getVariable2().getStd(), equation.getVariable2(), equation.getConstant()));
+        basedCycle.add(new LevelEquation<>(equation.getVariable2() == null || unBased.contains(equation.getVariable2()) ? null : equation.getVariable2().getStd(), equation.getVariable2(), equation.getConstant()));
       }
     }
     LevelEquation<InferenceLevelVariable> lastEquation = cycle.get(cycle.size() - 1);

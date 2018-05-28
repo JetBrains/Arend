@@ -216,7 +216,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
-      result = new Concrete.AppExpression(null, result, new Concrete.Argument(expr.getExpression().accept(this, null), false));
+      result = new Concrete.AppExpression(null, result, new Concrete.Argument(expr.getArgument().accept(this, null), false));
     }
     return result;
   }

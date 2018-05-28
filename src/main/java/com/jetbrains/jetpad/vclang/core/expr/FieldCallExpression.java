@@ -9,11 +9,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class FieldCallExpression extends DefCallExpression {
-  private final Expression myExpression;
+  private final Expression myArgument;
 
-  private FieldCallExpression(ClassField definition, Expression expression) {
+  private FieldCallExpression(ClassField definition, Expression argument) {
     super(definition);
-    myExpression = expression;
+    myArgument = argument;
   }
 
   public static Expression make(ClassField definition, Expression thisExpr) {
@@ -31,13 +31,13 @@ public class FieldCallExpression extends DefCallExpression {
     }
   }
 
-  public Expression getExpression() {
-    return myExpression;
+  public Expression getArgument() {
+    return myArgument;
   }
 
   @Override
   public List<? extends Expression> getDefCallArguments() {
-    return Collections.singletonList(myExpression);
+    return Collections.singletonList(myArgument);
   }
 
   @Override
@@ -57,10 +57,10 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public boolean isWHNF() {
-    if (myExpression.isInstance(NewExpression.class)) {
+    if (myArgument.isInstance(NewExpression.class)) {
       return false;
     }
-    Expression type = myExpression.getType();
+    Expression type = myArgument.getType();
     if (type == null) {
       return true;
     }
@@ -74,6 +74,6 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
-    return myExpression.getStuckExpression();
+    return myArgument.getStuckExpression();
   }
 }

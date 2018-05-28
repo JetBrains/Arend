@@ -249,7 +249,7 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\class B {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\func y (b : Nat -> B) => a.x {b 0}");
+      "\\func y (b : Nat -> B) => x {a {b 0}}");
   }
 
   @Test

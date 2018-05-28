@@ -12,7 +12,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import java.util.List;
 
 public class ClassField extends Definition {
-  private final ClassDefinition myParentClass; // TODO[classes]
+  private final ClassDefinition myParentClass;
   private PiExpression myType;
 
   public ClassField(TCReferable referable, ClassDefinition parentClass) {
@@ -41,7 +41,9 @@ public class ClassField extends Definition {
 
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    return myType == null ? null : myType.subst(new ExprSubstitution(), sortArgument.toLevelSubstitution());
+    PiExpression type = getType(sortArgument);
+    params.add(type.getParameters());
+    return type.getCodomain();
   }
 
   @Override

@@ -39,49 +39,45 @@ public class TypeCheckingDefCall {
   }
 
   public CheckTypeVisitor.TResult typeCheckDefCall(TCReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
-    Definition typeCheckedDefinition = getTypeCheckedDefinition(resolvedDefinition, expr);
-    if (typeCheckedDefinition == null) {
+    Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
+    if (definition == null) {
       return null;
     }
 
-    return makeResult(typeCheckedDefinition, expr);
-  }
-
-  private CheckTypeVisitor.TResult makeResult(Definition definition, Concrete.ReferenceExpression expr) {
     Sort sortArgument;
-    if (definition instanceof DataDefinition && !definition.getParameters().hasNext()) {
-      sortArgument = Sort.PROP;
+    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() ;
+    if (expr.getPLevel() == null && expr.getHLevel() == null) {
+      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myVisitor.getEquations(), expr);
     } else {
-      if (expr.getPLevel() == null && expr.getHLevel() == null) {
-        sortArgument = Sort.generateInferVars(myVisitor.getEquations(), expr);
-      } else {
-        Level pLevel = null;
-        if (expr.getPLevel() != null) {
-          pLevel = expr.getPLevel().accept(myVisitor, LevelVariable.PVAR);
-        }
-        if (pLevel == null) {
+      Level pLevel = null;
+      if (expr.getPLevel() != null) {
+        pLevel = expr.getPLevel().accept(myVisitor, LevelVariable.PVAR);
+      }
+      if (pLevel == null) {
+        if (isMin) {
+          pLevel = new Level(0);
+        } else {
           InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr.getPLevel());
           myVisitor.getEquations().addVariable(pl);
           pLevel = new Level(pl);
         }
+      }
 
-        Level hLevel = null;
-        if (expr.getHLevel() != null) {
-          hLevel = expr.getHLevel().accept(myVisitor, LevelVariable.HVAR);
-        }
-        if (hLevel == null) {
+      Level hLevel = null;
+      if (expr.getHLevel() != null) {
+        hLevel = expr.getHLevel().accept(myVisitor, LevelVariable.HVAR);
+      }
+      if (hLevel == null) {
+        if (isMin) {
+          hLevel = new Level(-1);
+        } else {
           InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr.getHLevel());
           myVisitor.getEquations().addVariable(hl);
           hLevel = new Level(hl);
         }
-
-        sortArgument = new Sort(pLevel, hLevel);
       }
-    }
 
-    if (definition instanceof ClassField) { // TODO[classes]: Check this properly, but do not pass field to makeTResult
-      myVisitor.getErrorReporter().report(new TypecheckingError("Field call without a class instance", expr));
-      return null;
+      sortArgument = new Sort(pLevel, hLevel);
     }
 
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
