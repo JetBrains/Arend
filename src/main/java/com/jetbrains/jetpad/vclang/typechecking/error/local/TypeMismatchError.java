@@ -17,6 +17,12 @@ public class TypeMismatchError extends TypecheckingError {
     this.actual = actual;
   }
 
+  public TypeMismatchError(String msg, PrettyPrintable expected, PrettyPrintable actual, Concrete.SourceNode sourceNode) {
+    super("Type mismatch " + msg, sourceNode);
+    this.expected = expected;
+    this.actual = actual;
+  }
+
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(

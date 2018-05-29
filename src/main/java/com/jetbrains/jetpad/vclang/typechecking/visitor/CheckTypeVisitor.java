@@ -482,6 +482,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(myErrorReporter);
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, Concrete.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr)) {
       myErrorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
@@ -490,6 +491,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return true;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkPath(TResult result, Concrete.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
       myErrorReporter.report(new TypecheckingError("Expected an argument for 'path'", expr));
@@ -498,6 +500,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (result instanceof Result) {
       ConCallExpression conCall = ((Result) result).expression.checkedCast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
+        //noinspection RedundantIfStatement
         if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
           !compareExpressions(false, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
@@ -685,7 +688,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             if (!argType.isError()) {
-              myErrorReporter.report(new TypeMismatchError(argExpectedType, argType, paramType));
+              myErrorReporter.report(new TypeMismatchError("in an argument of the lambda", argExpectedType, argType, paramType));
             }
             return null;
           }

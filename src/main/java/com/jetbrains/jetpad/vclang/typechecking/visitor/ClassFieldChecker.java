@@ -1,7 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -14,14 +12,14 @@ import java.util.Set;
 
 public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concrete.Expression> {
   private Referable myThisParameter;
-  private final Set<TCReferable> myFields;
-  private final Set<TCReferable> myPreviousFields;
+  private final Set<? extends LocatedReferable> myFields;
+  private final Set<TCReferable> myFutureFields;
   private final LocalErrorReporter myErrorReporter;
 
-  ClassFieldChecker(Referable thisParameter, Set<TCReferable> fields, Set<TCReferable> previousFields, LocalErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, LocalErrorReporter errorReporter) {
     myThisParameter = thisParameter;
     myFields = fields;
-    myPreviousFields = previousFields;
+    myFutureFields = futureFields;
     myErrorReporter = errorReporter;
   }
 
@@ -40,7 +38,7 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
     if (ref instanceof TCReferable && myFields.contains(ref)) {
-      if (!myPreviousFields.contains(ref)) {
+      if (myFutureFields.size() < myFields.size() && myFutureFields.contains(ref)) {
         LocalError error = new NamingError("Fields may refer only to previous fields", expr.getData());
         myErrorReporter.report(error);
         return new Concrete.ErrorHoleExpression(expr.getData(), error);

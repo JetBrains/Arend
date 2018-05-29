@@ -550,6 +550,7 @@ class DefinitionTypechecking {
     return sort;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private static boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     List<SingleDependentLink> piParams = new ArrayList<>();
     type = type.getPiParameters(piParams, false);
@@ -589,11 +590,13 @@ class DefinitionTypechecking {
         }
       }
       if (!type.isInstance(ReferenceExpression.class)) {
+        //noinspection RedundantIfStatement
         if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
           return false;
         }
       }
     } else {
+      //noinspection RedundantIfStatement
       if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
         return false;
       }
@@ -602,6 +605,7 @@ class DefinitionTypechecking {
     return true;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
     Variable def = expr.findBinding(variables);
     if (def == null) {
@@ -688,14 +692,14 @@ class DefinitionTypechecking {
     }
     typedDef.setCoercingField(coercingField);
     if (coercingFields != null) {
-      visitor.getErrorReporter().report(new ClassCoerceError(coercingFields, def));
+      errorReporter.report(new ClassCoerceError(coercingFields, def));
     }
 
     // Process implementations
     if (!def.getImplementations().isEmpty()) {
       typedDef.updateSorts();
-      for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
-        ClassField field = visitor.referableToClassField(implementation.getImplementedField(), implementation);
+      for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
+        ClassField field = visitor.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
         if (field == null) {
           classOk = false;
           continue;
@@ -703,26 +707,24 @@ class DefinitionTypechecking {
         if (typedDef.isImplemented(field)) {
           classOk = false;
           alreadyImplementFields.add(field.getReferable());
-          alreadyImplementedSourceNode = implementation;
+          alreadyImplementedSourceNode = classFieldImpl;
           continue;
         }
 
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(implementation.getImplementation(), field.getType(Sort.STD), false);
+        Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
+        Concrete.TelescopeParameter concreteParameter = (Concrete.TelescopeParameter) lamImpl.getParameters().get(0);
+        SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
+        visitor.getContext().put(concreteParameter.getReferableList().get(0), parameter);
+        visitor.getFreeBindings().add(parameter);
+        PiExpression fieldType = field.getType(Sort.STD);
+        CheckTypeVisitor.Result result = visitor.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
         if (result == null || result.expression.isInstance(ErrorExpression.class)) {
           classOk = false;
         }
 
-        LamExpression impl = result == null ? null : checkFieldImpl(result.expression, typedDef);
-        if (impl == null) {
-          TypedSingleDependentLink param = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
-          if (result == null) {
-            impl = new LamExpression(Sort.STD, param, new ErrorExpression(null, null));
-          } else {
-            visitor.getErrorReporter().report(new TypecheckingError("Internal error: a class implementation must be a lambda", implementation));
-            impl = new LamExpression(Sort.STD, param, result.expression);
-          }
-        }
-        typedDef.implementField(field, impl);
+        typedDef.implementField(field, new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        visitor.getContext().clear();
+        visitor.getFreeBindings().clear();
       }
     }
 
@@ -734,19 +736,6 @@ class DefinitionTypechecking {
       typedDef.setStatus(visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
     }
     typedDef.updateSorts();
-  }
-
-  private static LamExpression checkFieldImpl(Expression expr, ClassDefinition parentClass) {
-    if (!(expr instanceof LamExpression)) {
-      return null;
-    }
-    LamExpression lamExpr = (LamExpression) expr;
-    if (lamExpr.getParameters().getNext().hasNext()) {
-      return null;
-    }
-
-    Expression parameterType = lamExpr.getParameters().getTypeExpr();
-    return parameterType instanceof ClassCallExpression && ((ClassCallExpression) parameterType).getDefinition() == parentClass ? (LamExpression) expr : null;
   }
 
   private static PiExpression checkFieldType(Type type, ClassDefinition parentClass) {
