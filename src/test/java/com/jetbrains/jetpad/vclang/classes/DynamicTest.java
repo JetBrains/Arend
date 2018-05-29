@@ -17,12 +17,13 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 import static org.junit.Assert.*;
 
 public class DynamicTest extends TypeCheckingTestCase {
   @Test
   public void dynamicStaticCallError() {
-    typeCheckModule(
+    resolveNamesModule(
         "\\class A \\where {\n" +
         "  \\func f => 0\n" +
         "}\n" +
@@ -31,12 +32,74 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void dynamicStaticCallError2() {
-    typeCheckModule(
+    resolveNamesModule(
         "\\class A \\where {\n" +
         "  \\func f => 0\n" +
         "}\n" +
         "\\func g (a : A) => A.f\n" +
         "\\func h (a : A) => a.f", 1);
+  }
+
+  @Test
+  public void dynamicInheritance() {
+    resolveNamesModule(
+      "\\class X {\n" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x : X => \\new X\n" +
+      "\\class B \\extends x.A", 1);
+    assertThatErrorsAre(wrongReferable());
+  }
+
+  @Test
+  public void dynamicInheritanceFieldAccess() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A \\where {\n" +
+      "    \\func n : Nat => 0\n" +
+      "  }\n" +
+      "}\n" +
+      "\\func x => \\new X\n" +
+      "\\class B \\extends x.A {\n" +
+      "  \\func my : Nat => n\n" +
+      "}");
+  }
+
+  @Test
+  public void dynamicInheritanceFieldAccessQualified() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A \\where {\n" +
+      "    \\func n : Nat => 0\n" +
+      "  }\n" +
+      "}\n" +
+      "\\func x => \\new X\n" +
+      "\\class B \\extends x.A {\n" +
+      "  \\func my : Nat => x.A.n\n" +
+      "}");
+  }
+
+  @Test
+  public void multipleDynamicInheritanceSameParent() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x1 => \\new X\n" +
+      "\\func x2 => \\new X\n" +
+      "\\class B \\extends x1.A, x2.A");
+  }
+
+  @Test
+  public void multipleDynamicInheritanceDifferentParentsError() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  | n : Nat" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x1 => \\new X { n => 1 }\n" +
+      "\\func x2 => \\new X { n => 2 }\n" +
+      "\\class B \\extends x1.A, x2.A", 1);
   }
 
   @Test

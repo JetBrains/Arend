@@ -288,9 +288,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef, GlobalReferable definition) {
     Concrete.Expression newClassRef = exprVisitor.visitReference(classRef, null);
     if (newClassRef != classRef || !(classRef.getReferent() instanceof ClassReferable)) {
-      LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
-      classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
-      myErrorReporter.report(new ProxyError(definition, error));
+      if (!(classRef.getReferent() instanceof ErrorReference)) {
+        LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
+        classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
+        myErrorReporter.report(new ProxyError(definition, error));
+      }
       return false;
     } else {
       return true;

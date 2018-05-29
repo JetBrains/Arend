@@ -337,15 +337,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
           clause.term = clause.term.accept(this, null);
         }
 
-        ClassReferable classRef = getTypeClassReference(clause.getResultType());
-        if (classRef != null) {
-          for (Concrete.Parameter parameter : clause.getParameters()) {
-            if (parameter.getExplicit()) {
-              classRef = null;
-              break;
-            }
-          }
-        }
+        ClassReferable classRef = myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.getResultType());
         myContext.add(classRef == null ? clause.getData() : new TypedRedirectingReferable(clause.getData(), classRef));
       }
 

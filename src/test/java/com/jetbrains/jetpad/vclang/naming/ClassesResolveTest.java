@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 
 public class ClassesResolveTest extends NameResolverTestCase {
   @Test
@@ -141,5 +142,55 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\class X \\where { \\class C1 { | A : \\Set } \\class C2 \\extends C1 }\n" +
       "\\class D \\extends X.C2 { | A : \\Prop }", 1);
     assertThatErrorsAre(warning());
+  }
+
+  @Test
+  public void clashingNamesComplex() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  | S : \\Set0\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | s : S\n" +
+      "}\n" +
+      "\\class M {\n" +
+      "  \\class C \\extends A {\n" +
+      "    | s : S\n" +
+      "  }\n" +
+      "}\n" +
+      "\\class D \\extends B, M.C");
+  }
+
+  @Test
+  public void badFieldTypeError() {
+    resolveNamesModule(
+      "\\class C {\n" +
+        "  | A : \\Set0\n" +
+        "  | a : A\n" +
+        "}\n" +
+        "\\class B \\extends C {\n" +
+        "  | a' : A\n" +
+        "  | p : undefined_variable = a'\n" +
+        "}\n" +
+        "\\func f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+  }
+
+  @Test
+  public void dynamicInheritanceUnresolved() {
+    resolveNamesModule(
+      "\\class X {\n" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x : X => \\new X\n" +
+      "\\class B \\extends x.C", 1);
+  }
+
+  @Test
+  public void wrongInheritance() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\func Y => X\n" +
+      "\\class Z \\extends Y", 1);
+    assertThatErrorsAre(wrongReferable());
   }
 }
