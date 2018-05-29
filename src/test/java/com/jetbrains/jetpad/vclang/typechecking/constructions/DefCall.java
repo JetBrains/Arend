@@ -21,6 +21,7 @@ import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -45,7 +46,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   private Expression getThisFI(ChildGroup result) {
     FunctionDefinition function = (FunctionDefinition) getDefinition(result, "Test.test");
-    return FieldCall((ClassField) getDefinition(result, "Test.parent"), Sort.PROP, Ref(function.getParameters()));
+    return FieldCall(((ClassDefinition) getDefinition(result, "Test")).getPersonalFields().get(0), Sort.PROP, Ref(function.getParameters()));
   }
 
   private ClassCallExpression makeClassCall(Definition definition, Expression impl) {
@@ -86,11 +87,11 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void funDynamicError() {
-    resolveNamesModule(
+    typeCheckModule(
         "\\class Test {\n" +
         "  \\func f => 0\n" +
         "} \\where {\n" +
-        "  \\func test => f\n" +
+        "  \\func test : Nat => f\n" +
         "}", 1);
   }
 
@@ -124,7 +125,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\func f => 0\n" +
         "}\n" +
-        "\\func test (e : E) => e.f");
+        "\\func test (e : E) => E.f {e}");
     test(FunCall((FunctionDefinition) getDefinition(result, "E.f"), Sort.SET0, Ref(getThis(result))), result);
   }
 
@@ -134,7 +135,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E \\where {\n" +
         "  \\func f => 0\n" +
         "}\n" +
-        "\\func test (e : E) => e.f", 1);
+        "\\func test (e : E) => E.f {e}", 1);
   }
 
   @Test
@@ -143,7 +144,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\func f => 0\n" +
         "}\n" +
-        "\\func test (e : E) => e.f", "");
+        "\\func test (e : E) => E.f {e}", "");
     test(FunCall((FunctionDefinition) getDefinition(result, "E.f"), Sort.SET0, Ref(getThis(result).getNext())), result);
   }
 
@@ -157,7 +158,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.f");
+        "\\func test (e : E) => E.A.B.f {e}");
     test(FunCall((FunctionDefinition) getDefinition(result, "E.A.B.f"), Sort.SET0, Ref(getThis(result))), result);
   }
 
@@ -171,7 +172,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) (b : e.A.B) => b.f");
+        "\\func test (e : E) (b : E.A.B {e}) => E.A.B.f {b}");
     test(FunCall((FunctionDefinition) getDefinition(result, "E.A.B.f"), Sort.SET0, Ref(getThis(result).getNext())), result);
   }
 
@@ -185,7 +186,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.f", 1);
+        "\\func test (e : E) => E.A.B.f {e}", 1);
   }
 
   @Test
@@ -198,7 +199,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.f", 1);
+        "\\func test (e : E) => E.A.B.f {e}", 1);
   }
 
   @Test
@@ -216,28 +217,6 @@ public class DefCall extends TypeCheckingTestCase {
         "\\data D | c\n" +
         "\\func test => D.c");
     test(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, Collections.emptyList()), result);
-    assertEquals(getDefinition(result, "c"), getDefinition(result, "D.c"));
-  }
-
-  @Test
-  public void data0Static() {
-    ChildGroup result = typeCheckModule(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\func test => (D 0 (\\lam _ => 1)).c");
-    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "c"), getDefinition(result, "D.c"));
-  }
-
-  @Test
-  public void data1Static() {
-    ChildGroup result = typeCheckModule(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\func test => (D 0).c {\\lam _ => 1}");
-    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "D"), Sort.SET0, dataTypeArgs), result);
     assertEquals(getDefinition(result, "c"), getDefinition(result, "D.c"));
   }
 
@@ -291,50 +270,6 @@ public class DefCall extends TypeCheckingTestCase {
   }
 
   @Test
-  public void data0Dynamic() {
-    ChildGroup result = typeCheckClass(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\func test => (D 0 (\\lam _ => 1)).c", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "c"), getDefinition(result, "D.c"));
-  }
-
-  @Test
-  public void data0DynamicFromInside() {
-    ChildGroup result = typeCheckClass(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\class Test {\n" +
-        "  \\func test => (D 0 (\\lam _ => 1)).c\n" +
-        "}", "");
-    List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    testFI(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-  }
-
-  @Test
-  public void data1Dynamic() {
-    ChildGroup result = typeCheckClass(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\func test => (D 0).c {\\lam _ => 1}", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "c"), getDefinition(result, "D.c"));
-  }
-
-  @Test
-  public void data1DynamicFromInside() {
-    ChildGroup result = typeCheckClass(
-        "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\class Test {\n" +
-        "  \\func test => (D 0).c {\\lam _ => 1}\n" +
-        "}", "");
-    List<Expression> dataTypeArgs = Arrays.asList(getThisFI(result), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    testFI(ConCall((Constructor) getDefinition(result, "c"), Sort.SET0, dataTypeArgs), result);
-  }
-
-  @Test
   public void data2Dynamic() {
     ChildGroup result = typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
@@ -358,21 +293,21 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void conDynamicError() {
-    resolveNamesModule(
+    typeCheckModule(
         "\\class Test {\n" +
         "  \\data D | c\n" +
         "} \\where {\n" +
-        "  \\func test => c\n" +
+        "  \\func test : D => c\n" +
         "}", 1);
   }
 
   @Test
   public void dataDynamicError() {
-    resolveNamesModule(
+    typeCheckModule(
         "\\class Test {\n" +
         "  \\data D | c\n" +
         "} \\where {" +
-        "  \\func test => D.c\n" +
+        "  \\func test : D => D.c\n" +
         "}", 1);
   }
 
@@ -399,36 +334,6 @@ public class DefCall extends TypeCheckingTestCase {
         "}\n" +
         "\\func test => A.B.D.c");
     test(ConCall((Constructor) getDefinition(result, "A.B.c"), Sort.SET0, Collections.emptyList()), result);
-    assertEquals(getDefinition(result, "A.B.c"), getDefinition(result, "A.B.D.c"));
-  }
-
-  @Test
-  public void data0StaticInside() {
-    ChildGroup result = typeCheckModule(
-        "\\class A \\where {\n" +
-        "  \\class B \\where {\n" +
-        "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test => (A.B.D 0 (\\lam _ => 1)).c");
-    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "A.B.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "A.B.c"), getDefinition(result, "A.B.D.c"));
-  }
-
-  @Test
-  public void data1StaticInside() {
-    ChildGroup result = typeCheckModule(
-        "\\class A \\where {\n" +
-        "  \\class B \\where {\n" +
-        "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test => (A.B.D 0).c {\\lam _ => 1}");
-    List<Expression> dataTypeArgs = Arrays.asList(Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "A.B.D"), Sort.SET0, dataTypeArgs), result);
     assertEquals(getDefinition(result, "A.B.c"), getDefinition(result, "A.B.D.c"));
   }
 
@@ -474,36 +379,6 @@ public class DefCall extends TypeCheckingTestCase {
   }
 
   @Test
-  public void data0DynamicInside() {
-    ChildGroup result = typeCheckClass(
-        "\\class A \\where {\n" +
-        "  \\class B \\where {\n" +
-        "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test => (A.B.D 0 (\\lam _ => 1)).c", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "A.B.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "A.B.c"), getDefinition(result, "A.B.D.c"));
-  }
-
-  @Test
-  public void data1DynamicInside() {
-    ChildGroup result = typeCheckClass(
-        "\\class A \\where {\n" +
-        "  \\class B \\where {\n" +
-        "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test => (A.B.D 0).c {\\lam _ => 1}", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "A.B.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "A.B.c"), getDefinition(result, "A.B.D.c"));
-  }
-
-  @Test
   public void data2DynamicInside() {
     ChildGroup result = typeCheckClass(
         "\\class A \\where {\n" +
@@ -524,7 +399,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.c");
+        "\\func test (e : E) => E.c {e}");
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
     assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
   }
@@ -535,34 +410,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.D.c");
+        "\\func test (e : E) => E.D.c {e}");
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
-    assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
-  }
-
-  @Test
-  public void data0FieldStatic() {
-    ChildGroup result = typeCheckModule(
-        "\\class E {\n" +
-        "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.D 0 (\\lam _ => 1)).c");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
-  }
-
-  @Test
-  public void data1FieldStatic() {
-    ChildGroup result = typeCheckModule(
-        "\\class E {\n" +
-        "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.D 0).c {\\lam _ => 1}");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
     assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
   }
 
@@ -572,7 +421,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.D.c {0} {\\lam _ => 1}");
+        "\\func test (e : E) => E.D.c {e} {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
     testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
@@ -585,7 +434,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E \\where {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.c", 1);
+        "\\func test (e : E) => E.c {e}", 1);
   }
 
   @Test
@@ -594,7 +443,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E \\where {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.D.c", 1);
+        "\\func test (e : E) => E.D.c {e}", 1);
   }
 
   @Test
@@ -603,7 +452,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.c", "");
+        "\\func test (e : E) => E.c {e}", "");
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result).getNext()))), result);
     assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
   }
@@ -614,34 +463,8 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.D.c", "");
+        "\\func test (e : E) => E.D.c {e}", "");
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result).getNext()))), result);
-    assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
-  }
-
-  @Test
-  public void data0FieldDynamic() {
-    ChildGroup result = typeCheckClass(
-        "\\class E {\n" +
-        "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.D 0 (\\lam _ => 1)).c", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result).getNext()), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
-  }
-
-  @Test
-  public void data1FieldDynamic() {
-    ChildGroup result = typeCheckClass(
-        "\\class E {\n" +
-        "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.D 0).c {\\lam _ => 1}", "");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result).getNext()), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
     assertEquals(getDefinition(result, "E.c"), getDefinition(result, "E.D.c"));
   }
 
@@ -651,7 +474,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "}\n" +
-        "\\func test (e : E) => e.D.c {0} {\\lam _ => 1}", "");
+        "\\func test (e : E) => E.D.c {e} {0} {\\lam _ => 1}", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result).getNext()), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
     test(ConCall((Constructor) getDefinition(result, "E.c"), Sort.SET0, dataTypeArgs), result);
     testType(DataCall((DataDefinition) getDefinition(result, "E.D"), Sort.SET0, dataTypeArgs), result);
@@ -668,7 +491,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.c");
+        "\\func test (e : E) => E.A.B.c {e}");
     test(ConCall((Constructor) getDefinition(result, "E.A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
     assertEquals(getDefinition(result, "E.A.B.c"), getDefinition(result, "E.A.B.D.c"));
   }
@@ -683,42 +506,8 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.D.c");
+        "\\func test (e : E) => E.A.B.D.c {e}");
     test(ConCall((Constructor) getDefinition(result, "E.A.B.c"), Sort.SET0, Collections.singletonList(Ref(getThis(result)))), result);
-    assertEquals(getDefinition(result, "E.A.B.c"), getDefinition(result, "E.A.B.D.c"));
-  }
-
-  @Test
-  public void data0FieldInside() {
-    ChildGroup result = typeCheckModule(
-        "\\class E {\n" +
-        "  \\class A \\where {\n" +
-        "    \\class B \\where {\n" +
-        "      \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "    }\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.A.B.D 0 (\\lam _ => 1)).c");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.A.B.D"), Sort.SET0, dataTypeArgs), result);
-    assertEquals(getDefinition(result, "E.A.B.c"), getDefinition(result, "E.A.B.D.c"));
-  }
-
-  @Test
-  public void data1FieldInside() {
-    ChildGroup result = typeCheckModule(
-        "\\class E {\n" +
-        "  \\class A \\where {\n" +
-        "    \\class B \\where {\n" +
-        "      \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "    }\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test (e : E) => (e.A.B.D 0).c {\\lam _ => 1}");
-    List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
-    test(ConCall((Constructor) getDefinition(result, "E.A.B.c"), Sort.SET0, dataTypeArgs), result);
-    testType(DataCall((DataDefinition) getDefinition(result, "E.A.B.D"), Sort.SET0, dataTypeArgs), result);
     assertEquals(getDefinition(result, "E.A.B.c"), getDefinition(result, "E.A.B.D.c"));
   }
 
@@ -732,7 +521,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.D.c {0} {\\lam _ => 1}");
+        "\\func test (e : E) => E.A.B.D.c {e} {0} {\\lam _ => 1}");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis(result)), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
     test(ConCall((Constructor) getDefinition(result, "E.A.B.c"), Sort.SET0, dataTypeArgs), result);
     testType(DataCall((DataDefinition) getDefinition(result, "E.A.B.D"), Sort.SET0, dataTypeArgs), result);
@@ -749,7 +538,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.c", 1);
+        "\\func test (e : E) => E.A.B.c {e}", 1);
   }
 
   @Test
@@ -762,7 +551,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.D.c", 1);
+        "\\func test (e : E) => E.A.B.D.c {e}", 1);
   }
 
   @Test
@@ -775,7 +564,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.c", 1);
+        "\\func test (e : E) => E.A.B.c {e}", 1);
   }
 
   @Test
@@ -788,7 +577,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.D.c", 1);
+        "\\func test (e : E) => E.A.B.D.c {e}", 1);
   }
 
   @Test
@@ -818,13 +607,13 @@ public class DefCall extends TypeCheckingTestCase {
   }
 
   @Test
-  public void classDynamicError() {
-    resolveNamesModule(
+  public void classDynamicNoError() {
+    typeCheckModule(
         "\\class Test {\n" +
         "  \\class C\n" +
         "} \\where {\n" +
-        "  \\func test => C\n" +
-        "}", 1);
+        "  \\func test : \\Prop => C\n" +
+        "}");
   }
 
   @Test
@@ -857,7 +646,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\class C\n" +
         "}\n" +
-        "\\func test (e : E) => e.C");
+        "\\func test (e : E) => E.C {e}");
     test(makeClassCall(getDefinition(result, "E.C"), Ref(getThis(result))), result);
   }
 
@@ -867,7 +656,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E \\where {\n" +
         "  \\class C\n" +
         "}\n" +
-        "\\func test (e : E) => e.C", 1);
+        "\\func test (e : E) => E.C {e}", 1);
   }
 
   @Test
@@ -876,7 +665,7 @@ public class DefCall extends TypeCheckingTestCase {
         "\\class E {\n" +
         "  \\class C\n" +
         "}\n" +
-        "\\func test (e : E) => e.C", "");
+        "\\func test (e : E) => E.C {e}", "");
     test(makeClassCall(getDefinition(result, "E.C"), Ref(getThis(result).getNext())), result);
   }
 
@@ -890,7 +679,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.C");
+        "\\func test (e : E) => E.A.B.C {e}");
     test(makeClassCall(getDefinition(result, "E.A.B.C"), Ref(getThis(result))), result);
   }
 
@@ -904,7 +693,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.C", 1);
+        "\\func test (e : E) => E.A.B.C {e}", 1);
   }
 
   @Test
@@ -917,7 +706,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func test (e : E) => e.A.B.C", 1);
+        "\\func test (e : E) => E.A.B.C {e}", 1);
   }
 
   @Test
@@ -930,28 +719,29 @@ public class DefCall extends TypeCheckingTestCase {
   }
 
   @Test
-  public void nonStaticTestError() {
-    resolveNamesModule("\\class A { \\func x => 0 } \\func y => A.x", 1);
+  public void nonStaticTest() {
+    typeCheckModule("\\class A { \\func x => 0 } \\func y => A.x");
   }
 
   @Test
   public void staticTestError() {
-    typeCheckModule("\\class A \\where { \\func x => 0 } \\func y (a : A) => a.x", 1);
+    resolveNamesModule("\\class A \\where { \\func x => 0 } \\func y (a : A) => a.x", 1);
   }
 
   @Test
   public void innerNonStaticTestError() {
-    typeCheckModule("\\class A { \\class B { \\func x => 0 } } \\func y (a : A) => a.B.x", 1);
+    typeCheckModule("\\class A { \\class B { \\func x => 0 } } \\func y (a : A) => A.B.x {a}", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
   public void innerNonStaticTestAcc() {
-    typeCheckModule("\\class A { \\class B { \\func x => 0 } } \\func y (a : A) (b : a.B) => b.x");
+    typeCheckModule("\\class A { \\class B { \\func x => 0 } } \\func y (a : A) (b : A.B {a}) => A.B.x {b}");
   }
 
   @Test
   public void innerNonStaticTest() {
-    typeCheckModule("\\class A { \\class B \\where { \\func x => 0 } } \\func y (a : A) => a.B.x");
+    typeCheckModule("\\class A { \\class B \\where { \\func x => 0 } } \\func y (a : A) => A.B.x {a}");
   }
 
   @Test
@@ -963,11 +753,11 @@ public class DefCall extends TypeCheckingTestCase {
   public void resolvedConstructorTest() {
     ChildGroup cd = resolveNamesModule(
         "\\func isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
-        "\\func inP-isequiv (P : \\Prop) => isequiv (TrP P).inP");
+        "\\func inP-isequiv (P : \\Prop) => isequiv (inP {P})");
     Iterator<? extends Group> it = cd.getSubgroups().iterator();
     it.next();
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
-    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
+    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).getFunction()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
     typeCheckModule(cd);
   }
 }

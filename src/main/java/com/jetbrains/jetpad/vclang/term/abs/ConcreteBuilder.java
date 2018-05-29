@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.error.CountingErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -62,6 +59,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   // Definition
 
+  private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
+    TCReferable enclosingClass = myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
+    if (enclosingClass instanceof TCClassReferable) {
+      definition.enclosingClass = (TCClassReferable) enclosingClass;
+    }
+  }
+
   @Override
   public Concrete.FunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
     Concrete.FunctionBody body;
@@ -102,7 +106,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       type = null;
     }
 
-    return new Concrete.FunctionDefinition(myDefinition, parameters, type, body);
+    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(myDefinition, parameters, type, body);
+    setEnclosingClass(result, def);
+    return result;
   }
 
   @Override
@@ -131,6 +137,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     List<Concrete.ConstructorClause> clauses = new ArrayList<>(absClauses.size());
     Collection<? extends Abstract.Reference> elimExpressions = def.getEliminatedExpressions();
     Concrete.DataDefinition data = new Concrete.DataDefinition(myDefinition, typeParameters, elimExpressions == null ? null : buildReferences(elimExpressions), def.isTruncated(), universe instanceof Concrete.UniverseExpression ? (Concrete.UniverseExpression) universe : null, clauses);
+    setEnclosingClass(data, def);
 
     for (Abstract.ConstructorClause clause : absClauses) {
       Collection<? extends Abstract.Constructor> absConstructors = clause.getConstructors();
@@ -181,6 +188,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
       Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
+      setEnclosingClass(classDef, def);
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
@@ -241,7 +249,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (resultClass == null) {
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def));
     }
-    return new Concrete.Instance(myDefinition, parameters, buildReference(resultClass), implementations);
+
+    Concrete.Instance instance = new Concrete.Instance(myDefinition, parameters, buildReference(resultClass), implementations);
+    setEnclosingClass(instance, def);
+    return instance;
   }
 
   private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {

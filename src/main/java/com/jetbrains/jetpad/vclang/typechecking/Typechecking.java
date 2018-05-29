@@ -233,7 +233,7 @@ public class Typechecking implements DependencyListener {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), localErrorReporter, null);
-      unit.getDefinition().accept(new DesugarVisitor(myErrorReporter), null);
+      unit.getDefinition().accept(new DesugarVisitor(myConcreteProvider, myErrorReporter), null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), visitor);
@@ -323,7 +323,7 @@ public class Typechecking implements DependencyListener {
     typecheckingUnitStarted(unit.getDefinition().getData());
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter);
-    unit.getDefinition().accept(new DesugarVisitor(myErrorReporter), null);
+    unit.getDefinition().accept(new DesugarVisitor(myConcreteProvider, myErrorReporter), null);
     List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
 

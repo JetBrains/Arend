@@ -35,6 +35,7 @@ public abstract class Expression implements ExpectedType {
     StringBuilder builder = new StringBuilder();
     Concrete.Expression expr = ToAbstractVisitor.convert(this, EnumSet.of(
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
+      ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE,
       ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
       ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
     expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));

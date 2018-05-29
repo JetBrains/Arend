@@ -120,10 +120,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
-  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
-        Object statement = visitStatement(statementCtx, parent);
+        Object statement = visitStatement(statementCtx, parent, enclosingClass);
         if (statement instanceof Group) {
           subgroups.add((Group) statement);
         } else if (statement instanceof SimpleNamespaceCommand) {
@@ -139,11 +139,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private Object visitStatement(StatementContext statementCtx, ChildGroup parent) {
+  private Object visitStatement(StatementContext statementCtx, ChildGroup parent, TCClassReferable enclosingClass) {
     if (statementCtx instanceof StatCmdContext) {
       return visitStatCmd((StatCmdContext) statementCtx, parent);
     } else if (statementCtx instanceof StatDefContext) {
-      return visitDefinition(((StatDefContext) statementCtx).definition(), parent);
+      return visitDefinition(((StatDefContext) statementCtx).definition(), parent, enclosingClass);
     } else {
       return null;
     }
@@ -154,19 +154,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule), subgroups, namespaceCommands);
-    visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup);
+    visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup, null);
     return parentGroup;
   }
 
-  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent) {
+  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     if (ctx instanceof DefFunctionContext) {
-      return visitDefFunction((DefFunctionContext) ctx, parent);
+      return visitDefFunction((DefFunctionContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefDataContext) {
-      return visitDefData((DefDataContext) ctx, parent);
+      return visitDefData((DefDataContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefClassContext) {
-      return visitDefClass((DefClassContext) ctx, parent);
+      return visitDefClass((DefClassContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefInstanceContext) {
-      return visitDefInstance((DefInstanceContext) ctx, parent);
+      return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -343,7 +343,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), true);
   }
 
-  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Concrete.Parameter> parameters = visitFunctionParameters(ctx.tele());
     List<String> classPath = visitAtomFieldsAccRef(ctx.classCall().atomFieldsAcc());
     if (classPath == null) {
@@ -352,11 +352,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
     Position position = tokenPosition(ctx.classCall().start);
-    reference.setDefinition(new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, classPath)), visitCoClauses(ctx.coClauses())));
+    Concrete.Instance instance = new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, classPath)), visitCoClauses(ctx.coClauses()));
+    instance.enclosingClass = enclosingClass;
+    reference.setDefinition(instance);
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -391,9 +393,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return visitCoClauses(ctx.coClause());
   }
 
-  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     if (ctx != null) {
-      visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent);
+      visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent, enclosingClass);
     }
   }
 
@@ -410,7 +412,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     Concrete.Expression resultType = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
     Concrete.FunctionBody body;
     if (ctx.functionBody() instanceof WithElimContext) {
@@ -424,9 +426,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     Concrete.Definition funDef = new Concrete.FunctionDefinition(referable, visitFunctionParameters(ctx.tele()), resultType, body);
+    funDef.enclosingClass = enclosingClass;
     referable.setDefinition(funDef);
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -445,7 +448,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arguments;
   }
 
-  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     final Concrete.UniverseExpression universe;
     if (ctx.expr() != null) {
       Concrete.Expression expr = visitExpr(ctx.expr());
@@ -463,13 +466,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
+    dataDefinition.enclosingClass = enclosingClass;
     referable.setDefinition(dataDefinition);
     visitDataBody(ctx.dataBody(), dataDefinition, constructors);
 
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     DataGroup resultGroup = new DataGroup(referable, constructors, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -542,7 +546,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             implementations.add(impl);
           }
         } else if (statementCtx instanceof ClassDefinitionContext) {
-          subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent));
+          subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent, parentClass.getData()));
         } else {
           myErrorReporter.report(new ParserError(tokenPosition(statementCtx.start), "Unknown class statement"));
         }
@@ -552,7 +556,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
+  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     WhereContext where = ctx.where();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(ctx.classCall().size());
@@ -599,6 +603,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         implementations = new ArrayList<>();
       }
       classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
+      classDefinition.enclosingClass = enclosingClass;
 
       Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), (Concrete.ClassDefinition) classDefinition);
       if (firstField != null) {
@@ -621,7 +626,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (resultGroup == null) {
       resultGroup = new ClassGroup(reference, fieldReferences, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
-    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup);
+    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 

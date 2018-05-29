@@ -3,21 +3,28 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concrete.Expression> {
+public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concrete.Expression>, ConcreteDefinitionVisitor<Void, Void> {
   private Referable myThisParameter;
+  private final TCClassReferable myClassReferable;
+  private final ConcreteProvider myConcreteProvider;
   private final Set<? extends LocatedReferable> myFields;
   private final Set<TCReferable> myFutureFields;
   private final LocalErrorReporter myErrorReporter;
 
-  ClassFieldChecker(Referable thisParameter, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, LocalErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, TCClassReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, LocalErrorReporter errorReporter) {
     myThisParameter = thisParameter;
+    myClassReferable = classReferable;
+    myConcreteProvider = concreteProvider;
     myFields = fields;
     myFutureFields = futureFields;
     myErrorReporter = errorReporter;
@@ -34,16 +41,68 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
     return expr;
   }
 
+  private Concrete.Expression makeErrorExpression(Object data) {
+    LocalError error = new NamingError("Fields may refer only to previous fields", data);
+    myErrorReporter.report(error);
+    return new Concrete.ErrorHoleExpression(data, error);
+  }
+
+  private boolean isParent(TCClassReferable parent, TCClassReferable child) {
+    if (parent == null) {
+      return false;
+    }
+
+    while (child != null) {
+      if (child.equals(parent)) {
+        return true;
+      }
+      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(child);
+      if (!(def instanceof Concrete.ClassDefinition)) {
+        return false;
+      }
+      child = ((Concrete.ClassDefinition) def).enclosingClass;
+    }
+
+    return false;
+  }
+
+  private Concrete.Expression getParentCall(TCClassReferable parent, TCClassReferable child, Concrete.Expression expr) {
+    while (child != null) {
+      if (child.equals(parent)) {
+        return expr;
+      }
+      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(child);
+      if (!(def instanceof Concrete.ClassDefinition)) {
+        return expr;
+      }
+      child = ((Concrete.ClassDefinition) def).enclosingClass;
+      expr = new Concrete.AppExpression(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassDefinition) def).getFields().get(0).getData()), new Concrete.Argument(expr, false));
+    }
+
+    return expr;
+  }
+
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
-    if (ref instanceof TCReferable && myFields.contains(ref)) {
-      if (myFutureFields.size() < myFields.size() && myFutureFields.contains(ref)) {
-        LocalError error = new NamingError("Fields may refer only to previous fields", expr.getData());
-        myErrorReporter.report(error);
-        return new Concrete.ErrorHoleExpression(expr.getData(), error);
+    if (ref instanceof TCReferable) {
+      if (myFields.contains(ref)) {
+        if (myFutureFields != null && myFutureFields.contains(ref)) {
+          return makeErrorExpression(expr.getData());
+        } else {
+          return new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false));
+        }
       } else {
-        return new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false));
+        Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((GlobalReferable) ref);
+        if (def != null) {
+          TCClassReferable defEnclosingClass = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getRelatedDefinition().getData() : def.getRelatedDefinition().enclosingClass;
+          if (myFutureFields != null && myClassReferable.equals(defEnclosingClass)) {
+            return makeErrorExpression(expr.getData());
+          }
+          if (isParent(defEnclosingClass, myClassReferable)) {
+            return new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(getParentCall(defEnclosingClass, myClassReferable, new Concrete.ReferenceExpression(expr.getData(), myThisParameter)), false));
+          }
+        }
       }
     }
     return expr;
@@ -160,5 +219,73 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
   @Override
   public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, Void params) {
     return expr;
+  }
+
+  private void visitClauses(Collection<? extends Concrete.FunctionClause> clauses) {
+    for (Concrete.FunctionClause clause : clauses) {
+      if (clause.expression != null) {
+        clause.expression = clause.expression.accept(this, null);
+      }
+    }
+  }
+
+  @Override
+  public Void visitFunction(Concrete.FunctionDefinition def, Void params) {
+    visitParameters(def.getParameters());
+
+    if (def.getResultType() != null) {
+      def.setResultType(def.getResultType().accept(this, null));
+    }
+
+    Concrete.FunctionBody body = def.getBody();
+    if (body instanceof Concrete.TermFunctionBody) {
+      ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, null));
+    }
+    if (body instanceof Concrete.ElimFunctionBody) {
+      for (Concrete.FunctionClause clause : ((Concrete.ElimFunctionBody) body).getClauses()) {
+        if (clause.expression != null) {
+          clause.expression = clause.expression.accept(this, null);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public Void visitData(Concrete.DataDefinition def, Void params) {
+    visitParameters(def.getParameters());
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
+        visitParameters(constructor.getParameters());
+        visitClauses(constructor.getClauses());
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Concrete.ClassDefinition def, Void params) {
+    for (Concrete.ClassField field : def.getFields()) {
+      field.setResultType(field.getResultType().accept(this, null));
+    }
+    for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
+      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClassSynonym(Concrete.ClassSynonym def, Void params) {
+    return null;
+  }
+
+  @Override
+  public Void visitInstance(Concrete.Instance def, Void params) {
+    visitParameters(def.getParameters());
+    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
+    }
+    return null;
   }
 }

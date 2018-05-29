@@ -3,10 +3,7 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
@@ -882,7 +879,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static  Collection<? extends Parameter> getParameters(ReferableDefinition definition) {
+  public static Collection<? extends Parameter> getParameters(ReferableDefinition definition) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
@@ -913,7 +910,6 @@ public final class Concrete {
       return myReferable;
     }
 
-    // TODO: Delete this method.
     @Nonnull
     public abstract Definition getRelatedDefinition();
 
@@ -931,6 +927,8 @@ public final class Concrete {
   }
 
   public static abstract class Definition extends ReferableDefinition {
+    public TCClassReferable enclosingClass;
+
     public Definition(TCReferable referable) {
       super(referable);
     }

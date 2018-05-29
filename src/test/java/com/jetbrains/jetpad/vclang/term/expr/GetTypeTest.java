@@ -66,7 +66,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldAccTest() {
-    ChildGroup result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => (p 0).f");
+    ChildGroup result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => C.f {p 0}");
     SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) getDefinition(result, "C"), Sort.SET0)));
     Expression type = FunCall(Prelude.PATH_INFIX, Sort.SET0,
         Nat(),

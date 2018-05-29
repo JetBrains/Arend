@@ -17,27 +17,48 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 import static org.junit.Assert.*;
 
 public class DynamicTest extends TypeCheckingTestCase {
   @Test
-  public void dynamicStaticCallError() {
+  public void dynamicIsNotVisible() {
     resolveNamesModule(
-        "\\class A \\where {\n" +
-        "  \\func f => 0\n" +
-        "}\n" +
-        "\\func h (a : A) => a.f", 1);
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h => f", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
-  public void dynamicStaticCallError2() {
+  public void dynamicDefinition() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) : Nat => A.f {a}");
+  }
+
+  @Test
+  public void dynamicStaticCallError() {
     resolveNamesModule(
-        "\\class A \\where {\n" +
-        "  \\func f => 0\n" +
-        "}\n" +
-        "\\func g (a : A) => A.f\n" +
-        "\\func h (a : A) => a.f", 1);
+      "\\class A \\where {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) => a.f", 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void dynamicCallError() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) => a.f", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
@@ -48,19 +69,38 @@ public class DynamicTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func x : X => \\new X\n" +
       "\\class B \\extends x.A", 1);
-    assertThatErrorsAre(wrongReferable());
+    assertThatErrorsAre(notInScope("A"));
   }
 
   @Test
-  public void dynamicInheritanceFieldAccess() {
+  public void dynamicCallFromField() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : 0 = f\n" +
+      "  \\func f => 0\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void fieldCallFromDynamic() {
+    typeCheckModule(
+      "\\func h (x : Nat) => x\n" +
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  \\func f => h x\n" +
+      "}\n" +
+      "\\func g (a : A { x => 0 }) : a.x = A.f {a} => path (\\lam _ => 0)");
+  }
+
+  @Test
+  public void inheritanceFieldAccess() {
     typeCheckModule(
       "\\class X {\n" +
-      "  \\class A \\where {\n" +
-      "    \\func n : Nat => 0\n" +
+      "  \\class A {\n" +
+      "    | n : Nat\n" +
       "  }\n" +
       "}\n" +
-      "\\func x => \\new X\n" +
-      "\\class B \\extends x.A {\n" +
+      "\\class B \\extends X.A {\n" +
       "  \\func my : Nat => n\n" +
       "}");
   }
@@ -69,37 +109,14 @@ public class DynamicTest extends TypeCheckingTestCase {
   public void dynamicInheritanceFieldAccessQualified() {
     typeCheckModule(
       "\\class X {\n" +
-      "  \\class A \\where {\n" +
-      "    \\func n : Nat => 0\n" +
+      "  \\class A {\n" +
+      "    | n : Nat\n" +
       "  }\n" +
       "}\n" +
       "\\func x => \\new X\n" +
-      "\\class B \\extends x.A {\n" +
-      "  \\func my : Nat => x.A.n\n" +
+      "\\class B \\extends X.A {\n" +
+      "  \\func my : Nat => X.A.n\n" +
       "}");
-  }
-
-  @Test
-  public void multipleDynamicInheritanceSameParent() {
-    typeCheckModule(
-      "\\class X {\n" +
-      "  \\class A\n" +
-      "}\n" +
-      "\\func x1 => \\new X\n" +
-      "\\func x2 => \\new X\n" +
-      "\\class B \\extends x1.A, x2.A");
-  }
-
-  @Test
-  public void multipleDynamicInheritanceDifferentParentsError() {
-    typeCheckModule(
-      "\\class X {\n" +
-      "  | n : Nat" +
-      "  \\class A\n" +
-      "}\n" +
-      "\\func x1 => \\new X { n => 1 }\n" +
-      "\\func x2 => \\new X { n => 2 }\n" +
-      "\\class B \\extends x1.A, x2.A", 1);
   }
 
   @Test
@@ -165,7 +182,65 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  \\data D | con\n" +
         "  \\func x (_ : con = con) => 0\n" +
         "}\n" +
-        "\\func test (a : A) => a.x\n");
+        "\\func test (a : A) => A.x {a}\n");
+  }
+
+  @Test
+  public void dynamicFunctionWithPatterns() {
+    typeCheckClass("| x : Nat -> Nat \\func pred (n : Nat) : Nat | zero => x zero | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithImplicitPatterns() {
+    typeCheckClass("| x : Nat -> Nat \\func f {m : Nat} (n : Nat) : Nat | {m}, zero => x m | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithElim() {
+    typeCheckClass("| x : Nat -> Nat \\func pred (n : Nat) : Nat \\elim n | zero => x zero | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithImplicitElim() {
+    typeCheckClass("| x : Nat -> Nat \\func f {m : Nat} (n : Nat) : Nat \\elim n | zero => x m | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicDataWithPatterns() {
+    typeCheckClass("| x : Nat \\data D (n : Nat) \\with | zero => con1 (x = 0) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithImplicitPatterns() {
+    typeCheckClass("| x : Nat \\data D {m : Nat} (n : Nat) \\with | {m}, zero => con1 (x = m) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithElim() {
+    typeCheckClass("| x : Nat \\data D (n : Nat) \\elim n | zero => con1 (x = 0) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithImplicitElim() {
+    typeCheckClass("| x : Nat \\data D {m : Nat} (n : Nat) \\elim n | zero => con1 (x = m) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicInnerClass() {
+    typeCheckModule(
+        "\\class A {\n" +
+        "  \\class C\n" +
+        "}");
+  }
+
+  @Test
+  public void dynamicDoubleInnerClass() {
+    typeCheckModule(
+        "\\class A {\n" +
+        "  \\class B {\n" +
+        "    \\class C\n" +
+        "  }\n" +
+        "}");
   }
 
   @Test
@@ -295,7 +370,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    | g : f 0\n" +
         "  }\n" +
         "}\n" +
-        "\\func h (b : B) (a : b.A) : b.f 0 => a.g");
+        "\\func h (b : B) (a : B.A {b}) : b.f 0 => a.g");
   }
 
   @Test
@@ -305,8 +380,8 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con1 {a} (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con2 {a} (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -316,10 +391,10 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\func f' (a : A) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))\n" +
-        "\\func g' (a : A) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con1 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func f' (a : A) => A.con1 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con2 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func g' (a : A) => A.con2 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -331,10 +406,10 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  \\func f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "  \\func g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\func f' (a : A) => a.f\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\func g' (a : A) => a.g");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
+        "\\func f' (a : A) => A.f {a}\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.g {a}\n" +
+        "\\func g' (a : A) => A.g {a}");
   }
 
   @Test
@@ -343,19 +418,19 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\func f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
-        "  \\func g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => con1 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
+        "  \\func g => con2 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\func f' (a : A) => a.f\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\func g' (a : A) => a.g");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
+        "\\func f' (a : A) => A.f {a}\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.g {a}\n" +
+        "\\func g' (a : A) => A.g {a}");
   }
 
   @Test
   public void constructorIndicesThisTest() {
     typeCheckClass(
-        "| + : Nat -> Nat -> Nat\n" +
+        "| \\infix 6 + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) \\elim n\n" +
@@ -365,11 +440,11 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    | zero => con1 (path (\\lam _ => x + x))\n" +
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
-        "\\func f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
-        "\\func f' (a : A) (n : Nat) => a.f\n" +
-        "\\func g (a : A) (n : Nat) : a.D n (+) \\elim n\n" +
-        "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
-        "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))", "");
+        "\\func f (a : A) (n : Nat) : A.D {a} n (+) => A.f {a} n\n" +
+        "\\func f' (a : A) (n : Nat) => A.f {a}\n" +
+        "\\func g (a : A) (n : Nat) : A.D {a} n (+) \\elim n\n" +
+        "  | zero => A.con1 {a} (path (\\lam _ => a.x + a.x))\n" +
+        "  | suc n => A.con2 {a} (g a n) (path (\\lam _ => n + a.x))", "");
   }
 
   @Test
@@ -392,13 +467,13 @@ public class DynamicTest extends TypeCheckingTestCase {
   @Test
   public void funCallsTest() {
     ChildGroup result = typeCheckModule(
-        "\\func + (x y : Nat) => x\n" +
+        "\\func \\infix 6 + (x y : Nat) => x\n" +
         "\\class A {\n" +
         "  \\func q => p\n" +
         "  \\class C {\n" +
-        "    \\func k => h + (p + q)" +
+        "    \\func k => h + (p + q)\n" +
         "  } \\where {\n" +
-        "    \\func h => p + q" +
+        "    \\func h => p + q\n" +
         "  }\n" +
         "} \\where {\n" +
         "  \\func p => 0\n" +
@@ -434,7 +509,7 @@ public class DynamicTest extends TypeCheckingTestCase {
 
     ClassDefinition cClass = (ClassDefinition) getDefinition(result, "A.C");
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = (ClassField) getDefinition(result, "A.C.parent");
+    ClassField cParent = ((ClassDefinition) getDefinition(result, "A.C")).getPersonalFields().get(0);
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) getDefinition(result, "A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
@@ -459,7 +534,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    \\func f => 0\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.f");
+        "\\func y (a : A) => A.B.f {a}");
   }
 
   @Test
@@ -473,7 +548,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.C.f");
+        "\\func y (a : A) => A.B.C.f {a}");
   }
 
   @Test
@@ -487,7 +562,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) : \\Set0 => a.B.C");
+        "\\func y (a : A) : \\Set0 => A.B.C {a}");
   }
 
   @Test
@@ -500,7 +575,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : \\Prop => a.B.C");
+        "\\func y (a : A) : \\Prop => A.B.C {a}");
   }
 
   @Test
@@ -514,7 +589,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) : \\Set0 => a.B");
+        "\\func y (a : A) : \\Set0 => A.B {a}");
   }
 
   @Test
@@ -532,7 +607,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -546,7 +621,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.C.d.e");
+        "\\func y (a : A) => A.B.C.d.e {a}");
   }
 
   @Test
@@ -566,7 +641,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -591,7 +666,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  \\data Foo | foo (x = 0)\n" +
         "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
-        "\\func test (p : A) => p.y");
+        "\\func test (p : A) => A.y {p}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
     Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
@@ -627,7 +702,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  \\data Foo (p : x = x) | foo (p = p)\n" +
         "  \\func y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
         "}\n" +
-        "\\func test (q : A) => q.y");
+        "\\func test (q : A) => A.y {q}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
     Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);

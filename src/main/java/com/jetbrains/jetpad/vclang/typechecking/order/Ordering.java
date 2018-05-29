@@ -114,6 +114,9 @@ public class Ordering {
     }
 
     Set<TCReferable> dependenciesWithoutInstances = new LinkedHashSet<>();
+    if (definition.enclosingClass != null) {
+      dependenciesWithoutInstances.add(definition.enclosingClass);
+    }
 
     Typechecking.Recursion recursion = Typechecking.Recursion.NO;
     definition.accept(new DefinitionGetDependenciesVisitor(dependenciesWithoutInstances), unit.isHeader());

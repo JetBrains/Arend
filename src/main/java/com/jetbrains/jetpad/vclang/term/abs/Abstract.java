@@ -119,6 +119,7 @@ public final class Abstract {
   // Definition
 
   public interface Definition extends SourceNode {
+    @Nullable ClassReferable getEnclosingClass();
     @Nonnull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
