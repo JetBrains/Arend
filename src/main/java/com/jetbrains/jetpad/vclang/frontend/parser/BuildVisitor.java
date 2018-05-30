@@ -537,7 +537,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           }
 
           InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, parentClass.getData());
-          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, type);
+          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
           reference.setDefinition(field);
           fields.add(field);
         } else if (statementCtx instanceof ClassImplementContext) {
@@ -585,8 +585,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<Concrete.ClassFieldSynonym> fieldSynonyms = new ArrayList<>();
       classDefinition = new Concrete.ClassSynonym(reference, superClasses, null, fieldSynonyms);
 
-      if (!ctx.tele().isEmpty()) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.tele(0).start), "Class synonyms cannot have parameters"));
+      if (!ctx.fieldTele().isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.fieldTele(0).start), "Class synonyms cannot have parameters"));
       }
 
       for (FieldSynContext fieldSyn : ((ClassSynContext) ctx.classBody()).fieldSyn()) {
@@ -602,14 +602,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         implementations = new ArrayList<>();
       }
-      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
+      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations);
+      ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields));
       classDefinition.enclosingClass = enclosingClass;
-
-      Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), (Concrete.ClassDefinition) classDefinition);
-      if (firstField != null) {
-        fields.add(firstField);
-        ((Concrete.ClassDefinition) classDefinition).setHasParameter();
-      }
 
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
@@ -628,40 +623,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
-  }
-
-  private Concrete.ClassField visitUniqueFieldTele(List<TeleContext> teles, Concrete.ClassDefinition classDef) {
-    if (teles.isEmpty()) {
-      return null;
-    }
-
-    TypedExprContext typedExpr;
-    if (teles.get(0) instanceof ExplicitContext) {
-      typedExpr = ((ExplicitContext) teles.get(0)).typedExpr();
-    } else
-    if (teles.get(0) instanceof ImplicitContext) {
-      typedExpr = ((ImplicitContext) teles.get(0)).typedExpr();
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Class parameter must be explicit"));
-    } else {
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Expected a field name with a type"));
-      return null;
-    }
-
-    List<ParsedLocalReferable> vars = new ArrayList<>(1);
-    getVarList(((TypedContext) typedExpr).expr(0), vars);
-    Concrete.Expression type = visitExpr(((TypedContext) typedExpr).expr(1));
-
-    if (vars.isEmpty()) {
-      return null;
-    }
-    if (teles.size() > 1 || vars.size() > 1) {
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(1).start), "Class can have at most one parameter"));
-    }
-
-    InternalConcreteLocatedReferable referable = new InternalConcreteLocatedReferable(tokenPosition(teles.get(0).start), vars.get(0).textRepresentation(), Precedence.DEFAULT, false, classDef.getData());
-    Concrete.ClassField field = new Concrete.ClassField(referable, classDef, type);
-    referable.setDefinition(field);
-    return field;
   }
 
   @Override
@@ -1095,6 +1056,41 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
     }
     return arguments;
+  }
+
+  private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+    TCReferable coercingField = null;
+
+    for (FieldTeleContext tele : teles) {
+      boolean explicit;
+      List<TerminalNode> vars;
+      ExprContext exprCtx;
+      if (tele instanceof ExplicitFieldTeleContext) {
+        explicit = true;
+        vars = ((ExplicitFieldTeleContext) tele).ID();
+        exprCtx = ((ExplicitFieldTeleContext) tele).expr();
+      } else if (tele instanceof ImplicitFieldTeleContext) {
+        explicit = false;
+        vars = ((ImplicitFieldTeleContext) tele).ID();
+        exprCtx = ((ImplicitFieldTeleContext) tele).expr();
+      } else {
+        throw new IllegalStateException();
+      }
+
+      Concrete.Expression type = visitExpr(exprCtx);
+      for (TerminalNode var : vars) {
+        InternalConcreteLocatedReferable fieldRef = new InternalConcreteLocatedReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, classDef.getData());
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
+        fieldRef.setDefinition(field);
+        fields.add(field);
+
+        if (coercingField == null && explicit) {
+          coercingField = fieldRef;
+        }
+      }
+    }
+
+    return coercingField;
   }
 
   @Override

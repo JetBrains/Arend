@@ -18,7 +18,7 @@ public class ClassDefinition extends Definition {
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
-    mySuperClasses = new HashSet<>();
+    mySuperClasses = new LinkedHashSet<>();
     myFields = new LinkedHashSet<>();
     myPersonalFields = new ArrayList<>();
     myImplemented = new HashMap<>();

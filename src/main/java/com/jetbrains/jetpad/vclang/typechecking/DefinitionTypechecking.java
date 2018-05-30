@@ -663,37 +663,23 @@ class DefinitionTypechecking {
       typecheckClassField(field, typedDef, visitor);
     }
 
-    // TODO[classes]: Process coercing fields?
+    // Process coercing field
     ClassField coercingField = null;
-    Set<ClassField> coercingFields = null;
     for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-      if (coercingField == null) {
-        coercingField = superClass.getCoercingField();
-      } else {
-        if (superClass.getCoercingField() != null && superClass.getCoercingField() != coercingField) {
-          if (coercingFields == null) {
-            coercingFields = new LinkedHashSet<>();
-            coercingFields.add(coercingField);
-          }
-          coercingFields.add(superClass.getCoercingField());
-        }
+      coercingField = superClass.getCoercingField();
+      if (coercingField != null) {
+        break;
       }
     }
-    if (def.hasParameter() && !typedDef.getPersonalFields().isEmpty()) {
-      if (coercingField == null) {
-        coercingField = typedDef.getPersonalFields().get(0);
+    if (coercingField == null && def.getCoercingField() != null) {
+      Definition definition = visitor.getTypecheckingState().getTypechecked(def.getCoercingField());
+      if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
+        coercingField = (ClassField) definition;
       } else {
-        if (coercingFields == null) {
-          coercingFields = new LinkedHashSet<>();
-          coercingFields.add(coercingField);
-        }
-        coercingFields.add(typedDef.getPersonalFields().get(0));
+        errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
       }
     }
     typedDef.setCoercingField(coercingField);
-    if (coercingFields != null) {
-      errorReporter.report(new ClassCoerceError(coercingFields, def));
-    }
 
     // Process implementations
     if (!def.getImplementations().isEmpty()) {

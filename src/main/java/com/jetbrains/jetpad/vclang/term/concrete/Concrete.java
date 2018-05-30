@@ -956,28 +956,30 @@ public final class Concrete {
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
-    private boolean myHasParameter;
+    private TCReferable myCoercingField;
 
-    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations, boolean hasParameter) {
+    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
-      myHasParameter = hasParameter;
-    }
-
-    public boolean hasParameter() {
-      return myHasParameter;
-    }
-
-    public void setHasParameter() {
-      myHasParameter = true;
     }
 
     @Nonnull
     @Override
     public TCClassReferable getData() {
       return (TCClassReferable) super.getData();
+    }
+
+    @Nullable
+    public TCReferable getCoercingField() {
+      return myCoercingField;
+    }
+
+    public void setCoercingField(TCReferable coercingField) {
+      if (myCoercingField == null) {
+        myCoercingField = coercingField;
+      }
     }
 
     @Nonnull
@@ -1003,12 +1005,18 @@ public final class Concrete {
 
   public static class ClassField extends ReferableDefinition {
     private final ClassDefinition myParentClass;
+    private final boolean myExplicit;
     private Expression myResultType;
 
-    public ClassField(TCReferable referable, ClassDefinition parentClass, Expression resultType) {
+    public ClassField(TCReferable referable, ClassDefinition parentClass, boolean isExplicit, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
+      myExplicit = isExplicit;
       myResultType = resultType;
+    }
+
+    public boolean isExplicit() {
+       return myExplicit;
     }
 
     @Nonnull

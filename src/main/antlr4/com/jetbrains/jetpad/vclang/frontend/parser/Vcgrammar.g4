@@ -21,7 +21,7 @@ classStat : '|' precedence ID tele* ':' expr  # classField
 
 definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
-            | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
+            | '\\class' precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
             | '\\instance' ID tele* ':' classCall coClauses where?                                      # defInstance
             ;
 
@@ -171,6 +171,10 @@ tele : literal                          # teleLiteral
 
 typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
+          ;
+
+fieldTele : '(' ID+ ':' expr ')'        # explicitFieldTele
+          | '{' ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 USING : '\\using';

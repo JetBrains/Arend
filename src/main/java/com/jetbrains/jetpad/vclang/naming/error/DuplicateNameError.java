@@ -32,6 +32,18 @@ public class DuplicateNameError extends ReferenceError {
         module = null;
       }
     }
-    return DocFactory.text(text + " at " + (module == null ? "" : module + ":") + ((SourceInfo) previous).positionTextRepresentation());
+
+    String position = ((SourceInfo) previous).positionTextRepresentation();
+    if (module == null && position == null) {
+      return DocFactory.text(text);
+    }
+
+    if (module == null) {
+      module = "";
+    }
+    if (position == null) {
+      position = "";
+    }
+    return DocFactory.text(text + " at " + module + (module.isEmpty() || position.isEmpty() ? "" : ":") + position);
   }
 }

@@ -167,6 +167,34 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
+  private TCReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+    TCReferable coercingField = null;
+
+    for (Abstract.Parameter absParameter : absParameters) {
+      try {
+        Concrete.Parameter parameter = buildParameter(absParameter, false);
+        if (parameter instanceof Concrete.TelescopeParameter) {
+          for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
+            if (referable instanceof TCReferable) {
+              if (coercingField == null && parameter.getExplicit()) {
+                coercingField = (TCReferable) referable;
+              }
+              fields.add(new Concrete.ClassField((TCReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
+            } else {
+              myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable)));
+            }
+          }
+        } else {
+          myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Expected a typed parameter with a name", parameter.getData())));
+        }
+      } catch (AbstractExpressionError.Exception e) {
+        myErrorReporter.report(new ProxyError(myDefinition, e.error));
+      }
+    }
+
+    return coercingField;
+  }
+
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     List<Concrete.ClassFieldImpl> implementations;
@@ -181,13 +209,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (underlyingClass != null && !implementations.isEmpty()) {
       myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have implementations", implementations.get(0))));
     }
-    if (underlyingClass != null && def.hasParameter()) {
+
+    List<? extends Abstract.Parameter> classParameters = def.getParameters();
+    if (underlyingClass != null && !classParameters.isEmpty()) {
       myErrorReporter.report(new ProxyError(myDefinition, new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have parameters", def)));
     }
 
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations, def.hasParameter());
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations);
+      classDef.setCoercingField(buildClassParameters(def.getParameters(), classDef, classFields));
       setEnclosingClass(classDef, def);
 
       for (Abstract.ClassField field : def.getClassFields()) {
@@ -203,7 +234,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField(fieldRef, classDef, type));
+            classFields.add(new Concrete.ClassField(fieldRef, classDef, true, type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(new ProxyError(myDefinition, e.error));
           }
@@ -301,7 +332,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       } else {
         List<Referable> dataReferableList = new ArrayList<>(referableList.size());
         for (Referable referable : referableList) {
-          dataReferableList.add(myReferableConverter.toDataReferable(referable));
+          dataReferableList.add(referable instanceof LocatedReferable ? myReferableConverter.toDataLocatedReferable((LocatedReferable) referable) : myReferableConverter.toDataReferable(referable));
         }
         return new Concrete.TelescopeParameter(parameter.getData(), parameter.isExplicit(), dataReferableList, type.accept(this, null));
       }

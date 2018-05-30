@@ -1,10 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
@@ -92,7 +94,7 @@ public class DesugarVisitor implements ConcreteDefinitionVisitor<Void, Void> {
       }
 
       TCReferable thisParameter = new LocatedReferableImpl(Precedence.DEFAULT, name, def.getData(), false);
-      def.getFields().add(0, new Concrete.ClassField(thisParameter, def, new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
+      def.getFields().add(0, new Concrete.ClassField(thisParameter, def, false, new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
       fields.add(thisParameter);
       isParentField = true;
     }

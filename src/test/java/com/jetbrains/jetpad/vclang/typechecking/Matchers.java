@@ -58,26 +58,6 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> classCoerceError() {
-    return new LocalErrorMatcher() {
-      @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
-          if (error instanceof ClassCoerceError) {
-            description.appendText("class coerce duplicate");
-            return true;
-          } else {
-            description.appendText("not a class coerce duplicate");
-            return false;
-          }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a class coerce duplicate");
-      }
-    };
-  }
-
   public static Matcher<? super GeneralError> notInScope(String name) {
     return new LocalErrorMatcher() {
       @Override

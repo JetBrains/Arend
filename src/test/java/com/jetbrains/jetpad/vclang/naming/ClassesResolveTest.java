@@ -7,11 +7,6 @@ import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 
 public class ClassesResolveTest extends NameResolverTestCase {
   @Test
-  public void resolveParameter() {
-    resolveNamesDef("\\class C (A : \\Set) { | a : A }");
-  }
-
-  @Test
   public void unknownExtTestError() {
     resolveNamesModule(
       "\\class Point { | x : Nat | y : Nat }\n" +
