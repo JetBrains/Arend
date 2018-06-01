@@ -103,12 +103,18 @@ public class ModuleSerialization {
     }
     for (Group.InternalReferable internalReferable : group.getConstructors()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
+        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
+        if (def != null) {
+          builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
+        }
       }
     }
     for (Group.InternalReferable internalReferable : group.getFields()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
+        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
+        if (def != null) {
+          builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
+        }
       }
     }
 
