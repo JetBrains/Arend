@@ -190,10 +190,14 @@ public abstract class NameResolvingChecker {
   private void checkSubgroup(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables, LocatedReferable parentReferable) {
     for (Group subgroup : subgroups) {
       for (Group.InternalReferable internalReferable : subgroup.getFields()) {
-        checkReference(internalReferable.getReferable(), referables, parentReferable);
+        if (internalReferable.isVisible()) {
+          checkReference(internalReferable.getReferable(), referables, parentReferable);
+        }
       }
       for (Group.InternalReferable internalReferable : subgroup.getConstructors()) {
-        checkReference(internalReferable.getReferable(), referables, parentReferable);
+        if (internalReferable.isVisible()) {
+          checkReference(internalReferable.getReferable(), referables, parentReferable);
+        }
       }
     }
   }
