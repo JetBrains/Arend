@@ -42,6 +42,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myErrorReporter = errorReporter;
   }
 
+  public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, boolean resolveTypeClassReferences, ErrorReporter errorReporter) {
+    myResolveTypeClassReferences = resolveTypeClassReferences;
+    myConcreteProvider = concreteProvider;
+    myErrorReporter = errorReporter;
+  }
+
   public ErrorReporter getErrorReporter() {
     return myErrorReporter;
   }
@@ -129,12 +135,18 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
     if (myResolveTypeClassReferences) {
-      if (def.getBody() instanceof Concrete.TermFunctionBody) {
-        resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false, def.getData());
+      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED){
+        if (def.getBody() instanceof Concrete.TermFunctionBody) {
+          resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false, def.getData());
+        }
+        if (def.getResultType() != null) {
+          resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true, def.getData());
+        }
       }
-      if (def.getResultType() != null) {
-        resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true, def.getData());
-      }
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
 
@@ -161,6 +173,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       exprVisitor.visitClauses(((Concrete.ElimFunctionBody) body).getClauses());
     }
 
+    def.setResolved();
     return null;
   }
 
@@ -203,6 +216,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolveTypeClassReferences) {
       return null;
     }
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+      return null;
+    }
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
@@ -230,6 +246,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
+    def.setResolved();
     return null;
   }
 
@@ -262,9 +279,15 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (myResolveTypeClassReferences) {
-      for (Concrete.ClassField field : def.getFields()) {
-        resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true, def.getData());
+      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
+        for (Concrete.ClassField field : def.getFields()) {
+          resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true, def.getData());
+        }
       }
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
 
@@ -282,6 +305,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
     exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getData());
 
+    def.setResolved();
     return null;
   }
 
@@ -312,6 +336,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolveTypeClassReferences) {
       return null;
     }
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+      return null;
+    }
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(def.getData(), myErrorReporter);
     ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, Collections.emptyList(), localErrorReporter);
@@ -328,13 +355,20 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       def.getFields().clear();
     }
 
+    def.setResolved();
     return null;
   }
 
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
     if (myResolveTypeClassReferences) {
-      resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true, def.getData());
+      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
+        resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true, def.getData());
+      }
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
 
@@ -347,6 +381,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       def.getClassFieldImpls().clear();
     }
 
+    def.setResolved();
     return null;
   }
 

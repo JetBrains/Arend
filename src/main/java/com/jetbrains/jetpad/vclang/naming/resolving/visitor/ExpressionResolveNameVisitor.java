@@ -80,10 +80,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   void updateScope(Collection<? extends Concrete.Parameter> parameters) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter instanceof Concrete.TelescopeParameter) {
-        ClassReferable classRef = getTypeClassReference(((Concrete.TelescopeParameter) parameter).getType());
         for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
           if (referable != null && !referable.textRepresentation().equals("_")) {
-            myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
+            myContext.add(referable);
           }
         }
       } else

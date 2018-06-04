@@ -926,11 +926,28 @@ public final class Concrete {
     }
   }
 
+  public enum Resolved { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED }
+
   public static abstract class Definition extends ReferableDefinition {
+    Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCClassReferable enclosingClass;
 
     public Definition(TCReferable referable) {
       super(referable);
+    }
+
+    public Resolved getResolved() {
+      return myResolved;
+    }
+
+    public void setResolved() {
+      myResolved = Resolved.RESOLVED;
+    }
+
+    public void setTypeClassReferencesResolved() {
+      if (myResolved == Resolved.NOT_RESOLVED) {
+        myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
+      }
     }
 
     @Nonnull
@@ -960,6 +977,7 @@ public final class Concrete {
 
     public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
+      myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myFields = fields;
       myImplementations = implementations;
@@ -1092,6 +1110,7 @@ public final class Concrete {
 
     public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
+      myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;

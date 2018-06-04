@@ -38,7 +38,6 @@ public class Constructor extends Definition implements Function {
   }
 
   public Patterns getPatterns() {
-    assert myParameters != null;
     return myPatterns;
   }
 
