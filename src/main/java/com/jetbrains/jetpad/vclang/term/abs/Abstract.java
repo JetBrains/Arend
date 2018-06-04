@@ -14,9 +14,20 @@ import java.util.List;
 public final class Abstract {
   private Abstract() {}
 
+  public static class ErrorData {
+    public final Object cause;
+    public final String message;
+
+    public ErrorData(Object cause, String message) {
+      this.cause = cause;
+      this.message = message;
+    }
+  }
+
   public interface SourceNode {
     @Nonnull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
+    @Nullable ErrorData getErrorData();
   }
 
   public interface Parameter extends SourceNode {
