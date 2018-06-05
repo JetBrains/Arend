@@ -110,4 +110,11 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func test2 : h d = 0 => path (\\lam _ => 0)\n" +
       "\\func test3 : 1 = d => path (\\lam _ => 1)\n");
   }
+
+
+  @Test
+  public void parameterError() {
+    typeCheckModule("\\class C (x y : zero = suc)", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }

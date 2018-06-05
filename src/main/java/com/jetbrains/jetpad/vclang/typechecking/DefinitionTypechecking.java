@@ -659,8 +659,16 @@ class DefinitionTypechecking {
     }
 
     // Process fields
-    for (Concrete.ClassField field : def.getFields()) {
-      typecheckClassField(field, typedDef, visitor);
+    Concrete.Expression previousType = null;
+    ClassField previousField = null;
+    for (int i = 0; i < def.getFields().size(); i++) {
+      Concrete.ClassField field = def.getFields().get(i);
+      if (previousType == field.getResultType()) {
+        addField(field.getData(), typedDef, previousField.getType(Sort.STD), visitor.getTypecheckingState()).setStatus(previousField.status());
+      } else {
+        previousField = typecheckClassField(field, typedDef, visitor);
+        previousType = field.getResultType();
+      }
     }
 
     // Process coercing field
@@ -737,7 +745,7 @@ class DefinitionTypechecking {
     return parameterType instanceof ClassCallExpression && ((ClassCallExpression) parameterType).getDefinition() == parentClass ? (PiExpression) type : null;
   }
 
-  private static void typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, CheckTypeVisitor visitor) {
+  private static ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, CheckTypeVisitor visitor) {
     Type typeResult = visitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
     PiExpression piType = checkFieldType(typeResult, parentClass);
     if (piType == null) {
@@ -751,13 +759,19 @@ class DefinitionTypechecking {
       }
     }
 
-    ClassField typedDef = new ClassField(def.getData(), parentClass, piType);
+    ClassField typedDef = addField(def.getData(), parentClass, piType, visitor.getTypecheckingState());
     if (typeResult == null) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
-    visitor.getTypecheckingState().record(def.getData(), typedDef);
+    return typedDef;
+  }
+
+  private static ClassField addField(TCReferable fieldRef, ClassDefinition parentClass, PiExpression piType, TypecheckerState state) {
+    ClassField typedDef = new ClassField(fieldRef, parentClass, piType);
+    state.record(fieldRef, typedDef);
     parentClass.addField(typedDef);
     parentClass.addPersonalField(typedDef);
+    return typedDef;
   }
 
   private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {

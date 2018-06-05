@@ -106,17 +106,23 @@ public class DesugarVisitor implements ConcreteDefinitionVisitor<Void, Void> {
 
     // Check fields
     ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getData(), myConcreteProvider, fields, futureFields, new ProxyErrorReporter(def.getData(), myErrorReporter));
-    for (Concrete.ClassField classField : def.getFields()) {
+    Concrete.Expression previousType = null;
+    for (int i = 0; i < def.getFields().size(); i++) {
+      Concrete.ClassField classField = def.getFields().get(i);
       Concrete.Expression fieldType = classField.getResultType();
       Referable thisParameter = new LocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
-      if (isParentField) {
-        isParentField = false;
+      if (fieldType == previousType) {
+        classField.setResultType(def.getFields().get(i - 1).getResultType());
       } else {
-        fieldType = fieldType.accept(classFieldChecker, null);
+        previousType = fieldType;
+        if (!isParentField) {
+          fieldType = fieldType.accept(classFieldChecker, null);
+        }
+        classField.setResultType(new Concrete.PiExpression(fieldType.getData(), Collections.singletonList(new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData()))), fieldType));
       }
-      classField.setResultType(new Concrete.PiExpression(fieldType.getData(), Collections.singletonList(new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData()))), fieldType));
       futureFields.remove(classField.getData());
+      isParentField = false;
     }
 
     // Check implementations
