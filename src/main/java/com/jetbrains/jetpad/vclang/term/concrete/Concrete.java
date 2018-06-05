@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -931,9 +932,18 @@ public final class Concrete {
   public static abstract class Definition extends ReferableDefinition {
     Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCClassReferable enclosingClass;
+    private boolean myHasErrors = false;
 
     public Definition(TCReferable referable) {
       super(referable);
+    }
+
+    public boolean hasErrors() {
+      return myHasErrors;
+    }
+
+    public void setHasErrors() {
+      myHasErrors = true;
     }
 
     public Resolved getResolved() {

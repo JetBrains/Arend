@@ -101,6 +101,9 @@ class DefinitionTypechecking {
 
   static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, new LinkedHashMap<>(), errorReporter, instancePool);
+    if (unit.getDefinition().hasErrors()) {
+      visitor.setHasErrors();
+    }
     Definition typechecked = state.getTypechecked(unit.getDefinition().getData());
 
     if (unit.getDefinition() instanceof Concrete.ClassDefinition) {
@@ -726,9 +729,7 @@ class DefinitionTypechecking {
       errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
-    if (classOk) {
-      typedDef.setStatus(visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
-    }
+    typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
     typedDef.updateSorts();
   }
 
@@ -846,6 +847,6 @@ class DefinitionTypechecking {
 
     visitor.checkAllImplemented((ClassCallExpression) result.expression, def);
     typedDef.setResultType(result.expression);
-    typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
   }
 }

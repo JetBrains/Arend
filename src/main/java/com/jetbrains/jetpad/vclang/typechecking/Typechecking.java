@@ -233,6 +233,9 @@ public class Typechecking implements DependencyListener {
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter));
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), localErrorReporter, null);
+      if (unit.getDefinition().hasErrors()) {
+        visitor.setHasErrors();
+      }
       unit.getDefinition().accept(new DesugarVisitor(myConcreteProvider, myErrorReporter), null);
       Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {

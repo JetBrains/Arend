@@ -275,6 +275,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myInstancePool = pool;
   }
 
+  public void setHasErrors() {
+    myHasErrors = true;
+  }
+
   public TypecheckerState getTypecheckingState() {
     return myState;
   }
