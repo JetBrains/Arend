@@ -38,14 +38,11 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {
+    List<Concrete.Argument> args = new ArrayList<>(exprs.length);
     for (Concrete.Expression expr1 : exprs) {
-      expr = new Concrete.AppExpression(null, expr, new Concrete.Argument(expr1, true));
+      args.add(new Concrete.Argument(expr1, true));
     }
-    return expr;
-  }
-
-  public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression arg, boolean explicit) {
-    return new Concrete.AppExpression(null, expr, new Concrete.Argument(arg, explicit));
+    return Concrete.AppExpression.make(null, expr, args);
   }
 
   public static Concrete.ReferenceExpression cNat() {

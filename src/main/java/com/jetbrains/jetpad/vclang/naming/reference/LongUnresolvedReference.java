@@ -178,7 +178,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (i == myPath.size() - 1) {
         return result;
       }
-      result = new Concrete.AppExpression(data, new Concrete.ReferenceExpression(data, getReferable()), new Concrete.Argument(result, false));
+      result = Concrete.AppExpression.make(data, new Concrete.ReferenceExpression(data, getReferable()), result, false);
 
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {

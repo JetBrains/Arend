@@ -37,7 +37,9 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     expr.function = expr.function.accept(this, null);
-    expr.argument.expression = expr.argument.expression.accept(this, null);
+    for (Concrete.Argument argument : expr.getArguments()) {
+      argument.expression = argument.expression.accept(this, null);
+    }
     return expr;
   }
 
@@ -76,7 +78,7 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
         return expr;
       }
       child = ((Concrete.ClassDefinition) def).enclosingClass;
-      expr = new Concrete.AppExpression(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassDefinition) def).getFields().get(0).getData()), new Concrete.Argument(expr, false));
+      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassDefinition) def).getFields().get(0).getData()), expr, false);
     }
 
     return expr;
@@ -90,7 +92,7 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
         if (myFutureFields != null && myFutureFields.contains(ref)) {
           return makeErrorExpression(expr.getData());
         } else {
-          return new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false));
+          return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false);
         }
       } else {
         Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((GlobalReferable) ref);
@@ -100,7 +102,7 @@ public class ClassFieldChecker implements ConcreteExpressionVisitor<Void, Concre
             return makeErrorExpression(expr.getData());
           }
           if (isParent(defEnclosingClass, myClassReferable)) {
-            return new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(getParentCall(defEnclosingClass, myClassReferable, new Concrete.ReferenceExpression(expr.getData(), myThisParameter)), false));
+            return Concrete.AppExpression.make(expr.getData(), expr, getParentCall(defEnclosingClass, myClassReferable, new Concrete.ReferenceExpression(expr.getData(), myThisParameter)), false);
           }
         }
       }

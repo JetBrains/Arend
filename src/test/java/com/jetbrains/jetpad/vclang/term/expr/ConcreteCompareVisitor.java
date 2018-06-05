@@ -24,7 +24,16 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitApp(Concrete.AppExpression expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.AppExpression && compare(expr1.getFunction(), ((Concrete.AppExpression) expr2).getFunction()) && compare(expr1.getArgument().getExpression(), ((Concrete.AppExpression) expr2).getArgument().getExpression());
+    if (!(expr2 instanceof Concrete.AppExpression && compare(expr1.getFunction(), ((Concrete.AppExpression) expr2).getFunction()) && expr1.getArguments().size() == ((Concrete.AppExpression) expr2).getArguments().size())) {
+      return false;
+    }
+    for (int i = 0; i < expr1.getArguments().size(); i++) {
+      Concrete.Argument argument2 = ((Concrete.AppExpression) expr2).getArguments().get(i);
+      if (!(expr1.getArguments().get(i).isExplicit() == argument2.isExplicit() && compare(expr1.getArguments().get(i).expression, argument2.expression))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -171,6 +180,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return true;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean comparePattern(Concrete.Pattern pattern1, Concrete.Pattern pattern2) {
     if (pattern1 instanceof Concrete.NamePattern) {
       if (!(pattern2 instanceof Concrete.NamePattern)) {

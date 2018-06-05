@@ -100,9 +100,9 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
-    while (expr instanceof Concrete.AppExpression) {
+    if (expr instanceof Concrete.AppExpression) {
+      myArguments += ((Concrete.AppExpression) expr).getArguments().size();
       expr = ((Concrete.AppExpression) expr).getFunction();
-      myArguments++;
     }
 
     return expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;

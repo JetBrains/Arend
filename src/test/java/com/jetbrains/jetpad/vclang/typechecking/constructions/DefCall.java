@@ -757,7 +757,7 @@ public class DefCall extends TypeCheckingTestCase {
     Iterator<? extends Group> it = cd.getSubgroups().iterator();
     it.next();
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
-    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArgument().getExpression()).getFunction()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
+    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArguments().get(0).getExpression()).getFunction()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
     typeCheckModule(cd);
   }
 }

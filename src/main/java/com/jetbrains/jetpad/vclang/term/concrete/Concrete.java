@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -166,12 +165,34 @@ public final class Concrete {
   public static class AppExpression extends Expression {
     public static final byte PREC = 11;
     public Expression function;
-    public Argument argument;
+    private final List<Argument> myArguments;
 
-    public AppExpression(Object data, Expression function, Argument argument) {
+    private AppExpression(Object data, Expression function, List<Argument> arguments) {
       super(data);
       this.function = function;
-      this.argument = argument;
+      myArguments = arguments;
+    }
+
+    public static Expression make(Object data, Expression function, List<Argument> arguments) {
+      if (arguments.isEmpty()) {
+        return function;
+      }
+      if (function instanceof Concrete.AppExpression) {
+        ((AppExpression) function).myArguments.addAll(arguments);
+        return function;
+      }
+      return new AppExpression(data, function, arguments);
+    }
+
+    public static Expression make(Object data, Expression function, Expression argument, boolean isExplicit) {
+      if (function instanceof Concrete.AppExpression) {
+        ((AppExpression) function).myArguments.add(new Argument(argument, isExplicit));
+        return function;
+      }
+
+      List<Argument> arguments = new ArrayList<>();
+      arguments.add(new Argument(argument, isExplicit));
+      return new AppExpression(data, function, arguments);
     }
 
     @Nonnull
@@ -180,8 +201,8 @@ public final class Concrete {
     }
 
     @Nonnull
-    public Argument getArgument() {
-      return argument;
+    public List<Argument> getArguments() {
+      return myArguments;
     }
 
     @Override

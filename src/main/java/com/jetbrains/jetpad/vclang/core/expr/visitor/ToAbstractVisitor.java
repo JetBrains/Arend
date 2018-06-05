@@ -192,15 +192,16 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private Concrete.Expression visitApp(Concrete.Expression function, Expression argument, boolean isExplicit) {
     Concrete.Expression arg = isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
-    return arg != null ? cApps(function, arg, isExplicit) : function;
+    return arg != null ? Concrete.AppExpression.make(null, function, arg, isExplicit) : function;
   }
 
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
+    List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      expr = cApps(expr, arg.accept(this, null), parameters.isExplicit());
+      concreteArguments.add(new Concrete.Argument(arg.accept(this, null), parameters.isExplicit()));
       parameters = parameters.getNext();
     }
-    return expr;
+    return Concrete.AppExpression.make(null, expr, concreteArguments);
   }
 
   private static Concrete.Expression makeReference(Referable referable) {
@@ -216,7 +217,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
-      result = new Concrete.AppExpression(null, result, new Concrete.Argument(expr.getArgument().accept(this, null), false));
+      result = Concrete.AppExpression.make(null, result, expr.getArgument().accept(this, null), false);
     }
     return result;
   }
@@ -230,9 +231,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS)) {
+      List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
       for (Expression arg : expr.getDataTypeArguments()) {
-        result = new Concrete.AppExpression(null, result, new Concrete.Argument(arg.accept(this, null), false));
+        arguments.add(new Concrete.Argument(arg.accept(this, null), false));
       }
+      result = Concrete.AppExpression.make(null, result, arguments);
     }
     return visitParameters(result, expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }

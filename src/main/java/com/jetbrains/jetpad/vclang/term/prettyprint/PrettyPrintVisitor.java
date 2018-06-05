@@ -92,13 +92,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitApp(final Concrete.AppExpression expr, Precedence prec) {
     if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
 
-    Concrete.Expression fun = expr;
-    List<Concrete.Argument> args = new ArrayList<>();
-    while (fun instanceof Concrete.AppExpression) {
-      args.add(((Concrete.AppExpression) fun).getArgument());
-      fun = ((Concrete.AppExpression) fun).getFunction();
-    }
-    Collections.reverse(args);
+    Concrete.Expression fun = expr.getFunction();
+    List<Concrete.Argument> args = expr.getArguments();
 
     boolean infix = false;
     if (fun instanceof Concrete.ReferenceExpression && ((ReferenceExpression) fun).getReferent() instanceof GlobalReferable && ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence().isInfix) {
@@ -493,11 +488,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   private AbstractLayout createBinOpLayout(List<BinOpSequenceElem> elems) {
     Concrete.Expression lhs = elems.get(0).expression;
+    if (lhs instanceof Concrete.AppExpression && elems.size() > 1) {
+      lhs = Concrete.AppExpression.make(lhs.getData(), ((Concrete.AppExpression) lhs).getFunction(), new ArrayList<>(((Concrete.AppExpression) lhs).getArguments()));
+    }
 
     int i = 1;
     for (; i < elems.size(); i++) {
       if (!elems.get(i).isReference() || !elems.get(i).isExplicit || elems.get(i).fixity == Fixity.NONFIX || elems.get(i).fixity == Fixity.UNKNOWN && !elems.get(i).isInfixReference()) {
-        lhs = new Concrete.AppExpression(lhs.getData(), lhs, new Concrete.Argument(elems.get(i).expression, elems.get(i).isExplicit));
+        lhs = Concrete.AppExpression.make(lhs.getData(), lhs, elems.get(i).expression, elems.get(i).isExplicit);
       } else {
         break;
       }

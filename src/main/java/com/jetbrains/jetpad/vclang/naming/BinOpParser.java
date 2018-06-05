@@ -65,7 +65,7 @@ public class BinOpParser {
 
     StackElem topElem = myStack.get(myStack.size() - 1);
     if (topElem.precedence == null || !isExplicit) {
-      topElem.expression = new Concrete.AppExpression(topElem.expression.getData(), topElem.expression, new Concrete.Argument(expression, isExplicit));
+      topElem.expression = Concrete.AppExpression.make(topElem.expression.getData(), topElem.expression, expression, isExplicit);
     } else {
       myStack.add(new StackElem(expression, null));
     }
@@ -90,7 +90,7 @@ public class BinOpParser {
       StackElem nextElem = myStack.size() == 1 ? null : myStack.get(myStack.size() - 2);
       if (nextElem == null || nextElem.precedence.priority < precedence.priority || nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.RIGHT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.RIGHT_ASSOC)) {
         if (isPostfix) {
-          myStack.set(myStack.size() - 1, new StackElem(new Concrete.AppExpression(topElem.expression.getData(), reference, new Concrete.Argument(topElem.expression, true)), null));
+          myStack.set(myStack.size() - 1, new StackElem(Concrete.AppExpression.make(topElem.expression.getData(), reference, topElem.expression, true), null));
         } else {
           myStack.add(new StackElem(reference, precedence));
         }
@@ -107,7 +107,7 @@ public class BinOpParser {
   }
 
   private Referable getOperator(Concrete.Expression expr) {
-    while (expr instanceof Concrete.AppExpression) {
+    if (expr instanceof Concrete.AppExpression) {
       expr = ((Concrete.AppExpression) expr).getFunction();
     }
     return ((Concrete.ReferenceExpression) expr).getReferent();
@@ -125,7 +125,7 @@ public class BinOpParser {
 
     if (botElem == null) {
       if (topElem.precedence != null) {
-        myStack.add(new StackElem(new Concrete.AppExpression(midElem.expression.getData(), topElem.expression, new Concrete.Argument(midElem.expression, true)), null));
+        myStack.add(new StackElem(Concrete.AppExpression.make(midElem.expression.getData(), topElem.expression, midElem.expression, true), null));
       } else {
         Referable leftRef = new LocalReferable(null);
         myStack.add(new StackElem(new Concrete.LamExpression(midElem.expression.getData(), Collections.singletonList(new Concrete.NameParameter(midElem.expression.getData(), true, leftRef)), makeBinOp(new Concrete.ReferenceExpression(midElem.expression.getData(), leftRef), midElem.expression, topElem.expression)), null));
@@ -136,8 +136,8 @@ public class BinOpParser {
   }
 
   private static Concrete.Expression makeBinOp(Concrete.Expression left, Concrete.Expression var, Concrete.Expression right) {
-    Concrete.Expression expr = new Concrete.AppExpression(var.getData(), var, new Concrete.Argument(left, true));
-    return right == null ? expr : new Concrete.AppExpression(var.getData(), expr, new Concrete.Argument(right, true));
+    Concrete.Expression expr = Concrete.AppExpression.make(var.getData(), var, left, true);
+    return right == null ? expr : Concrete.AppExpression.make(var.getData(), expr, right, true);
   }
 
   public Concrete.Expression rollUp() {

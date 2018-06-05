@@ -39,7 +39,9 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
   @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     expr.function = expr.function.accept(this, null);
-    expr.argument.expression = expr.argument.expression.accept(this, null);
+    for (Concrete.Argument argument : expr.getArguments()) {
+      argument.expression = argument.expression.accept(this, null);
+    }
     return expr;
   }
 
@@ -63,7 +65,7 @@ public class ExpressionResolveNameVisitor implements ConcreteExpressionVisitor<V
     }
 
     expr.setReferent(referable);
-    return argument == null ? expr : new Concrete.AppExpression(expr.getData(), expr, new Concrete.Argument(argument, false));
+    return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
   }
 
   @Override

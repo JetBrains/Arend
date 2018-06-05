@@ -466,16 +466,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Expression visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, @Nullable Abstract.ErrorData errorData, Void params) {
-    Concrete.Expression result = expr.accept(this, null);
+    Concrete.Expression fun = expr.accept(this, null);
+    List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Abstract.Argument arg : arguments) {
       Abstract.Expression argExpr = arg.getExpression();
       if (argExpr != null) {
-        result = new Concrete.AppExpression(result.getData(), result, new Concrete.Argument(arg.getExpression().accept(this, null), arg.isExplicit()));
+        concreteArguments.add(new Concrete.Argument(argExpr.accept(this, null), arg.isExplicit()));
       }
     }
 
     reportError(errorData);
-    return result;
+    return Concrete.AppExpression.make(data, fun, concreteArguments);
   }
 
   @Override
@@ -583,8 +584,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.Expression visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
-    Concrete.AppExpression expr = new Concrete.AppExpression(data, new Concrete.ReferenceExpression(data, binOp), new Concrete.Argument(left.accept(this, null), true));
-    return right == null ? expr : new Concrete.AppExpression(data, expr, new Concrete.Argument(right.accept(this, null), true));
+    List<Concrete.Argument> arguments = new ArrayList<>(right == null ? 1 : 2);
+    arguments.add(new Concrete.Argument(left.accept(this, null), true));
+    if (right != null) {
+      arguments.add(new Concrete.Argument(right.accept(this, null), true));
+    }
+    return Concrete.AppExpression.make(data, new Concrete.ReferenceExpression(data, binOp), arguments);
   }
 
   private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence) {
