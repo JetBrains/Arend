@@ -602,8 +602,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         implementations = new ArrayList<>();
       }
-      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations);
-      ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields));
+      List<Boolean> fieldsExplicitness = new ArrayList<>();
+      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, fieldsExplicitness, implementations);
+      ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields, fieldsExplicitness));
       classDefinition.enclosingClass = enclosingClass;
 
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
@@ -1058,7 +1059,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arguments;
   }
 
-  private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
     TCReferable coercingField = null;
 
     for (FieldTeleContext tele : teles) {
@@ -1087,6 +1088,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (coercingField == null && explicit) {
           coercingField = fieldRef;
         }
+
+        fieldsExplicitness.add(explicit);
       }
     }
 

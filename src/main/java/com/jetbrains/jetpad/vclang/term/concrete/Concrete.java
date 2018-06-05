@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -164,12 +165,12 @@ public final class Concrete {
 
   public static class AppExpression extends Expression {
     public static final byte PREC = 11;
-    public Expression function;
-    private final List<Argument> myArguments;
+    private Expression myFunction;
+    private List<Argument> myArguments;
 
     private AppExpression(Object data, Expression function, List<Argument> arguments) {
       super(data);
-      this.function = function;
+      myFunction = function;
       myArguments = arguments;
     }
 
@@ -197,7 +198,17 @@ public final class Concrete {
 
     @Nonnull
     public Expression getFunction() {
-      return function;
+      return myFunction;
+    }
+
+    public void setFunction(Expression function) {
+      if (function instanceof AppExpression) {
+        myFunction = ((AppExpression) function).myFunction;
+        ((AppExpression) function).getArguments().addAll(myArguments);
+        myArguments = ((AppExpression) function).getArguments();
+      } else {
+        myFunction = function;
+      }
     }
 
     @Nonnull
@@ -399,7 +410,6 @@ public final class Concrete {
       this.implementation = implementation;
     }
 
-    @Nonnull
     public Referable getImplementedField() {
       return myImplementedField;
     }
@@ -1003,14 +1013,16 @@ public final class Concrete {
   public static class ClassDefinition extends Definition {
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
+    private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
     private TCReferable myCoercingField;
 
-    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
       super(referable);
       myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myFields = fields;
+      myFieldsExplicitness = fieldsExplicitness;
       myImplementations = implementations;
     }
 
@@ -1039,6 +1051,11 @@ public final class Concrete {
     @Nonnull
     public List<ClassField> getFields() {
       return myFields;
+    }
+
+    @Nonnull
+    public List<Boolean> getFieldsExplicitness() {
+      return myFieldsExplicitness;
     }
 
     @Nonnull

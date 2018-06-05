@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean> {
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
@@ -246,7 +243,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   private boolean compareImplementStatement(Concrete.ClassFieldImpl implStat1, Concrete.ClassFieldImpl implStat2) {
-    return compare(implStat1.getImplementation(), implStat2.getImplementation()) && implStat1.getImplementedField().equals(implStat2.getImplementedField());
+    return compare(implStat1.getImplementation(), implStat2.getImplementation()) && Objects.equals(implStat1.getImplementedField(), implStat2.getImplementedField());
   }
 
   @Override

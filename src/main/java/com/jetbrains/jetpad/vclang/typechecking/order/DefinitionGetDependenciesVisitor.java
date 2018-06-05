@@ -138,9 +138,6 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
 
     def.getClassReference().accept(myVisitor, null);
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-      if (classFieldImpl.getImplementedField() instanceof TCReferable) {
-        myVisitor.getDependencies().add((TCReferable) classFieldImpl.getImplementedField());
-      }
       classFieldImpl.getImplementation().accept(myVisitor, null);
     }
 

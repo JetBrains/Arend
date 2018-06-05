@@ -216,7 +216,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private TCReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  private TCReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
     TCReferable coercingField = null;
 
     for (Abstract.Parameter absParameter : absParameters) {
@@ -229,6 +229,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
                 coercingField = (TCReferable) referable;
               }
               fields.add(new Concrete.ClassField((TCReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
+              fieldsExplicitness.add(parameter.getExplicit());
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -268,8 +269,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, implementations);
-      classDef.setCoercingField(buildClassParameters(def.getParameters(), classDef, classFields));
+      List<Boolean> fieldsExplicitness = new ArrayList<>();
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, fieldsExplicitness, implementations);
+      classDef.setCoercingField(buildClassParameters(classParameters, classDef, classFields, fieldsExplicitness));
       setEnclosingClass(classDef, def);
 
       for (Abstract.ClassField field : def.getClassFields()) {

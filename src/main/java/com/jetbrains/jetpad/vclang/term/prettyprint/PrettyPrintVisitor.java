@@ -694,7 +694,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
-    myBuilder.append(classFieldImpl.getImplementedField().textRepresentation()).append(" => ");
+    String name = classFieldImpl.getImplementedField() == null ? "_" : classFieldImpl.getImplementedField().textRepresentation();
+    myBuilder.append(name).append(" => ");
     classFieldImpl.getImplementation().accept(this, new Precedence(Concrete.Expression.PREC));
   }
 

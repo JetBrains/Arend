@@ -117,4 +117,54 @@ public class ClassParametersTest extends TypeCheckingTestCase {
     typeCheckModule("\\class C (x y : zero = suc)", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void classCall() {
+    typeCheckModule(
+      "\\class C (x : Nat)\n" +
+      "\\func f => C 0");
+  }
+
+  @Test
+  public void classCallImplicit() {
+    typeCheckModule(
+      "\\class C {x : Nat} (y : Nat) {z w : Nat} (p : z = w)\n" +
+      "\\func f => C {0} 1 (path (\\lam _ => 2))");
+  }
+
+  @Test
+  public void classCallFields() {
+    typeCheckModule(
+      "\\class C {x : Nat} (y : Nat) { | z : Nat -> Nat | p : Nat }\n" +
+      "\\func f => C {0} 1 (\\lam x => x)");
+  }
+
+  @Test
+  public void classCallFieldAccessors() {
+    typeCheckModule(
+      "\\class C {x : Nat} (y : Nat) { | z : Nat -> Nat | p : Nat }\n" +
+      "\\func f (c : C {0} 1 (\\lam x => x)) : Nat => c.p");
+  }
+
+  @Test
+  public void classCallImplicitError() {
+    typeCheckModule(
+      "\\class C (x : Nat)\n" +
+      "\\func f => C {0} 1", 1);
+  }
+
+  @Test
+  public void tooManyArguments() {
+    typeCheckModule(
+      "\\class C (x : Nat)\n" +
+      "\\func f => C 1 2", 1);
+  }
+
+  @Test
+  public void superParameters() {
+    typeCheckModule(
+      "\\class C { | x : Nat }\n" +
+      "\\class D (y : Nat -> Nat) \\extends C\n" +
+      "\\func f => D 1 (\\lam x => x)");
+  }
 }
