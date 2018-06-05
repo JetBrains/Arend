@@ -32,16 +32,12 @@ public class DefinitionSerialization {
 
     switch (definition.status()) {
       case HEADER_HAS_ERRORS:
+      case HEADER_NEEDS_TYPE_CHECKING:
         out.setStatus(DefinitionProtos.Definition.Status.HEADER_HAS_ERRORS);
         break;
       case BODY_HAS_ERRORS:
-        out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
-        break;
-      case HEADER_NEEDS_TYPE_CHECKING:
-        out.setStatus(DefinitionProtos.Definition.Status.HEADER_NEEDS_TYPE_CHECKING);
-        break;
       case BODY_NEEDS_TYPE_CHECKING:
-        out.setStatus(DefinitionProtos.Definition.Status.BODY_NEEDS_TYPE_CHECKING);
+        out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
         break;
       case HAS_ERRORS:
         out.setStatus(DefinitionProtos.Definition.Status.HAS_ERRORS);

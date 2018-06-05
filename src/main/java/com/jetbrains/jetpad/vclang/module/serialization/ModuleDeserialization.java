@@ -32,7 +32,7 @@ public class ModuleDeserialization {
     return myModuleProto;
   }
 
-  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
+  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
@@ -47,7 +47,7 @@ public class ModuleDeserialization {
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
-      defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
+      defDeserialization.fillInDefinition(pair.proj1, pair.proj2, typecheckDefinitionsWithErrors);
     }
     myDefinitions.clear();
   }

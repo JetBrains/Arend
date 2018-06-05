@@ -115,11 +115,13 @@ public class Prelude {
         PROP_TRUNC = (DataDefinition) definition;
         PROP_TRUNC.setSort(Sort.PROP);
         PROP_TRUNC_PATH_CON = PROP_TRUNC.getConstructor("truncP");
+        PROP_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "TrS":
         SET_TRUNC = (DataDefinition) definition;
         SET_TRUNC.setSort(Sort.SetOfLevel(new Level(LevelVariable.PVAR)));
         SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
+        SET_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       default:
         throw new IllegalStateException();

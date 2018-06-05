@@ -92,7 +92,15 @@ public interface Library {
   ModuleScopeProvider getModuleScopeProvider();
 
   /**
+   * Checks if this library supports typechecking.
+   *
+   * @return true if this library can be typechecked, false if this library is read-only.
+   */
+  boolean supportsTypechecking();
+
+  /**
    * Checks if this library needs typechecking.
+   * If the library does not support typechecking (that is, {@link #supportsTypechecking} returns false), this method should always return false.
    *
    * @return true if the typechecking is needed, false otherwise.
    */

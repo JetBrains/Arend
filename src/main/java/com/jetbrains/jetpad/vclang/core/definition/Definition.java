@@ -49,7 +49,7 @@ public abstract class Definition implements Variable {
     }
 
     public boolean needsTypeChecking() {
-      return this != NO_ERRORS;
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
     }
   }
 

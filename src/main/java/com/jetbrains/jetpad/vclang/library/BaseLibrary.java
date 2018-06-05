@@ -93,6 +93,11 @@ public abstract class BaseLibrary implements Library {
   }
 
   @Override
+  public boolean supportsTypechecking() {
+    return true;
+  }
+
+  @Override
   public boolean needsTypechecking() {
     return !getUpdatedModules().isEmpty();
   }

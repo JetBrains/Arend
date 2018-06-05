@@ -32,7 +32,7 @@ public class DefinitionDeserialization {
     myDependencyListener = dependencyListener;
   }
 
-  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
+  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
 
     switch (defProto.getDefinitionDataCase()) {
@@ -53,25 +53,32 @@ public class DefinitionDeserialization {
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
 
-    def.setStatus(readTcStatus(defProto));
+    def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
   }
 
-  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
-    switch (defProto.getStatus()) {
-      case HEADER_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
-      case BODY_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
-      case HEADER_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
-      case BODY_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
-      case HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HAS_ERRORS;
-      case NO_ERRORS:
-        return Definition.TypeCheckingStatus.NO_ERRORS;
-      default:
-        throw new IllegalStateException("Unknown typechecking state");
+  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {
+    if (typecheckDefinitionsWithErrors) {
+      switch (defProto.getStatus()) {
+        case BODY_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+        case NO_ERRORS:
+          return Definition.TypeCheckingStatus.NO_ERRORS;
+        default:
+          return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
+      }
+    } else {
+      switch (defProto.getStatus()) {
+        case HEADER_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
+        case BODY_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
+        case HAS_ERRORS:
+          return Definition.TypeCheckingStatus.HAS_ERRORS;
+        case NO_ERRORS:
+          return Definition.TypeCheckingStatus.NO_ERRORS;
+        default:
+          throw new IllegalStateException("Unknown typechecking state");
+      }
     }
   }
 

@@ -83,8 +83,6 @@ message Definition {
     enum Status {
         HEADER_HAS_ERRORS = 0;
         BODY_HAS_ERRORS = 1;
-        HEADER_NEEDS_TYPE_CHECKING = 2;
-        BODY_NEEDS_TYPE_CHECKING = 3;
         HAS_ERRORS = 4;
         NO_ERRORS = 5;
     }

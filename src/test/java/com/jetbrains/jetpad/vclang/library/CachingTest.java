@@ -43,8 +43,8 @@ public class CachingTest extends LibraryTestCase {
     assertThat(aClass, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(b1Status)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(b2Status)));
+    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING)));
+    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING)));
   }
 
   @Test
