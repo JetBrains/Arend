@@ -226,11 +226,9 @@ public class Ordering {
         }
       } else {
         myDependencyListener.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
-        if (getTypechecked(tcReferable) == null) {
-          Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-          if (dependency instanceof Concrete.Definition) {
-            updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
-          }
+        Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
+        if (dependency instanceof Concrete.Definition && getTypechecked(tcReferable) == null) {
+          updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
         }
       }
     }
