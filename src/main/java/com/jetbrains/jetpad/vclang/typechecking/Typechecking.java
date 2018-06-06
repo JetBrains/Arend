@@ -63,6 +63,10 @@ public class Typechecking implements DependencyListener {
     this(state, concreteProvider, errorReporter, DummyDependencyListener.INSTANCE, IdReferableConverter.INSTANCE);
   }
 
+  public TypecheckerState getState() {
+    return myState;
+  }
+
   public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
     Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, false);
 
@@ -129,7 +133,7 @@ public class Typechecking implements DependencyListener {
   private void orderGroup(Group group, Ordering ordering) {
     LocatedReferable referable = group.getReferable();
     TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
-    Definition typechecked = tcReferable == null ? null : getTypechecked(tcReferable);
+    Definition typechecked = tcReferable == null ? null : ordering.getTypechecked(tcReferable);
     if (typechecked == null) {
       Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
       if (def instanceof Concrete.Definition) {
@@ -196,15 +200,6 @@ public class Typechecking implements DependencyListener {
       typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
-    }
-  }
-
-  public final Definition getTypechecked(TCReferable definition) {
-    Definition typechecked = myState.getTypechecked(definition);
-    if (typechecked == null || typechecked.status().needsTypeChecking()) {
-      return null;
-    } else {
-      return typechecked;
     }
   }
 

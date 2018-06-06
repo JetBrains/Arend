@@ -151,10 +151,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
     if (hasRawSources()) {
       for (ModulePath module : header.modules) {
-        if (!sourceLoader.loadRaw(module)) {
-          unload();
-          return false;
-        }
+        sourceLoader.loadRaw(module);
       }
     }
 

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
@@ -35,6 +36,15 @@ public class Ordering {
     myConcreteProvider = concreteProvider;
     myTypechecking = typechecking;
     myRefToHeaders = refToHeaders;
+  }
+
+  public final Definition getTypechecked(TCReferable definition) {
+    Definition typechecked = myTypechecking.getState().getTypechecked(definition);
+    if (typechecked == null || typechecked.status().needsTypeChecking()) {
+      return null;
+    } else {
+      return typechecked;
+    }
   }
 
   public void doOrder(Concrete.Definition definition) {
@@ -142,7 +152,7 @@ public class Ordering {
         }
       } else {
         myTypechecking.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
-        if (myTypechecking.getTypechecked(tcReferable) == null) {
+        if (getTypechecked(tcReferable) == null) {
           Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
           if (dependency instanceof Concrete.Definition) {
             updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));

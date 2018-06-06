@@ -33,8 +33,6 @@ public class CachingTest extends LibraryTestCase {
     errorList.clear();
 
     Definition.TypeCheckingStatus aStatus = typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status();
-    Definition.TypeCheckingStatus b1Status = typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status();
-    Definition.TypeCheckingStatus b2Status = typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status();
 
     libraryManager.unloadLibrary(library);
 
@@ -43,7 +41,7 @@ public class CachingTest extends LibraryTestCase {
     assertThat(aClass, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING)));
+    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING)));
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING)));
   }
 

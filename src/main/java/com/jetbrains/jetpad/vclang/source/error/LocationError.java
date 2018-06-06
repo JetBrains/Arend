@@ -29,7 +29,7 @@ public class LocationError extends GeneralError {
   }
 
   public static LocationError module(ModulePath modulePath) {
-    return new LocationError("Cannot locate the module", null, modulePath);
+    return new LocationError("Cannot locate module", null, modulePath);
   }
 
   @Override

@@ -65,7 +65,7 @@ public class LibraryLoadingTest extends LibraryTestCase {
   public void moduleWithErrorsError() {
     ModulePath modulePath = moduleName("A");
     library.addModule(modulePath, "hello world");
-    assertFalse(libraryManager.loadLibrary(library));
+    assertTrue(libraryManager.loadLibrary(library));
     assertThat(library.getModuleGroup(modulePath), is(nullValue()));
     assertThat(errorList, is(not(empty())));
   }

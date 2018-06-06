@@ -213,7 +213,9 @@ public abstract class BaseCliFrontend {
       if (recompile) {
         library.addFlag(SourceLibrary.Flag.RECOMPILE);
       }
-      myLibraryManager.loadLibrary(library);
+      if (!myLibraryManager.loadLibrary(library)) {
+        continue;
+      }
 
       if (!library.needsTypechecking()) {
         continue;
