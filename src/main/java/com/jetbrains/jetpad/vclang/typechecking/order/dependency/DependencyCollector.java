@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.order;
+package com.jetbrains.jetpad.vclang.typechecking.order.dependency;
 
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;

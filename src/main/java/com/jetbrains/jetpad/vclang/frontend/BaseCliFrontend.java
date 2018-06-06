@@ -17,7 +17,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.FileUtils;
 import org.apache.commons.cli.*;
 
@@ -68,7 +68,7 @@ public abstract class BaseCliFrontend {
   }
 
 
-  private class MyTypechecking extends Typechecking {
+  private class MyTypechecking extends TypecheckingOrderingListener {
     MyTypechecking() {
       super(myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter);
     }
@@ -223,7 +223,7 @@ public abstract class BaseCliFrontend {
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
-      library.typecheck(new MyTypechecking());
+      new MyTypechecking().typecheckLibrary(library);
       flushErrors();
 
       // Output nice per-module typechecking results

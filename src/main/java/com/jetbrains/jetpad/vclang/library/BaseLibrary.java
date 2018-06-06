@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -103,7 +103,7 @@ public abstract class BaseLibrary implements Library {
   }
 
   @Override
-  public boolean typecheck(Typechecking typechecking) {
+  public boolean orderModules(Ordering ordering) {
     Collection<? extends ModulePath> updatedModules = getUpdatedModules();
     if (updatedModules.isEmpty()) {
       return true;
@@ -117,7 +117,8 @@ public abstract class BaseLibrary implements Library {
       }
     }
 
-    return typechecking.typecheckModules(groups);
+    ordering.orderModules(groups);
+    return true;
   }
 
   @Override

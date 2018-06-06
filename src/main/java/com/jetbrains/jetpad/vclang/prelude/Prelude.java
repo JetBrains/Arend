@@ -23,7 +23,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -160,7 +160,7 @@ public class Prelude {
     }
   }
 
-  public static class PreludeTypechecking extends Typechecking {
+  public static class PreludeTypechecking extends TypecheckingOrderingListener {
     public PreludeTypechecking(TypecheckerState state, ConcreteProvider concreteProvider) {
       super(state, concreteProvider, DummyErrorReporter.INSTANCE);
     }

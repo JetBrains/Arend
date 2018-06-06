@@ -41,8 +41,8 @@ import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 // TODO[classes]: Make this class into a visitor
-class DefinitionTypechecking {
-  static Definition typecheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Concrete.Definition definition) {
+public class DefinitionTypechecking {
+  public static Definition typecheckHeader(CheckTypeVisitor visitor, GlobalInstancePool instancePool, Concrete.Definition definition) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
     visitor.setInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
     Definition typechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
@@ -77,7 +77,7 @@ class DefinitionTypechecking {
     }
   }
 
-  static List<Clause> typecheckBody(Definition definition, Concrete.Definition def, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
+  public static List<Clause> typecheckBody(Definition definition, Concrete.Definition def, CheckTypeVisitor exprVisitor, Set<DataDefinition> dataDefinitions) {
     if (definition instanceof FunctionDefinition) {
       try {
         return typecheckFunctionBody((FunctionDefinition) definition, (Concrete.FunctionDefinition) def, exprVisitor);
@@ -99,7 +99,7 @@ class DefinitionTypechecking {
     return null;
   }
 
-  static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
+  public static List<Clause> typecheck(TypecheckerState state, GlobalInstancePool instancePool, TypecheckingUnit unit, boolean recursive, LocalErrorReporter errorReporter) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(state, new LinkedHashMap<>(), errorReporter, instancePool);
     if (unit.getDefinition().hasErrors()) {
       visitor.setHasErrors();

@@ -14,7 +14,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.DataLocatedReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;

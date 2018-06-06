@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.order;
+package com.jetbrains.jetpad.vclang.typechecking.order.dependency;
 
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -10,7 +10,7 @@ import java.util.Collection;
 public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisitor<Boolean, Void> {
   private final CollectDefCallsVisitor myVisitor;
 
-  DefinitionGetDependenciesVisitor(Collection<TCReferable> dependencies) {
+  public DefinitionGetDependenciesVisitor(Collection<TCReferable> dependencies) {
     myVisitor = new CollectDefCallsVisitor(dependencies);
   }
 

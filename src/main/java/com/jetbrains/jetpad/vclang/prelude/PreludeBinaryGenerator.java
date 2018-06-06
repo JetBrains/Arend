@@ -31,7 +31,7 @@ public class PreludeBinaryGenerator {
 
     LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println, System.err::println);
     if (manager.loadLibrary(library)) {
-      if (library.typecheck(new Prelude.PreludeTypechecking(typecheckerState, ConcreteReferableProvider.INSTANCE))) {
+      if (new Prelude.PreludeTypechecking(typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(library)) {
         library.persistModule(Prelude.MODULE_PATH, IdReferableConverter.INSTANCE, System.err::println);
       }
     }

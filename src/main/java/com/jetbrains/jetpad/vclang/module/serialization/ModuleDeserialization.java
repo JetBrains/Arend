@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;

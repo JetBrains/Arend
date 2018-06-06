@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.prelude;
 import com.jetbrains.jetpad.vclang.library.LibraryManager;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,12 +48,12 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
   }
 
   @Override
-  public boolean typecheck(Typechecking typechecking) {
+  public boolean orderModules(Ordering ordering) {
     if (myTypechecked) {
       return true;
     }
 
-    if (super.typecheck(typechecking)) {
+    if (super.orderModules(ordering)) {
       synchronized (PreludeLibrary.class) {
         if (Prelude.INTERVAL == null) {
           Prelude.initialize(getPreludeScope(), getTypecheckerState());

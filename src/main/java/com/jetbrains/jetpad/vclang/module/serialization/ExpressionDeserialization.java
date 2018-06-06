@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;

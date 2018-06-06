@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.*;
@@ -178,7 +178,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     Expression result = eval(elimTree, expr.getDefCallArguments(), getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
-    if (Typechecking.CANCELLATION_INDICATOR.isCanceled()) {
+    if (TypecheckingOrderingListener.CANCELLATION_INDICATOR.isCanceled()) {
       throw new ComputationInterruptedException();
     }
 
