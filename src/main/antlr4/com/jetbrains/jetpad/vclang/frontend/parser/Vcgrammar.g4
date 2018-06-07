@@ -21,9 +21,13 @@ classStat : '|' precedence ID tele* ':' expr  # classField
 
 definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
-            | '\\class' precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
+            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
             | '\\instance' ID tele* ':' classCall coClauses where?                                      # defInstance
             ;
+
+classKw   : '\\class'   # classKwClass
+          | '\\record'  # classKwRecord
+          ;
 
 classBody : '{' classStat* '}'                      # classImpl
           | '=>' atomFieldsAcc ('{' fieldSyn* '}')? # classSyn

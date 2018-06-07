@@ -581,7 +581,12 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, (TCReferable) parent.getReferable());
     Concrete.Definition classDefinition;
     ClassGroup resultGroup = null;
+    boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     if (ctx.classBody() instanceof ClassSynContext) {
+      if (isRecord) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.fieldTele(0).start), "Records cannot be synonyms"));
+      }
+
       List<Concrete.ClassFieldSynonym> fieldSynonyms = new ArrayList<>();
       classDefinition = new Concrete.ClassSynonym(reference, superClasses, null, fieldSynonyms);
 
