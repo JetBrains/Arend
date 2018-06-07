@@ -57,6 +57,10 @@ public abstract class Definition implements Variable {
     return myStatus;
   }
 
+  public boolean isTypechecked() {
+    return myStatus.headerIsOK();
+  }
+
   public void setStatus(TypeCheckingStatus status) {
     myStatus = status;
   }

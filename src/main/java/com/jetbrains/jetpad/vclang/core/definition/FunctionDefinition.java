@@ -50,6 +50,11 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
+  public boolean isTypechecked() {
+    return myBody != null && super.isTypechecked();
+  }
+
+  @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
     if (!status().headerIsOK()) {
       return null;
