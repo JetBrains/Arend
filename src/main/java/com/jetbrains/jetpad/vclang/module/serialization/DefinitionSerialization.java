@@ -37,6 +37,7 @@ public class DefinitionSerialization {
         break;
       case BODY_HAS_ERRORS:
       case BODY_NEEDS_TYPE_CHECKING:
+      case MAY_BE_TYPE_CHECKED:
         out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
         break;
       case HAS_ERRORS:

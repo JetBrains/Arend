@@ -38,7 +38,7 @@ public abstract class Definition implements Variable {
   public abstract Expression getDefCall(Sort sortArgument, List<Expression> args);
 
   public enum TypeCheckingStatus {
-    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, NO_ERRORS;
+    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, MAY_BE_TYPE_CHECKED, HAS_ERRORS, NO_ERRORS;
 
     public boolean bodyIsOK() {
       return this == HAS_ERRORS || this == NO_ERRORS;
@@ -48,17 +48,17 @@ public abstract class Definition implements Variable {
       return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
     }
 
+    public boolean isTypeChecked() {
+      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING && this != BODY_NEEDS_TYPE_CHECKING;
+    }
+
     public boolean needsTypeChecking() {
-      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED;
     }
   }
 
   public TypeCheckingStatus status() {
     return myStatus;
-  }
-
-  public boolean isTypechecked() {
-    return myStatus.headerIsOK();
   }
 
   public void setStatus(TypeCheckingStatus status) {

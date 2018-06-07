@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Function {
@@ -47,11 +46,6 @@ public class FunctionDefinition extends Definition implements Function {
 
   public void setResultType(Expression resultType) {
     myResultType = resultType;
-  }
-
-  @Override
-  public boolean isTypechecked() {
-    return myBody != null && super.isTypechecked();
   }
 
   @Override
