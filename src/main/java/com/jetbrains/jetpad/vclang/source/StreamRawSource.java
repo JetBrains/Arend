@@ -8,6 +8,8 @@ import com.jetbrains.jetpad.vclang.frontend.parser.*;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ExceptionError;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.DefinitionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ScopeFactory;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.group.FileGroup;
 import org.antlr.v4.runtime.*;
@@ -73,6 +75,7 @@ public abstract class StreamRawSource implements Source {
 
       result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(result, null, result.getGroupScope());
+      sourceLoader.getInstanceProviderSet().collectInstances(result, CachingScope.make(ScopeFactory.parentScopeForGroup(result, sourceLoader.getModuleScopeProvider(), null, true)), ConcreteReferableProvider.INSTANCE);
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath, true));

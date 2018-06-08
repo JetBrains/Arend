@@ -1,8 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.order;
 
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
@@ -13,8 +12,8 @@ import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DefinitionGetDe
 import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProvider;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.*;
 
@@ -51,8 +50,8 @@ public class Ordering {
     myRefToHeaders = refToHeaders;
   }
 
-  public Ordering(ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state) {
-    myInstanceProviderSet = new InstanceProviderSet();
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state) {
+    myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
     myDependencyListener = dependencyListener;
@@ -77,17 +76,7 @@ public class Ordering {
     return myConcreteProvider;
   }
 
-  public void orderModules(final Collection<? extends Group> modules) {
-    /* TODO[classes]
-    InstanceNamespaceProvider instanceNamespaceProvider = new InstanceNamespaceProvider(myErrorReporter);
-    NameResolver nameResolver = new NameResolver(new NamespaceProviders(null, myStaticNsProvider, myDynamicNsProvider));
-    GroupResolver resolver = new GroupInstanceResolver(nameResolver, myErrorReporter, myInstanceProviderSet);
-    Scope emptyScope = EmptyScope.INSTANCE;
-    for (Group group : modules) {
-      resolver.resolveGroup(group, emptyScope);
-    }
-    */
-
+  public void orderModules(Collection<? extends Group> modules) {
     for (Group group : modules) {
       orderModule(group);
     }
@@ -119,7 +108,7 @@ public class Ordering {
     }
   }
 
-  public final Definition getTypechecked(TCReferable definition) {
+  public Definition getTypechecked(TCReferable definition) {
     Definition typechecked = myState.getTypechecked(definition);
     if (typechecked == null || typechecked.status().needsTypeChecking()) {
       return null;
@@ -142,27 +131,28 @@ public class Ordering {
     return ok;
   }
 
-  private void collectInstances(InstanceProvider instanceProvider, Set<TCReferable> referables, Set<TCReferable> result) {
-    /* TODO[classes]
+  private void collectInstances(InstanceProvider instanceProvider, Deque<TCReferable> referables, Set<TCReferable> result) {
     while (!referables.isEmpty()) {
-      GlobalReferable referable = referables.pop();
-      if (result.contains(referable)) {
+      TCReferable referable = referables.pop();
+      if (!result.add(referable)) {
         continue;
       }
-      result.add(referable);
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-      if (definition instanceof Concrete.ClassSynonymField) {
-        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassSynonymField) definition).getRelatedDefinition())) {
-          referables.push(instance.getData());
+      if (definition instanceof Concrete.ClassFieldSynonym) {
+        Referable classRef = ((Concrete.ClassFieldSynonym) definition).getRelatedDefinition().getUnderlyingClass().getReferent();
+        if (classRef instanceof ClassReferable) {
+          for (Concrete.Instance instance : instanceProvider.getInstances((ClassReferable) classRef)) {
+            referables.push(instance.getData());
+          }
         }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter parameter : parameters) {
-            Concrete.ClassSynonym classSynonym = Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
-            if (classSynonym != null) {
-              for (Concrete.Instance instance : instanceProvider.getInstances(classSynonym)) {
+            ClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType());
+            if (classDef != null) {
+              for (Concrete.Instance instance : instanceProvider.getInstances(classDef)) {
                 referables.push(instance.getData());
               }
             }
@@ -170,7 +160,6 @@ public class Ordering {
         }
       }
     }
-    */
   }
 
   private OrderResult doOrderRecursively(TypecheckingUnit unit) {
@@ -197,20 +186,16 @@ public class Ordering {
       }
     }
 
-    Set<TCReferable> dependenciesWithoutInstances = new LinkedHashSet<>();
+    Set<TCReferable> dependencies = new LinkedHashSet<>();
     if (definition.enclosingClass != null) {
-      dependenciesWithoutInstances.add(definition.enclosingClass);
+      dependencies.add(definition.enclosingClass);
     }
 
     TypecheckingOrderingListener.Recursion recursion = TypecheckingOrderingListener.Recursion.NO;
-    definition.accept(new DefinitionGetDependenciesVisitor(dependenciesWithoutInstances), unit.isHeader());
-    Set<TCReferable> dependencies;
-    InstanceProvider instanceProvider = myInstanceProviderSet.getInstanceProvider(definition.getData());
-    if (instanceProvider == null) {
-      dependencies = dependenciesWithoutInstances;
-    } else {
-      dependencies = new LinkedHashSet<>();
-      collectInstances(instanceProvider, dependenciesWithoutInstances, dependencies);
+    definition.accept(new DefinitionGetDependenciesVisitor(dependencies), unit.isHeader());
+    InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
+    if (instanceProvider != null) {
+      collectInstances(instanceProvider, new ArrayDeque<>(dependencies), dependencies);
     }
     if (unit.isHeader() && dependencies.contains(definition.getData())) {
       myStack.pop();

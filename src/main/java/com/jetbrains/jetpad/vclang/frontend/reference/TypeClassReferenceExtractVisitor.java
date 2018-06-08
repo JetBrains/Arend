@@ -132,11 +132,10 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       if (!(referent instanceof GlobalReferable)) {
         return null;
       }
-      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete((GlobalReferable) referent);
-      if (!(definition instanceof Concrete.FunctionDefinition)) {
+      Concrete.FunctionDefinition function = myConcreteProvider.getConcreteFunction((GlobalReferable) referent);
+      if (function == null) {
         return null;
       }
-      Concrete.FunctionDefinition function = (Concrete.FunctionDefinition) definition;
       if (!(function.getBody() instanceof Concrete.TermFunctionBody)) {
         return null;
       }

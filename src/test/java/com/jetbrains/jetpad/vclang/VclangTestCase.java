@@ -15,6 +15,7 @@ import com.jetbrains.jetpad.vclang.prelude.PreludeFileLibrary;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -38,11 +39,11 @@ public abstract class VclangTestCase {
   protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
-  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter);
+  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter);
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, errorReporter, errorReporter);
+    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, new InstanceProviderSet(), errorReporter, errorReporter);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
     libraryManager.loadLibrary(preludeLibrary);

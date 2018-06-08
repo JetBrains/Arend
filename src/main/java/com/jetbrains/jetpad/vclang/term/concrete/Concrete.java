@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -112,19 +113,22 @@ public final class Concrete {
 
   // Expressions
 
-  public static GlobalReferable getUnderlyingClassDef(Expression expr) { // TODO[classes]
+  public static ClassReferable getUnderlyingClassDef(Expression expr) {
+    while (expr instanceof Concrete.ClassExtExpression) {
+      expr = ((ClassExtExpression) expr).getBaseClassExpression();
+    }
+    if (expr instanceof Concrete.AppExpression) {
+      expr = ((AppExpression) expr).getFunction();
+    }
+
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof GlobalReferable) {
-        return (GlobalReferable) definition;
+      if (definition instanceof ClassReferable) {
+        return (ClassReferable) definition;
       }
     }
 
-    if (expr instanceof ClassExtExpression) {
-      return getUnderlyingClassDef(((ClassExtExpression) expr).getBaseClassExpression());
-    } else {
-      return null;
-    }
+    return null;
   }
 
   public static abstract class Expression extends SourceNodeImpl {

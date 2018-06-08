@@ -49,7 +49,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageE
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 
 import java.math.BigInteger;
 import java.util.*;

@@ -5,7 +5,7 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.InstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 
 import java.util.Set;
 

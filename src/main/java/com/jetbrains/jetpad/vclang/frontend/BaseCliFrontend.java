@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.PreludeResourceLibrary;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.FileUtils;
 import org.apache.commons.cli.*;
@@ -39,7 +40,7 @@ public abstract class BaseCliFrontend {
 
   private class MyLibraryManager extends LibraryManager {
     MyLibraryManager() {
-      super(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, myErrorReporter, System.err::println);
+      super(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, new InstanceProviderSet(), myErrorReporter, System.err::println);
     }
 
     @Override
@@ -70,7 +71,7 @@ public abstract class BaseCliFrontend {
 
   private class MyTypechecking extends TypecheckingOrderingListener {
     MyTypechecking() {
-      super(myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter);
+      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.jetbrains.jetpad.vclang.typechecking.typeclass.pool;
+package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -36,7 +36,7 @@ public class LocalInstancePool implements InstancePool {
       return getInstance(classifyingExpression, classSyn);
     } else {
       for (Pair pair : myPool) {
-        if (pair.key.equals(classifyingExpression) && pair.classSyn.getUnderlyingClass().getReferent() == classSyn.getUnderlyingClass().getReferent()) {
+        if (pair.classSyn.getUnderlyingClass().getReferent() == classSyn.getUnderlyingClass().getReferent() && pair.key.equals(classifyingExpression)) {
           return pair.value;
         }
       }

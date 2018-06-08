@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider;
 
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 
@@ -13,6 +14,24 @@ public class EmptyConcreteProvider implements ConcreteProvider {
   @Nullable
   @Override
   public Concrete.ReferableDefinition getConcrete(GlobalReferable referable) {
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable) {
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public Concrete.Instance getConcreteInstance(GlobalReferable referable) {
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public Concrete.ClassDefinition getConcreteClass(ClassReferable referable) {
     return null;
   }
 }

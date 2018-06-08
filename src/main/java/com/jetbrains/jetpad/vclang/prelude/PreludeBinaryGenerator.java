@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.source.BinarySource;
 import com.jetbrains.jetpad.vclang.source.Source;
 import com.jetbrains.jetpad.vclang.typechecking.SimpleTypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 
 import java.nio.file.Paths;
 
@@ -29,9 +30,9 @@ public class PreludeBinaryGenerator {
       }
     }
 
-    LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), System.err::println, System.err::println);
+    LibraryManager manager = new LibraryManager(name -> { throw new IllegalStateException(); }, library.getModuleScopeProvider(), new InstanceProviderSet(), System.err::println, System.err::println);
     if (manager.loadLibrary(library)) {
-      if (new Prelude.PreludeTypechecking(typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(library)) {
+      if (new Prelude.PreludeTypechecking(manager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(library)) {
         library.persistModule(Prelude.MODULE_PATH, IdReferableConverter.INSTANCE, System.err::println);
       }
     }

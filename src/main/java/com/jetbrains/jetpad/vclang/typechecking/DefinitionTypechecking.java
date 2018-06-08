@@ -29,9 +29,9 @@ import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecki
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.CompositeInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.LocalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.CompositeInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 

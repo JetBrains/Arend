@@ -173,10 +173,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     if (fun instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
       if (ref instanceof ClassReferable) {
-        Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((ClassReferable) ref);
-        if (def instanceof Concrete.ClassDefinition) {
+        Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass((ClassReferable) ref);
+        if (def != null) {
           List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
-          List<Boolean> fieldsExplicitness = ((Concrete.ClassDefinition) def).getFieldsExplicitness();
+          List<Boolean> fieldsExplicitness = def.getFieldsExplicitness();
           for (int i = 0, j = 0; i < expr.getArguments().size(); i++, j++) {
             boolean fieldExplicit = j < fieldsExplicitness.size() ? fieldsExplicitness.get(j) : true;
             Concrete.Expression argument = expr.getArguments().get(i).expression;

@@ -29,7 +29,7 @@ public class ScopeFactory {
     return forGroup(group, moduleScopeProvider, elementsScope, true);
   }
 
-  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
+  public static @Nonnull Scope parentScopeForGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
@@ -41,9 +41,13 @@ public class ScopeFactory {
       ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider, elementsScope);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider, elementsScope);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, elementsScope, prelude);
     }
-    return LexicalScope.insideOf(group, parentScope);
+    return parentScope;
+  }
+
+  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
+    return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, elementsScope, prelude));
   }
 
   public static boolean isParentScopeVisible(Abstract.SourceNode sourceNode) {

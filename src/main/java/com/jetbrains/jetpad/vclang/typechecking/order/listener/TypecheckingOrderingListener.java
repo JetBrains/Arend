@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.library.Library;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.IdReferableConverter;
-import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.CancellationIndicator;
@@ -30,8 +29,8 @@ import com.jetbrains.jetpad.vclang.typechecking.termination.DefinitionCallGraph;
 import com.jetbrains.jetpad.vclang.typechecking.termination.RecursiveBehavior;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.pool.GlobalInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.typeclass.provider.InstanceProviderSet;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.DesugarVisitor;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
@@ -53,16 +52,16 @@ public class TypecheckingOrderingListener implements OrderingListener {
     CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
   }
 
-  public TypecheckingOrderingListener(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
-    myInstanceProviderSet = new InstanceProviderSet();
+    myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
   }
 
-  public TypecheckingOrderingListener(TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
-    this(state, concreteProvider, errorReporter, DummyDependencyListener.INSTANCE);
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
+    this(instanceProviderSet, state, concreteProvider, errorReporter, DummyDependencyListener.INSTANCE);
   }
 
   public TypecheckingOrderingListener(Ordering ordering, ErrorReporter errorReporter) {
@@ -212,7 +211,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         visitor.setHasErrors();
       }
       DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, myErrorReporter);
-      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit.getDefinition());
+      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), visitor);
       }
@@ -302,7 +301,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter);
     DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, myErrorReporter);
-    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.getInstanceProvider(unit.getDefinition().getData())), unit, recursive, localErrorReporter);
+    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), unit, recursive, localErrorReporter);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
 
     if (recursive && clauses != null) {

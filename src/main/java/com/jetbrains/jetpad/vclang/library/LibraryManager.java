@@ -4,7 +4,9 @@ import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -13,6 +15,7 @@ import java.util.*;
 public class LibraryManager {
   private final LibraryResolver myLibraryResolver;
   private ModuleScopeProvider myModuleScopeProvider;
+  private final InstanceProviderSet myInstanceProviderSet;
   private final ErrorReporter myTypecheckingErrorReporter;
   private final ErrorReporter myLibraryErrorReporter;
   private final Map<Library, Set<Library>> myReverseDependencies = new LinkedHashMap<>();
@@ -24,12 +27,14 @@ public class LibraryManager {
    *
    * @param libraryResolver           a library resolver.
    * @param moduleScopeProvider       a module scope provider for the whole project.
+   * @param instanceProviderSet       an instance provider set.
    * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
    */
-  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
+  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
     myLibraryResolver = libraryResolver;
     myModuleScopeProvider = moduleScopeProvider;
+    myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
   }
@@ -40,6 +45,10 @@ public class LibraryManager {
 
   public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
     myModuleScopeProvider = moduleScopeProvider;
+  }
+
+  public InstanceProviderSet getInstanceProviderSet() {
+    return myInstanceProviderSet;
   }
 
   public ErrorReporter getTypecheckingErrorReporter() {

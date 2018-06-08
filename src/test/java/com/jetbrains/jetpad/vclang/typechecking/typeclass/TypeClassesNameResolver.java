@@ -6,173 +6,114 @@ import org.junit.Test;
 public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void classNotInScope() {
-    resolveNamesModule("\\view Foo \\on X \\by X { }", 1);
+    resolveNamesModule("\\class Y => X", 1);
   }
 
   @Test
-  public void resolveNames() {
+  public void fieldSynonymNotInScope() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\view X' \\on X \\by T { f }\n" +
-        "\\func g => f");
+      "\\class X (A : \\Type0)\n" +
+      "\\class Y => X { B => C }", 1);
   }
 
   @Test
-  public void resolveNames2() {
+  public void resolveFieldSynonym() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
+        "\\class X (T : \\Type0) {\n" +
         "  | f : \\Type0\n" +
         "}\n" +
-        "\\view X' \\on X \\by T { f }\n" +
-        "\\func g => f");
+        "\\class X' => X { f => f' }\n" +
+        "\\func g {x : X} => f\n" +
+        "\\func h (x : X) => x.f\n" +
+        "\\func g' {x' : X'} => f'\n" +
+        "\\func h' (x' : X') => x'.f'");
   }
 
   @Test
-  public void resolveNamesNonImplicit() {
+  public void resolveFieldSynonymError() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
+        "\\class X (T : \\Type0) {\n" +
         "  | f : \\Type0\n" +
-        "  | h : \\Type0\n" +
         "}\n" +
-        "\\view X' \\on X \\by T { f }\n" +
-        "\\func g => h", 1);
+        "\\class X' => X { f => f' }\n" +
+        "\\func h (x' : X') => x'.f", 1);
   }
 
   @Test
   public void resolveNamesDuplicate() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
+        "\\class X (T : \\Type0) {\n" +
         "  | f : \\Type0\n" +
         "}\n" +
-        "\\view X' \\on X \\by T { f }\n" +
-        "\\class Y {\n" +
-        "  | T : \\Type0\n" +
+        "\\class X' => X { f => h }\n" +
+        "\\class Y (T : \\Type0) {\n" +
         "  | g : \\Type0 -> \\Type0\n" +
         "}\n" +
-        "\\view Y' \\on Y \\by T { g => f }", 1);
+        "\\class Y' => Y { g => h }", 1);
   }
 
   @Test
   public void resolveNamesInner() {
     resolveNamesModule(
         "\\class X \\where {\n" +
-        "  \\class Z {\n" +
-        "    | T : \\Type0\n" +
+        "  \\class Z (T : \\Type0) {\n" +
         "    | f : \\Type0\n" +
         "  }\n" +
-        "  \\view Z' \\on Z \\by T { f }\n" +
+        "  \\class Z' => Z { f => f' }\n" +
         "}\n" +
-        "\\func g => f", 1);
-  }
-
-  @Test
-  public void resolveNamesRecursive() {
-    resolveNamesModule(
-        "\\class X \\where {\n" +
-        "  \\class Z {\n" +
-        "    | T : \\Type0\n" +
-        "    | f : \\Type0\n" +
-        "  }\n" +
-        "  \\view Z' \\on Z \\by T { f }\n" +
-        "}\n" +
-        "\\class Y {\n" +
-        "  | T : \\Type0\n" +
-        "  | z : X.Z\n" +
-        "}\n" +
-        "\\view Y' \\on Y \\by T { z }\n" +
-        "\\func g => f", 1);
+        "\\func g => f'", 1);
   }
 
   @Test
   public void resolveClassExt() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type1\n" +
+        "\\class X (T : \\Type1) {\n" +
         "  | f : \\Type1\n" +
         "}\n" +
-        "\\view Y \\on X \\by T { f => g }\n" +
+        "\\class Y => X { f => g }\n" +
         "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
   public void resolveClassExtSameName() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type1\n" +
+        "\\class X (T : \\Type1) {\n" +
         "  | f : \\Type1\n" +
         "}\n" +
-        "\\view X' \\on X \\by T { f => g }\n" +
-        "\\func h => \\new X' { T => \\Type0 | g => \\Type0 }");
+        "\\class Y => X\n" +
+        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }");
   }
 
   @Test
-  public void resolveClassExtSameName2() {
+  public void resolveClassExtError() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type1\n" +
+        "\\class X (T : \\Type1) {\n" +
         "  | f : \\Type1\n" +
         "}\n" +
-        "\\view X' \\on X \\by T { f => g }\n" +
-        "\\func h => \\new X' { T => \\Type0 | f => \\Type0 }", 1);
+        "\\class Y => X { f => g }\n" +
+        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }", 1);
   }
 
   @Test
-  public void duplicateClassView() {
+  public void duplicateFieldSynonymName() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\class Y {\n" +
-        "  | T : \\Type0\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\view X' \\on X \\by T { f }\n" +
-        "\\view Y' \\on Y \\by T { f }", 1);
+        "\\class X (T f : \\Type0)\n" +
+        "\\func g => 0\n" +
+        "\\class Y => X { f => g }", 1);
   }
 
   @Test
-  public void duplicateClassViewFieldName() {
+  public void cyclicSynonym() {
+    resolveNamesModule("\\class X => X", 1);
+  }
+
+  @Test
+  public void instanceRecord() {
     resolveNamesModule(
-        "\\class X {\n" +
-        "  | T : \\Type0\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\func f => 0\n" +
-        "\\view X' \\on X \\by T { f }", 1);
-  }
-
-  @Test
-  public void cyclicView() {
-    resolveNamesModule("\\view X \\on X \\by X { }", 1);
-  }
-
-  @Test
-  public void instanceWithoutView() {
-    resolveNamesModule(
-      "\\class X {\n" +
-      "  | A : \\Type0\n" +
+      "\\record X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\data D\n" +
       "\\instance D-X : X | A => D | B => \\lam n => D", 1);
-  }
-
-  @Test
-  public void instanceNotView() {
-    resolveNamesModule(
-      "\\class X {\n" +
-      "  | A : \\Type0\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\view X' \\on X \\by A { B }\n" +
-      "\\data D\n" +
-      "\\instance D-X : X | A => D | B => \\lam _ => D", 1);
   }
 }

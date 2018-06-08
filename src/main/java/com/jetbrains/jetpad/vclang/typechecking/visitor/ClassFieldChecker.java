@@ -47,11 +47,11 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
       if (child.equals(parent)) {
         return true;
       }
-      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(child);
-      if (!(def instanceof Concrete.ClassDefinition)) {
+      Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);
+      if (def == null) {
         return false;
       }
-      child = ((Concrete.ClassDefinition) def).enclosingClass;
+      child = def.enclosingClass;
     }
 
     return false;
@@ -62,12 +62,12 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
       if (child.equals(parent)) {
         return expr;
       }
-      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(child);
-      if (!(def instanceof Concrete.ClassDefinition)) {
+      Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);
+      if (def == null) {
         return expr;
       }
-      child = ((Concrete.ClassDefinition) def).enclosingClass;
-      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassDefinition) def).getFields().get(0).getData()), expr, false);
+      child = def.enclosingClass;
+      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), def.getFields().get(0).getData()), expr, false);
     }
 
     return expr;

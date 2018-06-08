@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.library.SourceLibrary;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.error.ModuleNotFoundError;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,10 @@ public final class SourceLoader {
 
   public ModuleScopeProvider getModuleScopeProvider() {
     return myLibraryManager.getModuleScopeProvider();
+  }
+
+  public InstanceProviderSet getInstanceProviderSet() {
+    return myLibraryManager.getInstanceProviderSet();
   }
 
   public ErrorReporter getTypecheckingErrorReporter() {
