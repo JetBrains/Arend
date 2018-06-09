@@ -571,16 +571,16 @@ public final class Concrete {
 
   public static class SigmaExpression extends Expression {
     public static final byte PREC = -3;
-    private final List<TypeParameter> myArguments;
+    private final List<TypeParameter> myParameters;
 
-    public SigmaExpression(Object data, List<TypeParameter> arguments) {
+    public SigmaExpression(Object data, List<TypeParameter> parameters) {
       super(data);
-      myArguments = arguments;
+      myParameters = parameters;
     }
 
     @Nonnull
     public List<TypeParameter> getParameters() {
-      return myArguments;
+      return myParameters;
     }
 
     @Override

@@ -129,7 +129,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       Object data = term == null ? myReferableConverter.toDataLocatedReferable(def.getReferable()) : term.getData();
-      body = new Concrete.TermFunctionBody(data, new Concrete.HoleExpression(data));
+      body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
     List<Concrete.Parameter> parameters;
@@ -558,11 +558,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.TupleExpression visitTuple(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> absFields, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (absFields.isEmpty()) { // TODO: Implement unit types as empty sigmas
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
     List<Concrete.Expression> fields = new ArrayList<>(absFields.size());
     for (Abstract.Expression field : absFields) {
       fields.add(field.accept(this, null));
@@ -574,11 +569,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.SigmaExpression visitSigma(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (parameters.isEmpty()) { // TODO: Implement unit types as empty sigmas
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
     reportError(errorData);
     return new Concrete.SigmaExpression(data, buildTypeParameters(parameters));
   }

@@ -979,6 +979,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitSigma(Concrete.SigmaExpression expr, ExpectedType expectedType) {
+    if (expr.getParameters().isEmpty()) {
+      return checkResult(expectedType, new Result(new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()), new UniverseExpression(Sort.PROP)), expr);
+    }
+
+    for (Concrete.TypeParameter parameter : expr.getParameters()) {
+      if (!parameter.getExplicit()) {
+        myErrorReporter.report(new TypecheckingError("Parameters in sigma types must be explicit", parameter));
+        parameter.setExplicit(true);
+      }
+    }
+
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
     DependentLink args = visitParameters(expr.getParameters(), sorts);
     if (args == null || !args.hasNext()) return null;

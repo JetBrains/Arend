@@ -200,4 +200,20 @@ public class ComparisonTest extends TypeCheckingTestCase {
     CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
+
+  @Test
+  public void etaTuple() {
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => (p.1,p.2)", null);
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => p", null);
+    assertEquals(result2.expression, result1.expression);
+    assertEquals(result1.expression, result2.expression);
+  }
+
+  @Test
+  public void etaEmptyTuple() {
+    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam (p : \\Sigma) => p", null);
+    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam (p : \\Sigma) => ()", null);
+    assertEquals(result2.expression, result1.expression);
+    assertEquals(result1.expression, result2.expression);
+  }
 }

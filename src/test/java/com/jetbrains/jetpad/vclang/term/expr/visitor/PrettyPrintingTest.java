@@ -141,4 +141,19 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintPiField() {
     testDefinition("\\func f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}");
   }
+
+  @Test
+  public void prettyPrintEmptyTuple() {
+    testDefinition("\\func f => ()");
+  }
+
+  @Test
+  public void prettyPrintSigma() {
+    testDefinition("\\func f => \\Sigma (x : Nat)");
+  }
+
+  @Test
+  public void prettyPrintEmptySigma() {
+    testDefinition("\\func f => \\Sigma");
+  }
 }
