@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ConcreteLocatedReferable;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.expr.ConcreteCompareVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
@@ -20,6 +21,7 @@ import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
@@ -104,42 +106,39 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     ((Concrete.Definition) def.getDefinition()).accept(visitor, null);
     String s2 = sb.toString();
     ConcreteLocatedReferable def2 = resolveNamesDef(s2);
-    //TODO: Current implementation only ensures that output of PrettyPrinter parses back but does not ensure that the parse result has not changed along the way
-    //TODO: Implement some comparator for definitions to fix this
+    assertTrue(ConcreteCompareVisitor.compare(def.getDefinition(), def2.getDefinition()));
   }
 
   @Test
   public void prettyPrintData1() {
-    String s1 =
-        "\\data S1 \n" +
-        "| base\n" +
-        "| loop Nat \\with {\n" +
-        "  | left => base\n" +
-        "  | right => base\n" +
-        "}";
-    testDefinition(s1);
+    testDefinition(
+      "\\data S1 \n" +
+      "| base\n" +
+      "| loop Nat \\with {\n" +
+      "  | left => base\n" +
+      "  | right => base\n" +
+      "}");
   }
 
   @Test
-  public void prettyPrintClass1(){
-    String s1 = "\\class C0 {\n" +
-                "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
-                "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
-                "}";
-    testDefinition(s1);
+  public void prettyPrintClass1() {
+    testDefinition(
+      "\\class C0 {\n" +
+      "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
+      "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
+      "}");
   }
 
   @Test
-  public void prettyPrintData2(){
-    String s1 = "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x\n" +
-                "    | suc x' => c0 (y = x')\n" +
-                "    | suc x' => c1 (p : D2 y x')";
-    testDefinition(s1);
+  public void prettyPrintData2() {
+    testDefinition(
+      "\\data D2 {A : \\Type0} (y : Nat) (x : Nat) \\elim x\n" +
+      "    | suc x' => c0 (y = x')\n" +
+      "    | suc x' => c1 (p : D2 y x')");
   }
 
   @Test
-  public void prettyPrintPiField(){
-    String s1 = "\\func f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}";
-    testDefinition(s1);
+  public void prettyPrintPiField() {
+    testDefinition("\\func f {A : \\Type} (P : A -> \\Type): \\Pi (u : A) ((P u).1) -> A => {?}");
   }
 }

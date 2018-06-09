@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.term.concrete;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
@@ -16,7 +15,6 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -696,19 +694,11 @@ public final class Concrete {
   }
 
   public static class FunctionClause extends Clause {
-    private final List<Pattern> myPatterns;
     public Expression expression;
 
     public FunctionClause(Object data, List<Pattern> patterns, Expression expression) {
-      super(data);
-      myPatterns = patterns;
+      super(data, patterns);
       this.expression = expression;
-    }
-
-    @Nonnull
-    @Override
-    public List<Pattern> getPatterns() {
-      return myPatterns;
     }
 
     @Nullable
@@ -1187,24 +1177,25 @@ public final class Concrete {
   }
 
   public static abstract class Clause extends SourceNodeImpl implements PatternContainer {
-    public Clause(Object data) {
-      super(data);
-    }
-  }
-
-  public static class ConstructorClause extends Clause {
     private final List<Pattern> myPatterns;
-    private final List<Constructor> myConstructors;
 
-    public ConstructorClause(Object data, List<Pattern> patterns, List<Constructor> constructors) {
+    public Clause(Object data, List<Pattern> patterns) {
       super(data);
       myPatterns = patterns;
-      myConstructors = constructors;
     }
 
     @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
+    }
+  }
+
+  public static class ConstructorClause extends Clause {
+    private final List<Constructor> myConstructors;
+
+    public ConstructorClause(Object data, List<Pattern> patterns, List<Constructor> constructors) {
+      super(data, patterns);
+      myConstructors = constructors;
     }
 
     @Nonnull
@@ -1323,20 +1314,20 @@ public final class Concrete {
   }
 
   public static class Instance extends Definition {
-    private final List<Parameter> myArguments;
+    private final List<Parameter> myParameters;
     private final ReferenceExpression myClass;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public Instance(TCReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(TCReferable referable, List<Parameter> parameters, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
-      myArguments = arguments;
+      myParameters = parameters;
       myClass = classRef;
       myClassFieldImpls = classFieldImpls;
     }
 
     @Nonnull
     public List<Parameter> getParameters() {
-      return myArguments;
+      return myParameters;
     }
 
     @Nonnull
