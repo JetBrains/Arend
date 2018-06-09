@@ -136,7 +136,7 @@ public abstract class BaseCliFrontend {
     // Get library dependencies
     String[] libStrings = cmdLine.getOptionValues("l");
     List<LibraryDependency> libraryDependencies = new ArrayList<>();
-    if (libDirStrings != null) {
+    if (libDirStrings != null && libStrings != null) {
       for (String libString : libStrings) {
         if (libString.endsWith(FileUtils.LIBRARY_EXTENSION)) {
           Library library = myLibraryResolver.registerLibrary(Paths.get(libString));

@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * Represent a library header.
+ *
  */
 public class LibraryHeader {
   public final Collection<ModulePath> modules;

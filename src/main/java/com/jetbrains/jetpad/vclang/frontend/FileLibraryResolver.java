@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.library.FileLoadableHeaderLibrary;
 import com.jetbrains.jetpad.vclang.library.FileSourceLibrary;
 import com.jetbrains.jetpad.vclang.library.Library;
 import com.jetbrains.jetpad.vclang.library.UnmodifiableSourceLibrary;
@@ -30,7 +31,7 @@ public class FileLibraryResolver implements LibraryResolver {
   }
 
   private FileSourceLibrary getLibrary(Path basePath, String libName) {
-    return new FileSourceLibrary(libName, null, basePath, FileUtils.getModules(basePath, FileUtils.SERIALIZED_EXTENSION), true, Collections.emptyList(), myTypecheckerState);
+    return new FileLoadableHeaderLibrary(libName, basePath, myTypecheckerState);
   }
 
   private static Path findLibrary(Path libDir, String libName) {
