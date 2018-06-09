@@ -1,74 +1,53 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FieldCallExpression;
+import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
-import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
 import java.util.List;
 
 public class ClassField extends Definition {
-  private TypedDependentLink myThisParameter;
-  private Expression myType;
+  private final ClassDefinition myParentClass;
+  private PiExpression myType;
 
-  public ClassField(TCReferable referable, ClassDefinition thisClass) {
+  public ClassField(TCReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
-    setThisClass(thisClass);
+    myParentClass = parentClass;
   }
 
-  public ClassField(TCReferable referable, Expression type, ClassDefinition thisClass, TypedDependentLink thisParameter) {
+  public ClassField(TCReferable referable, ClassDefinition parentClass, PiExpression type) {
     super(referable, TypeCheckingStatus.NO_ERRORS);
-    myThisParameter = thisParameter;
+    myParentClass = parentClass;
     myType = type;
-    setThisClass(thisClass);
   }
 
-  @Override
-  public String getName() {
-    return getReferable() != null ? super.getName() : getThisClass().getName() + ".\\parent"; // TODO[classes]
+  public ClassDefinition getParentClass() {
+    return myParentClass;
   }
 
-  @Override
-  public DependentLink getParameters() {
-    return myThisParameter;
+  public void setType(PiExpression type) {
+    assert myType == null;
+    myType = type;
   }
 
-  public TypedDependentLink getThisParameter() {
-    return myThisParameter;
-  }
-
-  public void setThisParameter(TypedDependentLink thisParameter) {
-    assert myThisParameter == null;
-    myThisParameter = thisParameter;
-  }
-
-  public Expression getBaseType(Sort sortArgument) {
-    return myType.subst(sortArgument.toLevelSubstitution());
+  public PiExpression getType(Sort sortArgument) {
+    return sortArgument == Sort.STD ? myType : new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
   }
 
   @Override
   public Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    if (myType == null) {
-      return null;
-    }
-
-    ExprSubstitution subst = new ExprSubstitution();
-    LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
-    params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myThisParameter, subst, polySubst)));
-    return myType.subst(subst, polySubst);
+    PiExpression type = getType(sortArgument);
+    params.add(type.getParameters());
+    return type.getCodomain();
   }
 
   @Override
-  public Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args) {
-    return FieldCallExpression.make(this, thisExpr);
-  }
-
-  public void setBaseType(Expression type) {
-    assert myType == null;
-    myType = type;
+  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
+    return FieldCallExpression.make(this, sortArgument, args.get(0));
   }
 }

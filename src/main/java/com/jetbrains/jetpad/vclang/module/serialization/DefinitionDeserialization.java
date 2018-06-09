@@ -2,18 +2,19 @@ package com.jetbrains.jetpad.vclang.module.serialization;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.Body;
 import com.jetbrains.jetpad.vclang.core.elimtree.ClauseBase;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
+import com.jetbrains.jetpad.vclang.naming.reference.DataLocatedReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -31,14 +32,8 @@ public class DefinitionDeserialization {
     myDependencyListener = dependencyListener;
   }
 
-  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
+  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
-
-    if (defProto.getThisClassRef() != 0) {
-      ClassDefinition thisClass = myCallTargetProvider.getCallTarget(defProto.getThisClassRef(), ClassDefinition.class);
-      def.setThisClass(thisClass);
-      myDependencyListener.dependsOn(def.getReferable(), defProto.getDefinitionDataCase() != DefinitionProtos.Definition.DefinitionDataCase.CLASS, thisClass.getReferable());
-    }
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
@@ -58,36 +53,67 @@ public class DefinitionDeserialization {
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
 
-    def.setStatus(readTcStatus(defProto));
+    def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
   }
 
-  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto) {
-    switch (defProto.getStatus()) {
-      case HEADER_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
-      case BODY_HAS_ERRORS:
-        return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
-      case HEADER_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
-      case BODY_NEEDS_TYPE_CHECKING:
-        return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
-      case HAS_ERRORS:
-        return Definition.TypeCheckingStatus.HAS_ERRORS;
-      case NO_ERRORS:
-        return Definition.TypeCheckingStatus.NO_ERRORS;
-      default:
-        throw new IllegalStateException("Unknown typechecking state");
+  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {
+    if (typecheckDefinitionsWithErrors) {
+      switch (defProto.getStatus()) {
+        case BODY_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+        case NO_ERRORS:
+          return Definition.TypeCheckingStatus.NO_ERRORS;
+        default:
+          return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
+      }
+    } else {
+      switch (defProto.getStatus()) {
+        case HEADER_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
+        case BODY_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
+        case HAS_ERRORS:
+          return Definition.TypeCheckingStatus.HAS_ERRORS;
+        case NO_ERRORS:
+          return Definition.TypeCheckingStatus.NO_ERRORS;
+        default:
+          throw new IllegalStateException("Unknown typechecking state");
+      }
     }
+  }
+
+  private LamExpression checkImplementation(Expression expr, ClassDefinition classDef) throws DeserializationException {
+    if (expr instanceof LamExpression) {
+      LamExpression lamExpr = (LamExpression) expr;
+      if (!lamExpr.getParameters().getNext().hasNext()) {
+        Expression type = lamExpr.getParameters().getTypeExpr();
+        if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition().equals(classDef)) {
+          return lamExpr;
+        }
+      }
+    }
+    throw new DeserializationException("Incorrect class field implementation");
+  }
+
+  private PiExpression checkFieldType(Expression expr, ClassDefinition classDef) throws DeserializationException {
+    if (expr instanceof PiExpression) {
+      PiExpression piExpr = (PiExpression) expr;
+      if (!piExpr.getParameters().getNext().hasNext()) {
+        Expression type = piExpr.getParameters().getTypeExpr();
+        if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition().equals(classDef)) {
+          return piExpr;
+        }
+      }
+    }
+    throw new DeserializationException("Incorrect class field type");
   }
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
     for (int classFieldRef : classProto.getFieldRefList()) {
       classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
     }
-    for (Map.Entry<Integer, DefinitionProtos.Definition.ClassData.Implementation> entry : classProto.getImplementationsMap().entrySet()) {
-      TypedDependentLink thisParam = (TypedDependentLink) defDeserializer.readParameter(entry.getValue().getThisParam());
-      ClassDefinition.Implementation impl = new ClassDefinition.Implementation(thisParam, defDeserializer.readExpr(entry.getValue().getTerm()));
-      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), impl);
+    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : classProto.getImplementationsMap().entrySet()) {
+      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkImplementation(defDeserializer.readExpr(entry.getValue()), classDef));
     }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
     if (classProto.getCoercingFieldRef() != -1) {
@@ -102,17 +128,16 @@ public class DefinitionDeserialization {
         ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
       }
     }
-    if (classProto.getEnclosingThisFieldRef() != 0) {
-      classDef.setEnclosingThisField(myCallTargetProvider.getCallTarget(classProto.getEnclosingThisFieldRef(), ClassField.class));
-    }
 
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
-      field.setThisParameter((TypedDependentLink) defDeserializer.readParameter(fieldProto.getThisParam()));
-      if (fieldProto.hasType()) {
-        field.setBaseType(defDeserializer.readExpr(fieldProto.getType()));
+      if (!fieldProto.hasType()) {
+        throw new DeserializationException("Missing class field type");
       }
+      PiExpression fieldType = checkFieldType(defDeserializer.readExpr(fieldProto.getType()), classDef);
+      field.setType(fieldType);
       classDef.addPersonalField(field);
+      setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
     }
 
     for (ClassField field : classDef.getPersonalFields()) {
@@ -222,6 +247,34 @@ public class DefinitionDeserialization {
     defDeserializer.setIsHeader(false);
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
+    }
+    setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
+  }
+
+  private void setTypeClassReference(TCReferable referable, DependentLink parameters, Expression type) {
+    if (!(referable instanceof DataLocatedReferableImpl)) {
+      return;
+    }
+
+    for (; parameters.hasNext(); parameters = parameters.getNext()) {
+      parameters = parameters.getNextTyped(null);
+      if (parameters.isExplicit()) {
+        return;
+      }
+    }
+
+    while (type instanceof PiExpression) {
+      for (DependentLink link = ((PiExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (link.isExplicit()) {
+          return;
+        }
+      }
+      type = ((PiExpression) type).getCodomain();
+    }
+
+    if (type instanceof ClassCallExpression) {
+      ((DataLocatedReferableImpl) referable).setTypeClassReference(((ClassCallExpression) type).getDefinition().getReferable());
     }
   }
 }

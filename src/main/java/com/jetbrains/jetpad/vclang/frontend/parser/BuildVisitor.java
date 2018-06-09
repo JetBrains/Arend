@@ -120,10 +120,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
-  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
-        Object statement = visitStatement(statementCtx, parent);
+        Object statement = visitStatement(statementCtx, parent, enclosingClass);
         if (statement instanceof Group) {
           subgroups.add((Group) statement);
         } else if (statement instanceof SimpleNamespaceCommand) {
@@ -139,11 +139,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private Object visitStatement(StatementContext statementCtx, ChildGroup parent) {
+  private Object visitStatement(StatementContext statementCtx, ChildGroup parent, TCClassReferable enclosingClass) {
     if (statementCtx instanceof StatCmdContext) {
       return visitStatCmd((StatCmdContext) statementCtx, parent);
     } else if (statementCtx instanceof StatDefContext) {
-      return visitDefinition(((StatDefContext) statementCtx).definition(), parent);
+      return visitDefinition(((StatDefContext) statementCtx).definition(), parent, enclosingClass);
     } else {
       return null;
     }
@@ -154,19 +154,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule), subgroups, namespaceCommands);
-    visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup);
+    visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup, null);
     return parentGroup;
   }
 
-  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent) {
+  public ChildGroup visitDefinition(DefinitionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     if (ctx instanceof DefFunctionContext) {
-      return visitDefFunction((DefFunctionContext) ctx, parent);
+      return visitDefFunction((DefFunctionContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefDataContext) {
-      return visitDefData((DefDataContext) ctx, parent);
+      return visitDefData((DefDataContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefClassContext) {
-      return visitDefClass((DefClassContext) ctx, parent);
+      return visitDefClass((DefClassContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefInstanceContext) {
-      return visitDefInstance((DefInstanceContext) ctx, parent);
+      return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -188,8 +188,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     } else {
       openedReferences = new ArrayList<>(ctx.nsUsing().nsId().size());
       for (NsIdContext nsIdCtx : ctx.nsUsing().nsId()) {
-        openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(
-          new NamedUnresolvedReference(tokenPosition(nsIdCtx.ID(0).getSymbol()), nsIdCtx.ID(0).getText()),
+        Position position = tokenPosition(nsIdCtx.ID(0).getSymbol());
+        openedReferences.add(new SimpleNamespaceCommand.SimpleNameRenaming(position,
+          new NamedUnresolvedReference(position, nsIdCtx.ID(0).getText()),
           nsIdCtx.precedence() == null ? null : visitPrecedence(nsIdCtx.precedence()),
           nsIdCtx.ID().size() < 2 ? null : nsIdCtx.ID(1).getText()));
       }
@@ -342,7 +343,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), true);
   }
 
-  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Concrete.Parameter> parameters = visitFunctionParameters(ctx.tele());
     List<String> classPath = visitAtomFieldsAccRef(ctx.classCall().atomFieldsAcc());
     if (classPath == null) {
@@ -351,11 +352,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
     Position position = tokenPosition(ctx.classCall().start);
-    reference.setDefinition(new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, new LongUnresolvedReference(position, classPath)), visitCoClauses(ctx.coClauses())));
+    Concrete.Instance instance = new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, classPath)), visitCoClauses(ctx.coClauses()));
+    instance.enclosingClass = enclosingClass;
+    reference.setDefinition(instance);
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -369,27 +372,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     throw new IllegalStateException();
   }
 
-  @Override
-  public List<Concrete.ClassFieldImpl> visitCoClausesWithoutBraces(CoClausesWithoutBracesContext ctx) {
-    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(ctx.coClause().size());
-    for (CoClauseContext coClause : ctx.coClause()) {
-      coClauses.add(visitCoClause(coClause));
+  private List<Concrete.ClassFieldImpl> visitCoClauses(List<CoClauseContext> coClausesCtx) {
+    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(coClausesCtx.size());
+    for (CoClauseContext coClause : coClausesCtx) {
+      Concrete.ClassFieldImpl impl = visitCoClause(coClause);
+      if (impl != null) {
+        coClauses.add(impl);
+      }
     }
     return coClauses;
+  }
+
+  @Override
+  public List<Concrete.ClassFieldImpl> visitCoClausesWithoutBraces(CoClausesWithoutBracesContext ctx) {
+    return visitCoClauses(ctx.coClause());
   }
 
   @Override
   public List<Concrete.ClassFieldImpl> visitCoClausesWithBraces(CoClausesWithBracesContext ctx) {
-    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(ctx.coClause().size());
-    for (CoClauseContext coClause : ctx.coClause()) {
-      coClauses.add(visitCoClause(coClause));
-    }
-    return coClauses;
+    return visitCoClauses(ctx.coClause());
   }
 
-  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     if (ctx != null) {
-      visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent);
+      visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent, enclosingClass);
     }
   }
 
@@ -406,7 +412,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     Concrete.Expression resultType = ctx.expr() != null ? visitExpr(ctx.expr()) : null;
     Concrete.FunctionBody body;
     if (ctx.functionBody() instanceof WithElimContext) {
@@ -420,9 +426,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     Concrete.Definition funDef = new Concrete.FunctionDefinition(referable, visitFunctionParameters(ctx.tele()), resultType, body);
+    funDef.enclosingClass = enclosingClass;
     referable.setDefinition(funDef);
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -441,7 +448,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arguments;
   }
 
-  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent) {
+  private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     final Concrete.UniverseExpression universe;
     if (ctx.expr() != null) {
       Concrete.Expression expr = visitExpr(ctx.expr());
@@ -459,13 +466,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.ReferenceExpression> eliminatedReferences = ctx.dataBody() instanceof DataClausesContext ? visitElim(((DataClausesContext) ctx.dataBody()).elim()) : null;
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     Concrete.DataDefinition dataDefinition = new Concrete.DataDefinition(referable, visitTeles(ctx.tele()), eliminatedReferences, ctx.TRUNCATED() != null, universe, new ArrayList<>());
+    dataDefinition.enclosingClass = enclosingClass;
     referable.setDefinition(dataDefinition);
     visitDataBody(ctx.dataBody(), dataDefinition, constructors);
 
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     DataGroup resultGroup = new DataGroup(referable, constructors, subgroups, namespaceCommands, parent);
-    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup);
+    visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
@@ -529,13 +537,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           }
 
           InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, parentClass.getData());
-          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, type);
+          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
           reference.setDefinition(field);
           fields.add(field);
         } else if (statementCtx instanceof ClassImplementContext) {
-          implementations.add(visitClassImplement((ClassImplementContext) statementCtx));
+          Concrete.ClassFieldImpl impl = visitClassImplement((ClassImplementContext) statementCtx);
+          if (impl != null) {
+            implementations.add(impl);
+          }
         } else if (statementCtx instanceof ClassDefinitionContext) {
-          subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent));
+          subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent, parentClass.getData()));
         } else {
           myErrorReporter.report(new ParserError(tokenPosition(statementCtx.start), "Unknown class statement"));
         }
@@ -545,10 +556,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
   }
 
-  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent) {
+  private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     WhereContext where = ctx.where();
 
-    List<Concrete.ReferenceExpression> superClasses = ctx.classCall().isEmpty() ? Collections.emptyList() : new ArrayList<>(ctx.classCall().size());
+    List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(ctx.classCall().size());
     List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
@@ -557,7 +568,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<String> superClass = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
       if (superClass != null) {
         Position position = tokenPosition(classCallCtx.start);
-        superClasses.add(new Concrete.ReferenceExpression(position, new LongUnresolvedReference(position, superClass)));
+        superClasses.add(new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, superClass)));
       }
     }
 
@@ -574,8 +585,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       List<Concrete.ClassFieldSynonym> fieldSynonyms = new ArrayList<>();
       classDefinition = new Concrete.ClassSynonym(reference, superClasses, null, fieldSynonyms);
 
-      if (!ctx.tele().isEmpty()) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.tele(0).start), "Class synonyms cannot have parameters"));
+      if (!ctx.fieldTele().isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.fieldTele(0).start), "Class synonyms cannot have parameters"));
       }
 
       for (FieldSynContext fieldSyn : ((ClassSynContext) ctx.classBody()).fieldSyn()) {
@@ -591,13 +602,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         implementations = new ArrayList<>();
       }
-      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, implementations, false);
-
-      Concrete.ClassField firstField = visitUniqueFieldTele(ctx.tele(), (Concrete.ClassDefinition) classDefinition);
-      if (firstField != null) {
-        fields.add(firstField);
-        ((Concrete.ClassDefinition) classDefinition).setHasParameter();
-      }
+      List<Boolean> fieldsExplicitness = new ArrayList<>();
+      classDefinition = new Concrete.ClassDefinition(reference, superClasses, fields, fieldsExplicitness, implementations);
+      ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields, fieldsExplicitness));
+      classDefinition.enclosingClass = enclosingClass;
 
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
@@ -614,42 +622,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     if (resultGroup == null) {
       resultGroup = new ClassGroup(reference, fieldReferences, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
-    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup);
+    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
-  }
-
-  private Concrete.ClassField visitUniqueFieldTele(List<TeleContext> teles, Concrete.ClassDefinition classDef) {
-    if (teles.isEmpty()) {
-      return null;
-    }
-
-    TypedExprContext typedExpr;
-    if (teles.get(0) instanceof ExplicitContext) {
-      typedExpr = ((ExplicitContext) teles.get(0)).typedExpr();
-    } else
-    if (teles.get(0) instanceof ImplicitContext) {
-      typedExpr = ((ImplicitContext) teles.get(0)).typedExpr();
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Class parameter must be explicit"));
-    } else {
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(0).start), "Expected a field name with a type"));
-      return null;
-    }
-
-    List<ParsedLocalReferable> vars = new ArrayList<>(1);
-    getVarList(((TypedContext) typedExpr).expr(0), vars);
-    Concrete.Expression type = visitExpr(((TypedContext) typedExpr).expr(1));
-
-    if (vars.isEmpty()) {
-      return null;
-    }
-    if (teles.size() > 1 || vars.size() > 1) {
-      myErrorReporter.report(new ParserError(tokenPosition(teles.get(1).start), "Class can have at most one parameter"));
-    }
-
-    InternalConcreteLocatedReferable referable = new InternalConcreteLocatedReferable(tokenPosition(teles.get(0).start), vars.get(0).textRepresentation(), Precedence.DEFAULT, false, classDef.getData());
-    Concrete.ClassField field = new Concrete.ClassField(referable, classDef, type);
-    referable.setDefinition(field);
-    return field;
   }
 
   @Override
@@ -660,7 +634,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
     }
 
-    return new Concrete.ClassFieldImpl(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(ctx.ID().getSymbol()), ctx.ID().getText()), term);
+    List<String> path = visitAtomFieldsAccRef(ctx.atomFieldsAcc());
+    return path == null ? null : new Concrete.ClassFieldImpl(tokenPosition(ctx.start), LongUnresolvedReference.make(tokenPosition(ctx.atomFieldsAcc().start), path), term);
   }
 
   @Override
@@ -669,8 +644,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.InferHoleExpression visitUnknown(UnknownContext ctx) {
-    return new Concrete.InferHoleExpression(tokenPosition(ctx.getStart()));
+  public Concrete.HoleExpression visitUnknown(UnknownContext ctx) {
+    return new Concrete.HoleExpression(tokenPosition(ctx.getStart()));
   }
 
   @Override
@@ -781,7 +756,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
         }
 
-        expr = Concrete.ReferenceExpression.make(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
+        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are allowed only after a reference"));
       }
@@ -839,15 +814,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
-    String fieldName = ctx.ID().getText();
-    Position position = tokenPosition(ctx.ID().getSymbol());
+    List<String> path = visitAtomFieldsAccRef(ctx.atomFieldsAcc());
+    if (path == null) {
+      return null;
+    }
+
+    Position position = tokenPosition(ctx.atomFieldsAcc().start);
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     Concrete.Expression term = visitExpr(ctx.expr());
     if (!parameters.isEmpty()) {
       term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
     }
 
-    return new Concrete.ClassFieldImpl(position, new NamedUnresolvedReference(position, fieldName), term);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {
@@ -1080,6 +1059,43 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return arguments;
   }
 
+  private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
+    TCReferable coercingField = null;
+
+    for (FieldTeleContext tele : teles) {
+      boolean explicit;
+      List<TerminalNode> vars;
+      ExprContext exprCtx;
+      if (tele instanceof ExplicitFieldTeleContext) {
+        explicit = true;
+        vars = ((ExplicitFieldTeleContext) tele).ID();
+        exprCtx = ((ExplicitFieldTeleContext) tele).expr();
+      } else if (tele instanceof ImplicitFieldTeleContext) {
+        explicit = false;
+        vars = ((ImplicitFieldTeleContext) tele).ID();
+        exprCtx = ((ImplicitFieldTeleContext) tele).expr();
+      } else {
+        throw new IllegalStateException();
+      }
+
+      Concrete.Expression type = visitExpr(exprCtx);
+      for (TerminalNode var : vars) {
+        InternalConcreteLocatedReferable fieldRef = new InternalConcreteLocatedReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, classDef.getData());
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
+        fieldRef.setDefinition(field);
+        fields.add(field);
+
+        if (coercingField == null && explicit) {
+          coercingField = fieldRef;
+        }
+
+        fieldsExplicitness.add(explicit);
+      }
+    }
+
+    return coercingField;
+  }
+
   @Override
   public Concrete.Expression visitAtomLiteral(AtomLiteralContext ctx) {
     return visitExpr(ctx.literal());
@@ -1123,11 +1139,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      List<Concrete.ClassFieldImpl> implementStatements = new ArrayList<>(implCtx.coClause().size());
-      for (CoClauseContext coClause : implCtx.coClause()) {
-        implementStatements.add(visitCoClause(coClause));
-      }
-      expr = new Concrete.ClassExtExpression(tokenPosition(appCtx.start), expr, implementStatements);
+      expr = new Concrete.ClassExtExpression(tokenPosition(appCtx.start), expr, visitCoClauses(implCtx.coClause()));
     }
 
     if (newNode != null) {
@@ -1201,7 +1213,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     }
 
     if (errorToken != null) {
-      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessor are not implemented"));
+      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessors can be applied only to identifiers"));
       throw new ParseException();
     }
 

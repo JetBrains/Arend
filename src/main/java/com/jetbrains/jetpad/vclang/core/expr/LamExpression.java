@@ -41,4 +41,10 @@ public class LamExpression extends Expression {
   public Expression getStuckExpression() {
     return null;
   }
+
+  public Expression substArgument(Expression argument) {
+    SingleDependentLink link = myLink.getNext();
+    Expression body = myBody.subst(myLink, argument);
+    return link.hasNext() ? new LamExpression(myResultSort, link, body) : body;
+  }
 }

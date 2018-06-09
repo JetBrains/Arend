@@ -2,51 +2,41 @@ package com.jetbrains.jetpad.vclang.classes;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.expr.*;
-import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import static com.jetbrains.jetpad.vclang.ExpressionFactory.Ref;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.hasErrors;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 
 public class RecordsTest extends TypeCheckingTestCase {
   @Test
-  public void unknownExtTestError() {
-    resolveNamesModule(
+  public void nonDependentImplement() {
+    typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
-        "\\func C => Point { x => 0 | z => 0 | y => 0 }", 1);
+        "\\func p => \\new Point { x => 0 | y => 0 }");
   }
 
   @Test
-  public void resultTypeMismatchTestError() {
+  public void nonDependentImplementError() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => \\lam (t : Nat) => t }", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
-  public void parentCallTest() {
-    resolveNamesModule(
-        "\\class M {" +
-        "  \\class A {\n" +
-        "    | c : Nat -> Nat -> Nat\n" +
-        "    | f : Nat -> Nat\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func B => M.A {\n" +
-        "  f => \\lam n => c n n\n" +
-        "}", 1);
+  public void dependentImplement() {
+    typeCheckModule(
+        "\\class Point { | X : \\Set | y : X -> Nat }\n" +
+        "\\func p => \\new Point { X => Nat | y => \\lam n => n }");
   }
 
   @Test
@@ -108,7 +98,14 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void newAbstractTestError() {
+  public void newError() {
+    typeCheckModule(
+      "\\class Point { | x : Nat | y : Nat }\n" +
+      "\\func C => \\new Point { x => 0 }", 1);
+  }
+
+  @Test
+  public void newFunctionError() {
     typeCheckModule(
         "\\class Point {\n" +
         "  | x : Nat\n" +
@@ -137,21 +134,6 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void mutualRecursionTestError() {
-    resolveNamesModule(
-        "\\class M {" +
-        "  \\class Point {\n" +
-        "    | x : Nat\n" +
-        "    | y : Nat\n" +
-        "  }\n" +
-        "}\n" +
-        "\\func test => M.Point {\n" +
-        "  | x => y\n" +
-        "  | y => x\n" +
-        "}", 2);
-  }
-
-  @Test
   public void mutualRecursionTypecheckingError() {
     typeCheckModule(
         "\\class Point {\n" +
@@ -162,17 +144,6 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => y\n" +
         "  | y => x\n" +
         "}", 2);
-  }
-
-  @Test
-  public void splitClassTestError() {
-    resolveNamesModule(
-        "\\class A \\where {\n" +
-        "  \\func x => 0\n" +
-        "}\n" +
-        "\\class A \\where {\n" +
-        "  \\func y => 0\n" +
-        "}", 1);
   }
 
   @Test
@@ -221,97 +192,111 @@ public class RecordsTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void recordConstructorsTest() {
-    ChildGroup result = typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "  \\data Foo | foo (x = 0)\n" +
-        "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
-        "}\n" +
-        "\\func test (p : A) => p.y");
-    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
-    Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
-    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
-    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
-    assertEquals(3, arguments.size());
-
-    Constructor foo = ((DataDefinition) getDefinition(result, "A.Foo")).getConstructor("foo");
-
-    ConCallExpression arg2 = arguments.get(2).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(1, arg2.getDataTypeArguments().size());
-    assertEquals(Ref(testFun.getParameters()), arg2.getDataTypeArguments().get(0));
-    assertEquals(foo, arg2.getDefinition());
-
-    ConCallExpression arg1 = arguments.get(1).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(1, arg1.getDataTypeArguments().size());
-    assertEquals(Ref(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
-    assertEquals(foo, arg1.getDefinition());
-
-    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
-    assertEquals(Prelude.PATH, domFunction.cast(DataCallExpression.class).getDefinition());
-    List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
-    assertEquals(3, domArguments.size());
-    assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters())), domArguments.get(1));
-    assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
+  public void fieldCallInClass() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : A\n" +
+      "  | y : a.x = a.x\n" +
+      "}");
   }
 
   @Test
-  public void recordConstructorsParametersTest() {
-    ChildGroup result = typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "  \\data Foo (p : x = x) | foo (p = p)\n" +
-        "  \\func y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
-        "}\n" +
-        "\\func test (q : A) => q.y");
-    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
-    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Ref(testFun.getParameters()));
-    Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
-    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
-    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
-    assertEquals(3, arguments.size());
+  public void fieldCallInClass2() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : A\n" +
+      "  | y : a.x = a.x\n" +
+      "  | z : y = y\n" +
+      "}");
+  }
 
-    DataDefinition Foo = (DataDefinition) getDefinition(result, "A.Foo");
-    Constructor foo = Foo.getConstructor("foo");
+  @Test
+  public void fieldCallInClass3() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : A\n" +
+      "  | y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
+      "}");
+  }
 
-    ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);
-    assertEquals(2, arg2Fun.getDataTypeArguments().size());
-    assertEquals(Ref(testFun.getParameters()), arg2Fun.getDataTypeArguments().get(0));
-    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr1.getDefinition());
-    assertEquals(xCall, expr1.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  @Test
+  public void fieldCallWithArg0() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : A\n" +
+      "}\n" +
+      "\\func y (b : B) => b.a.x");
+  }
 
-    assertEquals(foo, arg2Fun.getDefinition());
-    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr2.getDefinition());
-    ConCallExpression expr3 = expr2.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr3.getDefinition());
-    assertEquals(xCall, expr3.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  @Test
+  public void fieldCallWithArg1() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : A\n" +
+      "}\n" +
+      "\\func y (b : Nat -> B) => x {a {b 0}}");
+  }
 
-    ConCallExpression arg1Fun = arguments.get(1).cast(ConCallExpression.class);
-    assertEquals(2, arg1Fun.getDataTypeArguments().size());
-    assertEquals(Ref(testFun.getParameters()), arg1Fun.getDataTypeArguments().get(0));
-    assertEquals(expr1, arg1Fun.getDataTypeArguments().get(1));
-    assertEquals(foo, arg1Fun.getDefinition());
-    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr4.getDefinition());
-    ConCallExpression expr5 = expr4.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, expr5.getDefinition());
-    assertEquals(xCall, expr5.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  @Test
+  public void fieldCallWithArg2() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : Nat -> A\n" +
+      "}\n" +
+      "\\func y (b : B) => x {b.a 1}");
+  }
 
-    LamExpression arg0 = arguments.get(0).cast(LamExpression.class);
-    assertEquals(Foo, arg0.getBody().cast(DataCallExpression.class).getDefinition());
-    assertEquals(Ref(testFun.getParameters()), arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(0));
-    ConCallExpression paramConCall = arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(1).cast(ConCallExpression.class);
-    assertEquals(Prelude.PATH_CON, paramConCall.getDefinition());
-    assertEquals(1, paramConCall.getDefCallArguments().size());
-    assertEquals(xCall, paramConCall.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  @Test
+  public void fieldCallWithArg3() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B {\n" +
+      "  | a : Nat -> A\n" +
+      "}\n" +
+      "\\func y (b : Nat -> B) => x {a {b 0} 1}");
+  }
 
-    List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
-    assertEquals(3, parameters.size());
-    assertEquals(Nat(), parameters.get(0).cast(LamExpression.class).getBody());
-    assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
-    assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
+  @Test
+  public void recursiveClassError() {
+    typeCheckModule("\\class A { | a : A }", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void mutuallyRecursiveClassError() {
+    typeCheckModule(
+      "\\class A { | a : B }\n" +
+      "\\class B { | b : A }", 1);
+    assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void recursiveFieldsError() {
+    ChildGroup module = typeCheckModule(
+      "\\class X {\n" +
+      "  | A : (B (\\lam _ => 0) -> Nat) -> \\Prop\n" +
+      "  | B : (A (\\lam _ => 0) -> Nat) -> \\Prop\n" +
+      "}", 2);
+    assertThatErrorsAre(error(), hasErrors(getDefinition(module, "X.A").getReferable()));
   }
 }

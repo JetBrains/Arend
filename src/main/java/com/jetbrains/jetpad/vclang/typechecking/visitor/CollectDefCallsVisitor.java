@@ -21,7 +21,9 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   @Override
   public Void visitApp(Concrete.AppExpression expr, Void ignore) {
     expr.getFunction().accept(this, null);
-    expr.getArgument().getExpression().accept(this, null);
+    for (Concrete.Argument argument : expr.getArguments()) {
+      argument.getExpression().accept(this, null);
+    }
     return null;
   }
 
@@ -66,7 +68,7 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   }
 
   @Override
-  public Void visitInferHole(Concrete.InferHoleExpression expr, Void ignore) {
+  public Void visitHole(Concrete.HoleExpression expr, Void ignore) {
     return null;
   }
 

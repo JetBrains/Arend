@@ -15,13 +15,13 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 nsId : ID ('\\as' precedence ID)?;
 
 classStat : '|' precedence ID tele* ':' expr  # classField
-          | '|' ID tele* '=>' expr            # classImplement
+          | '|' atomFieldsAcc tele* '=>' expr # classImplement
           | definition                        # classDefinition
           ;
 
 definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
-            | '\\class' precedence ID tele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
+            | '\\class' precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
             | '\\instance' ID tele* ':' classCall coClauses where?                                      # defInstance
             ;
 
@@ -31,7 +31,7 @@ classBody : '{' classStat* '}'                      # classImpl
 
 fieldSyn : '|' ID '=>' precedence ID;
 
-classCall : atomFieldsAcc; // TODO[classes]: add arguments
+classCall : atomFieldsAcc;
 
 functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim
@@ -107,7 +107,7 @@ coClauses : ('|' coClause)*                   # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : ID tele* '=>' expr;
+coClause : atomFieldsAcc tele* '=>' expr;
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 
@@ -171,6 +171,10 @@ tele : literal                          # teleLiteral
 
 typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
+          ;
+
+fieldTele : '(' ID+ ':' expr ')'        # explicitFieldTele
+          | '{' ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 USING : '\\using';

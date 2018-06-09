@@ -15,7 +15,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -324,7 +324,7 @@ class ExpressionDeserialization {
 
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {
     ClassField classField = myCallTargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, classField.getThisClass().getReferable());
-    return FieldCallExpression.make(classField, readExpr(proto.getExpression()));
+    myDependencyListener.dependsOn(myDefinition, myHeader, classField.getParentClass().getReferable());
+    return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
   }
 }

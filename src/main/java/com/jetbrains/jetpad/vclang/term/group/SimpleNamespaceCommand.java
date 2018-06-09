@@ -76,12 +76,14 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     return myParent;
   }
 
-  public static class SimpleNameRenaming implements NameRenaming {
+  public static class SimpleNameRenaming implements NameRenaming, SourceInfo {
+    private final Position myPosition;
     private final Referable myReference;
     private final Precedence myPrecedence;
     private final String myName;
 
-    public SimpleNameRenaming(Referable reference, Precedence precedence, String name) {
+    public SimpleNameRenaming(Position position, Referable reference, Precedence precedence, String name) {
+      myPosition = position;
       myReference = reference;
       myPrecedence = precedence;
       myName = name;
@@ -103,6 +105,16 @@ public class SimpleNamespaceCommand implements ChildNamespaceCommand, SourceInfo
     @Override
     public Precedence getPrecedence() {
       return myPrecedence;
+    }
+
+    @Override
+    public String moduleTextRepresentation() {
+      return myPosition.moduleTextRepresentation();
+    }
+
+    @Override
+    public String positionTextRepresentation() {
+      return myPosition.positionTextRepresentation();
     }
   }
 }

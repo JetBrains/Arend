@@ -11,6 +11,7 @@ public class SimpleCallTargetIndexProvider implements CallTargetIndexProvider {
 
   @Override
   public int getDefIndex(Definition definition) {
+    assert definition != null;
     return myCallTargets.computeIfAbsent(definition, k -> myCallTargets.size() + 1);
   }
 

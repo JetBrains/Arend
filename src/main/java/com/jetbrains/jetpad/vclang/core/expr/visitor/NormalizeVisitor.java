@@ -10,7 +10,7 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
 import java.util.*;
@@ -72,7 +72,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (expr instanceof FieldCallExpression) {
-      return ExpressionFactory.FieldCall((ClassField) expr.getDefinition(), ((FieldCallExpression) expr).getExpression().accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
     }
 
     if (expr instanceof FunCallExpression) {
@@ -178,7 +178,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     Expression result = eval(elimTree, expr.getDefCallArguments(), getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
-    if (Typechecking.CANCELLATION_INDICATOR.isCanceled()) {
+    if (TypecheckingOrderingListener.CANCELLATION_INDICATOR.isCanceled()) {
       throw new ComputationInterruptedException();
     }
 
@@ -267,7 +267,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (expr instanceof FieldCallExpression) {
-      Expression thisExpr = ((FieldCallExpression) expr).getExpression().accept(this, Mode.WHNF);
+      Expression thisExpr = ((FieldCallExpression) expr).getArgument().accept(this, Mode.WHNF);
       if (!thisExpr.isInstance(InferenceReferenceExpression.class) || !(thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
         Expression type = thisExpr.getType();
         ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
@@ -278,7 +278,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return FieldCallExpression.make((ClassField) expr.getDefinition(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {

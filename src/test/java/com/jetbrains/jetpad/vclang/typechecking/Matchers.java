@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
+import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -57,26 +58,6 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> classCoerceError() {
-    return new LocalErrorMatcher() {
-      @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
-          if (error instanceof ClassCoerceError) {
-            description.appendText("class coerce duplicate");
-            return true;
-          } else {
-            description.appendText("not a class coerce duplicate");
-            return false;
-          }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a class coerce duplicate");
-      }
-    };
-  }
-
   public static Matcher<? super GeneralError> notInScope(String name) {
     return new LocalErrorMatcher() {
       @Override
@@ -93,6 +74,26 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a 'Not in scope: " + name + "' error");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> wrongReferable() {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof WrongReferable) {
+          description.appendText("Wrong referable '" + ((WrongReferable) error).referable.textRepresentation() + "'");
+          return true;
+        } else {
+          description.appendText("not a 'Wrong referable' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Wrong referable' error");
       }
     };
   }

@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.group.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -32,7 +32,7 @@ public class ModuleDeserialization {
     return myModuleProto;
   }
 
-  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
+  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
@@ -47,7 +47,7 @@ public class ModuleDeserialization {
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
-      defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
+      defDeserialization.fillInDefinition(pair.proj1, pair.proj2, typecheckDefinitionsWithErrors);
     }
     myDefinitions.clear();
   }
@@ -192,7 +192,7 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new ModuleReferable(modulePath);
       } else {
-        referable = new LocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), true);
+        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, true);
       }
     }
 
@@ -260,7 +260,7 @@ public class ModuleDeserialization {
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-            TCReferable absField = new LocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, false);
+            TCReferable absField = new DataLocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, null, false);
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absField, res);

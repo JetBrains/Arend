@@ -363,7 +363,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     builder.setFieldRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
     builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
     builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
-    builder.setExpression(expr.getExpression().accept(this, null));
+    builder.setExpression(expr.getArgument().accept(this, null));
     return ExpressionProtos.Expression.newBuilder().setFieldCall(builder).build();
   }
 }

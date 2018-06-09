@@ -14,9 +14,20 @@ import java.util.List;
 public final class Abstract {
   private Abstract() {}
 
+  public static class ErrorData {
+    public final Object cause;
+    public final String message;
+
+    public ErrorData(Object cause, String message) {
+      this.cause = cause;
+      this.message = message;
+    }
+  }
+
   public interface SourceNode {
     @Nonnull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
+    @Nullable ErrorData getErrorData();
   }
 
   public interface Parameter extends SourceNode {
@@ -119,6 +130,7 @@ public final class Abstract {
   // Definition
 
   public interface Definition extends SourceNode {
+    @Nullable ClassReferable getEnclosingClass();
     @Nonnull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
@@ -136,12 +148,11 @@ public final class Abstract {
     @Nonnull Collection<? extends ConstructorClause> getClauses();
   }
 
-  public interface ClassDefinition extends Definition {
+  public interface ClassDefinition extends Definition, ParametersHolder {
     @Override @Nonnull ClassReferable getReferable();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
-    boolean hasParameter();
     @Nullable Reference getUnderlyingClass();
     @Nonnull Collection<? extends ClassFieldSynonym> getFieldSynonyms();
   }
@@ -153,7 +164,7 @@ public final class Abstract {
   }
 
   public interface ClassField extends ParametersHolder {
-    @Nonnull LocatedReferable getReferable();
+    /* @Nonnull */ @Nullable LocatedReferable getReferable();
     /* @Nonnull */ @Nullable Expression getResultType();
   }
 

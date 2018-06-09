@@ -83,7 +83,7 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
-    if (typechecked != null && typechecked.status().headerIsOK()) {
+    if (typechecked != null && typechecked.status().isTypeChecked()) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
@@ -103,12 +103,18 @@ public class ModuleSerialization {
     }
     for (Group.InternalReferable internalReferable : group.getConstructors()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
+        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
+        if (def != null) {
+          builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
+        }
       }
     }
     for (Group.InternalReferable internalReferable : group.getFields()) {
       if (!internalReferable.isVisible()) {
-        builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()))));
+        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
+        if (def != null) {
+          builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
+        }
       }
     }
 

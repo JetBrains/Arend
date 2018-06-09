@@ -4,10 +4,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean> {
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
@@ -24,7 +21,16 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitApp(Concrete.AppExpression expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.AppExpression && compare(expr1.getFunction(), ((Concrete.AppExpression) expr2).getFunction()) && compare(expr1.getArgument().getExpression(), ((Concrete.AppExpression) expr2).getArgument().getExpression());
+    if (!(expr2 instanceof Concrete.AppExpression && compare(expr1.getFunction(), ((Concrete.AppExpression) expr2).getFunction()) && expr1.getArguments().size() == ((Concrete.AppExpression) expr2).getArguments().size())) {
+      return false;
+    }
+    for (int i = 0; i < expr1.getArguments().size(); i++) {
+      Concrete.Argument argument2 = ((Concrete.AppExpression) expr2).getArguments().get(i);
+      if (!(expr1.getArguments().get(i).isExplicit() == argument2.isExplicit() && compare(expr1.getArguments().get(i).expression, argument2.expression))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
@@ -128,8 +134,8 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitInferHole(Concrete.InferHoleExpression expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.InferHoleExpression;
+  public Boolean visitHole(Concrete.HoleExpression expr1, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.HoleExpression && (expr1.getError() == null) == (((Concrete.HoleExpression) expr2).getError() == null);
   }
 
   @Override
@@ -171,6 +177,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return true;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean comparePattern(Concrete.Pattern pattern1, Concrete.Pattern pattern2) {
     if (pattern1 instanceof Concrete.NamePattern) {
       if (!(pattern2 instanceof Concrete.NamePattern)) {
@@ -236,7 +243,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   private boolean compareImplementStatement(Concrete.ClassFieldImpl implStat1, Concrete.ClassFieldImpl implStat2) {
-    return compare(implStat1.getImplementation(), implStat2.getImplementation()) && implStat1.getImplementedField().equals(implStat2.getImplementedField());
+    return compare(implStat1.getImplementation(), implStat2.getImplementation()) && Objects.equals(implStat1.getImplementedField(), implStat2.getImplementedField());
   }
 
   @Override

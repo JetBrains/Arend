@@ -17,14 +17,14 @@ public class ExceptionError extends GeneralError {
   public final Exception exception;
   public final GlobalReferable affectedReferable;
 
-  public ExceptionError(Exception exception, GlobalReferable affectedReferable) {
-    super(Level.ERROR, "An exception happened while loading module: " + affectedReferable.textRepresentation());
+  public ExceptionError(Exception exception, GlobalReferable affectedReferable, boolean isLoading) {
+    super(Level.ERROR, "An exception happened while " + (isLoading ? "loading" : "persisting") + " module: " + affectedReferable.textRepresentation());
     this.exception = exception;
     this.affectedReferable = affectedReferable;
   }
 
-  public ExceptionError(Exception exception, ModulePath modulePath) {
-    this(exception, new ModuleReferable(modulePath));
+  public ExceptionError(Exception exception, ModulePath modulePath, boolean isLoading) {
+    this(exception, new ModuleReferable(modulePath), isLoading);
   }
 
   @Override

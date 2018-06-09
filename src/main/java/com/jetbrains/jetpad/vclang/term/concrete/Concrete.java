@@ -3,21 +3,20 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintVisitor;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrintable;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -80,11 +79,11 @@ public final class Concrete {
   }
 
   public static class TypeParameter extends Parameter {
-    private final Expression myType;
+    public Expression type;
 
     public TypeParameter(Object data, boolean explicit, Expression type) {
       super(data, explicit);
-      myType = type;
+      this.type = type;
     }
 
     public TypeParameter(boolean explicit, Expression type) {
@@ -93,7 +92,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getType() {
-      return myType;
+      return type;
     }
   }
 
@@ -146,17 +145,17 @@ public final class Concrete {
   }
 
   public static class Argument {
-    private final Expression myExpression;
+    public Expression expression;
     private final boolean myExplicit;
 
     public Argument(Expression expression, boolean explicit) {
-      myExpression = expression;
+      this.expression = expression;
       myExplicit = explicit;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     public boolean isExplicit() {
@@ -166,13 +165,35 @@ public final class Concrete {
 
   public static class AppExpression extends Expression {
     public static final byte PREC = 11;
-    private final Expression myFunction;
-    private final Argument myArgument;
+    private Expression myFunction;
+    private List<Argument> myArguments;
 
-    public AppExpression(Object data, Expression function, Argument argument) {
+    private AppExpression(Object data, Expression function, List<Argument> arguments) {
       super(data);
       myFunction = function;
-      myArgument = argument;
+      myArguments = arguments;
+    }
+
+    public static Expression make(Object data, Expression function, List<Argument> arguments) {
+      if (arguments.isEmpty()) {
+        return function;
+      }
+      if (function instanceof Concrete.AppExpression) {
+        ((AppExpression) function).myArguments.addAll(arguments);
+        return function;
+      }
+      return new AppExpression(data, function, arguments);
+    }
+
+    public static Expression make(Object data, Expression function, Expression argument, boolean isExplicit) {
+      if (function instanceof Concrete.AppExpression) {
+        ((AppExpression) function).myArguments.add(new Argument(argument, isExplicit));
+        return function;
+      }
+
+      List<Argument> arguments = new ArrayList<>();
+      arguments.add(new Argument(argument, isExplicit));
+      return new AppExpression(data, function, arguments);
     }
 
     @Nonnull
@@ -180,9 +201,19 @@ public final class Concrete {
       return myFunction;
     }
 
+    public void setFunction(Expression function) {
+      if (function instanceof AppExpression) {
+        myFunction = ((AppExpression) function).myFunction;
+        ((AppExpression) function).getArguments().addAll(myArguments);
+        myArguments = ((AppExpression) function).getArguments();
+      } else {
+        myFunction = function;
+      }
+    }
+
     @Nonnull
-    public Argument getArgument() {
-      return myArgument;
+    public List<Argument> getArguments() {
+      return myArguments;
     }
 
     @Override
@@ -192,7 +223,7 @@ public final class Concrete {
   }
 
   public static class BinOpSequenceElem {
-    public final Expression expression;
+    public Expression expression;
     public final Fixity fixity;
     public final boolean isExplicit;
 
@@ -225,11 +256,6 @@ public final class Concrete {
       return mySequence;
     }
 
-    public void replace(Expression expression) {
-      mySequence.clear();
-      mySequence.add(new BinOpSequenceElem(expression, Fixity.NONFIX, true));
-    }
-
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitBinOpSequence(this, params);
@@ -254,55 +280,6 @@ public final class Concrete {
       myReferent = referable;
       myPLevel = null;
       myHLevel = null;
-    }
-
-    public static ReferenceExpression make(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
-      LevelVariable.LvlType type1 = pLevel == null ? null : getLevelType(pLevel);
-      LevelVariable.LvlType type2 = hLevel == null ? null : getLevelType(hLevel);
-      return type1 == LevelVariable.LvlType.HLVL && type2 != LevelVariable.LvlType.HLVL || type1 == null && type2 == LevelVariable.LvlType.PLVL
-        ? new ReferenceExpression(data, referable, hLevel, pLevel)
-        : new ReferenceExpression(data, referable, pLevel, hLevel);
-    }
-
-    private static LevelVariable.LvlType getLevelType(Concrete.LevelExpression expr) {
-      return expr.accept(new ConcreteLevelExpressionVisitor<Void, LevelVariable.LvlType>() {
-        @Override
-        public LevelVariable.LvlType visitInf(Concrete.InfLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.HLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitLP(Concrete.PLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.PLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitLH(Concrete.HLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.HLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitNumber(Concrete.NumberLevelExpression expr, Void param) {
-          return null;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitSuc(Concrete.SucLevelExpression expr, Void param) {
-          return expr.getExpression().accept(this, null);
-        }
-
-        @Override
-        public LevelVariable.LvlType visitMax(Concrete.MaxLevelExpression expr, Void param) {
-          LevelVariable.LvlType type1 = expr.getLeft().accept(this, null);
-          LevelVariable.LvlType type2 = expr.getRight().accept(this, null);
-          return type1 == null || type1 == type2 ? type2 : type2 == null ? type1 : null;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitVar(Concrete.InferVarLevelExpression expr, Void param) {
-          return expr.getVariable().getType();
-        }
-      }, null);
     }
 
     @Nonnull
@@ -349,18 +326,18 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression {
     public static final byte PREC = 12;
-    private final Expression myBaseClassExpression;
+    public Expression baseClassExpression;
     private final List<ClassFieldImpl> myDefinitions;
 
     public ClassExtExpression(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
       super(data);
-      myBaseClassExpression = baseClassExpression;
+      this.baseClassExpression = baseClassExpression;
       myDefinitions = definitions;
     }
 
     @Nonnull
     public Expression getBaseClassExpression() {
-      return myBaseClassExpression;
+      return baseClassExpression;
     }
 
     @Nonnull
@@ -376,15 +353,14 @@ public final class Concrete {
 
   public static class ClassFieldImpl extends SourceNodeImpl {
     private Referable myImplementedField;
-    private final Expression myExpression;
+    public Expression implementation;
 
-    public ClassFieldImpl(Object data, Referable implementedField, Expression expression) {
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation) {
       super(data);
       myImplementedField = implementedField;
-      myExpression = expression;
+      this.implementation = implementation;
     }
 
-    @Nonnull
     public Referable getImplementedField() {
       return myImplementedField;
     }
@@ -395,22 +371,22 @@ public final class Concrete {
 
     @Nonnull
     public Expression getImplementation() {
-      return myExpression;
+      return implementation;
     }
   }
 
   public static class NewExpression extends Expression {
     public static final byte PREC = 11;
-    private final Expression myExpression;
+    public Expression expression;
 
     public NewExpression(Object data, Expression expression) {
       super(data);
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -422,12 +398,12 @@ public final class Concrete {
   public static class GoalExpression extends Expression {
     public static final byte PREC = 12;
     private final String myName;
-    private final Expression myExpression;
+    public Expression expression;
 
     public GoalExpression(Object data, String name, Expression expression) {
       super(data);
       myName = name;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     public String getName() {
@@ -435,7 +411,7 @@ public final class Concrete {
     }
 
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -444,27 +420,46 @@ public final class Concrete {
     }
   }
 
-  public static class InferHoleExpression extends Expression {
+  public static class HoleExpression extends Expression {
     public static final byte PREC = 12;
-    public InferHoleExpression(Object data) {
+
+    public HoleExpression(Object data) {
       super(data);
     }
 
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitInferHole(this, params);
+      return visitor.visitHole(this, params);
+    }
+
+    public LocalError getError() {
+      return null;
+    }
+  }
+
+  public static class ErrorHoleExpression extends HoleExpression {
+    private final LocalError myError;
+
+    public ErrorHoleExpression(Object data, LocalError error) {
+      super(data);
+      myError = error;
+    }
+
+    @Override
+    public LocalError getError() {
+      return myError;
     }
   }
 
   public static class LamExpression extends Expression {
     public static final byte PREC = -5;
     private final List<Parameter> myArguments;
-    private final Expression myBody;
+    public Expression body;
 
     public LamExpression(Object data, List<Parameter> arguments, Expression body) {
       super(data);
       myArguments = arguments;
-      myBody = body;
+      this.body = body;
     }
 
     @Nonnull
@@ -474,7 +469,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getBody() {
-      return myBody;
+      return body;
     }
 
     @Override
@@ -485,14 +480,14 @@ public final class Concrete {
 
   public static class LetClause implements SourceNode {
     private final List<Parameter> myParameters;
-    private final Expression myResultType;
-    private final Expression myTerm;
+    public Expression resultType;
+    public Expression term;
     private final Referable myReferable;
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
       myParameters = parameters;
-      myResultType = resultType;
-      myTerm = term;
+      this.resultType = resultType;
+      this.term = term;
       myReferable = referable;
     }
 
@@ -504,7 +499,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getTerm() {
-      return myTerm;
+      return term;
     }
 
     @Nonnull
@@ -513,7 +508,7 @@ public final class Concrete {
     }
 
     public Expression getResultType() {
-      return myResultType;
+      return resultType;
     }
 
     @Override
@@ -525,12 +520,12 @@ public final class Concrete {
   public static class LetExpression extends Expression {
     public static final byte PREC = -9;
     private final List<LetClause> myClauses;
-    private final Expression myExpression;
+    public Expression expression;
 
     public LetExpression(Object data, List<LetClause> clauses, Expression expression) {
       super(data);
       myClauses = clauses;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
@@ -540,7 +535,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     @Override
@@ -552,12 +547,12 @@ public final class Concrete {
   public static class PiExpression extends Expression {
     public static final byte PREC = -4;
     private final List<TypeParameter> myParameters;
-    private final Expression myCodomain;
+    public Expression codomain;
 
     public PiExpression(Object data, List<TypeParameter> parameters, Expression codomain) {
       super(data);
       myParameters = parameters;
-      myCodomain = codomain;
+      this.codomain = codomain;
     }
 
     @Nonnull
@@ -567,7 +562,7 @@ public final class Concrete {
 
     @Nonnull
     public Expression getCodomain() {
-      return myCodomain;
+      return codomain;
     }
 
     @Override
@@ -645,18 +640,18 @@ public final class Concrete {
 
   public static class ProjExpression extends Expression {
     public static final byte PREC = 12;
-    private final Expression myExpression;
+    public Expression expression;
     private final int myField;
 
     public ProjExpression(Object data, Expression expression, int field) {
       super(data);
-      myExpression = expression;
+      this.expression = expression;
       myField = field;
     }
 
     @Nonnull
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
 
     public int getField() {
@@ -702,12 +697,12 @@ public final class Concrete {
 
   public static class FunctionClause extends Clause {
     private final List<Pattern> myPatterns;
-    private final Expression myExpression;
+    public Expression expression;
 
     public FunctionClause(Object data, List<Pattern> patterns, Expression expression) {
       super(data);
       myPatterns = patterns;
-      myExpression = expression;
+      this.expression = expression;
     }
 
     @Nonnull
@@ -718,7 +713,7 @@ public final class Concrete {
 
     @Nullable
     public Expression getExpression() {
-      return myExpression;
+      return expression;
     }
   }
 
@@ -867,7 +862,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static  Collection<? extends Parameter> getParameters(ReferableDefinition definition) {
+  public static Collection<? extends Parameter> getParameters(ReferableDefinition definition) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
@@ -898,7 +893,6 @@ public final class Concrete {
       return myReferable;
     }
 
-    // TODO: Delete this method.
     @Nonnull
     public abstract Definition getRelatedDefinition();
 
@@ -907,15 +901,45 @@ public final class Concrete {
       builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
+    public abstract <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params);
+
     @Override
     public String toString() {
       return myReferable.textRepresentation();
     }
   }
 
+  public enum Resolved { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED }
+
   public static abstract class Definition extends ReferableDefinition {
+    Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
+    public TCClassReferable enclosingClass;
+    private boolean myHasErrors = false;
+
     public Definition(TCReferable referable) {
       super(referable);
+    }
+
+    public boolean hasErrors() {
+      return myHasErrors;
+    }
+
+    public void setHasErrors() {
+      myHasErrors = true;
+    }
+
+    public Resolved getResolved() {
+      return myResolved;
+    }
+
+    public void setResolved() {
+      myResolved = Resolved.RESOLVED;
+    }
+
+    public void setTypeClassReferencesResolved() {
+      if (myResolved == Resolved.NOT_RESOLVED) {
+        myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
+      }
     }
 
     @Nonnull
@@ -930,34 +954,44 @@ public final class Concrete {
     }
 
     public abstract <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params);
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return accept((ConcreteDefinitionVisitor<? super P, ? extends R>) visitor, params);
+    }
   }
 
   public static class ClassDefinition extends Definition {
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
+    private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
-    private boolean myHasParameter;
+    private TCReferable myCoercingField;
 
-    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations, boolean hasParameter) {
+    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
       super(referable);
+      myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myFields = fields;
+      myFieldsExplicitness = fieldsExplicitness;
       myImplementations = implementations;
-      myHasParameter = hasParameter;
-    }
-
-    public boolean hasParameter() {
-      return myHasParameter;
-    }
-
-    public void setHasParameter() {
-      myHasParameter = true;
     }
 
     @Nonnull
     @Override
     public TCClassReferable getData() {
       return (TCClassReferable) super.getData();
+    }
+
+    @Nullable
+    public TCReferable getCoercingField() {
+      return myCoercingField;
+    }
+
+    public void setCoercingField(TCReferable coercingField) {
+      if (myCoercingField == null) {
+        myCoercingField = coercingField;
+      }
     }
 
     @Nonnull
@@ -968,6 +1002,11 @@ public final class Concrete {
     @Nonnull
     public List<ClassField> getFields() {
       return myFields;
+    }
+
+    @Nonnull
+    public List<Boolean> getFieldsExplicitness() {
+      return myFieldsExplicitness;
     }
 
     @Nonnull
@@ -983,12 +1022,18 @@ public final class Concrete {
 
   public static class ClassField extends ReferableDefinition {
     private final ClassDefinition myParentClass;
-    private final Expression myResultType;
+    private final boolean myExplicit;
+    private Expression myResultType;
 
-    public ClassField(TCReferable referable, ClassDefinition parentClass, Expression resultType) {
+    public ClassField(TCReferable referable, ClassDefinition parentClass, boolean isExplicit, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
+      myExplicit = isExplicit;
       myResultType = resultType;
+    }
+
+    public boolean isExplicit() {
+       return myExplicit;
     }
 
     @Nonnull
@@ -996,10 +1041,19 @@ public final class Concrete {
       return myResultType;
     }
 
+    public void setResultType(Concrete.Expression resultType) {
+      myResultType = resultType;
+    }
+
     @Nonnull
     @Override
     public ClassDefinition getRelatedDefinition() {
       return myParentClass;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassField(this, params);
     }
   }
 
@@ -1010,7 +1064,7 @@ public final class Concrete {
   }
 
   public static class TermFunctionBody extends FunctionBody {
-    private final Expression myTerm;
+    private Expression myTerm;
 
     public TermFunctionBody(Object data, Expression term) {
       super(data);
@@ -1020,6 +1074,10 @@ public final class Concrete {
     @Nonnull
     public Expression getTerm() {
       return myTerm;
+    }
+
+    public void setTerm(Expression term) {
+      myTerm = term;
     }
   }
 
@@ -1039,18 +1097,19 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<? extends FunctionClause> getClauses() {
+    public List<FunctionClause> getClauses() {
       return myClauses;
     }
   }
 
   public static class FunctionDefinition extends Definition {
     private final List<Parameter> myParameters;
-    private final Expression myResultType;
+    private Expression myResultType;
     private final FunctionBody myBody;
 
     public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
+      myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
@@ -1064,6 +1123,10 @@ public final class Concrete {
     @Nullable
     public Expression getResultType() {
       return myResultType;
+    }
+
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
     }
 
     @Nonnull
@@ -1184,6 +1247,11 @@ public final class Concrete {
     public DataDefinition getRelatedDefinition() {
       return myDataType;
     }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitConstructor(this, params);
+    }
   }
 
   // Class synonyms
@@ -1247,17 +1315,22 @@ public final class Concrete {
     public ClassSynonym getRelatedDefinition() {
       return myClassSynonym;
     }
+
+    @Override
+    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitClassFieldSynonym(this, params);
+    }
   }
 
   public static class Instance extends Definition {
     private final List<Parameter> myArguments;
-    private final ReferenceExpression myClassView;
+    private final ReferenceExpression myClass;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
     public Instance(TCReferable referable, List<Parameter> arguments, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myArguments = arguments;
-      myClassView = classRef;
+      myClass = classRef;
       myClassFieldImpls = classFieldImpls;
     }
 
@@ -1268,7 +1341,7 @@ public final class Concrete {
 
     @Nonnull
     public ReferenceExpression getClassReference() {
-      return myClassView;
+      return myClass;
     }
 
     @Nonnull

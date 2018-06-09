@@ -61,7 +61,7 @@ public abstract class ParserTestCase extends VclangTestCase {
     VcgrammarParser.DefinitionContext ctx = _parse(text).definition();
     List<Group> subgroups = new ArrayList<>(1);
     FileGroup fileGroup = new FileGroup(new ModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
-    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup) : null;
+    ChildGroup definition = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitDefinition(ctx, fileGroup, null) : null;
     if (definition != null) {
       subgroups.add(definition);
     }

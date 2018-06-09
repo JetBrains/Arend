@@ -37,7 +37,7 @@ public class PatternTypechecking {
   private final EnumSet<Flag> myFlags;
   private Map<Referable, Binding> myContext;
 
-  public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, HAS_THIS, CHECK_COVERAGE, CONTEXT_FREE }
+  public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, CHECK_COVERAGE, CONTEXT_FREE }
 
   public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags) {
     myErrorReporter = errorReporter;
@@ -117,26 +117,13 @@ public class PatternTypechecking {
       }
       result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
     } else {
-      if (myFlags.contains(Flag.HAS_THIS) && visitor.getTypeCheckingDefCall().getThisClass() != null) {
-        List<Concrete.Pattern> patterns1 = new ArrayList<>(patterns.size() + 1);
-        patterns1.add(null);
-        patterns1.addAll(patterns);
-        result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
-      } else {
-        result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
-      }
+      result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
     }
 
     // Compute the context and the set of free bindings for CheckTypeVisitor
     if (result != null && result.proj2 != null && abstractParameters != null) {
       int i = 0;
       DependentLink link = parameters;
-      if (myFlags.contains(Flag.HAS_THIS) && visitor.getTypeCheckingDefCall().getThisClass() != null) {
-        visitor.setThis(visitor.getTypeCheckingDefCall().getThisClass(), getFirstBinding(result.proj1));
-        i = 1;
-        link = link.getNext();
-      }
-
       if (!elimParams.isEmpty()) {
         for (Concrete.Parameter parameter : abstractParameters) {
           if (parameter instanceof Concrete.TelescopeParameter) {

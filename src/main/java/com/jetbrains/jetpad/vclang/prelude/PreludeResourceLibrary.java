@@ -47,6 +47,16 @@ public class PreludeResourceLibrary extends PreludeLibrary {
     return null;
   }
 
+  @Override
+  public boolean supportsTypechecking() {
+    return false;
+  }
+
+  @Override
+  public boolean needsTypechecking() {
+    return false;
+  }
+
   @Nullable
   @Override
   public BinarySource getBinarySource(ModulePath modulePath) {

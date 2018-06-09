@@ -22,8 +22,6 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.FieldCall;
-
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
@@ -185,10 +183,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (type2 == null || !type2.isInstance(ClassCallExpression.class)) {
       return false;
     }
-    ClassDefinition classDef2 = type2.cast(ClassCallExpression.class).getDefinition();
+    ClassCallExpression classCall2 = type2.cast(ClassCallExpression.class);
+    Sort sortArgument = classCall2.getSortArgument();
 
     for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
-      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue())))) {
+      if (!(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
         return false;
       }
     }
@@ -197,8 +196,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return true;
     }
 
-    for (Map.Entry<ClassField, ClassDefinition.Implementation> entry : type1.getDefinition().getImplemented()) {
-      if (!(classDef2.getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().term, FieldCall(entry.getKey(), expr2)) : compare(FieldCall(entry.getKey(), expr2), entry.getValue().term)))) {
+    for (Map.Entry<ClassField, LamExpression> entry : type1.getDefinition().getImplemented()) {
+      if (!(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue().applyExpression(expr2))))) {
         return false;
       }
     }
@@ -321,11 +320,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     InferenceVariable variable = null;
-    InferenceReferenceExpression ref1 = fieldCall1.getExpression().checkedCast(InferenceReferenceExpression.class);
+    InferenceReferenceExpression ref1 = fieldCall1.getArgument().checkedCast(InferenceReferenceExpression.class);
     if (ref1 != null && ref1.getSubstExpression() == null) {
       variable = ref1.getVariable();
     } else {
-      InferenceReferenceExpression ref2 = fieldCall2.getExpression().checkedCast(InferenceReferenceExpression.class);
+      InferenceReferenceExpression ref2 = fieldCall2.getArgument().checkedCast(InferenceReferenceExpression.class);
       if (ref2 != null && ref2.getSubstExpression() == null) {
         variable = ref2.getVariable();
       }
@@ -334,7 +333,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return myEquations.add(fieldCall1, fieldCall2.subst(getSubstitution()), Equations.CMP.EQ, variable.getSourceNode(), variable);
     }
 
-    return compare(fieldCall1.getExpression(), fieldCall2.getExpression());
+    return compare(fieldCall1.getArgument(), fieldCall2.getArgument());
   }
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2) {

@@ -82,38 +82,31 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     private final List<Expression> myArguments;
     private List<DependentLink> myParameters;
     private Expression myResultType;
-    private final Expression myThisExpr;
 
-    private DefCallResult(Concrete.ReferenceExpression defCall, Definition definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType, Expression thisExpr) {
+    private DefCallResult(Concrete.ReferenceExpression defCall, Definition definition, Sort sortArgument, List<Expression> arguments, List<DependentLink> parameters, Expression resultType) {
       myDefCall = defCall;
       myDefinition = definition;
       mySortArgument = sortArgument;
       myArguments = arguments;
       myParameters = parameters;
       myResultType = resultType;
-      myThisExpr = thisExpr;
     }
 
-    public static TResult makeTResult(Concrete.ReferenceExpression defCall, Definition definition, Sort sortArgument, Expression thisExpr) {
+    public static TResult makeTResult(Concrete.ReferenceExpression defCall, Definition definition, Sort sortArgument) {
       List<DependentLink> parameters = new ArrayList<>();
       Expression resultType = definition.getTypeWithParams(parameters, sortArgument);
-      if (thisExpr != null) {
-        ExprSubstitution subst = DependentLink.Helper.toSubstitution(parameters.get(0), Collections.singletonList(thisExpr));
-        parameters = DependentLink.Helper.subst(parameters.subList(1, parameters.size()), subst, LevelSubstitution.EMPTY);
-        resultType = resultType.subst(subst, LevelSubstitution.EMPTY);
-      }
 
       if (parameters.isEmpty()) {
-        return new Result(definition.getDefCall(sortArgument, thisExpr, Collections.emptyList()), resultType);
+        return new Result(definition.getDefCall(sortArgument, Collections.emptyList()), resultType);
       } else {
-        return new DefCallResult(defCall, definition, sortArgument, new ArrayList<>(), parameters, resultType, thisExpr);
+        return new DefCallResult(defCall, definition, sortArgument, new ArrayList<>(), parameters, resultType);
       }
     }
 
     @Override
     public Result toResult(Equations equations) {
       if (myParameters.isEmpty()) {
-        return new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
+        return new Result(myDefinition.getDefCall(mySortArgument, myArguments), myResultType);
       }
 
       List<SingleDependentLink> parameters = new ArrayList<>();
@@ -140,7 +133,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
       }
 
-      Expression expression = myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments);
+      Expression expression = myDefinition.getDefCall(mySortArgument, myArguments);
       Expression type = myResultType.subst(substitution, LevelSubstitution.EMPTY);
       Sort codSort = getSortOf(type.getType());
       for (int i = parameters.size() - 1; i >= 0; i--) {
@@ -164,7 +157,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       subst.add(myParameters.get(0), expression);
       myParameters = DependentLink.Helper.subst(myParameters.subList(1, size), subst, LevelSubstitution.EMPTY);
       myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
-      return size > 1 ? this : new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
+      return size > 1 ? this : new Result(myDefinition.getDefCall(mySortArgument, myArguments), myResultType);
     }
 
     public TResult applyExpressions(List<? extends Expression> expressions) {
@@ -179,7 +172,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myResultType = myResultType.subst(subst, LevelSubstitution.EMPTY);
 
       assert expressions.size() <= size;
-      return expressions.size() < size ? this : new Result(myDefinition.getDefCall(mySortArgument, myThisExpr, myArguments), myResultType);
+      return expressions.size() < size ? this : new Result(myDefinition.getDefCall(mySortArgument, myArguments), myResultType);
     }
 
     @Override
@@ -282,8 +275,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myInstancePool = pool;
   }
 
-  public void setThis(ClassDefinition thisClass, Binding thisBinding) {
-    myTypeCheckingDefCall.setThis(thisClass, thisBinding);
+  public void setHasErrors() {
+    myHasErrors = true;
   }
 
   public TypecheckerState getTypecheckingState() {
@@ -358,7 +351,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
       ClassField coercingField = classCall.getDefinition().getCoercingField();
       if (coercingField != null) {
-        Expression actualType = coercingField.getBaseType(classCall.getSortArgument()).subst(coercingField.getThisParameter(), result.expression);
+        Expression actualType = coercingField.getType(classCall.getSortArgument()).applyExpression(result.expression);
         boolean ok = false;
         if (expectedType instanceof Expression && cmpVisitor.compare(actualType, (Expression) expectedType)) {
           ok = true;
@@ -369,7 +362,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
         }
         if (ok) {
-          result.expression = FieldCallExpression.make(coercingField, result.expression);
+          result.expression = FieldCallExpression.make(coercingField, classCall.getSortArgument(), result.expression);
           if (expectedType instanceof Expression) {
             result.expression = OfTypeExpression.make(result.expression, actualType, (Expression) expectedType);
           }
@@ -493,6 +486,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(myErrorReporter);
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, Concrete.Expression expr) {
     if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, actual, expected, expr)) {
       myErrorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
@@ -501,6 +495,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return true;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkPath(TResult result, Concrete.Expression expr) {
     if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition() == Prelude.PATH_CON) {
       myErrorReporter.report(new TypecheckingError("Expected an argument for 'path'", expr));
@@ -509,6 +504,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (result instanceof Result) {
       ConCallExpression conCall = ((Result) result).expression.checkedCast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
+        //noinspection RedundantIfStatement
         if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
           !compareExpressions(false, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
@@ -696,7 +692,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             if (!argType.isError()) {
-              myErrorReporter.report(new TypeMismatchError(argExpectedType, argType, paramType));
+              myErrorReporter.report(new TypeMismatchError("in an argument of the lambda", argExpectedType, argType, paramType));
             }
             return null;
           }
@@ -885,7 +881,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   @Override
-  public Result visitInferHole(Concrete.InferHoleExpression expr, ExpectedType expectedType) {
+  public Result visitHole(Concrete.HoleExpression expr, ExpectedType expectedType) {
+    if (expr.getError() != null) {
+      return null;
+    }
+
     if (expectedType instanceof Expression) {
       return new Result(new InferenceReferenceExpression(new ExpressionInferenceVariable((Expression) expectedType, expr, getAllBindings()), myEquations), (Expression) expectedType);
     } else {
@@ -988,8 +988,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitBinOpSequence(Concrete.BinOpSequenceExpression expr, ExpectedType expectedType) {
-    assert expr.getSequence().size() == 1;
-    return checkExpr(expr.getSequence().get(0).expression, expectedType);
+    throw new IllegalStateException();
   }
 
   @Override
@@ -1100,6 +1099,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
+    if (referable instanceof ErrorReference) {
+      return null;
+    }
+
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
     if (clazz.isInstance(definition)) {
       return clazz.cast(definition);
@@ -1135,7 +1138,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Map<ClassField, Concrete.ClassFieldImpl> classFieldMap = new HashMap<>();
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
+    Iterator<? extends ClassField> fieldIt = baseClass.getFields().iterator();
     for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
+      ClassField curField = fieldIt.hasNext() ? fieldIt.next() : null;
+      if (statement.getImplementedField() == null) {
+        if (curField == null) {
+          myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + baseClass.getName() + "' has only " + baseClass.getFields().size() + " fields.", statement.implementation));
+          continue;
+        } else {
+          statement.setImplementedField(curField.getReferable());
+        }
+      }
+
       ClassField field = referableToClassField(statement.getImplementedField(), statement);
       if (field == null) {
         continue;
@@ -1168,7 +1182,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (impl != null) {
           boolean ok = true;
           if (!notImplementedFields.isEmpty()) {
-            ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getBaseType(resultClassCall.getSortArgument()), notImplementedFields);
+            ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
             if (found != null) {
               ok = false;
               myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl));
@@ -1189,13 +1203,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     // Calculate the sort of the expression
 
-    DependentLink thisParam = ExpressionFactory.parameter("\\this", resultClassCall);
+    DependentLink thisParam = ExpressionFactory.parameter("this", resultClassCall);
     List<Sort> sorts = new ArrayList<>();
     for (ClassField field : classCallExpr.getDefinition().getFields()) {
       if (resultClassCall.isImplemented(field)) continue;
-      Expression baseType = field.getBaseType(classCallExpr.getSortArgument());
-      if (baseType.isInstance(ErrorExpression.class)) continue;
-      sorts.add(getSortOf(baseType.subst(field.getThisParameter(), new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType()));
+      PiExpression fieldType = field.getType(classCallExpr.getSortArgument());
+      if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
+      sorts.add(getSortOf(fieldType.applyExpression(new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType()));
     }
 
     resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, generateUpperBound(sorts, expr));
@@ -1203,7 +1217,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = checkExpr(implBody, field.getBaseType(fieldSetClass.getSortArgument()).subst(field.getThisParameter(), new NewExpression(fieldSetClass)));
+    CheckTypeVisitor.Result result = checkExpr(implBody, field.getType(fieldSetClass.getSortArgument()).applyExpression(new NewExpression(fieldSetClass)));
     return result != null ? result.expression : new ErrorExpression(null, null);
   }
 

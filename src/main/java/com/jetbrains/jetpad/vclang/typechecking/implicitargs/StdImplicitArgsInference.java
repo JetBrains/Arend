@@ -93,6 +93,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
     if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isError()) {
+      myVisitor.checkExpr(arg, null);
       return result;
     }
 
@@ -142,56 +143,53 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result.applyExpression(argResult.expression, myVisitor.getErrorReporter(), fun);
   }
 
-  protected CheckTypeVisitor.TResult inferArg(Concrete.Expression fun, Concrete.Expression arg, boolean isExplicit, ExpectedType expectedType) {
+  @Override
+  public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
     CheckTypeVisitor.TResult result;
-    if (fun instanceof Concrete.AppExpression) {
-      Concrete.Argument argument = ((Concrete.AppExpression) fun).getArgument();
-      result = inferArg(((Concrete.AppExpression) fun).getFunction(), argument.getExpression(), argument.isExplicit(), expectedType);
+    Concrete.Expression fun = expr.getFunction();
+    if (fun instanceof Concrete.ReferenceExpression) {
+      Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
+      result = defCall.getReferent() instanceof TCReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((TCReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
     } else {
-      if (fun instanceof Concrete.ReferenceExpression) {
-        Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
-        result = defCall.getReferent() instanceof TCReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((TCReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
-      } else {
-        result = myVisitor.checkExpr(fun, null);
+      result = myVisitor.checkExpr(fun, null);
+    }
+
+    if (result == null) {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        myVisitor.checkExpr(argument.expression, null);
       }
+      return null;
+    }
 
-      if (result instanceof CheckTypeVisitor.DefCallResult && isExplicit && expectedType != null) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-          DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
-          if (dataCall != null) {
-            if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
-              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
-              return null;
-            }
+    if (result instanceof CheckTypeVisitor.DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
+      CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+      if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
+        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
+        if (dataCall != null) {
+          if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
+            myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));
+            return null;
+          }
 
-            List<? extends Expression> args = dataCall.getDefCallArguments();
-            List<Expression> args1 = new ArrayList<>(args.size());
-            args1.addAll(defCallResult.getArguments());
-            args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
-            args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
-            if (args1 != null) {
-              result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument(), null);
-              if (!args1.isEmpty()) {
-                result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
-              }
+          List<? extends Expression> args = dataCall.getDefCallArguments();
+          List<Expression> args1 = new ArrayList<>(args.size());
+          args1.addAll(defCallResult.getArguments());
+          args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
+          args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
+          if (args1 != null) {
+            result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument());
+            if (!args1.isEmpty()) {
+              result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
             }
           }
         }
       }
     }
 
-    if (result == null) {
-      myVisitor.checkExpr(arg, null);
-      return null;
+    for (Concrete.Argument argument : expr.getArguments()) {
+      result = inferArg(result, argument.expression, argument.isExplicit(), fun);
     }
-    return inferArg(result, arg, isExplicit, fun);
-  }
-
-  @Override
-  public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
-    Concrete.Argument arg = expr.getArgument();
-    return inferArg(expr.getFunction(), arg.getExpression(), arg.isExplicit(), expectedType);
+    return result;
   }
 
   @Override

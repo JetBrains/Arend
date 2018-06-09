@@ -7,7 +7,7 @@ public interface ConcreteExpressionVisitor<P, R> {
   R visitLam(Concrete.LamExpression expr, P params);
   R visitPi(Concrete.PiExpression expr, P params);
   R visitUniverse(Concrete.UniverseExpression expr, P params);
-  R visitInferHole(Concrete.InferHoleExpression expr, P params);
+  R visitHole(Concrete.HoleExpression expr, P params);
   R visitGoal(Concrete.GoalExpression expr, P params);
   R visitTuple(Concrete.TupleExpression expr, P params);
   R visitSigma(Concrete.SigmaExpression expr, P params);

@@ -23,7 +23,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -115,11 +115,13 @@ public class Prelude {
         PROP_TRUNC = (DataDefinition) definition;
         PROP_TRUNC.setSort(Sort.PROP);
         PROP_TRUNC_PATH_CON = PROP_TRUNC.getConstructor("truncP");
+        PROP_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "TrS":
         SET_TRUNC = (DataDefinition) definition;
         SET_TRUNC.setSort(Sort.SetOfLevel(new Level(LevelVariable.PVAR)));
         SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
+        SET_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       default:
         throw new IllegalStateException();
@@ -158,7 +160,7 @@ public class Prelude {
     }
   }
 
-  public static class PreludeTypechecking extends Typechecking {
+  public static class PreludeTypechecking extends TypecheckingOrderingListener {
     public PreludeTypechecking(TypecheckerState state, ConcreteProvider concreteProvider) {
       super(state, concreteProvider, DummyErrorReporter.INSTANCE);
     }

@@ -2,9 +2,12 @@ package com.jetbrains.jetpad.vclang.library;
 
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.Typechecking;
+import com.jetbrains.jetpad.vclang.typechecking.order.Ordering;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.OrderingListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -92,18 +95,27 @@ public interface Library {
   ModuleScopeProvider getModuleScopeProvider();
 
   /**
+   * Checks if this library supports typechecking.
+   *
+   * @return true if this library can be typechecked, false if this library is read-only.
+   */
+  boolean supportsTypechecking();
+
+  /**
    * Checks if this library needs typechecking.
+   * If the library does not support typechecking (that is, {@link #supportsTypechecking} returns false), this method should always return false.
    *
    * @return true if the typechecking is needed, false otherwise.
    */
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   boolean needsTypechecking();
 
   /**
-   * Typechecks updated modules of this library and persists results.
+   * Runs an ordering on modules of this library that require typechecking.
    *
-   * @param typechecking  a context for typechecking.
+   * @param ordering  an ordering.
    *
-   * @return true if the typechecking is successful, false otherwise.
+   * @return true if the ordering was finished, false if it was interrupted.
    */
-  boolean typecheck(Typechecking typechecking);
+  boolean orderModules(Ordering ordering);
 }

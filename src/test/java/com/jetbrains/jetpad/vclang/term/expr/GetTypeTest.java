@@ -66,12 +66,12 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldAccTest() {
-    ChildGroup result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => (p 0).f");
+    ChildGroup result = typeCheckModule("\\class C { | x : Nat \\func f (p : 0 = x) => p } \\func test (p : Nat -> C) => C.f {p 0}");
     SingleDependentLink p = singleParam("p", Pi(Nat(), new ClassCallExpression((ClassDefinition) getDefinition(result, "C"), Sort.SET0)));
     Expression type = FunCall(Prelude.PATH_INFIX, Sort.SET0,
         Nat(),
         Zero(),
-        FieldCall((ClassField) getDefinition(result, "C.x"), Apps(Ref(p), Zero())));
+        FieldCall((ClassField) getDefinition(result, "C.x"), Sort.PROP, Apps(Ref(p), Zero())));
     List<DependentLink> testParams = new ArrayList<>();
     Expression testType = getDefinition(result, "test").getTypeWithParams(testParams, Sort.SET0);
     assertEquals(Pi(p, Pi(type, type)).normalize(NormalizeVisitor.Mode.NF), fromPiParameters(testType, testParams).normalize(NormalizeVisitor.Mode.NF));

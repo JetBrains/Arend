@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.library.error;
 
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.error.doc.DocFactory;
 import com.jetbrains.jetpad.vclang.error.doc.LineDoc;
@@ -20,6 +21,11 @@ public class LibraryError extends GeneralError {
 
   private LibraryError(String message, Stream<String> libraryNames) {
     super(Level.ERROR, message);
+    this.libraryNames = libraryNames;
+  }
+
+  private LibraryError(Error.Level level, String message, Stream<String> libraryNames) {
+    super(level, message);
     this.libraryNames = libraryNames;
   }
 
@@ -44,7 +50,7 @@ public class LibraryError extends GeneralError {
   }
 
   public static LibraryError incorrectLibrary(String libraryName) {
-    return new LibraryError("Unknown library type", Stream.of(libraryName));
+    return new LibraryError(Level.INFO, "Library cannot be typechecked", Stream.of(libraryName));
   }
 
   @Override

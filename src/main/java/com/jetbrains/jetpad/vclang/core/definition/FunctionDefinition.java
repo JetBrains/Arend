@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Function {
@@ -61,14 +60,7 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public FunCallExpression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> arguments) {
-    if (thisExpr == null) {
-      return new FunCallExpression(this, sortArgument, arguments);
-    } else {
-      List<Expression> args = new ArrayList<>(arguments.size() + 1);
-      args.add(thisExpr);
-      args.addAll(arguments);
-      return new FunCallExpression(this, sortArgument, args);
-    }
+  public FunCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
+    return new FunCallExpression(this, sortArgument, arguments);
   }
 }

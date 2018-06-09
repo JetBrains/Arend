@@ -85,7 +85,7 @@ public abstract class StreamBinarySource implements BinarySource {
 
       return true;
     } catch (IOException | DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath()));
+      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath(), true));
       if (!library.hasRawSources()) {
         library.onGroupLoaded(getModulePath(), null, false);
       }
@@ -104,12 +104,12 @@ public abstract class StreamBinarySource implements BinarySource {
         }
       }
 
-      myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(), library.getDependencyListener());
+      myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(), library.getDependencyListener(), library.supportsTypechecking());
       library.onBinaryLoaded(getModulePath(), myModuleDeserialization.getModuleProto().getComplete());
       myModuleDeserialization = null;
       return true;
     } catch (DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath()));
+      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath(), true));
       if (!library.hasRawSources()) {
         library.onGroupLoaded(getModulePath(), null, false);
       }
@@ -139,8 +139,8 @@ public abstract class StreamBinarySource implements BinarySource {
 
       module.writeTo(outputStream);
       return true;
-    } catch (IOException e) {
-      errorReporter.report(new ExceptionError(e, getModulePath()));
+    } catch (Exception e) {
+      errorReporter.report(new ExceptionError(e, getModulePath(), false));
       return false;
     }
   }

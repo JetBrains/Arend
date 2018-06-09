@@ -35,7 +35,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     for (Expression arg : expr.getDefCallArguments()) {
       args.add(arg.accept(this, null));
     }
-    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), null, args);
+    return expr.getDefinition().getDefCall(expr.getSortArgument().subst(myLevelSubstitution), args);
   }
 
   @Override
@@ -71,9 +71,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression result = myExprSubstitution.get(expr.getDefinition());
     if (result != null) {
-      return new AppExpression(result, expr.getExpression().accept(this, null));
+      return new AppExpression(result, expr.getArgument().accept(this, null));
     } else {
-      return ExpressionFactory.FieldCall(expr.getDefinition(), expr.getExpression().accept(this, null));
+      return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), expr.getArgument().accept(this, null));
     }
   }
 

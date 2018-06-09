@@ -10,8 +10,8 @@ import com.jetbrains.jetpad.vclang.source.SourceLoader;
 import com.jetbrains.jetpad.vclang.source.error.PersistingError;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.order.DependencyListener;
-import com.jetbrains.jetpad.vclang.typechecking.order.DummyDependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DummyDependencyListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -151,10 +151,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
     if (hasRawSources()) {
       for (ModulePath module : header.modules) {
-        if (!sourceLoader.loadRaw(module)) {
-          unload();
-          return false;
-        }
+        sourceLoader.loadRaw(module);
       }
     }
 

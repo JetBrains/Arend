@@ -9,7 +9,7 @@ import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
+public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public final static GetTypeVisitor INSTANCE = new GetTypeVisitor();
 
   private GetTypeVisitor() {
@@ -25,7 +25,7 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitDefCall(DefCallExpression expr, Void params) {
+  public Expression visitFunCall(FunCallExpression expr, Void params) {
     List<DependentLink> defParams = new ArrayList<>();
     Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDefCallArguments().size() == defParams.size();
@@ -35,6 +35,11 @@ public class GetTypeVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
     return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument())));
+  }
+
+  @Override
+  public Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    return expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument());
   }
 
   @Override

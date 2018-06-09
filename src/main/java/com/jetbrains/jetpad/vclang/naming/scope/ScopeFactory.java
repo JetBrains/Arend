@@ -1,6 +1,8 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
@@ -44,6 +46,67 @@ public class ScopeFactory {
     return LexicalScope.insideOf(group, parentScope);
   }
 
+  public static boolean isParentScopeVisible(Abstract.SourceNode sourceNode) {
+    // We cannot use any references in level expressions
+    if (sourceNode instanceof Abstract.LevelExpression) {
+      return false;
+    }
+
+    Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
+    if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
+      sourceNode = parentSourceNode;
+      parentSourceNode = sourceNode.getParentSourceNode();
+    }
+
+    // After namespace command
+    if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
+      if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
+        return false;
+      }
+      return sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference());
+    }
+
+    // After a dot
+    if (parentSourceNode instanceof Abstract.LongReference && sourceNode instanceof Abstract.Reference) {
+      Abstract.Reference headRef = ((Abstract.LongReference) parentSourceNode).getHeadReference();
+      return headRef == null || sourceNode.equals(headRef);
+    }
+
+    // We cannot use any references in the universe of a data type
+    if (parentSourceNode instanceof Abstract.DataDefinition && sourceNode instanceof Abstract.Expression) {
+      return false;
+    }
+
+    if (parentSourceNode instanceof Abstract.EliminatedExpressionsHolder) {
+      // We can use only parameters in eliminated expressions
+      if (sourceNode instanceof Abstract.Reference) {
+        Collection<? extends Abstract.Reference> elimExprs = ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getEliminatedExpressions();
+        if (elimExprs != null) {
+          for (Abstract.Reference elimExpr : elimExprs) {
+            if (sourceNode.equals(elimExpr)) {
+              return false;
+            }
+          }
+        }
+      }
+
+      // Remove eliminated expressions from the scope in clauses
+      if (sourceNode instanceof Abstract.Clause) {
+        Collection<? extends Abstract.Reference> elimExprs = ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getEliminatedExpressions();
+        if (elimExprs != null) {
+          return true;
+        }
+      }
+    }
+
+    // Replace the scope with class fields in class extensions
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
+      return false;
+    }
+
+    return true;
+  }
+
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {
     if (sourceNode == null) {
       return parentScope;
@@ -60,6 +123,10 @@ public class ScopeFactory {
     }
 
     Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
+    if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
+      sourceNode = parentSourceNode;
+      parentSourceNode = sourceNode.getParentSourceNode();
+    }
 
     // After namespace command
     if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
@@ -85,15 +152,16 @@ public class ScopeFactory {
         return parentScope;
       }
 
-      Scope scope = parentScope.getGlobalSubscope().resolveNamespace(headRef.getReferent().textRepresentation());
+      List<String> path = new ArrayList<>();
+      path.add(headRef.getReferent().textRepresentation());
       for (Abstract.Reference reference : ((Abstract.LongReference) parentSourceNode).getTailReferences()) {
-        if (scope == null || reference == null) {
+        if (reference == null) {
           return EmptyScope.INSTANCE;
         }
         if (sourceNode.equals(reference)) {
-          return scope;
+          return new LongUnresolvedReference(sourceNode, path).resolveNamespaceWithArgument(parentScope);
         }
-        scope = scope.resolveNamespace(reference.getReferent().textRepresentation());
+        path.add(reference.getReferent().textRepresentation());
       }
 
       return EmptyScope.INSTANCE;
@@ -142,8 +210,9 @@ public class ScopeFactory {
     // Replace the scope with class fields in class extensions
     if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
-      if (parentParent instanceof Abstract.ClassReferenceHolder && sourceNode.equals(((Abstract.ClassFieldImpl) parentSourceNode).getImplementation())) {
-        return new ClassFieldImplScope(((Abstract.ClassReferenceHolder) parentParent).getClassReference());
+      if (parentParent instanceof Abstract.ClassReferenceHolder) {
+        ClassReferable classRef = ((Abstract.ClassReferenceHolder) parentParent).getClassReference();
+        return classRef == null ? EmptyScope.INSTANCE : new ClassFieldImplScope(classRef, true);
       }
     }
 

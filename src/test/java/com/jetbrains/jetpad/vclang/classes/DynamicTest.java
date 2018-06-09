@@ -2,12 +2,12 @@ package com.jetbrains.jetpad.vclang.classes;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -17,27 +17,106 @@ import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 import static org.junit.Assert.*;
 
-public class ClassesTest extends TypeCheckingTestCase {
+public class DynamicTest extends TypeCheckingTestCase {
   @Test
-  public void dynamicStaticCallError() {
-    typeCheckModule(
-        "\\class A \\where {\n" +
-        "  \\func f => 0\n" +
-        "}\n" +
-        "\\func h (a : A) => a.f", 1);
+  public void dynamicIsNotVisible() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h => f", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
-  public void dynamicStaticCallError2() {
+  public void dynamicDefinition() {
     typeCheckModule(
-        "\\class A \\where {\n" +
-        "  \\func f => 0\n" +
-        "}\n" +
-        "\\func g (a : A) => A.f\n" +
-        "\\func h (a : A) => a.f", 1);
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) : Nat => A.f {a}");
+  }
+
+  @Test
+  public void dynamicStaticCallError() {
+    resolveNamesModule(
+      "\\class A \\where {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) => a.f", 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void dynamicCallError() {
+    resolveNamesModule(
+      "\\class A {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\func h (a : A) => a.f", 1);
+    assertThatErrorsAre(notInScope("f"));
+  }
+
+  @Test
+  public void dynamicInheritance() {
+    resolveNamesModule(
+      "\\class X {\n" +
+      "  \\class A\n" +
+      "}\n" +
+      "\\func x : X => \\new X\n" +
+      "\\class B \\extends x.A", 1);
+    assertThatErrorsAre(notInScope("A"));
+  }
+
+  @Test
+  public void dynamicCallFromField() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : 0 = f\n" +
+      "  \\func f => 0\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void fieldCallFromDynamic() {
+    typeCheckModule(
+      "\\func h (x : Nat) => x\n" +
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  \\func f => h x\n" +
+      "}\n" +
+      "\\func g (a : A { x => 0 }) : a.x = A.f {a} => path (\\lam _ => 0)");
+  }
+
+  @Test
+  public void inheritanceFieldAccess() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A {\n" +
+      "    | n : Nat\n" +
+      "  }\n" +
+      "}\n" +
+      "\\class B \\extends X.A {\n" +
+      "  \\func my : Nat => n\n" +
+      "}");
+  }
+
+  @Test
+  public void dynamicInheritanceFieldAccessQualified() {
+    typeCheckModule(
+      "\\class X {\n" +
+      "  \\class A {\n" +
+      "    | n : Nat\n" +
+      "  }\n" +
+      "}\n" +
+      "\\func x => \\new X\n" +
+      "\\class B \\extends X.A {\n" +
+      "  \\func my : Nat => X.A.n\n" +
+      "}");
   }
 
   @Test
@@ -103,7 +182,65 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  \\data D | con\n" +
         "  \\func x (_ : con = con) => 0\n" +
         "}\n" +
-        "\\func test (a : A) => a.x\n");
+        "\\func test (a : A) => A.x {a}\n");
+  }
+
+  @Test
+  public void dynamicFunctionWithPatterns() {
+    typeCheckClass("| x : Nat -> Nat \\func pred (n : Nat) : Nat | zero => x zero | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithImplicitPatterns() {
+    typeCheckClass("| x : Nat -> Nat \\func f {m : Nat} (n : Nat) : Nat | {m}, zero => x m | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithElim() {
+    typeCheckClass("| x : Nat -> Nat \\func pred (n : Nat) : Nat \\elim n | zero => x zero | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicFunctionWithImplicitElim() {
+    typeCheckClass("| x : Nat -> Nat \\func f {m : Nat} (n : Nat) : Nat \\elim n | zero => x m | suc n => x n", "");
+  }
+
+  @Test
+  public void dynamicDataWithPatterns() {
+    typeCheckClass("| x : Nat \\data D (n : Nat) \\with | zero => con1 (x = 0) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithImplicitPatterns() {
+    typeCheckClass("| x : Nat \\data D {m : Nat} (n : Nat) \\with | {m}, zero => con1 (x = m) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithElim() {
+    typeCheckClass("| x : Nat \\data D (n : Nat) \\elim n | zero => con1 (x = 0) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicDataWithImplicitElim() {
+    typeCheckClass("| x : Nat \\data D {m : Nat} (n : Nat) \\elim n | zero => con1 (x = m) | suc n => con2 (x = n)", "");
+  }
+
+  @Test
+  public void dynamicInnerClass() {
+    typeCheckModule(
+        "\\class A {\n" +
+        "  \\class C\n" +
+        "}");
+  }
+
+  @Test
+  public void dynamicDoubleInnerClass() {
+    typeCheckModule(
+        "\\class A {\n" +
+        "  \\class B {\n" +
+        "    \\class C\n" +
+        "  }\n" +
+        "}");
   }
 
   @Test
@@ -233,7 +370,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    | g : f 0\n" +
         "  }\n" +
         "}\n" +
-        "\\func h (b : B) (a : b.A) : b.f 0 => a.g");
+        "\\func h (b : B) (a : B.A {b}) : b.f 0 => a.g");
   }
 
   @Test
@@ -243,8 +380,8 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.con1 (path (\\lam _ => a.x))\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con1 {a} (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con2 {a} (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -254,10 +391,10 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\func f' (a : A) => (a.D (a.x) (\\lam y => y)).con1 (path (\\lam _ => a.x))\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))\n" +
-        "\\func g' (a : A) => (a.D (a.x) (\\lam y => y)).con2 (path (\\lam _ => a.x))");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con1 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func f' (a : A) => A.con1 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.con2 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))\n" +
+        "\\func g' (a : A) => A.con2 {a} {a.x} {\\lam y => y} (path (\\lam _ => a.x))");
   }
 
   @Test
@@ -269,10 +406,10 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  \\func f : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
         "  \\func g : D x (\\lam y => y) => con2 (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\func f' (a : A) => a.f\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\func g' (a : A) => a.g");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
+        "\\func f' (a : A) => A.f {a}\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.g {a}\n" +
+        "\\func g' (a : A) => A.g {a}");
   }
 
   @Test
@@ -281,19 +418,19 @@ public class ClassesTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\func f : D x (\\lam y => y) => (D x (\\lam y => y)).con1 (path (\\lam _ => x))\n" +
-        "  \\func g => (D x (\\lam y => y)).con2 (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => con1 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
+        "  \\func g => con2 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
         "}\n" +
-        "\\func f (a : A) : a.D (a.x) (\\lam y => y) => a.f\n" +
-        "\\func f' (a : A) => a.f\n" +
-        "\\func g (a : A) : a.D (a.x) (\\lam y => y) => a.g\n" +
-        "\\func g' (a : A) => a.g");
+        "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
+        "\\func f' (a : A) => A.f {a}\n" +
+        "\\func g (a : A) : A.D {a} (a.x) (\\lam y => y) => A.g {a}\n" +
+        "\\func g' (a : A) => A.g {a}");
   }
 
   @Test
   public void constructorIndicesThisTest() {
     typeCheckClass(
-        "| + : Nat -> Nat -> Nat\n" +
+        "| \\infix 6 + : Nat -> Nat -> Nat\n" +
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat -> Nat) \\elim n\n" +
@@ -303,11 +440,11 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    | zero => con1 (path (\\lam _ => x + x))\n" +
         "    | suc n => con2 (f n) (path (\\lam _ => n + x))\n" +
         "}\n" +
-        "\\func f (a : A) (n : Nat) : a.D n `+ => a.f n\n" +
-        "\\func f' (a : A) (n : Nat) => a.f\n" +
-        "\\func g (a : A) (n : Nat) : a.D n (+) \\elim n\n" +
-        "  | zero => a.con1 (path (\\lam _ => a.x + a.x))\n" +
-        "  | suc n => a.con2 (g a n) (path (\\lam _ => n + a.x))", "");
+        "\\func f (a : A) (n : Nat) : A.D {a} n (+) => A.f {a} n\n" +
+        "\\func f' (a : A) (n : Nat) => A.f {a}\n" +
+        "\\func g (a : A) (n : Nat) : A.D {a} n (+) \\elim n\n" +
+        "  | zero => A.con1 {a} (path (\\lam _ => a.x + a.x))\n" +
+        "  | suc n => A.con2 {a} (g a n) (path (\\lam _ => n + a.x))", "");
   }
 
   @Test
@@ -323,19 +460,20 @@ public class ClassesTest extends TypeCheckingTestCase {
     ClassField xField = (ClassField) getDefinition(result, "A.x");
     ClassField aField = (ClassField) getDefinition(result, "B.a");
     ClassField yField = (ClassField) getDefinition(result, "B.y");
-    assertEquals(FieldCall(xField, FieldCall(aField, Ref(yField.getThisParameter()))), yField.getBaseType(Sort.SET0));
+    PiExpression piType = yField.getType(Sort.SET0);
+    assertEquals(FieldCall(xField, Sort.PROP, FieldCall(aField, Sort.PROP, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
   public void funCallsTest() {
     ChildGroup result = typeCheckModule(
-        "\\func + (x y : Nat) => x\n" +
+        "\\func \\infix 6 + (x y : Nat) => x\n" +
         "\\class A {\n" +
         "  \\func q => p\n" +
         "  \\class C {\n" +
-        "    \\func k => h + (p + q)" +
+        "    \\func k => h + (p + q)\n" +
         "  } \\where {\n" +
-        "    \\func h => p + q" +
+        "    \\func h => p + q\n" +
         "  }\n" +
         "} \\where {\n" +
         "  \\func p => 0\n" +
@@ -371,7 +509,7 @@ public class ClassesTest extends TypeCheckingTestCase {
 
     ClassDefinition cClass = (ClassDefinition) getDefinition(result, "A.C");
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = cClass.getEnclosingThisField();
+    ClassField cParent = ((ClassDefinition) getDefinition(result, "A.C")).getPersonalFields().get(0);
     assertNotNull(cParent);
     FunctionDefinition hFun = (FunctionDefinition) getDefinition(result, "A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
@@ -384,93 +522,8 @@ public class ClassesTest extends TypeCheckingTestCase {
     Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
     assertEquals(Pi(ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
-    Expression aRef = FieldCall(cParent, Ref(kFunParam));
+    Expression aRef = FieldCall(cParent, Sort.PROP, Ref(kFunParam));
     assertEquals(new LeafElimTree(kFunParam, FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef)))), kFun.getBody());
-  }
-
-  @Test
-  public void fieldCallInClass() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : A\n" +
-        "  | y : a.x = a.x\n" +
-        "}");
-  }
-
-  @Test
-  public void fieldCallInClass2() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : A\n" +
-        "  | y : a.x = a.x\n" +
-        "  | z : y = y\n" +
-        "}");
-  }
-
-  @Test
-  public void fieldCallInClass3() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : A\n" +
-        "  | y : path (\\lam _ => a.x) = path (\\lam _ => a.x)\n" +
-        "}");
-  }
-
-  @Test
-  public void fieldCallWithArg0() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\func y (b : B) => b.a.x");
-  }
-
-  @Test
-  public void fieldCallWithArg1() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : A\n" +
-        "}\n" +
-        "\\func y (b : Nat -> B) => (b 0).a.x");
-  }
-
-  @Test
-  public void fieldCallWithArg2() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : Nat -> A\n" +
-        "}\n" +
-        "\\func y (b : B) => (b.a 1).x");
-  }
-
-  @Test
-  public void fieldCallWithArg3() {
-    typeCheckModule(
-        "\\class A {\n" +
-        "  | x : Nat\n" +
-        "}\n" +
-        "\\class B {\n" +
-        "  | a : Nat -> A\n" +
-        "}\n" +
-        "\\func y (b : Nat -> B) => ((b 0).a 1).x");
   }
 
   @Test
@@ -481,7 +534,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    \\func f => 0\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.f");
+        "\\func y (a : A) => A.B.f {a}");
   }
 
   @Test
@@ -495,7 +548,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.C.f");
+        "\\func y (a : A) => A.B.C.f {a}");
   }
 
   @Test
@@ -509,7 +562,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) : \\Set0 => a.B.C");
+        "\\func y (a : A) : \\Set0 => A.B.C {a}");
   }
 
   @Test
@@ -522,7 +575,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : \\Prop => a.B.C");
+        "\\func y (a : A) : \\Prop => A.B.C {a}");
   }
 
   @Test
@@ -536,7 +589,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "  }\n" +
         "  | x : Nat\n" +
         "}\n" +
-        "\\func y (a : A) : \\Set0 => a.B");
+        "\\func y (a : A) : \\Set0 => A.B {a}");
   }
 
   @Test
@@ -554,7 +607,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -568,7 +621,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) => a.B.C.d.e");
+        "\\func y (a : A) => A.B.C.d.e {a}");
   }
 
   @Test
@@ -588,7 +641,7 @@ public class ClassesTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : a.B.C.d.E.f = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -606,22 +659,97 @@ public class ClassesTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void recursiveExtendsError() {
-    typeCheckModule("\\class A \\extends A", 1);
-    assertThatErrorsAre(error());
+  public void classConstructorsTest() {
+    ChildGroup result = typeCheckModule(
+      "\\class A {\n" +
+        "  | x : Nat\n" +
+        "  \\data Foo | foo (x = 0)\n" +
+        "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
+        "}\n" +
+        "\\func test (p : A) => A.y {p}");
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
+    Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
+    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
+    assertEquals(3, arguments.size());
+
+    Constructor foo = ((DataDefinition) getDefinition(result, "A.Foo")).getConstructor("foo");
+
+    ConCallExpression arg2 = arguments.get(2).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
+    assertEquals(1, arg2.getDataTypeArguments().size());
+    assertEquals(Ref(testFun.getParameters()), arg2.getDataTypeArguments().get(0));
+    assertEquals(foo, arg2.getDefinition());
+
+    ConCallExpression arg1 = arguments.get(1).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
+    assertEquals(1, arg1.getDataTypeArguments().size());
+    assertEquals(Ref(testFun.getParameters()), arg1.getDataTypeArguments().get(0));
+    assertEquals(foo, arg1.getDefinition());
+
+    Expression domFunction = arguments.get(0).cast(LamExpression.class).getBody().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
+    assertEquals(Prelude.PATH, domFunction.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
+    assertEquals(3, domArguments.size());
+    assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
+    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
   }
 
   @Test
-  public void recursiveFieldError() {
-    typeCheckModule("\\class A { | a : A }", 1);
-    assertThatErrorsAre(error());
-  }
+  public void classConstructorsParametersTest() {
+    ChildGroup result = typeCheckModule(
+      "\\class A {\n" +
+        "  | x : Nat\n" +
+        "  \\data Foo (p : x = x) | foo (p = p)\n" +
+        "  \\func y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
+        "}\n" +
+        "\\func test (q : A) => A.y {q}");
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
+    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters()));
+    Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
+    assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
+    List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
+    assertEquals(3, arguments.size());
 
-  @Test
-  public void mutualRecursiveExtendsError() {
-    typeCheckModule(
-      "\\class A \\extends B\n" +
-      "\\class B \\extends A", 1);
-    assertThatErrorsAre(error());
+    DataDefinition Foo = (DataDefinition) getDefinition(result, "A.Foo");
+    Constructor foo = Foo.getConstructor("foo");
+
+    ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);
+    assertEquals(2, arg2Fun.getDataTypeArguments().size());
+    assertEquals(Ref(testFun.getParameters()), arg2Fun.getDataTypeArguments().get(0));
+    ConCallExpression expr1 = arg2Fun.getDataTypeArguments().get(1).cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, expr1.getDefinition());
+    assertEquals(xCall, expr1.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+
+    assertEquals(foo, arg2Fun.getDefinition());
+    ConCallExpression expr2 = arg2Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, expr2.getDefinition());
+    ConCallExpression expr3 = expr2.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, expr3.getDefinition());
+    assertEquals(xCall, expr3.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+
+    ConCallExpression arg1Fun = arguments.get(1).cast(ConCallExpression.class);
+    assertEquals(2, arg1Fun.getDataTypeArguments().size());
+    assertEquals(Ref(testFun.getParameters()), arg1Fun.getDataTypeArguments().get(0));
+    assertEquals(expr1, arg1Fun.getDataTypeArguments().get(1));
+    assertEquals(foo, arg1Fun.getDefinition());
+    ConCallExpression expr4 = arg1Fun.getDefCallArguments().get(0).cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, expr4.getDefinition());
+    ConCallExpression expr5 = expr4.getDefCallArguments().get(0).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, expr5.getDefinition());
+    assertEquals(xCall, expr5.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+
+    LamExpression arg0 = arguments.get(0).cast(LamExpression.class);
+    assertEquals(Foo, arg0.getBody().cast(DataCallExpression.class).getDefinition());
+    assertEquals(Ref(testFun.getParameters()), arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(0));
+    ConCallExpression paramConCall = arg0.getBody().cast(DataCallExpression.class).getDefCallArguments().get(1).cast(ConCallExpression.class);
+    assertEquals(Prelude.PATH_CON, paramConCall.getDefinition());
+    assertEquals(1, paramConCall.getDefCallArguments().size());
+    assertEquals(xCall, paramConCall.getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+
+    List<? extends Expression> parameters = paramConCall.getDataTypeArguments();
+    assertEquals(3, parameters.size());
+    assertEquals(Nat(), parameters.get(0).cast(LamExpression.class).getBody());
+    assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
+    assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
   }
 }

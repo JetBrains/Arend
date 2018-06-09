@@ -22,6 +22,10 @@ public class SimpleReferableConverter implements ReferableConverter {
     return referable == null ? null : myMap.get(new FullName(referable));
   }
 
+  public TCReferable get(LocatedReferable referable) {
+    return myMap.get(new FullName(referable));
+  }
+
   public TCReferable computeIfAbsent(LocatedReferable referable, Function<? super FullName, ? extends TCReferable> tcReferable) {
     return myMap.computeIfAbsent(new FullName(referable), tcReferable);
   }

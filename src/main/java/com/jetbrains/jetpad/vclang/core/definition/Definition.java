@@ -12,7 +12,6 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import java.util.List;
 
 public abstract class Definition implements Variable {
-  private ClassDefinition myThisClass;
   private TCReferable myReferable;
   private TypeCheckingStatus myStatus;
 
@@ -36,18 +35,10 @@ public abstract class Definition implements Variable {
 
   public abstract Expression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument);
 
-  public abstract Expression getDefCall(Sort sortArgument, Expression thisExpr, List<Expression> args);
-
-  public ClassDefinition getThisClass() {
-    return myThisClass;
-  }
-
-  public void setThisClass(ClassDefinition enclosingClass) {
-    myThisClass = enclosingClass;
-  }
+  public abstract Expression getDefCall(Sort sortArgument, List<Expression> args);
 
   public enum TypeCheckingStatus {
-    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, NO_ERRORS;
+    HEADER_HAS_ERRORS, BODY_HAS_ERRORS, HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, MAY_BE_TYPE_CHECKED, HAS_ERRORS, NO_ERRORS;
 
     public boolean bodyIsOK() {
       return this == HAS_ERRORS || this == NO_ERRORS;
@@ -57,8 +48,12 @@ public abstract class Definition implements Variable {
       return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
     }
 
+    public boolean isTypeChecked() {
+      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING && this != BODY_NEEDS_TYPE_CHECKING;
+    }
+
     public boolean needsTypeChecking() {
-      return this != NO_ERRORS;
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED;
     }
   }
 

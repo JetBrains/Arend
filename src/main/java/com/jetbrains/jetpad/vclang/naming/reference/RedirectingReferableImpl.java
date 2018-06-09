@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.reference;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
@@ -31,5 +32,21 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Override
   public String textRepresentation() {
     return myName;
+  }
+
+  @Override
+  public GlobalReferable getTypecheckable() {
+    return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getTypecheckable() : null;
+  }
+
+  @Override
+  public boolean isTypecheckable() {
+    return myOriginalReferable instanceof GlobalReferable && ((GlobalReferable) myOriginalReferable).isTypecheckable();
+  }
+
+  @Nullable
+  @Override
+  public ClassReferable getTypeClassReference() {
+    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeClassReference() : null;
   }
 }

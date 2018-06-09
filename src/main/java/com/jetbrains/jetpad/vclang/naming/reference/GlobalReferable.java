@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 
-public interface GlobalReferable extends Referable {
+public interface GlobalReferable extends TypedReferable {
   @Nonnull Precedence getPrecedence();
 
   default GlobalReferable getTypecheckable() {
