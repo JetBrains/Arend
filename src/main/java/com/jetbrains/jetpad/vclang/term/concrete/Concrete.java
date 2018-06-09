@@ -282,55 +282,6 @@ public final class Concrete {
       myHLevel = null;
     }
 
-    public static ReferenceExpression make(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
-      LevelVariable.LvlType type1 = pLevel == null ? null : getLevelType(pLevel);
-      LevelVariable.LvlType type2 = hLevel == null ? null : getLevelType(hLevel);
-      return type1 == LevelVariable.LvlType.HLVL && type2 != LevelVariable.LvlType.HLVL || type1 == null && type2 == LevelVariable.LvlType.PLVL
-        ? new ReferenceExpression(data, referable, hLevel, pLevel)
-        : new ReferenceExpression(data, referable, pLevel, hLevel);
-    }
-
-    private static LevelVariable.LvlType getLevelType(Concrete.LevelExpression expr) {
-      return expr.accept(new ConcreteLevelExpressionVisitor<Void, LevelVariable.LvlType>() {
-        @Override
-        public LevelVariable.LvlType visitInf(Concrete.InfLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.HLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitLP(Concrete.PLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.PLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitLH(Concrete.HLevelExpression expr, Void param) {
-          return LevelVariable.LvlType.HLVL;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitNumber(Concrete.NumberLevelExpression expr, Void param) {
-          return null;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitSuc(Concrete.SucLevelExpression expr, Void param) {
-          return expr.getExpression().accept(this, null);
-        }
-
-        @Override
-        public LevelVariable.LvlType visitMax(Concrete.MaxLevelExpression expr, Void param) {
-          LevelVariable.LvlType type1 = expr.getLeft().accept(this, null);
-          LevelVariable.LvlType type2 = expr.getRight().accept(this, null);
-          return type1 == null || type1 == type2 ? type2 : type2 == null ? type1 : null;
-        }
-
-        @Override
-        public LevelVariable.LvlType visitVar(Concrete.InferVarLevelExpression expr, Void param) {
-          return expr.getVariable().getType();
-        }
-      }, null);
-    }
-
     @Nonnull
     public Referable getReferent() {
       return myReferent;
