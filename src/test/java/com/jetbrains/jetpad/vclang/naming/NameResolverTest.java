@@ -16,6 +16,56 @@ import static org.junit.Assert.assertTrue;
 
 public class NameResolverTest extends NameResolverTestCase {
   @Test
+  public void notInScopeError() {
+    resolveNamesExpr("x", 1);
+    assertThatErrorsAre(notInScope("x"));
+  }
+
+  @Test
+  public void notInScopeLongNameError() {
+    resolveNamesExpr("x.y", 1);
+    assertThatErrorsAre(notInScope("x"));
+  }
+
+  @Test
+  public void notInScopeLongNameError2() {
+    resolveNamesExpr("x.y.z", 1);
+    assertThatErrorsAre(notInScope("x"));
+  }
+
+  @Test
+  public void notInScopeLongNameError3() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\func f => X.y", 1);
+    assertThatErrorsAre(notInScope("y"));
+  }
+
+  @Test
+  public void notInScopeLongNameError4() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\func f => X.y.z", 1);
+    assertThatErrorsAre(notInScope("y"));
+  }
+
+  @Test
+  public void notInScopeLongNameError5() {
+    resolveNamesModule(
+      "\\class X \\where { \\func y }\n" +
+      "\\func f => X.y.z", 1);
+    assertThatErrorsAre(notInScope("z"));
+  }
+
+  @Test
+  public void notInScopeLongNameError6() {
+    resolveNamesModule(
+      "\\class X \\where { \\func y }\n" +
+      "\\func f => X.y.z.w", 1);
+    assertThatErrorsAre(notInScope("z"));
+  }
+
+  @Test
   public void parserInfix() {
     ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH);
     Concrete.Definition plus = new Concrete.FunctionDefinition(plusRef, Collections.emptyList(), null, null);

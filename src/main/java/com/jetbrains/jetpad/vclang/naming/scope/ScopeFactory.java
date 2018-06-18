@@ -222,6 +222,10 @@ public class ScopeFactory {
 
     // Extend the scope with parameters
     if (parentSourceNode instanceof Abstract.ParametersHolder) {
+      if (sourceNode instanceof Abstract.Reference && parentSourceNode instanceof Abstract.InstanceDefinition) {
+        return parentScope;
+      }
+
       List<? extends Abstract.Parameter> parameters = ((Abstract.ParametersHolder) parentSourceNode).getParameters();
       if (sourceNode instanceof Abstract.Parameter && !(sourceNode instanceof Abstract.Expression)) {
         List<Abstract.Parameter> parameters1 = new ArrayList<>(parameters.size());

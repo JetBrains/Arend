@@ -1,5 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
+import javax.annotation.Nullable;
+
 public interface DataContainer {
-  Object getData();
+  @Nullable Object getData();
 }

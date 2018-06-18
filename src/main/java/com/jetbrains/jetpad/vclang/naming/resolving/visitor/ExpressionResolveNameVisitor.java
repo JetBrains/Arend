@@ -227,8 +227,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.baseClassExpression = expr.baseClassExpression.accept(this, null);
-    GlobalReferable classDef = Concrete.getUnderlyingClassDef(expr.baseClassExpression);
-    visitClassFieldImpls(expr.getStatements(), classDef instanceof ClassReferable ? (ClassReferable) classDef : null);
+    visitClassFieldImpls(expr.getStatements(), Concrete.getUnderlyingClassDef(expr.baseClassExpression));
     return expr;
   }
 

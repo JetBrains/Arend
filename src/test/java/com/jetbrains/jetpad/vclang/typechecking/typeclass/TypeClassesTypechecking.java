@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
 
-public class TypeClassesTypeChecking extends TypeCheckingTestCase {
+public class TypeClassesTypechecking extends TypeCheckingTestCase {
   @Test
   public void classSynonymExt() {
     typeCheckModule(

@@ -270,7 +270,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
       List<Boolean> fieldsExplicitness = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, buildReferences(def.getSuperClasses()), classFields, fieldsExplicitness, implementations);
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, fieldsExplicitness, implementations);
       classDef.setCoercingField(buildClassParameters(classParameters, classDef, classFields, fieldsExplicitness));
       setEnclosingClass(classDef, def);
 

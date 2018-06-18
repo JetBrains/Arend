@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.Error;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
@@ -11,10 +9,12 @@ import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.group.Group;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.PartialConcreteProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
+@SuppressWarnings("SameParameterValue")
 public abstract class NameResolvingChecker {
   private final boolean myRecursively;
 
@@ -22,24 +22,57 @@ public abstract class NameResolvingChecker {
     myRecursively = recursively;
   }
 
-  public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+  protected void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
 
   }
 
-  public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
+  protected void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
 
   }
 
-  public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
+  protected void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
 
   }
 
-  public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
+  protected void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
 
   }
 
-  public void nonTopLevelImport(NamespaceCommand command) {
+  protected void nonTopLevelImport(NamespaceCommand command) {
 
+  }
+
+  protected void expectedClass(Error.Level level, Object cause) {
+
+  }
+
+  private void checkDefinition(LocatedReferable definition, Scope scope, PartialConcreteProvider concreteProvider) {
+    Reference classRef = concreteProvider.getInstanceClassReference(definition);
+    if (classRef == null) {
+      return;
+    }
+
+    boolean ok = true;
+    Referable ref = classRef.getReferent();
+    while (ref instanceof RedirectingReferable) {
+      ref = ((RedirectingReferable) ref).getOriginalReferable();
+    }
+    if (ref instanceof UnresolvedReference) {
+      if (((UnresolvedReference) ref).resolveArgument(scope) != null) {
+        ok = false;
+      }
+      ref = ((UnresolvedReference) ref).resolve(scope);
+      while (ref instanceof RedirectingReferable) {
+        ref = ((RedirectingReferable) ref).getOriginalReferable();
+      }
+    }
+    if (ref instanceof ErrorReference) {
+      return;
+    }
+
+    if (!(ok && ref instanceof ClassReferable && !concreteProvider.isRecord((ClassReferable) ref))) {
+      expectedClass(Error.Level.ERROR, classRef.getData());
+    }
   }
 
   public static Scope makeScope(Group group, Scope parentScope) {
@@ -54,12 +87,14 @@ public abstract class NameResolvingChecker {
     }
   }
 
-  public void checkGroup(Group group, Scope scope, boolean isTopLevel) {
+  public void checkGroup(Group group, Scope scope, boolean isTopLevel, PartialConcreteProvider concreteProvider) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends ClassReferable> superClasses = groupRef instanceof ClassReferable ? ((ClassReferable) groupRef).getSuperClassReferences() : Collections.emptyList();
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
+
+    checkDefinition(groupRef, scope, concreteProvider);
 
     Map<String, LocatedReferable> referables = new HashMap<>();
     Map<String, Pair<LocatedReferable, ClassReferable>> fields = Collections.emptyMap();
@@ -123,11 +158,11 @@ public abstract class NameResolvingChecker {
 
     if (myRecursively) {
       for (Group subgroup : subgroups) {
-        checkGroup(subgroup, makeScope(subgroup, scope), false);
+        checkGroup(subgroup, makeScope(subgroup, scope), false, concreteProvider);
       }
 
       for (Group subgroup : dynamicSubgroups) {
-        checkGroup(subgroup, makeScope(subgroup, scope), false);
+        checkGroup(subgroup, makeScope(subgroup, scope), false, concreteProvider);
       }
     }
 

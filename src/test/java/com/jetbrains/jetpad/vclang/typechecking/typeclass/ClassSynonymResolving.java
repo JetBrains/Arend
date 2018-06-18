@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 import com.jetbrains.jetpad.vclang.naming.NameResolverTestCase;
 import org.junit.Test;
 
-public class TypeClassesNameResolver extends NameResolverTestCase {
+public class ClassSynonymResolving extends NameResolverTestCase {
   @Test
   public void classNotInScope() {
     resolveNamesModule("\\class Y => X", 1);
@@ -105,15 +105,5 @@ public class TypeClassesNameResolver extends NameResolverTestCase {
   @Test
   public void cyclicSynonym() {
     resolveNamesModule("\\class X => X", 1);
-  }
-
-  @Test
-  public void instanceRecord() {
-    resolveNamesModule(
-      "\\record X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\data D\n" +
-      "\\instance D-X : X | A => D | B => \\lam n => D", 1);
   }
 }

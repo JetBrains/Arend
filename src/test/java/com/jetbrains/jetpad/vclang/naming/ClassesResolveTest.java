@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 
@@ -187,5 +188,25 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\func Y => X\n" +
       "\\class Z \\extends Y", 1);
     assertThatErrorsAre(wrongReferable());
+  }
+
+  @Test
+  public void instanceLocalClassReference() {
+    resolveNamesModule(
+      "\\class C {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\instance D-X (c : C) : c.x", 1);
+    assertThatErrorsAre(notInScope("c"));
+  }
+
+  @Test
+  public void instanceRecord() {
+    resolveNamesModule(
+      "\\record X (A : \\Type0) {\n" +
+      "  | B : A -> \\Type0\n" +
+      "}\n" +
+      "\\data D\n" +
+      "\\instance D-X : X | A => D | B => \\lam n => D", 1);
   }
 }

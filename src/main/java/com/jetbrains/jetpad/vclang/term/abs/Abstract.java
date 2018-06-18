@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.Reference;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
@@ -58,9 +59,7 @@ public final class Abstract {
     @Nonnull List<? extends Pattern> getArguments();
   }
 
-  public interface Reference extends SourceNode {
-    @Nullable Object getData();
-    @Nonnull Referable getReferent();
+  public interface Reference extends com.jetbrains.jetpad.vclang.naming.reference.Reference, SourceNode {
   }
 
   public interface LongReference extends Reference {
@@ -150,6 +149,7 @@ public final class Abstract {
 
   public interface ClassDefinition extends Definition, ParametersHolder {
     @Override @Nonnull ClassReferable getReferable();
+    boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();

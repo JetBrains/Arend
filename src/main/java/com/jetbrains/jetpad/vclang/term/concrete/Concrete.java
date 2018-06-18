@@ -23,8 +23,7 @@ import java.util.List;
 public final class Concrete {
   private Concrete() {}
 
-  public interface SourceNode extends PrettyPrintable {
-    @Nullable Object getData();
+  public interface SourceNode extends PrettyPrintable, DataContainer {
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {
@@ -266,7 +265,7 @@ public final class Concrete {
     }
   }
 
-  public static class ReferenceExpression extends Expression {
+  public static class ReferenceExpression extends Expression implements Reference {
     public static final byte PREC = 12;
     private Referable myReferent;
     private final Concrete.LevelExpression myPLevel;
@@ -335,6 +334,7 @@ public final class Concrete {
       }, null);
     }
 
+    @Override
     @Nonnull
     public Referable getReferent() {
       return myReferent;
@@ -1015,14 +1015,16 @@ public final class Concrete {
   }
 
   public static class ClassDefinition extends Definition {
+    private final boolean myRecord;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
     private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
     private TCReferable myCoercingField;
 
-    public ClassDefinition(TCClassReferable referable, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
       super(referable);
+      myRecord = isRecord;
       myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myFields = fields;
@@ -1034,6 +1036,10 @@ public final class Concrete {
     @Override
     public TCClassReferable getData() {
       return (TCClassReferable) super.getData();
+    }
+
+    public boolean isRecord() {
+      return myRecord;
     }
 
     @Nullable

@@ -30,10 +30,10 @@ classKw   : '\\class'   # classKwClass
           ;
 
 classBody : '{' classStat* '}'                      # classImpl
-          | '=>' atomFieldsAcc ('{' fieldSyn* '}')? # classSyn
+          | '=>' atomFieldsAcc ('{' fieldSyn? ('|' fieldSyn)* '}')? # classSyn
           ;
 
-fieldSyn : '|' ID '=>' precedence ID;
+fieldSyn : ID '=>' precedence ID;
 
 classCall : atomFieldsAcc;
 
