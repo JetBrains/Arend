@@ -74,7 +74,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "  \\class Y => X\n" +
         "}\n" +
-        "\\instance Nat-X : M.Y { A => Nat | B => \\lam x => x\n" +
+        "\\instance Nat-X : M.Y | A => Nat | B => \\lam x => x\n" +
         "\\func f => M.B 0");
   }
 

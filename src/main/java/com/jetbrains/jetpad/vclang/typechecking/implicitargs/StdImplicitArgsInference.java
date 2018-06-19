@@ -2,16 +2,21 @@ package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -32,36 +37,38 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  /* TODO[classes]
-  private static Concrete.ClassView getClassViewFromDefCall(Concrete.Definition definition, int paramIndex) {
-    Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
-    if (parameters == null) {
-      return null;
+  private static TCClassReferable getClassRefFromDefCall(Definition definition, int paramIndex) {
+    if (definition instanceof ClassField) {
+      return paramIndex == 0 ? ((ClassField) definition).getParentClass().getReferable() : null;
     }
 
     int i = 0;
-    for (Concrete.Parameter parameter : parameters) {
-      if (parameter instanceof Concrete.NameParameter) {
+    DependentLink link = EmptyDependentLink.getInstance();
+    if (definition instanceof Constructor) {
+      link = ((Constructor) definition).getDataTypeParameters();
+      while (link.hasNext() && i < paramIndex) {
+        link = link.getNext();
         i++;
-      } else
-      if (parameter instanceof Concrete.TypeParameter) {
-        if (parameter instanceof Concrete.TelescopeParameter) {
-          i += ((Concrete.TelescopeParameter) parameter).getReferableList().size();
-        } else {
-          i++;
-        }
-        if (i > paramIndex) {
-          return Concrete.getUnderlyingClassView(((Concrete.TypeParameter) parameter).getType());
-        }
-      } else {
-        throw new IllegalStateException();
       }
     }
-    return null;
-  }
-  */
 
-  protected CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr) {
+    if (i < paramIndex) {
+      link = definition.getParameters();
+      while (i < paramIndex && link.hasNext()) {
+        link = link.getNext();
+        i++;
+      }
+    }
+
+    if (!link.hasNext()) {
+      return null;
+    }
+
+    ClassCallExpression type = link.getTypeExpr().checkedCast(ClassCallExpression.class);
+    return type != null ? type.getDefinition().getReferable() : null;
+  }
+
+  private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
@@ -69,12 +76,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        /* TODO[classes]: Fix class view inference
-        Concrete.ClassView classView = getClassViewFromDefCall(defCallResult.getDefinition().getConcreteDefinition(), i);
-        if (classView != null) {
-          infVar = new TypeClassInferenceVariable<>(parameter.getName(), type, classView, false, defCallResult.getDefCall(), myVisitor.getAllBindings());
+        TCClassReferable classRef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
+        if (classRef != null) {
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
-        */
       }
       if (infVar == null) {
         if (result instanceof CheckTypeVisitor.DefCallResult) {
@@ -91,7 +96,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result;
   }
 
-  protected CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
+  private CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
     if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isError()) {
       myVisitor.checkExpr(arg, null);
       return result;

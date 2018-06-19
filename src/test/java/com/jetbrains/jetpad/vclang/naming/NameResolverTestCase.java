@@ -77,6 +77,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
   private void resolveNamesModule(ChildGroup group, int errors) {
     Scope scope = CachingScope.make(ScopeFactory.forGroup(group, libraryManager.getModuleScopeProvider()));
     new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(group, null, scope);
+    libraryManager.getInstanceProviderSet().collectInstances(group, CachingScope.make(ScopeFactory.parentScopeForGroup(group, libraryManager.getModuleScopeProvider(), null, true)), ConcreteReferableProvider.INSTANCE);
     assertThat(errorList, containsErrors(errors));
   }
 

@@ -34,6 +34,10 @@ public class ClassDefinition extends Definition {
     return myCoercingField;
   }
 
+  public ClassField getClassifyingField() {
+    return myCoercingField;
+  }
+
   public void setCoercingField(ClassField coercingField) {
     myCoercingField = coercingField;
   }

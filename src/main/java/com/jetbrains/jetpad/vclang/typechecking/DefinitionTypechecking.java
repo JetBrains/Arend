@@ -276,23 +276,21 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           index++;
         }
 
-        /* TODO[classes]
         if (localInstancePool != null) {
-          Concrete.ClassView classView = Concrete.getUnderlyingClassView(typeParameter.getType());
-          if (classView != null && classView.getClassifyingField() instanceof GlobalReferable) {
-            ClassField classifyingField = visitor.referableToClassField(classView.getClassifyingField(), classView);
+          TCClassReferable classRef = Concrete.getUnderlyingClassDef(typeParameter.getType());
+          if (classRef != null) {
+            ClassField classifyingField = ((ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef)).getClassifyingField();
             if (classifyingField != null) {
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
-                Expression oldInstance = localInstancePool.addInstance(FieldCall(classifyingField, reference), classView, reference);
+                Expression oldInstance = localInstancePool.addInstance(FieldCallExpression.make(classifyingField, Sort.PROP /* TODO[classes] */, reference), classRef, reference);
                 if (oldInstance != null) {
-                  visitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
+                  myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
                 }
               }
             }
           }
         }
-        */
 
         list.append(param);
         for (; param.hasNext(); param = param.getNext()) {
@@ -707,22 +705,24 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     // Process coercing field
-    ClassField coercingField = null;
-    for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-      coercingField = superClass.getCoercingField();
-      if (coercingField != null) {
-        break;
+    if (!def.isRecord()) {
+      ClassField coercingField = null;
+      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+        coercingField = superClass.getCoercingField();
+        if (coercingField != null) {
+          break;
+        }
       }
-    }
-    if (coercingField == null && def.getCoercingField() != null) {
-      Definition definition = visitor.getTypecheckingState().getTypechecked(def.getCoercingField());
-      if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
-        coercingField = (ClassField) definition;
-      } else {
-        errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
+      if (coercingField == null && def.getCoercingField() != null) {
+        Definition definition = visitor.getTypecheckingState().getTypechecked(def.getCoercingField());
+        if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
+          coercingField = (ClassField) definition;
+        } else {
+          errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
+        }
       }
+      typedDef.setCoercingField(coercingField);
     }
-    typedDef.setCoercingField(coercingField);
 
     // Process implementations
     if (!def.getImplementations().isEmpty()) {

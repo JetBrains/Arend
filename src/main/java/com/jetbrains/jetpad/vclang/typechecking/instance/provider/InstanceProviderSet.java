@@ -13,10 +13,7 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -79,20 +76,34 @@ public class InstanceProviderSet {
     MyPredicate predicate = new MyPredicate(concreteProvider);
     parentScope.find(predicate);
     predicate.recordInstances = true;
+    predicate.test(group.getReferable());
     processGroup(group, parentScope, predicate);
     return true;
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {
+    Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
+    Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
+    Collection<? extends Group> subgroups = group.getSubgroups();
+    if (namespaceCommands.isEmpty() && dynamicSubgroups.isEmpty() && subgroups.isEmpty()) {
+      return;
+    }
+
     parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
-    for (NamespaceCommand command : group.getNamespaceCommands()) {
+    for (NamespaceCommand command : namespaceCommands) {
       NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(parentScope, command.getPath()), command).find(predicate);
     }
-    for (Group subgroup : group.getDynamicSubgroups()) {
+    processSubgroups(parentScope, predicate, dynamicSubgroups);
+    processSubgroups(parentScope, predicate, subgroups);
+  }
+
+  private void processSubgroups(Scope parentScope, MyPredicate predicate, Collection<? extends Group> subgroups) {
+    for (Group subgroup : subgroups) {
+      predicate.test(subgroup.getReferable());
+      SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
       processGroup(subgroup, parentScope, predicate);
-    }
-    for (Group subgroup : group.getSubgroups()) {
-      processGroup(subgroup, parentScope, predicate);
+      predicate.used = true;
+      predicate.instanceProvider = instanceProvider;
     }
   }
 }

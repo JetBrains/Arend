@@ -5,7 +5,9 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.DerivedInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ElimBindingVisitor;
@@ -46,6 +48,19 @@ public class TwoStageEquations implements Equations {
     myVisitor = visitor;
   }
 
+  private Expression getInstance(InferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
+    if (variable instanceof TypeClassInferenceVariable) {
+      ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(((TypeClassInferenceVariable) variable).getClassReferable());
+      if (classDef.getClassifyingField() == fieldCall.getDefinition()) {
+        Expression stuck2 = expr.getStuckExpression();
+        if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
+          return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr);
+        }
+      }
+    }
+    return null;
+  }
+
   private void addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
     InferenceVariable inf1 = expr1.isInstance(InferenceReferenceExpression.class) ? expr1.cast(InferenceReferenceExpression.class).getVariable() : null;
     InferenceVariable inf2 = expr2.isInstance(InferenceReferenceExpression.class) ? expr2.cast(InferenceReferenceExpression.class).getVariable() : null;
@@ -64,14 +79,7 @@ public class TwoStageEquations implements Equations {
       if (fieldCall1 != null && fieldCall1.getArgument().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall1.getArgument().cast(InferenceReferenceExpression.class).getVariable();
         // expr1 == view field call
-        /* TODO[classes]
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall1.getDefinition()) {
-          Expression stuck2 = expr2.getStuckExpression();
-          if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
-            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr2);
-          }
-        }
-        */
+        result = getInstance(variable, fieldCall1, expr2);
       }
 
       // expr2 == field call
@@ -79,14 +87,7 @@ public class TwoStageEquations implements Equations {
       if (variable == null && fieldCall2 != null && fieldCall2.getArgument().isInstance(InferenceReferenceExpression.class)) {
         variable = fieldCall2.getArgument().cast(InferenceReferenceExpression.class).getVariable();
         // expr2 == view field call
-        /* TODO[classes]
-        if (variable instanceof TypeClassInferenceVariable && myVisitor.getTypecheckingState().getTypechecked((GlobalReferable) ((TypeClassInferenceVariable) variable).getClassSynonym().getClassifyingField()) == fieldCall2.getDefinition()) {
-          Expression stuck1 = expr1.getStuckExpression();
-          if (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class) || stuck1.cast(InferenceReferenceExpression.class).getVariable() == null) {
-            result = ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr1);
-          }
-        }
-        */
+        result = getInstance(variable, fieldCall2, expr1);
       }
 
       if (result != null) {

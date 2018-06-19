@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.context.binding.inference;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
@@ -10,17 +11,15 @@ import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
-  private final Concrete.ClassSynonym myClassSyn;
-  private final boolean isSyn;
+  private final TCClassReferable myClassRef;
 
-  public TypeClassInferenceVariable(String name, Expression type, Concrete.ClassSynonym classSyn, boolean isSyn, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, TCClassReferable classRef, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
-    myClassSyn = classSyn;
-    this.isSyn = isSyn;
+    myClassRef = classRef;
   }
 
-  public Concrete.ClassSynonym getClassSynonym() {
-    return myClassSyn;
+  public TCClassReferable getClassReferable() {
+    return myClassRef;
   }
 
   @Override
@@ -34,6 +33,6 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression) {
-    return pool.getInstance(classifyingExpression, myClassSyn, isSyn);
+    return pool.getInstance(classifyingExpression, myClassRef);
   }
 }

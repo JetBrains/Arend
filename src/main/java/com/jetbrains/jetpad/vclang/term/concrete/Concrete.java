@@ -112,7 +112,7 @@ public final class Concrete {
 
   // Expressions
 
-  public static ClassReferable getUnderlyingClassDef(Expression expr) {
+  public static TCClassReferable getUnderlyingClassDef(Expression expr) {
     while (expr instanceof Concrete.ClassExtExpression) {
       expr = ((ClassExtExpression) expr).getBaseClassExpression();
     }
@@ -122,8 +122,8 @@ public final class Concrete {
 
     if (expr instanceof ReferenceExpression) {
       Referable definition = ((ReferenceExpression) expr).getReferent();
-      if (definition instanceof ClassReferable) {
-        return (ClassReferable) definition;
+      if (definition instanceof TCClassReferable) {
+        return (TCClassReferable) definition;
       }
     }
 
@@ -1048,7 +1048,7 @@ public final class Concrete {
     }
 
     public void setCoercingField(TCReferable coercingField) {
-      if (myCoercingField == null) {
+      if (myCoercingField == null && !myRecord) {
         myCoercingField = coercingField;
       }
     }

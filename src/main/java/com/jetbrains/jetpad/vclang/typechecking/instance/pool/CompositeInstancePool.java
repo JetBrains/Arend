@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,9 +14,9 @@ public class CompositeInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (InstancePool pool : myPools) {
-      Expression expr = pool.getInstance(classifyingExpression, classSyn, isView);
+      Expression expr = pool.getInstance(classifyingExpression, classRef);
       if (expr != null) {
         return expr;
       }

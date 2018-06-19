@@ -1,7 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 
 public class EmptyInstancePool implements InstancePool {
   public static EmptyInstancePool INSTANCE = new EmptyInstancePool();
@@ -9,7 +9,7 @@ public class EmptyInstancePool implements InstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, Concrete.ClassSynonym classSyn, boolean isView) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     return null;
   }
 }
