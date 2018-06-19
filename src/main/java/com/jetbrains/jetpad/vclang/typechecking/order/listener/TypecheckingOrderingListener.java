@@ -211,7 +211,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         visitor.setHasErrors();
       }
       DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, myErrorReporter);
-      Definition typechecked = DefinitionTypechecking.typecheckHeader(visitor, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), unit.getDefinition());
+      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), visitor);
       }
@@ -263,13 +263,15 @@ public class TypecheckingOrderingListener implements OrderingListener {
       }
     }
 
+    DefinitionTypechecking typechecking = new DefinitionTypechecking(null);
     for (Concrete.Definition definition : definitions) {
       typecheckingBodyStarted(definition.getData());
 
       Definition def = myState.getTypechecked(definition.getData());
       CheckTypeVisitor visitor = mySuspensions.remove(definition.getData());
       if (headersAreOK && visitor != null) {
-        List<Clause> clauses = DefinitionTypechecking.typecheckBody(def, definition, visitor, dataDefinitions);
+        typechecking.setVisitor(visitor);
+        List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions);
         if (clauses != null) {
           functionDefinitions.add((FunctionDefinition) def);
           clausesMap.put((FunctionDefinition) def, clauses);
@@ -301,7 +303,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     LocalErrorReporter localErrorReporter = new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter);
     DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, myErrorReporter);
-    List<Clause> clauses = DefinitionTypechecking.typecheck(myState, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), unit, recursive, localErrorReporter);
+    List<Clause> clauses = unit.getDefinition().accept(new DefinitionTypechecking(myState, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData())), localErrorReporter), recursive);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
 
     if (recursive && clauses != null) {
