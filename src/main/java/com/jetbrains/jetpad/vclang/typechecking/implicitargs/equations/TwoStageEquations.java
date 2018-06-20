@@ -54,7 +54,7 @@ public class TwoStageEquations implements Equations {
       if (classDef.getClassifyingField() == fieldCall.getDefinition()) {
         Expression stuck2 = expr.getStuckExpression();
         if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {
-          return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr);
+          return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, this, variable.getSourceNode());
         }
       }
     }

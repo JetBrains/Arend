@@ -283,7 +283,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             if (classifyingField != null) {
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
-                Expression oldInstance = localInstancePool.addInstance(FieldCallExpression.make(classifyingField, Sort.PROP /* TODO[classes] */, reference), classRef, reference);
+                Expression oldInstance = localInstancePool.addInstance(FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference);
                 if (oldInstance != null) {
                   myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
                 }

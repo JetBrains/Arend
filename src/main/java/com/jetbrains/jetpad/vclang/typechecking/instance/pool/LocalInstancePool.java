@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +25,11 @@ public class LocalInstancePool implements InstancePool {
   private final List<Pair> myPool = new ArrayList<>();
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
+    return getInstance(classifyingExpression, classRef);
+  }
+
+  private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (Pair pair : myPool) {
       if (pair.classRef == classRef && pair.key.equals(classifyingExpression)) {
         return pair.value;

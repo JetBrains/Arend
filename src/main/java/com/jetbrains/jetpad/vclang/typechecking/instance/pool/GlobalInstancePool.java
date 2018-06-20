@@ -12,6 +12,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProvider;
 
 import java.util.Collection;
@@ -27,7 +28,7 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
     if (myInstanceProvider == null) {
       return null;
     }
@@ -49,7 +50,7 @@ public class GlobalInstancePool implements InstancePool {
         if (definition != null && definition.status().headerIsOK() && definition.getResultType() instanceof ClassCallExpression) {
           Expression impl = ((ClassCallExpression) definition.getResultType()).getImplementationHere(classifyingField);
           if (impl instanceof DefCallExpression && ((DefCallExpression) impl).getDefinition() == classifyingDefCall.getDefinition()) {
-            return new FunCallExpression(definition, Sort.PROP /* TODO[classes] */, Collections.emptyList());
+            return new FunCallExpression(definition, Sort.generateInferVars(equations, sourceNode), Collections.emptyList());
           }
         }
       }

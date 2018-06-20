@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
+import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 
 import java.util.Set;
@@ -32,7 +33,7 @@ public class TypeClassInferenceVariable extends InferenceVariable {
     return new ArgInferenceError(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
   }
 
-  public Expression getInstance(InstancePool pool, Expression classifyingExpression) {
-    return pool.getInstance(classifyingExpression, myClassRef);
+  public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {
+    return pool.getInstance(classifyingExpression, myClassRef, equations, sourceNode);
   }
 }
