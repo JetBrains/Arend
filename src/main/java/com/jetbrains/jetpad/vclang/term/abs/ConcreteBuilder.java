@@ -531,6 +531,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.UniverseExpression visitUniverse(@Nullable Object data, @Nullable Integer pLevelNum, @Nullable Integer hLevelNum, @Nullable Abstract.LevelExpression pLevel, @Nullable Abstract.LevelExpression hLevel, @Nullable Abstract.ErrorData errorData, Void params) {
+    if (pLevelNum != null && hLevel == null) {
+      hLevel = pLevel;
+      pLevel = null;
+    }
     if (pLevelNum != null && pLevel != null) {
       myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "p-level is already specified", pLevel.getData()));
     }
