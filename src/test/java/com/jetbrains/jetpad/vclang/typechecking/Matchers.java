@@ -78,6 +78,26 @@ public class Matchers {
     };
   }
 
+  public static Matcher<? super GeneralError> duplicateInstanceError() {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof DuplicateInstanceError) {
+          description.appendText("Duplicate instance");
+          return true;
+        } else {
+          description.appendText("not a 'Duplicate instance' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Duplicate instance' error");
+      }
+    };
+  }
+
   public static Matcher<? super GeneralError> wrongReferable() {
     return new LocalErrorMatcher() {
       @Override

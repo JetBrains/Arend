@@ -389,7 +389,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
-    if (result != null && expectedType != null) {
+    if (result != null) {
       result = myArgsInference.inferTail(result, expectedType, expr);
     }
     return result == null ? null : checkResult(expectedType, result.toResult(myEquations), expr);

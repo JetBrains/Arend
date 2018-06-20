@@ -48,12 +48,7 @@ public class InstanceProviderSet {
     public boolean test(Referable ref) {
       if (ref instanceof TCReferable) {
         Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
-        if (instance == null) {
-          if (recordInstances) {
-            myProviders.put((TCReferable) ref, instanceProvider);
-            used = true;
-          }
-        } else {
+        if (instance != null) {
           Referable classRef = instance.getClassReference().getReferent();
           if (classRef instanceof ClassReferable) {
             if (used) {
@@ -62,6 +57,11 @@ public class InstanceProviderSet {
             }
             instanceProvider.put((ClassReferable) classRef, instance);
           }
+        }
+
+        if (recordInstances) {
+          myProviders.put((TCReferable) ref, instanceProvider);
+          used = true;
         }
       }
       return false;

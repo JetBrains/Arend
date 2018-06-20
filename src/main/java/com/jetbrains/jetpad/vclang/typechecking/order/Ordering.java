@@ -195,7 +195,9 @@ public class Ordering {
     definition.accept(new DefinitionGetDependenciesVisitor(dependencies), unit.isHeader());
     InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
     if (instanceProvider != null) {
-      collectInstances(instanceProvider, new ArrayDeque<>(dependencies), dependencies);
+      Deque<TCReferable> deque = new ArrayDeque<>(dependencies);
+      dependencies = new LinkedHashSet<>();
+      collectInstances(instanceProvider, deque, dependencies);
     }
     if (unit.isHeader() && dependencies.contains(definition.getData())) {
       myStack.pop();

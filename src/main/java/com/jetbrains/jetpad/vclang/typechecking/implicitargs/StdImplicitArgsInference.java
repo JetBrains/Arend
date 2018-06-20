@@ -4,7 +4,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInfere
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
@@ -43,21 +42,23 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     int i = 0;
-    DependentLink link = EmptyDependentLink.getInstance();
+    DependentLink link;
     if (definition instanceof Constructor) {
       link = ((Constructor) definition).getDataTypeParameters();
       while (link.hasNext() && i < paramIndex) {
         link = link.getNext();
         i++;
       }
+      if (i < paramIndex) {
+        link = definition.getParameters();
+      }
+    } else {
+      link = definition.getParameters();
     }
 
-    if (i < paramIndex) {
-      link = definition.getParameters();
-      while (i < paramIndex && link.hasNext()) {
-        link = link.getNext();
-        i++;
-      }
+    while (i < paramIndex && link.hasNext()) {
+      link = link.getNext();
+      i++;
     }
 
     if (!link.hasNext()) {
@@ -68,7 +69,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return type != null ? type.getDefinition().getReferable() : null;
   }
 
-  private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr) {
+  private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
     for (DependentLink parameter : implicitParameters) {
@@ -82,6 +83,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
       if (infVar == null) {
+        if (classVarsOnly) {
+          return result;
+        }
         if (result instanceof CheckTypeVisitor.DefCallResult) {
           infVar = new FunctionInferenceVariable(parameter.getName(), type, ((CheckTypeVisitor.DefCallResult) result).getArguments().size() + 1, ((CheckTypeVisitor.DefCallResult) result).getDefinition(), expr, myVisitor.getAllBindings());
         } else {
@@ -123,7 +127,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
 
-      result = fixImplicitArgs(result, result.getImplicitParameters(), fun);
+      result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false);
     }
 
     DependentLink param = result.getParameter();
@@ -200,18 +204,22 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   @Override
   public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Concrete.Expression expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
-    List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
-    expectedType.getPiParameters(expectedParams, true);
-    if (expectedParams.size() > actualParams.size()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
-      if (!result1.type.isError()) {
-        myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
+    int expectedParamsNumber = 0;
+    if (expectedType != null) {
+      List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
+      expectedType.getPiParameters(expectedParams, true);
+      if (expectedParams.size() > actualParams.size()) {
+        CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
+        if (!result1.type.isError()) {
+          myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
+        }
+        return null;
       }
-      return null;
+      expectedParamsNumber = expectedParams.size();
     }
 
-    if (expectedParams.size() != actualParams.size()) {
-      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParams.size()), expr);
+    if (expectedParamsNumber != actualParams.size()) {
+      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, expectedType == null);
     }
 
     return result;

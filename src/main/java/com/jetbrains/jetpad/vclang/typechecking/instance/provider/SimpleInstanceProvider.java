@@ -12,7 +12,10 @@ public class SimpleInstanceProvider implements InstanceProvider {
   }
 
   public SimpleInstanceProvider(SimpleInstanceProvider another) {
-    myInstances = new HashMap<>(another.myInstances);
+    myInstances = new HashMap<>();
+    for (Map.Entry<ClassReferable, List<Concrete.Instance>> entry : another.myInstances.entrySet()) {
+      myInstances.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+    }
   }
 
   public void put(ClassReferable classRef, Concrete.Instance instance) {

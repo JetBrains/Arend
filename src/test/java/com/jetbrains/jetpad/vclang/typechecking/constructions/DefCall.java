@@ -720,7 +720,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   @Test
   public void nonStaticTest() {
-    typeCheckModule("\\class A { \\func x => 0 } \\func y => A.x");
+    typeCheckModule("\\class A { \\func x => 0 } \\func y {a : A} => A.x {a}");
   }
 
   @Test
