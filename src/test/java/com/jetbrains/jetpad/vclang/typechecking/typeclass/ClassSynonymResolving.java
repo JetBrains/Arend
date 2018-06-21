@@ -98,12 +98,27 @@ public class ClassSynonymResolving extends NameResolverTestCase {
   public void duplicateFieldSynonymName() {
     resolveNamesModule(
         "\\class X (T f : \\Type0)\n" +
-        "\\func g => 0\n" +
+        "\\class Z { | g : Nat }\n" +
         "\\class Y => X { f => g }", 1);
+  }
+
+  @Test
+  public void synonymSynonym() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\class Y => X\n" +
+      "\\class Z => Y", 1);
   }
 
   @Test
   public void cyclicSynonym() {
     resolveNamesModule("\\class X => X", 1);
+  }
+
+  @Test
+  public void synonymParameters() {
+    parseModule(
+      "\\class X\n" +
+      "\\class Y (a : \\Prop) => X", 1);
   }
 }

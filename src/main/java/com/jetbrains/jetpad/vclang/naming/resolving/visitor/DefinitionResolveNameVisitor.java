@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
@@ -465,7 +466,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    new NameResolvingChecker(false) {
+    new NameResolvingChecker(false, group instanceof ChildGroup && ((ChildGroup) group).getParentGroup() == null, myConcreteProvider) {
       @Override
       public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
         myErrorReporter.report(new ProxyError(groupRef, new DuplicateNameError(level, ref2, ref1)));
@@ -496,6 +497,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       protected void expectedClass(Error.Level level, Object cause) {
         myErrorReporter.report(new ProxyError(groupRef, new NamingError(level, "Expected a class reference", cause)));
       }
-    }.checkGroup(group, convertedScope, true, myConcreteProvider);
+    }.checkGroup(group, convertedScope);
   }
 }

@@ -17,9 +17,13 @@ import java.util.*;
 @SuppressWarnings("SameParameterValue")
 public abstract class NameResolvingChecker {
   private final boolean myRecursively;
+  private boolean myTopLevel;
+  private final PartialConcreteProvider myConcreteProvider;
 
-  protected NameResolvingChecker(boolean recursively) {
+  protected NameResolvingChecker(boolean recursively, boolean isTopLevel, PartialConcreteProvider concreteProvider) {
     myRecursively = recursively;
+    myTopLevel = isTopLevel;
+    myConcreteProvider = concreteProvider;
   }
 
   protected void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
@@ -46,8 +50,8 @@ public abstract class NameResolvingChecker {
 
   }
 
-  private void checkDefinition(LocatedReferable definition, Scope scope, PartialConcreteProvider concreteProvider) {
-    Reference classRef = concreteProvider.getInstanceClassReference(definition);
+  protected void checkDefinition(LocatedReferable definition, Scope scope) {
+    Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
     if (classRef == null) {
       return;
     }
@@ -70,7 +74,7 @@ public abstract class NameResolvingChecker {
       return;
     }
 
-    if (!(ok && ref instanceof ClassReferable && !concreteProvider.isRecord((ClassReferable) ref))) {
+    if (!(ok && ref instanceof ClassReferable && !myConcreteProvider.isRecord((ClassReferable) ref))) {
       expectedClass(Error.Level.ERROR, classRef.getData());
     }
   }
@@ -87,14 +91,14 @@ public abstract class NameResolvingChecker {
     }
   }
 
-  public void checkGroup(Group group, Scope scope, boolean isTopLevel, PartialConcreteProvider concreteProvider) {
+  public void checkGroup(Group group, Scope scope) {
     LocatedReferable groupRef = group.getReferable();
     Collection<? extends ClassReferable> superClasses = groupRef instanceof ClassReferable ? ((ClassReferable) groupRef).getSuperClassReferences() : Collections.emptyList();
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
 
-    checkDefinition(groupRef, scope, concreteProvider);
+    checkDefinition(groupRef, scope);
 
     Map<String, LocatedReferable> referables = new HashMap<>();
     Map<String, Pair<LocatedReferable, ClassReferable>> fields = Collections.emptyMap();
@@ -156,13 +160,15 @@ public abstract class NameResolvingChecker {
 
     checkSubgroup(subgroups, referables, groupRef);
 
+    boolean isTopLevel = myTopLevel;
     if (myRecursively) {
+      myTopLevel = false;
       for (Group subgroup : subgroups) {
-        checkGroup(subgroup, makeScope(subgroup, scope), false, concreteProvider);
+        checkGroup(subgroup, makeScope(subgroup, scope));
       }
 
       for (Group subgroup : dynamicSubgroups) {
-        checkGroup(subgroup, makeScope(subgroup, scope), false, concreteProvider);
+        checkGroup(subgroup, makeScope(subgroup, scope));
       }
     }
 
