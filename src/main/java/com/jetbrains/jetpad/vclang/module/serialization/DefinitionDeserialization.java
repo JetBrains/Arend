@@ -109,25 +109,6 @@ public class DefinitionDeserialization {
   }
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
-    for (int classFieldRef : classProto.getFieldRefList()) {
-      classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
-    }
-    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : classProto.getImplementationsMap().entrySet()) {
-      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkImplementation(defDeserializer.readExpr(entry.getValue()), classDef));
-    }
-    classDef.setSort(defDeserializer.readSort(classProto.getSort()));
-    if (classProto.getCoercingFieldRef() != -1) {
-      classDef.setCoercingField(myCallTargetProvider.getCallTarget(classProto.getCoercingFieldRef(), ClassField.class));
-    }
-
-    for (int superClassRef : classProto.getSuperClassRefList()) {
-      ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
-      classDef.addSuperClass(superClass);
-      TCClassReferable classRef = classDef.getReferable();
-      if (classRef instanceof ClassReferableImpl) {
-        ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
-      }
-    }
 
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
@@ -138,10 +119,32 @@ public class DefinitionDeserialization {
       field.setType(fieldType);
       classDef.addPersonalField(field);
       setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
+      field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
-    for (ClassField field : classDef.getPersonalFields()) {
-      field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    for (int classFieldRef : classProto.getFieldRefList()) {
+      classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
+    }
+    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : classProto.getImplementationsMap().entrySet()) {
+      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkImplementation(defDeserializer.readExpr(entry.getValue()), classDef));
+    }
+    classDef.setSort(defDeserializer.readSort(classProto.getSort()));
+
+    for (int superClassRef : classProto.getSuperClassRefList()) {
+      ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
+      classDef.addSuperClass(superClass);
+      TCClassReferable classRef = classDef.getReferable();
+      if (classRef instanceof ClassReferableImpl) {
+        ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
+      }
+
+      for (Map.Entry<ClassField, LamExpression> entry : superClass.getImplemented()) {
+        classDef.implementField(entry.getKey(), entry.getValue());
+      }
+    }
+
+    if (classProto.getCoercingFieldRef() != -1) {
+      classDef.setCoercingField(myCallTargetProvider.getCallTarget(classProto.getCoercingFieldRef(), ClassField.class));
     }
   }
 

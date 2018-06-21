@@ -123,8 +123,8 @@ public class ClassDefinition extends Definition {
     return myImplemented.get(field);
   }
 
-  public void implementField(ClassField field, LamExpression impl) {
-    myImplemented.put(field, impl);
+  public LamExpression implementField(ClassField field, LamExpression impl) {
+    return myImplemented.putIfAbsent(field, impl);
   }
 
   @Override
@@ -135,5 +135,13 @@ public class ClassDefinition extends Definition {
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
     return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort);
+  }
+
+  public void clear() {
+    mySuperClasses.clear();
+    myFields.clear();
+    myPersonalFields.clear();
+    myImplemented.clear();
+    myCoercingField = null;
   }
 }

@@ -88,59 +88,61 @@ public class ModuleDeserialization {
   public void readDefinitions(ModuleProtos.Group groupProto, Group group) throws DeserializationException {
     if (groupProto.hasDefinition()) {
       LocatedReferable referable = group.getReferable();
-      TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
-      if (tcReferable == null) {
-        throw new DeserializationException("Cannot locate '" + referable + "'");
-      }
-
-      Definition def = readDefinition(groupProto.getDefinition(), tcReferable, false);
-      myState.record(tcReferable, def);
-      myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
-      myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
-
-      Collection<? extends Group.InternalReferable> fields = group.getFields();
-      if (!fields.isEmpty()) {
-        Map<String, DefinitionProtos.Definition.ClassData.Field> fieldMap = new HashMap<>();
-        for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
-          fieldMap.put(field.getReferable().getName(), field);
+      if (referable.getUnderlyingReference() == null) {
+        TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
+        if (tcReferable == null) {
+          throw new DeserializationException("Cannot locate '" + referable + "'");
         }
 
-        for (Group.InternalReferable field : fields) {
-          LocatedReferable fieldRef = field.getReferable();
-          TCReferable absField = myReferableConverter.toDataLocatedReferable(fieldRef);
-          DefinitionProtos.Definition.ClassData.Field fieldProto = fieldMap.get(fieldRef.textRepresentation());
-          if (fieldProto == null || absField == null) {
-            throw new DeserializationException("Cannot locate '" + fieldRef + "'");
+        Definition def = readDefinition(groupProto.getDefinition(), tcReferable, false);
+        myState.record(tcReferable, def);
+        myCallTargetProvider.putCallTarget(groupProto.getReferable().getIndex(), def);
+        myDefinitions.add(new Pair<>(groupProto.getDefinition(), def));
+
+        Collection<? extends Group.InternalReferable> fields = group.getFields();
+        if (!fields.isEmpty()) {
+          Map<String, DefinitionProtos.Definition.ClassData.Field> fieldMap = new HashMap<>();
+          for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
+            fieldMap.put(field.getReferable().getName(), field);
           }
 
-          assert def instanceof ClassDefinition;
-          ClassField res = new ClassField(absField, (ClassDefinition) def);
-          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-          myState.record(absField, res);
-          myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
-        }
-      }
+          for (Group.InternalReferable field : fields) {
+            LocatedReferable fieldRef = field.getReferable();
+            TCReferable absField = myReferableConverter.toDataLocatedReferable(fieldRef);
+            DefinitionProtos.Definition.ClassData.Field fieldProto = fieldMap.get(fieldRef.textRepresentation());
+            if (fieldProto == null || absField == null) {
+              throw new DeserializationException("Cannot locate '" + fieldRef + "'");
+            }
 
-      Collection<? extends Group.InternalReferable> constructors = group.getConstructors();
-      if (!constructors.isEmpty()) {
-        Map<String, DefinitionProtos.Definition.DataData.Constructor> constructorMap = new HashMap<>();
-        for (DefinitionProtos.Definition.DataData.Constructor constructor : groupProto.getDefinition().getData().getConstructorList()) {
-          constructorMap.put(constructor.getReferable().getName(), constructor);
+            assert def instanceof ClassDefinition;
+            ClassField res = new ClassField(absField, (ClassDefinition) def);
+            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+            myState.record(absField, res);
+            myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
+          }
         }
 
-        for (Group.InternalReferable constructor : constructors) {
-          LocatedReferable constructorRef = constructor.getReferable();
-          TCReferable absConstructor = myReferableConverter.toDataLocatedReferable(constructorRef);
-          DefinitionProtos.Definition.DataData.Constructor constructorProto = constructorMap.get(constructorRef.textRepresentation());
-          if (constructorProto == null || absConstructor == null) {
-            throw new DeserializationException("Cannot locate '" + constructorRef + "'");
+        Collection<? extends Group.InternalReferable> constructors = group.getConstructors();
+        if (!constructors.isEmpty()) {
+          Map<String, DefinitionProtos.Definition.DataData.Constructor> constructorMap = new HashMap<>();
+          for (DefinitionProtos.Definition.DataData.Constructor constructor : groupProto.getDefinition().getData().getConstructorList()) {
+            constructorMap.put(constructor.getReferable().getName(), constructor);
           }
 
-          assert def instanceof DataDefinition;
-          Constructor res = new Constructor(absConstructor, (DataDefinition) def);
-          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-          myState.record(absConstructor, res);
-          myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
+          for (Group.InternalReferable constructor : constructors) {
+            LocatedReferable constructorRef = constructor.getReferable();
+            TCReferable absConstructor = myReferableConverter.toDataLocatedReferable(constructorRef);
+            DefinitionProtos.Definition.DataData.Constructor constructorProto = constructorMap.get(constructorRef.textRepresentation());
+            if (constructorProto == null || absConstructor == null) {
+              throw new DeserializationException("Cannot locate '" + constructorRef + "'");
+            }
+
+            assert def instanceof DataDefinition;
+            Constructor res = new Constructor(absConstructor, (DataDefinition) def);
+            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
+            myState.record(absConstructor, res);
+            myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
+          }
         }
       }
     }

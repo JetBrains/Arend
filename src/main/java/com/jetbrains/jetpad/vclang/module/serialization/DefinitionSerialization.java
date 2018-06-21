@@ -83,7 +83,9 @@ public class DefinitionSerialization {
       builder.addFieldRef(myCallTargetIndexProvider.getDefIndex(classField));
     }
     for (Map.Entry<ClassField, LamExpression> impl : definition.getImplemented()) {
-      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeExpr(impl.getValue()));
+      if (definition.getPersonalFields().contains(impl.getKey())) {
+        builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeExpr(impl.getValue()));
+      }
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
 

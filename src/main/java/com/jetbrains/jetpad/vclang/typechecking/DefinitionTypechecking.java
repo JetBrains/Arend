@@ -399,6 +399,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, boolean polyHLevel, Set<DataDefinition> dataDefinitions) {
+    dataDefinition.getConstructors().clear();
+
     Sort userSort = dataDefinition.getSort();
     Sort inferredSort = Sort.PROP;
     if (userSort != null) {
@@ -449,9 +451,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               errorReporter.report(new TypecheckingError("This clause is redundant", clause));
               result = null;
             }
-          }
-          if (result == null) {
-            continue;
           }
         } else {
           if (def.getEliminatedReferences() != null) {
@@ -668,6 +667,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private static void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, CheckTypeVisitor visitor) {
+    typedDef.clear();
+
     LocalErrorReporter errorReporter = visitor.getErrorReporter();
     boolean classOk = true;
 
@@ -808,10 +809,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
-    LamExpression oldImpl = classDef.getImplementation(classField);
-    if (oldImpl == null) {
-      classDef.implementField(classField, implementation);
-    }
+    LamExpression oldImpl = classDef.implementField(classField, implementation);
     if (oldImpl != null && !oldImpl.substArgument(new ReferenceExpression(implementation.getParameters())).equals(implementation.getBody())) {
       alreadyImplemented.add(classField.getReferable());
       return false;
