@@ -10,6 +10,7 @@ import java.util.List;
 public interface LocatedReferable extends GlobalReferable {
   @Nullable ModulePath getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
+  @Nullable LocatedReferable getUnderlyingReference();
 
   class Helper {
     public static ModulePath getLocation(LocatedReferable referable, List<String> fullName) {

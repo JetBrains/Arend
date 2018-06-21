@@ -38,6 +38,12 @@ public class ModuleReferable implements LocatedReferable {
     return null;
   }
 
+  @Nullable
+  @Override
+  public LocatedReferable getUnderlyingReference() {
+    return null;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

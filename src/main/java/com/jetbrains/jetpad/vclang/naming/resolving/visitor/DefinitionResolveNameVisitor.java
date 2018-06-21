@@ -419,10 +419,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
       if (curScope != null) {
         for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
-          Referable ref = renaming.getOldReference();
-          if (ref instanceof UnresolvedReference) {
-            ref = ((UnresolvedReference) ref).resolve(curScope);
-          }
+          Referable ref = ExpressionResolveNameVisitor.resolve(renaming.getOldReference(), curScope);
           if (ref instanceof ErrorReference) {
             myErrorReporter.report(new ProxyError(groupRef, ((ErrorReference) ref).getError()));
           }
@@ -460,9 +457,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         });
 
         for (Referable ref : namespaceCommand.getHiddenReferences()) {
-          if (ref instanceof UnresolvedReference) {
-            ref = ((UnresolvedReference) ref).resolve(curScope);
-          }
+          ref = ExpressionResolveNameVisitor.resolve(ref, curScope);
           if (ref instanceof ErrorReference) {
             myErrorReporter.report(new ProxyError(groupRef, ((ErrorReference) ref).getError()));
           }

@@ -1,9 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TypedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -19,21 +16,34 @@ public class ClassFieldImplScope implements Scope {
     myWithSuperClasses = withSuperClasses;
   }
 
-  @Nullable
-  @Override
-  public Referable find(Predicate<Referable> pred) {
-    Set<GlobalReferable> visitedClasses = new HashSet<>();
-    Deque<ClassReferable> toVisit = new ArrayDeque<>();
-    toVisit.add(myReferable);
+  private Referable find(Predicate<Referable> pred, Deque<ClassReferable> toVisit, Set<ClassReferable> visitedClasses, Set<LocatedReferable> excludedFields, Set<ClassReferable> underlyingClasses) {
     while (!toVisit.isEmpty()) {
       ClassReferable classRef = toVisit.pop();
       if (!visitedClasses.add(classRef)) {
         continue;
       }
 
-      for (GlobalReferable referable : classRef.getFieldReferables()) {
-        if (pred.test(referable)) {
-          return referable;
+      if (underlyingClasses != null) {
+        ClassReferable underlyingClass = classRef.getUnderlyingReference();
+        if (underlyingClass != null) {
+          underlyingClasses.add(underlyingClass);
+        }
+      }
+
+      for (LocatedReferable referable : classRef.getFieldReferables()) {
+        if (underlyingClasses != null) {
+          if (pred.test(referable)) {
+            return referable;
+          }
+
+          LocatedReferable underlyingField = referable.getUnderlyingReference();
+          if (underlyingField != null) {
+            excludedFields.add(underlyingField);
+          }
+        } else {
+          if (!excludedFields.contains(referable) && pred.test(referable)) {
+            return referable;
+          }
         }
       }
 
@@ -50,6 +60,28 @@ public class ClassFieldImplScope implements Scope {
     }
 
     return null;
+  }
+
+  @Nullable
+  @Override
+  public Referable find(Predicate<Referable> pred) {
+    Set<LocatedReferable> excludedFields = new HashSet<>();
+    Set<ClassReferable> underlyingClasses = new LinkedHashSet<>();
+    Set<ClassReferable> visitedClasses = new HashSet<>();
+    Deque<ClassReferable> toVisit = new ArrayDeque<>();
+    toVisit.add(myReferable);
+
+    Referable ref = find(pred, toVisit, visitedClasses, excludedFields, underlyingClasses);
+    if (ref != null) {
+      return ref;
+    }
+
+    if (!underlyingClasses.isEmpty()) {
+      toVisit.addAll(underlyingClasses);
+      return find(pred, toVisit, visitedClasses, excludedFields, null);
+    } else {
+      return null;
+    }
   }
 
   @Nullable

@@ -2,10 +2,8 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -13,6 +11,7 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,10 +46,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     Scope scope = CachingScope.make(myGroup.getGroupScope());
     List<TCClassReferable> superClasses = new ArrayList<>(mySuperClasses.size());
     for (Concrete.ReferenceExpression superClass : mySuperClasses) {
-      Referable referable = superClass.getReferent();
-      if (referable instanceof UnresolvedReference) {
-        referable = ((UnresolvedReference) referable).resolve(scope);
-      }
+      Referable referable = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope);
       if (referable instanceof TCClassReferable) {
         superClasses.add((TCClassReferable) referable);
       }
@@ -62,5 +58,17 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   @Override
   public Collection<? extends InternalConcreteLocatedReferable> getFieldReferables() {
     return myFields;
+  }
+
+  @Nullable
+  @Override
+  public TCClassReferable getUnderlyingReference() {
+    Concrete.ReferableDefinition def = getDefinition();
+    if (!(def instanceof Concrete.ClassSynonym)) {
+      return null;
+    }
+
+    Referable ref = ((Concrete.ClassSynonym) def).getUnderlyingClass().getReferent();
+    return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
   }
 }

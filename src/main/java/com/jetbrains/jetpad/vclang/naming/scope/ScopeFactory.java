@@ -2,9 +2,10 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
@@ -199,11 +200,10 @@ public class ScopeFactory {
             List<Referable> excluded = new ArrayList<>(elimExprs.size());
             Scope parametersScope = new TelescopeScope(EmptyScope.INSTANCE, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters());
             for (Abstract.Reference elimExpr : elimExprs) {
-              Referable referable = elimExpr.getReferent();
-              if (referable instanceof UnresolvedReference) {
-                referable = ((UnresolvedReference) referable).resolve(parametersScope);
+              Referable ref = ExpressionResolveNameVisitor.resolve(elimExpr.getReferent(), parametersScope);
+              if (!(ref == null || ref instanceof ErrorReference)) {
+                excluded.add(ref);
               }
-              excluded.add(referable);
             }
             return new TelescopeScope(parentScope, ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getParameters(), excluded);
           }

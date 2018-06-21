@@ -61,6 +61,12 @@ public class LocatedReferableImpl implements TCReferable {
     return myParent;
   }
 
+  @Nullable
+  @Override
+  public LocatedReferable getUnderlyingReference() {
+    return null;
+  }
+
   @Override
   public String toString() {
     return myName;

@@ -36,6 +36,19 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return myScope;
   }
 
+  public static Referable resolve(Referable referable, Scope scope) {
+    while (referable instanceof RedirectingReferable) {
+      referable = ((RedirectingReferable) referable).getOriginalReferable();
+    }
+    if (referable instanceof UnresolvedReference) {
+      referable = ((UnresolvedReference) referable).resolve(scope);
+      while (referable instanceof RedirectingReferable) {
+        referable = ((RedirectingReferable) referable).getOriginalReferable();
+      }
+    }
+    return referable;
+  }
+
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable referable = expr.getReferent();
@@ -206,17 +219,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return;
     }
 
-    Referable referable = ((Concrete.ConstructorPattern) pattern).getConstructor();
-    if (referable instanceof RedirectingReferable) {
-      referable = ((RedirectingReferable) referable).getOriginalReferable();
-    }
-    if (referable instanceof UnresolvedReference) {
-      Referable newRef = ((UnresolvedReference) referable).resolve(myParentScope);
-      if (newRef instanceof ErrorReference) {
-        myErrorReporter.report(((ErrorReference) newRef).getError());
-      } else {
-        ((Concrete.ConstructorPattern) pattern).setConstructor(newRef);
-      }
+    Referable referable = resolve(((Concrete.ConstructorPattern) pattern).getConstructor(), myParentScope);
+    if (referable instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) referable).getError());
+    } else {
+      ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
     }
 
     for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
@@ -235,11 +242,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
       if (classDef != null) {
         Referable field = impl.getImplementedField();
-        if (field instanceof RedirectingReferable) {
+        while (field instanceof RedirectingReferable) {
           field = ((RedirectingReferable) field).getOriginalReferable();
         }
         if (field instanceof UnresolvedReference) {
           Referable newField = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
+          while (newField instanceof RedirectingReferable) {
+            newField = ((RedirectingReferable) newField).getOriginalReferable();
+          }
           if (newField instanceof ErrorReference) {
             myErrorReporter.report(((ErrorReference) newField).getError());
           }

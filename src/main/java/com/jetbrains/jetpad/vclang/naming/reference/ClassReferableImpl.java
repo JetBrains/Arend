@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -27,5 +28,11 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
   @Override
   public Collection<? extends TCReferable> getFieldReferables() {
     return myFieldReferables;
+  }
+
+  @Nullable
+  @Override
+  public TCClassReferable getUnderlyingReference() {
+    return null;
   }
 }

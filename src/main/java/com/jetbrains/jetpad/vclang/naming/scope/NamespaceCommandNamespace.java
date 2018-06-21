@@ -3,7 +3,7 @@ package com.jetbrains.jetpad.vclang.naming.scope;
 import com.jetbrains.jetpad.vclang.naming.reference.ErrorReference;
 import com.jetbrains.jetpad.vclang.naming.reference.RedirectingReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.UnresolvedReference;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
@@ -35,11 +35,8 @@ public class NamespaceCommandNamespace implements Scope {
     List<Referable> elements = new ArrayList<>();
     Collection<? extends NameRenaming> opened = myNamespaceCommand.getOpenedReferences();
     for (NameRenaming renaming : opened) {
-      Referable oldRef = renaming.getOldReference();
-      if (oldRef instanceof UnresolvedReference) {
-        oldRef = ((UnresolvedReference) oldRef).resolve(myModuleNamespace);
-      }
-      if (!(oldRef instanceof ErrorReference)) {
+      Referable oldRef = ExpressionResolveNameVisitor.resolve(renaming.getOldReference(), myModuleNamespace);
+      if (!(oldRef == null || oldRef instanceof ErrorReference)) {
         String newName = renaming.getName();
         String name = newName != null ? newName : oldRef.textRepresentation();
         if (!hidden.contains(name)) {
@@ -83,10 +80,8 @@ public class NamespaceCommandNamespace implements Scope {
       String newName = renaming.getName();
       Referable oldRef = renaming.getOldReference();
       if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
-        if (oldRef instanceof UnresolvedReference) {
-          oldRef = ((UnresolvedReference) oldRef).resolve(myModuleNamespace);
-        }
-        return newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
+        oldRef = ExpressionResolveNameVisitor.resolve(oldRef, myModuleNamespace);
+        return oldRef == null || oldRef instanceof ErrorReference ? null : newName != null ? new RedirectingReferableImpl(oldRef, renaming.getPrecedence(), newName) : oldRef;
       }
     }
 
