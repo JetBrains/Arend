@@ -31,12 +31,12 @@ public class InternalConcreteLocatedReferable extends ConcreteLocatedReferable i
 
   @Nullable
   @Override
-  public LocatedReferable getUnderlyingReference() {
+  public TCReferable getUnderlyingReference() {
     Concrete.ReferableDefinition def = getDefinition();
     if (!(def instanceof Concrete.ClassFieldSynonym)) {
       return null;
     }
     Referable ref = ((Concrete.ClassFieldSynonym) def).getUnderlyingField().getReferent();
-    return ref instanceof LocatedReferable ? (LocatedReferable) ref : null;
+    return ref instanceof TCReferable ? (TCReferable) ref : null;
   }
 }

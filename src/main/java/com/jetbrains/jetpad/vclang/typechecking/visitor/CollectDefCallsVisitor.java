@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
@@ -29,8 +30,13 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof TCReferable) {
-      myDependencies.add((TCReferable) expr.getReferent());
+    if (expr.getReferent() instanceof LocatedReferable) {
+      LocatedReferable ref = (LocatedReferable) expr.getReferent();
+      LocatedReferable underlyingRef = ref.getUnderlyingReference();
+      ref = underlyingRef == null ? ref : underlyingRef;
+      if (ref instanceof TCReferable) {
+        myDependencies.add((TCReferable) ref);
+      }
     }
     return null;
   }

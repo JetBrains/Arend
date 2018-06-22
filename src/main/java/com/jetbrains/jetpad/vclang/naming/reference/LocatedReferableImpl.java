@@ -63,7 +63,7 @@ public class LocatedReferableImpl implements TCReferable {
 
   @Nullable
   @Override
-  public LocatedReferable getUnderlyingReference() {
+  public TCReferable getUnderlyingReference() {
     return null;
   }
 

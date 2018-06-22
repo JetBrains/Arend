@@ -556,10 +556,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitReference(Concrete.ReferenceExpression expr, ExpectedType expectedType) {
-    if (!(expr.getReferent() instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
+    Referable ref = expr.getReferent();
+    if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
-    TResult result = expr.getReferent() instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) expr.getReferent(), expr) : getLocalVar(expr);
+    if (ref instanceof LocatedReferable) {
+      LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
+      if (underlyingRef != null) {
+        ref = underlyingRef;
+      }
+    }
+
+    TResult result = ref instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) expr.getReferent(), expr) : getLocalVar(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }

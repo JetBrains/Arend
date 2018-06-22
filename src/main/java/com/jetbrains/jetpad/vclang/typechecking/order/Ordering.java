@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.order;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
+import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
@@ -142,18 +143,15 @@ public class Ordering {
       }
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-      if (definition instanceof Concrete.ClassFieldSynonym) {
-        Referable classRef = ((Concrete.ClassFieldSynonym) definition).getRelatedDefinition().getUnderlyingClass().getReferent();
-        if (classRef instanceof ClassReferable) {
-          for (Concrete.Instance instance : instanceProvider.getInstances((ClassReferable) classRef)) {
-            referables.push(instance.getData());
-          }
+      if (definition instanceof Concrete.ClassField) {
+        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassField) definition).getRelatedDefinition().getData())) {
+          referables.push(instance.getData());
         }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter parameter : parameters) {
-            ClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType());
+            TCClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType());
             if (classDef != null) {
               for (Concrete.Instance instance : instanceProvider.getInstances(classDef)) {
                 referables.push(instance.getData());
@@ -196,10 +194,19 @@ public class Ordering {
 
     TypecheckingOrderingListener.Recursion recursion = TypecheckingOrderingListener.Recursion.NO;
     definition.accept(new DefinitionGetDependenciesVisitor(dependencies), unit.isHeader());
+    if (definition instanceof Concrete.ClassDefinition) {
+      new ClassFieldImplScope(((Concrete.ClassDefinition) definition).getData(), false).find(ref -> {
+        if (ref instanceof TCReferable) {
+          dependencies.remove(ref);
+        }
+        return false;
+      });
+    }
+
     InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
     if (instanceProvider != null) {
       Deque<TCReferable> deque = new ArrayDeque<>(dependencies);
-      dependencies = new LinkedHashSet<>();
+      dependencies.clear();
       collectInstances(instanceProvider, deque, dependencies);
     }
     if (unit.isHeader() && dependencies.contains(definition.getData())) {

@@ -40,7 +40,7 @@ public class ModuleReferable implements LocatedReferable {
 
   @Nullable
   @Override
-  public LocatedReferable getUnderlyingReference() {
+  public TCReferable getUnderlyingReference() {
     return null;
   }
 

@@ -33,6 +33,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     toVisit.add(classRef);
     while (!toVisit.isEmpty()) {
       classRef = toVisit.pop();
+      ClassReferable underlyingRef = classRef.getUnderlyingReference();
+      if (underlyingRef != null) {
+        classRef = underlyingRef;
+      }
       if (!visitedClasses.add(classRef)) {
         continue;
       }
