@@ -32,8 +32,10 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
     if (expr.getReferent() instanceof LocatedReferable) {
       LocatedReferable ref = (LocatedReferable) expr.getReferent();
-      LocatedReferable underlyingRef = ref.getUnderlyingReference();
-      ref = underlyingRef == null ? ref : underlyingRef;
+      if (ref instanceof TCReferable) {
+        myDependencies.add((TCReferable) ref);
+      }
+      ref = ref.getUnderlyingReference();
       if (ref instanceof TCReferable) {
         myDependencies.add((TCReferable) ref);
       }

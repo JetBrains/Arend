@@ -141,6 +141,9 @@ public class Ordering {
       if (!result.add(referable)) {
         continue;
       }
+      if (referable.getUnderlyingReference() != null) {
+        continue;
+      }
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
       if (definition instanceof Concrete.ClassField) {
@@ -223,9 +226,11 @@ public class Ordering {
         }
       } else {
         myDependencyListener.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
-        Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-        if (dependency instanceof Concrete.Definition && getTypechecked(tcReferable) == null) {
-          updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
+        if (referable.getUnderlyingReference() == null) {
+          Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
+          if (dependency instanceof Concrete.Definition && getTypechecked(tcReferable) == null) {
+            updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
+          }
         }
       }
     }
