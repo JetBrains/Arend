@@ -76,6 +76,10 @@ public class Ordering {
     return myConcreteProvider;
   }
 
+  public ReferableConverter getReferableConverter() {
+    return myReferableConverter;
+  }
+
   public void orderModules(Collection<? extends Group> modules) {
     for (Group group : modules) {
       orderModule(group);
@@ -85,8 +89,7 @@ public class Ordering {
   public void orderModule(Group group) {
     LocatedReferable referable = group.getReferable();
     TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
-    Definition typechecked = tcReferable == null ? null : getTypechecked(tcReferable);
-    if (typechecked == null) {
+    if (tcReferable == null || getTypechecked(tcReferable) == null) {
       Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(referable);
       if (def instanceof Concrete.Definition) {
         orderDefinition((Concrete.Definition) def);
