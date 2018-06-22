@@ -60,7 +60,7 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType, CheckTypeVisitor.Result>, ConcreteLevelExpressionVisitor<LevelVariable, Level> {
   private final TypecheckerState myState;
   private Map<Referable, Binding> myContext;
-  private final Set<Binding> myFreeBindings;
+  private Set<Binding> myFreeBindings;
   private boolean myHasErrors = false;
   private LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
@@ -299,8 +299,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return myContext;
   }
 
+  public void setContext(Map<Referable, Binding> context) {
+    myContext = context;
+  }
+
   public Set<Binding> getFreeBindings() {
     return myFreeBindings;
+  }
+
+  public void setFreeBindings(Set<Binding> freeBindings) {
+    myFreeBindings = freeBindings;
   }
 
   public Set<Binding> getAllBindings() {

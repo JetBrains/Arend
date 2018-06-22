@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.context.LinkList;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
+import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
+import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
@@ -435,11 +437,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     LocalErrorReporterCounter countingErrorReporter = new LocalErrorReporterCounter(Error.Level.ERROR, errorReporter);
     myVisitor.setErrorReporter(countingErrorReporter);
 
-    PatternTypechecking dataPatternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE));
-    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-      // Typecheck patterns and compute free bindings
-      Pair<List<Pattern>, List<Expression>> result = null;
-      try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
+    if (!def.getConstructorClauses().isEmpty()) {
+      Map<Referable, Binding> context = myVisitor.getContext();
+      Set<Binding> freeBindings = myVisitor.getFreeBindings();
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE));
+
+      for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+        myVisitor.setContext(new HashMap<>(context));
+        myVisitor.setFreeBindings(new HashSet<>(freeBindings));
+
+        // Typecheck patterns and compute free bindings
+        Pair<List<Pattern>, List<Expression>> result = null;
         if (clause.getPatterns() != null) {
           if (def.getEliminatedReferences() == null) {
             errorReporter.report(new TypecheckingError("Expected a constructor without patterns", clause));
@@ -450,6 +458,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             if (result != null && result.proj2 == null) {
               errorReporter.report(new TypecheckingError("This clause is redundant", clause));
               result = null;
+            }
+            if (result == null) {
+              myVisitor.setContext(new HashMap<>(context));
+              myVisitor.setFreeBindings(new HashSet<>(freeBindings));
+              fillInPatterns(clause.getPatterns());
             }
           }
         } else {
@@ -533,6 +546,19 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       dataDefinition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
     }
     return countingErrorReporter.getErrorsNumber() == 0;
+  }
+
+  private void fillInPatterns(List<Concrete.Pattern> patterns) {
+    for (Concrete.Pattern pattern : patterns) {
+      if (pattern instanceof Concrete.NamePattern) {
+        Referable referable = ((Concrete.NamePattern) pattern).getReferable();
+        if (referable != null) {
+          myVisitor.getContext().put(referable, new TypedBinding(referable.textRepresentation(), new ErrorExpression(null, null)));
+        }
+      } else if (pattern instanceof Concrete.ConstructorPattern) {
+        fillInPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
+      }
+    }
   }
 
   private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort) {
