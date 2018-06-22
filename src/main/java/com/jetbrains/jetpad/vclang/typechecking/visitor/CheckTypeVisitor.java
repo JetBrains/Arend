@@ -567,7 +567,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    TResult result = ref instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) expr.getReferent(), expr) : getLocalVar(expr);
+    TResult result = ref instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
     if (result == null || !checkPath(result, expr)) {
       return null;
     }

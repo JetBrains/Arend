@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.error.DummyErrorReporter;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
+import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.frontend.reference.TypeClassReferenceExtractVisitor;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
@@ -36,6 +37,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private boolean myResolveTypeClassReferences;
   private final ConcreteProvider myConcreteProvider;
   private final ErrorReporter myErrorReporter;
+  private LocalErrorReporter myLocalErrorReporter;
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
@@ -49,11 +51,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myErrorReporter = errorReporter;
   }
 
-  public ErrorReporter getErrorReporter() {
-    return myErrorReporter;
-  }
-
-  private void resolveTypeClassReference(List<Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType, GlobalReferable definition) {
+  private void resolveTypeClassReference(List<Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
     if (isType) {
       for (Concrete.Parameter parameter : parameters) {
         if (parameter.getExplicit()) {
@@ -114,7 +112,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       }
 
-      BinOpParser binOpParser = new BinOpParser(new ProxyErrorReporter(definition, myErrorReporter));
+      BinOpParser binOpParser = new BinOpParser(myLocalErrorReporter);
       expr = binOpParser.parse(binOpExpr);
       binOpExpr.getSequence().clear();
       binOpExpr.getSequence().add(new Concrete.BinOpSequenceElem(expr, Fixity.NONFIX, true));
@@ -133,27 +131,49 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
+  private class ConcreteProxyErrorReporter implements LocalErrorReporter {
+    private final Concrete.Definition definition;
+
+    private ConcreteProxyErrorReporter(Concrete.Definition definition) {
+      this.definition = definition;
+    }
+
+    @Override
+    public void report(GeneralError error) {
+      definition.setHasErrors();
+      myErrorReporter.report(error);
+    }
+
+    @Override
+    public void report(LocalError localError) {
+      definition.setHasErrors();
+      myErrorReporter.report(new ProxyError(definition.getData(), localError));
+    }
+  }
+
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+      return null;
+    }
+
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED){
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
-          resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false, def.getData());
+          resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
         if (def.getResultType() != null) {
-          resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true, def.getData());
+          resolveTypeClassReference(def.getParameters(), def.getResultType(), scope, true);
         }
       }
       def.setTypeClassReferencesResolved();
       return null;
     }
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
-      return null;
-    }
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
 
     Concrete.Expression resultType = def.getResultType();
@@ -182,7 +202,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     for (int i = 0; i < eliminatedReferences.size(); i++) {
       Concrete.Expression newExpr = exprVisitor.visitReference(eliminatedReferences.get(i), null);
       if (newExpr != eliminatedReferences.get(i)) {
-        myErrorReporter.report(new ProxyError(definition, new ReferenceError("\\elim can be applied only to a local variable", definition)));
+        myLocalErrorReporter.report(new ReferenceError("\\elim can be applied only to a local variable", definition));
         eliminatedReferences.remove(i--);
       }
     }
@@ -221,8 +241,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
+
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
     exprVisitor.visitParameters(def.getParameters());
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
@@ -252,7 +274,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters());
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
@@ -279,22 +301,24 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
+    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
+      return null;
+    }
+
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
         for (Concrete.ClassField field : def.getFields()) {
-          resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true, def.getData());
+          resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true);
         }
       }
       def.setTypeClassReferencesResolved();
       return null;
     }
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
-      return null;
-    }
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, new ProxyErrorReporter(def.getData(), myErrorReporter));
-    visitSuperClasses(exprVisitor, def.getSuperClasses(), def.getData());
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
+    visitSuperClasses(exprVisitor, def.getSuperClasses());
 
     for (Concrete.ClassField field : def.getFields()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
@@ -310,13 +334,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef, GlobalReferable definition) {
+  private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef) {
     Concrete.Expression newClassRef = exprVisitor.visitReference(classRef, null);
     if (newClassRef != classRef || !(classRef.getReferent() instanceof ClassReferable)) {
       if (!(classRef.getReferent() instanceof ErrorReference)) {
         LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
         classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
-        myErrorReporter.report(new ProxyError(definition, error));
+        myLocalErrorReporter.report(error);
       }
       return false;
     } else {
@@ -324,9 +348,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
-  private void visitSuperClasses(ExpressionResolveNameVisitor exprVisitor, List<Concrete.ReferenceExpression> superClasses, GlobalReferable definition) {
+  private void visitSuperClasses(ExpressionResolveNameVisitor exprVisitor, List<Concrete.ReferenceExpression> superClasses) {
     for (int i = 0; i < superClasses.size(); i++) {
-      if (!visitClassReference(exprVisitor, superClasses.get(i), definition)) {
+      if (!visitClassReference(exprVisitor, superClasses.get(i))) {
         superClasses.remove(i--);
       }
     }
@@ -341,13 +365,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
-    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(def.getData(), myErrorReporter);
-    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, Collections.emptyList(), localErrorReporter);
-    visitSuperClasses(visitor, def.getSuperClasses(), def.getData());
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
-    if (visitClassReference(visitor, def.getUnderlyingClass(), def.getData())) {
+    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, Collections.emptyList(), myLocalErrorReporter);
+    visitSuperClasses(visitor, def.getSuperClasses());
+
+    if (visitClassReference(visitor, def.getUnderlyingClass())) {
       if (!def.getFields().isEmpty()) {
-        visitor = new ExpressionResolveNameVisitor(myConcreteProvider, new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), localErrorReporter);
+        visitor = new ExpressionResolveNameVisitor(myConcreteProvider, new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), myLocalErrorReporter);
         for (Concrete.ClassFieldSynonym fieldSyn : def.getFields()) {
           visitor.visitReference(fieldSyn.getUnderlyingField(), null);
         }
@@ -362,19 +387,21 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
-    if (myResolveTypeClassReferences) {
-      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
-        resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true, def.getData());
-      }
-      def.setTypeClassReferencesResolved();
-      return null;
-    }
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), new ProxyErrorReporter(def.getData(), myErrorReporter));
-    if (visitClassReference(exprVisitor, def.getClassReference(), def.getData())) {
+    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
+    if (myResolveTypeClassReferences) {
+      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
+        resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true);
+      }
+      def.setTypeClassReferencesResolved();
+      return null;
+    }
+
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
+    if (visitClassReference(exprVisitor, def.getClassReference())) {
       exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassReference().getReferent());
     } else {
       def.getClassFieldImpls().clear();
@@ -398,6 +425,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Scope convertedScope = referableConverter == null ? scope : CachingScope.make(new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
+    } else {
+      myLocalErrorReporter = new ProxyErrorReporter(groupRef, myErrorReporter);
     }
 
     for (Group subgroup : group.getSubgroups()) {
@@ -415,14 +444,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
       Scope curScope = reference.resolveNamespace(convertedScope);
       if (curScope == null) {
-        myErrorReporter.report(new ProxyError(groupRef, reference.getErrorReference().getError()));
+        myLocalErrorReporter.report(reference.getErrorReference().getError());
       }
 
       if (curScope != null) {
         for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
           Referable ref = ExpressionResolveNameVisitor.resolve(renaming.getOldReference(), curScope);
           if (ref instanceof ErrorReference) {
-            myErrorReporter.report(new ProxyError(groupRef, ((ErrorReference) ref).getError()));
+            myLocalErrorReporter.report(((ErrorReference) ref).getError());
           }
         }
 
@@ -460,7 +489,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         for (Referable ref : namespaceCommand.getHiddenReferences()) {
           ref = ExpressionResolveNameVisitor.resolve(ref, curScope);
           if (ref instanceof ErrorReference) {
-            myErrorReporter.report(new ProxyError(groupRef, ((ErrorReference) ref).getError()));
+            myLocalErrorReporter.report(((ErrorReference) ref).getError());
           }
         }
       }
@@ -469,33 +498,33 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     new NameResolvingChecker(false, group instanceof ChildGroup && ((ChildGroup) group).getParentGroup() == null, myConcreteProvider) {
       @Override
       public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
-        myErrorReporter.report(new ProxyError(groupRef, new DuplicateNameError(level, ref2, ref1)));
+        myLocalErrorReporter.report(new DuplicateNameError(level, ref2, ref1));
       }
 
       @Override
       public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
-        myErrorReporter.report(new ProxyError(groupRef, new ReferenceError(level, "Field '" + ref2.textRepresentation() +
-          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()), superClass2 == currentClass ? ref2 : currentClass)));
+        myLocalErrorReporter.report(new ReferenceError(level, "Field '" + ref2.textRepresentation() +
+          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()), superClass2 == currentClass ? ref2 : currentClass));
       }
 
       @Override
       public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
-        myErrorReporter.report(new ProxyError(groupRef, new NamingError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()), cmd2)));
+        myLocalErrorReporter.report(new NamingError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()), cmd2));
       }
 
       @Override
       public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
-        myErrorReporter.report(new ProxyError(groupRef, new NamingError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming)));
+        myLocalErrorReporter.report(new NamingError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming));
       }
 
       @Override
       public void nonTopLevelImport(NamespaceCommand command) {
-        myErrorReporter.report(new ProxyError(groupRef, new NamingError(Error.Level.ERROR, "\\import is allowed only on the top level", command)));
+        myLocalErrorReporter.report(new NamingError(Error.Level.ERROR, "\\import is allowed only on the top level", command));
       }
 
       @Override
       protected void expectedClass(Error.Level level, Object cause) {
-        myErrorReporter.report(new ProxyError(groupRef, new NamingError(level, "Expected a class reference", cause)));
+        myLocalErrorReporter.report(new NamingError(level, "Expected a class reference", cause));
       }
     }.checkGroup(group, convertedScope);
   }
