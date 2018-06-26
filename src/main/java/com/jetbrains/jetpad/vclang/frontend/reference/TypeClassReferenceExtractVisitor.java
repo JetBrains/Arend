@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TypedReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteReferableDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
@@ -37,11 +36,6 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   }
 
   @Override
-  public ClassReferable visitClassSynonym(Concrete.ClassSynonym def, Void params) {
-    return null;
-  }
-
-  @Override
   public ClassReferable visitInstance(Concrete.Instance def, Void params) {
     return getTypeClassReference(def.getParameters(), def.getClassReference());
   }
@@ -54,12 +48,6 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   @Override
   public ClassReferable visitClassField(Concrete.ClassField def, Void params) {
     return getTypeClassReference(Collections.emptyList(), def.getResultType());
-  }
-
-  @Override
-  public ClassReferable visitClassFieldSynonym(Concrete.ClassFieldSynonym def, Void params) {
-    Referable fieldRef = def.getUnderlyingField().getReferent();
-    return fieldRef instanceof TypedReferable ? ((TypedReferable) fieldRef).getTypeClassReference() : null;
   }
 
   private Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {

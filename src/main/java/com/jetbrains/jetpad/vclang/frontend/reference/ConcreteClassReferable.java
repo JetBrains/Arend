@@ -63,12 +63,6 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   @Nullable
   @Override
   public TCClassReferable getUnderlyingReference() {
-    Concrete.ReferableDefinition def = getDefinition();
-    if (!(def instanceof Concrete.ClassSynonym)) {
-      return null;
-    }
-
-    Referable ref = ((Concrete.ClassSynonym) def).getUnderlyingClass().getReferent();
-    return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
+    return null;
   }
 }

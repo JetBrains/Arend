@@ -356,6 +356,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
+  /* TODO[classes]
   @Override
   public Void visitClassSynonym(Concrete.ClassSynonym def, Scope parentScope) {
     if (myResolveTypeClassReferences) {
@@ -384,6 +385,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     def.setResolved();
     return null;
   }
+  */
 
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {

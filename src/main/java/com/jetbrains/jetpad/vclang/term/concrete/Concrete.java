@@ -3,8 +3,6 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -18,7 +16,6 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -1322,72 +1319,6 @@ public final class Concrete {
   }
 
   // Class synonyms
-
-  public static class ClassSynonym extends Definition {
-    private final List<ReferenceExpression> mySuperClasses;
-    private final ReferenceExpression myUnderlyingClass;
-    private final List<ClassFieldSynonym> myFields;
-
-    public ClassSynonym(TCClassReferable referable, List<ReferenceExpression> superClasses, ReferenceExpression underlyingClass, List<ClassFieldSynonym> fields) {
-      super(referable);
-      mySuperClasses = superClasses;
-      myUnderlyingClass = underlyingClass;
-      myFields = fields;
-    }
-
-    @Nonnull
-    @Override
-    public TCClassReferable getData() {
-      return (TCClassReferable) super.getData();
-    }
-
-    @Nonnull
-    public List<ReferenceExpression> getSuperClasses() {
-      return mySuperClasses;
-    }
-
-    @Nonnull
-    public ReferenceExpression getUnderlyingClass() {
-      return myUnderlyingClass;
-    }
-
-    @Nonnull
-    public List<ClassFieldSynonym> getFields() {
-      return myFields;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassSynonym(this, params);
-    }
-  }
-
-  public static class ClassFieldSynonym extends ReferableDefinition {
-    private final ReferenceExpression myUnderlyingField;
-    private final ClassSynonym myClassSynonym;
-
-    public ClassFieldSynonym(TCReferable referable, ReferenceExpression underlyingField, ClassSynonym classSynonym) {
-      super(referable);
-      myUnderlyingField = underlyingField;
-      myClassSynonym = classSynonym;
-    }
-
-    @Nonnull
-    public ReferenceExpression getUnderlyingField() {
-      return myUnderlyingField;
-    }
-
-    @Nonnull
-    @Override
-    public ClassSynonym getRelatedDefinition() {
-      return myClassSynonym;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitClassFieldSynonym(this, params);
-    }
-  }
 
   public static class Instance extends Definition {
     private final List<Parameter> myArguments;

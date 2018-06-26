@@ -77,7 +77,7 @@ public abstract class Definition implements Variable {
     if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
       return new FunctionDefinition(definition.getData());
     }
-    if (definition instanceof Concrete.ClassDefinition || definition instanceof Concrete.ClassSynonym) {
+    if (definition instanceof Concrete.ClassDefinition) {
       return new ClassDefinition((TCClassReferable) definition.getData());
     }
     throw new IllegalStateException();

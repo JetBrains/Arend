@@ -198,6 +198,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return null;
   }
 
+  /* TODO[classes]
   @Override
   public List<Clause> visitClassSynonym(Concrete.ClassSynonym def, Boolean recursive) {
     Definition typechecked = prepare(def);
@@ -223,6 +224,50 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     return null;
   }
+
+  private void typecheckClassSynonym(Concrete.ClassSynonym classSyn, ClassDefinition underlyingClass) {
+    for (Concrete.ReferenceExpression superClassRef : classSyn.getSuperClasses()) {
+      ClassDefinition superClass = myVisitor.referableToDefinition(superClassRef.getReferent(), ClassDefinition.class, "Expected a class", superClassRef);
+      if (superClass != null && !underlyingClass.isSubClassOf(superClass)) {
+        myVisitor.getErrorReporter().report(new SuperClassError(superClassRef.getReferent(), underlyingClass.getReferable(), superClassRef));
+      }
+    }
+
+    for (Concrete.ClassFieldSynonym fieldSyn : classSyn.getFields()) {
+      ClassField underlyingField = myVisitor.referableToClassField(fieldSyn.getUnderlyingField().getReferent(), fieldSyn.getUnderlyingField());
+      if (underlyingField != null) {
+        myVisitor.getTypecheckingState().record(fieldSyn.getData(), underlyingField);
+      }
+    }
+
+    Deque<TCClassReferable> toVisit = new ArrayDeque<>();
+    toVisit.add(classSyn.getData());
+    Map<ClassField, GlobalReferable> overridden = new HashMap<>();
+    Map<ClassField, Set<GlobalReferable>> errorFields = Collections.emptyMap();
+    while (!toVisit.isEmpty()) {
+      TCClassReferable classRef = toVisit.pop();
+      for (TCReferable fieldRef : classRef.getFieldReferables()) {
+        Definition typecheckedDef = myVisitor.getTypecheckingState().getTypechecked(fieldRef);
+        if (typecheckedDef instanceof ClassField) {
+          GlobalReferable oldRef = overridden.putIfAbsent((ClassField) typecheckedDef, fieldRef);
+          if (oldRef != null) {
+            if (errorFields.isEmpty()) {
+              errorFields = new LinkedHashMap<>();
+            }
+            Set<GlobalReferable> list = errorFields.computeIfAbsent((ClassField) typecheckedDef, k -> new LinkedHashSet<>());
+            list.add(fieldRef);
+            list.add(oldRef);
+          }
+        }
+      }
+      toVisit.addAll(classRef.getSuperClassReferences());
+    }
+
+    for (Map.Entry<ClassField, Set<GlobalReferable>> entry : errorFields.entrySet()) {
+      myVisitor.getErrorReporter().report(new ClassFieldSynonymError(entry.getKey().getReferable(), entry.getValue(), classSyn));
+    }
+  }
+  */
 
   @Override
   public List<Clause> visitInstance(Concrete.Instance def, Boolean recursive) {
@@ -841,49 +886,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       return false;
     } else {
       return true;
-    }
-  }
-
-  private void typecheckClassSynonym(Concrete.ClassSynonym classSyn, ClassDefinition underlyingClass) {
-    for (Concrete.ReferenceExpression superClassRef : classSyn.getSuperClasses()) {
-      ClassDefinition superClass = myVisitor.referableToDefinition(superClassRef.getReferent(), ClassDefinition.class, "Expected a class", superClassRef);
-      if (superClass != null && !underlyingClass.isSubClassOf(superClass)) {
-        myVisitor.getErrorReporter().report(new SuperClassError(superClassRef.getReferent(), underlyingClass.getReferable(), superClassRef));
-      }
-    }
-
-    for (Concrete.ClassFieldSynonym fieldSyn : classSyn.getFields()) {
-      ClassField underlyingField = myVisitor.referableToClassField(fieldSyn.getUnderlyingField().getReferent(), fieldSyn.getUnderlyingField());
-      if (underlyingField != null) {
-        myVisitor.getTypecheckingState().record(fieldSyn.getData(), underlyingField);
-      }
-    }
-
-    Deque<TCClassReferable> toVisit = new ArrayDeque<>();
-    toVisit.add(classSyn.getData());
-    Map<ClassField, GlobalReferable> overridden = new HashMap<>();
-    Map<ClassField, Set<GlobalReferable>> errorFields = Collections.emptyMap();
-    while (!toVisit.isEmpty()) {
-      TCClassReferable classRef = toVisit.pop();
-      for (TCReferable fieldRef : classRef.getFieldReferables()) {
-        Definition typecheckedDef = myVisitor.getTypecheckingState().getTypechecked(fieldRef);
-        if (typecheckedDef instanceof ClassField) {
-          GlobalReferable oldRef = overridden.putIfAbsent((ClassField) typecheckedDef, fieldRef);
-          if (oldRef != null) {
-            if (errorFields.isEmpty()) {
-              errorFields = new LinkedHashMap<>();
-            }
-            Set<GlobalReferable> list = errorFields.computeIfAbsent((ClassField) typecheckedDef, k -> new LinkedHashSet<>());
-            list.add(fieldRef);
-            list.add(oldRef);
-          }
-        }
-      }
-      toVisit.addAll(classRef.getSuperClassReferences());
-    }
-
-    for (Map.Entry<ClassField, Set<GlobalReferable>> entry : errorFields.entrySet()) {
-      myVisitor.getErrorReporter().report(new ClassFieldSynonymError(entry.getKey().getReferable(), entry.getValue(), classSyn));
     }
   }
 

@@ -83,7 +83,7 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
-    if (typechecked != null && typechecked.status().isTypeChecked() && typechecked.getReferable().getUnderlyingReference() == null) {
+    if (typechecked != null && typechecked.status().isTypeChecked()) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);

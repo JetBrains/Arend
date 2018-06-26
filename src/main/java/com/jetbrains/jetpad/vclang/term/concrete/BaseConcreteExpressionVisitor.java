@@ -196,11 +196,6 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
-  public Void visitClassSynonym(Concrete.ClassSynonym def, P params) {
-    return null;
-  }
-
-  @Override
   public Void visitInstance(Concrete.Instance def, P params) {
     visitParameters(def.getParameters());
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {

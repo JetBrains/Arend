@@ -1116,30 +1116,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitClassSynonym(Concrete.ClassSynonym def, Void params) {
-    prettyPrintClassDefinitionHeader(def, def.getSuperClasses());
-    myBuilder.append(" => ");
-    def.getUnderlyingClass().accept(this, new Precedence(Concrete.Expression.PREC));
-
-    if (!def.getFields().isEmpty()) {
-      myBuilder.append(" {");
-      myIndent += INDENT;
-      for (Concrete.ClassFieldSynonym field : def.getFields()) {
-        myBuilder.append("\n");
-        printIndent();
-        myBuilder.append(field.getUnderlyingField().getReferent().textRepresentation()).append(" => ");
-        prettyPrintNameWithPrecedence(def.getData());
-      }
-      myIndent -= INDENT;
-      myBuilder.append("\n");
-      printIndent();
-      myBuilder.append("}");
-    }
-
-    return null;
-  }
-
-  @Override
   public Void visitInstance(Concrete.Instance def, Void params) {
     myBuilder.append("\\instance ");
     prettyPrintNameWithPrecedence(def.getData());
