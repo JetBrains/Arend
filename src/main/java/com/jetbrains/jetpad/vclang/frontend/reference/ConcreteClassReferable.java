@@ -7,7 +7,6 @@ import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNam
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
@@ -20,38 +19,58 @@ import java.util.List;
 public class ConcreteClassReferable extends ConcreteLocatedReferable implements TCClassReferable {
   private final ChildGroup myGroup;
   private final Collection<? extends InternalConcreteLocatedReferable> myFields;
-  private final Collection<? extends Concrete.ReferenceExpression> mySuperClasses;
+  private final List<? extends Reference> myUnresolvedSuperClasses;
+  private final List<TCClassReferable> mySuperClasses;
+  private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group, TCReferable parent) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
     super(position, name, precedence, parent, true);
     myFields = fields;
-    mySuperClasses = superClasses;
+    myUnresolvedSuperClasses = superClasses;
+    mySuperClasses = new ArrayList<>(superClasses.size());
     myGroup = group;
   }
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group, ModulePath parent) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
     super(position, name, precedence, parent);
     myFields = fields;
-    mySuperClasses = superClasses;
+    myUnresolvedSuperClasses = superClasses;
+    mySuperClasses = new ArrayList<>(superClasses.size());
     myGroup = group;
   }
 
   @Nonnull
   @Override
   public Collection<? extends TCClassReferable> getSuperClassReferences() {
-    if (mySuperClasses.isEmpty()) {
+    if (myUnresolvedSuperClasses.isEmpty()) {
       return Collections.emptyList();
     }
 
-    Scope scope = CachingScope.make(myGroup.getGroupScope());
-    List<TCClassReferable> superClasses = new ArrayList<>(mySuperClasses.size());
-    for (Concrete.ReferenceExpression superClass : mySuperClasses) {
-      Referable referable = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope);
-      if (referable instanceof TCClassReferable) {
-        superClasses.add((TCClassReferable) referable);
+    resolve();
+    return mySuperClasses;
+  }
+
+  protected void resolve() {
+    if (!myResolved) {
+      resolve(CachingScope.make(myGroup.getGroupScope()));
+      myResolved = true;
+    }
+  }
+
+  protected void resolve(Scope scope) {
+    mySuperClasses.clear();
+    for (Reference superClass : myUnresolvedSuperClasses) {
+      Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true);
+      if (ref instanceof TCClassReferable) {
+        mySuperClasses.add((TCClassReferable) ref);
       }
     }
-    return superClasses;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
+    return myUnresolvedSuperClasses;
   }
 
   @Nonnull

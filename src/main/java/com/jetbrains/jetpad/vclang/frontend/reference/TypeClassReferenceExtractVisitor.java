@@ -89,7 +89,11 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
     }
 
     if (expr instanceof Concrete.AppExpression) {
-      myArguments += ((Concrete.AppExpression) expr).getArguments().size();
+      for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {
+        if (argument.isExplicit()) {
+          myArguments++;
+        }
+      }
       expr = ((Concrete.AppExpression) expr).getFunction();
     }
 

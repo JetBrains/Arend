@@ -36,11 +36,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return myScope;
   }
 
-  public static Referable resolve(Referable referable, Scope scope) {
+  public static Referable resolve(Referable referable, Scope scope, boolean withArg) {
     while (referable instanceof RedirectingReferable) {
       referable = ((RedirectingReferable) referable).getOriginalReferable();
     }
     if (referable instanceof UnresolvedReference) {
+      if (withArg) {
+        ((UnresolvedReference) referable).resolveArgument(scope);
+      }
       referable = ((UnresolvedReference) referable).resolve(scope);
       while (referable instanceof RedirectingReferable) {
         referable = ((RedirectingReferable) referable).getOriginalReferable();
@@ -49,26 +52,35 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return referable;
   }
 
-  @Override
-  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
-    Referable referable = expr.getReferent();
+  public static Referable resolve(Referable referable, Scope scope) {
+    return resolve(referable, scope, false);
+  }
+
+  public static Concrete.Expression resolve(Concrete.ReferenceExpression refExpr, Scope scope) {
+    Referable referable = refExpr.getReferent();
     while (referable instanceof RedirectingReferable) {
       referable = ((RedirectingReferable) referable).getOriginalReferable();
     }
 
-    Concrete.Expression argument = null;
+    Concrete.Expression arg = null;
     if (referable instanceof UnresolvedReference) {
-      argument = ((UnresolvedReference) referable).resolveArgument(myScope);
-      referable = ((UnresolvedReference) referable).resolve(myScope);
-      if (referable instanceof ErrorReference) {
-        myErrorReporter.report(((ErrorReference) referable).getError());
-      }
+      arg = ((UnresolvedReference) referable).resolveArgument(scope);
+      referable = ((UnresolvedReference) referable).resolve(scope);
       while (referable instanceof RedirectingReferable) {
         referable = ((RedirectingReferable) referable).getOriginalReferable();
       }
     }
 
-    expr.setReferent(referable);
+    refExpr.setReferent(referable);
+    return arg;
+  }
+
+  @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    Concrete.Expression argument = resolve(expr, myScope);
+    if (expr.getReferent() instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+    }
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
   }
 

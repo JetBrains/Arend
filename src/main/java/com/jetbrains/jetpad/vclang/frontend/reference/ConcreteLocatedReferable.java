@@ -33,11 +33,12 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
 
   @Override
   public TCReferable getTypecheckable() {
-    return myDefinition.getRelatedDefinition().getData();
+    return myDefinition == null ? null : myDefinition.getRelatedDefinition().getData();
   }
 
+  @Override
   public boolean isTypecheckable() {
-    return myDefinition.getRelatedDefinition() == myDefinition;
+    return myDefinition != null && myDefinition.getRelatedDefinition() == myDefinition;
   }
 
   public void setDefinition(Concrete.ReferableDefinition definition) {
@@ -58,6 +59,6 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   @Nullable
   @Override
   public ClassReferable getTypeClassReference() {
-    return myDefinition.accept(new TypeClassReferenceExtractVisitor(ConcreteReferableProvider.INSTANCE), null);
+    return myDefinition == null ? null : myDefinition.accept(new TypeClassReferenceExtractVisitor(ConcreteReferableProvider.INSTANCE), null);
   }
 }

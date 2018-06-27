@@ -11,6 +11,7 @@ public interface LocatedReferable extends GlobalReferable {
   @Nullable ModulePath getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
   @Nullable LocatedReferable getUnderlyingReference();
+  @Nullable Reference getUnresolvedUnderlyingReference();
 
   class Helper {
     public static ModulePath getLocation(LocatedReferable referable, List<String> fullName) {

@@ -3,39 +3,53 @@ package com.jetbrains.jetpad.vclang.frontend.reference;
 import com.jetbrains.jetpad.vclang.frontend.parser.Position;
 import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.Reference;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
-import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 
 public class ConcreteClassSynonymReferable extends ConcreteClassReferable {
-  private Referable myUnderlyingClassReference;
+  private TCClassReferable myUnderlyingClassReference = null;
+  private final Reference myUnresolvedUnderlyingClassReference;
 
-  public ConcreteClassSynonymReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group, TCReferable parent, Referable underlyingClassReference) {
+  public ConcreteClassSynonymReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldSynonymReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent, Reference underlyingClassReference) {
     super(position, name, precedence, fields, superClasses, group, parent);
-    myUnderlyingClassReference = underlyingClassReference;
+    myUnresolvedUnderlyingClassReference = underlyingClassReference;
   }
 
-  public ConcreteClassSynonymReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, Collection<? extends Concrete.ReferenceExpression> superClasses, ChildGroup group, ModulePath parent, Referable myUnderlyingClassReference) {
+  public ConcreteClassSynonymReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldSynonymReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent, Reference underlyingClassReference) {
     super(position, name, precedence, fields, superClasses, group, parent);
-    this.myUnderlyingClassReference = myUnderlyingClassReference;
+    myUnresolvedUnderlyingClassReference = underlyingClassReference;
   }
 
   @Nullable
   @Override
   public TCClassReferable getUnderlyingReference() {
-    return myUnderlyingClassReference instanceof TCClassReferable ? (TCClassReferable) myUnderlyingClassReference : null;
+    resolve();
+    return myUnderlyingClassReference;
   }
 
-  public Referable resolveUnderlyingReference(Scope scope) {
-    myUnderlyingClassReference = ExpressionResolveNameVisitor.resolve(myUnderlyingClassReference, scope);
-    return myUnderlyingClassReference;
+  @Override
+  protected void resolve(Scope scope) {
+    super.resolve(scope);
+
+    Referable resolved = ExpressionResolveNameVisitor.resolve(myUnresolvedUnderlyingClassReference.getReferent(), scope, true);
+    if (resolved instanceof TCClassReferable) {
+      myUnderlyingClassReference = (TCClassReferable) resolved;
+    }
+  }
+
+  @Nullable
+  @Override
+  public Reference getUnresolvedUnderlyingReference() {
+    return myUnresolvedUnderlyingClassReference;
   }
 }

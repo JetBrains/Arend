@@ -342,13 +342,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Concrete.Parameter> parameters = visitFunctionParameters(ctx.tele());
-    Concrete.ReferenceExpression classRef = visitAtomFieldsAccRef(ctx.classCall().atomFieldsAcc());
+    UnresolvedReference classRef = visitAtomFieldsAccRef(ctx.classCall().atomFieldsAcc());
     if (classRef == null) {
       throw new ParseException();
     }
 
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
-    Concrete.Instance instance = new Concrete.Instance(reference, parameters, classRef, visitCoClauses(ctx.coClauses()));
+    Concrete.Instance instance = new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(classRef.getData(), classRef), visitCoClauses(ctx.coClauses()));
     instance.enclosingClass = enclosingClass;
     reference.setDefinition(instance);
     List<Group> subgroups = new ArrayList<>();
@@ -555,19 +555,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     WhereContext where = ctx.where();
 
-    List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(ctx.classCall().size());
     List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
+    List<Concrete.ReferenceExpression> superClasses = new ArrayList<>(ctx.classCall().size());
     for (ClassCallContext classCallCtx : ctx.classCall()) {
-      Concrete.ReferenceExpression superClassRef = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
+      UnresolvedReference superClassRef = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
       if (superClassRef != null) {
-        superClasses.add(superClassRef);
+        superClasses.add(new Concrete.ReferenceExpression(superClassRef.getData(), superClassRef));
       }
     }
 
-    List<InternalConcreteLocatedReferable> fieldReferences = new ArrayList<>();
+    List<? extends InternalConcreteLocatedReferable> fieldReferables;
     Position pos = tokenPosition(ctx.start);
     String name = ctx.ID().getText();
     Precedence prec = visitPrecedence(ctx.precedence());
@@ -579,20 +579,24 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.fieldTele(0).start), "Records cannot be synonyms"));
       }
 
-      Concrete.ReferenceExpression classRef = visitAtomFieldsAccRef(((ClassSynContext) ctx.classBody()).atomFieldsAcc());
+      UnresolvedReference classRef = visitAtomFieldsAccRef(((ClassSynContext) ctx.classBody()).atomFieldsAcc());
       if (classRef == null) {
         throw new ParseException();
       }
+      List<ConcreteClassFieldSynonymReferable> fieldSynonymReferables = new ArrayList<>();
+      Concrete.ReferenceExpression refExpr = new Concrete.ReferenceExpression(classRef.getData(), classRef);
       reference = parent instanceof FileGroup
-        ? new ConcreteClassSynonymReferable(pos, name, prec, fieldReferences, superClasses, parent, myModule, classRef.getReferent())
-        : new ConcreteClassSynonymReferable(pos, name, prec, fieldReferences, superClasses, parent, (TCReferable) parent.getReferable(), classRef.getReferent());
+        ? new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, myModule, refExpr)
+        : new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, (TCReferable) parent.getReferable(), refExpr);
+      fieldReferables = fieldSynonymReferables;
 
       if (!ctx.fieldTele().isEmpty()) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.fieldTele(0).start), "Class synonyms cannot have parameters"));
       }
 
       for (FieldSynContext fieldSyn : ((ClassSynContext) ctx.classBody()).fieldSyn()) {
-        fieldReferences.add(new ConcreteClassFieldSynonymReferable(tokenPosition(fieldSyn.start), fieldSyn.ID(1).getText(), visitPrecedence(fieldSyn.precedence()), true, reference, new NamedUnresolvedReference(tokenPosition(fieldSyn.ID(0).getSymbol()), fieldSyn.ID(0).getText())));
+        Position position = tokenPosition(fieldSyn.ID(0).getSymbol());
+        fieldSynonymReferables.add(new ConcreteClassFieldSynonymReferable(tokenPosition(fieldSyn.start), fieldSyn.ID(1).getText(), visitPrecedence(fieldSyn.precedence()), true, reference, new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, fieldSyn.ID(0).getText()))));
       }
     } else {
       List<Concrete.ClassField> fields = new ArrayList<>();
@@ -601,27 +605,30 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
       List<Boolean> fieldsExplicitness = new ArrayList<>();
 
+      List<InternalConcreteLocatedReferable> fieldReferables1 = new ArrayList<>();
       reference = parent instanceof FileGroup
-        ? new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, myModule)
-        : new ConcreteClassReferable(pos, name, prec, fieldReferences, superClasses, parent, (TCReferable) parent.getReferable());
-      Concrete.Definition classDefinition = new Concrete.ClassDefinition(reference, isRecord, superClasses, fields, fieldsExplicitness, implementations);
+        ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
+        : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
+
+      Concrete.Definition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, fieldsExplicitness, implementations);
       reference.setDefinition(classDefinition);
       ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields, fieldsExplicitness));
       classDefinition.enclosingClass = enclosingClass;
 
       if (ctx.classBody() != null && !((ClassImplContext) ctx.classBody()).classStat().isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
-        resultGroup = new ClassGroup(reference, fieldReferences, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
+        resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
         visitInstanceStatements(((ClassImplContext) ctx.classBody()).classStat(), fields, implementations, dynamicSubgroups, (Concrete.ClassDefinition) classDefinition, resultGroup);
       }
 
       for (Concrete.ClassField field : fields) {
-        fieldReferences.add((InternalConcreteLocatedReferable) field.getData());
+        fieldReferables1.add((InternalConcreteLocatedReferable) field.getData());
       }
+      fieldReferables = fieldReferables1;
     }
 
     if (resultGroup == null) {
-      resultGroup = new ClassGroup(reference, fieldReferences, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
+      resultGroup = new ClassGroup(reference, fieldReferables, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
@@ -1172,14 +1179,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return null;
   }
 
-  private Concrete.ReferenceExpression visitAtomFieldsAccRef(AtomFieldsAccContext ctx) {
+  private UnresolvedReference visitAtomFieldsAccRef(AtomFieldsAccContext ctx) {
     List<String> path = visitAtomFieldsAccPath(ctx);
-    if (path == null) {
-      return null;
-    }
-
-    Position position = tokenPosition(ctx.start);
-    return new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, path));
+    return path == null ? null : LongUnresolvedReference.make(tokenPosition(ctx.start), path);
   }
 
   @Override

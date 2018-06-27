@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class ClassReferableImpl extends LocatedReferableImpl implements TCClassReferable {
@@ -22,6 +23,12 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
   @Override
   public List<TCClassReferable> getSuperClassReferences() {
     return mySuperClassReferences;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Reference> getUnresolvedSuperClassReferences() {
+    return Collections.emptyList();
   }
 
   @Nonnull

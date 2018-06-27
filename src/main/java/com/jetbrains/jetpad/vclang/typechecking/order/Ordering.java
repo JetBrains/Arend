@@ -220,6 +220,10 @@ public class Ordering {
 
     for (TCReferable referable : dependencies) {
       TCReferable tcReferable = referable.getTypecheckable();
+      if (tcReferable == null) {
+        continue;
+      }
+
       if (tcReferable.equals(definition.getData())) {
         if (referable.equals(tcReferable)) {
           recursion = TypecheckingOrderingListener.Recursion.IN_BODY;

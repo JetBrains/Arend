@@ -751,6 +751,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
       ClassDefinition superClass = visitor.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
+      if (superClass == null) {
+        continue;
+      }
 
       typedDef.addFields(superClass.getFields());
       typedDef.addSuperClass(superClass);

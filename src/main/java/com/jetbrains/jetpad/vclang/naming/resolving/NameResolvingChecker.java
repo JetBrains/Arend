@@ -51,11 +51,24 @@ public abstract class NameResolvingChecker {
   }
 
   protected void checkDefinition(LocatedReferable definition, Scope scope) {
-    Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
-    if (classRef == null) {
-      return;
+    if (definition instanceof ClassReferable) {
+      ClassReferable classRef = (ClassReferable) definition;
+      for (Reference superClassRef : classRef.getUnresolvedSuperClassReferences()) {
+        checkClass(superClassRef, scope, false);
+      }
+      Reference underlyingClassRef = classRef.getUnresolvedUnderlyingReference();
+      if (underlyingClassRef != null) {
+        checkClass(underlyingClassRef, scope, true);
+      }
     }
 
+    Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
+    if (classRef != null) {
+      checkClass(classRef, scope, true);
+    }
+  }
+
+  private void checkClass(Reference classRef, Scope scope, boolean checkNotRecord) {
     boolean ok = true;
     Referable ref = classRef.getReferent();
     while (ref instanceof RedirectingReferable) {
@@ -70,11 +83,8 @@ public abstract class NameResolvingChecker {
         ref = ((RedirectingReferable) ref).getOriginalReferable();
       }
     }
-    if (ref instanceof ErrorReference) {
-      return;
-    }
 
-    if (!(ok && ref instanceof ClassReferable && !myConcreteProvider.isRecord((ClassReferable) ref))) {
+    if (!(ref instanceof ErrorReference || ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
       expectedClass(Error.Level.ERROR, classRef.getData());
     }
   }
