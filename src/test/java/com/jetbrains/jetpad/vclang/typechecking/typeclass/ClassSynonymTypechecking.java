@@ -3,124 +3,212 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
+
 public class ClassSynonymTypechecking extends TypeCheckingTestCase {
   @Test
-  public void inferInstanceSynonym() {
+  public void classNotInScope() {
+    resolveNamesModule("\\class Y => X", 1);
+  }
+
+  @Test
+  public void fieldSynonymNotInScope() {
+    resolveNamesModule(
+      "\\class X (A : \\Type0)\n" +
+      "\\class Y => X { B => C }", 1);
+  }
+
+  @Test
+  public void resolveFieldSynonym() {
+    resolveNamesModule(
+        "\\class X (T : \\Type0) {\n" +
+        "  | f : \\Type0\n" +
+        "}\n" +
+        "\\class X' => X { f => f' }\n" +
+        "\\func g {x : X} => f\n" +
+        "\\func h (x : X) => x.f\n" +
+        "\\func g' {x' : X'} => f'\n" +
+        "\\func h' (x' : X') => x'.f'");
+  }
+
+  @Test
+  public void resolveFieldSynonymError() {
+    resolveNamesModule(
+        "\\class X (T : \\Type0) {\n" +
+        "  | f : \\Type0\n" +
+        "}\n" +
+        "\\class X' => X { f => f' }\n" +
+        "\\func h (x' : X') => x'.f", 1);
+  }
+
+  @Test
+  public void resolveNamesDuplicate() {
+    resolveNamesModule(
+        "\\class X (T : \\Type0) {\n" +
+        "  | f : \\Type0\n" +
+        "}\n" +
+        "\\class X' => X { f => h }\n" +
+        "\\class Y (T : \\Type0) {\n" +
+        "  | g : \\Type0 -> \\Type0\n" +
+        "}\n" +
+        "\\class Y' => Y { g => h }", 1);
+  }
+
+  @Test
+  public void resolveNamesInner() {
+    resolveNamesModule(
+        "\\class X \\where {\n" +
+        "  \\class Z (T : \\Type0) {\n" +
+        "    | f : \\Type0\n" +
+        "  }\n" +
+        "  \\class Z' => Z { f => f' }\n" +
+        "}\n" +
+        "\\func g => f'", 1);
+  }
+
+  @Test
+  public void resolveClassExt() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
+        "\\class X (T : \\Type1) {\n" +
+        "  | f : \\Type1\n" +
+        "}\n" +
+        "\\class Y => X { f => g }\n" +
+        "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
+  }
+
+  @Test
+  public void resolveClassExtSameName() {
+    typeCheckModule(
+        "\\class X (T : \\Type1) {\n" +
+        "  | f : \\Type1\n" +
+        "}\n" +
+        "\\class Y => X\n" +
+        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }");
+  }
+
+  @Test
+  public void resolveClassExtError() {
+    resolveNamesModule(
+        "\\class X (T : \\Type1) {\n" +
+        "  | f : \\Type1\n" +
+        "}\n" +
+        "\\class Y => X { f => g }\n" +
+        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }", 1);
+  }
+
+  @Test
+  public void duplicateFieldSynonymName() {
+    resolveNamesModule(
+        "\\class X (T f : \\Type0)\n" +
+        "\\class Z { | g : Nat }\n" +
+        "\\class Y => X { f => g }", 1);
+  }
+
+  @Test
+  public void synonymSynonym() {
+    resolveNamesModule(
+      "\\class X\n" +
       "\\class Y => X\n" +
-      "\\instance Nat-X : Y | A => Nat | B => \\lam n => Nat\n" +
-      "\\func f => B 0");
+      "\\class Z => Y", 1);
   }
 
   @Test
-  public void differentViews() {
-    typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat\n" +
-      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => Nat -> Nat");
+  public void cyclicSynonym() {
+    resolveNamesModule("\\class X => X", 1);
   }
 
   @Test
-  public void transitiveMultipleInstances() {
-    typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat -> Nat\n" +
-      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => Nat -> Nat\n" +
-      "\\func f {A : \\Type0} {x : X { A => A } } (a : A) => B a\n" +
-      "\\func g => f 0");
+  public void synonymParameters() {
+    parseModule(
+      "\\class X\n" +
+      "\\class Y (a : \\Prop) => X", 1);
   }
 
   @Test
-  public void inferVarSynonym() {
+  public void superClasses() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> Nat\n" +
-      "}\n" +
+      "\\class X\n" +
+      "\\class X' \\extends X\n" +
       "\\class Y => X\n" +
-      "\\func f (y : Y) (a : y.A) => B a");
+      "\\class Y' \\extends Y => X'");
   }
 
   @Test
-  public void inferVarSynonym2() {
-    typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> Nat\n" +
-      "}\n" +
+  public void superClassesError() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\class X' \\extends X\n" +
+      "\\func Y => X\n" +
+      "\\class Y' \\extends Y => X'", 1);
+  }
+
+  @Test
+  public void superClassesError2() {
+    resolveNamesModule(
+      "\\class X\n" +
+      "\\class X'\n" +
       "\\class Y => X\n" +
-      "\\func f (A' : \\Type0) (y : Y { A => A' }) (a : A') => B a");
+      "\\class Y' \\extends Y => X'", 1);
   }
 
   @Test
-  public void inferVarDifferent() {
+  public void superClassFields() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> Nat\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\func f (A' : \\Type0) (x : X { A => A' }) {y : Y { A => A' } } (a : A') => B a = C a");
+      "\\class X (a b : Nat)\n" +
+      "\\class X' (c d : Nat) \\extends X\n" +
+      "\\class Y => X { a => a' }\n" +
+      "\\class Y' \\extends Y => X' { a => a'' | b => b' | c => c' }");
   }
 
   @Test
-  public void transitiveInferLocal() {
+  public void superClassParameters() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\func f {A : \\Type0} {x : X { A => A } } (a : A) => B a\n" +
-      "\\func g (y : Y) (a : y.A) => f a");
+      "\\class X (a b : Nat)\n" +
+      "\\class X' (c d : Nat) \\extends X\n" +
+      "\\class Y => X { a => a' }\n" +
+      "\\class Y' \\extends Y => X' { c => c' }");
   }
 
   @Test
-  public void transitiveInferLocal2() {
-    typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\func f {x : X} (a : x.A) => B a\n" +
-      "\\func g (y : Y) (a : y.A) => f a");
+  public void superClassFieldsDuplicate() {
+    resolveNamesModule(
+      "\\class X (a b : Nat)\n" +
+      "\\class X' \\extends X { | c : Nat |  d : Nat }\n" +
+      "\\class Y => X { a => a' }\n" +
+      "\\class M \\where \\class Y' \\extends Y => X' { c => a' }\n" +
+      "\\func f => \\new M.Y' { Y.a' => 0 | b => 1 | a' => 2 | d => 3 }", 1);
+    assertThatErrorsAre(warning());
   }
 
   @Test
-  public void transitiveLocalDuplicate() {
+  public void resolveInstance() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class Y => X { B => C }\n" +
-      "\\func f {A : \\Type0} {x : X { A => A }} (a : A) => B a\n" +
-      "\\func g {A : \\Type0} {x : X { A => A }} {y : Y { A => A }} (a : A) : f a = y.B a => path (\\lam _ => B a)");
+      "\\class X (a : Nat) { | b : Nat }\n" +
+      "\\class Y => X { a => a' }\n" +
+      "\\instance inst : Y | a' => 0 | b => 1");
   }
 
   @Test
-  public void classSynonymExt() {
+  public void resolveInstance2() {
     typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class X' => X { B => C }\n" +
-      "\\func f => \\new X  { A => Nat | B => \\lam _ => Nat }\n" +
-      "\\func g => \\new X' { A => Nat | C => \\lam _ => Nat }\n" +
-      "\\func p : f = g => path (\\lam _ => f)");
+      "\\class X (a : Nat) { | b : Nat }\n" +
+      "\\class Y => X { b => b' }\n" +
+      "\\instance inst : Y | a => 0 | b' => 1");
   }
 
   @Test
-  public void notImplementedField() {
-    typeCheckModule(
-      "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
-      "}\n" +
-      "\\class X' => X\n" +
-      "\\instance x : X' | A => Nat", 1);
+  public void resolveInstanceError() {
+    resolveNamesModule(
+      "\\class X (a : Nat) { | b : Nat }\n" +
+      "\\class Y => X { a => a' }\n" +
+      "\\instance inst : Y | a => 0 | b => 1", 1);
+  }
+
+  @Test
+  public void resolveInstanceError2() {
+    resolveNamesModule(
+      "\\class X (a : Nat) { | b : Nat }\n" +
+      "\\class Y => X { b => b' }\n" +
+      "\\instance inst : Y | a => 0 | b => 1", 1);
   }
 }

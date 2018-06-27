@@ -50,4 +50,8 @@ public abstract class Error {
   public final String toString() {
     return DocStringBuilder.build(getDoc(PrettyPrinterConfig.DEFAULT));
   }
+
+  public String getShortMessage() {
+    return message;
+  }
 }

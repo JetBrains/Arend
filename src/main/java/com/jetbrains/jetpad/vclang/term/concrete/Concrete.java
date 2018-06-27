@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -110,7 +112,7 @@ public final class Concrete {
 
   // Expressions
 
-  public static TCClassReferable getUnderlyingClassDef(Expression expr) {
+  public static TCClassReferable getUnderlyingClassDef(Expression expr, boolean resolveClassSynonym) {
     while (expr instanceof Concrete.ClassExtExpression) {
       expr = ((ClassExtExpression) expr).getBaseClassExpression();
     }
@@ -123,9 +125,11 @@ public final class Concrete {
       if (!(ref instanceof LocatedReferable)) {
         return null;
       }
-      LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-      if (underlyingRef != null) {
-        ref = underlyingRef;
+      if (resolveClassSynonym) {
+        LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
+        if (underlyingRef != null) {
+          ref = underlyingRef;
+        }
       }
       if (ref instanceof TCClassReferable) {
         return (TCClassReferable) ref;

@@ -154,7 +154,7 @@ public class Ordering {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter parameter : parameters) {
-            TCClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType());
+            TCClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType(), true);
             if (classDef != null) {
               for (Concrete.Instance instance : instanceProvider.getInstances(classDef)) {
                 referables.push(instance.getData());

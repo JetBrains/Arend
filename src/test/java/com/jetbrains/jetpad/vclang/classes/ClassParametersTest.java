@@ -167,4 +167,12 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class D (y : Nat -> Nat) \\extends C\n" +
       "\\func f => D 1 (\\lam x => x)");
   }
+
+  @Test
+  public void superParameters2() {
+    typeCheckModule(
+      "\\class C (x y : Nat)\n" +
+      "\\class D (z w : Nat) \\extends C\n" +
+      "\\func f => \\new D { | x => 0 | y => 1 | z => 2 | w => 3 }");
+  }
 }

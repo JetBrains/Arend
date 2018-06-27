@@ -36,7 +36,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  }\n" +
         "}\n" +
         "\\class Y => M.X\n" +
-        "\\func f (y : Y) (a : y.A) => B a");
+        "\\func f (y : Y) (a : y.A) => M.B a");
   }
 
   @Test
@@ -88,7 +88,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "}\n" +
         "\\class Y => M.X\n" +
         "\\instance Nat-X : Y | A => Nat | B => \\lam x => x\n" +
-        "\\func f => B 0");
+        "\\func f => M.B 0");
   }
 
   @Test

@@ -187,7 +187,6 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\class X\n" +
       "\\func Y => X\n" +
       "\\class Z \\extends Y", 1);
-    assertThatErrorsAre(wrongReferable());
   }
 
   @Test

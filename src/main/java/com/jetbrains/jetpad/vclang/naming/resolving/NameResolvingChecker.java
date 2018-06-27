@@ -2,13 +2,12 @@ package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
-import com.jetbrains.jetpad.vclang.naming.scope.EmptyScope;
-import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
-import com.jetbrains.jetpad.vclang.naming.scope.MergeScope;
-import com.jetbrains.jetpad.vclang.naming.scope.Scope;
+import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
+import com.jetbrains.jetpad.vclang.naming.scope.*;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 import com.jetbrains.jetpad.vclang.term.group.Group;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.PartialConcreteProvider;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -46,29 +45,91 @@ public abstract class NameResolvingChecker {
 
   }
 
-  protected void expectedClass(Error.Level level, Object cause) {
+  protected void expectedClass(Error.Level level, String message, Object cause) {
+
+  }
+
+  protected void error(LocalError error) {
 
   }
 
   protected void checkDefinition(LocatedReferable definition, Scope scope) {
+    // Check classes
     if (definition instanceof ClassReferable) {
       ClassReferable classRef = (ClassReferable) definition;
-      for (Reference superClassRef : classRef.getUnresolvedSuperClassReferences()) {
-        checkClass(superClassRef, scope, false);
-      }
       Reference underlyingClassRef = classRef.getUnresolvedUnderlyingReference();
-      if (underlyingClassRef != null) {
-        checkClass(underlyingClassRef, scope, true);
+      boolean isSynonym = underlyingClassRef != null;
+      ClassReferable underlyingClass = null;
+      if (isSynonym) {
+        // Check the underlying class of a synonym
+        underlyingClass = checkClass(underlyingClassRef, scope, true, true);
+        if (underlyingClass != null && underlyingClass.getUnresolvedUnderlyingReference() != null) {
+          expectedClass(Error.Level.ERROR, "Expected a class, got a class synonym", underlyingClassRef.getData());
+          underlyingClass = null;
+        }
+
+        // Check field synonyms
+        Collection<? extends LocatedReferable> fieldRefs = classRef.getFieldReferables();
+        if (underlyingClass != null && !fieldRefs.isEmpty()) {
+          Scope fieldsScope = new ClassFieldImplScope(underlyingClass, false);
+          for (LocatedReferable fieldRef : classRef.getFieldReferables()) {
+            Reference underlyingFieldRef = fieldRef.getUnresolvedUnderlyingReference();
+            if (underlyingFieldRef != null) {
+              Referable ref = ExpressionResolveNameVisitor.resolve(underlyingFieldRef.getReferent(), fieldsScope, true);
+              if (ref instanceof ErrorReference) {
+                error(((ErrorReference) ref).getError());
+              }
+            }
+          }
+        }
+      }
+
+      // Check super classes
+      for (Reference superClassRef : classRef.getUnresolvedSuperClassReferences()) {
+        ClassReferable resolvedRef = checkClass(superClassRef, scope, false, isSynonym);
+        // Check super classes of a synonym
+        if (isSynonym && resolvedRef != null) {
+          resolvedRef = resolvedRef.getUnderlyingReference();
+          if (resolvedRef == null) {
+            expectedClass(Error.Level.ERROR, "Expected a class synonym", superClassRef.getData());
+          } else if (underlyingClass != null) {
+            if (!isSubClassOf(underlyingClass, resolvedRef)) {
+              expectedClass(Error.Level.ERROR, "Expected a synonym of a superclass of '" + underlyingClass + "'", superClassRef.getData());
+            }
+          }
+        }
       }
     }
 
+    // Check instances
     Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
     if (classRef != null) {
-      checkClass(classRef, scope, true);
+      checkClass(classRef, scope, true, false);
     }
   }
 
-  private void checkClass(Reference classRef, Scope scope, boolean checkNotRecord) {
+  private boolean isSubClassOf(ClassReferable subClass, ClassReferable superClass) {
+    if (subClass == superClass) {
+      return true;
+    }
+
+    Set<ClassReferable> visitedClasses = new HashSet<>();
+    Deque<ClassReferable> toVisit = new ArrayDeque<>();
+    toVisit.add(subClass);
+    while (!toVisit.isEmpty()) {
+      ClassReferable classRef = toVisit.pop();
+      if (classRef == superClass) {
+        return true;
+      }
+      if (visitedClasses.add(classRef)) {
+        toVisit.addAll(classRef.getSuperClassReferences());
+      }
+    }
+
+    return false;
+  }
+
+  private ClassReferable checkClass(Reference classRef, Scope scope, boolean checkNotRecord, boolean reportUnresolved) {
     boolean ok = true;
     Referable ref = classRef.getReferent();
     while (ref instanceof RedirectingReferable) {
@@ -84,9 +145,15 @@ public abstract class NameResolvingChecker {
       }
     }
 
-    if (!(ref instanceof ErrorReference || ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
-      expectedClass(Error.Level.ERROR, classRef.getData());
+    if (ref instanceof ErrorReference) {
+      if (reportUnresolved) {
+        error(((ErrorReference) ref).getError());
+      }
+    } else if (!(ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
+      expectedClass(Error.Level.ERROR, ok && ref instanceof ClassReferable  ? "Expected a class, got a record" : "Expected a class", classRef.getData());
     }
+
+    return ref instanceof ClassReferable ? (ClassReferable) ref : null;
   }
 
   public static Scope makeScope(Group group, Scope parentScope) {

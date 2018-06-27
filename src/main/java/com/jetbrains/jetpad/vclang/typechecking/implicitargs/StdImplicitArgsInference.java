@@ -16,7 +16,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
@@ -157,8 +156,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     CheckTypeVisitor.TResult result;
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
-      Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) fun;
-      result = defCall.getReferent() instanceof TCReferable ? myVisitor.getTypeCheckingDefCall().typeCheckDefCall((TCReferable) defCall.getReferent(), defCall) : myVisitor.getLocalVar(defCall);
+      result = myVisitor.visitReference((Concrete.ReferenceExpression) fun);
     } else {
       result = myVisitor.checkExpr(fun, null);
     }

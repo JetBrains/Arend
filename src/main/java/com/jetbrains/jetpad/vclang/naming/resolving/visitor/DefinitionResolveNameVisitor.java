@@ -318,7 +318,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
-    visitSuperClasses(exprVisitor, def.getSuperClasses());
+    for (int i = 0; i < def.getSuperClasses().size(); i++) {
+      if (!visitClassReference(exprVisitor, def.getSuperClasses().get(i), false)) {
+        def.getSuperClasses().remove(i--);
+      }
+    }
 
     for (Concrete.ClassField field : def.getFields()) {
       try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
@@ -334,10 +338,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef) {
+  private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef, boolean reportNotAClass) {
     Concrete.Expression newClassRef = exprVisitor.visitReference(classRef, null);
     if (newClassRef != classRef || !(classRef.getReferent() instanceof ClassReferable)) {
-      if (!(classRef.getReferent() instanceof ErrorReference)) {
+      if (reportNotAClass && !(classRef.getReferent() instanceof ErrorReference)) {
         LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
         classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
         myLocalErrorReporter.report(error);
@@ -347,45 +351,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return true;
     }
   }
-
-  private void visitSuperClasses(ExpressionResolveNameVisitor exprVisitor, List<Concrete.ReferenceExpression> superClasses) {
-    for (int i = 0; i < superClasses.size(); i++) {
-      if (!visitClassReference(exprVisitor, superClasses.get(i))) {
-        superClasses.remove(i--);
-      }
-    }
-  }
-
-  /* TODO[classes]
-  @Override
-  public Void visitClassSynonym(Concrete.ClassSynonym def, Scope parentScope) {
-    if (myResolveTypeClassReferences) {
-      return null;
-    }
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
-      return null;
-    }
-
-    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
-
-    ExpressionResolveNameVisitor visitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, Collections.emptyList(), myLocalErrorReporter);
-    visitSuperClasses(visitor, def.getSuperClasses());
-
-    if (visitClassReference(visitor, def.getUnderlyingClass())) {
-      if (!def.getFields().isEmpty()) {
-        visitor = new ExpressionResolveNameVisitor(myConcreteProvider, new ClassFieldImplScope((ClassReferable) def.getUnderlyingClass().getReferent(), false), Collections.emptyList(), myLocalErrorReporter);
-        for (Concrete.ClassFieldSynonym fieldSyn : def.getFields()) {
-          visitor.visitReference(fieldSyn.getUnderlyingField(), null);
-        }
-      }
-    } else {
-      def.getFields().clear();
-    }
-
-    def.setResolved();
-    return null;
-  }
-  */
 
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
@@ -403,7 +368,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
-    if (visitClassReference(exprVisitor, def.getClassReference())) {
+    if (visitClassReference(exprVisitor, def.getClassReference(), true)) {
       exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassReference().getReferent());
     } else {
       def.getClassFieldImpls().clear();
@@ -525,8 +490,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
 
       @Override
-      protected void expectedClass(Error.Level level, Object cause) {
-        myLocalErrorReporter.report(new NamingError(level, "Expected a class reference", cause));
+      protected void expectedClass(Error.Level level, String message, Object cause) {
+        myLocalErrorReporter.report(new NamingError(level, message, cause));
+      }
+
+      @Override
+      protected void error(LocalError error) {
+        myLocalErrorReporter.report(error);
       }
     }.checkGroup(group, convertedScope);
   }

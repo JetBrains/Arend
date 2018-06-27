@@ -29,4 +29,9 @@ public class NotInScopeError extends LocalError {
     LineDoc header = hList(super.getHeaderDoc(src), text(" '" + name + "'"));
     return referable == null ? header : hList(header, text(" in "), refDoc(referable));
   }
+
+  @Override
+  public String getShortMessage() {
+    return message + " '" + name + "' " + (referable == null ? "" : " in " + referable.textRepresentation());
+  }
 }

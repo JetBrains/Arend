@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.term.abs;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.Reference;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
 
@@ -154,7 +153,6 @@ public final class Abstract {
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
     @Nullable Reference getUnderlyingClass();
-    @Nonnull Collection<? extends ClassFieldSynonym> getFieldSynonyms();
   }
 
   public interface Constructor extends EliminatedExpressionsHolder {

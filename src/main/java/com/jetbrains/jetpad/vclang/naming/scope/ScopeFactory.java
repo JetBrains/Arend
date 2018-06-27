@@ -51,6 +51,7 @@ public class ScopeFactory {
     return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, elementsScope, prelude));
   }
 
+  @SuppressWarnings("RedundantIfStatement")
   public static boolean isParentScopeVisible(Abstract.SourceNode sourceNode) {
     // We cannot use any references in level expressions
     if (sourceNode instanceof Abstract.LevelExpression) {
@@ -105,7 +106,7 @@ public class ScopeFactory {
     }
 
     // Replace the scope with class fields in class extensions
-    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
+    if ((parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
       return false;
     }
 
@@ -211,8 +212,8 @@ public class ScopeFactory {
       }
     }
 
-    // Replace the scope with class fields in class extensions
-    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression)) {
+    // Replace the scope with class fields in class extensions and class field synonyms
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder) {
         ClassReferable classRef = ((Abstract.ClassReferenceHolder) parentParent).getClassReference();
