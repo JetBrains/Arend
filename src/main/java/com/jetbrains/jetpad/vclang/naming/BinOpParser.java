@@ -36,6 +36,9 @@ public class BinOpParser {
   public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
       Concrete.ReferenceExpression reference = elem.expression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.expression : null;
+      if (reference == null && elem.fixity != Fixity.NONFIX && elem.expression instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem.expression).getFunction() instanceof Concrete.ReferenceExpression) {
+        reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.expression).getFunction();
+      }
       Precedence precedence = reference != null && reference.getReferent() instanceof GlobalReferable ? ((GlobalReferable) reference.getReferent()).getPrecedence() : null;
       if (precedence == null && reference != null && reference.getReferent() instanceof GlobalReferable) {
         precedence = ((GlobalReferable) reference.getReferent()).getPrecedence();
@@ -46,6 +49,11 @@ public class BinOpParser {
           precedence = Precedence.DEFAULT;
         }
         push(reference, precedence, elem.fixity == Fixity.POSTFIX);
+        if (elem.expression instanceof Concrete.AppExpression) {
+          for (Concrete.Argument argument : ((Concrete.AppExpression) elem.expression).getArguments()) {
+            push(argument.expression, argument.isExplicit());
+          }
+        }
       } else {
         push(elem.expression, elem.isExplicit);
       }

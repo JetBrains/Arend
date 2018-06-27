@@ -299,4 +299,11 @@ public class RecordsTest extends TypeCheckingTestCase {
       "}", 2);
     assertThatErrorsAre(error(), hasErrors(getDefinition(module, "X.A").getReferable()));
   }
+
+  @Test
+  public void infixTest() {
+    typeCheckModule(
+      "\\class A { | \\infix 5 + : Nat -> Nat -> Nat }\n" +
+      "\\func f (a : A) => 0 a.+ 0");
+  }
 }
