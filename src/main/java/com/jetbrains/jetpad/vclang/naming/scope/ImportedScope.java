@@ -17,16 +17,22 @@ public class ImportedScope implements Scope {
   private final ModuleScopeProvider myProvider;
   private final Scope myElementsScope;
 
-  public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider, @Nullable Scope elementsScope) {
+  public ImportedScope(@Nonnull Group group, ModuleScopeProvider provider) {
     myExpectedNamesTree = new Tree();
     myProvider = provider;
-    myElementsScope = elementsScope;
+    myElementsScope = null;
 
     for (NamespaceCommand command : group.getNamespaceCommands()) {
       if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
         myExpectedNamesTree.addPath(command.getPath());
       }
     }
+  }
+
+  public ImportedScope(ImportedScope importedScope, @Nonnull Scope elementsScope) {
+    myExpectedNamesTree = importedScope.myExpectedNamesTree;
+    myProvider = importedScope.myProvider;
+    myElementsScope = elementsScope;
   }
 
   private ImportedScope(Tree tree, ModuleScopeProvider provider, Scope elementsScope) {

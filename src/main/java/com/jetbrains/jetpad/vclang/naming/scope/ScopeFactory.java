@@ -23,14 +23,10 @@ import java.util.List;
 
 public class ScopeFactory {
   public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
-    return forGroup(group, moduleScopeProvider, null);
+    return forGroup(group, moduleScopeProvider, true);
   }
 
-  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope) {
-    return forGroup(group, moduleScopeProvider, elementsScope, true);
-  }
-
-  public static @Nonnull Scope parentScopeForGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
+  public static @Nonnull Scope parentScopeForGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
@@ -39,16 +35,16 @@ public class ScopeFactory {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;
       }
 
-      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider, elementsScope);
+      ImportedScope importedScope = new ImportedScope(group, moduleScopeProvider);
       parentScope = preludeScope == null ? importedScope : new MergeScope(preludeScope, importedScope);
     } else {
-      parentScope = forGroup(parentGroup, moduleScopeProvider, elementsScope, prelude);
+      parentScope = forGroup(parentGroup, moduleScopeProvider, prelude);
     }
     return parentScope;
   }
 
-  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, @Nullable Scope elementsScope, boolean prelude) {
-    return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, elementsScope, prelude));
+  public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider, boolean prelude) {
+    return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, prelude));
   }
 
   @SuppressWarnings("RedundantIfStatement")
@@ -113,7 +109,7 @@ public class ScopeFactory {
     return true;
   }
 
-  public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode) {
+  public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode, Scope importElements) {
     if (sourceNode == null) {
       return parentScope;
     }
@@ -139,7 +135,10 @@ public class ScopeFactory {
       Scope scope;
       if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
         ImportedScope importedScope = parentScope.getImportedSubscope();
-        scope = importedScope == null ? EmptyScope.INSTANCE : importedScope;
+        if (importedScope != null && importElements != null) {
+          importedScope = new ImportedScope(importedScope, importElements);
+        }
+        scope = importedScope == null ? (importElements == null ? EmptyScope.INSTANCE : importElements) : importedScope;
       } else {
         scope = parentScope.getGlobalSubscopeWithoutOpens();
       }
