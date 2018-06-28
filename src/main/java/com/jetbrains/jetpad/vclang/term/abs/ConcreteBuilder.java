@@ -129,7 +129,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       Object data = term == null ? myReferableConverter.toDataLocatedReferable(def.getReferable()) : term.getData();
-      body = new Concrete.TermFunctionBody(data, new Concrete.HoleExpression(data));
+      body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
     List<Concrete.Parameter> parameters;
@@ -471,7 +471,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
-    return Concrete.ReferenceExpression.make(data, referent, level1 == null ? null : level1.accept(this, null), level2 == null ? null : level2.accept(this, null));
+    return new Concrete.ReferenceExpression(data, referent, level1 == null ? null : level1.accept(this, null), level2 == null ? null : level2.accept(this, null));
   }
 
   @Override
@@ -518,6 +518,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.UniverseExpression visitUniverse(@Nullable Object data, @Nullable Integer pLevelNum, @Nullable Integer hLevelNum, @Nullable Abstract.LevelExpression pLevel, @Nullable Abstract.LevelExpression hLevel, @Nullable Abstract.ErrorData errorData, Void params) {
+    if (pLevelNum != null && hLevel == null) {
+      hLevel = pLevel;
+      pLevel = null;
+    }
     if (pLevelNum != null && pLevel != null) {
       myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "p-level is already specified", pLevel.getData()));
     }
@@ -545,11 +549,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.TupleExpression visitTuple(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> absFields, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (absFields.isEmpty()) { // TODO: Implement unit types as empty sigmas
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
     List<Concrete.Expression> fields = new ArrayList<>(absFields.size());
     for (Abstract.Expression field : absFields) {
       fields.add(field.accept(this, null));
@@ -561,11 +560,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.SigmaExpression visitSigma(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (parameters.isEmpty()) { // TODO: Implement unit types as empty sigmas
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
     reportError(errorData);
     return new Concrete.SigmaExpression(data, buildTypeParameters(parameters));
   }

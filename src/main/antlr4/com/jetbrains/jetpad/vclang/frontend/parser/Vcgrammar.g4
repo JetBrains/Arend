@@ -81,7 +81,7 @@ associativity : '\\infix'               # nonAssocInfix
 expr  : NEW? appExpr (implementStatements argument*)?                         # app
       | <assoc=right> expr '->' expr                                          # arr
       | '\\Pi' tele+ '->' expr                                                # pi
-      | '\\Sigma' tele+                                                       # sigma
+      | '\\Sigma' tele*                                                       # sigma
       | '\\lam' tele+ '=>' expr                                               # lam
       | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                   # let
       | '\\case' expr (',' expr)* '\\with' '{' clause? ('|' clause)* '}'      # case
@@ -148,7 +148,7 @@ fieldAcc : ID                       # classFieldAcc
          ;
 
 atom  : literal                         # atomLiteral
-      | '(' expr (',' expr)* ')'        # tuple
+      | '(' (expr (',' expr)*)? ')'     # tuple
       | NUMBER                          # atomNumber
       ;
 

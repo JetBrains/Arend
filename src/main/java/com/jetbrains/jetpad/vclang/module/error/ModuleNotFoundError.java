@@ -16,16 +16,14 @@ public class ModuleNotFoundError extends GeneralError {
   public final ModulePath notFoundModule;
   public final ModulePath currentModule;
 
-  public ModuleNotFoundError(ModulePath notFoundModule) {
-    super(Level.ERROR, "Module not found: " + notFoundModule);
-    this.notFoundModule = notFoundModule;
-    this.currentModule = null;
-  }
-
   public ModuleNotFoundError(ModulePath notFoundModule, ModulePath currentModule) {
     super(Level.ERROR, "Module not found: " + notFoundModule);
     this.notFoundModule = notFoundModule;
     this.currentModule = currentModule;
+  }
+
+  public ModuleNotFoundError(ModulePath notFoundModule) {
+    this(notFoundModule, null);
   }
 
   @Override

@@ -684,11 +684,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private List<Concrete.Parameter> visitLamTele(TeleContext tele) {
-    List<Concrete.Parameter> arguments = new ArrayList<>(3);
+    List<Concrete.Parameter> parameters = new ArrayList<>();
     if (tele instanceof ExplicitContext || tele instanceof ImplicitContext) {
       boolean explicit = tele instanceof ExplicitContext;
       TypedExprContext typedExpr = explicit ? ((ExplicitContext) tele).typedExpr() : ((ImplicitContext) tele).typedExpr();
-      Concrete.Expression typeExpr;
+      Concrete.Expression typeExpr = null;
       List<ParsedLocalReferable> vars = new ArrayList<>();
       if (typedExpr instanceof TypedContext) {
         getVarList(((TypedContext) typedExpr).expr(0), vars);
@@ -696,14 +696,13 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       } else if (typedExpr instanceof NotTypedContext) {
         getVarList(((NotTypedContext) typedExpr).expr(), vars);
         for (ParsedLocalReferable var : vars) {
-          arguments.add(new Concrete.NameParameter(var.getPosition(), explicit, var));
+          parameters.add(new Concrete.NameParameter(var.getPosition(), explicit, var));
         }
-        typeExpr = null;
       } else {
         throw new IllegalStateException();
       }
       if (typeExpr != null) {
-        arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, typeExpr));
+        parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, typeExpr));
       }
     } else {
       boolean ok = tele instanceof TeleLiteralContext;
@@ -711,9 +710,9 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
         if (literalContext instanceof NameContext && ((NameContext) literalContext).ID() != null) {
           TerminalNode id = ((NameContext) literalContext).ID();
-          arguments.add(new Concrete.NameParameter(tokenPosition(id.getSymbol()), true, new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText())));
+          parameters.add(new Concrete.NameParameter(tokenPosition(id.getSymbol()), true, new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText())));
         } else if (literalContext instanceof UnknownContext) {
-          arguments.add(new Concrete.NameParameter(tokenPosition(literalContext.getStart()), true, null));
+          parameters.add(new Concrete.NameParameter(tokenPosition(literalContext.getStart()), true, null));
         } else {
           ok = false;
         }
@@ -723,7 +722,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         throw new ParseException();
       }
     }
-    return arguments;
+    return parameters;
   }
 
   private List<Concrete.Parameter> visitLamTeles(List<TeleContext> tele) {
@@ -764,7 +763,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
         }
 
-        expr = Concrete.ReferenceExpression.make(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
+        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are allowed only after a reference"));
       }
@@ -1032,7 +1031,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   private List<Concrete.TypeParameter> visitTeles(List<TeleContext> teles) {
-    List<Concrete.TypeParameter> arguments = new ArrayList<>(teles.size());
+    List<Concrete.TypeParameter> parameters = new ArrayList<>(teles.size());
     for (TeleContext tele : teles) {
       boolean explicit = !(tele instanceof ImplicitContext);
       TypedExprContext typedExpr;
@@ -1041,11 +1040,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           typedExpr = ((ExplicitContext) tele).typedExpr();
         } else
         if (tele instanceof TeleLiteralContext) {
-          arguments.add(new Concrete.TypeParameter(true, visitExpr(((TeleLiteralContext) tele).literal())));
+          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleLiteralContext) tele).literal())));
           continue;
         } else
         if (tele instanceof TeleUniverseContext) {
-          arguments.add(new Concrete.TypeParameter(true, visitExpr(((TeleUniverseContext) tele).universeAtom())));
+          parameters.add(new Concrete.TypeParameter(true, visitExpr(((TeleUniverseContext) tele).universeAtom())));
           continue;
         } else {
           throw new IllegalStateException();
@@ -1056,15 +1055,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (typedExpr instanceof TypedContext) {
         List<ParsedLocalReferable> vars = new ArrayList<>();
         getVarList(((TypedContext) typedExpr).expr(0), vars);
-        arguments.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
+        parameters.add(new Concrete.TelescopeParameter(tokenPosition(tele.getStart()), explicit, vars, visitExpr(((TypedContext) typedExpr).expr(1))));
       } else
       if (typedExpr instanceof NotTypedContext) {
-        arguments.add(new Concrete.TypeParameter(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
+        parameters.add(new Concrete.TypeParameter(explicit, visitExpr(((NotTypedContext) typedExpr).expr())));
       } else {
         throw new IllegalStateException();
       }
     }
-    return arguments;
+    return parameters;
   }
 
   private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
@@ -1116,13 +1115,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
-    List<Concrete.TypeParameter> args = visitTeles(ctx.tele());
-    for (Concrete.TypeParameter arg : args) {
-      if (!arg.getExplicit()) {
-        myErrorReporter.report(new ParserError((Position) arg.getData(), "Fields in sigma types must be explicit"));
-      }
-    }
-    return new Concrete.SigmaExpression(tokenPosition(ctx.getStart()), args);
+    return new Concrete.SigmaExpression(tokenPosition(ctx.getStart()), visitTeles(ctx.tele()));
   }
 
   @Override

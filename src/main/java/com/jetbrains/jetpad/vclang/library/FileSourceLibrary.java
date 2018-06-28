@@ -5,18 +5,17 @@ import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.source.*;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
 public class FileSourceLibrary extends UnmodifiableSourceLibrary {
-  private final Path mySourceBasePath;
-  private final Path myBinaryBasePath;
-  private final Set<ModulePath> myModules;
-  private final List<LibraryDependency> myDependencies;
-  private final boolean myComplete;
+  protected Path mySourceBasePath;
+  protected Path myBinaryBasePath;
+  protected Set<ModulePath> myModules;
+  protected List<LibraryDependency> myDependencies;
+  protected boolean myComplete;
 
   /**
    * Creates a new {@code UnmodifiableFileSourceLibrary}
@@ -58,7 +57,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
     return myBinaryBasePath == null ? null : new GZIPStreamBinarySource(new FileBinarySource(myBinaryBasePath, modulePath));
   }
 
-  @Nonnull
+  @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
     return new LibraryHeader(myModules, myDependencies);
