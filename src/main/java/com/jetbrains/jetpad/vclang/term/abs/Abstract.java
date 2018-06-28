@@ -94,7 +94,7 @@ public final class Abstract {
 
   public interface Expression extends SourceNode {
     @Nullable Object getData();
-    <P, R> R accept(AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
+    <P, R> R accept(@Nonnull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
   public interface BinOpSequenceElem extends SourceNode {
