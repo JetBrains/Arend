@@ -826,11 +826,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, null, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    if (!paramsOk || def.getClassReference().getReferent() instanceof ErrorReference) {
+    if (!paramsOk) {
       return;
     }
 
-    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(new Concrete.ClassExtExpression(def.getData(), def.getClassReference(), def.getClassFieldImpls()), ExpectedType.OMEGA, false);
+    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(new Concrete.ClassExtExpression(def.getData(), def.getResultType(), def.getClassFieldImpls()), ExpectedType.OMEGA, false);
     if (result == null || !(result.expression instanceof ClassCallExpression)) {
       return;
     }

@@ -342,13 +342,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Concrete.Parameter> parameters = visitFunctionParameters(ctx.tele());
-    UnresolvedReference classRef = visitAtomFieldsAccRef(ctx.classCall().atomFieldsAcc());
-    if (classRef == null) {
-      throw new ParseException();
-    }
-
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
-    Concrete.Instance instance = new Concrete.Instance(reference, parameters, new Concrete.ReferenceExpression(classRef.getData(), classRef), visitCoClauses(ctx.coClauses()));
+    Concrete.Instance instance = new Concrete.Instance(reference, parameters, visitExpr(ctx.expr()), visitCoClauses(ctx.coClauses()));
     instance.enclosingClass = enclosingClass;
     reference.setDefinition(instance);
     List<Group> subgroups = new ArrayList<>();

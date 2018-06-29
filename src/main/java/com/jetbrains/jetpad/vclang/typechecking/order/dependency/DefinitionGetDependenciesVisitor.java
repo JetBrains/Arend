@@ -127,7 +127,7 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       }
     }
 
-    def.getClassReference().accept(myVisitor, null);
+    def.getResultType().accept(myVisitor, null);
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
       classFieldImpl.getImplementation().accept(myVisitor, null);
     }

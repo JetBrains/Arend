@@ -37,7 +37,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
   @Override
   public ClassReferable visitInstance(Concrete.Instance def, Void params) {
-    return getTypeClassReference(def.getParameters(), def.getClassReference());
+    return getTypeClassReference(def.getParameters(), def.getResultType());
   }
 
   @Override

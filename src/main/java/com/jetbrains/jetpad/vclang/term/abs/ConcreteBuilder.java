@@ -320,13 +320,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       implementations = Collections.emptyList();
     }
 
-    Abstract.Reference resultClass = def.getResultClass();
-    if (resultClass == null) {
+    Abstract.Expression resultType = def.getResultType();
+    if (resultType == null) {
       throwError(def.getErrorData());
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def));
     }
 
-    Concrete.Instance instance = new Concrete.Instance(myDefinition, parameters, buildReference(resultClass), implementations);
+    Concrete.Instance instance = new Concrete.Instance(myDefinition, parameters, resultType.accept(this, null), implementations);
     setEnclosingClass(instance, def);
     return instance;
   }

@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
-import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.resolving.NameResolvingChecker;
@@ -319,7 +318,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
-      if (!visitClassReference(exprVisitor, def.getSuperClasses().get(i), false)) {
+      Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
+      if (exprVisitor.visitReference(superClass, null) != superClass) {
+        myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
+      }
+      if (!(superClass.getReferent() instanceof ClassReferable)) {
         def.getSuperClasses().remove(i--);
       }
     }
@@ -338,20 +341,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  private boolean visitClassReference(ExpressionResolveNameVisitor exprVisitor, Concrete.ReferenceExpression classRef, boolean reportNotAClass) {
-    Concrete.Expression newClassRef = exprVisitor.visitReference(classRef, null);
-    if (newClassRef != classRef || !(classRef.getReferent() instanceof ClassReferable)) {
-      if (reportNotAClass && !(classRef.getReferent() instanceof ErrorReference)) {
-        LocalError error = new WrongReferable("Expected a reference to a class", classRef.getReferent(), classRef);
-        classRef.setReferent(new ErrorReference(error, classRef.getReferent().textRepresentation()));
-        myLocalErrorReporter.report(error);
-      }
-      return false;
-    } else {
-      return true;
-    }
-  }
-
   @Override
   public Void visitInstance(Concrete.Instance def, Scope parentScope) {
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
@@ -361,15 +350,17 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
-        resolveTypeClassReference(def.getParameters(), def.getClassReference(), parentScope, true);
+        resolveTypeClassReference(def.getParameters(), def.getResultType(), parentScope, true);
       }
       def.setTypeClassReferencesResolved();
       return null;
     }
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
-    if (visitClassReference(exprVisitor, def.getClassReference(), true)) {
-      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) def.getClassReference().getReferent());
+    def.setResultType(def.getResultType().accept(exprVisitor, null));
+    Referable typeRef = def.getReferenceInType();
+    if (typeRef instanceof ClassReferable) {
+      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) typeRef);
     } else {
       def.getClassFieldImpls().clear();
     }

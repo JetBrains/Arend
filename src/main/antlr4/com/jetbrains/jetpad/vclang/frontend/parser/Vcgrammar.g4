@@ -22,7 +22,7 @@ classStat : '|' precedence ID tele* ':' expr  # classField
 definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
             | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
-            | '\\instance' ID tele* ':' classCall coClauses where?                                      # defInstance
+            | '\\instance' ID tele* ':' expr coClauses where?                                           # defInstance
             ;
 
 classKw   : '\\class'   # classKwClass

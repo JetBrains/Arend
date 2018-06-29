@@ -45,7 +45,7 @@ public class GlobalInstancePool implements InstancePool {
 
     Collection<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(classRef);
     for (Concrete.Instance instance : instances) {
-      if (instance.getClassReference().getReferent() == classRef) {
+      if (instance.getReferenceInType() == classRef) {
         FunctionDefinition definition = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (definition != null && definition.status().headerIsOK() && definition.getResultType() instanceof ClassCallExpression) {
           Expression impl = ((ClassCallExpression) definition.getResultType()).getImplementationHere(classifyingField);

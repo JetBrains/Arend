@@ -49,7 +49,7 @@ public class InstanceProviderSet {
       if (ref instanceof TCReferable) {
         Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
         if (instance != null) {
-          Referable classRef = instance.getClassReference().getReferent();
+          Referable classRef = instance.getReferenceInType();
           if (classRef instanceof ClassReferable) {
             if (used) {
               instanceProvider = new SimpleInstanceProvider(instanceProvider);

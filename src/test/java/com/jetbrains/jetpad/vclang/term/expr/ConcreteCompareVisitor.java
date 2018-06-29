@@ -434,6 +434,6 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
     Concrete.Instance inst2 = (Concrete.Instance) def2;
-    return compareParameters(def.getParameters(), inst2.getParameters()) && compare(def.getClassReference(), inst2.getClassReference()) && compareImplementStatements(def.getClassFieldImpls(), inst2.getClassFieldImpls());
+    return compareParameters(def.getParameters(), inst2.getParameters()) && compare(def.getResultType(), inst2.getResultType()) && compareImplementStatements(def.getClassFieldImpls(), inst2.getClassFieldImpls());
   }
 }

@@ -172,7 +172,7 @@ public final class Abstract {
   }
 
   public interface InstanceDefinition extends Definition, ParametersHolder {
-    /* @Nonnull */ @Nullable Reference getResultClass();
+    /* @Nonnull */ @Nullable Expression getResultType();
     @Nonnull Collection<? extends ClassFieldImpl> getImplementation();
   }
 }

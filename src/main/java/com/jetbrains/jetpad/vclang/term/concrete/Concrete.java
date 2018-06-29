@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -1268,13 +1266,13 @@ public final class Concrete {
 
   public static class Instance extends Definition {
     private final List<Parameter> myParameters;
-    private final ReferenceExpression myClass;
+    private Expression myResultType;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public Instance(TCReferable referable, List<Parameter> parameters, ReferenceExpression classRef, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(TCReferable referable, List<Parameter> parameters, Expression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myParameters = parameters;
-      myClass = classRef;
+      myResultType = classRef;
       myClassFieldImpls = classFieldImpls;
     }
 
@@ -1284,8 +1282,27 @@ public final class Concrete {
     }
 
     @Nonnull
-    public ReferenceExpression getClassReference() {
-      return myClass;
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Nullable
+    public ReferenceExpression getReferenceExpressionInType() {
+      Expression type = myResultType;
+      if (type instanceof Concrete.AppExpression) {
+        type = ((AppExpression) type).getFunction();
+      }
+      return type instanceof ReferenceExpression ? (ReferenceExpression) type : null;
+    }
+
+    @Nullable
+    public Referable getReferenceInType() {
+      ReferenceExpression type = getReferenceExpressionInType();
+      return type == null ? null : type.myReferent;
+    }
+
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
     }
 
     @Nonnull
