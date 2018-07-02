@@ -13,6 +13,10 @@ public interface LocatedReferable extends GlobalReferable {
   @Nullable LocatedReferable getUnderlyingReference();
   @Nullable Reference getUnresolvedUnderlyingReference();
 
+  default boolean isFieldSynonym() {
+    return getUnderlyingReference() != null;
+  }
+
   class Helper {
     public static ModulePath getLocation(LocatedReferable referable, List<String> fullName) {
       LocatedReferable parent = referable.getLocatedReferableParent();

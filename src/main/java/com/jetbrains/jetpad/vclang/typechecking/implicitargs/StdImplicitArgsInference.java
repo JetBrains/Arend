@@ -15,10 +15,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
@@ -83,7 +80,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
-    if (ref instanceof LocatedReferable) {
+    if (ref instanceof LocatedReferable && ((LocatedReferable) ref).isFieldSynonym()) {
       ref = ((TCReferable) ref).getLocatedReferableParent();
       if (ref instanceof TCClassReferable) {
         return (TCClassReferable) ref;
@@ -100,12 +97,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+        boolean isField = true;
         TCClassReferable classRef = getClassRefFromDefCall(expr, i);
         if (classRef == null) {
+          isField = defCallResult.getDefinition() instanceof ClassField;
           classRef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         }
         if (classRef != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
+          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, isField, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }
       }
       if (infVar == null) {

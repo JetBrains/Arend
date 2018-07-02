@@ -11,7 +11,7 @@ public class EmptyInstancePool implements InstancePool {
   private EmptyInstancePool() {}
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
     return null;
   }
 }

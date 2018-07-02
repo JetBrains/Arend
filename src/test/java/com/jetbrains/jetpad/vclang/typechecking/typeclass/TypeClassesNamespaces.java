@@ -23,8 +23,9 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\class Y => X\n" +
+        "  \\func g {x : X} (a : x.A) => B a" +
         "}\n" +
-        "\\func f (x : M.Y) (a : x.A) => M.B a");
+        "\\func f (x : M.Y) (a : x.A) => M.g a");
   }
 
   @Test
@@ -34,9 +35,10 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  \\class X (A : \\Type0) {\n" +
         "    | B : A -> Nat\n" +
         "  }\n" +
+        "  \\func g {x : X} (a : x.A) => B a" +
         "}\n" +
         "\\class Y => M.X\n" +
-        "\\func f (y : Y) (a : y.A) => M.B a");
+        "\\func f (y : Y) (a : y.A) => M.g a");
   }
 
   @Test
@@ -73,9 +75,10 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "    | B : A -> Nat\n" +
         "  }\n" +
         "  \\class Y => X\n" +
+        "  \\func g {x : X} (a : x.A) => B a" +
         "}\n" +
         "\\instance Nat-X : M.Y | A => Nat | B => \\lam x => x\n" +
-        "\\func f => M.B 0");
+        "\\func f => M.g 0");
   }
 
   @Test
@@ -85,10 +88,11 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  \\class X (A : \\Type0) {\n" +
         "    | B : A -> Nat\n" +
         "  }\n" +
+        "  \\func g {x : X} (a : x.A) => B a" +
         "}\n" +
         "\\class Y => M.X\n" +
         "\\instance Nat-X : Y | A => Nat | B => \\lam x => x\n" +
-        "\\func f => M.B 0");
+        "\\func f => M.g 0");
   }
 
   @Test

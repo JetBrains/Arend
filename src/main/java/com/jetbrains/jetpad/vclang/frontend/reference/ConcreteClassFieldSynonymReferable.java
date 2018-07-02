@@ -44,4 +44,9 @@ public class ConcreteClassFieldSynonymReferable extends InternalConcreteLocatedR
   public Reference getUnresolvedUnderlyingReference() {
     return myUnresolvedUnderlyingFieldReference;
   }
+
+  @Override
+  public boolean isFieldSynonym() {
+    return true;
+  }
 }

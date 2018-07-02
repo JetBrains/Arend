@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.FunCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -28,7 +30,7 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
     if (myInstanceProvider == null) {
       return null;
     }
@@ -38,14 +40,16 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    ClassField classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(classRef.getUnderlyingTypecheckable())).getClassifyingField();
+    TCClassReferable typecheckable = classRef.getUnderlyingTypecheckable();
+    ClassField classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(typecheckable)).getClassifyingField();
     if (classifyingField == null) {
       return null;
     }
 
-    Collection<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(classRef);
+    Collection<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(typecheckable);
     for (Concrete.Instance instance : instances) {
-      if (instance.getReferenceInType() == classRef) {
+      Referable instanceRef = instance.getReferenceInType();
+      if (instanceRef instanceof ClassReferable && (isField ? instanceRef == classRef : ((ClassReferable) instanceRef).getUnderlyingTypecheckable() == typecheckable)) {
         FunctionDefinition definition = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (definition != null && definition.status().headerIsOK() && definition.getResultType() instanceof ClassCallExpression) {
           Expression impl = ((ClassCallExpression) definition.getResultType()).getImplementationHere(classifyingField);

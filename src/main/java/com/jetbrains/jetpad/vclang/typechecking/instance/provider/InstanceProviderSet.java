@@ -55,7 +55,7 @@ public class InstanceProviderSet {
               instanceProvider = new SimpleInstanceProvider(instanceProvider);
               used = false;
             }
-            instanceProvider.put((ClassReferable) classRef, instance);
+            instanceProvider.put(((ClassReferable) classRef).getUnderlyingTypecheckable(), instance);
           }
         }
 

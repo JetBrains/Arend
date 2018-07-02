@@ -16,9 +16,9 @@ public class CompositeInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
     for (InstancePool pool : myPools) {
-      Expression expr = pool.getInstance(classifyingExpression, classRef, equations, sourceNode);
+      Expression expr = pool.getInstance(classifyingExpression, classRef, isField, equations, sourceNode);
       if (expr != null) {
         return expr;
       }

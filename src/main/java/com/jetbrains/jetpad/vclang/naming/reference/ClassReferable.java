@@ -9,4 +9,14 @@ public interface ClassReferable extends LocatedReferable {
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @Nonnull Collection<? extends LocatedReferable> getFieldReferables();
   @Override @Nullable ClassReferable getUnderlyingReference();
+
+  default @Nonnull ClassReferable getUnderlyingTypecheckable() {
+    ClassReferable underlyingRef = getUnderlyingReference();
+    return underlyingRef != null ? underlyingRef : this;
+  }
+
+  @Override
+  default boolean isFieldSynonym() {
+    return false;
+  }
 }

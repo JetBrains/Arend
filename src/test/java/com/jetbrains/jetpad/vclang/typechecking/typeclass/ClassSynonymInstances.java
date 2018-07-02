@@ -16,27 +16,77 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
   }
 
   @Test
-  public void differentViews() {
+  public void multipleInstances() {
     typeCheckModule(
       "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
+      "  | B : A -> Nat\n" +
       "}\n" +
       "\\class Y => X { B => C }\n" +
-      "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat\n" +
-      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => Nat -> Nat");
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\func f : 1 = C 2 => path (\\lam _ => 1)");
+  }
+
+  @Test
+  public void multipleInstances2() {
+    typeCheckModule(
+      "\\class X (A : \\Type0) {\n" +
+      "  | B : A -> Nat\n" +
+      "}\n" +
+      "\\class Y => X { B => C }\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\func f : 1 = C 2 => path (\\lam _ => 1)");
+  }
+
+  @Test
+  public void multipleInstances3() {
+    typeCheckModule(
+      "\\class X (A : \\Type0) {\n" +
+      "  | B : A -> Nat\n" +
+      "}\n" +
+      "\\class Y => X { B => C }\n" +
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\func f : 0 = B 2 => path (\\lam _ => 0)");
+  }
+
+  @Test
+  public void multipleInstances4() {
+    typeCheckModule(
+      "\\class X (A : \\Type0) {\n" +
+      "  | B : A -> Nat\n" +
+      "}\n" +
+      "\\class Y => X { B => C }\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\func f : 0 = B 2 => path (\\lam _ => 0)");
   }
 
   @Test
   public void transitiveMultipleInstances() {
     typeCheckModule(
       "\\class X (A : \\Type0) {\n" +
-      "  | B : A -> \\Type0\n" +
+      "  | B : A -> Nat\n" +
       "}\n" +
       "\\class Y => X { B => C }\n" +
-      "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat -> Nat\n" +
-      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => Nat -> Nat\n" +
-      "\\func f {A : \\Type0} {x : X { A => A } } (a : A) => B a\n" +
-      "\\func g => f 0");
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\func f {A : \\Type0} {x : Y { A => A } } (a : A) => C a\n" +
+      "\\func g : 0 = f 2 => path (\\lam _ => 0)");
+  }
+
+  @Test
+  public void transitiveMultipleInstances2() {
+    typeCheckModule(
+      "\\class X (A : \\Type0) {\n" +
+      "  | B : A -> Nat\n" +
+      "}\n" +
+      "\\class Y => X { B => C }\n" +
+      "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
+      "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
+      "\\func f {A : \\Type0} {x : Y { A => A } } (a : A) => C a\n" +
+      "\\func g : 1 = f 2 => path (\\lam _ => 1)");
   }
 
   @Test
@@ -99,7 +149,7 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "}\n" +
       "\\class Y => X { B => C }\n" +
       "\\func f {A : \\Type0} {x : X { A => A }} (a : A) => B a\n" +
-      "\\func g {A : \\Type0} {x : X { A => A }} {y : Y { A => A }} (a : A) : f a = y.C a => path (\\lam _ => B a)");
+      "\\func g {A : \\Type0} {x : X { A => A }} {y : Y { A => A }} (a : A) : f a = B a => path (\\lam _ => B a)");
   }
 
   @Test
