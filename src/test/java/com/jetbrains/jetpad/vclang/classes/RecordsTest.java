@@ -9,6 +9,7 @@ import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
@@ -305,5 +306,15 @@ public class RecordsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class A { | \\infix 5 + : Nat -> Nat -> Nat }\n" +
       "\\func f (a : A) => 0 a.+ 0");
+  }
+
+  @Test
+  public void higherFunctionsTest() {
+    typeCheckModule(
+      "\\class C { | A : \\Set | a : A }\n" +
+      "\\func const (c : C) => \\new C { A => c.A -> c.A | a => \\lam _ => c.a }\n" +
+      "\\func const' (c : C) : C { A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
+      "\\func test' (f : (C -> C) -> Nat) => f const'\n" +
+      "\\func test (f : (\\Pi (c : C) -> C { A => c.A -> c.A }) -> Nat) => f const");
   }
 }
