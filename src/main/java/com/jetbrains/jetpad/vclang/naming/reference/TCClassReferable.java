@@ -13,6 +13,11 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
   @Override @Nonnull Collection<? extends TCReferable> getFieldReferables();
   @Override @Nullable TCClassReferable getUnderlyingReference();
 
+  default @Nonnull TCClassReferable getUnderlyingTypecheckable() {
+    TCClassReferable underlyingRef = getUnderlyingReference();
+    return underlyingRef != null ? underlyingRef : this;
+  }
+
   TCClassReferable NULL_REFERABLE = new TCClassReferable() {
     @Nonnull
     @Override

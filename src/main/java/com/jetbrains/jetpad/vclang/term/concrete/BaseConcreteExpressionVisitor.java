@@ -201,6 +201,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
     }
+    def.setResultType(def.getResultType().accept(this, params));
     return null;
   }
 }

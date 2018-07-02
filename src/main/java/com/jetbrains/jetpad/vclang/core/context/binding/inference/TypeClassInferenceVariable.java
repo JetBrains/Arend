@@ -25,12 +25,12 @@ public class TypeClassInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(ArgInferenceError.typeClass(), getSourceNode(), candidates);
+    return new ArgInferenceError(ArgInferenceError.typeClass(myClassRef), getSourceNode(), candidates);
   }
 
   @Override
   public LocalError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError(ArgInferenceError.typeClass(), expectedType, actualType, getSourceNode(), candidate);
+    return new ArgInferenceError(ArgInferenceError.typeClass(myClassRef), expectedType, actualType, getSourceNode(), candidate);
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {

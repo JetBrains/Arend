@@ -15,7 +15,10 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
@@ -68,6 +71,27 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return type != null ? type.getDefinition().getReferable() : null;
   }
 
+  private static TCClassReferable getClassRefFromDefCall(Concrete.Expression expr, int paramIndex) {
+    if (paramIndex != 0) {
+      return null;
+    }
+    if (expr instanceof Concrete.AppExpression) {
+      expr = ((Concrete.AppExpression) expr).getFunction();
+    }
+    if (!(expr instanceof Concrete.ReferenceExpression)) {
+      return null;
+    }
+
+    Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
+    if (ref instanceof LocatedReferable) {
+      ref = ((TCReferable) ref).getLocatedReferableParent();
+      if (ref instanceof TCClassReferable) {
+        return (TCClassReferable) ref;
+      }
+    }
+    return null;
+  }
+
   private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = 0;
@@ -76,7 +100,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       InferenceVariable infVar = null;
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        TCClassReferable classRef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
+        TCClassReferable classRef = getClassRefFromDefCall(expr, i);
+        if (classRef == null) {
+          classRef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
+        }
         if (classRef != null) {
           infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
         }

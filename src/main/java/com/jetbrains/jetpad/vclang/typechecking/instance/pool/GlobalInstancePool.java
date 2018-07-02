@@ -38,7 +38,7 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    ClassField classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(classRef)).getClassifyingField();
+    ClassField classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(classRef.getUnderlyingTypecheckable())).getClassifyingField();
     if (classifyingField == null) {
       return null;
     }

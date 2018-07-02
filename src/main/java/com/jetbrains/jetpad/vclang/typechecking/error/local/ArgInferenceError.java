@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
@@ -50,8 +51,8 @@ public class ArgInferenceError extends TypecheckingError {
     return "Cannot infer an expression";
   }
 
-  public static String typeClass() {
-    return "Cannot infer a type class instance";
+  public static String typeClass(TCClassReferable classRef) {
+    return "Cannot infer an instance of class '" + classRef.textRepresentation() + "'";
   }
 
   public static String suffix(int n) {

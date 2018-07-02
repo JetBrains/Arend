@@ -10,9 +10,9 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
-      "\\class Y => X\n" +
-      "\\instance Nat-X : Y | A => Nat | B => \\lam n => Nat\n" +
-      "\\func f => B 0");
+      "\\class Y => X { B => C }\n" +
+      "\\instance Nat-X : Y | A => Nat | C => \\lam n => Nat\n" +
+      "\\func f => C 0");
   }
 
   @Test
@@ -45,8 +45,8 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> Nat\n" +
       "}\n" +
-      "\\class Y => X\n" +
-      "\\func f (y : Y) (a : y.A) => B a");
+      "\\class Y => X { B => C }\n" +
+      "\\func f (y : Y) (a : y.A) => C a");
   }
 
   @Test
@@ -55,8 +55,8 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> Nat\n" +
       "}\n" +
-      "\\class Y => X\n" +
-      "\\func f (A' : \\Type0) (y : Y { A => A' }) (a : A') => B a");
+      "\\class Y => X { B => C }\n" +
+      "\\func f (A' : \\Type0) (y : Y { A => A' }) (a : A') => C a");
   }
 
   @Test

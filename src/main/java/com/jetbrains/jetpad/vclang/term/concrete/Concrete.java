@@ -1289,6 +1289,9 @@ public final class Concrete {
     @Nullable
     public ReferenceExpression getReferenceExpressionInType() {
       Expression type = myResultType;
+      if (type instanceof Concrete.ClassExtExpression) {
+        type = ((ClassExtExpression) type).baseClassExpression;
+      }
       if (type instanceof Concrete.AppExpression) {
         type = ((AppExpression) type).getFunction();
       }

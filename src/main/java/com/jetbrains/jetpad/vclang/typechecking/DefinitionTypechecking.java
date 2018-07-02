@@ -253,9 +253,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         if (localInstancePool != null) {
-          TCClassReferable classRef = Concrete.getUnderlyingClassDef(typeParameter.getType(), true);
+          TCClassReferable classRef = Concrete.getUnderlyingClassDef(typeParameter.getType(), false);
           if (classRef != null) {
-            ClassField classifyingField = ((ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef)).getClassifyingField();
+            ClassField classifyingField = ((ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef.getUnderlyingTypecheckable())).getClassifyingField();
             if (classifyingField != null) {
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
@@ -830,7 +830,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       return;
     }
 
-    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(new Concrete.ClassExtExpression(def.getData(), def.getResultType(), def.getClassFieldImpls()), ExpectedType.OMEGA, false);
+    Concrete.Expression resultType = def.getResultType();
+    if (resultType instanceof Concrete.ClassExtExpression) {
+      ((Concrete.ClassExtExpression) resultType).getStatements().addAll(def.getClassFieldImpls());
+    } else {
+      resultType = new Concrete.ClassExtExpression(def.getData(), resultType, def.getClassFieldImpls());
+    }
+    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(resultType, ExpectedType.OMEGA, false);
     if (result == null || !(result.expression instanceof ClassCallExpression)) {
       return;
     }
