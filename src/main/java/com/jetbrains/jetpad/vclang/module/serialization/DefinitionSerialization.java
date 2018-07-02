@@ -98,6 +98,7 @@ public class DefinitionSerialization {
     } else {
       builder.setCoercingFieldRef(-1);
     }
+    builder.setIsRecord(definition.isRecord());
     return builder.build();
   }
 

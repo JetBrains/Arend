@@ -124,4 +124,20 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance D-Y : X | A => D | B => \\lam n => D -> D");
     // assertThatErrorsAre(duplicateInstanceError());
   }
+
+  @Test
+  public void withoutClassifyingFieldError() {
+    typeCheckModule(
+      "\\class A { | n : Nat }\n" +
+      "\\func f => n", 1);
+  }
+
+  @Test
+  public void withoutClassifyingField() {
+    typeCheckModule(
+      "\\class A { | n : Nat }\n" +
+      "\\instance a0 : A | n => 0\n" +
+      "\\instance a1 : A | n => 1\n" +
+      "\\func f : n = n => path (\\lam _ => 1)");
+  }
 }

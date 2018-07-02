@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProvid
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
@@ -35,27 +36,35 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    DefCallExpression classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
-    if (classifyingDefCall == null) {
-      return null;
-    }
-
     TCClassReferable typecheckable = classRef.getUnderlyingTypecheckable();
-    ClassField classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(typecheckable)).getClassifyingField();
-    if (classifyingField == null) {
-      return null;
+    DefCallExpression classifyingDefCall = null;
+    ClassField classifyingField = null;
+    if (classifyingExpression != null) {
+      classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
+      if (classifyingDefCall == null) {
+        return null;
+      }
+
+      classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(typecheckable)).getClassifyingField();
+      if (classifyingField == null) {
+        return null;
+      }
     }
 
-    Collection<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(typecheckable);
-    for (Concrete.Instance instance : instances) {
+    List<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(typecheckable);
+    for (int i = instances.size() - 1; i >= 0; i--) {
+      Concrete.Instance instance = instances.get(i);
       Referable instanceRef = instance.getReferenceInType();
       if (instanceRef instanceof ClassReferable && (isField ? instanceRef == classRef : ((ClassReferable) instanceRef).getUnderlyingTypecheckable() == typecheckable)) {
         FunctionDefinition definition = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (definition != null && definition.status().headerIsOK() && definition.getResultType() instanceof ClassCallExpression) {
-          Expression impl = ((ClassCallExpression) definition.getResultType()).getImplementationHere(classifyingField);
-          if (impl instanceof DefCallExpression && ((DefCallExpression) impl).getDefinition() == classifyingDefCall.getDefinition()) {
-            return new FunCallExpression(definition, Sort.generateInferVars(equations, sourceNode), Collections.emptyList());
+          if (classifyingDefCall != null) {
+            Expression impl = ((ClassCallExpression) definition.getResultType()).getImplementationHere(classifyingField);
+            if (!(impl instanceof DefCallExpression && ((DefCallExpression) impl).getDefinition() == classifyingDefCall.getDefinition())) {
+              continue;
+            }
           }
+          return new FunCallExpression(definition, Sort.generateInferVars(equations, sourceNode), Collections.emptyList());
         }
       }
     }

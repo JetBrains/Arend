@@ -16,7 +16,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
     ChildGroup result = typeCheckModule(
-        "\\class Foo { | foo : Nat | bar : Nat }\n" +
+        "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
@@ -26,7 +26,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesGe() {
     ChildGroup result = typeCheckModule(
-        "\\class Foo { | foo : Nat | bar : Nat }\n" +
+        "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
@@ -36,7 +36,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesLe() {
     ChildGroup result = typeCheckModule(
-        "\\class Foo { | foo : Nat | bar : Nat }\n" +
+        "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
@@ -72,63 +72,63 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void emptyClass() {
     typeCheckModule(
-      "\\class Unit\n" +
+      "\\record Unit\n" +
       "\\func f (x : Unit) : x = \\new Unit => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass2() {
     typeCheckModule(
-      "\\class Unit\n" +
+      "\\record Unit\n" +
       "\\func f (x y : Unit) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass3() {
     typeCheckModule(
-      "\\class C { | n : Nat }\n" +
+      "\\record C { | n : Nat }\n" +
       "\\func f (x y : C { n => 0 }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass4a() {
     typeCheckModule(
-      "\\class C { | n : Nat }\n" +
+      "\\record C { | n : Nat }\n" +
       "\\func f (x : C { n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void emptyClass4b() {
     typeCheckModule(
-      "\\class C { | n : Nat }\n" +
+      "\\record C { | n : Nat }\n" +
       "\\func f (x : C) (y : C { n => 0 }) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void unitClass() {
     typeCheckModule(
-      "\\class C { | n : Nat }\n" +
+      "\\record C { | n : Nat }\n" +
       "\\func f (x : C) (y : C { n => x.n }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void unitClass2() {
     typeCheckModule(
-      "\\class C { | n : Nat | m : Nat }\n" +
+      "\\record C { | n : Nat | m : Nat }\n" +
       "\\func f (x : C { n => 3 }) (y : C { n => 3 | m => x.m }) : x = y => path (\\lam _ => y)");
   }
 
   @Test
   public void unitClass3() {
     typeCheckModule(
-      "\\class C {| m : Nat | n : Nat  }\n" +
+      "\\record C {| m : Nat | n : Nat  }\n" +
       "\\func f (x : C) (y : C { m => x.m }) : x = y => path (\\lam _ => y)", 1);
   }
 
   @Test
   public void unitClass4() {
     typeCheckModule(
-      "\\class C { | n : Nat | m : Nat }\n" +
+      "\\record C { | n : Nat | m : Nat }\n" +
       "\\func f (x : C { n => 3 }) (y : C { n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
   }
 }

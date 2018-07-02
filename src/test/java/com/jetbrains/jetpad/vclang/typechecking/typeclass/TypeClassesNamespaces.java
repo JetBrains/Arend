@@ -119,4 +119,15 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "\\open M\n" +
         "\\func f => B 0");
   }
+
+  @Test
+  public void overriddenInstance() {
+    typeCheckModule(
+      "\\class A { | n : Nat }\n" +
+      "\\instance a0 : A | n => 0\n" +
+      "\\class M \\where {\n" +
+      "  \\instance a1 : A | n => 1\n" +
+      "  \\func f : n = n => path (\\lam _ => 1)\n" +
+      "}");
+  }
 }

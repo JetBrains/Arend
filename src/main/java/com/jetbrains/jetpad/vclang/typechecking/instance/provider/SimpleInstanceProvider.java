@@ -23,7 +23,7 @@ public class SimpleInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public Collection<? extends Concrete.Instance> getInstances(ClassReferable classRef) {
+  public List<? extends Concrete.Instance> getInstances(ClassReferable classRef) {
     return myInstances.getOrDefault(classRef, Collections.emptyList());
   }
 }

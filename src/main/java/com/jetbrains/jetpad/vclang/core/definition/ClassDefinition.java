@@ -15,6 +15,7 @@ public class ClassDefinition extends Definition {
   private final Map<ClassField, LamExpression> myImplemented;
   private ClassField myCoercingField;
   private Sort mySort;
+  private boolean myRecord = false;
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -28,6 +29,14 @@ public class ClassDefinition extends Definition {
   @Override
   public TCClassReferable getReferable() {
     return (TCClassReferable) super.getReferable();
+  }
+
+  public boolean isRecord() {
+    return myRecord;
+  }
+
+  public void setRecord() {
+    myRecord = true;
   }
 
   public ClassField getCoercingField() {

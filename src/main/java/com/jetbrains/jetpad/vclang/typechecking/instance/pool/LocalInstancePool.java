@@ -30,8 +30,9 @@ public class LocalInstancePool implements InstancePool {
   }
 
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {
-    for (Triple triple : myPool) {
-      if ((isField ? triple.classRef == classRef : triple.classRef.getUnderlyingTypecheckable() == classRef.getUnderlyingTypecheckable()) && triple.key.equals(classifyingExpression)) {
+    for (int i = myPool.size() - 1; i >= 0; i--) {
+      Triple triple = myPool.get(i);
+      if ((isField ? triple.classRef == classRef : triple.classRef.getUnderlyingTypecheckable() == classRef.getUnderlyingTypecheckable()) && (triple.key == classifyingExpression || triple.key != null && triple.key.equals(classifyingExpression))) {
         return triple.value;
       }
     }

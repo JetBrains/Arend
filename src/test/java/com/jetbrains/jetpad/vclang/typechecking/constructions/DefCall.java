@@ -298,7 +298,7 @@ public class DefCall extends TypeCheckingTestCase {
         "  \\data D | c\n" +
         "} \\where {\n" +
         "  \\func test : D => c\n" +
-        "}", 1);
+        "}", 2);
   }
 
   @Test
@@ -306,9 +306,9 @@ public class DefCall extends TypeCheckingTestCase {
     typeCheckModule(
         "\\class Test {\n" +
         "  \\data D | c\n" +
-        "} \\where {" +
+        "} \\where {\n" +
         "  \\func test : D => D.c\n" +
-        "}", 1);
+        "}", 2);
   }
 
   @Test

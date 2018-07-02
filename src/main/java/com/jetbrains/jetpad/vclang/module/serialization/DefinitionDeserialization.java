@@ -146,6 +146,9 @@ public class DefinitionDeserialization {
     if (classProto.getCoercingFieldRef() != -1) {
       classDef.setCoercingField(myCallTargetProvider.getCallTarget(classProto.getCoercingFieldRef(), ClassField.class));
     }
+    if (classProto.getIsRecord()) {
+      classDef.setRecord();
+    }
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {

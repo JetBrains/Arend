@@ -255,11 +255,12 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (localInstancePool != null) {
           TCClassReferable classRef = Concrete.getUnderlyingClassDef(typeParameter.getType(), false);
           if (classRef != null) {
-            ClassField classifyingField = ((ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef.getUnderlyingTypecheckable())).getClassifyingField();
-            if (classifyingField != null) {
+            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef.getUnderlyingTypecheckable());
+            if (!classDef.isRecord()) {
+              ClassField classifyingField = classDef.getClassifyingField();
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
-                Expression oldInstance = localInstancePool.addInstance(FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference);
+                Expression oldInstance = localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference);
                 if (oldInstance != null) {
                   myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
                 }
@@ -726,6 +727,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
       typedDef.setCoercingField(coercingField);
+    } else {
+      typedDef.setRecord();
     }
 
     // Process implementations

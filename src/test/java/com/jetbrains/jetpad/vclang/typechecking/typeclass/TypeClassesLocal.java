@@ -127,4 +127,18 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "}\n" +
         "\\func f (x : X) (y : X { A => x.A -> x.A }) : x.A -> x.A => a");
   }
+
+  @Test
+  public void withoutClassifyingField() {
+    typeCheckModule(
+      "\\class A { | n : Nat }\n" +
+      "\\func f (a : A) : n = n => path (\\lam _ => a.n)");
+  }
+
+  @Test
+  public void recordWithoutClassifyingField() {
+    typeCheckModule(
+      "\\record A { | n : Nat }\n" +
+      "\\func f (a : A) : n = n => path (\\lam _ => a.n)", 2);
+  }
 }

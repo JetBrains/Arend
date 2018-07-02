@@ -52,6 +52,7 @@ message Definition {
         map<int32, Expression> implementations = 12;
         int32 coercing_field_ref = 11;
         Sort sort = 7;
+        bool is_record = 13;
 
         message Field {
             Referable referable = 1;

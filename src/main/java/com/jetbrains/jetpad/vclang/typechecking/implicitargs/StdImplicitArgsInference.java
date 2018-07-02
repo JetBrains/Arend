@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInfer
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
@@ -18,6 +19,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
@@ -35,9 +37,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     super(visitor);
   }
 
-  private static TCClassReferable getClassRefFromDefCall(Definition definition, int paramIndex) {
+  private static ClassDefinition getClassRefFromDefCall(Definition definition, int paramIndex) {
     if (definition instanceof ClassField) {
-      return paramIndex == 0 ? ((ClassField) definition).getParentClass().getReferable() : null;
+      return paramIndex == 0 ? ((ClassField) definition).getParentClass() : null;
     }
 
     int i = 0;
@@ -65,7 +67,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     ClassCallExpression type = link.getTypeExpr().checkedCast(ClassCallExpression.class);
-    return type != null ? type.getDefinition().getReferable() : null;
+    return type != null ? type.getDefinition() : null;
   }
 
   private static TCClassReferable getClassRefFromDefCall(Concrete.Expression expr, int paramIndex) {
@@ -91,32 +93,52 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
     ExprSubstitution substitution = new ExprSubstitution();
-    int i = 0;
+    int i = result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getArguments().size() : 0;
     for (DependentLink parameter : implicitParameters) {
       Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY);
       InferenceVariable infVar = null;
+
+      // If result is defCall, then try to infer class instances.
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
-        boolean isField = true;
-        TCClassReferable classRef = getClassRefFromDefCall(expr, i);
-        if (classRef == null) {
-          isField = defCallResult.getDefinition() instanceof ClassField;
-          classRef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
-        }
-        if (classRef != null) {
-          infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, isField, defCallResult.getDefCall(), myVisitor.getAllBindings());
+        ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
+        if (classDef != null) {
+          // If the class does not have a classifying field, infer instance immediately
+          if (!classDef.isRecord() && classDef.getClassifyingField() == null) {
+            Expression instance = myVisitor.getInstancePool().getInstance(null, classDef.getReferable(), defCallResult.getDefinition() instanceof ClassField, myVisitor.getEquations(), expr);
+            if (instance == null) {
+              ArgInferenceError error = new ArgInferenceError(ArgInferenceError.typeClass(classDef.getReferable()), expr, new Expression[0]);
+              myVisitor.getErrorReporter().report(error);
+              instance = new ErrorExpression(null, error);
+            }
+            result = result.applyExpression(instance, myVisitor.getErrorReporter(), expr);
+            substitution.add(parameter, instance);
+            i++;
+            continue;
+          }
+
+          // Otherwise, generate type class inference variable
+          boolean isField = true;
+          TCClassReferable classRef = getClassRefFromDefCall(expr, i);
+          if (classRef == null) {
+            isField = defCallResult.getDefinition() instanceof ClassField;
+            classRef = classDef.getReferable();
+          }
+
+          if (classRef != null) {
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, isField, defCallResult.getDefCall(), myVisitor.getAllBindings());
+          }
         }
       }
+
+      // Generate ordinary inference variable
       if (infVar == null) {
         if (classVarsOnly) {
           return result;
         }
-        if (result instanceof CheckTypeVisitor.DefCallResult) {
-          infVar = new FunctionInferenceVariable(parameter.getName(), type, ((CheckTypeVisitor.DefCallResult) result).getArguments().size() + 1, ((CheckTypeVisitor.DefCallResult) result).getDefinition(), expr, myVisitor.getAllBindings());
-        } else {
-          infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, null, expr, myVisitor.getAllBindings());
-        }
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
       }
+
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
       result = result.applyExpression(binding, myVisitor.getErrorReporter(), expr);
       substitution.add(parameter, binding);
