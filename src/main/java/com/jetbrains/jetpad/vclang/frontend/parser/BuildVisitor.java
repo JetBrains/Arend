@@ -631,14 +631,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitClassImplement(ClassImplementContext ctx) {
-    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
-    Concrete.Expression term = visitExpr(ctx.expr());
-    if (!parameters.isEmpty()) {
-      term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
-    }
-
-    List<String> path = visitAtomFieldsAccPath(ctx.atomFieldsAcc());
-    return path == null ? null : new Concrete.ClassFieldImpl(tokenPosition(ctx.start), LongUnresolvedReference.make(tokenPosition(ctx.atomFieldsAcc().start), path), term);
+    return visitCoClause(ctx.coClause());
   }
 
   @Override
@@ -823,9 +816,20 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
     Position position = tokenPosition(ctx.atomFieldsAcc().start);
     List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
-    Concrete.Expression term = visitExpr(ctx.expr());
-    if (!parameters.isEmpty()) {
-      term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
+    Concrete.Expression term;
+    ExprContext exprCtx = ctx.expr();
+    if (exprCtx != null) {
+      term = visitExpr(ctx.expr());
+      if (!parameters.isEmpty()) {
+        term = new Concrete.LamExpression(tokenPosition(ctx.tele(0).start), parameters, term);
+      }
+    } else {
+      if (!parameters.isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.tele(0).start), "Parameters are allowed only before '=> <expression>'"));
+      }
+      List<CoClauseContext> coClauses = ctx.coClause();
+      Position position1 = tokenPosition(coClauses.isEmpty() ? ctx.start : coClauses.get(0).start);
+      term = new Concrete.NewExpression(position1, new Concrete.ClassExtExpression(position1, new Concrete.HoleExpression(position1), visitCoClauses(ctx.coClause())));
     }
 
     return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term);

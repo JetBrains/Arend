@@ -112,6 +112,7 @@ public final class Abstract {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
+    @Nonnull Collection<? extends ClassFieldImpl> getRecursiveClassFieldImpls();
   }
 
   public interface LetClause extends ParametersHolder {

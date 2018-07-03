@@ -695,8 +695,20 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
     String name = classFieldImpl.getImplementedField() == null ? "_" : classFieldImpl.getImplementedField().textRepresentation();
-    myBuilder.append(name).append(" => ");
-    classFieldImpl.getImplementation().accept(this, new Precedence(Concrete.Expression.PREC));
+    myBuilder.append(name);
+    if (classFieldImpl.implementation instanceof Concrete.NewExpression) {
+      Concrete.Expression expr = ((Concrete.NewExpression) classFieldImpl.implementation).getExpression();
+      if (expr instanceof Concrete.ClassExtExpression) {
+        myBuilder.append(" {");
+        visitClassFieldImpls(((Concrete.ClassExtExpression) expr).getStatements());
+        myBuilder.append("\n");
+        printIndent();
+        myBuilder.append("}");
+      }
+    }
+
+    myBuilder.append(" => ");
+    classFieldImpl.implementation.accept(this, new Precedence(Expression.PREC));
   }
 
   @Override
@@ -1068,9 +1080,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
     Collection<? extends Concrete.ClassField> fields = def.getFields();
     Collection<? extends Concrete.ClassFieldImpl> implementations = def.getImplementations();
-    // Collection<? extends Concrete.Definition> instanceDefinitions = def.getInstanceDefinitions(); // TODO[pretty]
 
-    if (!fields.isEmpty() || !implementations.isEmpty() /* || !instanceDefinitions.isEmpty() */) {
+    if (!fields.isEmpty() || !implementations.isEmpty()) {
       myBuilder.append(" {");
       myIndent += INDENT;
 
@@ -1086,28 +1097,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         }
       }
 
-      if (!implementations.isEmpty()) {
-        myBuilder.append('\n');
-        for (Concrete.ClassFieldImpl impl : implementations) {
-          printIndent();
-          myBuilder.append("| ").append(impl.getImplementedField().textRepresentation()).append(" => ");
-          impl.getImplementation().accept(this, new Precedence(Concrete.Expression.PREC));
-          myBuilder.append('\n');
-        }
-      }
-
-      /*
-      if (!instanceDefinitions.isEmpty()) {
-        myBuilder.append('\n');
-        for (Abstract.Definition definition : instanceDefinitions) {
-          printIndent();
-          definition.accept(this, null);
-          myBuilder.append('\n');
-        }
-      }
-      */
-
       myIndent -= INDENT;
+      if (!implementations.isEmpty()) {
+        visitClassFieldImpls(implementations);
+        myBuilder.append('\n');
+      }
+
       printIndent();
       myBuilder.append("}");
     }

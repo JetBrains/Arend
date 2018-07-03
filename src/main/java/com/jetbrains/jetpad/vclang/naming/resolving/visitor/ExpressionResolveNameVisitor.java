@@ -258,17 +258,23 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           field = ((RedirectingReferable) field).getOriginalReferable();
         }
         if (field instanceof UnresolvedReference) {
-          Referable newField = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
-          while (newField instanceof RedirectingReferable) {
-            newField = ((RedirectingReferable) newField).getOriginalReferable();
+          field = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
+          while (field instanceof RedirectingReferable) {
+            field = ((RedirectingReferable) field).getOriginalReferable();
           }
-          if (newField instanceof ErrorReference) {
-            myErrorReporter.report(((ErrorReference) newField).getError());
+          if (field instanceof ErrorReference) {
+            myErrorReporter.report(((ErrorReference) field).getError());
           }
-          impl.setImplementedField(newField);
+          impl.setImplementedField(field);
         }
       }
 
+      if (impl.implementation instanceof Concrete.NewExpression && ((Concrete.NewExpression) impl.implementation).getExpression() instanceof Concrete.ClassExtExpression && ((Concrete.ClassExtExpression) ((Concrete.NewExpression) impl.implementation).getExpression()).baseClassExpression instanceof Concrete.HoleExpression && impl.getImplementedField() instanceof TypedReferable) {
+        ClassReferable classRef = ((TypedReferable) impl.getImplementedField()).getTypeClassReference();
+        if (classRef != null) {
+          ((Concrete.ClassExtExpression) ((Concrete.NewExpression) impl.implementation).getExpression()).baseClassExpression = new Concrete.ReferenceExpression(((Concrete.NewExpression) impl.implementation).getExpression().getData(), classRef);
+        }
+      }
       impl.implementation = impl.implementation.accept(this, null);
     }
   }

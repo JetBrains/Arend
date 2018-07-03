@@ -1161,12 +1161,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (typeCheckedBaseClass == null) {
       return null;
     }
-    Expression normalizedBaseClassExpr = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
-    if (!normalizedBaseClassExpr.isInstance(ClassCallExpression.class)) {
+    ClassCallExpression classCall = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+    if (classCall == null) {
       myErrorReporter.report(new TypecheckingError("Expected a class", baseClassExpr));
       return null;
     }
-    ClassCallExpression classCallExpr = normalizedBaseClassExpr.cast(ClassCallExpression.class);
+
+    // Typecheck field implementations
+    return visitClassExt(expr, expectedType, classCall);
+  }
+
+  private Result visitClassExt(Concrete.ClassExtExpression expr, ExpectedType expectedType, ClassCallExpression classCallExpr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
 
     // Check for already implemented fields
@@ -1259,22 +1264,26 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitNew(Concrete.NewExpression expr, ExpectedType expectedType) {
-    Result exprResult = checkExpr(expr.getExpression(), null);
-    if (exprResult == null) return null;
+    Result exprResult;
+    if (expr.getExpression() instanceof Concrete.ClassExtExpression && ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression instanceof Concrete.HoleExpression && expectedType instanceof ClassCallExpression) {
+      exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, (ClassCallExpression) expectedType);
+    } else {
+      exprResult = checkExpr(expr.getExpression(), null);
+      if (exprResult == null) {
+        return null;
+      }
+    }
+
     Expression normExpr = exprResult.expression.normalize(NormalizeVisitor.Mode.WHNF);
     ClassCallExpression classCallExpr = normExpr.checkedCast(ClassCallExpression.class);
     if (classCallExpr == null) {
       TypecheckingError error = new TypecheckingError("Expected a class", expr.getExpression());
       myErrorReporter.report(error);
-      exprResult.expression = new ErrorExpression(exprResult.type, error);
-      exprResult.type = normExpr;
-      return exprResult;
+      return new Result(new ErrorExpression(null, error), normExpr);
     }
 
     if (checkAllImplemented(classCallExpr, expr)) {
-      exprResult.expression = new NewExpression(classCallExpr);
-      exprResult.type = normExpr;
-      return checkResult(expectedType, exprResult, expr);
+      return checkResult(expectedType, new Result(new NewExpression(classCallExpr), normExpr), expr);
     } else {
       return null;
     }

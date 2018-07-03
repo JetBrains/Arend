@@ -15,7 +15,7 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 nsId : ID ('\\as' precedence ID)?;
 
 classStat : '|' precedence ID tele* ':' expr  # classField
-          | '|' atomFieldsAcc tele* '=>' expr # classImplement
+          | '|' coClause                      # classImplement
           | definition                        # classDefinition
           ;
 
@@ -111,7 +111,7 @@ coClauses : ('|' coClause)*                   # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : atomFieldsAcc tele* '=>' expr;
+coClause : atomFieldsAcc tele* ('=>' expr | '{' coClause? ('|' coClause)* '}');
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 
