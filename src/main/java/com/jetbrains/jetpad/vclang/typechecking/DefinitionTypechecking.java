@@ -305,6 +305,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     List<Clause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
     Expression expectedType = typedDef.getResultType();
+    boolean setBodyNull = false;
 
     if (body instanceof Concrete.ElimFunctionBody) {
       if (expectedType != null) {
@@ -335,11 +336,19 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           clauses = Collections.emptyList();
         }
-        typedDef.setResultType(termResult.type);
+        if (termResult.expression instanceof NewExpression) {
+          setBodyNull = true;
+          typedDef.setResultType(((NewExpression) termResult.expression).getExpression());
+        } else {
+          typedDef.setResultType(termResult.type);
+        }
       }
     }
 
     typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    if (setBodyNull) {
+      typedDef.setBody(null);
+    }
     return clauses;
   }
 

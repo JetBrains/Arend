@@ -2,7 +2,9 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
+import com.jetbrains.jetpad.vclang.core.expr.NewExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
@@ -20,7 +22,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -30,7 +32,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 
   @Test
@@ -40,7 +42,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, ((LeafElimTree) f.getBody()).getExpression(), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 
   @Test

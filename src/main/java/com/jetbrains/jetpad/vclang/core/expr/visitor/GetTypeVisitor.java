@@ -37,9 +37,22 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument())));
   }
 
+  private Expression normalizeFieldCall(FieldCallExpression expr) {
+    Expression arg = expr.getArgument();
+    Expression type;
+    if (arg instanceof FieldCallExpression) {
+      arg = normalizeFieldCall((FieldCallExpression) arg);
+      type = arg instanceof NewExpression ? ((NewExpression) arg).getExpression() : null;
+    } else {
+      type = arg.accept(this, null);
+    }
+    return type == null || !type.isInstance(ClassCallExpression.class) ? null : type.cast(ClassCallExpression.class).getImplementation(expr.getDefinition(), arg);
+  }
+
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    return expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument());
+    Expression norm = normalizeFieldCall(expr);
+    return norm != null ? norm.accept(this, null) : expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument());
   }
 
   @Override
