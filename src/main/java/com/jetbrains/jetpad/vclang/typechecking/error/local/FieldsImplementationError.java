@@ -22,7 +22,7 @@ public class FieldsImplementationError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), hSep(text(", "), fields.stream().map(DocFactory::refDoc).collect(Collectors.toList())));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return hList(text(message), hSep(text(", "), fields.stream().map(DocFactory::refDoc).collect(Collectors.toList())));
   }
 }

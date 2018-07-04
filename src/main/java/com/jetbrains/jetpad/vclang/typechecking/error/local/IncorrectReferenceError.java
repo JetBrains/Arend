@@ -16,7 +16,7 @@ public class IncorrectReferenceError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), text("'"), refDoc(referable), text("' is not a reference to either a definition or a variable"));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return hList(text("'"), refDoc(referable), text("' is not a reference to either a definition or a variable"));
   }
 }

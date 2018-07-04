@@ -33,8 +33,8 @@ public class LocationError extends GeneralError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return referable == null ? super.getHeaderDoc(src) : DocFactory.hList(super.getHeaderDoc(src), DocFactory.refDoc(referable));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return referable == null ? text(message) : DocFactory.hList(text(message), DocFactory.refDoc(referable));
   }
 
   @Override

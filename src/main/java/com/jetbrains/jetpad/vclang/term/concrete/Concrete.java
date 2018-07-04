@@ -2,6 +2,8 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
+import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -109,33 +111,6 @@ public final class Concrete {
 
   // Expressions
 
-  public static TCClassReferable getUnderlyingClassDef(Expression expr, boolean resolveClassSynonym) {
-    while (expr instanceof Concrete.ClassExtExpression) {
-      expr = ((ClassExtExpression) expr).getBaseClassExpression();
-    }
-    if (expr instanceof Concrete.AppExpression) {
-      expr = ((AppExpression) expr).getFunction();
-    }
-
-    if (expr instanceof ReferenceExpression) {
-      Referable ref = ((ReferenceExpression) expr).getReferent();
-      if (!(ref instanceof LocatedReferable)) {
-        return null;
-      }
-      if (resolveClassSynonym) {
-        LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-        if (underlyingRef != null) {
-          ref = underlyingRef;
-        }
-      }
-      if (ref instanceof TCClassReferable) {
-        return (TCClassReferable) ref;
-      }
-    }
-
-    return null;
-  }
-
   public static abstract class Expression extends SourceNodeImpl {
     public static final byte PREC = -12;
 
@@ -144,6 +119,33 @@ public final class Concrete {
     }
 
     public abstract <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params);
+
+    public Referable getUnderlyingReferable() {
+      Expression expr = this;
+      while (expr instanceof Concrete.ClassExtExpression) {
+        expr = ((ClassExtExpression) expr).getBaseClassExpression();
+      }
+      if (expr instanceof Concrete.AppExpression) {
+        expr = ((AppExpression) expr).getFunction();
+      }
+      return expr instanceof ReferenceExpression ? ((ReferenceExpression) expr).getReferent() : null;
+    }
+
+    public TCClassReferable getUnderlyingClassReferable(boolean resolveClassSynonym) {
+      Referable ref = getUnderlyingReferable();
+      if (!(ref instanceof LocatedReferable)) {
+        return null;
+      }
+
+      if (resolveClassSynonym) {
+        LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
+        if (underlyingRef != null) {
+          ref = underlyingRef;
+        }
+      }
+
+      return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
+    }
 
     @Override
     public String toString() {

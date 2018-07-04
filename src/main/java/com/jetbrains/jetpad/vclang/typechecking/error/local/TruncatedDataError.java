@@ -20,9 +20,8 @@ public class TruncatedDataError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
     return hList(
-      super.getHeaderDoc(src),
       text(" Data type '"),
       refDoc(dataDef.getReferable()),
       text("' is truncated to the universe " + dataDef.getSort()));

@@ -23,7 +23,7 @@ public class Ordering {
     int index, lowLink;
     boolean onStack;
 
-    public DefState(int currentIndex) {
+    DefState(int currentIndex) {
       index = currentIndex;
       lowLink = currentIndex;
       onStack = true;
@@ -154,9 +154,9 @@ public class Ordering {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.Parameter parameter : parameters) {
-            TCClassReferable classDef = Concrete.getUnderlyingClassDef(((Concrete.TypeParameter) parameter).getType(), true);
-            if (classDef != null) {
-              for (Concrete.Instance instance : instanceProvider.getInstances(classDef)) {
+            TCClassReferable classRef = ((Concrete.TypeParameter) parameter).getType().getUnderlyingClassReferable(true);
+            if (classRef != null) {
+              for (Concrete.Instance instance : instanceProvider.getInstances(classRef)) {
                 referables.push(instance.getData());
               }
             }

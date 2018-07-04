@@ -37,8 +37,8 @@ public class TerminationCheckError extends GeneralError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), text("Termination check failed for function '"), refDoc(definition), text("'"));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return hList(text("Termination check failed for function '"), refDoc(definition), text("'"));
   }
 
   @Override

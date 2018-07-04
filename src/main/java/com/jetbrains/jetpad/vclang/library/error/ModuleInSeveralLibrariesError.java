@@ -26,11 +26,9 @@ public class ModuleInSeveralLibrariesError extends GeneralError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
     List<LineDoc> libraryDocs = libraries.stream().map(lib -> text(lib.getName())).collect(Collectors.toList());
-    return libraryDocs.isEmpty()
-      ? super.getHeaderDoc(src)
-      : hList(super.getHeaderDoc(src), text(": "), hSep(text(", "), libraryDocs));
+    return libraryDocs.isEmpty() ? text(message) : hList(text(message), text(": "), hSep(text(", "), libraryDocs));
   }
 
   @Override

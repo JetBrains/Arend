@@ -19,8 +19,8 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), text(" Cannot solve equation " + variable + " <= constant"));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return text("Cannot solve equation " + variable + " <= constant");
   }
 
   @Override

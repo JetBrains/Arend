@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.hList;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.text;
 
 public class LibraryIOError extends GeneralError {
@@ -20,8 +19,8 @@ public class LibraryIOError extends GeneralError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), text(": "), text(fileName));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return text(message + ": " + fileName);
   }
 
   @Override

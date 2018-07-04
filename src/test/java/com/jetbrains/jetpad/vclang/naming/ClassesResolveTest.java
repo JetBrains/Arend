@@ -195,7 +195,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "\\class C {\n" +
       "  | x : Nat\n" +
       "}\n" +
-      "\\instance D-X (c : C) : c.x", 1);
+      "\\instance D-X {c : C} : c.x", 1);
     assertThatErrorsAre(notInScope("c"));
   }
 

@@ -19,7 +19,7 @@ public class ExpectedConstructor extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return hList(super.getHeaderDoc(ppConfig), text("'"), refDoc(referable), text("' is not a constructor of data type "), termLine(dataCall, ppConfig));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
+    return hList(text("'"), refDoc(referable), text("' is not a constructor of data type "), termLine(dataCall, ppConfig));
   }
 }

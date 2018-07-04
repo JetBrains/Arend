@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.resolving;
 
 import com.jetbrains.jetpad.vclang.error.Error;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.*;
@@ -25,31 +26,19 @@ public abstract class NameResolvingChecker {
     myConcreteProvider = concreteProvider;
   }
 
-  protected void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+  protected void onDefinitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
 
   }
 
-  protected void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
+  protected void onFieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
 
   }
 
-  protected void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
+  protected void onNamespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
 
   }
 
-  protected void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
-
-  }
-
-  protected void nonTopLevelImport(NamespaceCommand command) {
-
-  }
-
-  protected void expectedClass(Error.Level level, String message, Object cause) {
-
-  }
-
-  protected void error(LocalError error) {
+  protected void onError(LocalError error) {
 
   }
 
@@ -64,7 +53,7 @@ public abstract class NameResolvingChecker {
         // Check the underlying class of a synonym
         underlyingClass = checkClass(underlyingClassRef, scope, true, true);
         if (underlyingClass != null && underlyingClass.getUnresolvedUnderlyingReference() != null) {
-          expectedClass(Error.Level.ERROR, "Expected a class, got a class synonym", underlyingClassRef.getData());
+          onError(new NamingError("Expected a class, got a class synonym", underlyingClassRef.getData()));
           underlyingClass = null;
         }
 
@@ -77,7 +66,7 @@ public abstract class NameResolvingChecker {
             if (underlyingFieldRef != null) {
               Referable ref = ExpressionResolveNameVisitor.resolve(underlyingFieldRef.getReferent(), fieldsScope, true);
               if (ref instanceof ErrorReference) {
-                error(((ErrorReference) ref).getError());
+                onError(((ErrorReference) ref).getError());
               }
             }
           }
@@ -91,10 +80,10 @@ public abstract class NameResolvingChecker {
         if (isSynonym && resolvedRef != null) {
           resolvedRef = resolvedRef.getUnderlyingReference();
           if (resolvedRef == null) {
-            expectedClass(Error.Level.ERROR, "Expected a class synonym", superClassRef.getData());
+            onError(new NamingError("Expected a class synonym", superClassRef.getData()));
           } else if (underlyingClass != null) {
             if (!isSubClassOf(underlyingClass, resolvedRef)) {
-              expectedClass(Error.Level.ERROR, "Expected a synonym of a superclass of '" + underlyingClass + "'", superClassRef.getData());
+              onError(new NamingError("Expected a synonym of a superclass of '" + underlyingClass + "'", superClassRef.getData()));
             }
           }
         }
@@ -105,6 +94,23 @@ public abstract class NameResolvingChecker {
     Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
     if (classRef != null) {
       checkClass(classRef, scope, true, false);
+    }
+
+    Collection<PartialConcreteProvider.InstanceParameter> parameters = myConcreteProvider.getInstanceParameterReferences(definition);
+    if (parameters != null) {
+      for (PartialConcreteProvider.InstanceParameter parameter : parameters) {
+        if (parameter.isExplicit) {
+          onError(new NamingError("Instances can have only implicit parameters", parameter.data));
+        } else if (parameter.referable == null) {
+          onError(new NamingError("Expected a class", parameter.data));
+        }
+        if (parameter.referable != null) {
+          boolean isRecord = parameter.referable instanceof ClassReferable && myConcreteProvider.isRecord((ClassReferable) parameter.referable);
+          if (!(parameter.referable instanceof ClassReferable) || isRecord) {
+            onError(new NamingError(isRecord ? "Expected a class, got a record" : "Expected a class", parameter.data));
+          }
+        }
+      }
     }
   }
 
@@ -147,10 +153,10 @@ public abstract class NameResolvingChecker {
 
     if (ref instanceof ErrorReference) {
       if (reportUnresolved) {
-        error(((ErrorReference) ref).getError());
+        onError(((ErrorReference) ref).getError());
       }
     } else if (!(ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
-      expectedClass(Error.Level.ERROR, ok && ref instanceof ClassReferable  ? "Expected a class, got a record" : "Expected a class", classRef.getData());
+      onError(new NamingError(ok && ref instanceof ClassReferable  ? "Expected a class, got a record" : "Expected a class", classRef.getData()));
     }
 
     return ref instanceof ClassReferable ? (ClassReferable) ref : null;
@@ -218,7 +224,7 @@ public abstract class NameResolvingChecker {
         Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
         if (oldField != null) {
           assert groupRef instanceof ClassReferable;
-          fieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.WARNING);
+          onFieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.WARNING);
         }
       }
 
@@ -255,7 +261,7 @@ public abstract class NameResolvingChecker {
 
     for (NamespaceCommand cmd : namespaceCommands) {
       if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        nonTopLevelImport(cmd);
+        onError(new NamingError("\\import is allowed only on the top level", cmd));
       }
 
       for (NameRenaming renaming : cmd.getOpenedReferences()) {
@@ -265,7 +271,7 @@ public abstract class NameResolvingChecker {
         }
         LocatedReferable ref = referables.get(name);
         if (ref != null) {
-          namespaceDefinitionNameClash(renaming, ref, Error.Level.WARNING);
+          onError(new NamingError(Error.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming));
         }
       }
     }
@@ -298,7 +304,7 @@ public abstract class NameResolvingChecker {
 
         for (int j = i + 1; j < namespaces.size(); j++) {
           if (namespaces.get(j).proj2.contains(name)) {
-            namespacesClash(pair.proj1, namespaces.get(j).proj1, name, Error.Level.WARNING);
+            onNamespacesClash(pair.proj1, namespaces.get(j).proj1, name, Error.Level.WARNING);
           }
         }
       }
@@ -338,7 +344,7 @@ public abstract class NameResolvingChecker {
         }
         level = Error.Level.WARNING;
       }
-      definitionNamesClash(oldRef, newRef, level);
+      onDefinitionNamesClash(oldRef, newRef, level);
     }
   }
 }

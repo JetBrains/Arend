@@ -25,13 +25,8 @@ public class NotInScopeError extends LocalError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    LineDoc header = hList(super.getHeaderDoc(src), text(" '" + name + "'"));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    LineDoc header = text(message + " '" + name + "'");
     return referable == null ? header : hList(header, text(" in "), refDoc(referable));
-  }
-
-  @Override
-  public String getShortMessage() {
-    return message + " '" + name + "' " + (referable == null ? "" : " in " + referable.textRepresentation());
   }
 }

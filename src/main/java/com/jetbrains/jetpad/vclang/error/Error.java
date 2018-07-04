@@ -29,11 +29,15 @@ public abstract class Error {
     return cause instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) cause)) : empty();
   }
 
-  public LineDoc getHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return hSep(text(" "), text("[" + level + "]"), hEnd(text(":"), getPositionDoc(ppConfig)), text(message));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
+    return text(message);
   }
 
-  public Doc getCauseDoc(PrettyPrinterConfig infoProvider) {
+  public final LineDoc getHeaderDoc(PrettyPrinterConfig ppConfig) {
+    return hSep(text(" "), text("[" + level + "]"), hEnd(text(":"), getPositionDoc(ppConfig)), getShortHeaderDoc(ppConfig));
+  }
+
+  public Doc getCauseDoc(PrettyPrinterConfig ppConfig) {
     return null;
   }
 
@@ -41,9 +45,12 @@ public abstract class Error {
     return nullDoc();
   }
 
+  protected Doc getDoc(PrettyPrinterConfig ppConfig, LineDoc header, Doc cause) {
+    return vHang(header, vList(getBodyDoc(ppConfig), cause == null ? nullDoc() : hang(text("In:"), cause)));
+  }
+
   public Doc getDoc(PrettyPrinterConfig ppConfig) {
-    Doc cause = getCauseDoc(ppConfig);
-    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), cause == null ? nullDoc() : hang(text("In:"), cause)));
+    return getDoc(ppConfig, getHeaderDoc(ppConfig), getCauseDoc(ppConfig));
   }
 
   @Override
@@ -51,7 +58,11 @@ public abstract class Error {
     return DocStringBuilder.build(getDoc(PrettyPrinterConfig.DEFAULT));
   }
 
+  public Doc getShortDoc() {
+    return getDoc(PrettyPrinterConfig.DEFAULT, text(message), null);
+  }
+
   public String getShortMessage() {
-    return message;
+    return DocStringBuilder.build(getShortDoc());
   }
 }

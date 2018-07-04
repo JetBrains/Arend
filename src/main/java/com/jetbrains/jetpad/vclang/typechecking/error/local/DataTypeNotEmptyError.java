@@ -22,8 +22,8 @@ public class DataTypeNotEmptyError extends TypecheckingError {
   }
 
   @Override
-  public LineDoc getHeaderDoc(PrettyPrinterConfig src) {
-    return hList(super.getHeaderDoc(src), text(" Data type '"), refDoc(dataCall.getDefinition().getReferable()), text("' is not empty"));
+  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
+    return hList(text("Data type '"), refDoc(dataCall.getDefinition().getReferable()), text("' is not empty"));
   }
 
   @Override

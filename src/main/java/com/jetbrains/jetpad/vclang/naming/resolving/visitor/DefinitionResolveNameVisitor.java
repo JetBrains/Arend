@@ -455,38 +455,23 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     new NameResolvingChecker(false, group instanceof ChildGroup && ((ChildGroup) group).getParentGroup() == null, myConcreteProvider) {
       @Override
-      public void definitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
+      public void onDefinitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
         myLocalErrorReporter.report(new DuplicateNameError(level, ref2, ref1));
       }
 
       @Override
-      public void fieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
+      public void onFieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
         myLocalErrorReporter.report(new ReferenceError(level, "Field '" + ref2.textRepresentation() +
           (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()), superClass2 == currentClass ? ref2 : currentClass));
       }
 
       @Override
-      public void namespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
+      public void onNamespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
         myLocalErrorReporter.report(new NamingError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()), cmd2));
       }
 
       @Override
-      public void namespaceDefinitionNameClash(NameRenaming renaming, LocatedReferable ref, Error.Level level) {
-        myLocalErrorReporter.report(new NamingError(level, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming));
-      }
-
-      @Override
-      public void nonTopLevelImport(NamespaceCommand command) {
-        myLocalErrorReporter.report(new NamingError(Error.Level.ERROR, "\\import is allowed only on the top level", command));
-      }
-
-      @Override
-      protected void expectedClass(Error.Level level, String message, Object cause) {
-        myLocalErrorReporter.report(new NamingError(level, message, cause));
-      }
-
-      @Override
-      protected void error(LocalError error) {
+      protected void onError(LocalError error) {
         myLocalErrorReporter.report(error);
       }
     }.checkGroup(group, convertedScope);
