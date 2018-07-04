@@ -108,7 +108,7 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getExpression();
   }
 
-  public interface ClassFieldImpl extends ParametersHolder {
+  public interface ClassFieldImpl extends ParametersHolder, ClassReferenceHolder {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
@@ -172,7 +172,7 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Reference getUnderlyingField();
   }
 
-  public interface InstanceDefinition extends Definition, ParametersHolder {
+  public interface InstanceDefinition extends Definition, ParametersHolder, ClassReferenceHolder {
     /* @Nonnull */ @Nullable Expression getResultType();
     @Nonnull Collection<? extends ClassFieldImpl> getImplementation();
   }
