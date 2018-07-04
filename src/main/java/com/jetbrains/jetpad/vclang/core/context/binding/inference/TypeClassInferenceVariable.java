@@ -4,7 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.InstanceInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
@@ -27,12 +27,12 @@ public class TypeClassInferenceVariable extends InferenceVariable {
 
   @Override
   public LocalError getErrorInfer(Expression... candidates) {
-    return new ArgInferenceError(ArgInferenceError.typeClass(myClassRef), getSourceNode(), candidates);
+    return new InstanceInferenceError(myClassRef, getSourceNode(), candidates);
   }
 
   @Override
   public LocalError getErrorMismatch(Expression expectedType, Expression actualType, Expression candidate) {
-    return new ArgInferenceError(ArgInferenceError.typeClass(myClassRef), expectedType, actualType, getSourceNode(), candidate);
+    return new InstanceInferenceError(myClassRef, expectedType, actualType, getSourceNode(), candidate);
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {

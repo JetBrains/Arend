@@ -1,10 +1,13 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.duplicateInstanceError;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.instanceInference;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
@@ -127,9 +130,10 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void withoutClassifyingFieldError() {
-    typeCheckModule(
+    ChildGroup group = typeCheckModule(
       "\\class A { | n : Nat }\n" +
       "\\func f => n", 1);
+    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
   }
 
   @Test
@@ -143,12 +147,13 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void checkClassifyingExpressionArguments() {
-    typeCheckModule(
+    ChildGroup group = typeCheckModule(
       "\\data Data (A : \\Set)\n" +
       "\\data D\n" +
       "\\data D'\n" +
       "\\class B (X : \\Set) { | foo : X -> X }\n" +
       "\\instance B-inst : B (Data D) | foo => \\lam x => x\n" +
       "\\func f (x : Data D') => foo x", 1);
+    assertThatErrorsAre(instanceInference(getDefinition(group, "B").getReferable()));
   }
 }

@@ -1,7 +1,12 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import java.util.Collections;
+
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.fieldsImplementation;
 
 public class ClassSynonymInstances extends TypeCheckingTestCase {
   @Test
@@ -177,11 +182,12 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
 
   @Test
   public void notImplementedField() {
-    typeCheckModule(
+    ChildGroup group = typeCheckModule(
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\class X' => X\n" +
       "\\instance x : X' | A => Nat", 1);
+    assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(getDefinition(group, "X.B").getReferable())));
   }
 }

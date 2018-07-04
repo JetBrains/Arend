@@ -16,19 +16,20 @@ public class ArgInferenceError extends TypecheckingError {
   public final Expression expected;
   public final Expression actual;
 
-  public ArgInferenceError(String message, Concrete.SourceNode cause, Expression[] candidates) {
+  protected ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression[] candidates) {
     super(message, cause);
     this.candidates = candidates;
-    this.expected = null;
-    this.actual = null;
+    this.expected = expected;
+    this.actual = actual;
+  }
+
+  public ArgInferenceError(String message, Concrete.SourceNode cause, Expression[] candidates) {
+    this(message, null, null, cause, candidates);
   }
 
   public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate) {
-    super(message, cause);
-    this.candidates = new Expression[1];
-    this.candidates[0] = candidate;
-    this.expected = expected;
-    this.actual = actual;
+    this(message, expected, actual, cause, new Expression[1]);
+    candidates[0] = candidate;
   }
 
   public static String functionArg(int index, String function) {
@@ -49,10 +50,6 @@ public class ArgInferenceError extends TypecheckingError {
 
   public static String expression() {
     return "Cannot infer an expression";
-  }
-
-  public static String typeClass(TCClassReferable classRef) {
-    return "Cannot infer an instance of class '" + classRef.textRepresentation() + "'";
   }
 
   public static String suffix(int n) {

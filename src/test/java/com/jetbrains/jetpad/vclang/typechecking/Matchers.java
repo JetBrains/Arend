@@ -2,16 +2,20 @@ package com.jetbrains.jetpad.vclang.typechecking;
 
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
+import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
 import com.jetbrains.jetpad.vclang.naming.error.NotInScopeError;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.ProxyError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+
+import java.util.Collection;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -78,6 +82,26 @@ public class Matchers {
     };
   }
 
+  public static Matcher<? super GeneralError> duplicateName(Error.Level level, String name) {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof DuplicateNameError && error.level.equals(level) && ((DuplicateNameError) error).referable.textRepresentation().equals(name)) {
+          description.appendText("Duplicate name '" + name + "'");
+          return true;
+        } else {
+          description.appendText(error instanceof DuplicateNameError ? "'Duplicate name: " + ((DuplicateNameError) error).referable.textRepresentation() + (error.level.equals(level) ? "" : "[" + error.level + "]") + "' error" : "not a 'Duplicate name' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Duplicate name: " + name + "' error");
+      }
+    };
+  }
+
   public static Matcher<? super GeneralError> duplicateInstanceError() {
     return new LocalErrorMatcher() {
       @Override
@@ -114,6 +138,46 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a 'Wrong referable' error");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> fieldsImplementation(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields) {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof FieldsImplementationError && ((FieldsImplementationError) error).alreadyImplemented == ((FieldsImplementationError) error).alreadyImplemented && ((FieldsImplementationError) error).fields.equals(fields)) {
+          description.appendText(error.toString());
+          return true;
+        } else {
+          description.appendText(error instanceof FieldsImplementationError ? "'Fields " + ((FieldsImplementationError) error).fields + " are " + (((FieldsImplementationError) error).alreadyImplemented ? "already" : "not") + " implemented' error" : "not a 'Fields implementation' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Fields " + fields + " are " + (alreadyImplemented ? "already" : "not") + " implemented' error");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> instanceInference(TCReferable classRef) {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof InstanceInferenceError && ((InstanceInferenceError) error).classRef.equals(classRef)) {
+          description.appendText("Instance inference for class '" + ((InstanceInferenceError) error).classRef.textRepresentation() + "'");
+          return true;
+        } else {
+          description.appendText(error instanceof InstanceInferenceError ? "'Instance inference for class " + ((InstanceInferenceError) error).classRef.textRepresentation() + "' error" : "not a 'Instance inference' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Instance inference for class " + classRef + "' error");
       }
     };
   }

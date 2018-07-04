@@ -1,8 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
+import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.duplicateName;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
 
 public class ClassSynonymTypechecking extends TypeCheckingTestCase {
@@ -16,92 +19,98 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
     resolveNamesModule(
       "\\class X (A : \\Type0)\n" +
       "\\class Y => X { B => C }", 1);
+    assertThatErrorsAre(notInScope("B"));
   }
 
   @Test
   public void resolveFieldSynonym() {
     resolveNamesModule(
-        "\\class X (T : \\Type0) {\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\class X' => X { f => f' }\n" +
-        "\\func g {x : X} => f\n" +
-        "\\func h (x : X) => x.f\n" +
-        "\\func g' {x' : X'} => f'\n" +
-        "\\func h' (x' : X') => x'.f'");
+      "\\class X (T : \\Type0) {\n" +
+      "  | f : \\Type0\n" +
+      "}\n" +
+      "\\class X' => X { f => f' }\n" +
+      "\\func g {x : X} => f\n" +
+      "\\func h (x : X) => x.f\n" +
+      "\\func g' {x' : X'} => f'\n" +
+      "\\func h' (x' : X') => x'.f'");
   }
 
   @Test
   public void resolveFieldSynonymError() {
     resolveNamesModule(
-        "\\class X (T : \\Type0) {\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\class X' => X { f => f' }\n" +
-        "\\func h (x' : X') => x'.f", 1);
+      "\\class X (T : \\Type0) {\n" +
+      "  | f : \\Type0\n" +
+      "}\n" +
+      "\\class X' => X { f => f' }\n" +
+      "\\func h (x' : X') => x'.f", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
   public void resolveNamesDuplicate() {
     resolveNamesModule(
-        "\\class X (T : \\Type0) {\n" +
-        "  | f : \\Type0\n" +
-        "}\n" +
-        "\\class X' => X { f => h }\n" +
-        "\\class Y (T : \\Type0) {\n" +
-        "  | g : \\Type0 -> \\Type0\n" +
-        "}\n" +
-        "\\class Y' => Y { g => h }", 1);
+      "\\class X (T : \\Type0) {\n" +
+      "  | f : \\Type0\n" +
+      "}\n" +
+      "\\class X' => X { f => h }\n" +
+      "\\class Y (T : \\Type0) {\n" +
+      "  | g : \\Type0 -> \\Type0\n" +
+      "}\n" +
+      "\\class Y' => Y { g => h }", 1);
+    assertThatErrorsAre(duplicateName(Error.Level.WARNING, "h"));
   }
 
   @Test
   public void resolveNamesInner() {
     resolveNamesModule(
-        "\\class X \\where {\n" +
-        "  \\class Z (T : \\Type0) {\n" +
-        "    | f : \\Type0\n" +
-        "  }\n" +
-        "  \\class Z' => Z { f => f' }\n" +
-        "}\n" +
-        "\\func g => f'", 1);
+      "\\class X \\where {\n" +
+      "  \\class Z (T : \\Type0) {\n" +
+      "    | f : \\Type0\n" +
+      "  }\n" +
+      "  \\class Z' => Z { f => f' }\n" +
+      "}\n" +
+      "\\func g => f'", 1);
+    assertThatErrorsAre(notInScope("f'"));
   }
 
   @Test
   public void resolveClassExt() {
     typeCheckModule(
-        "\\class X (T : \\Type1) {\n" +
-        "  | f : \\Type1\n" +
-        "}\n" +
-        "\\class Y => X { f => g }\n" +
-        "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
+      "\\class X (T : \\Type1) {\n" +
+      "  | f : \\Type1\n" +
+      "}\n" +
+      "\\class Y => X { f => g }\n" +
+      "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
   public void resolveClassExtSameName() {
     typeCheckModule(
-        "\\class X (T : \\Type1) {\n" +
-        "  | f : \\Type1\n" +
-        "}\n" +
-        "\\class Y => X\n" +
-        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }");
+      "\\class X (T : \\Type1) {\n" +
+      "  | f : \\Type1\n" +
+      "}\n" +
+      "\\class Y => X\n" +
+      "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }");
   }
 
   @Test
   public void resolveClassExtError() {
     resolveNamesModule(
-        "\\class X (T : \\Type1) {\n" +
-        "  | f : \\Type1\n" +
-        "}\n" +
-        "\\class Y => X { f => g }\n" +
-        "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }", 1);
+      "\\class X (T : \\Type1) {\n" +
+      "  | f : \\Type1\n" +
+      "}\n" +
+      "\\class Y => X { f => g }\n" +
+      "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 
   @Test
   public void duplicateFieldSynonymName() {
     resolveNamesModule(
-        "\\class X (T f : \\Type0)\n" +
-        "\\class Z { | g : Nat }\n" +
-        "\\class Y => X { f => g }", 1);
+      "\\class X (T f : \\Type0)\n" +
+      "\\class Z { | g : Nat }\n" +
+      "\\class Y => X { f => g }", 1);
+    assertThatErrorsAre(duplicateName(Error.Level.WARNING, "g"));
   }
 
   @Test
@@ -202,6 +211,7 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "\\class X (a : Nat) { | b : Nat }\n" +
       "\\class Y => X { a => a' }\n" +
       "\\instance inst : Y | a => 0 | b => 1", 1);
+    assertThatErrorsAre(notInScope("a"));
   }
 
   @Test
@@ -210,5 +220,6 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "\\class X (a : Nat) { | b : Nat }\n" +
       "\\class Y => X { b => b' }\n" +
       "\\instance inst : Y | a => 0 | b => 1", 1);
+    assertThatErrorsAre(notInScope("b"));
   }
 }

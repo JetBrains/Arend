@@ -19,10 +19,7 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.NotPiType;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -102,12 +99,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       if (result instanceof CheckTypeVisitor.DefCallResult) {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
-        if (classDef != null) {
+        if (classDef != null && !classDef.isRecord()) {
           // If the class does not have a classifying field, infer instance immediately
-          if (!classDef.isRecord() && classDef.getClassifyingField() == null) {
+          if (classDef.getClassifyingField() == null) {
             Expression instance = myVisitor.getInstancePool().getInstance(null, classDef.getReferable(), defCallResult.getDefinition() instanceof ClassField, myVisitor.getEquations(), expr);
             if (instance == null) {
-              ArgInferenceError error = new ArgInferenceError(ArgInferenceError.typeClass(classDef.getReferable()), expr, new Expression[0]);
+              ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), expr, new Expression[0]);
               myVisitor.getErrorReporter().report(error);
               instance = new ErrorExpression(null, error);
             }
