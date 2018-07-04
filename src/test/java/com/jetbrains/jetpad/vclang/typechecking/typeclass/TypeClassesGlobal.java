@@ -140,4 +140,15 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance a1 : A | n => 1\n" +
       "\\func f : n = n => path (\\lam _ => 1)");
   }
+
+  @Test
+  public void checkClassifyingExpressionArguments() {
+    typeCheckModule(
+      "\\data Data (A : \\Set)\n" +
+      "\\data D\n" +
+      "\\data D'\n" +
+      "\\class B (X : \\Set) { | foo : X -> X }\n" +
+      "\\instance B-inst : B (Data D) | foo => \\lam x => x\n" +
+      "\\func f (x : Data D') => foo x", 1);
+  }
 }

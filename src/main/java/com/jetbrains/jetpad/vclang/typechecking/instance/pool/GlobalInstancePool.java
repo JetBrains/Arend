@@ -63,6 +63,9 @@ public class GlobalInstancePool implements InstancePool {
             if (!(impl instanceof DefCallExpression && ((DefCallExpression) impl).getDefinition() == classifyingDefCall.getDefinition())) {
               continue;
             }
+            if (!((DefCallExpression) impl).getDefCallArguments().equals(classifyingDefCall.getDefCallArguments())) {
+              return null;
+            }
           }
           return new FunCallExpression(definition, Sort.generateInferVars(equations, sourceNode), Collections.emptyList());
         }
