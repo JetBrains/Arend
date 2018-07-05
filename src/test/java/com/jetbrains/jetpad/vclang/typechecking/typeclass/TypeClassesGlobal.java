@@ -147,13 +147,20 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void checkClassifyingExpressionArguments() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\data Data (A : \\Set)\n" +
       "\\data D\n" +
       "\\data D'\n" +
       "\\class B (X : \\Set) { | foo : X -> X }\n" +
       "\\instance B-inst : B (Data D) | foo => \\lam x => x\n" +
       "\\func f (x : Data D') => foo x", 1);
-    assertThatErrorsAre(instanceInference(getDefinition(group, "B").getReferable()));
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void classifyingFieldIsNotADefCall() {
+    typeCheckModule(
+      "\\class B (n : Nat)\n" +
+      "\\instance B-inst {x : Nat} : B x", 1);
   }
 }

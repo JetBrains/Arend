@@ -28,11 +28,9 @@ import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
-import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
-import com.jetbrains.jetpad.vclang.typechecking.instance.pool.CompositeInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
@@ -45,16 +43,11 @@ import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceE
 
 public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean, List<Clause>> {
   private CheckTypeVisitor myVisitor;
-  private InstancePool myInstancePool;
+  private GlobalInstancePool myInstancePool;
 
   public DefinitionTypechecking(CheckTypeVisitor visitor) {
     myVisitor = visitor;
     myInstancePool = visitor == null ? null : visitor.getInstancePool();
-  }
-
-  public DefinitionTypechecking(TypecheckerState state, GlobalInstancePool instancePool, LocalErrorReporter errorReporter) {
-    myVisitor = new CheckTypeVisitor(state, new LinkedHashMap<>(), errorReporter, instancePool);
-    myInstancePool = instancePool;
   }
 
   public void setVisitor(CheckTypeVisitor visitor) {
@@ -64,7 +57,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   public Definition typecheckHeader(GlobalInstancePool instancePool, Concrete.Definition definition) {
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    myVisitor.setInstancePool(new CompositeInstancePool(localInstancePool, instancePool));
+    instancePool.setInstancePool(localInstancePool);
+    myVisitor.setInstancePool(instancePool);
     Definition typechecked = myVisitor.getTypecheckingState().getTypechecked(definition.getData());
 
     if (definition instanceof Concrete.FunctionDefinition) {
@@ -130,7 +124,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   public List<Clause> visitFunction(Concrete.FunctionDefinition def, Boolean recursive) {
     Definition typechecked = prepare(def);
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    myVisitor.setInstancePool(new CompositeInstancePool(localInstancePool, myInstancePool));
+    myInstancePool.setInstancePool(localInstancePool);
+    myVisitor.setInstancePool(myInstancePool);
 
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(def.getData());
     try {
@@ -155,7 +150,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   public List<Clause> visitData(Concrete.DataDefinition def, Boolean recursive) {
     Definition typechecked = prepare(def);
     LocalInstancePool localInstancePool = new LocalInstancePool();
-    myVisitor.setInstancePool(new CompositeInstancePool(localInstancePool, myInstancePool));
+    myInstancePool.setInstancePool(localInstancePool);
+    myVisitor.setInstancePool(myInstancePool);
 
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
     try {
@@ -200,6 +196,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   @Override
   public List<Clause> visitInstance(Concrete.Instance def, Boolean recursive) {
+    LocalInstancePool localInstancePool = new LocalInstancePool();
+    myInstancePool.setInstancePool(localInstancePool);
+    myVisitor.setInstancePool(myInstancePool);
+
     Definition typechecked = prepare(def);
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(def.getData());
     if (typechecked == null) {
@@ -210,7 +210,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     } else {
       try {
-        typecheckInstance(def, definition);
+        typecheckInstance(def, definition, localInstancePool);
       } catch (IncorrectExpressionException e) {
         myVisitor.getErrorReporter().report(new TypecheckingError(e.getMessage(), def));
       }
@@ -833,9 +833,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
-  private void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef) {
+  private void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, LocalInstancePool localInstancePool) {
     LinkList list = new LinkList();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, null, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null) != null;
     typedDef.setParameters(list.getFirst());
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     if (!paramsOk) {
@@ -853,8 +853,19 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       return;
     }
 
-    myVisitor.checkAllImplemented((ClassCallExpression) result.expression, def);
+    ClassCallExpression typecheckedResultType = (ClassCallExpression) result.expression;
+    myVisitor.checkAllImplemented(typecheckedResultType, def);
     typedDef.setResultType(result.expression);
     typedDef.setStatus(myVisitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+
+    ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
+    if (classifyingField != null) {
+      Expression classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
+      if (classifyingExpr != null && !(classifyingExpr instanceof ErrorExpression)) {
+        if (!(classifyingExpr instanceof DefCallExpression)) {
+          myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be a defCall", resultType));
+        }
+      }
+    }
   }
 }

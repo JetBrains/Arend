@@ -95,23 +95,6 @@ public abstract class NameResolvingChecker {
     if (classRef != null) {
       checkClass(classRef, scope, true, false);
     }
-
-    Collection<PartialConcreteProvider.InstanceParameter> parameters = myConcreteProvider.getInstanceParameterReferences(definition);
-    if (parameters != null) {
-      for (PartialConcreteProvider.InstanceParameter parameter : parameters) {
-        if (parameter.isExplicit) {
-          onError(new NamingError("Instances can have only implicit parameters", parameter.data));
-        } else if (parameter.referable == null) {
-          onError(new NamingError("Expected a class", parameter.data));
-        }
-        if (parameter.referable != null) {
-          boolean isRecord = parameter.referable instanceof ClassReferable && myConcreteProvider.isRecord((ClassReferable) parameter.referable);
-          if (!(parameter.referable instanceof ClassReferable) || isRecord) {
-            onError(new NamingError(isRecord ? "Expected a class, got a record" : "Expected a class", parameter.data));
-          }
-        }
-      }
-    }
   }
 
   private boolean isSubClassOf(ClassReferable subClass, ClassReferable superClass) {

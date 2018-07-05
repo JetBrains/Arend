@@ -357,6 +357,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
+    exprVisitor.visitParameters(def.getParameters());
     def.setResultType(def.getResultType().accept(exprVisitor, null));
     Referable typeRef = def.getReferenceInType();
     if (typeRef instanceof ClassReferable) {
@@ -364,7 +365,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     } else {
       def.getClassFieldImpls().clear();
     }
-    exprVisitor.visitParameters(def.getParameters());
 
     def.setResolved();
     return null;

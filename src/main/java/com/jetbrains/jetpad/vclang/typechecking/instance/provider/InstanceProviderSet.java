@@ -1,9 +1,7 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.provider;
 
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
 import com.jetbrains.jetpad.vclang.naming.scope.NamespaceCommandNamespace;
@@ -35,18 +33,28 @@ public class InstanceProviderSet {
 
   private class MyPredicate implements Predicate<Referable> {
     private final ConcreteProvider concreteProvider;
+    private final ReferableConverter referableConverter;
     private SimpleInstanceProvider instanceProvider;
     private boolean used = false;
     boolean recordInstances = false;
 
-    private MyPredicate(ConcreteProvider concreteProvider) {
+    private MyPredicate(ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
       this.concreteProvider = concreteProvider;
+      this.referableConverter = referableConverter;
       this.instanceProvider = new SimpleInstanceProvider();
     }
 
     @Override
     public boolean test(Referable ref) {
+      if (referableConverter != null && ref instanceof LocatedReferable) {
+        ref = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
+      }
       if (ref instanceof TCReferable) {
+        if (recordInstances) {
+          myProviders.put((TCReferable) ref, instanceProvider);
+          used = true;
+        }
+
         Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
         if (instance != null) {
           Referable classRef = instance.getReferenceInType();
@@ -58,22 +66,17 @@ public class InstanceProviderSet {
             instanceProvider.put(((ClassReferable) classRef).getUnderlyingTypecheckable(), instance);
           }
         }
-
-        if (recordInstances) {
-          myProviders.put((TCReferable) ref, instanceProvider);
-          used = true;
-        }
       }
       return false;
     }
   }
 
-  public boolean collectInstances(Group group, Scope parentScope, ConcreteProvider concreteProvider) {
+  public boolean collectInstances(Group group, Scope parentScope, ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
     if (!myCollected.add(group)) {
       return false;
     }
 
-    MyPredicate predicate = new MyPredicate(concreteProvider);
+    MyPredicate predicate = new MyPredicate(concreteProvider, referableConverter);
     parentScope.find(predicate);
     predicate.recordInstances = true;
     predicate.test(group.getReferable());

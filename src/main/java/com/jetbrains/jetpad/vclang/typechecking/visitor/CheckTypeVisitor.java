@@ -46,10 +46,10 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.StdImplicitArgsInfe
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.TwoStageEquations;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
-import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -66,7 +66,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
-  private InstancePool myInstancePool;
+  private GlobalInstancePool myInstancePool;
 
   public interface TResult {
     Result toResult(Equations equations);
@@ -264,7 +264,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, InstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, GlobalInstancePool pool) {
     myState = state;
     myContext = localContext;
     myFreeBindings = new HashSet<>();
@@ -287,11 +287,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return myTypeCheckingDefCall;
   }
 
-  public InstancePool getInstancePool() {
+  public GlobalInstancePool getInstancePool() {
     return myInstancePool;
   }
 
-  public void setInstancePool(InstancePool pool) {
+  public void setInstancePool(GlobalInstancePool pool) {
     myInstancePool = pool;
   }
 
@@ -396,7 +396,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
+  public Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
     if (result != null) {
       result = myArgsInference.inferTail(result, expectedType, expr);
     }

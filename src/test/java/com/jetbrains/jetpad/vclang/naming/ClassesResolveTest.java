@@ -2,9 +2,7 @@ package com.jetbrains.jetpad.vclang.naming;
 
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.warning;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 
 public class ClassesResolveTest extends NameResolverTestCase {
   @Test
@@ -196,7 +194,6 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "  | x : Nat\n" +
       "}\n" +
       "\\instance D-X {c : C} : c.x", 1);
-    assertThatErrorsAre(notInScope("c"));
   }
 
   @Test
