@@ -1,12 +1,10 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.duplicateInstanceError;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.instanceInference;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -162,5 +160,34 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class B (n : Nat)\n" +
       "\\instance B-inst {x : Nat} : B x", 1);
+  }
+
+  @Test
+  public void superClassInstance() {
+    typeCheckModule(
+      "\\class A { | x : Nat }\n" +
+      "\\class B \\extends A\n" +
+      "\\instance B-inst : B | x => 0\n" +
+      "\\func f => x");
+  }
+
+  @Test
+  public void superClassWithClassifyingFieldInstance() {
+    typeCheckModule(
+      "\\class A (C : \\Set) { | c : C }\n" +
+      "\\class B \\extends A\n" +
+      "\\instance B-inst : B Nat | c => 0\n" +
+      "\\func f : Nat => c");
+  }
+
+  @Test
+  public void superClassWithClassifyingFieldNoInstance() {
+    ChildGroup group = typeCheckModule(
+      "\\class A (C : \\Set) { | c : C }\n" +
+      "\\class B \\extends A\n" +
+      "\\data Nat'\n" +
+      "\\instance B-inst : B Nat | c => 0\n" +
+      "\\func f : Nat' => c", 1);
+    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
   }
 }

@@ -63,11 +63,11 @@ public class GlobalInstancePool implements InstancePool {
       }
     }
 
-    List<? extends Concrete.Instance> instances = myInstanceProvider.getInstances(typecheckable);
+    List<? extends Concrete.Instance> instances = myInstanceProvider.getInstances();
     for (int i = instances.size() - 1; i >= 0; i--) {
       Concrete.Instance instance = instances.get(i);
       Referable instanceRef = instance.getReferenceInType();
-      if (instanceRef instanceof ClassReferable && (isField ? instanceRef == classRef : ((ClassReferable) instanceRef).getUnderlyingTypecheckable() == typecheckable)) {
+      if (instanceRef instanceof ClassReferable && (isField ? ((ClassReferable) instanceRef).isSubClassOf(classRef) : (((ClassReferable) instanceRef).getUnderlyingTypecheckable()).isSubClassOf(typecheckable))) {
         FunctionDefinition instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression) {
           ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();

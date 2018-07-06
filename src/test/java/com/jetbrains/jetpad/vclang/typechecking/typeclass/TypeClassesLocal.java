@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.duplicateInstanceError;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.instanceInference;
 
 public class TypeClassesLocal extends TypeCheckingTestCase {
   @Test
@@ -140,5 +142,31 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A { | n : Nat }\n" +
       "\\func f (a : A) : n = n => path (\\lam _ => a.n)", 2);
+  }
+
+  @Test
+  public void superClassInstance() {
+    typeCheckModule(
+      "\\class A { | x : Nat }\n" +
+      "\\class B \\extends A\n" +
+      "\\func f {b : B} => x");
+  }
+
+  @Test
+  public void superClassWithClassifyingFieldInstance() {
+    typeCheckModule(
+      "\\class A (C : \\Set) { | c : C }\n" +
+      "\\class B \\extends A\n" +
+      "\\func f {b : B Nat} : Nat => c");
+  }
+
+  @Test
+  public void superClassWithClassifyingFieldNoInstance() {
+    ChildGroup group = typeCheckModule(
+      "\\class A (C : \\Set) { | c : C }\n" +
+      "\\class B \\extends A\n" +
+      "\\data Nat'\n" +
+      "\\func f {b : B Nat} : Nat' => c", 1);
+    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
   }
 }

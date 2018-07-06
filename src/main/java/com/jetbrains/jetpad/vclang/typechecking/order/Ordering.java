@@ -147,8 +147,12 @@ public class Ordering {
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
       if (definition instanceof Concrete.ClassField) {
-        for (Concrete.Instance instance : instanceProvider.getInstances(((Concrete.ClassField) definition).getRelatedDefinition().getData())) {
-          referables.push(instance.getData());
+        ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
+        for (Concrete.Instance instance : instanceProvider.getInstances()) {
+          Referable ref = instance.getReferenceInType();
+          if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+            referables.push(instance.getData());
+          }
         }
       } else if (definition != null) {
         Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
@@ -156,8 +160,11 @@ public class Ordering {
           for (Concrete.Parameter parameter : parameters) {
             TCClassReferable classRef = ((Concrete.TypeParameter) parameter).getType().getUnderlyingClassReferable(true);
             if (classRef != null) {
-              for (Concrete.Instance instance : instanceProvider.getInstances(classRef)) {
-                referables.push(instance.getData());
+              for (Concrete.Instance instance : instanceProvider.getInstances()) {
+                Referable ref = instance.getReferenceInType();
+                if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+                  referables.push(instance.getData());
+                }
               }
             }
           }

@@ -57,14 +57,11 @@ public class InstanceProviderSet {
 
         Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
         if (instance != null) {
-          Referable classRef = instance.getReferenceInType();
-          if (classRef instanceof ClassReferable) {
-            if (used) {
-              instanceProvider = new SimpleInstanceProvider(instanceProvider);
-              used = false;
-            }
-            instanceProvider.put(((ClassReferable) classRef).getUnderlyingTypecheckable(), instance);
+          if (used) {
+            instanceProvider = new SimpleInstanceProvider(instanceProvider);
+            used = false;
           }
+          instanceProvider.put(instance);
         }
       }
       return false;

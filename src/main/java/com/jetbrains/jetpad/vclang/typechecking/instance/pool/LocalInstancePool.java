@@ -1,7 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
@@ -32,7 +31,7 @@ public class LocalInstancePool implements InstancePool {
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       Triple triple = myPool.get(i);
-      if ((isField ? triple.classRef == classRef : triple.classRef.getUnderlyingTypecheckable() == classRef.getUnderlyingTypecheckable()) && (triple.key == classifyingExpression || triple.key != null && triple.key.equals(classifyingExpression))) {
+      if ((isField ? triple.classRef.isSubClassOf(classRef) : triple.classRef.getUnderlyingTypecheckable().isSubClassOf(classRef.getUnderlyingTypecheckable())) && (triple.key == classifyingExpression || triple.key != null && triple.key.equals(classifyingExpression))) {
         return triple.value;
       }
     }

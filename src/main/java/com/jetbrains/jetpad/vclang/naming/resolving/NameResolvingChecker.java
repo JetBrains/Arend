@@ -82,7 +82,7 @@ public abstract class NameResolvingChecker {
           if (resolvedRef == null) {
             onError(new NamingError("Expected a class synonym", superClassRef.getData()));
           } else if (underlyingClass != null) {
-            if (!isSubClassOf(underlyingClass, resolvedRef)) {
+            if (!underlyingClass.isSubClassOf(resolvedRef)) {
               onError(new NamingError("Expected a synonym of a superclass of '" + underlyingClass + "'", superClassRef.getData()));
             }
           }
@@ -95,27 +95,6 @@ public abstract class NameResolvingChecker {
     if (classRef != null) {
       checkClass(classRef, scope, true, false);
     }
-  }
-
-  private boolean isSubClassOf(ClassReferable subClass, ClassReferable superClass) {
-    if (subClass == superClass) {
-      return true;
-    }
-
-    Set<ClassReferable> visitedClasses = new HashSet<>();
-    Deque<ClassReferable> toVisit = new ArrayDeque<>();
-    toVisit.add(subClass);
-    while (!toVisit.isEmpty()) {
-      ClassReferable classRef = toVisit.pop();
-      if (classRef == superClass) {
-        return true;
-      }
-      if (visitedClasses.add(classRef)) {
-        toVisit.addAll(classRef.getSuperClassReferences());
-      }
-    }
-
-    return false;
   }
 
   private ClassReferable checkClass(Reference classRef, Scope scope, boolean checkNotRecord, boolean reportUnresolved) {
