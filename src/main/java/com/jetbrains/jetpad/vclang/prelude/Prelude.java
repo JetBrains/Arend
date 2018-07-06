@@ -68,6 +68,8 @@ public class Prelude {
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
         break;
+      case "Int":
+        break;
       case "I":
         INTERVAL = (DataDefinition) definition;
         INTERVAL.setSort(Sort.PROP);

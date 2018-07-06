@@ -2,6 +2,10 @@
     | zero
     | suc Nat
 
+\data Int
+  | pos Nat
+  | neg Nat \with { zero => pos zero }
+
 \data I
     | left
     | right
