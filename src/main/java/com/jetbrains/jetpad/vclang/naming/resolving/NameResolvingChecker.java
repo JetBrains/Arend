@@ -244,14 +244,11 @@ public abstract class NameResolvingChecker {
 
     List<Pair<NamespaceCommand, Set<String>>> namespaces = new ArrayList<>(namespaceCommands.size());
     for (NamespaceCommand cmd : namespaceCommands) {
-      Scope cmdNamespace = Scope.Utils.resolveNamespace(scope, cmd.getPath());
-      if (cmdNamespace != null) {
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd).getElements();
+      if (!elements.isEmpty()) {
         Set<String> names = new LinkedHashSet<>();
-        for (Referable ref : cmdNamespace.getElements()) {
+        for (Referable ref : elements) {
           names.add(ref.textRepresentation());
-        }
-        for (Referable ref : cmd.getHiddenReferences()) {
-          names.remove(ref.textRepresentation());
         }
         namespaces.add(new Pair<>(cmd, names));
       }
