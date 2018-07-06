@@ -43,6 +43,10 @@ public class Prelude {
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
 
+  public static DataDefinition INT;
+  public static Constructor POS;
+  public static Constructor NEG;
+
   public static FunctionDefinition COERCE;
 
   public static DataDefinition PATH;
@@ -69,6 +73,9 @@ public class Prelude {
         SUC = NAT.getConstructor("suc");
         break;
       case "Int":
+        INT = (DataDefinition) definition;
+        POS = INT.getConstructor("pos");
+        NEG = INT.getConstructor("neg");
         break;
       case "I":
         INTERVAL = (DataDefinition) definition;
@@ -133,6 +140,9 @@ public class Prelude {
 
   public static void fillInTypecheckerState(TypecheckerState state) {
     state.record(NAT.getReferable(), NAT);
+    state.record(INT.getReferable(), INT);
+    state.record(POS.getReferable(), POS);
+    state.record(NEG.getReferable(), NEG);
     state.record(ZERO.getReferable(), ZERO);
     state.record(SUC.getReferable(), SUC);
     state.record(INTERVAL.getReferable(), INTERVAL);
@@ -158,7 +168,7 @@ public class Prelude {
 
   // TODO[prelude]: This works only because currently the prelude namespace is flat.
   public static void initialize(Scope scope, TypecheckerState state) {
-    for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
+    for (String name : new String[]{"Nat", "Int", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((TCReferable) scope.resolveName(name)));
     }
   }

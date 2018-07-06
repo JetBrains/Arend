@@ -24,11 +24,11 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
-    return new DataCallExpression(definition, sortArgument, arguments);
+    return DataCallExpression.make(definition, sortArgument, arguments);
   }
 
   public static DataCallExpression DataCall(DataDefinition definition, Sort sortArgument, Expression... arguments) {
-    return new DataCallExpression(definition, sortArgument, Arrays.asList(arguments));
+    return DataCallExpression.make(definition, sortArgument, Arrays.asList(arguments));
   }
 
   public static ClassCallExpression ClassCall(ClassDefinition definition) {

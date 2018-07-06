@@ -21,6 +21,11 @@ public abstract class BaseExpressionVisitor<P, R> implements ExpressionVisitor<P
   }
 
   @Override
+  public R visitIntCall(IntCallExpression expr, P params) {
+    return visitDefCall(expr, params);
+  }
+
+  @Override
   public R visitFieldCall(FieldCallExpression expr, P params) {
     return visitDefCall(expr, params);
   }

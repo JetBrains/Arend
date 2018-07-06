@@ -247,6 +247,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   @Override
+  public Concrete.ReferenceExpression visitIntCall(IntCallExpression expr, Void params) {
+    return Concrete.IntReferenceExpression.make(null, Prelude.INT.getReferable(), expr.getLowerBound(), expr.getUpperBound());
+  }
+
+  @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
     Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>(implHere.size());

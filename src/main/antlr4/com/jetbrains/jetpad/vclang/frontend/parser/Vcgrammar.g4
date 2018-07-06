@@ -87,11 +87,19 @@ expr  : NEW? appExpr (implementStatements argument*)?                         # 
       | '\\case' expr (',' expr)* '\\with' '{' clause? ('|' clause)* '}'      # case
       ;
 
-appExpr : atomFieldsAcc onlyLevelAtom* argument*      # appArgument
-        | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse
-        | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?  # universe
-        | SET maybeLevelAtom?                         # setUniverse
+appExpr : atomFieldsAcc onlyLevelAtom* argument* intSpec* # appArgument
+        | TRUNCATED_UNIVERSE maybeLevelAtom?              # truncatedUniverse
+        | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?      # universe
+        | SET maybeLevelAtom?                             # setUniverse
         ;
+
+intSpec : intLBrace NUMBER '}';
+
+intLBrace : '{<'  # intL
+          | '{<=' # intLE
+          | '{>'  # intG
+          | '{>=' # intGE
+          ;
 
 argument : atomFieldsAcc                # argumentExplicit
          | NEW appExpr implementStatements? # argumentNew

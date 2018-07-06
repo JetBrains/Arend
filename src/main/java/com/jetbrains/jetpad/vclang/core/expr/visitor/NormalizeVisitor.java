@@ -83,6 +83,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return new FunCallExpression((FunctionDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
+    if (expr instanceof IntCallExpression) {
+      return expr;
+    }
+
     if (expr instanceof DataCallExpression) {
       List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
       for (Expression arg : expr.getDefCallArguments()) {
@@ -302,6 +306,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public DataCallExpression visitDataCall(DataCallExpression expr, Mode mode) {
     return (DataCallExpression) applyDefCall(expr, mode);
+  }
+
+  @Override
+  public IntCallExpression visitIntCall(IntCallExpression expr, Mode params) {
+    return expr;
   }
 
   @Override

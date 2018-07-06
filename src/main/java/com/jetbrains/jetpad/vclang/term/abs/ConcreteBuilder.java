@@ -470,13 +470,19 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
-    return new Concrete.ReferenceExpression(data, referent, level1 == null ? null : level1.accept(this, null), level2 == null ? null : level2.accept(this, null));
+    return Concrete.LevelReferenceExpression.make(data, referent, level1 == null ? null : level1.accept(this, null), level2 == null ? null : level2.accept(this, null));
   }
 
   @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, int lp, int lh, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
-    return new Concrete.ReferenceExpression(data, referent, new Concrete.NumberLevelExpression(data, lp), new Concrete.NumberLevelExpression(data, lh));
+    return Concrete.LevelReferenceExpression.make(data, referent, new Concrete.NumberLevelExpression(data, lp), new Concrete.NumberLevelExpression(data, lh));
+  }
+
+  @Override
+  public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, boolean isLowerBound1, @Nullable BigInteger bound1, boolean isLowerBound2, @Nullable BigInteger bound2, @Nullable Abstract.ErrorData errorData, Void params) {
+    reportError(errorData);
+    return Concrete.IntReferenceExpression.make(data, referent, isLowerBound1, bound1, isLowerBound2, bound2);
   }
 
   @Override

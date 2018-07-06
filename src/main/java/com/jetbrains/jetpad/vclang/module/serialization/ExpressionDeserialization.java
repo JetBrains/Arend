@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -185,6 +186,8 @@ class ExpressionDeserialization {
         return readConCall(proto.getConCall());
       case DATA_CALL:
         return readDataCall(proto.getDataCall());
+      case INT_CALL:
+        return readIntCall(proto.getIntCall());
       case CLASS_CALL:
         return readClassCall(proto.getClassCall());
       case REFERENCE:
@@ -246,6 +249,10 @@ class ExpressionDeserialization {
     DataDefinition dataDefinition = myCallTargetProvider.getCallTarget(proto.getDataRef(), DataDefinition.class);
     myDependencyListener.dependsOn(myDefinition, myHeader, dataDefinition.getReferable());
     return new DataCallExpression(dataDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
+  }
+
+  private IntCallExpression readIntCall(ExpressionProtos.Expression.IntCall proto) {
+    return new IntCallExpression(proto.getLowerBound() == null ? null : new BigInteger(proto.getLowerBound().toByteArray()), proto.getUpperBound() == null ? null : new BigInteger(proto.getUpperBound().toByteArray()));
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {

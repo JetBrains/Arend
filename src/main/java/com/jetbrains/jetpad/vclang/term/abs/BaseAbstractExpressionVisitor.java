@@ -35,6 +35,11 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
+  public R visitReference(@Nullable Object data, @Nonnull Referable referent, boolean isLowerBound1, @Nullable BigInteger bound1, boolean isLowerBound2, @Nullable BigInteger bound2, @Nullable Abstract.ErrorData errorData, P params) {
+    return defaultValue;
+  }
+
+  @Override
   public R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }

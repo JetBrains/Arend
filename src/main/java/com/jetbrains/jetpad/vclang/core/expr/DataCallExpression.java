@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 
 import java.util.ArrayList;
@@ -24,6 +25,10 @@ public class DataCallExpression extends DefCallExpression implements Type {
     super(definition);
     mySortArgument = sortArgument;
     myArguments = arguments;
+  }
+
+  public static DataCallExpression make(DataDefinition definition, Sort sortArgument, List<Expression> arguments) {
+    return definition == Prelude.INT ? new IntCallExpression(null, null) : new DataCallExpression(definition, sortArgument, arguments);
   }
 
   @Override
@@ -81,6 +86,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
     return result;
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean getMatchedConCall(Constructor constructor, List<ConCallExpression> conCalls) {
     if (!constructor.status().headerIsOK()) {
       return true;

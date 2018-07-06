@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -276,21 +274,10 @@ public final class Concrete {
   public static class ReferenceExpression extends Expression implements Reference {
     public static final byte PREC = 12;
     private Referable myReferent;
-    private final Concrete.LevelExpression myPLevel;
-    private final Concrete.LevelExpression myHLevel;
-
-    public ReferenceExpression(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
-      super(data);
-      myReferent = referable;
-      myPLevel = pLevel;
-      myHLevel = hLevel;
-    }
 
     public ReferenceExpression(Object data, Referable referable) {
       super(data);
       myReferent = referable;
-      myPLevel = null;
-      myHLevel = null;
     }
 
     @Nonnull
@@ -303,16 +290,102 @@ public final class Concrete {
     }
 
     public Concrete.LevelExpression getPLevel() {
-      return myPLevel;
+      return null;
     }
 
     public Concrete.LevelExpression getHLevel() {
-      return myHLevel;
+      return null;
+    }
+
+    public BigInteger getLowerIntBound() {
+      return null;
+    }
+
+    public BigInteger getUpperIntBound() {
+      return null;
     }
 
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitReference(this, params);
+    }
+  }
+
+  public static class IntReferenceExpression extends ReferenceExpression {
+    private final BigInteger myLowerIntBound;
+    private final BigInteger myUpperIntBound;
+
+    private IntReferenceExpression(Object data, Referable referable, BigInteger lowerIntBound, BigInteger upperIntBound) {
+      super(data, referable);
+      myLowerIntBound = lowerIntBound;
+      myUpperIntBound = upperIntBound;
+    }
+
+    public static ReferenceExpression make(Object data, Referable referable, BigInteger lowerIntBound, BigInteger upperIntBound) {
+      return lowerIntBound == null && upperIntBound == null ? new ReferenceExpression(data, referable) : new IntReferenceExpression(data, referable, lowerIntBound, upperIntBound);
+    }
+
+    public static ReferenceExpression make(Object data, Referable referable, boolean isLowerBound1, BigInteger bound1, boolean isLowerBound2, BigInteger bound2) {
+      BigInteger lowerBound = null;
+      BigInteger upperBound = null;
+      if (bound1 != null) {
+        if (isLowerBound1) {
+          lowerBound = bound1;
+        } else {
+          upperBound = bound1;
+        }
+      }
+      if (bound2 != null) {
+        if (isLowerBound2) {
+          if (lowerBound == null) {
+            lowerBound = bound2;
+          } else {
+            lowerBound = lowerBound.max(bound2);
+          }
+        } else {
+          if (upperBound == null) {
+            upperBound = bound2;
+          } else {
+            upperBound = upperBound.min(bound2);
+          }
+        }
+      }
+      return make(data, referable, lowerBound, upperBound);
+    }
+
+    @Override
+    public BigInteger getLowerIntBound() {
+      return myLowerIntBound;
+    }
+
+    @Override
+    public BigInteger getUpperIntBound() {
+      return myUpperIntBound;
+    }
+  }
+
+  public static class LevelReferenceExpression extends ReferenceExpression {
+    private final Concrete.LevelExpression myPLevel;
+    private final Concrete.LevelExpression myHLevel;
+
+    private LevelReferenceExpression(Object data, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+      super(data, referable);
+      myPLevel = pLevel;
+      myHLevel = hLevel;
+    }
+
+    public static ReferenceExpression make(Object data, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
+      return pLevel == null && hLevel == null ? new ReferenceExpression(data, referable) : new LevelReferenceExpression(data, referable, pLevel, hLevel);
+    }
+
+    @Override
+    public Concrete.LevelExpression getPLevel() {
+      return myPLevel;
+    }
+
+    @Override
+    public Concrete.LevelExpression getHLevel() {
+      return myHLevel;
     }
   }
 

@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.serialization;
 
+import com.google.protobuf.ByteString;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
@@ -16,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -224,6 +226,18 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       builder.addArgument(arg.accept(this, null));
     }
     return ExpressionProtos.Expression.newBuilder().setDataCall(builder).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitIntCall(IntCallExpression expr, Void params) {
+    ExpressionProtos.Expression.IntCall.Builder builder = ExpressionProtos.Expression.IntCall.newBuilder();
+    if (expr.getLowerBound() != null) {
+      builder.setLowerBound(ByteString.copyFrom(expr.getLowerBound().toByteArray()));
+    }
+    if (expr.getUpperBound() != null) {
+      builder.setLowerBound(ByteString.copyFrom(expr.getUpperBound().toByteArray()));
+    }
+    return ExpressionProtos.Expression.newBuilder().setIntCall(builder).build();
   }
 
   private ExpressionProtos.Expression.ClassCall writeClassCall(ClassCallExpression expr) {

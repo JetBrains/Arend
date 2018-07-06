@@ -731,6 +731,27 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Pair<Boolean, BigInteger> visitIntSpec(IntSpecContext ctx) {
+    IntLBraceContext intLBrace = ctx.intLBrace();
+    Boolean b =
+      intLBrace instanceof IntLContext || intLBrace instanceof IntLEContext ? Boolean.FALSE :
+      intLBrace instanceof IntGContext || intLBrace instanceof IntGEContext ? Boolean.TRUE :
+      null;
+    if (b == null) {
+      return null;
+    }
+
+    BigInteger result = new BigInteger(ctx.NUMBER().getText());
+    if (intLBrace instanceof IntGContext) {
+      result = result.add(BigInteger.ONE);
+    }
+    if (intLBrace instanceof IntLContext) {
+      result = result.subtract(BigInteger.ONE);
+    }
+    return new Pair<>(b, result);
+  }
+
+  @Override
   public Concrete.Expression visitAppArgument(AppArgumentContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
     if (!ctx.onlyLevelAtom().isEmpty()) {
@@ -738,7 +759,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         Object obj1 = ctx.onlyLevelAtom().isEmpty() ? null : visit(ctx.onlyLevelAtom(0));
         Object obj2 = ctx.onlyLevelAtom().size() < 2 ? null : visit(ctx.onlyLevelAtom(1));
         if (ctx.onlyLevelAtom().size() > 2 || obj1 instanceof Pair && obj2 != null || obj2 instanceof Pair) {
-          myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "too many level specifications"));
+          myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Too many level specifications"));
         }
 
         Concrete.LevelExpression level1;
@@ -751,9 +772,26 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;
         }
 
-        expr = new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
+        expr = Concrete.LevelReferenceExpression.make(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), level1, level2);
       } else {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are allowed only after a reference"));
+      }
+    }
+    if (!ctx.intSpec().isEmpty()) {
+      if (expr instanceof Concrete.ReferenceExpression) {
+        if (expr instanceof Concrete.LevelReferenceExpression) {
+          myErrorReporter.report(new ParserError(tokenPosition(ctx.onlyLevelAtom(0).start), "Level annotations are ignored"));
+        }
+
+        Pair<Boolean, BigInteger> intSpec1 = visitIntSpec(ctx.intSpec(0));
+        Pair<Boolean, BigInteger> intSpec2 = ctx.intSpec().size() > 1 ? visitIntSpec(ctx.intSpec(1)) : null;
+        if (ctx.intSpec().size() > 2) {
+          myErrorReporter.report(new ParserError(tokenPosition(ctx.intSpec(2).start), "Int bounds after the first two are ignored"));
+        }
+
+        expr = Concrete.IntReferenceExpression.make(expr.getData(), ((Concrete.ReferenceExpression) expr).getReferent(), intSpec1 != null && intSpec1.proj1, intSpec1 == null ? null : intSpec1.proj2, intSpec2 != null && intSpec2.proj1, intSpec2 == null ? null : intSpec2.proj2);
+      } else {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.intSpec(0).start), "Int bounds are allowed only after a reference"));
       }
     }
 

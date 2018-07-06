@@ -118,6 +118,6 @@ public class DataDefinition extends Definition {
 
   @Override
   public DataCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
-    return new DataCallExpression(this, sortArgument, arguments);
+    return DataCallExpression.make(this, sortArgument, arguments);
   }
 }

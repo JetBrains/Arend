@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -15,6 +16,7 @@ import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence, Void>, ConcreteLevelExpressionVisitor<Precedence, Void>, ConcreteDefinitionVisitor<Void, Void> {
@@ -167,27 +169,37 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Precedence prec) {
-    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix;
+    boolean parens = expr.getReferent() instanceof GlobalReferable && ((GlobalReferable) expr.getReferent()).getPrecedence().isInfix || expr.getUpperIntBound() != null || expr.getLowerIntBound() != null && !expr.getLowerIntBound().equals(BigInteger.ZERO);
     if (parens) {
       myBuilder.append('(');
     }
-    myBuilder.append(expr.getReferent().textRepresentation());
 
-    if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\levels ");
-      if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
-        myBuilder.append("\\Prop");
-      } else {
-        if (expr.getPLevel() != null) {
-          expr.getPLevel().accept(this, new Precedence(Expression.PREC));
+    if (expr.getLowerIntBound() != null || expr.getUpperIntBound() != null) {
+      myBuilder.append(expr.getLowerIntBound() != null && expr.getLowerIntBound().compareTo(BigInteger.ZERO) >= 0 ? Prelude.NAT.getName() : Prelude.INT.getName());
+      if (expr.getLowerIntBound() != null && !expr.getLowerIntBound().equals(BigInteger.ZERO)) {
+        myBuilder.append(" {>= ").append(expr.getLowerIntBound()).append('}');
+      }
+      if (expr.getUpperIntBound() != null) {
+        myBuilder.append(" {<= ").append(expr.getUpperIntBound()).append('}');
+      }
+    } else {
+      myBuilder.append(expr.getReferent().textRepresentation());
+      if (expr.getPLevel() != null || expr.getHLevel() != null) {
+        myBuilder.append(" \\levels ");
+        if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
+          myBuilder.append("\\Prop");
         } else {
-          myBuilder.append('_');
-        }
-        myBuilder.append(' ');
-        if (expr.getHLevel() != null) {
-          expr.getHLevel().accept(this, new Precedence(Expression.PREC));
-        } else {
-          myBuilder.append('_');
+          if (expr.getPLevel() != null) {
+            expr.getPLevel().accept(this, new Precedence(Expression.PREC));
+          } else {
+            myBuilder.append('_');
+          }
+          myBuilder.append(' ');
+          if (expr.getHLevel() != null) {
+            expr.getHLevel().accept(this, new Precedence(Expression.PREC));
+          } else {
+            myBuilder.append('_');
+          }
         }
       }
     }

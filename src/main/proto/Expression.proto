@@ -13,6 +13,7 @@ message Expression {
         ClassCall class_call = 2;
         ConCall con_call = 4;
         DataCall data_call = 5;
+        IntCall int_call = 21;
         Error error = 6;
         FieldCall field_call = 7;
         FunCall fun_call = 8;
@@ -51,6 +52,10 @@ message Expression {
         Level pLevel = 2;
         Level hLevel = 4;
         repeated Expression argument = 3;
+    }
+    message IntCall {
+        bytes lower_bound = 1;
+        bytes upper_bound = 2;
     }
     message Error {
         Expression expression = 1;

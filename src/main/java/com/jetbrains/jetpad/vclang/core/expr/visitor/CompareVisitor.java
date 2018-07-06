@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
@@ -22,6 +21,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
+@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
@@ -310,6 +310,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     }
     return true;
+  }
+
+  @Override
+  public Boolean visitIntCall(IntCallExpression intCall1, Expression expr2) {
+    IntCallExpression intCall2 = expr2.checkedCast(IntCallExpression.class);
+    if (intCall2 == null) {
+      return false;
+    }
+
+    int lowerCMP =
+      intCall1.getLowerBound() == null && intCall2.getLowerBound() == null ? 0 :
+      intCall1.getLowerBound() == null ? -1 :
+      intCall2.getLowerBound() == null ?  1 :
+      intCall1.getLowerBound().compareTo(intCall2.getLowerBound());
+    if (lowerCMP == -1 && myCMP != Equations.CMP.GE || lowerCMP == 1 && myCMP != Equations.CMP.LE) {
+      return false;
+    }
+    int upperCMP =
+      intCall1.getUpperBound() == null && intCall2.getUpperBound() == null ? 0 :
+      intCall1.getUpperBound() == null ?  1 :
+      intCall2.getUpperBound() == null ? -1 :
+      intCall1.getUpperBound().compareTo(intCall2.getUpperBound());
+    return
+      lowerCMP == -1 ? upperCMP != -1 :
+      lowerCMP == 1 ? upperCMP != 1 :
+      upperCMP == 0 || upperCMP == -1 && myCMP == Equations.CMP.LE || upperCMP == 1 && myCMP == Equations.CMP.GE;
   }
 
   @Override

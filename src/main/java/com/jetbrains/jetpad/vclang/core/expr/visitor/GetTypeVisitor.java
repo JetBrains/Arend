@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.core.expr.visitor;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.StdLevelSubstitution;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
@@ -35,6 +36,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public UniverseExpression visitDataCall(DataCallExpression expr, Void params) {
     return new UniverseExpression(expr.getDefinition().getSort().subst(new StdLevelSubstitution(expr.getSortArgument())));
+  }
+
+  @Override
+  public Expression visitIntCall(IntCallExpression expr, Void params) {
+    return new UniverseExpression(Sort.SET0);
   }
 
   private Expression normalizeFieldCall(FieldCallExpression expr) {

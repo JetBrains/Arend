@@ -8,11 +8,14 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.HasErrors;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.IncorrectReferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+
+import java.util.Collections;
 
 public class TypeCheckingDefCall {
   private final CheckTypeVisitor myVisitor;
@@ -42,6 +45,14 @@ public class TypeCheckingDefCall {
     Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
     if (definition == null) {
       return null;
+    }
+
+    if ((expr.getLowerIntBound() != null || expr.getUpperIntBound() != null)) {
+      if (definition != Prelude.INT && definition != Prelude.NAT) {
+        myVisitor.getErrorReporter().report(new TypecheckingError("Int bounds are allowed only after Int and Nat", expr));
+      } else {
+        return new CheckTypeVisitor.Result(definition == Prelude.INT ? new IntCallExpression(expr.getLowerIntBound(), expr.getUpperIntBound()) : definition.getDefCall(Sort.SET0, Collections.emptyList()), new UniverseExpression(Sort.SET0));
+      }
     }
 
     Sort sortArgument;

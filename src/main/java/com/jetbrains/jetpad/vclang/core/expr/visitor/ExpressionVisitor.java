@@ -7,6 +7,7 @@ public interface ExpressionVisitor<P, R> {
   R visitFunCall(FunCallExpression expr, P params);
   R visitConCall(ConCallExpression expr, P params);
   R visitDataCall(DataCallExpression expr, P params);
+  R visitIntCall(IntCallExpression expr, P params);
   R visitFieldCall(FieldCallExpression expr, P params);
   R visitClassCall(ClassCallExpression expr, P params);
   R visitReference(ReferenceExpression expr, P params);

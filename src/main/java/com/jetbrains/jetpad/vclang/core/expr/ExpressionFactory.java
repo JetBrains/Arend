@@ -62,7 +62,7 @@ public class ExpressionFactory {
   }
 
   public static DataCallExpression Nat() {
-    return new DataCallExpression(Prelude.NAT, Sort.SET0, Collections.emptyList());
+    return DataCallExpression.make(Prelude.NAT, Sort.SET0, Collections.emptyList());
   }
 
   public static ConCallExpression Zero() {
