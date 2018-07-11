@@ -169,7 +169,13 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
 
       for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
-        branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+        if (entry.getKey() == null) {
+          branchBuilder.setNullClause(writeElimTree(entry.getValue()));
+        } else if (entry.getKey() == BranchElimTree.TUPLE) {
+          branchBuilder.setTupleClause(writeElimTree(entry.getValue()));
+        } else {
+          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+        }
       }
 
       builder.setBranch(branchBuilder);

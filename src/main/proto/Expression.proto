@@ -152,5 +152,7 @@ message ElimTree {
     }
     message Branch {
         map<int32, ElimTree> clauses = 1;
+        ElimTree null_clause = 2;
+        ElimTree tuple_clause = 3;
     }
 }

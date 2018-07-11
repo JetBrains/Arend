@@ -1,16 +1,14 @@
 package com.jetbrains.jetpad.vclang.core.elimtree;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BranchElimTree extends ElimTree {
+  public final static Constructor TUPLE = new Constructor(null, null);
   private final Map<Constructor, ElimTree> myChildren;
 
   public BranchElimTree(DependentLink parameters, Map<Constructor, ElimTree> children) {
@@ -18,53 +16,128 @@ public class BranchElimTree extends ElimTree {
     myChildren = children;
   }
 
+  public BranchElimTree(DependentLink parameters, ElimTree child) {
+    super(parameters);
+    myChildren = Collections.singletonMap(TUPLE, child);
+  }
+
   public ElimTree getChild(Constructor constructor) {
     return myChildren.get(constructor);
+  }
+
+  public ElimTree getTupleChild() {
+    return myChildren.get(TUPLE);
+  }
+
+  public boolean isTupleTree() {
+    return myChildren.size() == 1 && myChildren.keySet().iterator().next() == TUPLE;
   }
 
   public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
     return myChildren.entrySet();
   }
 
+  private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
+    List<Expression> newArguments = null;
+    if (isTupleTree()) {
+      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
+        ElimTree elimTree = myChildren.get(TUPLE);
+        if (elimTree != null) {
+          newArguments = new ArrayList<>();
+          if (argument.isInstance(TupleExpression.class)) {
+            newArguments.addAll(argument.cast(TupleExpression.class).getFields());
+          } else {
+            NewExpression newExpr = argument.cast(NewExpression.class);
+            ClassCallExpression classCall = newExpr.getExpression();
+            for (ClassField field : classCall.getDefinition().getFields()) {
+              newArguments.add(classCall.getImplementation(field, newExpr));
+            }
+          }
+          newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+        }
+      }
+    } else {
+      if (argument.isInstance(ConCallExpression.class)) {
+        ConCallExpression conCall = argument.cast(ConCallExpression.class);
+        ElimTree elimTree = myChildren.get(conCall.getDefinition());
+        if (elimTree != null) {
+          newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
+          newArguments.addAll(conCall.getDefCallArguments());
+          newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+        } else {
+          return new ArrayList<>(arguments.subList(index, arguments.size()));
+        }
+      }
+    }
+    return newArguments;
+  }
+
   @Override
   public boolean isWHNF(List<? extends Expression> arguments) {
     int index = DependentLink.Helper.size(getParameters());
-    if (!arguments.get(index).isWHNF()) {
+    Expression argument = arguments.get(index);
+    if (!argument.isWHNF()) {
       return false;
     }
-    if (arguments.get(index).isInstance(ConCallExpression.class)) {
-      ConCallExpression conCall = arguments.get(index).cast(ConCallExpression.class);
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree != null) {
-        List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
-        newArguments.addAll(conCall.getDefCallArguments());
-        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
-        return elimTree.isWHNF(newArguments);
-      } else {
-        elimTree = myChildren.get(null);
-        //noinspection SimplifiableConditionalExpression
-        return elimTree != null ? elimTree.isWHNF(arguments.subList(index, arguments.size())) : true;
+
+    List<Expression> newArguments = getNewArguments(arguments, argument, index);
+    if (newArguments == null) {
+      return true;
+    }
+
+    if (isTupleTree()) {
+      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
+        ElimTree elimTree = myChildren.get(TUPLE);
+        if (elimTree != null) {
+          return elimTree.isWHNF(newArguments);
+        }
+      }
+    } else {
+      if (argument.isInstance(ConCallExpression.class)) {
+        ConCallExpression conCall = argument.cast(ConCallExpression.class);
+        ElimTree elimTree = myChildren.get(conCall.getDefinition());
+        if (elimTree != null) {
+          return elimTree.isWHNF(newArguments);
+        } else {
+          elimTree = myChildren.get(null);
+          return elimTree == null || elimTree.isWHNF(newArguments);
+        }
       }
     }
+
     return true;
   }
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
     int index = DependentLink.Helper.size(getParameters());
-    if (arguments.get(index).isInstance(ConCallExpression.class)) {
-      ConCallExpression conCall = arguments.get(index).cast(ConCallExpression.class);
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree != null) {
-        List<Expression> newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
-        newArguments.addAll(conCall.getDefCallArguments());
-        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
-        return elimTree.getStuckExpression(newArguments, expression);
-      } else {
-        elimTree = myChildren.get(null);
-        return elimTree != null ? elimTree.getStuckExpression(arguments.subList(index, arguments.size()), expression) : expression;
+    Expression argument = arguments.get(index);
+
+    List<Expression> newArguments = getNewArguments(arguments, argument, index);
+    if (newArguments == null) {
+      return argument.getStuckExpression();
+    }
+
+    if (isTupleTree()) {
+      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
+        ElimTree elimTree = myChildren.get(TUPLE);
+        if (elimTree != null) {
+          return elimTree.getStuckExpression(newArguments, expression);
+        }
+      }
+    } else {
+      if (argument.isInstance(ConCallExpression.class)) {
+        ConCallExpression conCall = argument.cast(ConCallExpression.class);
+        ElimTree elimTree = myChildren.get(conCall.getDefinition());
+        if (elimTree != null) {
+          return elimTree.getStuckExpression(newArguments, expression);
+        } else {
+          elimTree = myChildren.get(null);
+          return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+        }
       }
     }
-    return arguments.get(index).getStuckExpression();
+
+    return argument.getStuckExpression();
   }
 }

@@ -162,9 +162,16 @@ class ExpressionDeserialization {
     DependentLink parameters = readParameters(proto.getParamList());
     switch (proto.getKindCase()) {
       case BRANCH: {
+        ExpressionProtos.ElimTree.Branch branchProto = proto.getBranch();
         Map<Constructor, ElimTree> children = new HashMap<>();
-        for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : proto.getBranch().getClausesMap().entrySet()) {
+        for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : branchProto.getClausesMap().entrySet()) {
           children.put(myCallTargetProvider.getCallTarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
+        }
+        if (branchProto.hasNullClause()) {
+          children.put(null, readElimTree(branchProto.getNullClause()));
+        }
+        if (branchProto.hasTupleClause()) {
+          children.put(BranchElimTree.TUPLE, readElimTree(branchProto.getTupleClause()));
         }
         return new BranchElimTree(parameters, children);
       }

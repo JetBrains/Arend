@@ -187,6 +187,26 @@ public class Matchers {
     return instanceInference(definition.getReferable());
   }
 
+  public static Matcher<? super GeneralError> missingClauses(int clauses) {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof MissingClausesError && ((MissingClausesError) error).getMissingClauses().size() == clauses) {
+          description.appendText("Missing " + clauses + " clauses");
+          return true;
+        } else {
+          description.appendText(error instanceof MissingClausesError ? "'Missing " + ((MissingClausesError) error).getMissingClauses().size() + " clauses' error" : "not a 'Missing clauses' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Missing " + clauses + " clauses' error");
+      }
+    };
+  }
+
   public static Matcher<? super GeneralError> error() {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override

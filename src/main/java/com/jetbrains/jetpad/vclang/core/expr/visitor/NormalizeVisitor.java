@@ -199,18 +199,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
       }
 
-      Expression argument = stack.peek().accept(this, Mode.WHNF);
-      ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
-      elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? null : conCall.getDefinition());
+      elimTree = updateStack(stack, elimTree);
       if (elimTree == null) {
         return null;
-      }
-
-      if (conCall != null) {
-        stack.pop();
-        for (int i = conCall.getDefCallArguments().size() - 1; i >= 0; i--) {
-          stack.push(conCall.getDefCallArguments().get(i));
-        }
       }
     }
   }
@@ -232,20 +223,46 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return true;
       }
 
-      Expression argument = stack.peek().accept(this, Mode.WHNF);
-      ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
-      elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? null : conCall.getDefinition());
+      elimTree = updateStack(stack, elimTree);
       if (elimTree == null) {
         return false;
       }
+    }
+  }
 
+  private ElimTree updateStack(Stack<Expression> stack, ElimTree elimTree) {
+    Expression argument = stack.peek().accept(this, Mode.WHNF);
+    ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
+    boolean isPatternMatching = conCall != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
+    elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? (isPatternMatching ? BranchElimTree.TUPLE : null) : conCall.getDefinition());
+    if (elimTree == null) {
+      return null;
+    }
+
+    if (isPatternMatching) {
+      stack.pop();
+
+      List<? extends Expression> args;
       if (conCall != null) {
-        stack.pop();
-        for (int i = conCall.getDefCallArguments().size() - 1; i >= 0; i--) {
-          stack.push(conCall.getDefCallArguments().get(i));
+        args = conCall.getDefCallArguments();
+      } else if (argument.isInstance(TupleExpression.class)) {
+        args = argument.cast(TupleExpression.class).getFields();
+      } else {
+        NewExpression newExpr = argument.cast(NewExpression.class);
+        ClassCallExpression classCall = newExpr.getExpression();
+        List<Expression> newArgs = new ArrayList<>(classCall.getDefinition().getFields().size());
+        for (ClassField field : classCall.getDefinition().getFields()) {
+          newArgs.add(classCall.getImplementation(field, newExpr));
         }
+        args = newArgs;
+      }
+
+      for (int i = args.size() - 1; i >= 0; i--) {
+        stack.push(args.get(i));
       }
     }
+
+    return elimTree;
   }
 
   private ExprSubstitution getDataTypeArgumentsSubstitution(DefCallExpression expr) {
