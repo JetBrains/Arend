@@ -547,6 +547,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort) {
     Constructor constructor = new Constructor(def.getData(), dataDefinition);
+    constructor.setPatterns(patterns);
     List<DependentLink> elimParams = null;
     Sort sort;
 
@@ -562,12 +563,12 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
           link = link.getNextTyped(null);
           if (!checkPositiveness(link.getTypeExpr(), index, def.getParameters(), def, myVisitor.getErrorReporter(), dataDefinitions)) {
+            constructor.setParameters(EmptyDependentLink.getInstance());
             return null;
           }
         }
 
         constructor.setParameters(list.getFirst());
-        constructor.setPatterns(patterns);
 
         if (!def.getClauses().isEmpty()) {
           elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), constructor.getParameters(), myVisitor);
