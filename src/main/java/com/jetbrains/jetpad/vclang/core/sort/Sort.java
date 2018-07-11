@@ -94,13 +94,13 @@ public class Sort {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
         return true;
       }
-      return sort2.getHLevel().getConstant() == -1 && sort2.getHLevel().getVar() instanceof InferenceLevelVariable && equations.add(new Level(sort2.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode);
+      return sort2.getHLevel().getConstant() == -1 && sort2.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort2.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
     }
     if (sort2.isProp()) {
       if (cmp == Equations.CMP.GE) {
         return true;
       }
-      return sort1.getHLevel().getConstant() == -1 && sort1.getHLevel().getVar() instanceof InferenceLevelVariable && equations.add(new Level(sort1.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode);
+      return sort1.getHLevel().getConstant() == -1 && sort1.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort1.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
     }
     return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
   }

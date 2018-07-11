@@ -24,6 +24,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void universeTest() {
+    typeCheckModule("\\func f (A : \\Type) : \\Type => A = A");
+  }
+
+  @Test
   public void belowTen() {
     // ?l <= 10
     // error: cannot infer ?l
@@ -49,12 +54,19 @@ public class InferLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void belowParam3() {
+    typeCheckModule(
+        "\\func A => \\oo-Type\n" +
+        "\\func f : \\oo-Type => A");
+  }
+
+  @Test
   public void belowParamError() {
     // ?l + 1 <= c
     // error: cannot infer ?l
     typeCheckModule(
         "\\func A => \\oo-Type\n" +
-        "\\func f : \\oo-Type => A", 1);
+        "\\func f : \\oo-Type \\lp => A", 1);
   }
 
   @Test
@@ -77,11 +89,18 @@ public class InferLevelTest extends TypeCheckingTestCase {
 
   @Test
   public void btwOneAndParamWithH() {
+    typeCheckModule(
+        "\\func f (A : \\Type) => A\n" +
+        "\\func g : \\Type => f \\Type0");
+  }
+
+  @Test
+  public void btwOneAndParamWithHError() {
     // 1 <= ?l, 1 <= c
     // error: cannot solve 1 <= c
     typeCheckModule(
         "\\func f (A : \\Type) => A\n" +
-        "\\func g : \\Type => f \\Type0", 2);
+        "\\func g : \\Type \\lp \\lh => f \\Type0", 2);
   }
 
   @Test

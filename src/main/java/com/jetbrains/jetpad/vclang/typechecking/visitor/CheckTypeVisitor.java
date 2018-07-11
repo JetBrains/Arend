@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
@@ -825,12 +826,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitUniverse(Concrete.UniverseExpression expr, ExpectedType expectedType) {
-    Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : new Level(LevelVariable.PVAR);
-    Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : new Level(LevelVariable.HVAR);
+    Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : null;
+    Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : null;
 
-    if (pLevel.isInfinity()) {
+    if (pLevel != null && pLevel.isInfinity()) {
       myErrorReporter.report(new TypecheckingError("\\inf is not a correct p-level", expr));
-      pLevel = new Level(LevelVariable.PVAR);
+      pLevel = null;
+    }
+
+    if (pLevel == null) {
+      InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+      myEquations.addVariable(pl);
+      pLevel = new Level(pl);
+    }
+
+    if (hLevel == null) {
+      InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
+      myEquations.addVariable(hl);
+      hLevel = new Level(hl);
     }
 
     UniverseExpression universe = new UniverseExpression(new Sort(pLevel, hLevel));

@@ -22,6 +22,7 @@ import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations
 
 import java.util.*;
 
+@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private Equations myEquations;
@@ -475,7 +476,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    return expr2.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), expr2.cast(UniverseExpression.class).getSort(), myCMP, myEquations, mySourceNode);
+    return expr2.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), expr2.cast(UniverseExpression.class).getSort(), myCMP, myEquations == DummyEquations.getInstance() ? null : myEquations, mySourceNode);
   }
 
   @Override

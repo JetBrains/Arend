@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.core.sort;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ToAbstractVisitor;
 import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -137,10 +138,10 @@ public class Level {
     }
 
     if (level1.isInfinity()) {
-      return level2.isInfinity() || !level2.isClosed() && equations.add(INFINITY, level2, Equations.CMP.LE, sourceNode);
+      return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.add(INFINITY, level2, Equations.CMP.LE, sourceNode));
     }
     if (level2.isInfinity()) {
-      return cmp == Equations.CMP.LE || !level1.isClosed() && equations.add(INFINITY, level1, Equations.CMP.LE, sourceNode);
+      return cmp == Equations.CMP.LE || !level1.isClosed() && (equations == null || equations.add(INFINITY, level1, Equations.CMP.LE, sourceNode));
     }
 
     if (level1.getVar() == null && cmp == Equations.CMP.LE) {
@@ -156,7 +157,11 @@ public class Level {
         return level1.myConstant == level2.myConstant && level1.myMaxConstant == level2.myMaxConstant;
       }
     } else {
-      return equations.add(level1, level2, cmp, sourceNode);
+      if (equations == null) {
+        return level1.getVar() instanceof InferenceLevelVariable || level2.getVar() instanceof InferenceLevelVariable;
+      } else {
+        return equations.add(level1, level2, cmp, sourceNode);
+      }
     }
   }
 }
