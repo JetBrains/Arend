@@ -5,7 +5,6 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVaria
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
@@ -339,7 +338,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2) {
     Equations.CMP origCMP = myCMP;
-    myCMP = Equations.CMP.EQ;
     for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
       if (impl1 == null) {
@@ -368,7 +366,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE) || checkSubclassImpl(classCall2, expr1);
+    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE);
+    if (!implAllOf1Test) {
+      myCMP = myCMP.not();
+      implAllOf1Test = checkSubclassImpl(classCall2, expr1);
+      myCMP = myCMP.not();
+    }
     boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(expr1, classCall2);
     return implAllOf1Test && implAllOf2Test;
   }

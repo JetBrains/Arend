@@ -49,11 +49,10 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     TCClassReferable typecheckable = classRef.getUnderlyingTypecheckable();
-    DefCallExpression classifyingDefCall = null;
     ClassField classifyingField = null;
     if (classifyingExpression != null) {
-      classifyingDefCall = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DefCallExpression.class);
-      if (classifyingDefCall == null) {
+      classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
+      if (!classifyingExpression.isInstance(DefCallExpression.class) && !classifyingExpression.isInstance(UniverseExpression.class)) {
         return null;
       }
 
@@ -71,9 +70,10 @@ public class GlobalInstancePool implements InstancePool {
         FunctionDefinition instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression) {
           ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();
-          Expression instanceClassifyingExpr = classifyingDefCall != null || instanceDef.getParameters().hasNext() ? instanceResultType.getImplementationHere(classifyingField) : null;
-          if (classifyingDefCall != null) {
-            if (!(instanceClassifyingExpr instanceof DefCallExpression && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingDefCall.getDefinition())) {
+          if (classifyingExpression != null) {
+            Expression instanceClassifyingExpr = instanceResultType.getImplementationHere(classifyingField);
+            if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
+                  instanceClassifyingExpr instanceof DefCallExpression  && classifyingExpression.isInstance(DefCallExpression.class)  && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
               continue;
             }
           }
@@ -85,7 +85,7 @@ public class GlobalInstancePool implements InstancePool {
             }
           }
 
-          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, classifyingDefCall == null ? null : new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, Collections.singletonMap(classifyingField, classifyingDefCall), Sort.STD));
+          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, classifyingField == null ? null : new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, Collections.singletonMap(classifyingField, classifyingExpression), Sort.STD));
           return result == null ? new ErrorExpression(null, null) : result.expression;
         }
       }

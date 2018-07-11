@@ -189,4 +189,61 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func f : Nat' => c", 1);
     assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
+
+  @Test
+  public void instanceProp() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D : \\Prop\n" +
+      "\\instance aaa : A \\Prop | c => D\n" +
+      "\\func f1 : \\Prop => c\n" +
+      "\\func f2 : \\Set => c\n" +
+      "\\func f3 : \\Type => c");
+  }
+
+  @Test
+  public void instanceSet() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\instance a : A \\Set | c => Nat\n" +
+      "\\func f1 : \\Set => c\n" +
+      "\\func f2 : \\Type => c");
+  }
+
+  @Test
+  public void instanceType() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D | con \\Set0\n" +
+      "\\instance a : A \\Type1 | c => D\n" +
+      "\\func f : \\1-Type => c");
+  }
+
+  @Test
+  public void instanceTypeError() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\instance a : A \\Set | c => Nat\n" +
+      "\\func f : \\Prop => c", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void instanceTypeError2() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D | con \\Set0\n" +
+      "\\instance a : A \\0-Type1 | c => D", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void instanceTypeError3() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C }\n" +
+      "\\data D | con \\Set0\n" +
+      "\\instance a : A \\1-Type1 | c => D\n" +
+      "\\func f : \\1-Type0 => c", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }

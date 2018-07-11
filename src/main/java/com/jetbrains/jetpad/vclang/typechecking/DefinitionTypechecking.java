@@ -22,17 +22,20 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
-import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
-import com.jetbrains.jetpad.vclang.typechecking.instance.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -863,8 +866,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (classifyingField != null) {
       Expression classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
       if (classifyingExpr != null && !(classifyingExpr instanceof ErrorExpression)) {
-        if (!(classifyingExpr instanceof DefCallExpression)) {
-          myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be a defCall", resultType));
+        if (!(classifyingExpr instanceof DefCallExpression || classifyingExpr instanceof UniverseExpression)) {
+          myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be a defCall or a universe", resultType));
         }
       }
     }
