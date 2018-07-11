@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.ClassCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.LamExpression;
 import com.jetbrains.jetpad.vclang.core.expr.NewExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
@@ -17,31 +16,31 @@ import static org.junit.Assert.assertTrue;
 public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void classesEq() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
+    assertTrue(getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 
   @Test
   public void classesGe() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
+    assertTrue(getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 
   @Test
   public void classesLe() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
-    assertTrue(getDefinition(result, "f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
+    assertTrue(getDefinition("f") instanceof FunctionDefinition);
+    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
   }
 

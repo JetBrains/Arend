@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -162,11 +161,11 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
 
   @Test
   public void superClassWithClassifyingFieldNoInstance() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A (C : \\Set) { | c : C }\n" +
       "\\class B \\extends A\n" +
       "\\data Nat'\n" +
       "\\func f {b : B Nat} : Nat' => c", 1);
-    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 }

@@ -1,20 +1,16 @@
 package com.jetbrains.jetpad.vclang.classes;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
-import com.jetbrains.jetpad.vclang.core.definition.*;
+import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.Universe;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.error;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.hasErrors;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchError;
+import static com.jetbrains.jetpad.vclang.typechecking.Matchers.*;
 import static org.junit.Assert.assertEquals;
 
 public class RecordsTest extends TypeCheckingTestCase {
@@ -149,47 +145,47 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recordUniverseTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => 0 }");
-    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition(result, "Point")).getSort());
-    assertEquals(Universe(Sort.SET0), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
+    assertEquals(Universe(Sort.SET0), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest2() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
         "\\func C => Point { x => 0 | y => 1 }");
-    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition(result, "Point")).getSort());
-    assertEquals(Universe(Sort.PROP), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
+    assertEquals(Universe(Sort.PROP), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest3() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { x => Nat }");
-    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition(result, "Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest4() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
         "\\func C => Point { x => Nat }");
-    assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) getDefinition(result, "Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) getDefinition("Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
   public void recordUniverseTest5() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
         "\\func C => Point { x => \\Type2 }");
-    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition(result, "Point")).getSort());
-    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition(result, "C").getTypeWithParams(new ArrayList<>(), Sort.STD));
+    assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
+    assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
 
   @Test
@@ -293,12 +289,12 @@ public class RecordsTest extends TypeCheckingTestCase {
 
   @Test
   public void recursiveFieldsError() {
-    ChildGroup module = typeCheckModule(
+    typeCheckModule(
       "\\class X {\n" +
       "  | A : (B (\\lam _ => 0) -> Nat) -> \\Prop\n" +
       "  | B : (A (\\lam _ => 0) -> Nat) -> \\Prop\n" +
       "}", 2);
-    assertThatErrorsAre(error(), hasErrors(getDefinition(module, "X.A").getReferable()));
+    assertThatErrorsAre(error(), hasErrors(getDefinition("X.A").getReferable()));
   }
 
   @Test

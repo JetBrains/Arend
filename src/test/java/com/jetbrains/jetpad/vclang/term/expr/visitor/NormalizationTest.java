@@ -21,7 +21,6 @@ import com.jetbrains.jetpad.vclang.core.subst.LevelSubstitution;
 import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -265,10 +264,10 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeElimAnyConstructor() {
     DependentLink var0 = param("var0", Universe(0));
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\data D | d Nat\n" +
         "\\func test (x : D) : Nat | _ => 0");
-    FunctionDefinition test = (FunctionDefinition) getDefinition(result, "test");
+    FunctionDefinition test = (FunctionDefinition) getDefinition("test");
     assertEquals(Zero(), FunCall(test, Sort.SET0, Ref(var0)).normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -417,16 +416,16 @@ public class NormalizationTest extends TypeCheckingTestCase {
 
   @Test
   public void testConCallEta() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\func \\infixl 1 $ {X Y : \\Type0} (f : X -> Y) (x : X) => f x\n" +
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
-    FunctionDefinition f = (FunctionDefinition) getDefinition(result, "f");
+    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     Expression term = ((LeafElimTree) f.getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);
-    assertEquals(getDefinition(result, "fsuc"), conCall.getDefinition());
+    assertEquals(getDefinition("fsuc"), conCall.getDefinition());
     assertEquals(1, conCall.getDefCallArguments().size());
     assertEquals(f.getParameters().getNext(), conCall.getDefCallArguments().get(0).cast(ReferenceExpression.class).getBinding());
   }

@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -18,7 +17,6 @@ import java.util.List;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.notInScope;
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.wrongReferable;
 import static org.junit.Assert.*;
 
 public class DynamicTest extends TypeCheckingTestCase {
@@ -449,7 +447,7 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldCallTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class A {\n" +
         "  | x : \\Type0\n" +
         "}\n" +
@@ -457,16 +455,16 @@ public class DynamicTest extends TypeCheckingTestCase {
         "  | a : A\n" +
         "  | y : a.x\n" +
         "}");
-    ClassField xField = (ClassField) getDefinition(result, "A.x");
-    ClassField aField = (ClassField) getDefinition(result, "B.a");
-    ClassField yField = (ClassField) getDefinition(result, "B.y");
+    ClassField xField = (ClassField) getDefinition("A.x");
+    ClassField aField = (ClassField) getDefinition("B.a");
+    ClassField yField = (ClassField) getDefinition("B.y");
     PiExpression piType = yField.getType(Sort.SET0);
     assertEquals(FieldCall(xField, Sort.PROP, FieldCall(aField, Sort.PROP, Ref(piType.getParameters()))), piType.getCodomain());
   }
 
   @Test
   public void funCallsTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\func \\infix 6 + (x y : Nat) => x\n" +
         "\\class A {\n" +
         "  \\func q => p\n" +
@@ -483,41 +481,41 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    \\func f : Nat => p\n" +
         "  }\n" +
         "}");
-    FunctionDefinition plus = (FunctionDefinition) getDefinition(result, "+");
+    FunctionDefinition plus = (FunctionDefinition) getDefinition("+");
 
-    ClassDefinition aClass = (ClassDefinition) getDefinition(result, "A");
+    ClassDefinition aClass = (ClassDefinition) getDefinition("A");
     assertTrue(aClass.getFields().isEmpty());
-    FunctionDefinition pFun = (FunctionDefinition) getDefinition(result, "A.p");
+    FunctionDefinition pFun = (FunctionDefinition) getDefinition("A.p");
     assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
     assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), Zero()), pFun.getBody());
-    FunctionDefinition qFun = (FunctionDefinition) getDefinition(result, "A.q");
+    FunctionDefinition qFun = (FunctionDefinition) getDefinition("A.q");
     List<DependentLink> qParams = new ArrayList<>();
     Expression qType = qFun.getTypeWithParams(qParams, Sort.SET0);
     assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
     assertEquals(new LeafElimTree(param("\\this", ClassCall(aClass)), FunCall(pFun, Sort.SET0)), qFun.getBody());
 
-    ClassDefinition bClass = (ClassDefinition) getDefinition(result, "A.B");
+    ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
     assertTrue(bClass.getFields().isEmpty());
-    FunctionDefinition fFun = (FunctionDefinition) getDefinition(result, "A.B.f");
+    FunctionDefinition fFun = (FunctionDefinition) getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
     assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), FunCall(pFun, Sort.SET0)), fFun.getBody());
-    FunctionDefinition gFun = (FunctionDefinition) getDefinition(result, "A.B.g");
+    FunctionDefinition gFun = (FunctionDefinition) getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
     Expression gType = gFun.getTypeWithParams(gParams, Sort.SET0);
     assertEquals(Pi(ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
     assertEquals(new LeafElimTree(param("\\this", ClassCall(bClass)), FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0))), gFun.getBody());
 
-    ClassDefinition cClass = (ClassDefinition) getDefinition(result, "A.C");
+    ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
-    ClassField cParent = ((ClassDefinition) getDefinition(result, "A.C")).getPersonalFields().get(0);
+    ClassField cParent = ((ClassDefinition) getDefinition("A.C")).getPersonalFields().get(0);
     assertNotNull(cParent);
-    FunctionDefinition hFun = (FunctionDefinition) getDefinition(result, "A.C.h");
+    FunctionDefinition hFun = (FunctionDefinition) getDefinition("A.C.h");
     List<DependentLink> hParams = new ArrayList<>();
     Expression hType = hFun.getTypeWithParams(hParams, Sort.SET0);
     assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
     DependentLink hFunParam = param("\\this", ClassCall(aClass));
     assertEquals(new LeafElimTree(hFunParam, FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, Ref(hFunParam)))), hFun.getBody());
-    FunctionDefinition kFun = (FunctionDefinition) getDefinition(result, "A.C.k");
+    FunctionDefinition kFun = (FunctionDefinition) getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
     Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
     assertEquals(Pi(ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
@@ -660,20 +658,20 @@ public class DynamicTest extends TypeCheckingTestCase {
 
   @Test
   public void classConstructorsTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
       "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
         "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
         "}\n" +
         "\\func test (p : A) => A.y {p}");
-    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
     Expression function = testFun.getResultType().normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
-    Constructor foo = ((DataDefinition) getDefinition(result, "A.Foo")).getConstructor("foo");
+    Constructor foo = ((DataDefinition) getDefinition("A.Foo")).getConstructor("foo");
 
     ConCallExpression arg2 = arguments.get(2).cast(LamExpression.class).getBody().cast(ConCallExpression.class);
     assertEquals(1, arg2.getDataTypeArguments().size());
@@ -690,27 +688,27 @@ public class DynamicTest extends TypeCheckingTestCase {
     List<? extends Expression> domArguments = domFunction.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
-    assertEquals(FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
+    assertEquals(FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
     assertEquals(Prelude.ZERO, domArguments.get(2).cast(ConCallExpression.class).getDefinition());
   }
 
   @Test
   public void classConstructorsParametersTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
       "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo (p : x = x) | foo (p = p)\n" +
         "  \\func y (_ : foo (path (\\lam _ => path (\\lam _ => x))) = foo (path (\\lam _ => path (\\lam _ => x)))) => 0\n" +
         "}\n" +
         "\\func test (q : A) => A.y {q}");
-    FunctionDefinition testFun = (FunctionDefinition) getDefinition(result, "test");
-    Expression xCall = FieldCall((ClassField) getDefinition(result, "A.x"), Sort.PROP, Ref(testFun.getParameters()));
+    FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");
+    Expression xCall = FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters()));
     Expression function = testFun.getResultType().cast(PiExpression.class).getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.NF);
     assertEquals(Prelude.PATH, function.cast(DataCallExpression.class).getDefinition());
     List<? extends Expression> arguments = function.cast(DataCallExpression.class).getDefCallArguments();
     assertEquals(3, arguments.size());
 
-    DataDefinition Foo = (DataDefinition) getDefinition(result, "A.Foo");
+    DataDefinition Foo = (DataDefinition) getDefinition("A.Foo");
     Constructor foo = Foo.getConstructor("foo");
 
     ConCallExpression arg2Fun = arguments.get(2).cast(ConCallExpression.class);

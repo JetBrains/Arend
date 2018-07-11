@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TypeCheckingTestCase extends NameResolverTestCase {
   protected final LocalErrorReporter localErrorReporter = new TestLocalErrorReporter(errorReporter);
-
+  protected ChildGroup lastGroup;
 
   CheckTypeVisitor.Result typeCheckExpr(Map<Referable, Binding> context, Concrete.Expression expression, Expression expectedType, int errors) {
     CheckTypeVisitor visitor = new CheckTypeVisitor(typecheckerState, context, localErrorReporter, null);
@@ -101,14 +101,20 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     return ref != null ? typecheckerState.getTypechecked(ref) : null;
   }
 
+  public Definition getDefinition(String path) {
+    TCReferable ref = get(lastGroup.getGroupScope(), path);
+    return ref != null ? typecheckerState.getTypechecked(ref) : null;
+  }
+
   protected void typeCheckModule(ChildGroup group) {
+    lastGroup = group;
     typeCheckModule(group, 0);
   }
 
   protected ChildGroup typeCheckModule(String text, int errors) {
-    ChildGroup group = resolveNamesModule(text);
-    typeCheckModule(group, errors);
-    return group;
+    lastGroup = resolveNamesModule(text);
+    typeCheckModule(lastGroup, errors);
+    return lastGroup;
   }
 
   protected ChildGroup typeCheckModule(String text) {
@@ -116,9 +122,9 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
   protected ChildGroup typeCheckClass(String instance, String global, int errors) {
-    ChildGroup group = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
-    typeCheckModule(group, errors);
-    return group;
+    lastGroup = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
+    typeCheckModule(lastGroup, errors);
+    return lastGroup;
   }
 
   protected ChildGroup typeCheckClass(String instance, String global) {

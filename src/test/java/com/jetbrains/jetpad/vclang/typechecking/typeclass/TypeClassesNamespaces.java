@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -59,7 +58,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
 
   @Test
   public void typeClassFullNameInstanceII() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
         "\\class M \\where {\n" +
         "  \\class X (A : \\Type0) {\n" +
         "    | B : A -> Nat\n" +
@@ -68,7 +67,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  \\func T => B 0 = 0\n" +
         "}\n" +
         "\\func f (t : M.T) => M.B 0", 1);
-    assertThatErrorsAre(instanceInference(getDefinition(group, "M.X").getReferable()));
+    assertThatErrorsAre(instanceInference(getDefinition("M.X")));
   }
 
   @Test

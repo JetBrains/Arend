@@ -8,7 +8,6 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -49,11 +48,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void constructorTypeTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\data NatVec Nat \\with\n" +
         "  | zero  => nil\n" +
         "  | suc n => cons Nat (NatVec n)");
-    DataDefinition data = (DataDefinition) getDefinition(result, "NatVec");
+    DataDefinition data = (DataDefinition) getDefinition("NatVec");
     assertEquals(DataCall(data, Sort.SET0, Zero()), data.getConstructor("nil").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     SingleDependentLink param = singleParams(false, vars("n"), Nat());
     List<DependentLink> consParams = new ArrayList<>();
@@ -63,11 +62,11 @@ public class DataIndicesTest extends TypeCheckingTestCase {
 
   @Test
   public void toAbstractTest() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\data Fin Nat \\with\n" +
         "  | suc n => fzero\n" +
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc (fsuc x)");
-    assertEquals("fsuc {suc n} (fsuc {n} x)", ((LeafElimTree) ((FunctionDefinition) getDefinition(result, "f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
+    assertEquals("fsuc {suc n} (fsuc {n} x)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f")).getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF).toString());
   }
 }

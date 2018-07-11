@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -139,14 +138,14 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void universe() {
-    ChildGroup result = typeCheckModule(
+    typeCheckModule(
         "\\class C {\n" +
         "  | A : \\Set0\n" +
         "  | a : A\n" +
         "}\n" +
         "\\class B \\extends C");
-    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "C")).getSort());
-    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition(result, "B")).getSort());
+    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition("C")).getSort());
+    assertEquals(new Sort(1, 1), ((ClassDefinition) getDefinition("B")).getSort());
   }
 
   @Test
@@ -165,122 +164,122 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
   @Test
   public void newEmbeddedExtension() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a => \\new A { | n => \\lam x => x | k => 1 } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition(group, "f"), Sort.STD, Collections.emptyList());
+    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition(group, "B.a"), Sort.STD, funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallANorm instanceof FieldCallExpression);
     assertEquals(fieldCallA, fieldCallANorm);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition(group, "B.m"), Sort.STD, funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallM instanceof ConCallExpression);
     assertEquals(Zero(), fieldCallM);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition(group, "A.k"), Sort.STD, fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
   @Test
   public void deeplyEmbeddedExtension() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C { | l : Nat | b : B }\n" +
       "\\func f => \\new C { | l => 2 | b { | m => 1 | a { | n => \\lam x => x | k => 0 } } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition(group, "f"), Sort.STD, Collections.emptyList());
+    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
-    Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition(group, "C.l"), Sort.STD, funCall);
+    Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), Sort.STD, funCall);
     fieldCallL = fieldCallL.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallL instanceof ConCallExpression);
     assertEquals(Suc(Suc(Zero())), fieldCallL);
 
-    Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition(group, "C.b"), Sort.STD, funCall);
+    Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), Sort.STD, funCall);
     Expression fieldCallBNorm = fieldCallB.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallBNorm instanceof FieldCallExpression);
     assertEquals(fieldCallB, fieldCallBNorm);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition(group, "B.m"), Sort.STD, fieldCallB);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, fieldCallB);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallM);
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition(group, "B.a"), Sort.STD, fieldCallB);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, fieldCallB);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallANorm instanceof FieldCallExpression);
     assertEquals(fieldCallA, fieldCallANorm);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition(group, "A.k"), Sort.STD, fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Zero(), fieldCallK);
   }
 
   @Test
   public void embeddedExtension() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    NewExpression newExpr = new NewExpression(new ClassCallExpression((ClassDefinition) getDefinition(group, "C"), Sort.STD));
+    NewExpression newExpr = new NewExpression(new ClassCallExpression((ClassDefinition) getDefinition("C"), Sort.STD));
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition(group, "B.a"), Sort.STD, newExpr);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, newExpr);
     assertTrue(fieldCallA instanceof NewExpression);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition(group, "B.m"), Sort.STD, newExpr);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, newExpr);
     assertTrue(fieldCallM instanceof ConCallExpression);
     assertEquals(Zero(), fieldCallM);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition(group, "A.k"), Sort.STD, fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
   @Test
   public void anonymousEmbeddedExtension() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\func f => \\new B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition(group, "f"), Sort.STD, Collections.emptyList());
+    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition(group, "B.a"), Sort.STD, funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallANorm instanceof FieldCallExpression);
     assertEquals(fieldCallA, fieldCallANorm);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition(group, "B.m"), Sort.STD, funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallM instanceof ConCallExpression);
     assertEquals(Zero(), fieldCallM);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition(group, "A.k"), Sort.STD, fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
 
   @Test
   public void instanceEmbeddedExtension() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\instance f : B | m => 0 | a { | n => \\lam x => x | k => 1 }");
-    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition(group, "f"), Sort.STD, Collections.emptyList());
+    FunCallExpression funCall = new FunCallExpression((FunctionDefinition) getDefinition("f"), Sort.STD, Collections.emptyList());
 
-    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition(group, "B.a"), Sort.STD, funCall);
+    Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallANorm instanceof FieldCallExpression);
     assertEquals(fieldCallA, fieldCallANorm);
 
-    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition(group, "B.m"), Sort.STD, funCall);
+    Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
     assertTrue(fieldCallM instanceof ConCallExpression);
     assertEquals(Zero(), fieldCallM);
 
-    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition(group, "A.k"), Sort.STD, fieldCallA);
+    Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }

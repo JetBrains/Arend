@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking;
 
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.GeneralError;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
@@ -180,6 +181,10 @@ public class Matchers {
         description.appendText("should be a 'Instance inference for class " + classRef + "' error");
       }
     };
+  }
+
+  public static Matcher<? super GeneralError> instanceInference(Definition definition) {
+    return instanceInference(definition.getReferable());
   }
 
   public static Matcher<? super GeneralError> error() {

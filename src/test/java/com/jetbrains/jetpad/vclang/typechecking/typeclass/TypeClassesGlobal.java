@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 
-import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.error.CycleError;
 import org.junit.Test;
@@ -128,10 +127,10 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void withoutClassifyingFieldError() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A { | n : Nat }\n" +
       "\\func f => n", 1);
-    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 
   @Test
@@ -182,12 +181,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
 
   @Test
   public void superClassWithClassifyingFieldNoInstance() {
-    ChildGroup group = typeCheckModule(
+    typeCheckModule(
       "\\class A (C : \\Set) { | c : C }\n" +
       "\\class B \\extends A\n" +
       "\\data Nat'\n" +
       "\\instance B-inst : B Nat | c => 0\n" +
       "\\func f : Nat' => c", 1);
-    assertThatErrorsAre(instanceInference(getDefinition(group, "A").getReferable()));
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 }
