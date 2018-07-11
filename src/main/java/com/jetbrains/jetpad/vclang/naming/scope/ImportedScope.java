@@ -97,11 +97,11 @@ public class ImportedScope implements Scope {
   }
 
   private static class Triple {
-    Referable referable;
+    ModuleReferable referable;
     ModulePath modulePath;
     Tree tree;
 
-    Triple(Referable referable, ModulePath modulePath, Tree tree) {
+    Triple(ModuleReferable referable, ModulePath modulePath, Tree tree) {
       this.referable = referable;
       this.modulePath = modulePath;
       this.tree = tree;
@@ -119,10 +119,14 @@ public class ImportedScope implements Scope {
       Tree tree = this;
       for (int i = 0; i < path.size(); i++) {
         final int finalI = i + 1;
-        tree = tree.map.computeIfAbsent(path.get(i), k -> {
+        Triple triple = tree.map.computeIfAbsent(path.get(i), k -> {
           ModulePath modulePath = new ModulePath(path.subList(0, finalI));
           return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree());
-        }).tree;
+        });
+        if (triple.modulePath == null && finalI == path.size()) {
+          triple.modulePath = triple.referable.path;
+        }
+        tree = triple.tree;
       }
     }
   }
