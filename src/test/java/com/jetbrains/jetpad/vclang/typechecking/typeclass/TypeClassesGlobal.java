@@ -246,4 +246,14 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func f : \\1-Type0 => c", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void instanceTypeCheckTest() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C | n : Nat }\n" +
+      "\\instance a : A \\Set | c => Nat | n => 0\n" +
+      "\\func f {c : A { C => \\Set | n => 1 }} => 2\n" +
+      "\\func g => f", 1);
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
+  }
 }

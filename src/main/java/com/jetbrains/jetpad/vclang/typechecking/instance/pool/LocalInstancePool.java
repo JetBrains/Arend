@@ -1,27 +1,40 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.pool;
 
+import com.jetbrains.jetpad.vclang.core.expr.ErrorExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
+import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class LocalInstancePool implements InstancePool {
-  static private class Triple {
+  static private class InstanceData {
     final Expression key;
     final TCClassReferable classRef;
-    final Expression value;
+    final ReferenceExpression value;
+    final Concrete.SourceNode sourceNode;
 
-    Triple(Expression key, TCClassReferable classRef, Expression value) {
+    InstanceData(Expression key, TCClassReferable classRef, ReferenceExpression value, Concrete.SourceNode sourceNode) {
       this.key = key;
       this.classRef = classRef;
       this.value = value;
+      this.sourceNode = sourceNode;
     }
   }
 
-  private final List<Triple> myPool = new ArrayList<>();
+  private final List<InstanceData> myPool = new ArrayList<>();
+  private final CheckTypeVisitor myVisitor;
+
+  public LocalInstancePool(CheckTypeVisitor visitor) {
+    myVisitor = visitor;
+  }
 
   @Override
   public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
@@ -30,20 +43,29 @@ public class LocalInstancePool implements InstancePool {
 
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
-      Triple triple = myPool.get(i);
-      if ((isField ? triple.classRef.isSubClassOf(classRef) : triple.classRef.getUnderlyingTypecheckable().isSubClassOf(classRef.getUnderlyingTypecheckable())) && (triple.key == classifyingExpression || triple.key != null && triple.key.equals(classifyingExpression))) {
-        return triple.value;
+      InstanceData instanceData = myPool.get(i);
+      if ((isField ? instanceData.classRef.isSubClassOf(classRef) : instanceData.classRef.getUnderlyingTypecheckable().isSubClassOf(classRef.getUnderlyingTypecheckable())) && (instanceData.key == classifyingExpression || instanceData.key != null && instanceData.key.equals(classifyingExpression))) {
+        Expression result = instanceData.value;
+        if (instanceData.key == classifyingExpression) {
+          return result;
+        }
+        if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.LE, instanceData.key, classifyingExpression, instanceData.sourceNode)) {
+          LocalError error = new TypeMismatchError(instanceData.key, classifyingExpression, instanceData.sourceNode);
+          myVisitor.getErrorReporter().report(error);
+          result = new ErrorExpression(result, error);
+        }
+        return result;
       }
     }
     return null;
   }
 
-  public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, Expression instance) {
+  public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, ReferenceExpression instance, Concrete.SourceNode sourceNode) {
     Expression oldInstance = getInstance(classifyingExpression, classRef, true);
     if (oldInstance != null) {
       return oldInstance;
     } else {
-      myPool.add(new Triple(classifyingExpression, classRef, instance));
+      myPool.add(new InstanceData(classifyingExpression, classRef, instance, sourceNode));
       return null;
     }
   }

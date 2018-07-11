@@ -168,4 +168,12 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\func f {b : B Nat} : Nat' => c", 1);
     assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
+
+  @Test
+  public void instanceTypeCheckTest() {
+    typeCheckModule(
+      "\\class A (C : \\Type) { | c : C | n : Nat }\n" +
+      "\\func id (A : \\Type) => A\n" +
+      "\\func f {a : A \\1-Type} : \\Set => id c", 1);
+  }
 }

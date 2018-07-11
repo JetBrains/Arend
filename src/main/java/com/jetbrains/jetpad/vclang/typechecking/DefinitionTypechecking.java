@@ -59,7 +59,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   public Definition typecheckHeader(GlobalInstancePool instancePool, Concrete.Definition definition) {
-    LocalInstancePool localInstancePool = new LocalInstancePool();
+    LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     instancePool.setInstancePool(localInstancePool);
     myVisitor.setInstancePool(instancePool);
     Definition typechecked = myVisitor.getTypecheckingState().getTypechecked(definition.getData());
@@ -126,7 +126,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   @Override
   public List<Clause> visitFunction(Concrete.FunctionDefinition def, Boolean recursive) {
     Definition typechecked = prepare(def);
-    LocalInstancePool localInstancePool = new LocalInstancePool();
+    LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     myInstancePool.setInstancePool(localInstancePool);
     myVisitor.setInstancePool(myInstancePool);
 
@@ -152,7 +152,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   @Override
   public List<Clause> visitData(Concrete.DataDefinition def, Boolean recursive) {
     Definition typechecked = prepare(def);
-    LocalInstancePool localInstancePool = new LocalInstancePool();
+    LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     myInstancePool.setInstancePool(localInstancePool);
     myVisitor.setInstancePool(myInstancePool);
 
@@ -199,7 +199,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   @Override
   public List<Clause> visitInstance(Concrete.Instance def, Boolean recursive) {
-    LocalInstancePool localInstancePool = new LocalInstancePool();
+    LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     myInstancePool.setInstancePool(localInstancePool);
     myVisitor.setInstancePool(myInstancePool);
 
@@ -263,7 +263,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               ClassField classifyingField = classDef.getClassifyingField();
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
-                Expression oldInstance = localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference);
+                Expression oldInstance = localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
                 if (oldInstance != null) {
                   myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
                 }
