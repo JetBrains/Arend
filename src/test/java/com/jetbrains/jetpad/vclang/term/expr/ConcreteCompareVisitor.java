@@ -5,7 +5,10 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concrete.Expression, Boolean>, ConcreteDefinitionVisitor<Concrete.Definition, Boolean> {
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
@@ -173,6 +176,10 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean comparePattern(Concrete.Pattern pattern1, Concrete.Pattern pattern2) {
+    if (pattern1.isExplicit() != pattern2.isExplicit()) {
+      return false;
+    }
+
     if (pattern1 instanceof Concrete.NamePattern) {
       if (!(pattern2 instanceof Concrete.NamePattern)) {
         return false;
@@ -180,6 +187,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       mySubstitution.put(((Concrete.NamePattern) pattern1).getReferable(), ((Concrete.NamePattern) pattern2).getReferable());
       return true;
     }
+
     if (pattern1 instanceof Concrete.ConstructorPattern) {
       if (!(pattern2 instanceof Concrete.ConstructorPattern)) {
         return false;
@@ -187,19 +195,28 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
       Concrete.ConstructorPattern conPattern1 = (Concrete.ConstructorPattern) pattern1;
       Concrete.ConstructorPattern conPattern2 = (Concrete.ConstructorPattern) pattern2;
-      if (!conPattern1.getConstructor().equals(conPattern2.getConstructor()) || conPattern1.getPatterns().size() != conPattern2.getPatterns().size()) {
+      return conPattern1.getConstructor().equals(conPattern2.getConstructor()) && comparePatterns(conPattern1.getPatterns(), conPattern2.getPatterns());
+    }
+
+    if (pattern1 instanceof Concrete.TuplePattern) {
+      return pattern2 instanceof Concrete.TuplePattern && comparePatterns(((Concrete.TuplePattern) pattern1).getPatterns(), ((Concrete.TuplePattern) pattern2).getPatterns());
+    }
+
+    throw new IllegalStateException();
+  }
+
+  private boolean comparePatterns(List<Concrete.Pattern> patterns1, List<Concrete.Pattern> patterns2) {
+    if (patterns1.size() != patterns2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < patterns1.size(); i++) {
+      if (!comparePattern(patterns1.get(i), patterns2.get(i))) {
         return false;
       }
-
-      for (int i = 0; i < conPattern1.getPatterns().size(); i++) {
-        if (!comparePattern(conPattern1.getPatterns().get(i), conPattern2.getPatterns().get(i))) {
-          return false;
-        }
-      }
-
-      return true;
     }
-    return pattern1 instanceof Concrete.EmptyPattern && pattern2 instanceof Concrete.EmptyPattern;
+
+    return true;
   }
 
   private boolean compareClause(Concrete.Clause clause1, Concrete.Clause clause2) {

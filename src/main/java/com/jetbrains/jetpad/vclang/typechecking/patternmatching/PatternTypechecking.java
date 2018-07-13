@@ -6,10 +6,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.DataCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
@@ -231,6 +228,47 @@ public class PatternTypechecking {
       }
 
       Expression expr = parameters.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF);
+      if (pattern instanceof Concrete.TuplePattern) {
+        List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
+        // Either sigma or class patterns
+        if (expr.isInstance(SigmaExpression.class) || expr.isInstance(ClassCallExpression.class)) {
+          DependentLink newParameters = expr.isInstance(SigmaExpression.class) ? expr.cast(SigmaExpression.class).getParameters() : expr.cast(ClassCallExpression.class).getClassFieldParameters();
+          Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(((Concrete.TuplePattern) pattern).getPatterns(), newParameters, pattern, false);
+          if (conResult == null) {
+            return null;
+          }
+
+          ConstructorPattern newPattern = expr.isInstance(SigmaExpression.class)
+            ? new ConstructorPattern(expr.cast(SigmaExpression.class), new Patterns(conResult.proj1))
+            : new ConstructorPattern(expr.cast(ClassCallExpression.class), new Patterns(conResult.proj1));
+          result.add(newPattern);
+          if (conResult.proj2 == null) {
+            exprs = null;
+            parameters = parameters.getNext();
+          } else {
+            Expression newExpr = newPattern.toExpression(conResult.proj2);
+            exprs.add(newExpr);
+            parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, newExpr));
+          }
+
+          continue;
+        } else {
+          if (!patternArgs.isEmpty()) {
+            if (!expr.isError()) {
+              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a Sigma-type or a class"), expr, pattern));
+            }
+            return null;
+          }
+          if (!expr.isInstance(DataCallExpression.class)) {
+            if (!expr.isError()) {
+              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type, a Sigma-type, or a class"), expr, pattern));
+            }
+            return null;
+          }
+        }
+      }
+
+      // Constructor patterns
       if (!expr.isInstance(DataCallExpression.class)) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
@@ -243,7 +281,7 @@ public class PatternTypechecking {
         return null;
       }
 
-      if (pattern instanceof Concrete.EmptyPattern) {
+      if (pattern instanceof Concrete.TuplePattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
           myErrorReporter.report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));

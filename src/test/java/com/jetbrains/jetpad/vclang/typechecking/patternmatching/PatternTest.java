@@ -33,7 +33,8 @@ public class PatternTest extends TypeCheckingTestCase {
     int i = 0, j = 0;
     for (; i < patternArgs.size() && j < patterns.size(); i++, j++) {
       Concrete.Pattern pattern1 = patternArgs.get(i);
-      if (pattern1 instanceof Concrete.EmptyPattern) {
+      if (pattern1 instanceof Concrete.TuplePattern) {
+        assertTrue(((Concrete.TuplePattern) pattern1).getPatterns().isEmpty());
         while (hasImplicit && patterns.get(j) instanceof BindingPattern) {
           j++;
         }
@@ -59,7 +60,8 @@ public class PatternTest extends TypeCheckingTestCase {
 
         Concrete.ConstructorPattern conPattern1 = (Concrete.ConstructorPattern) pattern1;
         ConstructorPattern conPattern2 = (ConstructorPattern) patterns.get(j);
-        assertEquals(conPattern1.getConstructor(), conPattern2.getConstructor().getReferable());
+        assertNotNull(conPattern2.getDefinition());
+        assertEquals(conPattern1.getConstructor(), conPattern2.getDefinition().getReferable());
         checkPatterns(conPattern1.getPatterns(), conPattern2.getArguments(), expected, actual, hasImplicit);
       } else {
         throw new IllegalStateException();

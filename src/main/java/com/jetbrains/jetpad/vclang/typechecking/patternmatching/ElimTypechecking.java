@@ -3,8 +3,7 @@ package com.jetbrains.jetpad.vclang.typechecking.patternmatching;
 import com.jetbrains.jetpad.vclang.core.context.Utils;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.definition.DataDefinition;
+import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.GetTypeVisitor;
@@ -111,8 +110,8 @@ public class ElimTypechecking {
             continue;
           }
           if (pattern instanceof ConstructorPattern) {
-            Constructor constructor = ((ConstructorPattern) pattern).getConstructor();
-            if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
+            Definition definition = ((ConstructorPattern) pattern).getDefinition();
+            if (definition == Prelude.LEFT || definition == Prelude.RIGHT) {
               intervals++;
               continue;
             }
@@ -279,12 +278,12 @@ public class ElimTypechecking {
       for (ExtClause clauseData : clauseDataList) {
         if (clauseData.patterns.get(i) instanceof ConstructorPattern) {
           boolean found = false;
-          Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(i)).getConstructor();
-          if (constructor == Prelude.LEFT) {
+          Definition definition = ((ConstructorPattern) clauseData.patterns.get(i)).getDefinition();
+          if (definition == Prelude.LEFT) {
             if (left == null) {
               found = true;
             }
-          } else if (constructor == Prelude.RIGHT) {
+          } else if (definition == Prelude.RIGHT) {
             if (right == null) {
               found = true;
             }
@@ -306,7 +305,7 @@ public class ElimTypechecking {
               oldLink = oldLink.getNext();
             }
 
-            if (constructor == Prelude.LEFT) {
+            if (definition == Prelude.LEFT) {
               left = clauseData.expression.subst(substitution);
             } else {
               right = clauseData.expression.subst(substitution);
@@ -343,8 +342,8 @@ public class ElimTypechecking {
         for (ExtClause clauseData : clauseDataList) {
           if (!(clauseData.patterns.get(index) instanceof BindingPattern)) {
             if (clauseDataList.get(0).patterns.get(index) instanceof BindingPattern && clauseData.patterns.get(index) instanceof ConstructorPattern) {
-              Constructor constructor = ((ConstructorPattern) clauseData.patterns.get(index)).getConstructor();
-              if (constructor == Prelude.LEFT || constructor == Prelude.RIGHT) {
+              Definition definition = ((ConstructorPattern) clauseData.patterns.get(index)).getDefinition();
+              if (definition == Prelude.LEFT || definition == Prelude.RIGHT) {
                 final int finalIndex = index;
                 clauseDataList = clauseDataList.stream().filter(clauseData1 -> clauseData1.patterns.get(finalIndex) instanceof BindingPattern).collect(Collectors.toList());
                 continue loop;
@@ -397,29 +396,35 @@ public class ElimTypechecking {
       ConstructorPattern someConPattern = (ConstructorPattern) conClauseData.patterns.get(index);
       List<ConCallExpression> conCalls = null;
       List<Constructor> constructors;
-      if (someConPattern.getConstructor().getDataType().hasIndexedConstructors()) {
-        conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall(someConPattern.getConCall(), null), null).getMatchedConstructors();
-        if (conCalls == null) {
-          myVisitor.getErrorReporter().report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
-          myOK = false;
-          return null;
-        }
-        constructors = new ArrayList<>(conCalls.size());
-        for (ConCallExpression conCall : conCalls) {
-          constructors.add(conCall.getDefinition());
+      DataDefinition dataType;
+      if (someConPattern.getDefinition() instanceof Constructor) {
+        dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
+        if (dataType.hasIndexedConstructors()) {
+          conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall((ConCallExpression) someConPattern.getDataExpression(), null), null).getMatchedConstructors();
+          if (conCalls == null) {
+            myVisitor.getErrorReporter().report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
+            myOK = false;
+            return null;
+          }
+          constructors = new ArrayList<>(conCalls.size());
+          for (ConCallExpression conCall : conCalls) {
+            constructors.add(conCall.getDefinition());
+          }
+        } else {
+          constructors = dataType.getConstructors();
         }
       } else {
-        constructors = someConPattern.getConstructor().getDataType().getConstructors();
+        constructors = Collections.singletonList(BranchElimTree.TUPLE);
+        dataType = null;
       }
 
-      DataDefinition dataType = someConPattern.getConstructor().getDataType();
       if (dataType == Prelude.INTERVAL) {
         myVisitor.getErrorReporter().report(new TypecheckingError("Pattern matching on the interval is not allowed here", conClauseData.clause));
         myOK = false;
         return null;
       }
 
-      if (someConPattern.getConstructor().getDataType().isTruncated()) {
+      if (dataType != null && dataType.isTruncated()) {
         if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
           myVisitor.getErrorReporter().report(new TruncatedDataError(dataType, myExpectedType, conClauseData.clause));
           myOK = false;
@@ -435,7 +440,8 @@ public class ElimTypechecking {
             constructorMap.computeIfAbsent(constructor, k -> new ArrayList<>()).add(clauseData);
           }
         } else {
-          constructorMap.computeIfAbsent(((ConstructorPattern) clauseData.patterns.get(index)).getConstructor(), k -> new ArrayList<>()).add(clauseData);
+          Definition def = ((ConstructorPattern) clauseData.patterns.get(index)).getDefinition();
+          constructorMap.computeIfAbsent(def instanceof Constructor ? (Constructor) def : BranchElimTree.TUPLE, k -> new ArrayList<>()).add(clauseData);
         }
       }
 
@@ -455,7 +461,7 @@ public class ElimTypechecking {
             }
 
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
-              myContext.push(new Util.ConstructorClauseElem(constructor));
+              myContext.push(Util.makeDataClauseElem(constructor, someConPattern));
               for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
                 myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
               }
@@ -471,7 +477,7 @@ public class ElimTypechecking {
         if (conClauseDataList == null) {
           continue;
         }
-        myContext.push(new Util.ConstructorClauseElem(constructor));
+        myContext.push(Util.makeDataClauseElem(constructor, someConPattern));
 
         for (int i = 0; i < conClauseDataList.size(); i++) {
           List<Pattern> patterns = new ArrayList<>();
@@ -480,7 +486,7 @@ public class ElimTypechecking {
             patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getArguments());
           } else {
             Expression substExpr;
-            List<Expression> dataTypesArgs;
+            DependentLink conParameters;
             List<Expression> arguments = new ArrayList<>(patterns.size());
             if (conCalls != null) {
               ConCallExpression conCall = null;
@@ -491,17 +497,37 @@ public class ElimTypechecking {
                 }
               }
               assert conCall != null;
-              dataTypesArgs = conCall.getDataTypeArguments();
+              conParameters = constructor.getParameters();
+              List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
               substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
+              conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             } else {
-              dataTypesArgs = new ArrayList<>(someConPattern.getDataTypeArguments().size());
-              for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
-                dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
+              if (constructor == BranchElimTree.TUPLE) {
+                conParameters = someConPattern.getParameters();
+                if (someConPattern.getDefinition() instanceof ClassDefinition) {
+                  Map<ClassField, Expression> implementations = new HashMap<>();
+                  ClassDefinition classDef = (ClassDefinition) someConPattern.getDefinition();
+                  DependentLink link = conParameters;
+                  for (ClassField field : classDef.getFields()) {
+                    implementations.put(field, new ReferenceExpression(link));
+                    link = link.getNext();
+                  }
+                  substExpr = new NewExpression(new ClassCallExpression(classDef, someConPattern.getSortArgument(), implementations, Sort.PROP));
+                } else {
+                  substExpr = new TupleExpression(arguments, (SigmaExpression) someConPattern.getDataExpression());
+                  conParameters = DependentLink.Helper.subst(conParameters, new ExprSubstitution());
+                }
+              } else {
+                conParameters = constructor.getParameters();
+                List<Expression> dataTypesArgs = new ArrayList<>(someConPattern.getDataTypeArguments().size());
+                for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
+                  dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
+                }
+                substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
+                conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
               }
-              substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
             }
 
-            DependentLink conParameters = DependentLink.Helper.subst(constructor.getParameters(), DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             for (DependentLink link = conParameters; link.hasNext(); link = link.getNext()) {
               patterns.add(new BindingPattern(link));
               arguments.add(new ReferenceExpression(link));

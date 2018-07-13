@@ -20,14 +20,14 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void function() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f : Nat => 0");
     assertNotNull(typedDef);
-    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typedDef.status(), Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionUntyped() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f => 0");
     assertNotNull(typedDef);
-    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typedDef.status(), Definition.TypeCheckingStatus.NO_ERRORS);
     assertEquals(Nat(), typedDef.getTypeWithParams(new ArrayList<>(), Sort.SET0));
   }
 
@@ -35,7 +35,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void functionWithArgs() {
     FunctionDefinition typedDef = (FunctionDefinition) typeCheckDef("\\func f (x : Nat) (y : Nat -> Nat) => y");
     assertNotNull(typedDef);
-    assertTrue(typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typedDef.status(), Definition.TypeCheckingStatus.NO_ERRORS);
     List<DependentLink> params = new ArrayList<>();
     Expression type = typedDef.getTypeWithParams(params, Sort.SET0);
     assertEquals(Pi(Nat(), Pi(Pi(Nat(), Nat()), Pi(Nat(), Nat()))), fromPiParameters(type, params));
@@ -165,7 +165,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest() {
     typeCheckModule(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C (n m : Nat) \\with | suc n, suc (suc n) => c (n = n)\n" +
+        "\\data C (n m : Nat) \\with | suc n', suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 2)) \\with | c p => x (E p)\n" +
         "\\func test => x (e {path (\\lam _ => 0)})");
   }
@@ -174,7 +174,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
   public void patternNormalizeTest1() {
     typeCheckModule(
         "\\data E (x : 0 = 0) | e\n" +
-        "\\data C Nat Nat \\with | suc n, suc (suc n) => c (n = n)\n" +
+        "\\data C Nat Nat \\with | suc n', suc (suc n) => c (n = n)\n" +
         "\\data D ((\\lam (x : \\Type0) => x) (C 1 1)) \\with | c p => x (E p)", 1);
   }
 

@@ -2,8 +2,6 @@ package com.jetbrains.jetpad.vclang.term.concrete;
 
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
-import com.jetbrains.jetpad.vclang.core.expr.AppExpression;
-import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.Precedence;
@@ -702,10 +700,6 @@ public final class Concrete {
     }
   }
 
-  public interface PatternContainer {
-    List<Pattern> getPatterns();
-  }
-
   public static class FunctionClause extends Clause {
     public Expression expression;
 
@@ -1195,7 +1189,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNodeImpl implements PatternContainer {
+  public static abstract class Clause extends SourceNodeImpl {
     private final List<Pattern> myPatterns;
 
     public Clause(Object data, List<Pattern> patterns) {
@@ -1203,7 +1197,6 @@ public final class Concrete {
       myPatterns = patterns;
     }
 
-    @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
     }
@@ -1361,7 +1354,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorPattern extends Pattern implements PatternContainer {
+  public static class ConstructorPattern extends Pattern {
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
@@ -1388,20 +1381,27 @@ public final class Concrete {
     }
 
     @Nonnull
-    @Override
     public List<Pattern> getPatterns() {
       return myArguments;
     }
   }
 
-  public static class EmptyPattern extends Pattern {
-    public EmptyPattern(Object data) {
+  public static class TuplePattern extends Pattern {
+    private final List<Pattern> myPatterns;
+
+    public TuplePattern(Object data, List<Pattern> patterns) {
       super(data);
+      myPatterns = patterns;
     }
 
-    public EmptyPattern(Object data, boolean isExplicit) {
+    public TuplePattern(Object data, boolean isExplicit, List<Pattern> patterns) {
       super(data);
       setExplicit(isExplicit);
+      myPatterns = patterns;
+    }
+
+    public List<Pattern> getPatterns() {
+      return myPatterns;
     }
   }
 }

@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -233,13 +232,18 @@ public class DefinitionDeserialization {
       case EMPTY:
         return EmptyPattern.INSTANCE;
       case CONSTRUCTOR:
-        return new ConstructorPattern(
-          new ConCallExpression(
-            myCallTargetProvider.getCallTarget(proto.getConstructor().getConstructorRef(), Constructor.class),
-            defDeserializer.readSort(proto.getConstructor().getSortArgument()),
-            defDeserializer.readExprList(proto.getConstructor().getDataTypeArgumentList()),
-            Collections.emptyList()
-          ), readPatterns(defDeserializer, proto.getConstructor().getPatternList(), list));
+        Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
+        Patterns patterns = readPatterns(defDeserializer, proto.getConstructor().getPatternList(), list);
+        if (expression instanceof ConCallExpression) {
+          return new ConstructorPattern((ConCallExpression) expression, patterns);
+        }
+        if (expression instanceof ClassCallExpression) {
+          return new ConstructorPattern((ClassCallExpression) expression, patterns);
+        }
+        if (expression instanceof SigmaExpression) {
+          return new ConstructorPattern((SigmaExpression) expression, patterns);
+        }
+        throw new DeserializationException("Wrong pattern expression");
       default:
         throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }

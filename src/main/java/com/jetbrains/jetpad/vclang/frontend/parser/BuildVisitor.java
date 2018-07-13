@@ -308,7 +308,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Pattern visitPatternExplicit(PatternExplicitContext ctx) {
-    return ctx.pattern() == null ? new Concrete.EmptyPattern(tokenPosition(ctx.start)) : visitPattern(ctx.pattern());
+    List<PatternContext> patternCtxs = ctx.pattern();
+    if (patternCtxs.isEmpty()) {
+      return new Concrete.TuplePattern(tokenPosition(ctx.start), Collections.emptyList());
+    }
+    if (patternCtxs.size() == 1) {
+      return visitPattern(patternCtxs.get(0));
+    }
+
+    List<Concrete.Pattern> patterns = new ArrayList<>(patternCtxs.size());
+    for (PatternContext patternCtx : patternCtxs) {
+      patterns.add(visitPattern(patternCtx));
+    }
+    return new Concrete.TuplePattern(tokenPosition(ctx.start), patterns);
   }
 
   @Override

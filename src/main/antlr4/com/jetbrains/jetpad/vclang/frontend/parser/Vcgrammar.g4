@@ -55,9 +55,9 @@ pattern : atomPattern             # patternAtom
         | ID atomPatternOrID*     # patternConstructor
         ;
 
-atomPattern : '(' pattern? ')'    # patternExplicit
-            | '{' pattern '}'     # patternImplicit
-            | '_'                 # patternAny
+atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
+            | '{' pattern '}'                     # patternImplicit
+            | '_'                                 # patternAny
             ;
 
 atomPatternOrID : atomPattern     # patternOrIDAtom

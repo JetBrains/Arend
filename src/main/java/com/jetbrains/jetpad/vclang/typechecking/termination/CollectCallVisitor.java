@@ -81,15 +81,15 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     if (!(pattern2 instanceof ConstructorPattern)) {
       return pattern2 instanceof BindingPattern && expr1 instanceof ReferenceExpression && ((ReferenceExpression) expr1).getBinding() == ((BindingPattern) pattern2).getBinding() ? BaseCallMatrix.R.Equal : BaseCallMatrix.R.Unknown;
     }
+    ConstructorPattern conPattern = (ConstructorPattern) pattern2;
 
-    if (expr1 instanceof ConCallExpression) {
-      ConCallExpression conCall1 = (ConCallExpression) expr1;
-      if (conCall1.getDefinition() == ((ConstructorPattern) pattern2).getConCall().getDefinition()) {
-        BaseCallMatrix.R ord = isLess(conCall1.getDefCallArguments(), ((ConstructorPattern) pattern2).getPatterns().getPatternList());
-        if (ord != BaseCallMatrix.R.Unknown) return ord;
-      }
+    List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1);
+    if (exprArguments != null) {
+      BaseCallMatrix.R ord = isLess(exprArguments, conPattern.getArguments());
+      if (ord != BaseCallMatrix.R.Unknown) return ord;
     }
-    for (Pattern arg : ((ConstructorPattern) pattern2).getPatterns().getPatternList()) {
+
+    for (Pattern arg : conPattern.getPatterns().getPatternList()) {
       if (isLess(expr1, arg) != BaseCallMatrix.R.Unknown) return BaseCallMatrix.R.LessThan;
     }
     return BaseCallMatrix.R.Unknown;

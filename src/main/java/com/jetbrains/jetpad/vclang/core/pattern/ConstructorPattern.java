@@ -1,22 +1,39 @@
 package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
-import com.jetbrains.jetpad.vclang.core.definition.Constructor;
-import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
-import com.jetbrains.jetpad.vclang.core.expr.Expression;
+import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConstructorPattern implements Pattern {
-  private final ConCallExpression myConCall;
+  private final Expression myExpression; // Either conCall, classCall, or Sigma.
   private final Patterns myPatterns;
 
   public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
-    myConCall = conCall;
+    myExpression = conCall;
+    myPatterns = patterns;
+  }
+
+  public ConstructorPattern(ClassCallExpression classCall, Patterns patterns) {
+    myExpression = classCall;
+    myPatterns = patterns;
+  }
+
+  public ConstructorPattern(SigmaExpression sigma, Patterns patterns) {
+    myExpression = sigma;
+    myPatterns = patterns;
+  }
+
+  public ConstructorPattern(ConstructorPattern pattern, Patterns patterns) {
+    myExpression = pattern.myExpression;
     myPatterns = patterns;
   }
 
@@ -24,8 +41,16 @@ public class ConstructorPattern implements Pattern {
     return myPatterns;
   }
 
-  public Constructor getConstructor() {
-    return myConCall.getDefinition();
+  public Expression getDataExpression() {
+    return myExpression;
+  }
+
+  public Definition getDefinition() {
+    return myExpression instanceof DefCallExpression ? ((DefCallExpression) myExpression).getDefinition() : null;
+  }
+
+  public List<Expression> getDataTypeArguments() {
+    return myExpression instanceof ConCallExpression ? ((ConCallExpression) myExpression).getDataTypeArguments() : null;
   }
 
   public List<Pattern> getArguments() {
@@ -33,19 +58,38 @@ public class ConstructorPattern implements Pattern {
   }
 
   public Sort getSortArgument() {
-    return myConCall.getSortArgument();
+    return myExpression instanceof DefCallExpression ? ((DefCallExpression) myExpression).getSortArgument() : null;
   }
 
-  public List<Expression> getDataTypeArguments() {
-    return myConCall.getDataTypeArguments();
+  public DependentLink getParameters() {
+    return myExpression instanceof ConCallExpression
+      ? ((ConCallExpression) myExpression).getDefinition().getParameters()
+      : myExpression instanceof SigmaExpression
+        ? ((SigmaExpression) myExpression).getParameters()
+        : ((ClassCallExpression) myExpression).getClassFieldParameters();
   }
 
-  public ConCallExpression getConCall() {
-    return myConCall;
+  public Expression toExpression(List<Expression> arguments) {
+    if (myExpression instanceof SigmaExpression) {
+      return new TupleExpression(arguments, (SigmaExpression) myExpression);
+    }
+
+    if (myExpression instanceof ConCallExpression) {
+      ConCallExpression conCall = (ConCallExpression) myExpression;
+      return new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
+    }
+
+    ClassCallExpression classCall = (ClassCallExpression) myExpression;
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    int i = 0;
+    for (ClassField field : classCall.getDefinition().getFields()) {
+      implementations.put(field, arguments.get(i++));
+    }
+    return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP));
   }
 
   @Override
-  public ConCallExpression toExpression() {
+  public Expression toExpression() {
     List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());
     for (Pattern pattern : myPatterns.getPatternList()) {
       Expression argument = pattern.toExpression();
@@ -54,7 +98,7 @@ public class ConstructorPattern implements Pattern {
       }
       arguments.add(argument);
     }
-    return new ConCallExpression(myConCall.getDefinition(), myConCall.getSortArgument(), myConCall.getDataTypeArguments(), arguments);
+    return toExpression(arguments);
   }
 
   @Override
@@ -67,16 +111,45 @@ public class ConstructorPattern implements Pattern {
     return myPatterns.getLastBinding();
   }
 
+  public List<? extends Expression> getMatchingExpressionArguments(Expression expression) {
+    if (myExpression instanceof SigmaExpression) {
+      TupleExpression tuple = expression.checkedCast(TupleExpression.class);
+      return tuple == null ? null : tuple.getFields();
+    }
+
+    if (myExpression instanceof ConCallExpression) {
+      ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
+      if (conCall == null || conCall.getDefinition() != ((ConCallExpression) myExpression).getDefinition()) {
+        return null;
+      }
+      return conCall.getDefCallArguments();
+    }
+
+    NewExpression newExpr = expression.checkedCast(NewExpression.class);
+    if (newExpr == null) {
+      return null;
+    }
+    List<Expression> arguments = new ArrayList<>();
+    for (ClassField field : ((ClassCallExpression) myExpression).getDefinition().getFields()) {
+      arguments.add(newExpr.getExpression().getImplementation(field, newExpr));
+    }
+    return arguments;
+  }
+
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
-    ConCallExpression conCall = expression.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ConCallExpression.class);
-    if (conCall == null) {
-      return MatchResult.MAYBE;
+    List<? extends Expression> arguments = getMatchingExpressionArguments(expression.normalize(NormalizeVisitor.Mode.WHNF));
+    if (arguments != null) {
+      return myPatterns.match(arguments, result);
     }
-    if (conCall.getDefinition() != myConCall.getDefinition()) {
-      return MatchResult.FAIL;
+
+    if (myExpression instanceof ConCallExpression) {
+      ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
+      if (conCall != null && conCall.getDefinition() != ((ConCallExpression) myExpression).getDefinition()) {
+        return MatchResult.FAIL;
+      }
     }
-    return myPatterns.match(conCall.getDefCallArguments(), result);
+    return MatchResult.MAYBE;
   }
 
   @Override
@@ -88,7 +161,10 @@ public class ConstructorPattern implements Pattern {
 
     if (other instanceof ConstructorPattern) {
       ConstructorPattern conPattern = (ConstructorPattern) other;
-      return myConCall.getDefinition() == conPattern.myConCall.getDefinition() && myPatterns.unify(conPattern.myPatterns, substitution1, substitution2);
+      return (myExpression instanceof SigmaExpression && conPattern.myExpression instanceof SigmaExpression ||
+              myExpression instanceof DefCallExpression && conPattern.myExpression instanceof DefCallExpression &&
+                ((DefCallExpression) myExpression).getDefinition() == ((DefCallExpression) conPattern.myExpression).getDefinition())
+        && myPatterns.unify(conPattern.myPatterns, substitution1, substitution2);
     }
 
     return false;

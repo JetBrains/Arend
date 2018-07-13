@@ -1,7 +1,11 @@
 package com.jetbrains.jetpad.vclang.core.definition;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
+import com.jetbrains.jetpad.vclang.core.context.param.TypedDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.*;
+import com.jetbrains.jetpad.vclang.core.expr.type.Type;
+import com.jetbrains.jetpad.vclang.core.expr.type.TypeExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
@@ -134,6 +138,31 @@ public class ClassDefinition extends Definition {
 
   public LamExpression implementField(ClassField field, LamExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
+  }
+
+  public DependentLink getClassFieldParameters(Sort sortArgument) {
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    Expression newExpr = new NewExpression(new ClassCallExpression(this, sortArgument, implementations, Sort.PROP));
+    if (myFields.isEmpty()) {
+      return EmptyDependentLink.getInstance();
+    }
+
+    DependentLink first = null, last = null;
+    for (ClassField field : myFields) {
+      PiExpression piExpr = field.getType(sortArgument);
+      Expression type = piExpr.applyExpression(newExpr);
+      DependentLink link = new TypedDependentLink(true, field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
+      if (last != null) {
+        last.setNext(link);
+      }
+      last = link;
+      if (first == null) {
+        first = link;
+      }
+      implementations.put(field, new ReferenceExpression(link));
+    }
+
+    return first;
   }
 
   @Override

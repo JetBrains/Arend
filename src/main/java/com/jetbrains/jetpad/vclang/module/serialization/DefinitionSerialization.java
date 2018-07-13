@@ -155,8 +155,8 @@ public class DefinitionSerialization {
     } else if (pattern instanceof EmptyPattern) {
       builder.setEmpty(DefinitionProtos.Definition.Pattern.Empty.newBuilder());
     } else if (pattern instanceof ConstructorPattern) {
-      DefinitionProtos.Definition.Pattern.ConstructorRef.Builder pBuilder = DefinitionProtos.Definition.Pattern.ConstructorRef.newBuilder();
-      pBuilder.setConstructorRef(myCallTargetIndexProvider.getDefIndex(((ConstructorPattern) pattern).getConstructor()));
+      DefinitionProtos.Definition.Pattern.Constructor.Builder pBuilder = DefinitionProtos.Definition.Pattern.Constructor.newBuilder();
+      pBuilder.setExpression(defSerializer.writeExpr(((ConstructorPattern) pattern).getDataExpression()));
       for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
         pBuilder.addPattern(writePattern(defSerializer, patternArgument));
       }

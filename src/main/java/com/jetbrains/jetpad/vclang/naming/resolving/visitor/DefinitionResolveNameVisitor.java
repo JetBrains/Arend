@@ -13,7 +13,10 @@ import com.jetbrains.jetpad.vclang.naming.error.ReferenceError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.resolving.NameResolvingChecker;
-import com.jetbrains.jetpad.vclang.naming.scope.*;
+import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.ConvertingScope;
+import com.jetbrains.jetpad.vclang.naming.scope.NamespaceCommandNamespace;
+import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Fixity;
 import com.jetbrains.jetpad.vclang.term.NameRenaming;
 import com.jetbrains.jetpad.vclang.term.NamespaceCommand;
@@ -286,15 +289,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructorClause(Concrete.ConstructorClause clause, ExpressionResolveNameVisitor exprVisitor) {
-    List<? extends Concrete.Pattern> patterns = clause.getPatterns();
+    List<Concrete.Pattern> patterns = clause.getPatterns();
     if (patterns != null) {
-      for (int i = 0; i < patterns.size(); i++) {
-        Referable constructor = exprVisitor.visitPattern(patterns.get(i), new HashMap<>());
-        if (constructor != null) {
-          ExpressionResolveNameVisitor.replaceWithConstructor(clause, i, constructor);
-        }
-        exprVisitor.resolvePattern(patterns.get(i));
-      }
+      exprVisitor.visitPatterns(patterns, new HashMap<>(), true);
     }
   }
 

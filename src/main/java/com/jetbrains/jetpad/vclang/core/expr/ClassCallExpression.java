@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -57,6 +58,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public boolean isUnit() {
     return myImplementations.size() + getDefinition().getImplemented().size() == getDefinition().getFields().size();
+  }
+
+  public DependentLink getClassFieldParameters() {
+    return getDefinition().getClassFieldParameters(getSortArgument());
   }
 
   @Override

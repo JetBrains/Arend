@@ -37,7 +37,7 @@ public class ProductsTest extends TypeCheckingTestCase {
   @Test
   public void embeddedTupleTest2() {
     typeCheckModule(
-      "\\data D | con \\Sigma Nat Nat | con'\n" +
+      "\\data D | con (\\Sigma Nat Nat) | con'\n" +
       "\\func f (d : D) : Nat\n" +
       "  | con (zero , y) => y\n" +
       "  | con (suc x, _) => x\n" +

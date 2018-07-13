@@ -25,17 +25,15 @@ message Definition {
     message Pattern {
         oneof kind {
             Binding binding = 4;
-            ConstructorRef constructor = 5;
+            Constructor constructor = 7;
             Empty empty = 6;
         }
 
         message Binding {
             SingleParameter var = 1;
         }
-        message ConstructorRef {
-            Sort sortArgument = 4;
-            repeated Expression data_type_argument = 5;
-            int32 constructor_ref = 1;
+        message Constructor {
+            Expression expression = 6;
             repeated Pattern pattern = 3;
         }
         message Empty {

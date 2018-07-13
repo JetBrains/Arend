@@ -1024,8 +1024,18 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         name = "_";
       }
       myBuilder.append(name);
-    } else if (pattern instanceof Concrete.EmptyPattern) {
-      myBuilder.append("()");
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      myBuilder.append('(');
+      boolean first = true;
+      for (Concrete.Pattern arg : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        if (first) {
+          first = false;
+        } else {
+          myBuilder.append(',');
+        }
+        prettyPrintPattern(arg, Concrete.Pattern.PREC);
+      }
+      myBuilder.append(')');
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
       if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append('(');

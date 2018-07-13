@@ -167,32 +167,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return result instanceof Concrete.BinOpSequenceExpression ? new BinOpParser(myErrorReporter).parse((Concrete.BinOpSequenceExpression) result) : result;
   }
 
-  static void replaceWithConstructor(Concrete.PatternContainer container, int index, Referable constructor) {
-    Concrete.Pattern old = container.getPatterns().get(index);
-    Concrete.Pattern newPattern = new Concrete.ConstructorPattern(old.getData(), constructor, Collections.emptyList());
-    newPattern.setExplicit(old.isExplicit());
-    container.getPatterns().set(index, newPattern);
-  }
-
   @Override
   protected void visitClause(Concrete.FunctionClause clause) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      Map<String, Concrete.NamePattern> usedNames = new HashMap<>();
-      for (int j = 0; j < clause.getPatterns().size(); j++) {
-        Referable constructor = visitPattern(clause.getPatterns().get(j), usedNames);
-        if (constructor != null) {
-          replaceWithConstructor(clause, j, constructor);
-        }
-        resolvePattern(clause.getPatterns().get(j));
-      }
-
+      visitPatterns(clause.getPatterns(), new HashMap<>(), true);
       if (clause.expression != null) {
         clause.expression = clause.expression.accept(this, null);
       }
     }
   }
 
-  GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Concrete.NamePattern> usedNames) {
+  private GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Concrete.NamePattern> usedNames) {
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       Referable referable = namePattern.getReferable();
@@ -211,22 +196,35 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       }
       return null;
     } else if (pattern instanceof Concrete.ConstructorPattern) {
-      List<? extends Concrete.Pattern> patterns = ((Concrete.ConstructorPattern) pattern).getPatterns();
-      for (int i = 0; i < patterns.size(); i++) {
-        Referable constructor = visitPattern(patterns.get(i), usedNames);
-        if (constructor != null) {
-          replaceWithConstructor((Concrete.ConstructorPattern) pattern, i, constructor);
-        }
-      }
+      visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns(), usedNames, false);
       return null;
-    } else if (pattern instanceof Concrete.EmptyPattern) {
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      visitPatterns(((Concrete.TuplePattern) pattern).getPatterns(), usedNames, false);
       return null;
     } else {
       throw new IllegalStateException();
     }
   }
 
-  void resolvePattern(Concrete.Pattern pattern) {
+  void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Concrete.NamePattern> usedNames, boolean resolvePatterns) {
+    for (int i = 0; i < patterns.size(); i++) {
+      Referable constructor = visitPattern(patterns.get(i), usedNames);
+      if (constructor != null) {
+        patterns.set(i, new Concrete.ConstructorPattern(patterns.get(i).getData(), patterns.get(i).isExplicit(), constructor, Collections.emptyList()));
+      }
+      if (resolvePatterns) {
+        resolvePattern(patterns.get(i));
+      }
+    }
+  }
+
+  private void resolvePattern(Concrete.Pattern pattern) {
+    if (pattern instanceof Concrete.TuplePattern) {
+      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        resolvePattern(patternArg);
+      }
+      return;
+    }
     if (!(pattern instanceof Concrete.ConstructorPattern)) {
       return;
     }

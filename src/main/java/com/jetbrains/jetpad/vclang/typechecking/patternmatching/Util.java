@@ -8,6 +8,7 @@ import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.ConCallExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
+import com.jetbrains.jetpad.vclang.core.expr.SigmaExpression;
 import com.jetbrains.jetpad.vclang.core.pattern.BindingPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.ConstructorPattern;
 import com.jetbrains.jetpad.vclang.core.pattern.Pattern;
@@ -29,15 +30,50 @@ public class Util {
     }
   }
 
-  public static class ConstructorClauseElem implements ClauseElem {
-    public final Sort sort;
+  public interface DataClauseElem extends ClauseElem {
+    DependentLink getParameters();
+    ConstructorPattern getPattern(Patterns arguments);
+  }
+
+  public static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorPattern pattern) {
+    return constructor == BranchElimTree.TUPLE ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
+  }
+
+  public static class TupleClauseElem implements DataClauseElem {
+    public final ConstructorPattern pattern;
+
+    public TupleClauseElem(ConstructorPattern pattern) {
+      this.pattern = pattern;
+    }
+
+    @Override
+    public DependentLink getParameters() {
+      return pattern.getParameters();
+    }
+
+    @Override
+    public ConstructorPattern getPattern(Patterns arguments) {
+      return new ConstructorPattern(pattern, arguments);
+    }
+  }
+
+  public static class ConstructorClauseElem implements DataClauseElem {
     public final List<Expression> dataArguments;
     public final Constructor constructor;
 
-    ConstructorClauseElem(Constructor constructor) {
-      this.sort = Sort.STD;
+    private ConstructorClauseElem(Constructor constructor) {
       this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();
       this.constructor = constructor;
+    }
+
+    @Override
+    public DependentLink getParameters() {
+      return constructor.getParameters();
+    }
+
+    @Override
+    public ConstructorPattern getPattern(Patterns arguments) {
+      return new ConstructorPattern(new ConCallExpression(constructor, Sort.STD, dataArguments, Collections.emptyList()), arguments);
     }
   }
 
@@ -62,7 +98,7 @@ public class Util {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
         for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
           if (entry.getKey() != null) {
-            myStack.push(new ConstructorClauseElem(entry.getKey()));
+            myStack.push(entry.getKey() == BranchElimTree.TUPLE ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
             walk(entry.getValue());
             myStack.pop();
           }
@@ -76,21 +112,21 @@ public class Util {
 
   private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
-      if (clauseElems.get(i) instanceof ConstructorClauseElem) {
-        ConstructorClauseElem conClauseElem = (ConstructorClauseElem) clauseElems.get(i);
-        Constructor constructor = conClauseElem.constructor;
-        int size = DependentLink.Helper.size(constructor.getParameters());
+      if (clauseElems.get(i) instanceof DataClauseElem) {
+        DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
+        DependentLink parameters = dataClauseElem.getParameters();
+        int size = DependentLink.Helper.size(parameters);
         List<Pattern> patterns = new ArrayList<>(size);
         for (int j = i + 1; j < clauseElems.size() && patterns.size() < size; j++) {
           patterns.add(((PatternClauseElem) clauseElems.get(j)).pattern);
         }
         if (patterns.size() < size) {
-          for (DependentLink link = DependentLink.Helper.get(constructor.getParameters(), clauseElems.size() - i - 1); link.hasNext(); link = link.getNext()) {
+          for (DependentLink link = DependentLink.Helper.get(parameters, clauseElems.size() - i - 1); link.hasNext(); link = link.getNext()) {
             patterns.add(new BindingPattern(link));
           }
         }
         clauseElems.subList(i, Math.min(i + size + 1, clauseElems.size())).clear();
-        clauseElems.add(i, new PatternClauseElem(new ConstructorPattern(new ConCallExpression(constructor, conClauseElem.sort, conClauseElem.dataArguments, Collections.emptyList()), new Patterns(patterns))));
+        clauseElems.add(i, new PatternClauseElem(dataClauseElem.getPattern(new Patterns(patterns))));
       }
     }
 
