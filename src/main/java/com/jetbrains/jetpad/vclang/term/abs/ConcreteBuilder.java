@@ -408,14 +408,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
-    if (pattern.isEmpty()) {
-      if (pattern.getHeadReference() == null && pattern.getArguments().isEmpty()) {
-        return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), Collections.emptyList());
-      } else {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Unexpected arguments for an empty pattern", pattern.getData()));
-      }
+    Referable reference = pattern.getHeadReference();
+    if (reference == null && !pattern.isUnnamed()) {
+      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()));
     } else {
-      Referable reference = pattern.getHeadReference();
       List<? extends Abstract.Pattern> args = pattern.getArguments();
       if (reference instanceof GlobalReferable || !args.isEmpty()) {
         return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args));

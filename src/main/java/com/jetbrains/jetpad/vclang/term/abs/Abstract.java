@@ -52,7 +52,7 @@ public final class Abstract {
 
   public interface Pattern extends SourceNode {
     @Nullable Object getData();
-    boolean isEmpty();
+    boolean isUnnamed();
     boolean isExplicit();
     @Nullable Referable getHeadReference();
     @Nonnull List<? extends Pattern> getArguments();
