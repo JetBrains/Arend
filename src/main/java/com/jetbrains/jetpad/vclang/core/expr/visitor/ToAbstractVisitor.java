@@ -23,7 +23,6 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.Util;
 
-import java.math.BigInteger;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
@@ -230,11 +229,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitConCall(ConCallExpression expr, Void params) {
-    BigInteger num = getNum(expr);
-    if (num != null) {
-      return cNum(num);
-    }
-
     Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS)) {
       List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
@@ -345,23 +339,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       result = cPi(parameters.get(i), result);
     }
     return result;
-  }
-
-  private BigInteger getNum(Expression expr) {
-    ConCallExpression conCall = expr.checkedCast(ConCallExpression.class);
-    if (conCall == null) {
-      return null;
-    }
-    if (conCall.getDefinition() == Prelude.ZERO) {
-      return BigInteger.ZERO;
-    }
-    if (conCall.getDefinition() == Prelude.SUC) {
-      BigInteger result = getNum(conCall.getDefCallArguments().get(0));
-      if (result != null) {
-        return result.add(BigInteger.ONE);
-      }
-    }
-    return null;
   }
 
   @Override
