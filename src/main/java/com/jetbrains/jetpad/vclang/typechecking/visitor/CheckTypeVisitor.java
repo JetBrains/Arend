@@ -1405,6 +1405,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitNumericLiteral(Concrete.NumericLiteral expr, ExpectedType expectedType) {
-    return checkResult(expectedType, new Result(new IntegerExpression(expr.getNumber()), ExpressionFactory.Nat()), expr);
+    IntegerExpression result;
+    try {
+      result = new SmallIntegerExpression(expr.getNumber().intValueExact());
+    } catch (ArithmeticException e) {
+      result = new BigIntegerExpression(expr.getNumber());
+    }
+    return checkResult(expectedType, new Result(result, ExpressionFactory.Nat()), expr);
   }
 }

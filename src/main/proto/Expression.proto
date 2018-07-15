@@ -26,7 +26,8 @@ message Expression {
         Sigma sigma = 16;
         Tuple tuple = 17;
         Universe universe = 18;
-        Integer integer = 21;
+        SmallInteger small_integer = 21;
+        BigInteger big_integer = 22;
     }
 
     message App {
@@ -115,7 +116,10 @@ message Expression {
     message Universe {
         Sort sort = 1;
     }
-    message Integer {
+    message SmallInteger {
+        int32 value = 1;
+    }
+    message BigInteger {
         bytes value = 1;
     }
 }

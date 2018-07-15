@@ -366,9 +366,15 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   @Override
   public ExpressionProtos.Expression visitInteger(IntegerExpression expr, Void params) {
-    ExpressionProtos.Expression.Integer.Builder builder = ExpressionProtos.Expression.Integer.newBuilder();
-    builder.setValue(ByteString.copyFrom(expr.getInteger().toByteArray()));
-    return ExpressionProtos.Expression.newBuilder().setInteger(builder).build();
+    if (expr instanceof SmallIntegerExpression) {
+      ExpressionProtos.Expression.SmallInteger.Builder builder = ExpressionProtos.Expression.SmallInteger.newBuilder();
+      builder.setValue(((SmallIntegerExpression) expr).getInteger());
+      return ExpressionProtos.Expression.newBuilder().setSmallInteger(builder).build();
+    } else {
+      ExpressionProtos.Expression.BigInteger.Builder builder = ExpressionProtos.Expression.BigInteger.newBuilder();
+      builder.setValue(ByteString.copyFrom(expr.getBigInteger().toByteArray()));
+      return ExpressionProtos.Expression.newBuilder().setBigInteger(builder).build();
+    }
   }
 
   @Override

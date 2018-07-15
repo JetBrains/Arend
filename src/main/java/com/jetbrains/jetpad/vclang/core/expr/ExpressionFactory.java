@@ -6,7 +6,6 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
-import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
@@ -67,7 +66,7 @@ public class ExpressionFactory {
   }
 
   public static IntegerExpression Zero() {
-    return new IntegerExpression(BigInteger.ZERO);
+    return new SmallIntegerExpression(0);
   }
 
   public static Expression Suc(Expression expr) {

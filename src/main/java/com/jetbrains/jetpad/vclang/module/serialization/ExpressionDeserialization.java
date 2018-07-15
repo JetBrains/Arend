@@ -219,8 +219,10 @@ class ExpressionDeserialization {
         return readCase(proto.getCase());
       case FIELD_CALL:
         return readFieldCall(proto.getFieldCall());
-      case INTEGER:
-        return readInteger(proto.getInteger());
+      case SMALL_INTEGER:
+        return readSmallInteger(proto.getSmallInteger());
+      case BIG_INTEGER:
+        return readBigInteger(proto.getBigInteger());
       default:
         throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
     }
@@ -338,7 +340,11 @@ class ExpressionDeserialization {
     return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
   }
 
-  private IntegerExpression readInteger(ExpressionProtos.Expression.Integer proto) throws DeserializationException {
-    return new IntegerExpression(new BigInteger(proto.getValue().toByteArray()));
+  private SmallIntegerExpression readSmallInteger(ExpressionProtos.Expression.SmallInteger proto) throws DeserializationException {
+    return new SmallIntegerExpression(proto.getValue());
+  }
+
+  private BigIntegerExpression readBigInteger(ExpressionProtos.Expression.BigInteger proto) throws DeserializationException {
+    return new BigIntegerExpression(new BigInteger(proto.getValue().toByteArray()));
   }
 }

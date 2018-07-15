@@ -10,7 +10,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
-import java.math.BigInteger;
 import java.util.*;
 
 public class ConstructorPattern implements Pattern {
@@ -123,10 +122,10 @@ public class ConstructorPattern implements Pattern {
       if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
         IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
         if (intExpr != null) {
-          return myConstructor == Prelude.ZERO && intExpr.getInteger().equals(BigInteger.ZERO)
+          return myConstructor == Prelude.ZERO && intExpr.isZero()
             ? Collections.emptyList()
-            : myConstructor == Prelude.SUC && !intExpr.getInteger().equals(BigInteger.ZERO)
-              ? Collections.singletonList(new IntegerExpression(intExpr.getInteger().subtract(BigInteger.ONE)))
+            : myConstructor == Prelude.SUC && !intExpr.isZero()
+              ? Collections.singletonList(intExpr.pred())
               : null;
         }
       }
@@ -162,7 +161,7 @@ public class ConstructorPattern implements Pattern {
       }
       if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
         IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
-        if (intExpr != null && (myConstructor == Prelude.ZERO) != intExpr.getInteger().equals(BigInteger.ZERO)) {
+        if (intExpr != null && (myConstructor == Prelude.ZERO) != intExpr.isZero()) {
           return MatchResult.FAIL;
         }
       }

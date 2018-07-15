@@ -6,16 +6,16 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
 import java.math.BigInteger;
 
-public class IntegerExpression extends Expression {
-  private final BigInteger myInteger;
+public abstract class IntegerExpression extends Expression {
+  public abstract BigInteger getBigInteger();
 
-  public IntegerExpression(BigInteger integer) {
-    myInteger = integer;
-  }
+  public abstract IntegerExpression suc();
 
-  public BigInteger getInteger() {
-    return myInteger;
-  }
+  public abstract IntegerExpression pred();
+
+  public abstract boolean isZero();
+
+  public abstract boolean isEqual(IntegerExpression expr);
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
@@ -33,6 +33,6 @@ public class IntegerExpression extends Expression {
   }
 
   public boolean match(Constructor constructor) {
-    return (constructor == Prelude.ZERO || constructor == Prelude.SUC) && (constructor == Prelude.ZERO) == myInteger.equals(BigInteger.ZERO);
+    return (constructor == Prelude.ZERO || constructor == Prelude.SUC) && (constructor == Prelude.ZERO) == isZero();
   }
 }

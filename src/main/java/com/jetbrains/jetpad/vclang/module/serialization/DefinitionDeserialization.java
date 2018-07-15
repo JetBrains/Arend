@@ -20,7 +20,6 @@ import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListe
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -238,7 +237,7 @@ public class DefinitionDeserialization {
       case CONSTRUCTOR:
         Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
         Patterns patterns = readPatterns(defDeserializer, proto.getConstructor().getPatternList(), list);
-        if (expression instanceof IntegerExpression && ((IntegerExpression) expression).getInteger().equals(BigInteger.ZERO)) {
+        if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
           return new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
         }
         if (expression instanceof ConCallExpression) {

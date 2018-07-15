@@ -475,6 +475,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitInteger(IntegerExpression expr, Void params) {
-    return new Concrete.NumericLiteral(null, expr.getInteger());
+    return new Concrete.NumericLiteral(null, expr.getBigInteger());
   }
 }

@@ -19,7 +19,6 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
-import java.math.BigInteger;
 import java.util.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -588,7 +587,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   @Override
   public Boolean visitInteger(IntegerExpression expr, Expression expr2) {
     if (expr2.isInstance(IntegerExpression.class)) {
-      return expr.getInteger().equals(expr2.cast(IntegerExpression.class).getInteger());
+      return expr.isEqual(expr2.cast(IntegerExpression.class));
     }
 
     ConCallExpression conCall2 = expr2.checkedCast(ConCallExpression.class);
@@ -599,6 +598,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (constructor2 == Prelude.ZERO) {
       return true;
     }
-    return compare(new IntegerExpression(expr.getInteger().subtract(BigInteger.ONE)), conCall2.getDefCallArguments().get(0));
+    return compare(expr.pred(), conCall2.getDefCallArguments().get(0));
   }
 }

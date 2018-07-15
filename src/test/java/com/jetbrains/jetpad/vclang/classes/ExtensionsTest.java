@@ -9,7 +9,6 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.Collections;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Suc;
@@ -178,8 +177,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallM instanceof IntegerExpression);
-    assertEquals(BigInteger.ZERO, ((IntegerExpression) fieldCallM).getInteger());
+    assertTrue(fieldCallM instanceof SmallIntegerExpression);
+    assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
@@ -197,8 +196,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallL = FieldCallExpression.make((ClassField) getDefinition("C.l"), Sort.STD, funCall);
     fieldCallL = fieldCallL.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallL instanceof IntegerExpression);
-    assertEquals(new BigInteger("2"), ((IntegerExpression) fieldCallL).getInteger());
+    assertTrue(fieldCallL instanceof SmallIntegerExpression);
+    assertEquals(2, ((SmallIntegerExpression) fieldCallL).getInteger());
 
     Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), Sort.STD, funCall);
     Expression fieldCallBNorm = fieldCallB.normalize(NormalizeVisitor.Mode.WHNF);
@@ -231,8 +230,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     assertTrue(fieldCallA instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, newExpr);
-    assertTrue(fieldCallM instanceof IntegerExpression);
-    assertEquals(BigInteger.ZERO, ((IntegerExpression) fieldCallM).getInteger());
+    assertTrue(fieldCallM instanceof SmallIntegerExpression);
+    assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
@@ -254,8 +253,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallM instanceof IntegerExpression);
-    assertEquals(BigInteger.ZERO, ((IntegerExpression) fieldCallM).getInteger());
+    assertTrue(fieldCallM instanceof SmallIntegerExpression);
+    assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
@@ -277,8 +276,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallM instanceof IntegerExpression);
-    assertEquals(BigInteger.ZERO, ((IntegerExpression) fieldCallM).getInteger());
+    assertTrue(fieldCallM instanceof SmallIntegerExpression);
+    assertEquals(0, ((SmallIntegerExpression) fieldCallM).getInteger());
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);

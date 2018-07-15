@@ -11,7 +11,6 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -690,7 +689,7 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertEquals(3, domArguments.size());
     assertEquals(Prelude.NAT, domArguments.get(0).cast(LamExpression.class).getBody().cast(DefCallExpression.class).getDefinition());
     assertEquals(FieldCall((ClassField) getDefinition("A.x"), Sort.PROP, Ref(testFun.getParameters())), domArguments.get(1));
-    assertEquals(BigInteger.ZERO, domArguments.get(2).cast(IntegerExpression.class).getInteger());
+    assertEquals(0, domArguments.get(2).cast(SmallIntegerExpression.class).getInteger());
   }
 
   @Test

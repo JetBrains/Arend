@@ -13,7 +13,6 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
-import java.math.BigInteger;
 import java.util.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
@@ -238,7 +237,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (constructor == null) {
       IntegerExpression intExpr = argument.checkedCast(IntegerExpression.class);
       if (intExpr != null) {
-        constructor = intExpr.getInteger().equals(BigInteger.ZERO) ? Prelude.ZERO : Prelude.SUC;
+        constructor = intExpr.isZero() ? Prelude.ZERO : Prelude.SUC;
       }
     }
     boolean isPatternMatching = constructor != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
@@ -256,7 +255,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           ? conCall.getDefCallArguments()
           : constructor == Prelude.ZERO
             ? Collections.emptyList()
-            : Collections.singletonList(new IntegerExpression(argument.cast(IntegerExpression.class).getInteger().subtract(BigInteger.ONE)));
+            : Collections.singletonList(argument.cast(IntegerExpression.class).pred());
       } else if (argument.isInstance(TupleExpression.class)) {
         args = argument.cast(TupleExpression.class).getFields();
       } else {
