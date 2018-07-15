@@ -22,4 +22,5 @@ public interface ExpressionVisitor<P, R> {
   R visitLet(LetExpression expr, P params);
   R visitCase(CaseExpression expr, P params);
   R visitOfType(OfTypeExpression expr, P params);
+  R visitInteger(IntegerExpression expr, P params);
 }

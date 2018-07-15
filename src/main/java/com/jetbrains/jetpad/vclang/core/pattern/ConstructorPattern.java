@@ -2,16 +2,16 @@ package com.jetbrains.jetpad.vclang.core.pattern;
 
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.math.BigInteger;
+import java.util.*;
 
 public class ConstructorPattern implements Pattern {
   private final Expression myExpression; // Either conCall, classCall, or Sigma.
@@ -76,7 +76,7 @@ public class ConstructorPattern implements Pattern {
 
     if (myExpression instanceof ConCallExpression) {
       ConCallExpression conCall = (ConCallExpression) myExpression;
-      return new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
+      return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
     }
 
     ClassCallExpression classCall = (ClassCallExpression) myExpression;
@@ -119,7 +119,18 @@ public class ConstructorPattern implements Pattern {
 
     if (myExpression instanceof ConCallExpression) {
       ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
-      if (conCall == null || conCall.getDefinition() != ((ConCallExpression) myExpression).getDefinition()) {
+      Constructor myConstructor = ((ConCallExpression) myExpression).getDefinition();
+      if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
+        IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
+        if (intExpr != null) {
+          return myConstructor == Prelude.ZERO && intExpr.getInteger().equals(BigInteger.ZERO)
+            ? Collections.emptyList()
+            : myConstructor == Prelude.SUC && !intExpr.getInteger().equals(BigInteger.ZERO)
+              ? Collections.singletonList(new IntegerExpression(intExpr.getInteger().subtract(BigInteger.ONE)))
+              : null;
+        }
+      }
+      if (conCall == null || conCall.getDefinition() != myConstructor) {
         return null;
       }
       return conCall.getDefCallArguments();
@@ -145,8 +156,15 @@ public class ConstructorPattern implements Pattern {
 
     if (myExpression instanceof ConCallExpression) {
       ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
-      if (conCall != null && conCall.getDefinition() != ((ConCallExpression) myExpression).getDefinition()) {
+      Constructor myConstructor = ((ConCallExpression) myExpression).getDefinition();
+      if (conCall != null && conCall.getDefinition() != myConstructor) {
         return MatchResult.FAIL;
+      }
+      if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
+        IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
+        if (intExpr != null && (myConstructor == Prelude.ZERO) != intExpr.getInteger().equals(BigInteger.ZERO)) {
+          return MatchResult.FAIL;
+        }
       }
     }
     return MatchResult.MAYBE;

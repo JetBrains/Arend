@@ -13,6 +13,7 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.util.ComputationInterruptedException;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
@@ -96,7 +97,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       for (Expression arg : expr.getDefCallArguments()) {
         args.add(arg.accept(this, mode));
       }
-      return new ConCallExpression((Constructor) expr.getDefinition(), expr.getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
+      return ConCallExpression.make((Constructor) expr.getDefinition(), expr.getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
     throw new IllegalStateException();
@@ -233,8 +234,15 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   private ElimTree updateStack(Stack<Expression> stack, ElimTree elimTree) {
     Expression argument = stack.peek().accept(this, Mode.WHNF);
     ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
-    boolean isPatternMatching = conCall != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
-    elimTree = ((BranchElimTree) elimTree).getChild(conCall == null ? (isPatternMatching ? BranchElimTree.TUPLE : null) : conCall.getDefinition());
+    Constructor constructor = conCall == null ? null : conCall.getDefinition();
+    if (constructor == null) {
+      IntegerExpression intExpr = argument.checkedCast(IntegerExpression.class);
+      if (intExpr != null) {
+        constructor = intExpr.getInteger().equals(BigInteger.ZERO) ? Prelude.ZERO : Prelude.SUC;
+      }
+    }
+    boolean isPatternMatching = constructor != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
+    elimTree = ((BranchElimTree) elimTree).getChild(constructor == null ? (isPatternMatching ? BranchElimTree.TUPLE : null) : constructor);
     if (elimTree == null) {
       return null;
     }
@@ -243,8 +251,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       stack.pop();
 
       List<? extends Expression> args;
-      if (conCall != null) {
-        args = conCall.getDefCallArguments();
+      if (constructor != null) {
+        args = conCall != null
+          ? conCall.getDefCallArguments()
+          : constructor == Prelude.ZERO
+            ? Collections.emptyList()
+            : Collections.singletonList(new IntegerExpression(argument.cast(IntegerExpression.class).getInteger().subtract(BigInteger.ONE)));
       } else if (argument.isInstance(TupleExpression.class)) {
         args = argument.cast(TupleExpression.class).getFields();
       } else {
@@ -469,5 +481,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitOfType(OfTypeExpression expr, Mode mode) {
     return mode == Mode.NF ? new OfTypeExpression(expr.getExpression().accept(this, mode), expr.getTypeOf()) : expr.getExpression().accept(this, mode);
+  }
+
+  @Override
+  public IntegerExpression visitInteger(IntegerExpression expr, Mode params) {
+    return expr;
   }
 }

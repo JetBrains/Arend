@@ -44,7 +44,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
+  public Expression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
       dataTypeArgs.add(parameter.accept(this, null));
@@ -55,7 +55,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       args.add(arg.accept(this, null));
     }
 
-    return new ConCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
+    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override
@@ -191,5 +191,10 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return new OfTypeExpression(expr.getExpression().accept(this, null), expr.getTypeOf().accept(this, null));
+  }
+
+  @Override
+  public IntegerExpression visitInteger(IntegerExpression expr, Void params) {
+    return expr;
   }
 }

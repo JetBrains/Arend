@@ -26,6 +26,7 @@ message Expression {
         Sigma sigma = 16;
         Tuple tuple = 17;
         Universe universe = 18;
+        Integer integer = 21;
     }
 
     message App {
@@ -113,6 +114,9 @@ message Expression {
     }
     message Universe {
         Sort sort = 1;
+    }
+    message Integer {
+        bytes value = 1;
     }
 }
 

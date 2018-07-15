@@ -9,6 +9,8 @@ import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Nat;
+
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   public final static GetTypeVisitor INSTANCE = new GetTypeVisitor();
 
@@ -146,5 +148,10 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitOfType(OfTypeExpression expr, Void params) {
     return expr.getTypeOf();
+  }
+
+  @Override
+  public Expression visitInteger(IntegerExpression expr, Void params) {
+    return Nat();
   }
 }

@@ -52,7 +52,6 @@ import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecki
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
 
-import java.math.BigInteger;
 import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.expression;
@@ -1406,11 +1405,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitNumericLiteral(Concrete.NumericLiteral expr, ExpectedType expectedType) {
-    BigInteger number = expr.getNumber();
-    Expression expression = ExpressionFactory.Zero(); // TODO: Store as a constant
-    for (BigInteger i = BigInteger.ZERO; i.compareTo(number) < 0; i = i.add(BigInteger.ONE)) {
-      expression = ExpressionFactory.Suc(expression);
-    }
-    return checkResult(expectedType, new Result(expression, ExpressionFactory.Nat()), expr);
+    return checkResult(expectedType, new Result(new IntegerExpression(expr.getNumber()), ExpressionFactory.Nat()), expr);
   }
 }

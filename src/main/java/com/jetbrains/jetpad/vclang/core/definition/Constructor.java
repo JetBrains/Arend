@@ -158,10 +158,10 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public ConCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
+  public Expression getDefCall(Sort sortArgument, List<Expression> args) {
     int dataTypeArgsNumber = DependentLink.Helper.size(getDataTypeParameters());
     List<Expression> dataTypeArgs = new ArrayList<>(dataTypeArgsNumber);
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
-    return new ConCallExpression(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
+    return ConCallExpression.make(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
   }
 }

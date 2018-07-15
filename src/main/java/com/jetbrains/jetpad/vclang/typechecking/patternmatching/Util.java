@@ -35,14 +35,14 @@ public class Util {
     ConstructorPattern getPattern(Patterns arguments);
   }
 
-  public static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorPattern pattern) {
+  static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorPattern pattern) {
     return constructor == BranchElimTree.TUPLE ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
   }
 
   public static class TupleClauseElem implements DataClauseElem {
     public final ConstructorPattern pattern;
 
-    public TupleClauseElem(ConstructorPattern pattern) {
+    TupleClauseElem(ConstructorPattern pattern) {
       this.pattern = pattern;
     }
 
@@ -58,8 +58,8 @@ public class Util {
   }
 
   public static class ConstructorClauseElem implements DataClauseElem {
-    public final List<Expression> dataArguments;
-    public final Constructor constructor;
+    final List<Expression> dataArguments;
+    final Constructor constructor;
 
     private ConstructorClauseElem(Constructor constructor) {
       this.dataArguments = constructor.getDataTypeExpression(Sort.STD).getDefCallArguments();

@@ -80,7 +80,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
-  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
+  public Expression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> newArgs = visitDefCallArguments(expr.getDefCallArguments());
     if (newArgs == null) {
       return null;
@@ -93,7 +93,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
       dataTypeArgs.add(newArg);
     }
-    return new ConCallExpression(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, newArgs);
+    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, newArgs);
   }
 
   @Override
@@ -292,5 +292,10 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
     Expression newType = findBindings(expr.getTypeOf(), true);
     return newType == null ? null : new OfTypeExpression(newExpr, newType);
+  }
+
+  @Override
+  public Expression visitInteger(IntegerExpression expr, Void params) {
+    return expr;
   }
 }

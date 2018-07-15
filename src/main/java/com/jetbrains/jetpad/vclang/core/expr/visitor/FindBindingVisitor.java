@@ -192,4 +192,9 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
     Variable result = expr.getExpression().accept(this, null);
     return result != null ? result : expr.getTypeOf().accept(this, null);
   }
+
+  @Override
+  public Variable visitInteger(IntegerExpression expr, Void params) {
+    return null;
+  }
 }

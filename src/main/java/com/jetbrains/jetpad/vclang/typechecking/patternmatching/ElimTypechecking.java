@@ -25,6 +25,9 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Left;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.Right;
+
 public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Concrete.FunctionClause> myUnusedClauses;
@@ -323,7 +326,7 @@ public class ElimTypechecking {
         int j = 0;
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext(), j++) {
           missingClause.add(new Util.PatternClauseElem(j == i
-            ? new ConstructorPattern(new ConCallExpression(left == null ? Prelude.LEFT : Prelude.RIGHT, Sort.STD, Collections.emptyList(), Collections.emptyList()), new Patterns(Collections.emptyList()))
+            ? new ConstructorPattern(left == null ? Left() : Right(), new Patterns(Collections.emptyList()))
             : new BindingPattern(link)));
         }
         addMissingClause(missingClause, true);
@@ -400,7 +403,7 @@ public class ElimTypechecking {
       if (someConPattern.getDefinition() instanceof Constructor) {
         dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
         if (dataType.hasIndexedConstructors()) {
-          conCalls = GetTypeVisitor.INSTANCE.visitConCall(new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall((ConCallExpression) someConPattern.getDataExpression(), null), null).getMatchedConstructors();
+          conCalls = ((DataCallExpression) new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall((ConCallExpression) someConPattern.getDataExpression(), null).accept(GetTypeVisitor.INSTANCE, null)).getMatchedConstructors();
           if (conCalls == null) {
             myVisitor.getErrorReporter().report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
             myOK = false;
@@ -499,7 +502,7 @@ public class ElimTypechecking {
               assert conCall != null;
               conParameters = constructor.getParameters();
               List<Expression> dataTypesArgs = conCall.getDataTypeArguments();
-              substExpr = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
+              substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             } else {
               if (constructor == BranchElimTree.TUPLE) {
@@ -523,7 +526,7 @@ public class ElimTypechecking {
                 for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
                   dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
                 }
-                substExpr = new ConCallExpression(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
+                substExpr = ConCallExpression.make(constructor, someConPattern.getSortArgument(), dataTypesArgs, arguments);
                 conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
               }
             }

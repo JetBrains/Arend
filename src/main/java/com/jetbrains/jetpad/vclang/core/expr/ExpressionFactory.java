@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.core.expr.type.Type;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,11 +31,11 @@ public class ExpressionFactory {
   }
 
   public static ConCallExpression Left() {
-    return new ConCallExpression(Prelude.LEFT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
+    return (ConCallExpression) ConCallExpression.make(Prelude.LEFT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
   }
 
   public static ConCallExpression Right() {
-    return new ConCallExpression(Prelude.RIGHT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
+    return (ConCallExpression) ConCallExpression.make(Prelude.RIGHT, Sort.PROP, Collections.emptyList(), Collections.emptyList());
   }
 
   public static DependentLink parameter(boolean explicit, String var, Type type) {
@@ -65,11 +66,11 @@ public class ExpressionFactory {
     return new DataCallExpression(Prelude.NAT, Sort.SET0, Collections.emptyList());
   }
 
-  public static ConCallExpression Zero() {
-    return new ConCallExpression(Prelude.ZERO, Sort.SET0, Collections.emptyList(), Collections.emptyList());
+  public static IntegerExpression Zero() {
+    return new IntegerExpression(BigInteger.ZERO);
   }
 
-  public static ConCallExpression Suc(Expression expr) {
-    return new ConCallExpression(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+  public static Expression Suc(Expression expr) {
+    return ConCallExpression.make(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 }

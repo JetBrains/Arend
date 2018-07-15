@@ -10,15 +10,19 @@ import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.pattern.*;
+import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.DataLocatedReferableImpl;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -234,6 +238,9 @@ public class DefinitionDeserialization {
       case CONSTRUCTOR:
         Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
         Patterns patterns = readPatterns(defDeserializer, proto.getConstructor().getPatternList(), list);
+        if (expression instanceof IntegerExpression && ((IntegerExpression) expression).getInteger().equals(BigInteger.ZERO)) {
+          return new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
+        }
         if (expression instanceof ConCallExpression) {
           return new ConstructorPattern((ConCallExpression) expression, patterns);
         }

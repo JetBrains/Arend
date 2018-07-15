@@ -3,7 +3,9 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 
+import java.math.BigInteger;
 import java.util.List;
 
 public class ConCallExpression extends DefCallExpression {
@@ -17,6 +19,16 @@ public class ConCallExpression extends DefCallExpression {
     mySortArgument = sortArgument;
     myDataTypeArguments = dataTypeArguments;
     myArguments = arguments;
+  }
+
+  public static Expression make(Constructor constructor, Sort sortArgument, List<Expression> dataTypeArguments, List<Expression> arguments) {
+    if (constructor == Prelude.ZERO) {
+      return new IntegerExpression(BigInteger.ZERO);
+    }
+    if (constructor == Prelude.SUC && !arguments.isEmpty() && arguments.get(0).isInstance(IntegerExpression.class)) {
+      return new IntegerExpression(arguments.get(0).cast(IntegerExpression.class).getInteger().add(BigInteger.ONE));
+    }
+    return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
   }
 
   public List<Expression> getDataTypeArguments() {

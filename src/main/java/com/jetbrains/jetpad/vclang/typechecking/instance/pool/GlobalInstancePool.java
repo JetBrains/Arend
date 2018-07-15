@@ -52,7 +52,7 @@ public class GlobalInstancePool implements InstancePool {
     ClassField classifyingField = null;
     if (classifyingExpression != null) {
       classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
-      if (!classifyingExpression.isInstance(DefCallExpression.class) && !classifyingExpression.isInstance(UniverseExpression.class)) {
+      if (!classifyingExpression.isInstance(DefCallExpression.class) && !classifyingExpression.isInstance(UniverseExpression.class) && !classifyingExpression.isInstance(IntegerExpression.class)) {
         return null;
       }
 
@@ -73,6 +73,8 @@ public class GlobalInstancePool implements InstancePool {
           if (classifyingExpression != null) {
             Expression instanceClassifyingExpr = instanceResultType.getImplementationHere(classifyingField);
             if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
+                  instanceClassifyingExpr instanceof IntegerExpression  && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).getInteger().equals(classifyingExpression.cast(IntegerExpression.class).getInteger()) ||
+                                                                            classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
                   instanceClassifyingExpr instanceof DefCallExpression  && classifyingExpression.isInstance(DefCallExpression.class)  && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
               continue;
             }

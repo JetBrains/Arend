@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.module.serialization;
 
+import com.google.protobuf.ByteString;
 import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.LevelVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
@@ -361,6 +362,13 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitOfType(OfTypeExpression expr, Void params) {
     throw new IllegalStateException();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitInteger(IntegerExpression expr, Void params) {
+    ExpressionProtos.Expression.Integer.Builder builder = ExpressionProtos.Expression.Integer.newBuilder();
+    builder.setValue(ByteString.copyFrom(expr.getInteger().toByteArray()));
+    return ExpressionProtos.Expression.newBuilder().setInteger(builder).build();
   }
 
   @Override

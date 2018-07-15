@@ -124,4 +124,9 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
   public Boolean visitOfType(OfTypeExpression expression, P param) {
     return expression.getExpression().accept(this, param) || expression.getTypeOf().accept(this, param);
   }
+
+  @Override
+  public Boolean visitInteger(IntegerExpression expr, P params) {
+    return false;
+  }
 }

@@ -19,6 +19,7 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.GoalError;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.DummyEquations;
 import com.jetbrains.jetpad.vclang.typechecking.implicitargs.equations.Equations;
 
+import java.math.BigInteger;
 import java.util.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -292,6 +293,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
+    if (expr1 instanceof ConCallExpression && expr2.isInstance(IntegerExpression.class)) {
+      return visitInteger(expr2.cast(IntegerExpression.class), expr1);
+    }
     return visitDefCall(expr1, expr2, true);
   }
 
@@ -306,7 +310,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     for (int i = 0; i < dataCall1.getDefCallArguments().size(); i++) {
       myCMP = dataCall1.getDefinition().isCovariant(i) ? origCMP : Equations.CMP.EQ;
       if (!compare(dataCall1.getDefCallArguments().get(i), dataCall2.getDefCallArguments().get(i))) {
-        return false;
+         return false;
       }
     }
     return true;
@@ -577,7 +581,24 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitOfType(OfTypeExpression expr, Expression params) {
-    return expr.getExpression().accept(this, params);
+  public Boolean visitOfType(OfTypeExpression expr, Expression expr2) {
+    return expr.getExpression().accept(this, expr2);
+  }
+
+  @Override
+  public Boolean visitInteger(IntegerExpression expr, Expression expr2) {
+    if (expr2.isInstance(IntegerExpression.class)) {
+      return expr.getInteger().equals(expr2.cast(IntegerExpression.class).getInteger());
+    }
+
+    ConCallExpression conCall2 = expr2.checkedCast(ConCallExpression.class);
+    Constructor constructor2 = conCall2 == null ? null : conCall2.getDefinition();
+    if (constructor2 == null || !expr.match(constructor2)) {
+      return false;
+    }
+    if (constructor2 == Prelude.ZERO) {
+      return true;
+    }
+    return compare(new IntegerExpression(expr.getInteger().subtract(BigInteger.ONE)), conCall2.getDefCallArguments().get(0));
   }
 }

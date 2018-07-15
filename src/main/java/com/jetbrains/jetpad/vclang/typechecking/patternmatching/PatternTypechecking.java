@@ -281,6 +281,7 @@ public class PatternTypechecking {
         return null;
       }
 
+      // Empty pattern
       if (pattern instanceof Concrete.TuplePattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
@@ -335,9 +336,9 @@ public class PatternTypechecking {
         exprs = null;
         parameters = parameters.getNext();
       } else {
-        conCall = new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.proj2);
-        exprs.add(conCall);
-        parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, conCall));
+        Expression newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.proj2);
+        exprs.add(newConCall);
+        parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, newConCall));
       }
     }
 

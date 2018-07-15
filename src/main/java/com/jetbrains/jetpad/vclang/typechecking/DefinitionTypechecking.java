@@ -866,7 +866,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (classifyingField != null) {
       Expression classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
       if (classifyingExpr != null && !(classifyingExpr instanceof ErrorExpression)) {
-        if (!(classifyingExpr instanceof DefCallExpression || classifyingExpr instanceof UniverseExpression)) {
+        if (!(classifyingExpr instanceof DefCallExpression || classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof IntegerExpression)) {
           myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be a defCall or a universe", resultType));
         }
       }

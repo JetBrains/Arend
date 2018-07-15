@@ -17,6 +17,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -218,6 +219,8 @@ class ExpressionDeserialization {
         return readCase(proto.getCase());
       case FIELD_CALL:
         return readFieldCall(proto.getFieldCall());
+      case INTEGER:
+        return readInteger(proto.getInteger());
       default:
         throw new DeserializationException("Unknown Expression kind: " + proto.getKindCase());
     }
@@ -242,10 +245,10 @@ class ExpressionDeserialization {
     return new FunCallExpression(functionDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
-  private ConCallExpression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationException {
+  private Expression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationException {
     Constructor constructor = myCallTargetProvider.getCallTarget(proto.getConstructorRef(), Constructor.class);
     myDependencyListener.dependsOn(myDefinition, myHeader, constructor.getDataType().getReferable());
-    return new ConCallExpression(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
+    return ConCallExpression.make(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
@@ -333,5 +336,9 @@ class ExpressionDeserialization {
     ClassField classField = myCallTargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class);
     myDependencyListener.dependsOn(myDefinition, myHeader, classField.getParentClass().getReferable());
     return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
+  }
+
+  private IntegerExpression readInteger(ExpressionProtos.Expression.Integer proto) throws DeserializationException {
+    return new IntegerExpression(new BigInteger(proto.getValue().toByteArray()));
   }
 }

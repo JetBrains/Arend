@@ -172,4 +172,9 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
   public Boolean visitOfType(OfTypeExpression expr, Void params) {
     return findBinding(expr.getExpression(), true) || findBinding(expr.getTypeOf(), true);
   }
+
+  @Override
+  public Boolean visitInteger(IntegerExpression expr, Void params) {
+    return false;
+  }
 }

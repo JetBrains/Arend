@@ -174,6 +174,11 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
   }
 
   @Override
+  public Void visitInteger(IntegerExpression expr, Set<Variable> params) {
+    return null;
+  }
+
+  @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
     variables.add(expr.getDefinition());
     for (Expression arg : expr.getDefCallArguments()) {

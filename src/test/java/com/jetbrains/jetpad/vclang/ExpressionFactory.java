@@ -35,8 +35,8 @@ public class ExpressionFactory {
     return new ClassCallExpression(definition, Sort.STD);
   }
 
-  public static ConCallExpression ConCall(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, Expression... arguments) {
-    return new ConCallExpression(definition, sortArgument, dataTypeArguments, Arrays.asList(arguments));
+  public static Expression ConCall(Constructor definition, Sort sortArgument, List<Expression> dataTypeArguments, Expression... arguments) {
+    return ConCallExpression.make(definition, sortArgument, dataTypeArguments, Arrays.asList(arguments));
   }
 
   public static ReferenceExpression Ref(Binding binding) {
