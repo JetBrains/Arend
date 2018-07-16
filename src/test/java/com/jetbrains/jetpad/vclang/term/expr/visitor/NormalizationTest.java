@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -37,15 +38,16 @@ import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest extends TypeCheckingTestCase {
   // \func + (x y : Nat) : Nat => \elim x | zero => y | suc x' => suc (x' + y)
-  private final FunctionDefinition plus;
+  private FunctionDefinition plus;
   // \func * (x y : Nat) : Nat => \elim x | zero => zero | suc x' => y + x' * y
-  private final FunctionDefinition mul;
+  private FunctionDefinition mul;
   // \func fac (x : Nat) : Nat => \elim x | zero => suc zero | suc x' => suc x' * fac x'
-  private final FunctionDefinition fac;
+  private FunctionDefinition fac;
   // \func nelim (z : Nat) (s : Nat -> Nat -> Nat) (x : Nat) : Nat => elim x | zero => z | suc x' => s x' (nelim z s x')
-  private final FunctionDefinition nelim;
+  private FunctionDefinition nelim;
 
-  public NormalizationTest() {
+  @Before
+  public void initialize() {
     DependentLink xPlus = param("x", Nat());
     DependentLink yPlus = param("y", Nat());
     plus = new FunctionDefinition(null);

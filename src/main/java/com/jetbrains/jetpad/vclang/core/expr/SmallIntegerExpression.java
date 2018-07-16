@@ -3,6 +3,8 @@ package com.jetbrains.jetpad.vclang.core.expr;
 import java.math.BigInteger;
 
 public class SmallIntegerExpression extends IntegerExpression {
+  private final static int MAX_VALUE_TO_MULTIPLY = 45000;
+
   private final int myInteger;
 
   public SmallIntegerExpression(int integer) {
@@ -44,5 +46,29 @@ public class SmallIntegerExpression extends IntegerExpression {
   @Override
   public boolean isEqual(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? myInteger == ((SmallIntegerExpression) expr).getInteger() : expr.getBigInteger().equals(BigInteger.valueOf(myInteger));
+  }
+
+  @Override
+  public IntegerExpression plus(IntegerExpression expr) {
+    if (expr instanceof SmallIntegerExpression) {
+      int sum = myInteger + ((SmallIntegerExpression) expr).myInteger;
+      if (sum >= 0) {
+        return new SmallIntegerExpression(sum);
+      }
+    }
+
+    return new BigIntegerExpression(BigInteger.valueOf(myInteger).add(expr.getBigInteger()));
+  }
+
+  @Override
+  public IntegerExpression mul(IntegerExpression expr) {
+    if (expr instanceof SmallIntegerExpression) {
+      int other = ((SmallIntegerExpression) expr).getInteger();
+      if (myInteger <= MAX_VALUE_TO_MULTIPLY && other <= MAX_VALUE_TO_MULTIPLY) {
+        return new SmallIntegerExpression(myInteger * other);
+      }
+    }
+
+    return new BigIntegerExpression(BigInteger.valueOf(myInteger).multiply(expr.getBigInteger()));
   }
 }

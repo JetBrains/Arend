@@ -1,6 +1,15 @@
 \data Nat
     | zero
     | suc Nat
+  \where {
+    \func \infixl 6 + (x y : Nat) : Nat \elim y
+      | zero => x
+      | suc y => suc (x + y)
+
+    \func \infixl 7 * (x y : Nat) : Nat \elim y
+      | zero => zero
+      | suc y => x * y + x
+  }
 
 \data I
     | left

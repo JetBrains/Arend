@@ -33,4 +33,14 @@ public class BigIntegerExpression extends IntegerExpression {
   public boolean isEqual(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? myInteger.equals(BigInteger.valueOf(((SmallIntegerExpression) expr).getInteger())) : myInteger.equals(expr.getBigInteger());
   }
+
+  @Override
+  public BigIntegerExpression plus(IntegerExpression expr) {
+    return new BigIntegerExpression(myInteger.add(expr.getBigInteger()));
+  }
+
+  @Override
+  public BigIntegerExpression mul(IntegerExpression expr) {
+    return new BigIntegerExpression(myInteger.multiply(expr.getBigInteger()));
+  }
 }

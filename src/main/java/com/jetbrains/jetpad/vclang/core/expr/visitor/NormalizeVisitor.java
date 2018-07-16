@@ -103,7 +103,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression visitDefCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
-    if (expr.getDefinition() == Prelude.COERCE) {
+    Definition definition = expr.getDefinition();
+    if (definition == Prelude.COERCE) {
       LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, Mode.WHNF).checkedCast(LamExpression.class);
       if (lamExpr != null) {
         Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
@@ -138,20 +139,43 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
+    List<? extends Expression> defCallArgs = expr.getDefCallArguments();
+    if (definition == Prelude.PLUS || definition == Prelude.MUL) {
+      Expression arg2 = defCallArgs.get(1).normalize(Mode.WHNF);
+      if (arg2.isInstance(IntegerExpression.class)) {
+        Expression arg1 = defCallArgs.get(0).normalize(Mode.WHNF);
+        if (arg1.isInstance(IntegerExpression.class)) {
+          return definition == Prelude.PLUS
+            ? arg1.cast(IntegerExpression.class).plus(arg2.cast(IntegerExpression.class))
+            : arg1.cast(IntegerExpression.class).mul(arg2.cast(IntegerExpression.class));
+        }
+
+        List<Expression> newDefCallArgs = new ArrayList<>(2);
+        newDefCallArgs.add(arg1);
+        newDefCallArgs.add(arg2);
+        defCallArgs = newDefCallArgs;
+      } else {
+        List<Expression> newDefCallArgs = new ArrayList<>(2);
+        newDefCallArgs.add(defCallArgs.get(0));
+        newDefCallArgs.add(arg2);
+        defCallArgs = newDefCallArgs;
+      }
+    }
+
     ElimTree elimTree;
-    Body body = ((Function) expr.getDefinition()).getBody();
+    Body body = ((Function) definition).getBody();
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
-      int i0 = expr.getDefCallArguments().size() - elim.getCases().size();
-      for (int i = i0; i < expr.getDefCallArguments().size(); i++) {
-        Expression arg = expr.getDefCallArguments().get(i).accept(this, Mode.WHNF);
+      int i0 = defCallArgs.size() - elim.getCases().size();
+      for (int i = i0; i < defCallArgs.size(); i++) {
+        Expression arg = defCallArgs.get(i).accept(this, Mode.WHNF);
         ConCallExpression conCall = arg.checkedCast(ConCallExpression.class);
         if (conCall != null) {
           ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
           DependentLink link = elim.getParameters();
-          for (int j = 0; j < expr.getDefCallArguments().size(); j++) {
+          for (int j = 0; j < defCallArgs.size(); j++) {
             if (j != i) {
-              substitution.add(link, expr.getDefCallArguments().get(j));
+              substitution.add(link, defCallArgs.get(j));
             }
             link = link.getNext();
           }
@@ -176,7 +200,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return applyDefCall(expr, mode);
     }
 
-    Expression result = eval(elimTree, expr.getDefCallArguments(), getDataTypeArgumentsSubstitution(expr), levelSubstitution);
+    Expression result = eval(elimTree, defCallArgs, getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
     if (TypecheckingOrderingListener.CANCELLATION_INDICATOR.isCanceled()) {
       throw new ComputationInterruptedException();

@@ -42,6 +42,8 @@ public class Prelude {
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
+  public static FunctionDefinition PLUS;
+  public static FunctionDefinition MUL;
 
   public static FunctionDefinition COERCE;
 
@@ -67,6 +69,12 @@ public class Prelude {
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
+        break;
+      case "+":
+        PLUS = (FunctionDefinition) definition;
+        break;
+      case "*":
+        MUL = (FunctionDefinition) definition;
         break;
       case "I":
         INTERVAL = (DataDefinition) definition;
@@ -154,11 +162,14 @@ public class Prelude {
     }
   }
 
-  // TODO[prelude]: This works only because currently the prelude namespace is flat.
   public static void initialize(Scope scope, TypecheckerState state) {
     for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((TCReferable) scope.resolveName(name)));
     }
+    Scope natScope = scope.resolveNamespace("Nat");
+    assert natScope != null;
+    update(state.getTypechecked((TCReferable) natScope.resolveName("+")));
+    update(state.getTypechecked((TCReferable) natScope.resolveName("*")));
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {

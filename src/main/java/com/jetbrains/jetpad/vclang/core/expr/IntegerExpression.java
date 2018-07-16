@@ -17,6 +17,10 @@ public abstract class IntegerExpression extends Expression {
 
   public abstract boolean isEqual(IntegerExpression expr);
 
+  public abstract IntegerExpression plus(IntegerExpression expr);
+
+  public abstract IntegerExpression mul(IntegerExpression expr);
+
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInteger(this, params);
