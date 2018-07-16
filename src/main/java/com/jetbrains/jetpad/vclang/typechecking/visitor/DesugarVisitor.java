@@ -2,6 +2,7 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.BaseConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
@@ -198,5 +199,40 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       }
     }
     return expr;
+  }
+
+  private void visitPatterns(List<Concrete.Pattern> patterns) {
+    for (int i = 0; i < patterns.size(); i++) {
+      Concrete.Pattern pattern = patterns.get(i);
+      if (pattern instanceof Concrete.TuplePattern) {
+        visitPatterns(((Concrete.TuplePattern) pattern).getPatterns());
+      } else if (pattern instanceof Concrete.ConstructorPattern) {
+        visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
+      } else if (pattern instanceof Concrete.NumberPattern) {
+        Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList());
+        int n = ((Concrete.NumberPattern) pattern).getNumber();
+        if (n > Concrete.NumberPattern.MAX_VALUE) {
+          n = Concrete.NumberPattern.MAX_VALUE;
+        }
+        if (n == Concrete.NumberPattern.MAX_VALUE) {
+          myErrorReporter.report(new TypecheckingError("Value too big", pattern));
+        }
+        for (int j = 0; j < n; j++) {
+          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern));
+        }
+        if (!pattern.isExplicit()) {
+          newPattern.setExplicit(false);
+        }
+        patterns.set(i, newPattern);
+      }
+    }
+  }
+
+  @Override
+  protected void visitClause(Concrete.Clause clause) {
+    if (clause.getPatterns() != null) {
+      visitPatterns(clause.getPatterns());
+    }
+    super.visitClause(clause);
   }
 }

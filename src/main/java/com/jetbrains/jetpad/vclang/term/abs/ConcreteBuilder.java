@@ -409,6 +409,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
     Referable reference = pattern.getHeadReference();
+    if (reference == null) {
+      Integer number = pattern.getNumber();
+      if (number != null) {
+        return new Concrete.NumberPattern(pattern.getData(), number);
+      }
+    }
+
     if (reference == null && !pattern.isUnnamed()) {
       return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()));
     } else {
@@ -416,9 +423,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       if (reference instanceof GlobalReferable || !args.isEmpty()) {
         return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args));
       } else {
-        if (!pattern.getArguments().isEmpty()) {
-          myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Unexpected argument", args.iterator().next()));
-        }
         return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference));
       }
     }

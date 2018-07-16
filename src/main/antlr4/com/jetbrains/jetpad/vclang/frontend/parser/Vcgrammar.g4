@@ -57,6 +57,7 @@ pattern : atomPattern             # patternAtom
 
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
             | '{' pattern '}'                     # patternImplicit
+            | NUMBER                              # patternNumber
             | '_'                                 # patternAny
             ;
 

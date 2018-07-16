@@ -54,6 +54,7 @@ public final class Abstract {
     @Nullable Object getData();
     boolean isUnnamed();
     boolean isExplicit();
+    @Nullable Integer getNumber();
     @Nullable Referable getHeadReference();
     @Nonnull List<? extends Pattern> getArguments();
   }

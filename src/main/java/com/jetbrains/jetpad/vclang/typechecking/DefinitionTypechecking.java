@@ -544,6 +544,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       } else if (pattern instanceof Concrete.ConstructorPattern) {
         fillInPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
+      } else if (pattern instanceof Concrete.TuplePattern) {
+        fillInPatterns(((Concrete.TuplePattern) pattern).getPatterns());
       }
     }
   }

@@ -139,6 +139,8 @@ public class Prelude {
 
   public static void fillInTypecheckerState(TypecheckerState state) {
     state.record(NAT.getReferable(), NAT);
+    state.record(PLUS.getReferable(), PLUS);
+    state.record(MUL.getReferable(), MUL);
     state.record(ZERO.getReferable(), ZERO);
     state.record(SUC.getReferable(), SUC);
     state.record(INTERVAL.getReferable(), INTERVAL);

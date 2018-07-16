@@ -1334,6 +1334,20 @@ public final class Concrete {
     }
   }
 
+  public static class NumberPattern extends Pattern {
+    public final static int MAX_VALUE = 1000;
+    private final int myNumber;
+
+    public NumberPattern(Object data, int number) {
+      super(data);
+      myNumber = number;
+    }
+
+    public int getNumber() {
+      return myNumber;
+    }
+  }
+
   public static class NamePattern extends Pattern {
     private final @Nullable Referable myReferable;
 

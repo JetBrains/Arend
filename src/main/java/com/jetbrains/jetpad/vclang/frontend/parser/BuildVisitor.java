@@ -344,6 +344,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.Pattern visitPatternNumber(PatternNumberContext ctx) {
+    String text = ctx.NUMBER().getText();
+    int value;
+    if (text.length() >= 10) {
+      value = Concrete.NumberPattern.MAX_VALUE;
+    } else {
+      value = Integer.parseInt(ctx.NUMBER().getText(), 10);
+    }
+
+    return new Concrete.NumberPattern(tokenPosition(ctx.start), value);
+  }
+
+  @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     return new Concrete.NamePattern(tokenPosition(ctx.start), null);
   }

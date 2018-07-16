@@ -168,11 +168,14 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  protected void visitClause(Concrete.FunctionClause clause) {
-    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitPatterns(clause.getPatterns(), new HashMap<>(), true);
-      if (clause.expression != null) {
-        clause.expression = clause.expression.accept(this, null);
+  protected void visitClause(Concrete.Clause clause) {
+    if (clause instanceof Concrete.FunctionClause) {
+      Concrete.FunctionClause functionClause = (Concrete.FunctionClause) clause;
+      try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+        visitPatterns(clause.getPatterns(), new HashMap<>(), true);
+        if (functionClause.expression != null) {
+          functionClause.expression = functionClause.expression.accept(this, null);
+        }
       }
     }
   }
@@ -200,6 +203,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return null;
     } else if (pattern instanceof Concrete.TuplePattern) {
       visitPatterns(((Concrete.TuplePattern) pattern).getPatterns(), usedNames, false);
+      return null;
+    } else if (pattern instanceof Concrete.NumberPattern) {
       return null;
     } else {
       throw new IllegalStateException();

@@ -83,6 +83,10 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
       }
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        visitPattern(patternArg);
+      }
     }
   }
 

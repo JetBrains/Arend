@@ -1024,6 +1024,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         name = "_";
       }
       myBuilder.append(name);
+    } else if (pattern instanceof Concrete.NumberPattern) {
+      myBuilder.append(((Concrete.NumberPattern) pattern).getNumber());
     } else if (pattern instanceof Concrete.TuplePattern) {
       myBuilder.append('(');
       boolean first = true;

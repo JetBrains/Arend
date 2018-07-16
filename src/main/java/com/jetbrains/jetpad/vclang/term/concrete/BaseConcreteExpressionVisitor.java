@@ -94,9 +94,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  protected void visitClause(Concrete.FunctionClause clause) {
-    if (clause.expression != null) {
-      clause.expression = clause.expression.accept(this, null);
+  protected void visitClause(Concrete.Clause clause) {
+    if (clause instanceof Concrete.FunctionClause && ((Concrete.FunctionClause) clause).expression != null) {
+      ((Concrete.FunctionClause) clause).expression = ((Concrete.FunctionClause) clause).expression.accept(this, null);
     }
   }
 
@@ -176,6 +176,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   public Void visitData(Concrete.DataDefinition def, P params) {
     visitParameters(def.getParameters());
     for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+      visitClause(clause);
       for (Concrete.Constructor constructor : clause.getConstructors()) {
         visitParameters(constructor.getParameters());
         visitClauses(constructor.getClauses());

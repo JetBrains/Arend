@@ -188,6 +188,13 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return true;
     }
 
+    if (pattern1 instanceof Concrete.NumberPattern) {
+      if (!(pattern2 instanceof Concrete.NumberPattern)) {
+        return false;
+      }
+      return ((Concrete.NumberPattern) pattern1).getNumber() == ((Concrete.NumberPattern) pattern2).getNumber();
+    }
+
     if (pattern1 instanceof Concrete.ConstructorPattern) {
       if (!(pattern2 instanceof Concrete.ConstructorPattern)) {
         return false;
