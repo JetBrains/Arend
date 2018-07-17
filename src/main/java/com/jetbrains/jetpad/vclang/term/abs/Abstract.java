@@ -83,6 +83,8 @@ public final class Abstract {
 
   public interface ClassReferenceHolder extends SourceNode {
     @Nullable ClassReferable getClassReference();
+    @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
+    int getNumberOfArguments();
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
@@ -113,7 +115,6 @@ public final class Abstract {
     @Nullable Object getData();
     @Nonnull Referable getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
-    @Nonnull Collection<? extends ClassFieldImpl> getRecursiveClassFieldImpls();
   }
 
   public interface LetClause extends ParametersHolder {
@@ -148,12 +149,11 @@ public final class Abstract {
     @Nonnull Collection<? extends ConstructorClause> getClauses();
   }
 
-  public interface ClassDefinition extends Definition, ParametersHolder {
+  public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
     @Override @Nonnull ClassReferable getReferable();
     boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
-    @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
     @Nullable Reference getUnderlyingClass();
   }
 
@@ -175,6 +175,5 @@ public final class Abstract {
 
   public interface InstanceDefinition extends Definition, ParametersHolder, ClassReferenceHolder {
     /* @Nonnull */ @Nullable Expression getResultType();
-    @Nonnull Collection<? extends ClassFieldImpl> getImplementation();
   }
 }

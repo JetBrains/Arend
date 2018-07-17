@@ -314,7 +314,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     List<Concrete.ClassFieldImpl> implementations;
     try {
-      implementations = buildImplementations(def.getImplementation());
+      implementations = buildImplementations(def.getClassFieldImpls());
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       implementations = Collections.emptyList();
@@ -357,7 +357,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), term));
       } else {
         Object data = implementation.getData();
-        implementations.add(new Concrete.ClassFieldImpl(data, implementation.getImplementedField(), new Concrete.NewExpression(data, new Concrete.ClassExtExpression(data, new Concrete.HoleExpression(data), buildImplementations(implementation.getRecursiveClassFieldImpls())))));
+        implementations.add(new Concrete.ClassFieldImpl(data, implementation.getImplementedField(), new Concrete.NewExpression(data, new Concrete.ClassExtExpression(data, new Concrete.HoleExpression(data), buildImplementations(implementation.getClassFieldImpls())))));
       }
     }
     return implementations;

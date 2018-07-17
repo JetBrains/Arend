@@ -705,10 +705,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         printIndent();
         myBuilder.append("}");
       }
+    } else {
+      myBuilder.append(" => ");
+      classFieldImpl.implementation.accept(this, new Precedence(Expression.PREC));
     }
-
-    myBuilder.append(" => ");
-    classFieldImpl.implementation.accept(this, new Precedence(Expression.PREC));
   }
 
   @Override

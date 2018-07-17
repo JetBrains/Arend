@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TypedReferable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -10,6 +13,10 @@ import java.util.function.Predicate;
 public class ClassFieldImplScope implements Scope {
   private final ClassReferable myReferable;
   private final boolean myWithSuperClasses;
+
+  public ClassReferable getClassReference() {
+    return myReferable;
+  }
 
   public ClassFieldImplScope(ClassReferable referable, boolean withSuperClasses) {
     myReferable = referable;
@@ -48,7 +55,7 @@ public class ClassFieldImplScope implements Scope {
       }
 
       Collection<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();
-      if (myWithSuperClasses) {
+      if (myWithSuperClasses && underlyingClasses != null) {
         for (ClassReferable superClass : superClasses) {
           if (pred.test(superClass)) {
             return superClass;
