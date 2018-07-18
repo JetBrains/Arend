@@ -363,11 +363,13 @@ public final class Concrete {
   public static class ClassFieldImpl extends SourceNodeImpl {
     private Referable myImplementedField;
     public Expression implementation;
+    public final List<ClassFieldImpl> subClassFieldImpls;
 
-    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation) {
+    public ClassFieldImpl(Object data, Referable implementedField, Expression implementation, List<ClassFieldImpl> subClassFieldImpls) {
       super(data);
       myImplementedField = implementedField;
       this.implementation = implementation;
+      this.subClassFieldImpls = subClassFieldImpls;
     }
 
     public Referable getImplementedField() {
@@ -376,11 +378,6 @@ public final class Concrete {
 
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
-    }
-
-    @Nonnull
-    public Expression getImplementation() {
-      return implementation;
     }
   }
 

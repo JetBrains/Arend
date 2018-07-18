@@ -272,13 +272,18 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         }
       }
 
-      if (impl.implementation instanceof Concrete.NewExpression && ((Concrete.NewExpression) impl.implementation).getExpression() instanceof Concrete.ClassExtExpression && ((Concrete.ClassExtExpression) ((Concrete.NewExpression) impl.implementation).getExpression()).baseClassExpression instanceof Concrete.HoleExpression && impl.getImplementedField() instanceof TypedReferable) {
-        ClassReferable classRef = ((TypedReferable) impl.getImplementedField()).getTypeClassReference();
+      if (impl.implementation == null) {
+        ClassReferable classRef = impl.getImplementedField() instanceof ClassReferable
+          ? (ClassReferable) impl.getImplementedField()
+          : impl.getImplementedField() instanceof TypedReferable
+            ? ((TypedReferable) impl.getImplementedField()).getTypeClassReference()
+            : null;
         if (classRef != null) {
-          ((Concrete.ClassExtExpression) ((Concrete.NewExpression) impl.implementation).getExpression()).baseClassExpression = new Concrete.ReferenceExpression(((Concrete.NewExpression) impl.implementation).getExpression().getData(), classRef);
+          visitClassFieldImpls(impl.subClassFieldImpls, classRef);
         }
+      } else {
+        impl.implementation = impl.implementation.accept(this, null);
       }
-      impl.implementation = impl.implementation.accept(this, null);
     }
   }
 

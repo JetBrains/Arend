@@ -864,7 +864,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
     List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);
-    Concrete.Expression term;
+    Concrete.Expression term = null;
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
     ExprContext exprCtx = ctx.expr();
     if (exprCtx != null) {
       term = visitExpr(exprCtx);
@@ -875,12 +876,10 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (!parameters.isEmpty()) {
         myErrorReporter.report(new ParserError(tokenPosition(teleCtxs.get(0).start), "Parameters are allowed only before '=> <expression>'"));
       }
-      List<CoClauseContext> coClauses = ctx.coClause();
-      Position position1 = tokenPosition(coClauses.isEmpty() ? ctx.start : coClauses.get(0).start);
-      term = new Concrete.NewExpression(position1, new Concrete.ClassExtExpression(position1, new Concrete.HoleExpression(position1), visitCoClauses(coClauses)));
+      subClassFieldImpls = visitCoClauses(ctx.coClause());
     }
 
-    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term);
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
   }
 
   private Concrete.LevelExpression parseTruncatedUniverse(TerminalNode terminal) {

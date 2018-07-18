@@ -354,10 +354,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters), term);
         }
 
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), term));
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), term, Collections.emptyList()));
       } else {
         Object data = implementation.getData();
-        implementations.add(new Concrete.ClassFieldImpl(data, implementation.getImplementedField(), new Concrete.NewExpression(data, new Concrete.ClassExtExpression(data, new Concrete.HoleExpression(data), buildImplementations(implementation.getClassFieldImpls())))));
+        implementations.add(new Concrete.ClassFieldImpl(data, implementation.getImplementedField(), null, buildImplementations(implementation.getClassFieldImpls())));
       }
     }
     return implementations;

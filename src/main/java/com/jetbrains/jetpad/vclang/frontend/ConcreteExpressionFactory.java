@@ -34,7 +34,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ClassFieldImpl cImplStatement(Referable referable, Concrete.Expression expr) {
-    return new Concrete.ClassFieldImpl(null, referable, expr);
+    return new Concrete.ClassFieldImpl(null, referable, expr, Collections.emptyList());
   }
 
   public static Concrete.Expression cApps(Concrete.Expression expr, Concrete.Expression... exprs) {

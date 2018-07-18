@@ -51,6 +51,7 @@ import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ElimTypechecking;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.PatternTypechecking;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
@@ -1140,7 +1141,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedType, exprResult, expr);
   }
 
-  public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
+  private Definition referableToDefinition(Referable referable, Concrete.SourceNode sourceNode) {
     if (referable instanceof ErrorReference) {
       return null;
     }
@@ -1152,11 +1153,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
+    if (definition == null) {
+      myErrorReporter.report(new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()));
+    }
+    return definition;
+  }
+
+  public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
+    Definition definition = referableToDefinition(referable, sourceNode);
+    if (definition == null) {
+      return null;
+    }
     if (clazz.isInstance(definition)) {
       return clazz.cast(definition);
     }
 
-    myErrorReporter.report(definition == null ? new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()) : new WrongReferable(errorMsg, referable, sourceNode));
+    myErrorReporter.report(new WrongReferable(errorMsg, referable, sourceNode));
     return null;
   }
 
@@ -1189,6 +1201,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     // Check for already implemented fields
 
     Map<ClassField, Concrete.ClassFieldImpl> classFieldMap = new HashMap<>();
+    Map<ClassField, Pair<Expression,Concrete.SourceNode>> classFieldMap2 = new HashMap<>();
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
     Iterator<? extends ClassField> fieldIt = baseClass.getFields().iterator();
@@ -1196,22 +1209,45 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ClassField curField = fieldIt.hasNext() ? fieldIt.next() : null;
       if (statement.getImplementedField() == null) {
         if (curField == null) {
-          myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + baseClass.getName() + "' has only " + baseClass.getFields().size() + " fields.", statement.implementation));
+          myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + baseClass.getName() + "' has only " + baseClass.getFields().size() + " fields", statement.implementation == null ? statement : statement.implementation));
           continue;
         } else {
           statement.setImplementedField(curField.getReferable());
         }
       }
 
-      ClassField field = referableToClassField(statement.getImplementedField(), statement);
-      if (field == null) {
+      Definition definition = referableToDefinition(statement.getImplementedField(), statement);
+      if (definition == null) {
         continue;
       }
-      if (baseClass.isImplemented(field) || classFieldMap.containsKey(field)) {
-        alreadyImplementedFields.add(field.getReferable());
-        alreadyImplementedSourceNode = statement;
+
+      if (definition instanceof ClassField) {
+        ClassField field = (ClassField) definition;
+        if (baseClass.isImplemented(field) || classFieldMap.containsKey(field) || classFieldMap2.containsKey(field)) {
+          alreadyImplementedFields.add(field.getReferable());
+          alreadyImplementedSourceNode = statement;
+        } else {
+          classFieldMap.put(field, statement);
+        }
+      } else if (definition instanceof ClassDefinition) {
+        Result result = checkExpr(statement.implementation, null);
+        if (result != null) {
+          Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+          ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
+          if (classCall == null) {
+            myErrorReporter.report(new TypeMismatchError(DocFactory.text("a class instance"), type, statement.implementation));
+          } else {
+            if (classCall.getDefinition() != definition) {
+              myErrorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) definition, Sort.PROP), type, statement.implementation));
+            } else {
+              for (ClassField field : classCall.getDefinition().getFields()) {
+                classFieldMap2.put(field, new Pair<>(FieldCallExpression.make(field, classCall.getSortArgument(), result.expression), statement.implementation));
+              }
+            }
+          }
+        }
       } else {
-        classFieldMap.put(field, statement);
+        myErrorReporter.report(new WrongReferable("Expected either a field or a class", statement.getImplementedField(), statement));
       }
     }
 
@@ -1226,30 +1262,58 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     if (!classFieldMap.isEmpty()) {
       Set<ClassField> notImplementedFields = new HashSet<>();
+      Set<ClassField> notImplementedFields2 = new HashSet<>();
       for (ClassField field : baseClass.getFields()) {
-        if (resultClassCall.isImplemented(field)) {
+        Pair<Expression, Concrete.SourceNode> impl2 = classFieldMap2.get(field);
+        if (impl2 == null && resultClassCall.isImplemented(field)) {
           continue;
         }
 
-        Concrete.ClassFieldImpl impl = classFieldMap.get(field);
-        if (impl != null) {
-          boolean ok = true;
-          if (!notImplementedFields.isEmpty()) {
-            ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
-            if (found != null) {
-              ok = false;
-              myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl));
+        Expression oldImpl = impl2 == null ? null : resultClassCall.getImplementation(field, new NewExpression(resultClassCall));
+        if (oldImpl == null) {
+          Concrete.ClassFieldImpl impl = classFieldMap.get(field);
+          if (impl != null) {
+            boolean ok = true;
+            if (!notImplementedFields.isEmpty()) {
+              ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
+              if (found != null) {
+                ok = false;
+                myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl));
+              }
+            }
+            if (ok) {
+              oldImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
+              fieldSet.put(field, oldImpl);
+              classFieldMap.remove(field);
+              if (classFieldMap.isEmpty()) {
+                break;
+              }
+            }
+          } else if (impl2 == null) {
+            notImplementedFields.add(field);
+          }
+        }
+
+        if (impl2 != null) {
+          if (oldImpl != null) {
+            CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl2.proj2);
+            if (!cmpVisitor.compare(oldImpl, impl2.proj1)) {
+              myErrorReporter.report(new ImplementationClashError(oldImpl, field, impl2.proj1, impl2.proj2));
+              notImplementedFields2.add(field);
+            }
+          } else {
+            boolean ok = true;
+            if (!notImplementedFields2.isEmpty()) {
+              ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields2);
+              if (found != null) {
+                ok = false;
+                myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl2.proj2));
+              }
+            }
+            if (ok) {
+              fieldSet.put(field, impl2.proj1);
             }
           }
-          if (ok) {
-            fieldSet.put(field, typecheckImplementation(field, impl.getImplementation(), resultClassCall));
-            classFieldMap.remove(field);
-            if (classFieldMap.isEmpty()) {
-              break;
-            }
-          }
-        } else {
-          notImplementedFields.add(field);
         }
       }
     }

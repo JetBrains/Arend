@@ -275,7 +275,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
     for (int i = 0; i < implStats1.size(); i++) {
-      if (!(compare(implStats1.get(i).getImplementation(), implStats2.get(i).getImplementation()) && Objects.equals(implStats1.get(i).getImplementedField(), implStats2.get(i).getImplementedField()))) {
+      if (!(compareImplementStatements(implStats1.get(i).subClassFieldImpls, implStats2.get(i).subClassFieldImpls) && (implStats1.get(i).implementation == implStats2.get(i).implementation || implStats1.get(i).implementation != null && implStats2.get(i).implementation != null && compare(implStats1.get(i).implementation, implStats2.get(i).implementation)) && Objects.equals(implStats1.get(i).getImplementedField(), implStats2.get(i).getImplementedField()))) {
         return false;
       }
     }

@@ -128,10 +128,17 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   @Override
   public Void visitClassExt(Concrete.ClassExtExpression expr, Void ignore) {
     expr.getBaseClassExpression().accept(this, null);
-    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
-      statement.getImplementation().accept(this, null);
-    }
+    visitClassFieldImpls(expr.getStatements());
     return null;
+  }
+
+  public void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
+      if (classFieldImpl.implementation != null) {
+        classFieldImpl.implementation.accept(this, null);
+      }
+      visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
+    }
   }
 
   @Override

@@ -124,10 +124,21 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, P params) {
     expr.baseClassExpression = expr.baseClassExpression.accept(this, null);
-    for (Concrete.ClassFieldImpl classFieldImpl : expr.getStatements()) {
+    visitClassFieldImpls(expr.getStatements());
+    return expr;
+  }
+
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
+    if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
     }
-    return expr;
+    visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
+  }
+
+  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
+      visitClassFieldImpl(classFieldImpl);
+    }
   }
 
   @Override
@@ -190,18 +201,14 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     for (Concrete.ClassField field : def.getFields()) {
       field.setResultType(field.getResultType().accept(this, null));
     }
-    for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
-      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
-    }
+    visitClassFieldImpls(def.getImplementations());
     return null;
   }
 
   @Override
   public Void visitInstance(Concrete.Instance def, P params) {
     visitParameters(def.getParameters());
-    for (Concrete.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
-    }
+    visitClassFieldImpls(def.getClassFieldImpls());
     def.setResultType(def.getResultType().accept(this, params));
     return null;
   }

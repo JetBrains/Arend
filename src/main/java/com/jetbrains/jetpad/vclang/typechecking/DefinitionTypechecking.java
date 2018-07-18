@@ -762,13 +762,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           continue;
         }
 
-        Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
-        Concrete.TelescopeParameter concreteParameter = (Concrete.TelescopeParameter) lamImpl.getParameters().get(0);
         SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
-        visitor.getContext().put(concreteParameter.getReferableList().get(0), parameter);
-        visitor.getFreeBindings().add(parameter);
-        PiExpression fieldType = field.getType(Sort.STD);
-        CheckTypeVisitor.Result result = visitor.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
+        Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
+        CheckTypeVisitor.Result result;
+        if (lamImpl != null) {
+          Concrete.TelescopeParameter concreteParameter = (Concrete.TelescopeParameter) lamImpl.getParameters().get(0);
+          visitor.getContext().put(concreteParameter.getReferableList().get(0), parameter);
+          visitor.getFreeBindings().add(parameter);
+          PiExpression fieldType = field.getType(Sort.STD);
+          result = visitor.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
+        } else {
+          result = null;
+        }
         if (result == null || result.expression.isInstance(ErrorExpression.class)) {
           classOk = false;
         }
