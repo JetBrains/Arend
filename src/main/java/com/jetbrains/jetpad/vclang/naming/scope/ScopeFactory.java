@@ -47,63 +47,65 @@ public class ScopeFactory {
     return LexicalScope.insideOf(group, parentScopeForGroup(group, moduleScopeProvider, prelude));
   }
 
-  @SuppressWarnings("RedundantIfStatement")
-  public static boolean isParentScopeVisible(Abstract.SourceNode sourceNode) {
-    // We cannot use any references in level expressions
-    if (sourceNode instanceof Abstract.LevelExpression) {
-      return false;
-    }
-
-    Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
-    if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
-      sourceNode = parentSourceNode;
-      parentSourceNode = sourceNode.getParentSourceNode();
-    }
-
-    // After namespace command
-    if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
-      if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
+  public static boolean isGlobalScopeVisible(Abstract.SourceNode sourceNode) {
+    while (sourceNode != null && !(sourceNode instanceof Abstract.Definition || sourceNode instanceof Abstract.NamespaceCommandHolder)) {
+      // We cannot use any references in level expressions
+      if (sourceNode instanceof Abstract.LevelExpression) {
         return false;
       }
-      return sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference());
-    }
 
-    // After a dot
-    if (parentSourceNode instanceof Abstract.LongReference && sourceNode instanceof Abstract.Reference) {
-      Abstract.Reference headRef = ((Abstract.LongReference) parentSourceNode).getHeadReference();
-      return headRef == null || sourceNode.equals(headRef);
-    }
+      // We can use only constructors in patterns
+      if (sourceNode instanceof Abstract.Pattern) {
+        return false;
+      }
 
-    // We cannot use any references in the universe of a data type
-    if (parentSourceNode instanceof Abstract.DataDefinition && sourceNode instanceof Abstract.Expression) {
-      return false;
-    }
+      Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
+      if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
+        sourceNode = parentSourceNode;
+        parentSourceNode = sourceNode.getParentSourceNode();
+      }
 
-    if (parentSourceNode instanceof Abstract.EliminatedExpressionsHolder) {
-      // We can use only parameters in eliminated expressions
-      if (sourceNode instanceof Abstract.Reference) {
-        Collection<? extends Abstract.Reference> elimExprs = ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getEliminatedExpressions();
-        if (elimExprs != null) {
-          for (Abstract.Reference elimExpr : elimExprs) {
-            if (sourceNode.equals(elimExpr)) {
-              return false;
+      // After namespace command
+      if (parentSourceNode instanceof Abstract.NamespaceCommandHolder && sourceNode instanceof Abstract.Reference) {
+        if (((Abstract.NamespaceCommandHolder) parentSourceNode).getKind() == NamespaceCommand.Kind.IMPORT) {
+          return false;
+        }
+        return sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference());
+      }
+
+      // After a dot
+      if (parentSourceNode instanceof Abstract.LongReference && sourceNode instanceof Abstract.Reference) {
+        Abstract.Reference headRef = ((Abstract.LongReference) parentSourceNode).getHeadReference();
+        if (headRef != null && !sourceNode.equals(headRef)) {
+          return false;
+        }
+      } else
+
+      // We cannot use any references in the universe of a data type
+      if (parentSourceNode instanceof Abstract.DataDefinition && sourceNode instanceof Abstract.Expression) {
+        return false;
+      } else
+
+      if (parentSourceNode instanceof Abstract.EliminatedExpressionsHolder) {
+        // We can use only parameters in eliminated expressions
+        if (sourceNode instanceof Abstract.Reference) {
+          Collection<? extends Abstract.Reference> elimExprs = ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getEliminatedExpressions();
+          if (elimExprs != null) {
+            for (Abstract.Reference elimExpr : elimExprs) {
+              if (sourceNode.equals(elimExpr)) {
+                return false;
+              }
             }
           }
         }
+      } else
+
+      // Class extensions
+      if ((parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
+        return false;
       }
 
-      // Remove eliminated expressions from the scope in clauses
-      if (sourceNode instanceof Abstract.Clause) {
-        Collection<? extends Abstract.Reference> elimExprs = ((Abstract.EliminatedExpressionsHolder) parentSourceNode).getEliminatedExpressions();
-        if (elimExprs != null) {
-          return true;
-        }
-      }
-    }
-
-    // Replace the scope with class fields in class extensions
-    if ((parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
-      return false;
+      sourceNode = parentSourceNode;
     }
 
     return true;
