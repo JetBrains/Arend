@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.Reference;
 import javax.annotation.Nullable;
 
 public interface PartialConcreteProvider {
-  @Nullable Reference getInstanceClassReference(GlobalReferable instance);
+  @Nullable Reference getInstanceTypeReference(GlobalReferable instance);
   boolean isRecord(ClassReferable classRef);
   boolean isInstance(GlobalReferable ref);
 }

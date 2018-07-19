@@ -91,9 +91,12 @@ public abstract class NameResolvingChecker {
     }
 
     // Check instances
-    Reference classRef = myConcreteProvider.getInstanceClassReference(definition);
-    if (classRef != null) {
-      checkClass(classRef, scope, true, false);
+    ClassReferable classRef = definition.getTypeClassReference();
+    if (classRef == null || myConcreteProvider.isRecord(classRef)) {
+      Reference typeRef = myConcreteProvider.getInstanceTypeReference(definition);
+      if (typeRef != null) {
+        checkClass(typeRef, scope, true, false);
+      }
     }
   }
 
