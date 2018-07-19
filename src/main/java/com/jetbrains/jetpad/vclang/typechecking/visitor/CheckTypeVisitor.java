@@ -1236,7 +1236,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
           ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
           if (classCall == null) {
-            myErrorReporter.report(new TypeMismatchError(DocFactory.text("a class instance"), type, statement.implementation));
+            if (!type.isInstance(ErrorExpression.class)) {
+              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a class instance"), type, statement.implementation));
+            }
           } else {
             if (classCall.getDefinition() != definition) {
               myErrorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) definition, Sort.PROP), type, statement.implementation));
