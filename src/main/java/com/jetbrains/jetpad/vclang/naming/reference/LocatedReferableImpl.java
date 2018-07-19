@@ -10,21 +10,21 @@ public class LocatedReferableImpl implements TCReferable {
   private final Precedence myPrecedence;
   private final String myName;
   private final LocatedReferable myParent;
-  private final boolean myTypecheckable;
+  private final Kind myKind;
 
-  public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, boolean isTypecheckable) {
-    assert isTypecheckable || parent instanceof TCReferable;
+  public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, Kind kind) {
+    assert kind == Kind.TYPECHECKABLE || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
     myParent = parent;
-    myTypecheckable = isTypecheckable;
+    myKind = kind;
   }
 
   public LocatedReferableImpl(Precedence precedence, String name, ModulePath parent) {
     myPrecedence = precedence;
     myName = name;
     myParent = new ModuleReferable(parent);
-    myTypecheckable = true;
+    myKind = Kind.TYPECHECKABLE;
   }
 
   @Nonnull
@@ -41,12 +41,13 @@ public class LocatedReferableImpl implements TCReferable {
 
   @Override
   public TCReferable getTypecheckable() {
-    return myTypecheckable ? this : (TCReferable) myParent;
+    return myKind == Kind.TYPECHECKABLE ? this : (TCReferable) myParent;
   }
 
+  @Nonnull
   @Override
-  public boolean isTypecheckable() {
-    return myTypecheckable;
+  public Kind getKind() {
+    return myKind;
   }
 
   @Nullable

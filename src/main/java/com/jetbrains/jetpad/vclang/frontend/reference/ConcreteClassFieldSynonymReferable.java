@@ -17,7 +17,7 @@ public class ConcreteClassFieldSynonymReferable extends InternalConcreteLocatedR
   private final Reference myUnresolvedUnderlyingFieldReference;
 
   public ConcreteClassFieldSynonymReferable(Position position, @Nonnull String name, Precedence precedence, boolean isVisible, ConcreteClassReferable parent, Reference underlyingFieldReference) {
-    super(position, name, precedence, isVisible, parent);
+    super(position, name, precedence, isVisible, parent, Kind.FIELD);
     myUnresolvedUnderlyingFieldReference = underlyingFieldReference;
   }
 

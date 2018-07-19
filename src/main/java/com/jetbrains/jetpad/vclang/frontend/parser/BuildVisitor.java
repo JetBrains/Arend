@@ -364,7 +364,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, ChildGroup parent) {
     return parent instanceof FileGroup
       ? new ConcreteLocatedReferable(position, name, precedence, myModule)
-      : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), true);
+      : new ConcreteLocatedReferable(position, name, precedence, (TCReferable) parent.getReferable(), LocatedReferableImpl.Kind.TYPECHECKABLE);
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
@@ -537,7 +537,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
           clauses = Collections.emptyList();
         }
 
-        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true, def.getData());
+        InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele()), visitElim(elimCtx), clauses);
         reference.setDefinition(constructor);
         constructors.add(reference);
@@ -565,7 +565,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
           }
 
-          InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, parentClass.getData());
+          InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
           Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
           reference.setDefinition(field);
           fields.add(field);
@@ -1126,7 +1126,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        InternalConcreteLocatedReferable fieldRef = new InternalConcreteLocatedReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, classDef.getData());
+        InternalConcreteLocatedReferable fieldRef = new InternalConcreteLocatedReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
         fieldRef.setDefinition(field);
         fields.add(field);

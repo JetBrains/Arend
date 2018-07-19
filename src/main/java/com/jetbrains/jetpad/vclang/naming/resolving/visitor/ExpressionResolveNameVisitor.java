@@ -187,7 +187,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       String name = referable == null ? null : referable.textRepresentation();
       if (name == null) return null;
       Referable ref = myParentScope.resolveName(name);
-      if (ref instanceof GlobalReferable) {
+      if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
         return (GlobalReferable) ref;
       }
       if (!name.equals("_")) {

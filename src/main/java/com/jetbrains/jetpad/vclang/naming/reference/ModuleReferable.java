@@ -32,6 +32,12 @@ public class ModuleReferable implements LocatedReferable {
     return path;
   }
 
+  @Nonnull
+  @Override
+  public Kind getKind() {
+    return Kind.OTHER;
+  }
+
   @Nullable
   @Override
   public LocatedReferable getLocatedReferableParent() {

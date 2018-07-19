@@ -17,8 +17,8 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   private final Position myPosition;
   private Concrete.ReferableDefinition myDefinition;
 
-  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, TCReferable parent, boolean isTypecheckable) {
-    super(precedence, name, parent, isTypecheckable);
+  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, TCReferable parent, Kind kind) {
+    super(precedence, name, parent, kind);
     myPosition = position;
   }
 
@@ -34,11 +34,6 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   @Override
   public TCReferable getTypecheckable() {
     return myDefinition == null ? null : myDefinition.getRelatedDefinition().getData();
-  }
-
-  @Override
-  public boolean isTypecheckable() {
-    return myDefinition != null && myDefinition.getRelatedDefinition() == myDefinition;
   }
 
   public void setDefinition(Concrete.ReferableDefinition definition) {

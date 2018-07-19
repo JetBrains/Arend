@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 public class DataLocatedReferableImpl extends LocatedReferableImpl {
   private ClassReferable myTypeClassReference;
 
-  public DataLocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, ClassReferable typeClassReference, boolean isTypecheckable) {
-    super(precedence, name, parent, isTypecheckable);
+  public DataLocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, ClassReferable typeClassReference, Kind kind) {
+    super(precedence, name, parent, kind);
     myTypeClassReference = typeClassReference;
   }
 

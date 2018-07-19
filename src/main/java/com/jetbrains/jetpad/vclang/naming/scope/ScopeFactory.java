@@ -121,9 +121,9 @@ public class ScopeFactory {
       return EmptyScope.INSTANCE;
     }
 
-    // We can use only global definitions in patterns
+    // We can use only constructors in patterns
     if (sourceNode instanceof Abstract.Pattern) {
-      return parentScope.getGlobalSubscope();
+      return new ConstructorFilteredScope(parentScope.getGlobalSubscope());
     }
 
     Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();

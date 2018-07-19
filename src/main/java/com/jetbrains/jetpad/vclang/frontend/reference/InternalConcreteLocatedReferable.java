@@ -11,8 +11,8 @@ import javax.annotation.Nonnull;
 public class InternalConcreteLocatedReferable extends ConcreteLocatedReferable implements Group.InternalReferable {
   private final boolean myVisible;
 
-  public InternalConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, boolean isVisible, TCReferable parent) {
-    super(position, name, precedence, parent, false);
+  public InternalConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, boolean isVisible, TCReferable parent, Kind kind) {
+    super(position, name, precedence, parent, kind);
     myVisible = isVisible;
   }
 

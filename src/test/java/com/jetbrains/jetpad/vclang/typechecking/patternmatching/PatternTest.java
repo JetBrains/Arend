@@ -383,12 +383,16 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void casePatternWrongDefinition() {
-    typeCheckModule("\\func test (x : Nat) : Nat => \\case x \\with { zero => 0 | Nat => 1 }", 1);
+    typeCheckModule(
+      "\\data D | con\n" +
+      "\\func test (x : Nat) : Nat => \\case x \\with { zero => 0 | con => 1 }", 1);
   }
 
   @Test
   public void elimPatternWrongDefinition() {
-    typeCheckModule("\\func test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
+    typeCheckModule(
+      "\\data D | con\n" +
+      "\\func test (x : Nat) : Nat | zero => 0 | con => 1", 1);
   }
 
   @Test
@@ -402,6 +406,8 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void functionPatternWrongDefinition() {
-    typeCheckModule("\\func test (x : Nat) : Nat | zero => 0 | Nat => 1", 1);
+    typeCheckModule(
+      "\\data D | con\n" +
+      "\\func test (x : Nat) : Nat | zero => 0 | con => 1", 1);
   }
 }
