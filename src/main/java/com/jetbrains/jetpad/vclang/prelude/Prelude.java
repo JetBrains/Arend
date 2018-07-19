@@ -42,8 +42,10 @@ public class Prelude {
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
-  public static FunctionDefinition PLUS;
-  public static FunctionDefinition MUL;
+  public static FunctionDefinition PLUS, MUL;
+
+  public static DataDefinition INT;
+  public static Constructor POS, NEG;
 
   public static FunctionDefinition COERCE;
 
@@ -75,6 +77,11 @@ public class Prelude {
         break;
       case "*":
         MUL = (FunctionDefinition) definition;
+        break;
+      case "Int":
+        INT = (DataDefinition) definition;
+        POS = INT.getConstructor("pos");
+        NEG = INT.getConstructor("neg");
         break;
       case "I":
         INTERVAL = (DataDefinition) definition;
@@ -143,6 +150,9 @@ public class Prelude {
     state.record(MUL.getReferable(), MUL);
     state.record(ZERO.getReferable(), ZERO);
     state.record(SUC.getReferable(), SUC);
+    state.record(INT.getReferable(), INT);
+    state.record(POS.getReferable(), POS);
+    state.record(NEG.getReferable(), NEG);
     state.record(INTERVAL.getReferable(), INTERVAL);
     state.record(LEFT.getReferable(), LEFT);
     state.record(RIGHT.getReferable(), RIGHT);
@@ -165,7 +175,7 @@ public class Prelude {
   }
 
   public static void initialize(Scope scope, TypecheckerState state) {
-    for (String name : new String[]{"Nat", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
+    for (String name : new String[]{"Nat", "Int", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((TCReferable) scope.resolveName(name)));
     }
     Scope natScope = scope.resolveNamespace("Nat");

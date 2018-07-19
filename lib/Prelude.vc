@@ -1,6 +1,6 @@
 \data Nat
-    | zero
-    | suc Nat
+  | zero
+  | suc Nat
   \where {
     \func \infixl 6 + (x y : Nat) : Nat \elim y
       | zero => x
@@ -11,39 +11,43 @@
       | suc y => x * y + x
   }
 
+\data Int
+  | pos Nat
+  | neg Nat \with { zero => pos zero }
+
 \data I
-    | left
-    | right
+  | left
+  | right
 
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
-    | path (\Pi (i : I) -> A i)
+  | path (\Pi (i : I) -> A i)
 
 \func \infix 1 = {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
 \func \infixl 9 @ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \elim p, i
-    | _, left => a
-    | _, right => a'
-    | path f, i => f i
+  | _, left => a
+  | _, right => a'
+  | path f, i => f i
 
 \func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
-    | left => a
+  | left => a
 
 \func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
-    | left => A
-    | right => B
+  | left => A
+  | right => B
 
 \data TrP (A : \Type)
-    | inP A
-    | truncP (a a' : TrP A) (i : I) \elim i {
-        | left  => a
-        | right => a'
-    }
+  | inP A
+  | truncP (a a' : TrP A) (i : I) \elim i {
+    | left  => a
+    | right => a'
+  }
 
 \data TrS (A : \Type)
-    | inS A
-    | truncS (a a' : TrS A) (p p' : a = a') (i j : I) \elim i, j {
-        | i, left  => p @ i
-        | i, right => p' @ i
-        | left,  _ => a
-        | right, _ => a'
-    }
+  | inS A
+  | truncS (a a' : TrS A) (p p' : a = a') (i j : I) \elim i, j {
+    | i, left  => p @ i
+    | i, right => p' @ i
+    | left,  _ => a
+    | right, _ => a'
+  }
