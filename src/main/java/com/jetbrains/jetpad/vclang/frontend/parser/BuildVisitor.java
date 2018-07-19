@@ -164,6 +164,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       return visitDefClass((DefClassContext) ctx, parent, enclosingClass);
     } else if (ctx instanceof DefInstanceContext) {
       return visitDefInstance((DefInstanceContext) ctx, parent, enclosingClass);
+    } else if (ctx instanceof DefModuleContext) {
+      return visitDefModule((DefModuleContext) ctx, parent, enclosingClass);
     } else {
       if (ctx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Unknown definition"));
@@ -596,6 +598,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       }
     }
+  }
+
+  private StaticGroup visitDefModule(DefModuleContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+    WhereContext where = ctx.where();
+    List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
+
+    Position position = tokenPosition(ctx.start);
+    String name = ctx.ID().getText();
+    ConcreteLocatedReferable reference = parent instanceof FileGroup
+        ? new ConcreteLocatedReferable(position, name, Precedence.DEFAULT, myModule)
+        : new ConcreteLocatedReferable(position, name, Precedence.DEFAULT, (TCReferable) parent.getReferable(), GlobalReferable.Kind.OTHER);
+
+    StaticGroup resultGroup = new StaticGroup(reference, staticSubgroups, namespaceCommands, parent);
+    visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
+    return resultGroup;
   }
 
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {

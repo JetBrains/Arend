@@ -19,10 +19,11 @@ classStat : '|' precedence ID tele* ':' expr  # classField
           | definition                        # classDefinition
           ;
 
-definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                              # defFunction
-            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                       # defData
-            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where? # defClass
-            | '\\instance' ID tele* ':' expr coClauses where?                                           # defInstance
+definition  : '\\func' precedence ID tele* (':' expr)? functionBody where?                                  # defFunction
+            | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
+            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where?  # defClass
+            | '\\module' ID where?                                                                          # defModule
+            | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
             ;
 
 classKw   : '\\class'   # classKwClass
