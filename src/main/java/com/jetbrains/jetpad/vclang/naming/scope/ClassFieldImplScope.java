@@ -18,6 +18,10 @@ public class ClassFieldImplScope implements Scope {
     return myReferable;
   }
 
+  public boolean withSuperClasses() {
+    return myWithSuperClasses;
+  }
+
   public ClassFieldImplScope(ClassReferable referable, boolean withSuperClasses) {
     myReferable = referable;
     myWithSuperClasses = withSuperClasses;
