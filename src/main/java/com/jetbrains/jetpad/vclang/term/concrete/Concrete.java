@@ -1332,7 +1332,7 @@ public final class Concrete {
   }
 
   public static class NumberPattern extends Pattern {
-    public final static int MAX_VALUE = 1000;
+    public final static int MAX_VALUE = 100;
     private final int myNumber;
 
     public NumberPattern(Object data, int number) {

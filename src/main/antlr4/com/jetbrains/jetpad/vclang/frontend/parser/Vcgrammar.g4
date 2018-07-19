@@ -58,6 +58,7 @@ pattern : atomPattern             # patternAtom
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
             | '{' pattern '}'                     # patternImplicit
             | NUMBER                              # patternNumber
+            | NEGATIVE_NUMBER                     # patternNegativeNumber
             | '_'                                 # patternAny
             ;
 
@@ -151,6 +152,7 @@ fieldAcc : ID                       # classFieldAcc
 atom  : literal                         # atomLiteral
       | '(' (expr (',' expr)*)? ')'     # tuple
       | NUMBER                          # atomNumber
+      | NEGATIVE_NUMBER                 # atomNegativeNumber
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;
@@ -186,6 +188,7 @@ USING : '\\using';
 TRUNCATED : '\\truncated';
 NEW : '\\new';
 NUMBER : [0-9]+;
+NEGATIVE_NUMBER : '-' [0-9]+;
 UNIVERSE : '\\Type' [0-9]*;
 TRUNCATED_UNIVERSE : '\\' (NUMBER | 'oo') '-Type' [0-9]*;
 SET : '\\Set' [0-9]*;

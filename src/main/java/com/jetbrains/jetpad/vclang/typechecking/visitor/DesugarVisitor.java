@@ -214,6 +214,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       } else if (pattern instanceof Concrete.NumberPattern) {
         Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList());
         int n = ((Concrete.NumberPattern) pattern).getNumber();
+        boolean isNegative = n < 0;
+        if (isNegative) {
+          n = -n;
+        }
         if (n > Concrete.NumberPattern.MAX_VALUE) {
           n = Concrete.NumberPattern.MAX_VALUE;
         }
@@ -222,6 +226,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
         }
         for (int j = 0; j < n; j++) {
           newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern));
+        }
+        if (isNegative) {
+          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.NEG.getReferable(), Collections.singletonList(newPattern));
         }
         if (!pattern.isExplicit()) {
           newPattern.setExplicit(false);

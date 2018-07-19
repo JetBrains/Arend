@@ -357,6 +357,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
+  public Concrete.Pattern visitPatternNegativeNumber(PatternNegativeNumberContext ctx) {
+    String text = ctx.NEGATIVE_NUMBER().getText();
+    int value;
+    if (text.length() >= 9) {
+      value = -Concrete.NumberPattern.MAX_VALUE;
+    } else {
+      value = Integer.parseInt(ctx.NEGATIVE_NUMBER().getText(), 10);
+    }
+
+    return new Concrete.NumberPattern(tokenPosition(ctx.start), value);
+  }
+
+  @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
     return new Concrete.NamePattern(tokenPosition(ctx.start), null);
   }
@@ -1150,6 +1163,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   @Override
   public Concrete.NumericLiteral visitAtomNumber(AtomNumberContext ctx) {
     return new Concrete.NumericLiteral(tokenPosition(ctx.start), new BigInteger(ctx.NUMBER().getText(), 10));
+  }
+
+  @Override
+  public Concrete.NumericLiteral visitAtomNegativeNumber(AtomNegativeNumberContext ctx) {
+    return new Concrete.NumericLiteral(tokenPosition(ctx.start), new BigInteger(ctx.NEGATIVE_NUMBER().getText(), 10));
   }
 
   @Override

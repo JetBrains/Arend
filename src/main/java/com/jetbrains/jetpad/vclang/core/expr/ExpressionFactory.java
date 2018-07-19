@@ -65,11 +65,23 @@ public class ExpressionFactory {
     return new DataCallExpression(Prelude.NAT, Sort.SET0, Collections.emptyList());
   }
 
+  public static DataCallExpression Int() {
+    return new DataCallExpression(Prelude.INT, Sort.SET0, Collections.emptyList());
+  }
+
   public static IntegerExpression Zero() {
     return new SmallIntegerExpression(0);
   }
 
   public static Expression Suc(Expression expr) {
     return ConCallExpression.make(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+  }
+
+  public static Expression Pos(Expression expr) {
+    return ConCallExpression.make(Prelude.POS, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+  }
+
+  public static Expression Neg(Expression expr) {
+    return ConCallExpression.make(Prelude.NEG, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 }

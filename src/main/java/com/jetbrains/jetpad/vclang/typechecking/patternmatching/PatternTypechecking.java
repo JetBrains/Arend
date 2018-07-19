@@ -307,17 +307,23 @@ public class PatternTypechecking {
       }
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
 
+      if (dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
+        boolean isExplicit = conPattern.isExplicit();
+        conPattern.setExplicit(true);
+        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern));
+      }
+
       Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         if (!(conPattern.getConstructor() instanceof UnresolvedReference)) {
-          myErrorReporter.report(new ExpectedConstructor(conPattern.getConstructor(), dataCall, pattern));
+          myErrorReporter.report(new ExpectedConstructor(conPattern.getConstructor(), dataCall, conPattern));
         }
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);
       if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
-        myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is not allowed here", pattern));
+        myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is not allowed here", conPattern));
         return null;
       }
 
