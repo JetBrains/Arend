@@ -11,6 +11,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenc
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
 import com.jetbrains.jetpad.vclang.core.definition.ClassField;
+import com.jetbrains.jetpad.vclang.core.definition.CoerceData;
 import com.jetbrains.jetpad.vclang.core.definition.Definition;
 import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
@@ -356,34 +357,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-
-    if (result.type.isInstance(ClassCallExpression.class)) {
-      ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
-      ClassField coercingField = classCall.getDefinition().getCoercingField();
-      if (coercingField != null) {
-        Expression actualType = coercingField.getType(classCall.getSortArgument()).applyExpression(result.expression);
-        boolean ok = false;
-        if (expectedType instanceof Expression && cmpVisitor.compare(actualType, (Expression) expectedType)) {
-          ok = true;
-        } else if (expectedType == ExpectedType.OMEGA) {
-          actualType = actualType.normalize(NormalizeVisitor.Mode.WHNF);
-          if (actualType.isInstance(UniverseExpression.class)) {
-            ok = true;
-          }
-        }
-        if (ok) {
-          result.expression = FieldCallExpression.make(coercingField, classCall.getSortArgument(), result.expression);
-          if (expectedType instanceof Expression) {
-            result.expression = OfTypeExpression.make(result.expression, actualType, (Expression) expectedType);
-          }
-          result.type = actualType;
-          return result;
-        }
-      }
+    expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    Result coercedResult = CoerceData.coerce(result, expectedType, expr, this);
+    if (coercedResult != null) {
+      return coercedResult;
     }
 
     if (expectedType instanceof Expression) {
-      expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
       if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType)) {
         result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
         return result;
@@ -396,6 +376,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     } else {
       return result;
     }
+  }
+
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  public boolean checkNormalizedResult(ExpectedType expectedType, Result result, Concrete.Expression expr, boolean strict) {
+    if (expectedType instanceof Expression && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType) || expectedType == ExpectedType.OMEGA && result.type.isInstance(UniverseExpression.class)) {
+      if (!strict && expectedType instanceof Expression) {
+        result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
+      }
+      return true;
+    }
+
+    if (!strict && !result.type.isError()) {
+      myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+    }
+
+    return false;
   }
 
   public Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {

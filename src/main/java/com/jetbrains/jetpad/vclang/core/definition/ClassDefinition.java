@@ -20,6 +20,7 @@ public class ClassDefinition extends Definition {
   private ClassField myCoercingField;
   private Sort mySort;
   private boolean myRecord = false;
+  private final CoerceData myCoerce = new CoerceData();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -43,15 +44,11 @@ public class ClassDefinition extends Definition {
     myRecord = true;
   }
 
-  public ClassField getCoercingField() {
-    return myCoercingField;
-  }
-
   public ClassField getClassifyingField() {
     return myCoercingField;
   }
 
-  public void setCoercingField(ClassField coercingField) {
+  public void setClassifyingField(ClassField coercingField) {
     myCoercingField = coercingField;
   }
 
@@ -86,6 +83,11 @@ public class ClassDefinition extends Definition {
 
   public void setSort(Sort sort) {
     mySort = sort;
+  }
+
+  @Override
+  public CoerceData getCoerceData() {
+    return myCoerce;
   }
 
   public boolean isSubClassOf(ClassDefinition classDefinition) {

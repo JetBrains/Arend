@@ -93,8 +93,8 @@ public class DefinitionSerialization {
       builder.addSuperClassRef(myCallTargetIndexProvider.getDefIndex(classDefinition));
     }
 
-    if (definition.getCoercingField() != null) {
-      builder.setCoercingFieldRef(myCallTargetIndexProvider.getDefIndex(definition.getCoercingField()));
+    if (definition.getClassifyingField() != null) {
+      builder.setCoercingFieldRef(myCallTargetIndexProvider.getDefIndex(definition.getClassifyingField()));
     } else {
       builder.setCoercingFieldRef(-1);
     }

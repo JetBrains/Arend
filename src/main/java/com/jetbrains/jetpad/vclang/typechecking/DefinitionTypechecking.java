@@ -726,22 +726,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     // Process coercing field
     if (!def.isRecord()) {
-      ClassField coercingField = null;
+      ClassField classifyingField = null;
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        coercingField = superClass.getCoercingField();
-        if (coercingField != null) {
+        classifyingField = superClass.getClassifyingField();
+        if (classifyingField != null) {
           break;
         }
       }
-      if (coercingField == null && def.getCoercingField() != null) {
+      if (classifyingField == null && def.getCoercingField() != null) {
         Definition definition = visitor.getTypecheckingState().getTypechecked(def.getCoercingField());
         if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
-          coercingField = (ClassField) definition;
+          classifyingField = (ClassField) definition;
+          classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
         } else {
           errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
         }
       }
-      typedDef.setCoercingField(coercingField);
+      typedDef.setClassifyingField(classifyingField);
+      if (classifyingField != null) {
+        typedDef.getCoerceData().addCoercingField(classifyingField);
+      }
     } else {
       typedDef.setRecord();
     }

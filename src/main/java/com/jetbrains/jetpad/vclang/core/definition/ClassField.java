@@ -31,7 +31,6 @@ public class ClassField extends Definition {
   }
 
   public void setType(PiExpression type) {
-    assert myType == null;
     myType = type;
   }
 

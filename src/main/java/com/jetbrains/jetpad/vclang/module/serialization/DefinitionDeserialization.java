@@ -146,7 +146,7 @@ public class DefinitionDeserialization {
     }
 
     if (classProto.getCoercingFieldRef() != -1) {
-      classDef.setCoercingField(myCallTargetProvider.getCallTarget(classProto.getCoercingFieldRef(), ClassField.class));
+      classDef.setClassifyingField(myCallTargetProvider.getCallTarget(classProto.getCoercingFieldRef(), ClassField.class));
     }
     if (classProto.getIsRecord()) {
       classDef.setRecord();

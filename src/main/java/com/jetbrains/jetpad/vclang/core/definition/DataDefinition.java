@@ -22,6 +22,7 @@ public class DataDefinition extends Definition {
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
+  private final CoerceData myCoerce = new CoerceData();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -34,6 +35,11 @@ public class DataDefinition extends Definition {
 
   public void setSort(Sort sort) {
     mySort = sort;
+  }
+
+  @Override
+  public CoerceData getCoerceData() {
+    return myCoerce;
   }
 
   public boolean isCovariant(int index) {
