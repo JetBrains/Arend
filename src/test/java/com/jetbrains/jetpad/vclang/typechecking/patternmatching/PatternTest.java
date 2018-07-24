@@ -410,4 +410,24 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\data D | con\n" +
       "\\func test (x : Nat) : Nat | zero => 0 | con => 1", 1);
   }
+
+  @Test
+  public void fakeNatTest() {
+    typeCheckModule(
+      "\\data Nat' | suc' Nat' | zero'\n" +
+      "\\data Foo | foo Nat'\n" +
+      "\\func ff (x : Foo) : Nat'\n" +
+      "  | foo (suc' (suc' (suc' zero'))) => zero'\n" +
+      "  | foo n => n\n" +
+      "\\func test : ff (foo (suc' (suc' zero'))) = suc' (suc' zero') => path (\\lam _ => suc' (suc' zero'))");
+  }
+
+  @Test
+  public void natTest() {
+    typeCheckModule(
+      "\\func ff (x : Nat) : Nat\n" +
+      "  | suc zero => zero\n" +
+      "  | n => n\n" +
+      "\\func test : ff (suc (suc (suc zero))) = 3 => path (\\lam _ => 3)");
+  }
 }

@@ -485,8 +485,10 @@ public class ElimTypechecking {
         for (int i = 0; i < conClauseDataList.size(); i++) {
           List<Pattern> patterns = new ArrayList<>();
           List<Pattern> oldPatterns = conClauseDataList.get(i).patterns;
+          ExprSubstitution newSubstitution;
           if (oldPatterns.get(index) instanceof ConstructorPattern) {
             patterns.addAll(((ConstructorPattern) oldPatterns.get(index)).getArguments());
+            newSubstitution = conClauseDataList.get(i).substitution;
           } else {
             Expression substExpr;
             DependentLink conParameters;
@@ -536,7 +538,8 @@ public class ElimTypechecking {
               arguments.add(new ReferenceExpression(link));
             }
 
-            conClauseDataList.get(i).substitution.add(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
+            newSubstitution = new ExprSubstitution(conClauseDataList.get(i).substitution);
+            newSubstitution.addSubst(((BindingPattern) oldPatterns.get(index)).getBinding(), substExpr);
           }
           List<Pattern> rest = oldPatterns.subList(index + 1, oldPatterns.size());
           DependentLink last = new Patterns(patterns).getLastBinding();
@@ -545,7 +548,7 @@ public class ElimTypechecking {
             last.setNext(first);
           }
           patterns.addAll(rest);
-          conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, conClauseDataList.get(i).substitution, conClauseDataList.get(i).clause));
+          conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, newSubstitution, conClauseDataList.get(i).clause));
         }
 
         ElimTree elimTree = clausesToElimTree(conClauseDataList);

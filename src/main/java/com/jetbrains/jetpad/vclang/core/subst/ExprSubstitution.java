@@ -15,6 +15,10 @@ public class ExprSubstitution {
     mySubstExprs = Collections.emptyMap();
   }
 
+  public ExprSubstitution(ExprSubstitution substitution) {
+    mySubstExprs = substitution.mySubstExprs.isEmpty() ? Collections.emptyMap() : new HashMap<>(substitution.mySubstExprs);
+  }
+
   public ExprSubstitution(Variable from, Expression to) {
     mySubstExprs = new HashMap<>();
     add(from, to);
@@ -43,6 +47,17 @@ public class ExprSubstitution {
   public void add(Variable binding, Expression expression) {
     if (mySubstExprs.isEmpty()) {
       mySubstExprs = new HashMap<>();
+    }
+    mySubstExprs.put(binding, expression);
+  }
+
+  public void addSubst(Variable binding, Expression expression) {
+    if (mySubstExprs.isEmpty()) {
+      mySubstExprs = new HashMap<>();
+    } else {
+      for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
+        entry.setValue(entry.getValue().subst(binding, expression));
+      }
     }
     mySubstExprs.put(binding, expression);
   }

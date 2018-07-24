@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.Binding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.DependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
@@ -97,7 +96,7 @@ public abstract class Expression implements ExpectedType {
     return accept(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), null);
   }
 
-  public final Expression subst(Binding binding, Expression substExpr) {
+  public final Expression subst(Variable binding, Expression substExpr) {
     return accept(new SubstVisitor(new ExprSubstitution(binding, substExpr), LevelSubstitution.EMPTY), null);
   }
 
