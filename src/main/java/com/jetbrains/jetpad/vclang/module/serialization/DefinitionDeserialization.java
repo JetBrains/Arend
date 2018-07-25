@@ -151,6 +151,8 @@ public class DefinitionDeserialization {
     if (classProto.getIsRecord()) {
       classDef.setRecord();
     }
+
+    readCoerceData(classProto.getCoerceData(), classDef.getCoerceData());
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
@@ -191,6 +193,28 @@ public class DefinitionDeserialization {
 
     for (Constructor constructor : dataDef.getConstructors()) {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    }
+
+    readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData());
+  }
+
+  private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
+    for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceFromList()) {
+      List<FunctionDefinition> coercingDefs = new ArrayList<>();
+      for (Integer defIndex : elementProto.getCoercingDefList()) {
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class));
+      }
+      int classifyingDefIndex = elementProto.getClassifyingDef();
+      coerceData.putCoerceFrom(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
+    }
+
+    for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceToList()) {
+      List<Definition> coercingDefs = new ArrayList<>();
+      for (Integer defIndex : elementProto.getCoercingDefList()) {
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
+      }
+      int classifyingDefIndex = elementProto.getClassifyingDef();
+      coerceData.putCoerceTo(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
     }
   }
 

@@ -18,6 +18,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map;
 
 public class DefinitionSerialization {
@@ -99,6 +100,11 @@ public class DefinitionSerialization {
       builder.setCoercingFieldRef(-1);
     }
     builder.setIsRecord(definition.isRecord());
+
+    if (!definition.getCoerceData().isEmpty()) {
+      builder.setCoerceData(writeCoerceData(definition.getCoerceData()));
+    }
+
     return builder.build();
   }
 
@@ -135,6 +141,31 @@ public class DefinitionSerialization {
       builder.addCovariantParameter(definition.isCovariant(i++));
     }
 
+    if (!definition.getCoerceData().isEmpty()) {
+      builder.setCoerceData(writeCoerceData(definition.getCoerceData()));
+    }
+
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.CoerceData writeCoerceData(CoerceData coerceData) {
+    DefinitionProtos.Definition.CoerceData.Builder builder = DefinitionProtos.Definition.CoerceData.newBuilder();
+    for (Map.Entry<Definition, List<FunctionDefinition>> entry : coerceData.getMapFrom()) {
+      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
+      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
+      for (FunctionDefinition def : entry.getValue()) {
+        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
+      }
+      builder.addCoerceFrom(elementBuilder.build());
+    }
+    for (Map.Entry<Definition, List<Definition>> entry : coerceData.getMapTo()) {
+      DefinitionProtos.Definition.CoerceData.Element.Builder elementBuilder = DefinitionProtos.Definition.CoerceData.Element.newBuilder();
+      elementBuilder.setClassifyingDef(entry.getKey() == null ? 0 : myCallTargetIndexProvider.getDefIndex(entry.getKey()) + 1);
+      for (Definition def : entry.getValue()) {
+        elementBuilder.addCoercingDef(myCallTargetIndexProvider.getDefIndex(def));
+      }
+      builder.addCoerceTo(elementBuilder.build());
+    }
     return builder.build();
   }
 

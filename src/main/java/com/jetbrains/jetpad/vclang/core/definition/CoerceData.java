@@ -18,6 +18,26 @@ public class CoerceData {
   private Map<Definition, List<FunctionDefinition>> myMapFrom = new HashMap<>();
   private Map<Definition, List<Definition>> myMapTo = new HashMap<>();
 
+  public Set<Map.Entry<Definition, List<FunctionDefinition>>> getMapFrom() {
+    return myMapFrom.entrySet();
+  }
+
+  public Set<Map.Entry<Definition, List<Definition>>> getMapTo() {
+    return myMapTo.entrySet();
+  }
+
+  public boolean isEmpty() {
+    return myMapFrom.isEmpty() && myMapTo.isEmpty();
+  }
+
+  public void putCoerceFrom(Definition classifyingDefinition, List<FunctionDefinition> coercingDefinitions) {
+    myMapFrom.put(classifyingDefinition, coercingDefinitions);
+  }
+
+  public void putCoerceTo(Definition classifyingDefinition, List<Definition> coercingDefinitions) {
+    myMapTo.put(classifyingDefinition, coercingDefinitions);
+  }
+
   public static CheckTypeVisitor.Result coerce(CheckTypeVisitor.Result result, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
     DefCallExpression actualDefCall = result.type.checkedCast(DefCallExpression.class);
     DefCallExpression expectedDefCall = expectedType instanceof Expression ? ((Expression) expectedType).checkedCast(DefCallExpression.class) : null;

@@ -51,6 +51,7 @@ message Definition {
         int32 coercing_field_ref = 11;
         Sort sort = 7;
         bool is_record = 13;
+        CoerceData coerce_data = 14;
 
         message Field {
             Referable referable = 1;
@@ -64,6 +65,7 @@ message Definition {
         repeated Constructor constructor = 3;
         bool matches_on_interval = 5;
         repeated bool covariant_parameter = 8;
+        CoerceData coerce_data = 14;
 
         message Constructor {
             Referable referable = 1;
@@ -84,6 +86,15 @@ message Definition {
         BODY_HAS_ERRORS = 1;
         HAS_ERRORS = 4;
         NO_ERRORS = 5;
+    }
+
+    message CoerceData {
+        message Element {
+            int32 classifying_def = 1;
+            repeated int32 coercing_def = 2;
+        }
+        repeated Element coerce_from = 1;
+        repeated Element coerce_to = 2;
     }
 }
 
