@@ -29,4 +29,10 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   default boolean isInstance(GlobalReferable ref) {
     return getConcreteInstance(ref) != null;
   }
+
+  @Override
+  default boolean isCoerce(GlobalReferable ref) {
+    Concrete.FunctionDefinition func = getConcreteFunction(ref);
+    return func != null && func.isCoerce();
+  }
 }

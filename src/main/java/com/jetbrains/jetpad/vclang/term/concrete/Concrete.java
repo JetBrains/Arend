@@ -1106,13 +1106,19 @@ public final class Concrete {
     private final List<Parameter> myParameters;
     private Expression myResultType;
     private final FunctionBody myBody;
+    private final boolean myCoerce;
 
-    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, boolean isCoerce) {
       super(referable);
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
+      myCoerce = isCoerce;
+    }
+
+    public boolean isCoerce() {
+      return myCoerce;
     }
 
     @Nonnull

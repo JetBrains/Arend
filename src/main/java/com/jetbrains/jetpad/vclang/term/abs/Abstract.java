@@ -141,6 +141,7 @@ public final class Abstract {
     @Nullable Expression getTerm();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
+    boolean isCoerce();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
