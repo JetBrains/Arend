@@ -18,7 +18,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void classesEq() {
     typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
-        "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
+        "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
@@ -28,7 +28,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void classesGe() {
     typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
-        "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
+        "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
@@ -38,7 +38,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void classesLe() {
     typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
-        "\\func f (l : Foo) => \\new Foo { foo => l.foo | bar => l.bar }");
+        "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
@@ -88,48 +88,48 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void emptyClass3() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x y : C { n => 0 }) : x = y => path (\\lam _ => x)");
+      "\\func f (x y : C { | n => 0 }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void emptyClass4a() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C { n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
+      "\\func f (x : C { | n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void emptyClass4b() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C) (y : C { n => 0 }) : x = y => path (\\lam _ => x)", 1);
+      "\\func f (x : C) (y : C { | n => 0 }) : x = y => path (\\lam _ => x)", 1);
   }
 
   @Test
   public void unitClass() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C) (y : C { n => x.n }) : x = y => path (\\lam _ => x)");
+      "\\func f (x : C) (y : C { | n => x.n }) : x = y => path (\\lam _ => x)");
   }
 
   @Test
   public void unitClass2() {
     typeCheckModule(
       "\\record C { | n : Nat | m : Nat }\n" +
-      "\\func f (x : C { n => 3 }) (y : C { n => 3 | m => x.m }) : x = y => path (\\lam _ => y)");
+      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.m }) : x = y => path (\\lam _ => y)");
   }
 
   @Test
   public void unitClass3() {
     typeCheckModule(
       "\\record C {| m : Nat | n : Nat  }\n" +
-      "\\func f (x : C) (y : C { m => x.m }) : x = y => path (\\lam _ => y)", 1);
+      "\\func f (x : C) (y : C { | m => x.m }) : x = y => path (\\lam _ => y)", 1);
   }
 
   @Test
   public void unitClass4() {
     typeCheckModule(
       "\\record C { | n : Nat | m : Nat }\n" +
-      "\\func f (x : C { n => 3 }) (y : C { n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
+      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
   }
 }

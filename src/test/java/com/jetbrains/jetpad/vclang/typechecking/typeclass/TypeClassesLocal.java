@@ -22,7 +22,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (x : X { A => A' }) (a : A') => B a");
+        "\\func f (A' : \\Type0) (x : X { | A => A' }) (a : A') => B a");
   }
 
   @Test
@@ -31,7 +31,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (x : X { A => Nat }) => B 0");
+        "\\func f (x : X { | A => Nat }) => B 0");
   }
 
   @Test
@@ -49,7 +49,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A : \\Type0) (x y : X { A => A }) (a : y.A) => 0", 1);
+        "\\func f (A : \\Type0) (x y : X { | A => A }) (a : y.A) => 0", 1);
     assertThatErrorsAre(duplicateInstanceError());
   }
 
@@ -59,7 +59,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (x : X) (a : x.A) {y : X { A => x.A } } => 0", 1);
+        "\\func f (x : X) (a : x.A) {y : X { | A => x.A } } => 0", 1);
     assertThatErrorsAre(duplicateInstanceError());
   }
 
@@ -69,7 +69,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (x : X { A => A' }) {y : X { A => A' } } (a : A') => 0", 1);
+        "\\func f (A' : \\Type0) (x : X { | A => A' }) {y : X { | A => A' } } (a : A') => 0", 1);
     assertThatErrorsAre(duplicateInstanceError());
   }
 
@@ -79,7 +79,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) {y : X { A => A' -> A' } } (a : A') (x : X { A => A' }) => B a");
+        "\\func f (A' : \\Type0) {y : X { | A => A' -> A' } } (a : A') (x : X { | A => A' }) => B a");
   }
 
   @Test
@@ -97,7 +97,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (x : X) (y : X { A => x.A }) : x.A => a", 1);
+        "\\func f (x : X) (y : X { | A => x.A }) : x.A => a", 1);
     assertThatErrorsAre(duplicateInstanceError());
   }
 
@@ -107,7 +107,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (x : X { A => A' }) : A' => a");
+        "\\func f (A' : \\Type0) (x : X { | A => A' }) : A' => a");
   }
 
   @Test
@@ -116,7 +116,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (y : X { A => A' }) (x : X { A => A' }) : A' => a", 1);
+        "\\func f (A' : \\Type0) (y : X { | A => A' }) (x : X { | A => A' }) : A' => a", 1);
     assertThatErrorsAre(duplicateInstanceError());
   }
 
@@ -126,7 +126,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (x : X) (y : X { A => x.A -> x.A }) : x.A -> x.A => a");
+        "\\func f (x : X) (y : X { | A => x.A -> x.A }) : x.A -> x.A => a");
   }
 
   @Test

@@ -80,7 +80,7 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "  | f : \\Type1\n" +
       "}\n" +
       "\\class Y => X { f => g }\n" +
-      "\\func h => \\new Y { T => \\Type0 | g => \\Type0 }");
+      "\\func h => \\new Y { | T => \\Type0 | g => \\Type0 }");
   }
 
   @Test
@@ -90,7 +90,7 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "  | f : \\Type1\n" +
       "}\n" +
       "\\class Y => X\n" +
-      "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }");
+      "\\func h => \\new Y { | T => \\Type0 | f => \\Type0 }");
   }
 
   @Test
@@ -100,7 +100,7 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "  | f : \\Type1\n" +
       "}\n" +
       "\\class Y => X { f => g }\n" +
-      "\\func h => \\new Y { T => \\Type0 | f => \\Type0 }", 1);
+      "\\func h => \\new Y { | T => \\Type0 | f => \\Type0 }", 1);
     assertThatErrorsAre(notInScope("f"));
   }
 
@@ -185,7 +185,7 @@ public class ClassSynonymTypechecking extends TypeCheckingTestCase {
       "\\class X' \\extends X { | c : Nat |  d : Nat }\n" +
       "\\class Y => X { a => a' }\n" +
       "\\class M \\where \\class Y' \\extends Y => X' { c => a' }\n" +
-      "\\func f => \\new M.Y' { Y.a' => 0 | b => 1 | a' => 2 | d => 3 }", 1);
+      "\\func f => \\new M.Y' { | Y.a' => 0 | b => 1 | a' => 2 | d => 3 }", 1);
     assertThatErrorsAre(warning());
   }
 

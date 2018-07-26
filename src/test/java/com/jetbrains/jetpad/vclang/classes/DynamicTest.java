@@ -87,7 +87,7 @@ public class DynamicTest extends TypeCheckingTestCase {
       "  | x : Nat\n" +
       "  \\func f => h x\n" +
       "}\n" +
-      "\\func g (a : A { x => 0 }) : a.x = A.f {a} => path (\\lam _ => 0)");
+      "\\func g (a : A { | x => 0 }) : a.x = A.f {a} => path (\\lam _ => 0)");
   }
 
   @Test

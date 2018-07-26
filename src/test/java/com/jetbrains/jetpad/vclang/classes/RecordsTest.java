@@ -18,14 +18,14 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void nonDependentImplement() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
-        "\\func p => \\new Point { x => 0 | y => 0 }");
+        "\\func p => \\new Point { | x => 0 | y => 0 }");
   }
 
   @Test
   public void nonDependentImplementError() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
-        "\\func C => Point { x => \\lam (t : Nat) => t }", 1);
+        "\\func C => Point { | x => \\lam (t : Nat) => t }", 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
@@ -33,7 +33,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void dependentImplement() {
     typeCheckModule(
         "\\class Point { | X : \\Set | y : X -> Nat }\n" +
-        "\\func p => \\new Point { X => Nat | y => \\lam n => n }");
+        "\\func p => \\new Point { | X => Nat | y => \\lam n => n }");
   }
 
   @Test
@@ -44,7 +44,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | f : Nat -> Nat\n" +
         "}\n" +
         "\\func B => A {\n" +
-        "  f => \\lam n => c n n\n" +
+        "  | f => \\lam n => c n n\n" +
         "}", 1);
   }
 
@@ -81,7 +81,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : Nat\n" +
         "}\n" +
-        "\\func diagonal => Point { y => 0 }");
+        "\\func diagonal => Point { | y => 0 }");
   }
 
   @Test
@@ -91,14 +91,14 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : x = x -> Nat\n" +
         "}\n" +
-        "\\func diagonal => Point { y => \\lam _ => 0 }", 1);
+        "\\func diagonal => Point { | y => \\lam _ => 0 }", 1);
   }
 
   @Test
   public void newError() {
     typeCheckModule(
       "\\class Point { | x : Nat | y : Nat }\n" +
-      "\\func C => \\new Point { x => 0 }", 1);
+      "\\func C => \\new Point { | x => 0 }", 1);
   }
 
   @Test
@@ -108,7 +108,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : Nat\n" +
         "}\n" +
-        "\\func diagonal => Point { x => 0 }\n" +
+        "\\func diagonal => Point { | x => 0 }\n" +
         "\\func test => \\new diagonal", 1);
   }
 
@@ -127,7 +127,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => 0\n" +
         "  | y => 0\n" +
         "}\n" +
-        "\\func test : \\new diagonal1 {} = \\new diagonal 0 => path (\\lam _ => \\new Point { x => 0 | y => 0 })");
+        "\\func test : \\new diagonal1 {} = \\new diagonal 0 => path (\\lam _ => \\new Point { | x => 0 | y => 0 })");
   }
 
   @Test
@@ -147,7 +147,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordUniverseTest() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
-        "\\func C => Point { x => 0 }");
+        "\\func C => Point { | x => 0 }");
     assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.SET0), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
@@ -156,7 +156,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordUniverseTest2() {
     typeCheckModule(
         "\\class Point { | x : Nat | y : Nat }\n" +
-        "\\func C => Point { x => 0 | y => 1 }");
+        "\\func C => Point { | x => 0 | y => 1 }");
     assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("Point")).getSort());
     assertEquals(Universe(Sort.PROP), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
@@ -165,7 +165,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordUniverseTest3() {
     typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
-        "\\func C => Point { x => Nat }");
+        "\\func C => Point { | x => Nat }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 1))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
@@ -174,7 +174,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordUniverseTest4() {
     typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\oo-Type1 }\n" +
-        "\\func C => Point { x => Nat }");
+        "\\func C => Point { | x => Nat }");
     assertEquals(new Sort(new Level(4), Level.INFINITY), ((ClassDefinition) getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), Level.INFINITY)), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
@@ -183,7 +183,7 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void recordUniverseTest5() {
     typeCheckModule(
         "\\class Point { | x : \\Type3 | y : \\Type1 }\n" +
-        "\\func C => Point { x => \\Type2 }");
+        "\\func C => Point { | x => \\Type2 }");
     assertEquals(new Sort(new Level(4), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("Point")).getSort());
     assertEquals(Universe(new Sort(new Level(2), new Level(LevelVariable.HVAR, 2))), getDefinition("C").getTypeWithParams(new ArrayList<>(), Sort.STD));
   }
@@ -308,9 +308,9 @@ public class RecordsTest extends TypeCheckingTestCase {
   public void higherFunctionsTest() {
     typeCheckModule(
       "\\class C { | A : \\Set | a : A }\n" +
-      "\\func const (c : C) => \\new C { A => c.A -> c.A | a => \\lam _ => c.a }\n" +
-      "\\func const' (c : C) : C { A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
+      "\\func const (c : C) => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
+      "\\func const' (c : C) : C { | A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
       "\\func test' (f : (C -> C) -> Nat) => f const'\n" +
-      "\\func test (f : (\\Pi (c : C) -> C { A => c.A -> c.A }) -> Nat) => f const");
+      "\\func test (f : (\\Pi (c : C) -> C { | A => c.A -> c.A }) -> Nat) => f const");
   }
 }

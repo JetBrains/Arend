@@ -59,8 +59,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "  | B : A -> \\Set0\n" +
       "}\n" +
       "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat -> Nat\n" +
-      "\\func f (y : X { A => Nat }) => B 0\n" +
-      "\\func test : Nat = Nat => path (\\lam _ => f (\\new X { A => Nat | B => \\lam _ => Nat }))");
+      "\\func f (y : X { | A => Nat }) => B 0\n" +
+      "\\func test : Nat = Nat => path (\\lam _ => f (\\new X { | A => Nat | B => \\lam _ => Nat }))");
   }
 
   @Test
@@ -70,7 +70,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "  | B : A -> \\Type0\n" +
       "}\n" +
       "\\instance Nat-X : X | A => Nat | B => \\lam n => Nat -> Nat\n" +
-      "\\func f {A : \\Type0} {y : X { A => A } } (a : A) => B a\n" +
+      "\\func f {A : \\Type0} {y : X { | A => A } } (a : A) => B a\n" +
       "\\func g => f 0");
   }
 
@@ -90,7 +90,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\instance Nat-X : X | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
-      "\\func g {x : X { A => Nat }} => \\Prop\n" +
+      "\\func g {x : X { | A => Nat }} => \\Prop\n" +
       "\\func f : \\Set0 => g\n" +
       "\\instance D-X : X | A => D | B => \\lam _ => f\n" +
       "\\class X (A : \\Type0) {\n" +
@@ -103,7 +103,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\instance Nat-X : X | A => Nat | B => \\lam _ => Nat\n" +
       "\\data D | c\n" +
-      "\\func g {x : X { A => Nat }} => \\Prop\n" +
+      "\\func g {x : X { | A => Nat }} => \\Prop\n" +
       "\\instance D-X : X | A => D | B => \\lam _ => f\n" +
       "\\func f : \\Set0 => g\n" +
       "\\class X (A : \\Type0) {\n" +
@@ -252,7 +252,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class A (C : \\Type) { | c : C | n : Nat }\n" +
       "\\instance a : A \\Set | c => Nat | n => 0\n" +
-      "\\func f {c : A { C => \\Set | n => 1 }} => 2\n" +
+      "\\func f {c : A { | C => \\Set | n => 1 }} => 2\n" +
       "\\func g => f", 1);
     assertThatErrorsAre(instanceInference(getDefinition("A")));
   }

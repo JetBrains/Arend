@@ -43,7 +43,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
 
   @Test
   public void classExtTest() {
-    typeCheckModule("\\class Test { | A : \\Type0 | a : A } \\func test => Test { A => Nat }");
+    typeCheckModule("\\class Test { | A : \\Type0 | a : A } \\func test => Test { | A => Nat }");
     assertEquals(Universe(new Level(1), new Level(LevelVariable.HVAR, 1)), getDefinition("Test").getTypeWithParams(new ArrayList<>(), Sort.STD));
     assertEquals(Universe(Sort.SET0), getDefinition("test").getTypeWithParams(new ArrayList<>(), Sort.SET0));
     testType(Universe(Sort.SET0));

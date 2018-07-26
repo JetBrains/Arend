@@ -47,7 +47,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C (A : \\Set) {\n" +
       "  | a : A\n" +
       "}\n" +
-      "\\func f (c : C { A => Nat }) : c => 1\n" +
+      "\\func f (c : C { | A => Nat }) : c => 1\n" +
       "\\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => path (\\lam _ => 1)");
   }
 
@@ -91,7 +91,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C1 (n : Nat)\n" +
       "\\class C2 (B : \\Set0)\n" +
       "\\class D \\extends C2, C1\n" +
-      "\\func d => \\new D { n => 0 | B => \\Prop }\n" +
+      "\\func d => \\new D { | n => 0 | B => \\Prop }\n" +
       "\\func test3 : 0 = d => path (\\lam _ => 0)\n", 1);
     assertThatErrorsAre(typeMismatchError());
   }

@@ -9,7 +9,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
   public void unknownExtTestError() {
     resolveNamesModule(
       "\\class Point { | x : Nat | y : Nat }\n" +
-      "\\func C => Point { x => 0 | z => 0 | y => 0 }", 1);
+      "\\func C => Point { | x => 0 | z => 0 | y => 0 }", 1);
   }
 
   @Test
@@ -22,7 +22,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "  }\n" +
       "}\n" +
       "\\func B => M.A {\n" +
-      "  f => \\lam n => c n n\n" +
+      "  | f => \\lam n => c n n\n" +
       "}", 1);
   }
 
@@ -57,7 +57,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class C { | A : \\Set }\n" +
       "\\class D { | B : \\Set }\n" +
-      "\\func f => \\new D { A => \\Prop }", 1);
+      "\\func f => \\new D { | A => \\Prop }", 1);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class A { | x : Nat }\n" +
       "\\class B \\extends A { | y : Nat }\n" +
-      "\\class C \\extends B { | A => \\new A { x => 0 } }");
+      "\\class C \\extends B { | A => \\new A { | x => 0 } }");
   }
 
   @Test
@@ -95,7 +95,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\class A { | x : Nat }\n" +
       "\\class B { | y : Nat }\n" +
-      "\\class C \\extends B { | A => \\new A { x => 0 } }", 1);
+      "\\class C \\extends B { | A => \\new A { | x => 0 } }", 1);
   }
 
   @Test
@@ -166,7 +166,7 @@ public class ClassesResolveTest extends NameResolverTestCase {
         "  | a' : A\n" +
         "  | p : undefined_variable = a'\n" +
         "}\n" +
-        "\\func f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
+        "\\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }", 1);
   }
 
   @Test

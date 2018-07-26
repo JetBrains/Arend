@@ -346,6 +346,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   private List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
+      Referable implementedField = implementation.getImplementedField();
+      if (implementedField == null) {
+        continue;
+      }
+
       Abstract.Expression impl = implementation.getImplementation();
       if (impl != null) {
         List<? extends Abstract.Parameter> parameters = implementation.getParameters();
@@ -354,10 +359,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters), term);
         }
 
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementation.getImplementedField(), term, Collections.emptyList()));
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField, term, Collections.emptyList()));
       } else {
         Object data = implementation.getData();
-        implementations.add(new Concrete.ClassFieldImpl(data, implementation.getImplementedField(), null, buildImplementations(implementation.getClassFieldImpls())));
+        implementations.add(new Concrete.ClassFieldImpl(data, implementedField, null, buildImplementations(implementation.getClassFieldImpls())));
       }
     }
     return implementations;

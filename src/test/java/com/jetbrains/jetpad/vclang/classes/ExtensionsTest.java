@@ -43,7 +43,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
-        "\\func f => \\new B { A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
+        "\\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
   }
 
   @Test
@@ -56,7 +56,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class B \\extends C {\n" +
         "  | a' : A\n" +
         "}\n" +
-        "\\func f => \\new B { A => Nat | a' => 0 }", 1);
+        "\\func f => \\new B { | A => Nat | a' => 0 }", 1);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "}\n" +
         "\\func f : \\Sigma (1 = 1) (0 = 0) =>\n" +
-        "  \\let b : B => \\new B { A => Nat | a => 1 | a' => 0 }\n" +
+        "  \\let b : B => \\new B { | A => Nat | a => 1 | a' => 0 }\n" +
         "  \\in  (path (\\lam _ => b.a), path (\\lam _ => b.a'))");
   }
 
@@ -85,8 +85,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "}\n" +
         "\\func f (a : C) => a.a\n" +
-        "\\func g : 3 = 3 => path (\\lam _ => f (\\new B { A => Nat | a' => 2 | a => 3 }))\n" +
-        "\\func h (b : B { A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
+        "\\func g : 3 = 3 => path (\\lam _ => f (\\new B { | A => Nat | a' => 2 | a => 3 }))\n" +
+        "\\func h (b : B { | A => Nat | a => 5 }) : 5 = 5 => path (\\lam _ => b.a)");
   }
 
   @Test
@@ -104,8 +104,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "\\class D \\extends B, C {\n" +
         "  | p : b = c\n" +
         "}\n" +
-        "\\func f (d : D { S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
-        "\\func g => \\new D { S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
+        "\\func f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
+        "\\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
   }
 
   @Test
