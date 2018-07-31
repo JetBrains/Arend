@@ -24,6 +24,18 @@ public class NamespaceCommandNamespace implements Scope {
     return moduleNamespace == null || namespaceCommand.getOpenedReferences().isEmpty() && !namespaceCommand.isUsing() ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(moduleNamespace, namespaceCommand);
   }
 
+  public static @Nonnull Scope resolveNamespace(Scope parentScope, NamespaceCommand cmd) {
+    if (cmd.getOpenedReferences().isEmpty() && !cmd.isUsing()) {
+      return EmptyScope.INSTANCE;
+    }
+    List<String> path = cmd.getPath();
+    if (path.isEmpty()) {
+      return EmptyScope.INSTANCE;
+    }
+    parentScope = Scope.Utils.resolveNamespace(parentScope, path);
+    return parentScope == null ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(parentScope, cmd);
+  }
+
   @Nonnull
   @Override
   public Collection<? extends Referable> getElements() {

@@ -88,7 +88,7 @@ public class LexicalScope implements Scope {
         }
         scope = cachingScope;
       }
-      elements.addAll(NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd).getElements());
+      elements.addAll(NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements());
     }
 
     elements.addAll(myParent.getElements());
@@ -179,7 +179,7 @@ public class LexicalScope implements Scope {
         scope = cachingScope;
       }
 
-      scope = NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd);
+      scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
       Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name);
       if (result != null) {
         return result;

@@ -42,7 +42,18 @@ public abstract class NameResolvingChecker {
 
   }
 
-  protected void checkDefinition(LocatedReferable definition, Scope scope) {
+  public void checkSuperClassOfSynonym(ClassReferable superClass, ClassReferable underlyingClass, Object cause) {
+    superClass = superClass.getUnderlyingReference();
+    if (superClass == null) {
+      onError(new NamingError("Expected a class synonym", cause));
+    } else if (underlyingClass != null) {
+      if (!underlyingClass.isSubClassOf(superClass)) {
+        onError(new NamingError("Expected a synonym of a superclass of '" + underlyingClass.textRepresentation() + "'", cause));
+      }
+    }
+  }
+
+  private void checkDefinition(LocatedReferable definition, Scope scope) {
     // Check classes
     if (definition instanceof ClassReferable) {
       ClassReferable classRef = (ClassReferable) definition;
@@ -61,7 +72,7 @@ public abstract class NameResolvingChecker {
         Collection<? extends LocatedReferable> fieldRefs = classRef.getFieldReferables();
         if (underlyingClass != null && !fieldRefs.isEmpty()) {
           Scope fieldsScope = new ClassFieldImplScope(underlyingClass, false);
-          for (LocatedReferable fieldRef : classRef.getFieldReferables()) {
+          for (LocatedReferable fieldRef : fieldRefs) {
             Reference underlyingFieldRef = fieldRef.getUnresolvedUnderlyingReference();
             if (underlyingFieldRef != null) {
               Referable ref = ExpressionResolveNameVisitor.resolve(underlyingFieldRef.getReferent(), fieldsScope, true);
@@ -76,16 +87,8 @@ public abstract class NameResolvingChecker {
       // Check super classes
       for (Reference superClassRef : classRef.getUnresolvedSuperClassReferences()) {
         ClassReferable resolvedRef = checkClass(superClassRef, scope, false, isSynonym);
-        // Check super classes of a synonym
         if (isSynonym && resolvedRef != null) {
-          resolvedRef = resolvedRef.getUnderlyingReference();
-          if (resolvedRef == null) {
-            onError(new NamingError("Expected a class synonym", superClassRef.getData()));
-          } else if (underlyingClass != null) {
-            if (!underlyingClass.isSubClassOf(resolvedRef)) {
-              onError(new NamingError("Expected a synonym of a superclass of '" + underlyingClass + "'", superClassRef.getData()));
-            }
-          }
+          checkSuperClassOfSynonym(resolvedRef, underlyingClass, superClassRef.getData());
         }
       }
     }
@@ -139,61 +142,76 @@ public abstract class NameResolvingChecker {
     }
   }
 
+  public static Map<String, Pair<LocatedReferable, ClassReferable>> collectClassFields(LocatedReferable referable) {
+    Collection<? extends ClassReferable> superClasses = referable instanceof ClassReferable ? ((ClassReferable) referable).getSuperClassReferences() : Collections.emptyList();
+    if (superClasses.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    Map<String, Pair<LocatedReferable, ClassReferable>> fields = new HashMap<>();
+    Set<ClassReferable> visited = new HashSet<>();
+    visited.add((ClassReferable) referable);
+    Deque<ClassReferable> toVisit = new ArrayDeque<>(superClasses);
+    while (!toVisit.isEmpty()) {
+      ClassReferable superClass = toVisit.pop();
+      if (!visited.add(superClass)) {
+        continue;
+      }
+
+      for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
+        String name = fieldRef.textRepresentation();
+        if (!name.isEmpty() && !"_".equals(name)) {
+          // Pair<LocatedReferable, ClassReferable> oldField =
+          fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
+          // if (oldField != null && !superClass.equals(oldField.proj2)) {
+          //   fieldNamesClash(oldField.proj1, oldField.proj2, fieldRef, superClass, (ClassReferable) groupRef, Error.Level.ERROR);
+          // }
+        }
+      }
+
+      toVisit.addAll(superClass.getSuperClassReferences());
+    }
+
+    return fields;
+  }
+
+  public void checkField(LocatedReferable field, Map<String, Pair<LocatedReferable, ClassReferable>> fields, LocatedReferable classRef) {
+    if (field == null || fields.isEmpty()) {
+      return;
+    }
+
+    String name = field.textRepresentation();
+    if (!name.isEmpty() && !"_".equals(name)) {
+      Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
+      if (oldField != null) {
+        onFieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) classRef, (ClassReferable) classRef, Error.Level.WARNING);
+      }
+    }
+  }
+
   public void checkGroup(Group group, Scope scope) {
     LocatedReferable groupRef = group.getReferable();
-    Collection<? extends ClassReferable> superClasses = groupRef instanceof ClassReferable ? ((ClassReferable) groupRef).getSuperClassReferences() : Collections.emptyList();
     Collection<? extends Group> subgroups = group.getSubgroups();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
 
     checkDefinition(groupRef, scope);
 
-    Map<String, LocatedReferable> referables = new HashMap<>();
-    Map<String, Pair<LocatedReferable, ClassReferable>> fields = Collections.emptyMap();
-
-    if (!superClasses.isEmpty()) {
-      fields = new HashMap<>();
-
-      Set<ClassReferable> visited = new HashSet<>();
-      visited.add((ClassReferable) groupRef);
-      Deque<ClassReferable> toVisit = new ArrayDeque<>(superClasses);
-      while (!toVisit.isEmpty()) {
-        ClassReferable superClass = toVisit.pop();
-        if (!visited.add(superClass)) {
-          continue;
-        }
-
-        for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
-          String name = fieldRef.textRepresentation();
-          if (!name.isEmpty() && !"_".equals(name)) {
-            // Pair<LocatedReferable, ClassReferable> oldField =
-              fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
-            // if (oldField != null && !superClass.equals(oldField.proj2)) {
-            //   fieldNamesClash(oldField.proj1, oldField.proj2, fieldRef, superClass, (ClassReferable) groupRef, Error.Level.ERROR);
-            // }
-          }
-        }
-
-        toVisit.addAll(superClass.getSuperClassReferences());
+    Collection<? extends Group.InternalReferable> fields = group.getFields();
+    if (!fields.isEmpty()) {
+      Map<String, Pair<LocatedReferable, ClassReferable>> superFields = collectClassFields(groupRef);
+      for (Group.InternalReferable internalRef : fields) {
+        checkField(internalRef.getReferable(), superFields, groupRef);
       }
     }
 
+    Map<String, LocatedReferable> referables = new HashMap<>();
     for (Group.InternalReferable internalRef : group.getConstructors()) {
       checkReference(internalRef.getReferable(), referables, null);
     }
 
-    for (Group.InternalReferable internalRef : group.getFields()) {
-      LocatedReferable field = internalRef.getReferable();
-      String name = field.textRepresentation();
-      if (!name.isEmpty() && !"_".equals(name)) {
-        Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
-        if (oldField != null) {
-          assert groupRef instanceof ClassReferable;
-          onFieldNamesClash(oldField.proj1, oldField.proj2, field, (ClassReferable) groupRef, (ClassReferable) groupRef, Error.Level.WARNING);
-        }
-      }
-
-      checkReference(field, referables, null);
+    for (Group.InternalReferable internalRef : fields) {
+      checkReference(internalRef.getReferable(), referables, null);
     }
 
     for (Group subgroup : subgroups) {
@@ -235,17 +253,8 @@ public abstract class NameResolvingChecker {
     for (NamespaceCommand cmd : namespaceCommands) {
       if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         onError(new NamingError("\\import is allowed only on the top level", cmd));
-      }
-
-      for (NameRenaming renaming : cmd.getOpenedReferences()) {
-        String name = renaming.getName();
-        if (name == null) {
-          name = renaming.getOldReference().textRepresentation();
-        }
-        LocatedReferable ref = referables.get(name);
-        if (ref != null) {
-          onError(new NamingError(Error.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is not imported since it is defined in this module", renaming));
-        }
+      } else {
+        checkNamespaceCommand(cmd, referables.keySet());
       }
     }
 
@@ -255,7 +264,7 @@ public abstract class NameResolvingChecker {
 
     List<Pair<NamespaceCommand, Set<String>>> namespaces = new ArrayList<>(namespaceCommands.size());
     for (NamespaceCommand cmd : namespaceCommands) {
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(scope, cmd.getPath()), cmd).getElements();
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements();
       if (!elements.isEmpty()) {
         Set<String> names = new LinkedHashSet<>();
         for (Referable ref : elements) {
@@ -277,6 +286,22 @@ public abstract class NameResolvingChecker {
             onNamespacesClash(pair.proj1, namespaces.get(j).proj1, name, Error.Level.WARNING);
           }
         }
+      }
+    }
+  }
+
+  public void checkNamespaceCommand(NamespaceCommand cmd, Set<String> defined) {
+    if (defined == null) {
+      return;
+    }
+
+    for (NameRenaming renaming : cmd.getOpenedReferences()) {
+      String name = renaming.getName();
+      if (name == null) {
+        name = renaming.getOldReference().textRepresentation();
+      }
+      if (defined.contains(name)) {
+        onError(new NamingError(Error.Level.WARNING, "Definition '" + name + "' is not imported since it is defined in this module", renaming));
       }
     }
   }
@@ -310,17 +335,23 @@ public abstract class NameResolvingChecker {
 
     LocatedReferable oldRef = referables.putIfAbsent(name, newRef);
     if (oldRef != null) {
-      Error.Level level;
-      if (parentReferable == null) {
-        level = Error.Level.ERROR;
-      } else {
-        LocatedReferable oldParent = oldRef.getLocatedReferableParent();
-        if (parentReferable.equals(oldParent) || oldParent != null && oldParent.equals(newRef.getLocatedReferableParent())) {
-          return;
-        }
-        level = Error.Level.WARNING;
-      }
-      onDefinitionNamesClash(oldRef, newRef, level);
+      checkReference(oldRef, newRef, parentReferable);
     }
+  }
+
+  public boolean checkReference(LocatedReferable oldRef, LocatedReferable newRef, LocatedReferable parentReferable) {
+    Error.Level level;
+    if (parentReferable == null) {
+      level = Error.Level.ERROR;
+    } else {
+      LocatedReferable oldParent = oldRef.getLocatedReferableParent();
+      if (parentReferable.equals(oldParent) || oldParent != null && oldParent.equals(newRef.getLocatedReferableParent())) {
+        return true;
+      }
+      level = Error.Level.WARNING;
+    }
+
+    onDefinitionNamesClash(oldRef, newRef, level);
+    return false;
   }
 }

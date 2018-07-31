@@ -130,9 +130,13 @@ public final class Abstract {
 
   // Definition
 
-  public interface Definition extends SourceNode {
+  public interface ReferableDefinition extends SourceNode {
+    /* @Nonnull */ @Nullable LocatedReferable getReferable();
+  }
+
+  public interface Definition extends ReferableDefinition {
     @Nullable ClassReferable getEnclosingClass();
-    @Nonnull LocatedReferable getReferable();
+    @Override @Nonnull LocatedReferable getReferable();
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
@@ -158,19 +162,17 @@ public final class Abstract {
     @Nullable Reference getUnderlyingClass();
   }
 
-  public interface Constructor extends EliminatedExpressionsHolder {
-    @Nonnull LocatedReferable getReferable();
+  public interface Constructor extends ReferableDefinition, EliminatedExpressionsHolder {
+    @Override @Nonnull LocatedReferable getReferable();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
   }
 
-  public interface ClassField extends ParametersHolder {
-    /* @Nonnull */ @Nullable LocatedReferable getReferable();
+  public interface ClassField extends ReferableDefinition, ParametersHolder {
     /* @Nonnull */ @Nullable Expression getResultType();
   }
 
-  public interface ClassFieldSynonym extends SourceNode {
-    /* @Nonnull */ @Nullable LocatedReferable getReferable();
+  public interface ClassFieldSynonym extends ReferableDefinition {
     /* @Nonnull */ @Nullable Reference getUnderlyingField();
   }
 

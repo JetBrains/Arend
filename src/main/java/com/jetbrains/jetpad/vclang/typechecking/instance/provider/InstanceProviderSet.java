@@ -1,6 +1,9 @@
 package com.jetbrains.jetpad.vclang.typechecking.instance.provider;
 
-import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.LexicalScope;
@@ -91,7 +94,7 @@ public class InstanceProviderSet {
 
     parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
     for (NamespaceCommand command : namespaceCommands) {
-      NamespaceCommandNamespace.makeNamespace(Scope.Utils.resolveNamespace(parentScope, command.getPath()), command).find(predicate);
+      NamespaceCommandNamespace.resolveNamespace(parentScope, command).find(predicate);
     }
     processSubgroups(parentScope, predicate, dynamicSubgroups);
     processSubgroups(parentScope, predicate, subgroups);
