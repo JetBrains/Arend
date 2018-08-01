@@ -94,13 +94,15 @@ public abstract class NameResolvingChecker {
     }
 
     // Check instances
-    ClassReferable classRef = definition.getTypeClassReference();
-    if (classRef == null || myConcreteProvider.isRecord(classRef)) {
+
+    // The code is commented since we (currently) do not allow functions in types of instances
+    // ClassReferable classRef = definition.getTypeClassReference();
+    // if (classRef == null || myConcreteProvider.isRecord(classRef)) {
       Reference typeRef = myConcreteProvider.getInstanceTypeReference(definition);
       if (typeRef != null) {
         checkClass(typeRef, scope, true, false);
       }
-    }
+    // }
   }
 
   private ClassReferable checkClass(Reference classRef, Scope scope, boolean checkNotRecord, boolean reportUnresolved) {

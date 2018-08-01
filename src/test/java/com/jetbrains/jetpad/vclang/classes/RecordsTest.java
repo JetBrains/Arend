@@ -123,11 +123,11 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => d\n" +
         "  | y => d\n" +
         "}\n" +
-        "\\func diagonal1 => Point {\n" +
+        "\\func diagonal1 => \\new Point {\n" +
         "  | x => 0\n" +
         "  | y => 0\n" +
         "}\n" +
-        "\\func test : \\new diagonal1 {} = \\new diagonal 0 => path (\\lam _ => \\new Point { | x => 0 | y => 0 })");
+        "\\func test : diagonal1 = \\new diagonal 0 => path (\\lam _ => \\new Point { | x => 0 | y => 0 })");
   }
 
   @Test

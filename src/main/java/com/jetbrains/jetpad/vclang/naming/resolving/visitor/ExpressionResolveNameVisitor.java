@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.frontend.reference.TypeClassReferenceExtractVisitor;
 import com.jetbrains.jetpad.vclang.naming.BinOpParser;
 import com.jetbrains.jetpad.vclang.naming.error.DuplicateNameError;
+import com.jetbrains.jetpad.vclang.naming.error.NamingError;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.naming.scope.ListScope;
@@ -249,27 +250,31 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.baseClassExpression = expr.baseClassExpression.accept(this, null);
-    visitClassFieldImpls(expr.getStatements(), expr.baseClassExpression.getUnderlyingClassReferable(false));
+    ClassReferable classRef = expr.baseClassExpression.getUnderlyingClassReferable(false);
+    if (classRef != null) {
+      visitClassFieldImpls(expr.getStatements(), classRef);
+    } else {
+      myErrorReporter.report(new NamingError("Expected a class", expr.baseClassExpression.getData()));
+      expr.getStatements().clear();
+    }
     return expr;
   }
 
   void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
-      if (classDef != null) {
-        Referable field = impl.getImplementedField();
+      Referable field = impl.getImplementedField();
+      while (field instanceof RedirectingReferable) {
+        field = ((RedirectingReferable) field).getOriginalReferable();
+      }
+      if (field instanceof UnresolvedReference) {
+        field = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
         while (field instanceof RedirectingReferable) {
           field = ((RedirectingReferable) field).getOriginalReferable();
         }
-        if (field instanceof UnresolvedReference) {
-          field = ((UnresolvedReference) field).resolve(new ClassFieldImplScope(classDef, true));
-          while (field instanceof RedirectingReferable) {
-            field = ((RedirectingReferable) field).getOriginalReferable();
-          }
-          if (field instanceof ErrorReference) {
-            myErrorReporter.report(((ErrorReference) field).getError());
-          }
-          impl.setImplementedField(field);
+        if (field instanceof ErrorReference) {
+          myErrorReporter.report(((ErrorReference) field).getError());
         }
+        impl.setImplementedField(field);
       }
 
       if (impl.implementation == null) {
