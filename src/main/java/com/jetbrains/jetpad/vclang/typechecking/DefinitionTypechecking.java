@@ -329,7 +329,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       } else {
         if (def.getResultType() == null) {
-          visitor.getErrorReporter().report(new TypecheckingError("Cannot infer type of the expression", body));
+          visitor.getErrorReporter().report(new TypecheckingError("Cannot infer type of a function defined by pattern matching", def));
         }
       }
     } else {

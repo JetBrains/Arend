@@ -6,15 +6,15 @@ import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter
 import com.jetbrains.jetpad.vclang.naming.scope.ClassFieldImplScope;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.Group;
-import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
-import com.jetbrains.jetpad.vclang.typechecking.order.listener.OrderingListener;
-import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DefinitionGetDependenciesVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
-import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProvider;
 import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DefinitionGetDependenciesVisitor;
+import com.jetbrains.jetpad.vclang.typechecking.order.dependency.DependencyListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.OrderingListener;
+import com.jetbrains.jetpad.vclang.typechecking.order.listener.TypecheckingOrderingListener;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.TypecheckingUnit;
+import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
@@ -269,6 +269,7 @@ public class Ordering {
 
       if (units.size() == 1) {
         myOrderingListener.unitFound(unit, recursion);
+        doOrderCoercingFunctions(unit.getDefinition());
         return OrderResult.REPORTED;
       }
     }
@@ -278,8 +279,32 @@ public class Ordering {
     }
     if (scc != null) {
       myOrderingListener.sccFound(scc);
+      for (TypecheckingUnit unit1 : scc.getUnits()) {
+        doOrderCoercingFunctions(unit1.getDefinition());
+      }
     }
 
     return OrderResult.REPORTED;
+  }
+
+  private void doOrderCoercingFunctions(Concrete.Definition definition) {
+    if (myRefToHeaders) {
+      return;
+    }
+
+    List<TCReferable> coercingFunctions = Collections.emptyList();
+    if (definition instanceof Concrete.DataDefinition) {
+      coercingFunctions = ((Concrete.DataDefinition) definition).getCoercingFunctions();
+    } else if (definition instanceof Concrete.ClassDefinition) {
+      coercingFunctions = ((Concrete.ClassDefinition) definition).getCoercingFunctions();
+    }
+
+    for (TCReferable coercingFunction : coercingFunctions) {
+      myDependencyListener.dependsOn(definition.getData(), true, coercingFunction);
+      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(coercingFunction);
+      if (def instanceof Concrete.Definition) {
+        orderDefinition((Concrete.Definition) def);
+      }
+    }
   }
 }

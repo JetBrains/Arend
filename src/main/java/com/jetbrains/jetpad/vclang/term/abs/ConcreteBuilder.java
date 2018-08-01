@@ -213,6 +213,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
     }
 
+    data.setCoercingFunctions(visitCoercingFunctions(def.getCoercingFunctions()));
     return data;
   }
 
@@ -296,9 +297,22 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         }
       }
 
+      classDef.setCoercingFunctions(visitCoercingFunctions(def.getCoercingFunctions()));
       return classDef;
     } else {
       return null;
+    }
+  }
+
+  private List<TCReferable> visitCoercingFunctions(Collection<? extends LocatedReferable> coercingFunctions) {
+    if (!coercingFunctions.isEmpty()) {
+      List<TCReferable> tcCoercingFunctions = new ArrayList<>(coercingFunctions.size());
+      for (LocatedReferable coercingFunction : coercingFunctions) {
+        tcCoercingFunctions.add(myReferableConverter.toDataLocatedReferable(coercingFunction));
+      }
+      return tcCoercingFunctions;
+    } else {
+      return Collections.emptyList();
     }
   }
 

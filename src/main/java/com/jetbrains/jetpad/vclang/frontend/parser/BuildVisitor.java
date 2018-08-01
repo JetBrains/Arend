@@ -515,7 +515,28 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     DataGroup resultGroup = new DataGroup(referable, constructors, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
+
+    List<TCReferable> coercingFunctions = collectCoercingFunctions(subgroups, null);
+    if (coercingFunctions != null) {
+      dataDefinition.setCoercingFunctions(coercingFunctions);
+    }
+
     return resultGroup;
+  }
+
+  private List<TCReferable> collectCoercingFunctions(List<Group> groups, List<TCReferable> coercingFunctions) {
+    for (Group subgroup : groups) {
+      if (subgroup.getReferable() instanceof ConcreteLocatedReferable) {
+        Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) subgroup.getReferable()).getDefinition();
+        if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).isCoerce()) {
+          if (coercingFunctions == null) {
+            coercingFunctions = new ArrayList<>();
+          }
+          coercingFunctions.add((TCReferable) subgroup.getReferable());
+        }
+      }
+    }
+    return coercingFunctions;
   }
 
   private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<InternalConcreteLocatedReferable> constructors) {
@@ -639,6 +660,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     ClassGroup resultGroup = null;
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
+    Concrete.ClassDefinition classDefinition = null;
+    List<TCReferable> coercingFunctions = null;
     if (classBodyCtx instanceof ClassSynContext) {
       if (isRecord) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Records cannot be synonyms"));
@@ -677,15 +700,16 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
         : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
 
-      Concrete.Definition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, fieldsExplicitness, implementations);
+      classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, fieldsExplicitness, implementations);
       reference.setDefinition(classDefinition);
-      ((Concrete.ClassDefinition) classDefinition).setCoercingField(visitFieldTeles(ctx.fieldTele(), (Concrete.ClassDefinition) classDefinition, fields, fieldsExplicitness));
+      classDefinition.setCoercingField(visitFieldTeles(ctx.fieldTele(), classDefinition, fields, fieldsExplicitness));
       classDefinition.enclosingClass = enclosingClass;
 
       if (!classStatCtxs.isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
         resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
-        visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, (Concrete.ClassDefinition) classDefinition, resultGroup);
+        visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
+        coercingFunctions = collectCoercingFunctions(dynamicSubgroups, null);
       }
 
       for (Concrete.ClassField field : fields) {
@@ -698,6 +722,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       resultGroup = new ClassGroup(reference, fieldReferables, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
+
+    if (classDefinition != null) {
+      coercingFunctions = collectCoercingFunctions(staticSubgroups, coercingFunctions);
+      if (coercingFunctions != null) {
+        classDefinition.setCoercingFunctions(coercingFunctions);
+      }
+    }
+
     return resultGroup;
   }
 

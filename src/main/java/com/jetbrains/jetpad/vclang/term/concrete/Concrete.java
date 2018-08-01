@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public final class Concrete {
@@ -962,6 +963,7 @@ public final class Concrete {
     private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
     private TCReferable myCoercingField;
+    private List<TCReferable> myCoercingFunctions = Collections.emptyList();
 
     public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
       super(referable);
@@ -1012,6 +1014,14 @@ public final class Concrete {
     @Nonnull
     public List<ClassFieldImpl> getImplementations() {
       return myImplementations;
+    }
+
+    public List<TCReferable> getCoercingFunctions() {
+      return myCoercingFunctions;
+    }
+
+    public void setCoercingFunctions(List<TCReferable> coercingFunctions) {
+      myCoercingFunctions = coercingFunctions;
     }
 
     @Override
@@ -1152,6 +1162,7 @@ public final class Concrete {
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
+    private List<TCReferable> myCoercingFunctions = Collections.emptyList();
 
     public DataDefinition(TCReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(referable);
@@ -1184,6 +1195,14 @@ public final class Concrete {
     @Nullable
     public UniverseExpression getUniverse() {
       return myUniverse;
+    }
+
+    public List<TCReferable> getCoercingFunctions() {
+      return myCoercingFunctions;
+    }
+
+    public void setCoercingFunctions(List<TCReferable> coercingFunctions) {
+      myCoercingFunctions = coercingFunctions;
     }
 
     @Override

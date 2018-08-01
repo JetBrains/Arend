@@ -111,7 +111,6 @@ public class DefinitionDeserialization {
   }
 
   private void fillInClassDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ClassData classProto, ClassDefinition classDef) throws DeserializationException {
-
     for (DefinitionProtos.Definition.ClassData.Field fieldProto : classProto.getPersonalFieldList()) {
       ClassField field = myCallTargetProvider.getCallTarget(fieldProto.getReferable().getIndex(), ClassField.class);
       if (!fieldProto.hasType()) {
@@ -135,6 +134,7 @@ public class DefinitionDeserialization {
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
+      myDependencyListener.dependsOn(classDef.getReferable(), true, superClass.getReferable());
       TCClassReferable classRef = classDef.getReferable();
       if (classRef instanceof ClassReferableImpl) {
         ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
@@ -152,7 +152,7 @@ public class DefinitionDeserialization {
       classDef.setRecord();
     }
 
-    readCoerceData(classProto.getCoerceData(), classDef.getCoerceData());
+    readCoerceData(classProto.getCoerceData(), classDef.getCoerceData(), classDef);
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
@@ -195,14 +195,16 @@ public class DefinitionDeserialization {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
-    readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData());
+    readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData(), dataDef);
   }
 
-  private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
+  private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData, Definition definition) throws DeserializationException {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceFromList()) {
       List<FunctionDefinition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class));
+        FunctionDefinition coercingDef = myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class);
+        myDependencyListener.dependsOn(definition.getReferable(), true, coercingDef.getReferable());
+        coercingDefs.add(coercingDef);
       }
       int classifyingDefIndex = elementProto.getClassifyingDef();
       coerceData.putCoerceFrom(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
@@ -211,7 +213,9 @@ public class DefinitionDeserialization {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceToList()) {
       List<Definition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
+        Definition coercingDef = myCallTargetProvider.getCallTarget(defIndex);
+        myDependencyListener.dependsOn(definition.getReferable(), true, coercingDef.getReferable());
+        coercingDefs.add(coercingDef);
       }
       int classifyingDefIndex = elementProto.getClassifyingDef();
       coerceData.putCoerceTo(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
