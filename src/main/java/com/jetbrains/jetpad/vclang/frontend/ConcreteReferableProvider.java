@@ -53,4 +53,16 @@ public class ConcreteReferableProvider implements ConcreteProvider {
     }
     return null;
   }
+
+  @Nullable
+  @Override
+  public Concrete.DataDefinition getConcreteData(GlobalReferable referable) {
+    if (referable instanceof ConcreteLocatedReferable) {
+      Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) referable).getDefinition();
+      if (def instanceof Concrete.DataDefinition) {
+        return (Concrete.DataDefinition) def;
+      }
+    }
+    return null;
+  }
 }

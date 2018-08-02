@@ -1116,19 +1116,21 @@ public final class Concrete {
     private final List<Parameter> myParameters;
     private Expression myResultType;
     private final FunctionBody myBody;
-    private final boolean myCoerce;
 
-    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, boolean isCoerce) {
+    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
-      myCoerce = isCoerce;
     }
 
     public boolean isCoerce() {
-      return myCoerce;
+      return false;
+    }
+
+    public TCReferable getCoerceParent() {
+      return null;
     }
 
     @Nonnull
@@ -1153,6 +1155,27 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitFunction(this, params);
+    }
+  }
+
+  public static class CoerceDefinition extends FunctionDefinition {
+    private final TCReferable myCoerceParent;
+
+    private CoerceDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
+      super(referable, parameters, resultType, body);
+      myCoerceParent = coerceParent;
+    }
+
+    public static FunctionDefinition make(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable ? new CoerceDefinition(referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(referable, parameters, resultType, body);
+    }
+
+    public boolean isCoerce() {
+      return true;
+    }
+
+    public TCReferable getCoerceParent() {
+      return myCoerceParent;
     }
   }
 

@@ -464,7 +464,14 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
-    Concrete.Definition funDef = new Concrete.FunctionDefinition(referable, visitFunctionParameters(ctx.tele()), resultType, body, ctx.funcKw() instanceof FuncKwCoerceContext);
+    boolean isCoerce = ctx.funcKw() instanceof FuncKwCoerceContext;
+    Concrete.FunctionDefinition funDef = isCoerce
+      ? Concrete.CoerceDefinition.make(referable, visitFunctionParameters(ctx.tele()), resultType, body, parent.getReferable())
+      : new Concrete.FunctionDefinition(referable, visitFunctionParameters(ctx.tele()), resultType, body);
+    if (isCoerce && !funDef.isCoerce()) {
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\coerce is not allowed on the top level"));
+    }
+
     funDef.enclosingClass = enclosingClass;
     referable.setDefinition(funDef);
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);

@@ -34,4 +34,10 @@ public class EmptyConcreteProvider implements ConcreteProvider {
   public Concrete.ClassDefinition getConcreteClass(ClassReferable referable) {
     return null;
   }
+
+  @Nullable
+  @Override
+  public Concrete.DataDefinition getConcreteData(GlobalReferable referable) {
+    return null;
+  }
 }

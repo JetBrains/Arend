@@ -11,6 +11,7 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   @Nullable Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable);
   @Nullable Concrete.Instance getConcreteInstance(GlobalReferable referable);
   @Nullable Concrete.ClassDefinition getConcreteClass(ClassReferable referable);
+  @Nullable Concrete.DataDefinition getConcreteData(GlobalReferable referable);
 
   @Override
   @Nullable
@@ -34,5 +35,10 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   default boolean isCoerce(GlobalReferable ref) {
     Concrete.FunctionDefinition func = getConcreteFunction(ref);
     return func != null && func.isCoerce();
+  }
+
+  @Override
+  default boolean isData(GlobalReferable ref) {
+    return getConcreteData(ref) != null;
   }
 }

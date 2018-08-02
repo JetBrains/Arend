@@ -6,6 +6,18 @@ import static com.jetbrains.jetpad.vclang.typechecking.Matchers.typeMismatchErro
 
 public class CoerceTest extends TypeCheckingTestCase {
   @Test
+  public void coerceTop() {
+    parseModule("\\coerce f (n : Nat) : Nat => n", 1);
+  }
+
+  @Test
+  public void coerceFunction() {
+    typeCheckModule(
+      "\\func g => 0\n" +
+      "  \\where \\coerce f (n : Nat) : Nat => n", 1);
+  }
+
+  @Test
   public void coerceFromDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
@@ -88,6 +100,13 @@ public class CoerceTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void bothCoerce() {
+    typeCheckModule(
+      "\\data D | con\n" +
+      "  \\where \\coerce f (d : D) : D => d", 1);
+  }
+
+  @Test
   public void recursiveCoerceFromDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
@@ -136,6 +155,14 @@ public class CoerceTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
       "  \\where \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
+      "\\func f (d : D 3) : Nat => d");
+  }
+
+  @Test
+  public void coerceToDefWithExplicitParameters() {
+    typeCheckModule(
+      "\\data D Nat | con Nat\n" +
+      "  \\where \\coerce toNat (p : Nat) (d : D p) : Nat | con n => n\n" +
       "\\func f (d : D 3) : Nat => d");
   }
 

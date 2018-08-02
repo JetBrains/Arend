@@ -11,4 +11,5 @@ public interface PartialConcreteProvider {
   boolean isRecord(ClassReferable classRef);
   boolean isInstance(GlobalReferable ref);
   boolean isCoerce(GlobalReferable ref);
+  boolean isData(GlobalReferable ref);
 }

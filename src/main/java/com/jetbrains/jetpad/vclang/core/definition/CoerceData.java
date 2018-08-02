@@ -153,7 +153,7 @@ public class CoerceData {
   }
 
   public FunctionDefinition addCoerceFrom(Definition classifyingDefinition, FunctionDefinition coercingDefinition) {
-    if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition || classifyingDefinition instanceof Constructor)) {
+    if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition)) {
       classifyingDefinition = null;
     }
 
@@ -181,7 +181,7 @@ public class CoerceData {
   }
 
   public FunctionDefinition addCoerceTo(Definition classifyingDefinition, FunctionDefinition coercingDefinition) {
-    if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition || classifyingDefinition instanceof Constructor)) {
+    if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition)) {
       classifyingDefinition = null;
     }
 

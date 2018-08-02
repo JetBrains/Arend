@@ -149,7 +149,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       type = null;
     }
 
-    Concrete.FunctionDefinition result = new Concrete.FunctionDefinition(myDefinition, parameters, type, body, def.isCoerce());
+    Concrete.FunctionDefinition result = def.isCoerce()
+      ? Concrete.CoerceDefinition.make(myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()))
+      : new Concrete.FunctionDefinition(myDefinition, parameters, type, body);
     setEnclosingClass(result, def);
     return result;
   }
