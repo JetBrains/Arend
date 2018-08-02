@@ -167,7 +167,7 @@ implementStatements : '{' coClause* '}';
 literal : ID                            # name
         | '\\Prop'                      # prop
         | '_'                           # unknown
-        | '{?' ID? ('{' expr '}')? '}'  # goal
+        | '{?' ID? ('(' expr? ')')? '}' # goal
         ;
 
 universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse
