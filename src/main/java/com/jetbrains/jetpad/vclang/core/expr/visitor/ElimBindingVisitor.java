@@ -43,7 +43,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
-  public AppExpression visitApp(AppExpression expr, Void params) {
+  public Expression visitApp(AppExpression expr, Void params) {
     Expression result = findBindings(expr.getFunction(), false);
     if (result == null) {
       return null;
@@ -52,7 +52,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (arg == null) {
       return null;
     }
-    return new AppExpression(result, arg);
+    return AppExpression.make(result, arg);
   }
 
   private List<Expression> visitDefCallArguments(List<? extends Expression> args) {

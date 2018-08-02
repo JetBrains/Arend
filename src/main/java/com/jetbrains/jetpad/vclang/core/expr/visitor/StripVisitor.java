@@ -23,8 +23,8 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public AppExpression visitApp(AppExpression expr, Void params) {
-    return new AppExpression(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
+  public Expression visitApp(AppExpression expr, Void params) {
+    return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
   }
 
   @Override

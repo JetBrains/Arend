@@ -16,7 +16,7 @@ public class ExpressionFactory {
     }
     Expression result = function;
     for (Expression argument : arguments) {
-      result = new AppExpression(result, argument);
+      result = AppExpression.make(result, argument);
     }
     return result;
   }

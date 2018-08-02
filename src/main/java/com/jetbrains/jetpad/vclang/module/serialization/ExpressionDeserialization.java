@@ -237,8 +237,8 @@ class ExpressionDeserialization {
   }
 
 
-  private AppExpression readApp(ExpressionProtos.Expression.App proto) throws DeserializationException {
-    return new AppExpression(readExpr(proto.getFunction()), readExpr(proto.getArgument()));
+  private Expression readApp(ExpressionProtos.Expression.App proto) throws DeserializationException {
+    return AppExpression.make(readExpr(proto.getFunction()), readExpr(proto.getArgument()));
   }
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {
@@ -340,11 +340,11 @@ class ExpressionDeserialization {
     return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
   }
 
-  private SmallIntegerExpression readSmallInteger(ExpressionProtos.Expression.SmallInteger proto) throws DeserializationException {
+  private SmallIntegerExpression readSmallInteger(ExpressionProtos.Expression.SmallInteger proto) {
     return new SmallIntegerExpression(proto.getValue());
   }
 
-  private BigIntegerExpression readBigInteger(ExpressionProtos.Expression.BigInteger proto) throws DeserializationException {
+  private BigIntegerExpression readBigInteger(ExpressionProtos.Expression.BigInteger proto) {
     return new BigIntegerExpression(new BigInteger(proto.getValue().toByteArray()));
   }
 }

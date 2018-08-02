@@ -229,7 +229,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     @Override
     public Result applyExpression(Expression expr, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
-      expression = new AppExpression(expression, expr);
+      expression = AppExpression.make(expression, expr);
       Expression newType = type.applyExpression(expr);
       if (newType == null) {
         errorReporter.report(new TypecheckingError("Expected an expression of a pi type", sourceNode));
@@ -511,8 +511,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ConCallExpression conCall = ((Result) result).expression.checkedCast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
         //noinspection RedundantIfStatement
-        if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
-          !compareExpressions(false, conCall.getDataTypeArguments().get(2), new AppExpression(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
+        if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
+          !compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
         }
       }

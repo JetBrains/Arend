@@ -41,7 +41,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       function = function.accept(this, mode);
     }
     for (Expression arg : args) {
-      function = new AppExpression(function, mode == Mode.WHNF ? arg : arg.accept(this, mode));
+      function = AppExpression.make(function, mode == Mode.WHNF ? arg : arg.accept(this, mode));
     }
     return function;
   }
@@ -61,7 +61,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     result = result.subst(subst);
     for (; i < arguments.size(); i++) {
-      result = new AppExpression(result, arguments.get(i));
+      result = AppExpression.make(result, arguments.get(i));
     }
     return result;
   }
@@ -127,7 +127,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
                 }
               }
               if (noFreeVar) {
-                return visitApp(new AppExpression(isoArgs.get(2), expr.getDefCallArguments().get(1)), mode);
+                return AppExpression.make(isoArgs.get(2), expr.getDefCallArguments().get(1)).accept(this, mode);
               }
             }
           }

@@ -411,12 +411,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     if (params1.size() < params2.size()) {
       for (int i = params1.size(); i < params2.size(); i++) {
-        body1 = new AppExpression(body1, new ReferenceExpression(params2.get(i)));
+        body1 = AppExpression.make(body1, new ReferenceExpression(params2.get(i)));
       }
     }
     if (params2.size() < params1.size()) {
       for (int i = params2.size(); i < params1.size(); i++) {
-        body2 = new AppExpression(body2, new ReferenceExpression(params1.get(i)));
+        body2 = AppExpression.make(body2, new ReferenceExpression(params1.get(i)));
       }
     }
 

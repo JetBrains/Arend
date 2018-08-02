@@ -64,13 +64,15 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
 
   @Test
   public void prettyPrintingParserLamApp() {
-    // (\x y. x (x y)) (\x y. x) ((\x. x) (\x. x))
+    // \a. a (\x y. x (x y)) (\x y. x) (a (\x. x) (\x. x))
     ParsedLocalReferable cx = ref("x");
     ParsedLocalReferable cy = ref("y");
-    Concrete.Expression expected = cApps(cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx))));
+    ParsedLocalReferable ca = ref("a");
+    Concrete.Expression expected = cLam(cargs(cTele(cvars(ca), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cApps(cVar(ca), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cVar(ca), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
-    Expression expr = Apps(Lam(xy, Apps(Ref(xy), Apps(Ref(xy), Ref(xy.getNext())))), Lam(xy, Ref(xy)), Apps(Lam(x, Ref(x)), Lam(x, Ref(x))));
+    SingleDependentLink a = singleParam("a", Pi(Universe(1), Pi(Universe(1), Universe(1))));
+    Expression expr = Lam(a, Apps(Ref(a), Lam(xy, Apps(Ref(xy), Apps(Ref(xy), Ref(xy.getNext())))), Lam(xy, Ref(xy)), Apps(Ref(a), Lam(x, Ref(x)), Lam(x, Ref(x)))));
     testExpr(expected, expr);
   }
 

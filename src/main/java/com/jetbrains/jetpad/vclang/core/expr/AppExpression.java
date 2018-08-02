@@ -1,14 +1,26 @@
 package com.jetbrains.jetpad.vclang.core.expr;
 
+import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.ExpressionVisitor;
 
 public class AppExpression extends Expression {
   private final Expression myFunction;
   private final Expression myArgument;
 
-  public AppExpression(Expression function, Expression argument) {
+  private AppExpression(Expression function, Expression argument) {
     myFunction = function;
     myArgument = argument;
+  }
+
+  public static Expression make(Expression function, Expression argument) {
+    if (function.isInstance(LamExpression.class)) {
+      LamExpression lamExpr = function.cast(LamExpression.class);
+      SingleDependentLink var = lamExpr.getParameters();
+      SingleDependentLink next = var.getNext();
+      return (next.hasNext() ? new LamExpression(lamExpr.getResultSort(), next, lamExpr.getBody()) : lamExpr.getBody()).subst(var, argument);
+    } else {
+      return new AppExpression(function, argument);
+    }
   }
 
   public Expression getFunction() {
