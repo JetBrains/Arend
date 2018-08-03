@@ -359,12 +359,14 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (def.getParameters().isEmpty()) {
           myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));
         } else {
-          Definition resultDef = getExpressionDef(def.getResultType());
           Definition paramDef = null;
           Concrete.Parameter parameter = def.getParameters().get(def.getParameters().size() - 1);
           if (parameter instanceof Concrete.TypeParameter) {
             paramDef = getExpressionDef(((Concrete.TypeParameter) parameter).getType());
           }
+
+          DefCallExpression resultDefCall = typedDef.getResultType().checkedCast(DefCallExpression.class);
+          Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 
           if ((resultDef == coerceParent) == (paramDef == coerceParent)) {
             myVisitor.getErrorReporter().report(new TypecheckingError("Either the last parameter or the result type (but not both) of \\coerce must be the parent definition", def));
@@ -385,16 +387,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private Definition getExpressionDef(Concrete.Expression expr) {
-    if (expr instanceof Concrete.AppExpression) {
-      expr = ((Concrete.AppExpression) expr).getFunction();
-    }
-    if (expr instanceof Concrete.ReferenceExpression) {
-      Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
-      if (ref instanceof TCReferable) {
-        return myVisitor.getTypecheckingState().getTypechecked((TCReferable) ref);
-      }
-    }
-    return null;
+    Referable ref = expr.getUnderlyingReferable();
+    return ref instanceof TCReferable ? myVisitor.getTypecheckingState().getTypechecked((TCReferable) ref) : null;
   }
 
   private void typecheckDataHeader(DataDefinition dataDefinition, Concrete.DataDefinition def, LocalInstancePool localInstancePool) {
