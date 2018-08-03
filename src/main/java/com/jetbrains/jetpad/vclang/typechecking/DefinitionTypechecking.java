@@ -374,7 +374,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             if (resultDef == coerceParent) {
               coerceParent.getCoerceData().addCoerceFrom(paramDef, typedDef);
             } else {
-              coerceParent.getCoerceData().addCoerceTo(paramDef, typedDef);
+              coerceParent.getCoerceData().addCoerceTo(resultDef, typedDef);
             }
           }
         }

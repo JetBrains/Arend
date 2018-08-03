@@ -122,7 +122,7 @@ public class CoerceTest extends TypeCheckingTestCase {
       "\\data D | con Nat\n" +
       "  \\where \\coerce toNat (d : D) : Nat | con n => n\n" +
       "\\data E | con' D\n" +
-      "  \\where \\coerce toD (e : E) | con' d => d\n" +
+      "  \\where \\coerce toD (e : E) : D | con' d => d\n" +
       "\\func f (e : E) : Nat => e");
   }
 
@@ -162,7 +162,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDefWithExplicitParameters() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce toNat (p : Nat) (d : D p) : Nat | con n => n\n" +
+      "  \\where \\coerce toNat (p : Nat) (d : D p) : Nat \\elim d | con n => n\n" +
       "\\func f (d : D 3) : Nat => d");
   }
 

@@ -46,6 +46,7 @@ public class Prelude {
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
+  private static FunctionDefinition FROM_NAT;
 
   public static FunctionDefinition COERCE;
 
@@ -139,6 +140,9 @@ public class Prelude {
         SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
         SET_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
+      case "fromNat":
+        FROM_NAT = (FunctionDefinition) definition;
+        break;
       default:
         throw new IllegalStateException();
     }
@@ -153,6 +157,7 @@ public class Prelude {
     state.record(INT.getReferable(), INT);
     state.record(POS.getReferable(), POS);
     state.record(NEG.getReferable(), NEG);
+    state.record(FROM_NAT.getReferable(), FROM_NAT);
     state.record(INTERVAL.getReferable(), INTERVAL);
     state.record(LEFT.getReferable(), LEFT);
     state.record(RIGHT.getReferable(), RIGHT);
@@ -178,10 +183,15 @@ public class Prelude {
     for (String name : new String[]{"Nat", "Int", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
       update(state.getTypechecked((TCReferable) scope.resolveName(name)));
     }
+
     Scope natScope = scope.resolveNamespace("Nat");
     assert natScope != null;
     update(state.getTypechecked((TCReferable) natScope.resolveName("+")));
     update(state.getTypechecked((TCReferable) natScope.resolveName("*")));
+
+    Scope intScope = scope.resolveNamespace("Int");
+    assert intScope != null;
+    update(state.getTypechecked((TCReferable) intScope.resolveName("fromNat")));
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
