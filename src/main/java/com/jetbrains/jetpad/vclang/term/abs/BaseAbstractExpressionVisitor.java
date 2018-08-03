@@ -70,22 +70,12 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, @Nullable Abstract.ErrorData errorData, P params) {
-    return defaultValue;
-  }
-
-  @Override
   public R visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 
   @Override
   public R visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> expressions, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, P params) {
-    return defaultValue;
-  }
-
-  @Override
-  public R visitProj(@Nullable Object data, @Nonnull Abstract.Expression expression, int field, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 

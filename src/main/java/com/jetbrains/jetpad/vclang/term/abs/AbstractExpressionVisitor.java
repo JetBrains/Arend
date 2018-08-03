@@ -19,10 +19,8 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitGoal(@Nullable Object data, @Nullable String name, @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, P params);
   R visitTuple(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> fields, @Nullable Abstract.ErrorData errorData, P params);
   R visitSigma(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.ErrorData errorData, P params);
-  R visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, @Nullable Abstract.ErrorData errorData, P params);
   R visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params);
   R visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> expressions, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, P params);
-  R visitProj(@Nullable Object data, @Nonnull Abstract.Expression expression, int field, @Nullable Abstract.ErrorData errorData, P params);
   R visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<Integer> fieldAccs, @Nullable Abstract.ErrorData errorData, P params);
   R visitClassExt(@Nullable Object data, boolean isNew, /* @Nonnull */ @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params);
   R visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> clauses, /* @Nonnull */ @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, P params);

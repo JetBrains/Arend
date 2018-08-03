@@ -584,17 +584,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return new Concrete.SigmaExpression(data, buildTypeParameters(parameters));
   }
 
-  @Override
-  public Concrete.Expression visitBinOp(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Referable binOp, @Nullable Abstract.Expression right, @Nullable Abstract.ErrorData errorData, Void params) {
-    reportError(errorData);
-    List<Concrete.Argument> arguments = new ArrayList<>(right == null ? 1 : 2);
-    arguments.add(new Concrete.Argument(left.accept(this, null), true));
-    if (right != null) {
-      arguments.add(new Concrete.Argument(right.accept(this, null), true));
-    }
-    return Concrete.AppExpression.make(data, new Concrete.ReferenceExpression(data, binOp), arguments);
-  }
-
   private Concrete.Expression makeBinOpSequence(Object data, Concrete.Expression left, Collection<? extends Abstract.BinOpSequenceElem> sequence) {
     if (sequence.isEmpty()) {
       return left;
@@ -641,12 +630,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     reportError(errorData);
     return new Concrete.CaseExpression(data, expressions, buildClauses(clauses));
-  }
-
-  @Override
-  public Concrete.ProjExpression visitProj(@Nullable Object data, @Nonnull Abstract.Expression expression, int field, @Nullable Abstract.ErrorData errorData, Void params) {
-    reportError(errorData);
-    return new Concrete.ProjExpression(data, expression.accept(this, null), field - 1);
   }
 
   @Override
