@@ -50,4 +50,16 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   public ClassReferable getTypeClassReference() {
     return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeClassReference() : null;
   }
+
+  @Nullable
+  @Override
+  public Object getParameterType(int index) {
+    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getParameterType(index) : null;
+  }
+
+  @Nullable
+  @Override
+  public Object getTypeOf() {
+    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeOf() : null;
+  }
 }

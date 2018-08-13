@@ -6,4 +6,12 @@ public interface TypedReferable extends Referable {
   default @Nullable ClassReferable getTypeClassReference() {
     return null;
   }
+
+  default @Nullable Object getTypeOf() {
+    return null;
+  }
+
+  default @Nullable Object getParameterType(int index) {
+    return null;
+  }
 }

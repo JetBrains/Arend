@@ -9,7 +9,6 @@ import java.util.Collection;
 
 public interface AbstractExpressionVisitor<P, R> {
   boolean visitErrors();
-  R visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, @Nullable Abstract.ErrorData errorData, P params);
   R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params);
   R visitReference(@Nullable Object data, @Nonnull Referable referent, int lp, int lh, @Nullable Abstract.ErrorData errorData, P params);
   R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* @Nonnull */ @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, P params);

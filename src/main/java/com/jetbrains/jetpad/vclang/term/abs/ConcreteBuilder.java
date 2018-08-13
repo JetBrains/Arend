@@ -474,21 +474,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   // Expression
 
   @Override
-  public Concrete.Expression visitApp(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Collection<? extends Abstract.Argument> arguments, @Nullable Abstract.ErrorData errorData, Void params) {
-    Concrete.Expression fun = expr.accept(this, null);
-    List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
-    for (Abstract.Argument arg : arguments) {
-      Abstract.Expression argExpr = arg.getExpression();
-      if (argExpr != null) {
-        concreteArguments.add(new Concrete.Argument(argExpr.accept(this, null), arg.isExplicit()));
-      }
-    }
-
-    reportError(errorData);
-    return Concrete.AppExpression.make(data, fun, concreteArguments);
-  }
-
-  @Override
   public Concrete.ReferenceExpression visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
     return new Concrete.ReferenceExpression(data, referent, level1 == null ? null : level1.accept(this, null), level2 == null ? null : level2.accept(this, null));

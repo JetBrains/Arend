@@ -30,6 +30,26 @@ public final class Abstract {
     @Nullable ErrorData getErrorData();
   }
 
+  public static abstract class SourceNodeImpl implements SourceNode {
+    @Nonnull
+    @Override
+    public SourceNode getTopmostEquivalentSourceNode() {
+      return this;
+    }
+
+    @Nullable
+    @Override
+    public SourceNode getParentSourceNode() {
+      return null;
+    }
+
+    @Nullable
+    @Override
+    public ErrorData getErrorData() {
+      return null;
+    }
+  }
+
   public interface Parameter extends SourceNode {
     @Nullable Object getData();
     boolean isExplicit();

@@ -214,7 +214,7 @@ public class ScopeFactory {
     }
 
     // Replace the scope with class fields in class extensions and class field synonyms
-    if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) {
+    if (parentSourceNode instanceof Abstract.ClassFieldImpl && sourceNode instanceof Abstract.Reference || parentSourceNode instanceof Abstract.ClassFieldSynonym && sourceNode instanceof Abstract.Reference) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder) {
         ClassReferable classRef = ((Abstract.ClassReferenceHolder) parentParent).getClassReference();
