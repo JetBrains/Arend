@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public interface TypedReferable extends Referable {
   default @Nullable ClassReferable getTypeClassReference() {
@@ -11,7 +12,7 @@ public interface TypedReferable extends Referable {
     return null;
   }
 
-  default @Nullable Object getParameterType(int index) {
+  default @Nullable Object getParameterType(List<Boolean> parameters) {
     return null;
   }
 }

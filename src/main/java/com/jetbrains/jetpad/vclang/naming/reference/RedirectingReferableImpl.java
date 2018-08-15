@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
@@ -53,8 +54,8 @@ public class RedirectingReferableImpl implements RedirectingReferable {
 
   @Nullable
   @Override
-  public Object getParameterType(int index) {
-    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getParameterType(index) : null;
+  public Object getParameterType(List<Boolean> params) {
+    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getParameterType(params) : null;
   }
 
   @Nullable
