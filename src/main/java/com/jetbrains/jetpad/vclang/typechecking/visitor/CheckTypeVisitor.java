@@ -1236,10 +1236,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
               myErrorReporter.report(new TypeMismatchError(DocFactory.text("a class instance"), type, statement.implementation));
             }
           } else {
-            if (classCall.getDefinition() != definition) {
+            if (!classCall.getDefinition().isSubClassOf((ClassDefinition) definition)) {
               myErrorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) definition, Sort.PROP), type, statement.implementation));
             } else {
-              for (ClassField field : classCall.getDefinition().getFields()) {
+              for (ClassField field : ((ClassDefinition) definition).getFields()) {
                 classFieldMap2.put(field, new Pair<>(FieldCallExpression.make(field, classCall.getSortArgument(), result.expression), statement.implementation));
               }
             }

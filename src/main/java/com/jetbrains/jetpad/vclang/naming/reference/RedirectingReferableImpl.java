@@ -1,6 +1,7 @@
 package com.jetbrains.jetpad.vclang.naming.reference;
 
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.abs.Abstract;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,7 +61,7 @@ public class RedirectingReferableImpl implements RedirectingReferable {
 
   @Nullable
   @Override
-  public Object getTypeOf() {
+  public Abstract.Expression getTypeOf() {
     return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeOf() : null;
   }
 }
