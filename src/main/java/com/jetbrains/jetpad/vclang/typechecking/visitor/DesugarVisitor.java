@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.visitor;
 
-import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
@@ -10,7 +9,6 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.ProxyErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
 
@@ -25,8 +23,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     myErrorReporter = errorReporter;
   }
 
-  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
-    definition.accept(new DesugarVisitor(concreteProvider, new ProxyErrorReporter(definition.getData(), errorReporter)), null);
+  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, LocalErrorReporter errorReporter) {
+    definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
   }
 
   private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
