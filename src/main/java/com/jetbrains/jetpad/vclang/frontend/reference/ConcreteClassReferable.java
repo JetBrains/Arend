@@ -10,6 +10,7 @@ import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNam
 import com.jetbrains.jetpad.vclang.naming.scope.CachingScope;
 import com.jetbrains.jetpad.vclang.naming.scope.Scope;
 import com.jetbrains.jetpad.vclang.term.Precedence;
+import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
@@ -40,6 +41,11 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());
     myGroup = group;
+  }
+
+  @Override
+  public Concrete.ClassDefinition getDefinition() {
+    return (Concrete.ClassDefinition) super.getDefinition();
   }
 
   @Nonnull
@@ -80,6 +86,17 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   @Override
   public Collection<? extends ConcreteClassFieldReferable> getFieldReferables() {
     return myFields;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Referable> getImplementedFields() {
+    List<Concrete.ClassFieldImpl> impls = getDefinition().getImplementations();
+    List<Referable> result = new ArrayList<>(impls.size());
+    for (Concrete.ClassFieldImpl impl : impls) {
+      result.add(impl.getImplementedField());
+    }
+    return result;
   }
 
   @Nullable

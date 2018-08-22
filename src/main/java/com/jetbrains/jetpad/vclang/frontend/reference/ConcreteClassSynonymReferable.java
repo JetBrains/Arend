@@ -14,6 +14,7 @@ import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class ConcreteClassSynonymReferable extends ConcreteClassReferable {
@@ -51,5 +52,11 @@ public class ConcreteClassSynonymReferable extends ConcreteClassReferable {
   @Override
   public Reference getUnresolvedUnderlyingReference() {
     return myUnresolvedUnderlyingClassReference;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends Referable> getImplementedFields() {
+    return Collections.emptyList();
   }
 }

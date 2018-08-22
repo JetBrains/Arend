@@ -8,6 +8,7 @@ public interface ClassReferable extends LocatedReferable {
   @Nonnull Collection<? extends ClassReferable> getSuperClassReferences();
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @Nonnull Collection<? extends FieldReferable> getFieldReferables();
+  @Nonnull Collection<? extends Referable> getImplementedFields();
   @Override @Nullable ClassReferable getUnderlyingReference();
 
   default @Nonnull ClassReferable getUnderlyingTypecheckable() {

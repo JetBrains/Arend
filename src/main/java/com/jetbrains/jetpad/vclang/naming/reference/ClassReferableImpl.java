@@ -37,6 +37,12 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
     return myFieldReferables;
   }
 
+  @Nonnull
+  @Override
+  public Collection<? extends Referable> getImplementedFields() {
+    return Collections.emptyList();
+  }
+
   @Nullable
   @Override
   public TCClassReferable getUnderlyingReference() {
