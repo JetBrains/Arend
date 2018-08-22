@@ -104,7 +104,7 @@ public final class Abstract {
   public interface ClassReferenceHolder extends SourceNode {
     @Nullable ClassReferable getClassReference();
     @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
-    int getNumberOfArguments();
+    List<Boolean> getArgumentsExplicitness();
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
