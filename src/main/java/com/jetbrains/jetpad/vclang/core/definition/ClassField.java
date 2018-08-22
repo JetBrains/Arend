@@ -7,7 +7,7 @@ import com.jetbrains.jetpad.vclang.core.expr.PiExpression;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.core.subst.SubstVisitor;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.TCFieldReferable;
 
 import java.util.List;
 
@@ -15,15 +15,20 @@ public class ClassField extends Definition {
   private final ClassDefinition myParentClass;
   private PiExpression myType;
 
-  public ClassField(TCReferable referable, ClassDefinition parentClass) {
+  public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParentClass = parentClass;
   }
 
-  public ClassField(TCReferable referable, ClassDefinition parentClass, PiExpression type) {
+  public ClassField(TCFieldReferable referable, ClassDefinition parentClass, PiExpression type) {
     super(referable, TypeCheckingStatus.NO_ERRORS);
     myParentClass = parentClass;
     myType = type;
+  }
+
+  @Override
+  public TCFieldReferable getReferable() {
+    return (TCFieldReferable) super.getReferable();
   }
 
   public ClassDefinition getParentClass() {

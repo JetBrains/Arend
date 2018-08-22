@@ -7,7 +7,7 @@ import java.util.*;
 public interface ClassReferable extends LocatedReferable {
   @Nonnull Collection<? extends ClassReferable> getSuperClassReferences();
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
-  @Nonnull Collection<? extends LocatedReferable> getFieldReferables();
+  @Nonnull Collection<? extends FieldReferable> getFieldReferables();
   @Override @Nullable ClassReferable getUnderlyingReference();
 
   default @Nonnull ClassReferable getUnderlyingTypecheckable() {

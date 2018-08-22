@@ -113,9 +113,12 @@ public class ModuleDeserialization {
             if (fieldProto == null || absField == null) {
               throw new DeserializationException("Cannot locate '" + fieldRef + "'");
             }
+            if (!(absField instanceof TCFieldReferable)) {
+              throw new DeserializationException("Incorrect field '" + absField.textRepresentation() + "'");
+            }
 
             assert def instanceof ClassDefinition;
-            ClassField res = new ClassField(absField, (ClassDefinition) def);
+            ClassField res = new ClassField((TCFieldReferable) absField, (ClassDefinition) def);
             res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absField, res);
             myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
@@ -184,7 +187,7 @@ public class ModuleDeserialization {
   @Nonnull
   private ChildGroup readGroup(ModuleProtos.Group groupProto, ChildGroup parent, ModulePath modulePath) throws DeserializationException {
     DefinitionProtos.Referable referableProto = groupProto.getReferable();
-    List<TCReferable> fieldReferables;
+    List<TCFieldReferable> fieldReferables;
     LocatedReferable referable;
     if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
       fieldReferables = new ArrayList<>();
@@ -232,8 +235,8 @@ public class ModuleDeserialization {
       }
       List<Group.InternalReferable> internalReferables = new ArrayList<>();
       for (DefinitionProtos.Definition.ClassData.Field field : groupProto.getDefinition().getClass_().getPersonalFieldList()) {
-        Definition fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex());
-        TCReferable fieldReferable = fieldDef.getReferable();
+        ClassField fieldDef = myCallTargetProvider.getCallTarget(field.getReferable().getIndex(), ClassField.class);
+        TCFieldReferable fieldReferable = fieldDef.getReferable();
         internalReferables.add(new SimpleInternalReferable(fieldReferable, !invisibleRefs.contains(fieldDef)));
         fieldReferables.add(fieldReferable);
       }
@@ -262,7 +265,7 @@ public class ModuleDeserialization {
         if (fillInternalDefinitions) {
           for (DefinitionProtos.Definition.ClassData.Field fieldProto : defProto.getClass_().getPersonalFieldList()) {
             DefinitionProtos.Referable fieldReferable = fieldProto.getReferable();
-            TCReferable absField = new DataLocatedReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, null, LocatedReferableImpl.Kind.FIELD);
+            TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), referable, null);
             ClassField res = new ClassField(absField, classDef);
             res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absField, res);

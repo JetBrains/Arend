@@ -12,12 +12,12 @@ import com.jetbrains.jetpad.vclang.term.Precedence;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ConcreteClassFieldSynonymReferable extends InternalConcreteLocatedReferable {
+public class ConcreteClassFieldSynonymReferable extends ConcreteClassFieldReferable {
   private TCReferable myUnderlyingFieldReference = TCClassReferable.NULL_REFERABLE;
   private final Reference myUnresolvedUnderlyingFieldReference;
 
   public ConcreteClassFieldSynonymReferable(Position position, @Nonnull String name, Precedence precedence, boolean isVisible, ConcreteClassReferable parent, Reference underlyingFieldReference) {
-    super(position, name, precedence, isVisible, parent, Kind.FIELD);
+    super(position, name, precedence, isVisible, true, parent, Kind.FIELD);
     myUnresolvedUnderlyingFieldReference = underlyingFieldReference;
   }
 

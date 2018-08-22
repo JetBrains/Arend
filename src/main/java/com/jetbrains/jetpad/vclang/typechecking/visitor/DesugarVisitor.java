@@ -111,7 +111,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
         name = name + "'";
       }
 
-      TCReferable thisParameter = new LocatedReferableImpl(Precedence.DEFAULT, name, def.getData(), LocatedReferableImpl.Kind.FIELD);
+      FieldReferableImpl thisParameter = new FieldReferableImpl(Precedence.DEFAULT, name, def.getData(), def.enclosingClass);
       def.getFieldsExplicitness().add(0, false);
       def.getFields().add(0, new Concrete.ClassField(thisParameter, def, false, new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
       fields.add(thisParameter);

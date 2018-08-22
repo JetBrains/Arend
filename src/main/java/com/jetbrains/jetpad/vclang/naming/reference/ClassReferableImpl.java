@@ -11,9 +11,9 @@ import java.util.List;
 
 public class ClassReferableImpl extends LocatedReferableImpl implements TCClassReferable {
   private final List<TCClassReferable> mySuperClassReferences;
-  private final List<? extends TCReferable> myFieldReferables;
+  private final List<? extends TCFieldReferable> myFieldReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, List<TCClassReferable> superClassReferences, List<? extends TCReferable> fieldReferables, ModulePath parent) {
+  public ClassReferableImpl(Precedence precedence, String name, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModulePath parent) {
     super(precedence, name, parent);
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;
@@ -33,7 +33,7 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
 
   @Nonnull
   @Override
-  public Collection<? extends TCReferable> getFieldReferables() {
+  public Collection<? extends TCFieldReferable> getFieldReferables() {
     return myFieldReferables;
   }
 

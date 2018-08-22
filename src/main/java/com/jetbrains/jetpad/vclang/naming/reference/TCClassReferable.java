@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public interface TCClassReferable extends TCReferable, ClassReferable {
   @Override @Nonnull Collection<? extends TCClassReferable> getSuperClassReferences();
-  @Override @Nonnull Collection<? extends TCReferable> getFieldReferables();
+  @Override @Nonnull Collection<? extends TCFieldReferable> getFieldReferables();
   @Override @Nullable TCClassReferable getUnderlyingReference();
 
   default @Override @Nonnull TCClassReferable getUnderlyingTypecheckable() {
@@ -27,7 +27,7 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
 
     @Nonnull
     @Override
-    public Collection<? extends TCReferable> getFieldReferables() {
+    public Collection<? extends TCFieldReferable> getFieldReferables() {
       return Collections.emptyList();
     }
 

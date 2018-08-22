@@ -608,7 +608,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
             type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
           }
 
-          InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+          ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
           Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
           reference.setDefinition(field);
           fields.add(field);
@@ -702,7 +702,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
       List<Boolean> fieldsExplicitness = new ArrayList<>();
 
-      List<InternalConcreteLocatedReferable> fieldReferables1 = new ArrayList<>();
+      List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
       reference = parent instanceof FileGroup
         ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
         : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
@@ -720,7 +720,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       }
 
       for (Concrete.ClassField field : fields) {
-        fieldReferables1.add((InternalConcreteLocatedReferable) field.getData());
+        fieldReferables1.add((ConcreteClassFieldReferable) field.getData());
       }
       fieldReferables = fieldReferables1;
     }
@@ -1175,8 +1175,8 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return parameters;
   }
 
-  private TCReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
-    TCReferable coercingField = null;
+  private TCFieldReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
+    TCFieldReferable coercingField = null;
 
     for (FieldTeleContext tele : teles) {
       boolean explicit;
@@ -1196,7 +1196,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        InternalConcreteLocatedReferable fieldRef = new InternalConcreteLocatedReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
+        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
         fieldRef.setDefinition(field);
         fields.add(field);

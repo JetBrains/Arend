@@ -219,19 +219,19 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private TCReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
-    TCReferable coercingField = null;
+  private TCFieldReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
+    TCFieldReferable coercingField = null;
 
     for (Abstract.Parameter absParameter : absParameters) {
       try {
         Concrete.Parameter parameter = buildParameter(absParameter, false);
         if (parameter instanceof Concrete.TelescopeParameter) {
           for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-            if (referable instanceof TCReferable) {
+            if (referable instanceof TCFieldReferable) {
               if (coercingField == null && parameter.getExplicit()) {
-                coercingField = (TCReferable) referable;
+                coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
+              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
               fieldsExplicitness.add(parameter.getExplicit());
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
@@ -279,10 +279,13 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
       for (Abstract.ClassField field : def.getClassFields()) {
         Abstract.Expression resultType = field.getResultType();
-        TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(field.getReferable());
-        if (resultType == null || fieldRef == null) {
+        LocatedReferable fieldRefOrig = field.getReferable();
+        TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
+        if (resultType == null || !(fieldRef instanceof TCFieldReferable)) {
           if (!reportError(field.getErrorData())) {
-            myErrorReporter.report(AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
+            myErrorReporter.report(fieldRef != null && !(fieldRef instanceof TCFieldReferable)
+              ? new AbstractExpressionError(Error.Level.ERROR, "Incorrect field", fieldRef)
+              : AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
           }
         } else {
           try {
@@ -292,7 +295,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField(fieldRef, classDef, true, type));
+            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(e.error);
           }

@@ -962,7 +962,7 @@ public final class Concrete {
     private final List<ClassField> myFields;
     private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
-    private TCReferable myCoercingField;
+    private TCFieldReferable myCoercingField;
     private List<TCReferable> myCoercingFunctions = Collections.emptyList();
 
     public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
@@ -986,11 +986,11 @@ public final class Concrete {
     }
 
     @Nullable
-    public TCReferable getCoercingField() {
+    public TCFieldReferable getCoercingField() {
       return myCoercingField;
     }
 
-    public void setCoercingField(TCReferable coercingField) {
+    public void setCoercingField(TCFieldReferable coercingField) {
       if (myCoercingField == null && !myRecord) {
         myCoercingField = coercingField;
       }
@@ -1035,11 +1035,17 @@ public final class Concrete {
     private final boolean myExplicit;
     private Expression myResultType;
 
-    public ClassField(TCReferable referable, ClassDefinition parentClass, boolean isExplicit, Expression resultType) {
+    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
       myExplicit = isExplicit;
       myResultType = resultType;
+    }
+
+    @Nonnull
+    @Override
+    public TCFieldReferable getData() {
+      return (TCFieldReferable) super.getData();
     }
 
     public boolean isExplicit() {

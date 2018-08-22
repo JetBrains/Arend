@@ -22,10 +22,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Level;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
-import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.TCReferable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -866,7 +863,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return typedDef;
   }
 
-  private static ClassField addField(TCReferable fieldRef, ClassDefinition parentClass, PiExpression piType, TypecheckerState state) {
+  private static ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType, TypecheckerState state) {
     ClassField typedDef = new ClassField(fieldRef, parentClass, piType);
     state.record(fieldRef, typedDef);
     parentClass.addField(typedDef);

@@ -21,12 +21,12 @@ import java.util.List;
 
 public class ConcreteClassReferable extends ConcreteLocatedReferable implements TCClassReferable {
   private final ChildGroup myGroup;
-  private final Collection<? extends InternalConcreteLocatedReferable> myFields;
+  private final Collection<? extends ConcreteClassFieldReferable> myFields;
   private final List<? extends Reference> myUnresolvedSuperClasses;
   private final List<TCClassReferable> mySuperClasses;
   private boolean myResolved = false;
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, TCReferable parent) {
     super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
@@ -34,7 +34,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     myGroup = group;
   }
 
-  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends InternalConcreteLocatedReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
+  public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
     super(position, name, precedence, parent);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
@@ -78,7 +78,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
 
   @Nonnull
   @Override
-  public Collection<? extends InternalConcreteLocatedReferable> getFieldReferables() {
+  public Collection<? extends ConcreteClassFieldReferable> getFieldReferables() {
     return myFields;
   }
 
