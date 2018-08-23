@@ -444,7 +444,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         return false;
       }
     }
-    return def.getFieldsExplicitness().equals(class2.getFieldsExplicitness()) && compareImplementStatements(def.getImplementations(), class2.getImplementations()) && Objects.equals(def.getCoercingField(), class2.getCoercingField());
+    return compareImplementStatements(def.getImplementations(), class2.getImplementations()) && Objects.equals(def.getCoercingField(), class2.getCoercingField());
   }
 
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {

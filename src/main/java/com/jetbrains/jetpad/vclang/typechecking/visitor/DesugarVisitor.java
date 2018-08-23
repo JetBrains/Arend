@@ -3,11 +3,11 @@ package com.jetbrains.jetpad.vclang.typechecking.visitor;
 import com.jetbrains.jetpad.vclang.naming.error.WrongReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
-import com.jetbrains.jetpad.vclang.term.Precedence;
 import com.jetbrains.jetpad.vclang.term.concrete.BaseConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.typecheckable.provider.ConcreteProvider;
@@ -99,6 +99,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     Set<LocatedReferable> fields = getClassFields(def.getData());
 
     // Process enclosing class
+    /*
     boolean isParentField = false;
     if (def.enclosingClass != null) {
       Set<String> names = new HashSet<>();
@@ -112,11 +113,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       }
 
       FieldReferableImpl thisParameter = new FieldReferableImpl(Precedence.DEFAULT, name, def.getData(), def.enclosingClass);
-      def.getFieldsExplicitness().add(0, false);
       def.getFields().add(0, new Concrete.ClassField(thisParameter, def, false, new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
       fields.add(thisParameter);
       isParentField = true;
     }
+    */
 
     Set<TCReferable> futureFields = new HashSet<>();
     for (Concrete.ClassField field : def.getFields()) {
@@ -135,13 +136,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
         classField.setResultType(def.getFields().get(i - 1).getResultType());
       } else {
         previousType = fieldType;
-        if (!isParentField) {
+        // if (!isParentField) {
           fieldType = fieldType.accept(classFieldChecker, null);
-        }
+        // }
         classField.setResultType(new Concrete.PiExpression(fieldType.getData(), Collections.singletonList(new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData()))), fieldType));
       }
       futureFields.remove(classField.getData());
-      isParentField = false;
+      // isParentField = false;
     }
 
     // Process expressions
@@ -179,24 +180,36 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     if (fun instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
       if (ref instanceof ClassReferable) {
-        Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass((ClassReferable) ref);
-        if (def != null) {
-          List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
-          List<Boolean> fieldsExplicitness = def.getFieldsExplicitness();
-          for (int i = 0, j = 0; i < expr.getArguments().size(); i++, j++) {
-            boolean fieldExplicit = j < fieldsExplicitness.size() ? fieldsExplicitness.get(j) : true;
-            Concrete.Expression argument = expr.getArguments().get(i).expression;
-            if (fieldExplicit == expr.getArguments().get(i).isExplicit()) {
-              classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), null, argument, Collections.emptyList()));
-            } else if (fieldExplicit) {
-              myErrorReporter.report(new TypecheckingError("Expected an explicit argument", argument));
-            } else {
-              classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), null, new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
-              i--;
+        List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
+        Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
+        Iterator<FieldReferable> it = notImplementedFields.iterator();
+        for (int i = 0; i < expr.getArguments().size(); i++) {
+          if (!it.hasNext()) {
+            myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), expr.getArguments().get(i).expression));
+            break;
+          }
+
+          FieldReferable fieldRef = it.next();
+          boolean fieldExplicit = fieldRef.isExplicitField();
+          if (fieldExplicit && !expr.getArguments().get(i).isExplicit()) {
+            myErrorReporter.report(new TypecheckingError("Expected an explicit argument", expr.getArguments().get(i).expression));
+            while (i < expr.getArguments().size() && !expr.getArguments().get(i).isExplicit()) {
+              i++;
+            }
+            if (i == expr.getArguments().size()) {
+              break;
             }
           }
-          return new Concrete.ClassExtExpression(expr.getData(), fun, classFieldImpls);
+
+          Concrete.Expression argument = expr.getArguments().get(i).expression;
+          if (fieldExplicit == expr.getArguments().get(i).isExplicit()) {
+            classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, argument, Collections.emptyList()));
+          } else {
+            classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
+            i--;
+          }
         }
+        return new Concrete.ClassExtExpression(expr.getData(), fun, classFieldImpls);
       }
     }
     return expr;

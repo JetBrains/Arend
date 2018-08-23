@@ -2,7 +2,6 @@ package com.jetbrains.jetpad.vclang.typechecking.error.local;
 
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.error.doc.Doc;
-import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.prettyprint.PrettyPrinterConfig;
 
@@ -70,6 +69,10 @@ public class ArgInferenceError extends TypecheckingError {
 
   public static String ordinal(int n) {
     return n + suffix(n);
+  }
+
+  public static String number(int n, String r) {
+    return n + " " + r + (n == 1 ? "" : "s");
   }
 
   @Override

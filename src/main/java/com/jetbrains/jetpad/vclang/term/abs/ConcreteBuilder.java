@@ -87,7 +87,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   private void setEnclosingClass(Concrete.Definition definition, Abstract.Definition abstractDef) {
     TCReferable enclosingClass = myReferableConverter.toDataLocatedReferable(abstractDef.getEnclosingClass());
-    if (enclosingClass instanceof TCClassReferable) {
+    if (enclosingClass instanceof TCClassReferable && !(definition instanceof Concrete.ClassDefinition)) {
       definition.enclosingClass = (TCClassReferable) enclosingClass;
     }
   }
@@ -219,7 +219,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private TCFieldReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
+  private TCFieldReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
     TCFieldReferable coercingField = null;
 
     for (Abstract.Parameter absParameter : absParameters) {
@@ -232,7 +232,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
                 coercingField = (TCFieldReferable) referable;
               }
               fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
-              fieldsExplicitness.add(parameter.getExplicit());
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -272,9 +271,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
-      List<Boolean> fieldsExplicitness = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, fieldsExplicitness, implementations);
-      classDef.setCoercingField(buildClassParameters(classParameters, classDef, classFields, fieldsExplicitness));
+      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
+      classDef.setCoercingField(buildClassParameters(classParameters, classDef, classFields));
       setEnclosingClass(classDef, def);
 
       for (Abstract.ClassField field : def.getClassFields()) {

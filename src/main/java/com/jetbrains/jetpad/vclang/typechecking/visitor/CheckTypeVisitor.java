@@ -1201,18 +1201,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Map<ClassField, Pair<Expression,Concrete.SourceNode>> classFieldMap2 = new HashMap<>();
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
-    Iterator<? extends ClassField> fieldIt = baseClass.getFields().iterator();
     for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
-      ClassField curField = fieldIt.hasNext() ? fieldIt.next() : null;
-      if (statement.getImplementedField() == null) {
-        if (curField == null) {
-          myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + baseClass.getName() + "' has only " + baseClass.getFields().size() + " fields", statement.implementation == null ? statement : statement.implementation));
-          continue;
-        } else {
-          statement.setImplementedField(curField.getReferable());
-        }
-      }
-
       Definition definition = referableToDefinition(statement.getImplementedField(), statement);
       if (definition == null) {
         continue;

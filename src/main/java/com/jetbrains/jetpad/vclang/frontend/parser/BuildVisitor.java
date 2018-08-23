@@ -700,17 +700,15 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
       if (!classStatCtxs.isEmpty()) {
         implementations = new ArrayList<>();
       }
-      List<Boolean> fieldsExplicitness = new ArrayList<>();
 
       List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
       reference = parent instanceof FileGroup
         ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
         : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
 
-      classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, fieldsExplicitness, implementations);
+      classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, implementations);
       reference.setDefinition(classDefinition);
-      classDefinition.setCoercingField(visitFieldTeles(ctx.fieldTele(), classDefinition, fields, fieldsExplicitness));
-      classDefinition.enclosingClass = enclosingClass;
+      classDefinition.setCoercingField(visitFieldTeles(ctx.fieldTele(), classDefinition, fields));
 
       if (!classStatCtxs.isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
@@ -1175,7 +1173,7 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     return parameters;
   }
 
-  private TCFieldReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields, List<Boolean> fieldsExplicitness) {
+  private TCFieldReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
     TCFieldReferable coercingField = null;
 
     for (FieldTeleContext tele : teles) {
@@ -1204,8 +1202,6 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
         if (coercingField == null && explicit) {
           coercingField = fieldRef;
         }
-
-        fieldsExplicitness.add(explicit);
       }
     }
 

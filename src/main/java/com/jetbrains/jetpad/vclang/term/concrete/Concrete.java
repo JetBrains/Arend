@@ -960,18 +960,16 @@ public final class Concrete {
     private final boolean myRecord;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassField> myFields;
-    private final List<Boolean> myFieldsExplicitness;
     private final List<ClassFieldImpl> myImplementations;
     private TCFieldReferable myCoercingField;
     private List<TCReferable> myCoercingFunctions = Collections.emptyList();
 
-    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<Boolean> fieldsExplicitness, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
       myRecord = isRecord;
       myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myFields = fields;
-      myFieldsExplicitness = fieldsExplicitness;
       myImplementations = implementations;
     }
 
@@ -1004,11 +1002,6 @@ public final class Concrete {
     @Nonnull
     public List<ClassField> getFields() {
       return myFields;
-    }
-
-    @Nonnull
-    public List<Boolean> getFieldsExplicitness() {
-      return myFieldsExplicitness;
     }
 
     @Nonnull

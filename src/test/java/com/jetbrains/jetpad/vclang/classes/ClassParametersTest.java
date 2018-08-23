@@ -175,4 +175,21 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class D (z w : Nat) \\extends C\n" +
       "\\func f => \\new D { | x => 0 | y => 1 | z => 2 | w => 3 }");
   }
+
+  @Test
+  public void superImplicitParameters() {
+    typeCheckModule(
+      "\\class C (x : Nat) {y : Nat} (p : y = 0)\n" +
+      "\\class D {z : Nat} (w : z = 1) \\extends C\n" +
+      "\\func f => \\new D 0 (path (\\lam _ => 0)) (path (\\lam _ => 1))");
+  }
+
+  @Test
+  public void superImplicitParameters2() {
+    typeCheckModule(
+      "\\class C (x : Nat) {y : Nat}\n" +
+      "\\class D {z : Nat} \\extends C\n" +
+      "\\func f => D 0\n" +
+      "\\func g => \\new D 0 { | y => 1 | z => 2 }");
+  }
 }
