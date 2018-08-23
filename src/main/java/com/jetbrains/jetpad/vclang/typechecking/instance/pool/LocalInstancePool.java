@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.expr.ErrorExpression;
 import com.jetbrains.jetpad.vclang.core.expr.Expression;
 import com.jetbrains.jetpad.vclang.core.expr.ReferenceExpression;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.CompareVisitor;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.LocalError;
@@ -39,6 +40,16 @@ public class LocalInstancePool implements InstancePool {
   @Override
   public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
     return getInstance(classifyingExpression, classRef, isField);
+  }
+
+  @Override
+  public LocalInstancePool subst(ExprSubstitution substitution) {
+    LocalInstancePool result = new LocalInstancePool(myVisitor);
+    for (InstanceData data : myPool) {
+      Expression newValue = substitution.get(data.value.getBinding());
+      result.myPool.add(newValue != null && newValue.isInstance(ReferenceExpression.class) ? new InstanceData(data.key, data.classRef, newValue.cast(ReferenceExpression.class), data.sourceNode) : data);
+    }
+    return result;
   }
 
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {

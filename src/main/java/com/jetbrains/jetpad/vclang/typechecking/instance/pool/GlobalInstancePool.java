@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.visitor.NormalizeVisitor;
 import com.jetbrains.jetpad.vclang.core.sort.Sort;
+import com.jetbrains.jetpad.vclang.core.subst.ExprSubstitution;
 import com.jetbrains.jetpad.vclang.naming.reference.ClassReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.reference.TCClassReferable;
@@ -29,6 +30,10 @@ public class GlobalInstancePool implements InstancePool {
     myTypecheckerState = typecheckerState;
     myInstanceProvider = instanceProvider;
     myCheckTypeVisitor = checkTypeVisitor;
+  }
+
+  public InstancePool getInstancePool() {
+    return myInstancePool;
   }
 
   public void setInstancePool(InstancePool instancePool) {
@@ -94,5 +99,16 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     return null;
+  }
+
+  @Override
+  public GlobalInstancePool subst(ExprSubstitution substitution) {
+    if (myInstancePool != null) {
+      GlobalInstancePool result = new GlobalInstancePool(myTypecheckerState, myInstanceProvider, myCheckTypeVisitor);
+      result.setInstancePool(myInstancePool.subst(substitution));
+      return result;
+    } else {
+      return this;
+    }
   }
 }

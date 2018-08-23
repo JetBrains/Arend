@@ -24,6 +24,8 @@ import com.jetbrains.jetpad.vclang.typechecking.error.local.DataTypeNotEmptyErro
 import com.jetbrains.jetpad.vclang.typechecking.error.local.ExpectedConstructor;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypeMismatchError;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
+import com.jetbrains.jetpad.vclang.typechecking.instance.pool.InstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
 import com.jetbrains.jetpad.vclang.util.Pair;
 
@@ -85,12 +87,21 @@ public class PatternTypechecking {
       }
       expectedType = expectedType.subst(substitution);
 
+      GlobalInstancePool globalInstancePool = visitor.getInstancePool();
+      InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
+      if (instancePool != null) {
+        globalInstancePool.setInstancePool(instancePool.subst(substitution));
+      }
+
       // Typecheck the RHS
       CheckTypeVisitor.Result tcResult;
       if (abstractParameters != null) {
         tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
       } else {
         tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
+      }
+      if (instancePool != null) {
+        globalInstancePool.setInstancePool(instancePool);
       }
       return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
     }
