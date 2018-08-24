@@ -128,7 +128,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
+  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
     }
@@ -161,6 +161,13 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitNumericLiteral(Concrete.NumericLiteral expr, P params) {
+    return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitTyped(Concrete.TypedExpression expr, P params) {
+    expr.expression = expr.expression.accept(this, params);
+    expr.type = expr.type.accept(this, params);
     return expr;
   }
 

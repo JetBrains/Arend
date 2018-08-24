@@ -154,10 +154,12 @@ fieldAcc : ID                       # classFieldAcc
          | NUMBER                   # sigmaFieldAcc
          ;
 
-atom  : literal                         # atomLiteral
-      | '(' (expr (',' expr)*)? ')'     # tuple
-      | NUMBER                          # atomNumber
-      | NEGATIVE_NUMBER                 # atomNegativeNumber
+tupleExpr : expr (':' expr)?;
+
+atom  : literal                               # atomLiteral
+      | '(' (tupleExpr (',' tupleExpr)*)? ')' # tuple
+      | NUMBER                                # atomNumber
+      | NEGATIVE_NUMBER                       # atomNegativeNumber
       ;
 
 atomFieldsAcc : atom ('.' fieldAcc)*;

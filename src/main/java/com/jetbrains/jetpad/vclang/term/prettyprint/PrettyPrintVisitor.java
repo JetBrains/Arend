@@ -789,6 +789,16 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
+  @Override
+  public Void visitTyped(Concrete.TypedExpression expr, Precedence prec) {
+    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.append('(');
+    expr.expression.accept(this, new Precedence(Concrete.TypedExpression.PREC));
+    myBuilder.append(" : ");
+    expr.type.accept(this, new Precedence(Concrete.TypedExpression.PREC));
+    if (prec.priority > Concrete.TypedExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
   public void printIndent() {
     for (int i = 0; i < myIndent; ++i) {
       myBuilder.append(' ');

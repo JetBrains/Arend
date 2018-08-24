@@ -1475,4 +1475,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
     return checkResult(expectedType, result, expr);
   }
+
+  @Override
+  public Result visitTyped(Concrete.TypedExpression expr, ExpectedType expectedType) {
+    Type type = checkType(expr.type, ExpectedType.OMEGA);
+    if (type == null) {
+      return checkExpr(expr.expression, expectedType);
+    } else {
+      return checkResult(expectedType, checkExpr(expr.expression, type.getExpr()), expr);
+    }
+  }
 }

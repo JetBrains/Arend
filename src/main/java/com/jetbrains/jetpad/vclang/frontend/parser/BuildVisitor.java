@@ -771,14 +771,21 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
   }
 
   @Override
-  public Concrete.Expression visitTuple(TupleContext ctx) {
+  public Concrete.Expression visitTupleExpr(TupleExprContext ctx) {
     List<ExprContext> exprs = ctx.expr();
+    Concrete.Expression expr = visitExpr(exprs.get(0));
+    return exprs.size() > 1 ? new Concrete.TypedExpression(expr.getData(), expr, visitExpr(exprs.get(1))) : expr;
+  }
+
+  @Override
+  public Concrete.Expression visitTuple(TupleContext ctx) {
+    List<TupleExprContext> exprs = ctx.tupleExpr();
     if (exprs.size() == 1) {
-      return visitExpr(exprs.get(0));
+      return visitTupleExpr(exprs.get(0));
     } else {
       List<Concrete.Expression> fields = new ArrayList<>(exprs.size());
-      for (ExprContext exprCtx : exprs) {
-        fields.add(visitExpr(exprCtx));
+      for (TupleExprContext exprCtx : exprs) {
+        fields.add(visitTupleExpr(exprCtx));
       }
       return new Concrete.TupleExpression(tokenPosition(ctx.start), fields);
     }

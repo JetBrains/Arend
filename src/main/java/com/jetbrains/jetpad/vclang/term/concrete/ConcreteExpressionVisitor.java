@@ -18,4 +18,5 @@ public interface ConcreteExpressionVisitor<P, R> {
   R visitNew(Concrete.NewExpression expr, P params);
   R visitLet(Concrete.LetExpression expr, P params);
   R visitNumericLiteral(Concrete.NumericLiteral expr, P params);
+  R visitTyped(Concrete.TypedExpression expr, P params);
 }

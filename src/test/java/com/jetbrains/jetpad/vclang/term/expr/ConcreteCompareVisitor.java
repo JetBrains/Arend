@@ -319,6 +319,11 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return expr2 instanceof Concrete.NumericLiteral && expr1.getNumber().equals(((Concrete.NumericLiteral) expr2).getNumber());
   }
 
+  @Override
+  public Boolean visitTyped(Concrete.TypedExpression expr, Concrete.Expression expr2) {
+    return expr2 instanceof Concrete.TypedExpression && compare(expr.expression, ((Concrete.TypedExpression) expr2).expression) && compare(expr.type, ((Concrete.TypedExpression) expr2).type);
+  }
+
   private boolean compareExpressionList(List<? extends Concrete.Expression> list1, List<? extends Concrete.Expression> list2) {
     if (list1.size() != list2.size()) {
       return false;

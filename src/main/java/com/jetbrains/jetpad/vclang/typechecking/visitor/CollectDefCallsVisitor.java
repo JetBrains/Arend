@@ -164,4 +164,11 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
   public Void visitNumericLiteral(Concrete.NumericLiteral expr, Void ignore) {
     return null;
   }
+
+  @Override
+  public Void visitTyped(Concrete.TypedExpression expr, Void params) {
+    expr.expression.accept(this, null);
+    expr.type.accept(this, null);
+    return null;
+  }
 }

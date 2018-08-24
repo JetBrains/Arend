@@ -173,6 +173,23 @@ public final class Concrete {
     }
   }
 
+  public static class TypedExpression extends Expression {
+    public static final byte PREC = 0;
+    public Expression expression;
+    public Expression type;
+
+    public TypedExpression(Object data, Expression expression, Expression type) {
+      super(data);
+      this.expression = expression;
+      this.type = type;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitTyped(this, params);
+    }
+  }
+
   public static class AppExpression extends Expression {
     public static final byte PREC = 11;
     private Expression myFunction;
