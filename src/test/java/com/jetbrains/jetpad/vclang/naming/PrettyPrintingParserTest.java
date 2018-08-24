@@ -4,6 +4,7 @@ import com.jetbrains.jetpad.vclang.core.context.param.EmptyDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.SingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.context.param.TypedSingleDependentLink;
 import com.jetbrains.jetpad.vclang.core.definition.Constructor;
+import com.jetbrains.jetpad.vclang.core.definition.FunctionDefinition;
 import com.jetbrains.jetpad.vclang.core.elimtree.BranchElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
@@ -26,9 +27,20 @@ import java.util.*;
 import static com.jetbrains.jetpad.vclang.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.frontend.ConcreteExpressionFactory.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
+  private void testExpr(String expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
+    StringBuilder builder = new StringBuilder();
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
+    assertEquals(expected, builder.toString());
+  }
+
+  private void testExpr(String expected, Expression expr) {
+    testExpr(expected, expr, EnumSet.of(ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM, ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
+  }
+
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
     ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
@@ -161,5 +173,25 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(Collections.singletonList(cVar(cx)), cfc));
 
     testExpr(ccExpr, cExpr);
+  }
+
+  @Test
+  public void assocTest() {
+    typeCheckModule(
+      "\\func \\infix 6 + (x y : Nat) => x\n" +
+      "\\func \\infixl 6 * (x y : Nat) => x\n" +
+      "\\func \\infixr 6 & (x y : Nat) => x\n" +
+      "\\func f1 => (0 + 1) + 2\n" +
+      "\\func f2 => 0 + (1 + 2)\n" +
+      "\\func g1 => (0 * 1) * 2\n" +
+      "\\func g2 => 0 * (1 * 2)\n" +
+      "\\func h1 => 0 & (1 & 2)\n" +
+      "\\func h2 => 0 & (1 & 2)");
+    testExpr("(0 + 1) + 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("f1")).getBody()).getExpression());
+    testExpr("0 + (1 + 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f2")).getBody()).getExpression());
+    testExpr("0 * 1 * 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("g1")).getBody()).getExpression());
+    testExpr("0 * (1 * 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("g2")).getBody()).getExpression());
+    testExpr("0 & (1 & 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("h1")).getBody()).getExpression());
+    testExpr("0 & 1 & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h2")).getBody()).getExpression());
   }
 }
