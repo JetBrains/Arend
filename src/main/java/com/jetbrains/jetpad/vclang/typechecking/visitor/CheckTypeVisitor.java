@@ -1052,9 +1052,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             argType = checkType(caseArg.type, ExpectedType.OMEGA);
           }
 
-          Result exprResult = checkExpr(caseArg.expression, argType == null ? null : argType.getExpr());
+          Result exprResult = checkExpr(caseArg.expression, argType == null ? null : argType.getExpr().subst(substitution));
           if (exprResult == null) return null;
-          DependentLink link = ExpressionFactory.parameter(null, argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType())));
+          DependentLink link = ExpressionFactory.parameter(caseArg.referable == null ? null : caseArg.referable.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType())));
           list.append(link);
           if (caseArg.referable != null) {
             myContext.put(caseArg.referable, link);
