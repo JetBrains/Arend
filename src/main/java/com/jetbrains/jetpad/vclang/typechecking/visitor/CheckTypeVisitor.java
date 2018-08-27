@@ -1033,32 +1033,53 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
-    if (expectedType == null) {
+    if (expectedType == null && expr.getResultType() == null) {
       myErrorReporter.report(new TypecheckingError("Cannot infer the result type", expr));
       return null;
     }
-    if (!(expectedType instanceof Expression)) {
-      expectedType = new UniverseExpression(Sort.generateInferVars(myEquations, expr));
-    }
 
-    List<? extends Concrete.Expression> abstractExprs = expr.getExpressions();
+    List<? extends Concrete.CaseArgument> caseArgs = expr.getArguments();
     LinkList list = new LinkList();
-    List<Expression> expressions = new ArrayList<>(abstractExprs.size());
-    for (Concrete.Expression expression : abstractExprs) {
-      Result exprResult = checkExpr(expression, null);
-      if (exprResult == null) return null;
-      list.append(ExpressionFactory.parameter(null, exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType()))));
-      expressions.add(exprResult.expression);
+    List<Expression> expressions = new ArrayList<>(caseArgs.size());
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    Type resultType = null;
+    try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
+      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        for (Concrete.CaseArgument caseArg : caseArgs) {
+          Type argType = null;
+          if (caseArg.type != null) {
+            argType = checkType(caseArg.type, ExpectedType.OMEGA);
+          }
+
+          Result exprResult = checkExpr(caseArg.expression, argType == null ? null : argType.getExpr());
+          if (exprResult == null) return null;
+          DependentLink link = ExpressionFactory.parameter(null, argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOf(exprResult.type.getType())));
+          list.append(link);
+          if (caseArg.referable != null) {
+            myContext.put(caseArg.referable, link);
+          }
+          myFreeBindings.add(link);
+          expressions.add(exprResult.expression);
+          substitution.add(link, exprResult.expression);
+        }
+
+        if (expr.getResultType() != null) {
+          resultType = checkType(expr.getResultType(), ExpectedType.OMEGA);
+        }
+      }
     }
 
+    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, expr));
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, (Expression) expectedType, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE)).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE)).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }
 
     ConditionsChecking.check(resultClauses, elimTree, myErrorReporter);
-    return new Result(new CaseExpression(list.getFirst(), (Expression) expectedType, elimTree, expressions), (Expression) expectedType);
+    Result result = new Result(new CaseExpression(list.getFirst(), resultExpr, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
+    return resultType == null ? result : checkResult(expectedType, result, expr);
   }
 
   private static Sort generateUniqueUpperBound(List<Sort> sorts) {

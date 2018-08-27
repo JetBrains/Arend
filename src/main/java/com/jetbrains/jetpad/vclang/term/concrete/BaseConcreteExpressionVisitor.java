@@ -108,8 +108,14 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, P params) {
-    for (int i = 0; i < expr.getExpressions().size(); i++) {
-      expr.getExpressions().set(i, expr.getExpressions().get(i).accept(this, null));
+    for (Concrete.CaseArgument caseArg : expr.getArguments()) {
+      caseArg.expression = caseArg.expression.accept(this, null);
+      if (caseArg.type != null) {
+        caseArg.type = caseArg.type.accept(this, null);
+      }
+    }
+    if (expr.getResultType() != null) {
+      expr.setResultType(expr.getResultType().accept(this, null));
     }
     visitClauses(expr.getClauses());
     return expr;

@@ -432,11 +432,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitCase(CaseExpression expr, Void params) {
-    List<Concrete.Expression> arguments = new ArrayList<>(expr.getArguments().size());
+    List<Concrete.CaseArgument> arguments = new ArrayList<>(expr.getArguments().size());
     for (Expression argument : expr.getArguments()) {
-      arguments.add(argument.accept(this, null));
+      arguments.add(new Concrete.CaseArgument(argument.accept(this, null), null, null));
     }
-    return cCase(arguments, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+    return cCase(arguments, null, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
   }
 
   private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {

@@ -163,6 +163,27 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
+  public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
+    try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
+      for (Concrete.CaseArgument caseArg : expr.getArguments()) {
+        caseArg.expression = caseArg.expression.accept(this, null);
+        if (caseArg.type != null) {
+          caseArg.type = caseArg.type.accept(this, null);
+        }
+        if (caseArg.referable != null) {
+          ClassReferable classRef = getTypeClassReference(expr.getResultType());
+          myContext.add(classRef == null ? caseArg.referable : new TypedRedirectingReferable(caseArg.referable, classRef));
+        }
+      }
+      if (expr.getResultType() != null) {
+        expr.setResultType(expr.getResultType().accept(this, null));
+      }
+    }
+    visitClauses(expr.getClauses());
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, Void params) {
     Concrete.Expression result = super.visitBinOpSequence(expr, null);
     return result instanceof Concrete.BinOpSequenceExpression ? new BinOpParser(myErrorReporter).parse((Concrete.BinOpSequenceExpression) result) : result;

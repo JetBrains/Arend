@@ -109,8 +109,14 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
 
   @Override
   public Void visitCase(Concrete.CaseExpression expr, Void ignore) {
-    for (Concrete.Expression caseExpr : expr.getExpressions()) {
-      caseExpr.accept(this, null);
+    for (Concrete.CaseArgument caseArg : expr.getArguments()) {
+      caseArg.expression.accept(this, null);
+      if (caseArg.type != null) {
+        caseArg.type.accept(this, null);
+      }
+    }
+    if (expr.getResultType() != null) {
+      expr.getResultType().accept(this, null);
     }
     for (Concrete.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null)

@@ -85,14 +85,16 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
-expr  : NEW? appExpr (implementStatements argument*)?                         # app
-      | <assoc=right> expr '->' expr                                          # arr
-      | '\\Pi' tele+ '->' expr                                                # pi
-      | '\\Sigma' tele*                                                       # sigma
-      | '\\lam' tele+ '=>' expr                                               # lam
-      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                   # let
-      | '\\case' expr (',' expr)* '\\with' '{' clause? ('|' clause)* '}'      # case
+expr  : NEW? appExpr (implementStatements argument*)?                                             # app
+      | <assoc=right> expr '->' expr                                                              # arr
+      | '\\Pi' tele+ '->' expr                                                                    # pi
+      | '\\Sigma' tele*                                                                           # sigma
+      | '\\lam' tele+ '=>' expr                                                                   # lam
+      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                                       # let
+      | '\\case' caseArg (',' caseArg)* ('\\return' expr)? '\\with' '{' clause? ('|' clause)* '}' # case
       ;
+
+caseArg : expr ('\\as' ID)? (':' expr)?;
 
 appExpr : atomFieldsAcc onlyLevelAtom* argument*      # appArgument
         | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse

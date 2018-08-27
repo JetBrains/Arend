@@ -120,6 +120,16 @@ public final class Abstract {
     <P, R> R accept(@Nonnull AbstractExpressionVisitor<? super P, ? extends R> visitor, @Nullable P params);
   }
 
+  public interface CaseArgument extends SourceNode {
+    @Nonnull Expression getExpression();
+    @Nullable Referable getReferable();
+    @Nullable Expression getType();
+  }
+
+  public interface CaseArgumentsHolder extends SourceNode {
+    @Nonnull List<? extends CaseArgument> getCaseArguments();
+  }
+
   public interface BinOpSequenceElem extends SourceNode {
     /* @Nonnull */ @Nullable Expression getExpression();
     @Nonnull Fixity getFixity();

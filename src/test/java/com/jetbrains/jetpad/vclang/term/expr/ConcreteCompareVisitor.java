@@ -14,6 +14,12 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   private final Map<Referable, Referable> mySubstitution = new HashMap<>();
 
   public boolean compare(Concrete.Expression expr1, Concrete.Expression expr2) {
+    if (expr1 == expr2) {
+      return true;
+    }
+    if (expr1 == null || expr2 == null) {
+      return false;
+    }
     if (expr1 instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr1).getSequence().size() == 1) {
       expr1 = ((Concrete.BinOpSequenceExpression) expr1).getSequence().get(0).expression;
     }
@@ -262,7 +268,20 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
     Concrete.CaseExpression case2 = (Concrete.CaseExpression) expr2;
-    return compareExpressionList(expr1.getExpressions(), case2.getExpressions()) && compareFunctionClauses(expr1.getClauses(), case2.getClauses());
+    if (expr1.getArguments().size() != case2.getArguments().size()) {
+      return false;
+    }
+    for (int i = 0; i < expr1.getArguments().size(); i++) {
+      Concrete.CaseArgument caseArg1 = expr1.getArguments().get(i);
+      Concrete.CaseArgument caseArg2 = case2.getArguments().get(i);
+      if (!(compare(caseArg1.expression, caseArg2.expression) && compare(caseArg1.type, caseArg2.type) && (caseArg1.referable == null) == (caseArg2.referable == null))) {
+        return false;
+      }
+      if (caseArg1.referable != null) {
+        mySubstitution.put(caseArg1.referable, caseArg2.referable);
+      }
+    }
+    return compare(expr1.getResultType(), case2.getResultType()) && compareFunctionClauses(expr1.getClauses(), case2.getClauses());
   }
 
   @Override

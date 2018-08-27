@@ -604,18 +604,19 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.CaseExpression visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.Expression> absExpressions, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (absExpressions.isEmpty()) {
+  public Concrete.CaseExpression visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.CaseArgument> caseArgs, @Nullable Abstract.Expression resultType, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, Void params) {
+    if (caseArgs.isEmpty()) {
       throwError(errorData);
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
     }
-    List<Concrete.Expression> expressions = new ArrayList<>(absExpressions.size());
-    for (Abstract.Expression expression : absExpressions) {
-      expressions.add(expression.accept(this, null));
+    List<Concrete.CaseArgument> concreteCaseArgs = new ArrayList<>(caseArgs.size());
+    for (Abstract.CaseArgument caseArg : caseArgs) {
+      Abstract.Expression type = caseArg.getType();
+      concreteCaseArgs.add(new Concrete.CaseArgument(caseArg.getExpression().accept(this, null), myReferableConverter.toDataReferable(caseArg.getReferable()), type == null ? null : type.accept(this, null)));
     }
 
     reportError(errorData);
-    return new Concrete.CaseExpression(data, expressions, buildClauses(clauses));
+    return new Concrete.CaseExpression(data, concreteCaseArgs, resultType == null ? null : resultType.accept(this, null), buildClauses(clauses));
   }
 
   @Override

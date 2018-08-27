@@ -1380,15 +1380,19 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   @Override
   public Concrete.Expression visitCase(CaseContext ctx) {
-    List<Concrete.Expression> elimExprs = new ArrayList<>();
-    for (ExprContext exprCtx : ctx.expr()) {
-      elimExprs.add(visitExpr(exprCtx));
+    List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
+    for (CaseArgContext caseArgCtx : ctx.caseArg()) {
+      ExprContext typeCtx = caseArgCtx.expr(1);
+      TerminalNode id = caseArgCtx.ID();
+      caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgCtx.expr(0)), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
     }
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
     for (ClauseContext clauseCtx : ctx.clause()) {
       clauses.add(visitClause(clauseCtx));
     }
-    return new Concrete.CaseExpression(tokenPosition(ctx.start), elimExprs, clauses);
+
+    ExprContext exprCtx = ctx.expr();
+    return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, exprCtx == null ? null : visitExpr(exprCtx), clauses);
   }
 
   @Override

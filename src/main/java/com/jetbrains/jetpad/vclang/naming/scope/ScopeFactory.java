@@ -7,6 +7,7 @@ import com.jetbrains.jetpad.vclang.naming.reference.LongUnresolvedReference;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import com.jetbrains.jetpad.vclang.naming.scope.local.LetScope;
+import com.jetbrains.jetpad.vclang.naming.scope.local.ListScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.PatternScope;
 import com.jetbrains.jetpad.vclang.naming.scope.local.TelescopeScope;
 import com.jetbrains.jetpad.vclang.prelude.Prelude;
@@ -241,6 +242,33 @@ public class ScopeFactory {
       } else {
         return new TelescopeScope(parentScope, parameters);
       }
+    }
+
+    // Extend the scope with case arguments
+    if (sourceNode instanceof Abstract.Expression && (parentSourceNode instanceof Abstract.CaseArgumentsHolder || parentSourceNode instanceof Abstract.CaseArgument && sourceNode.equals(((Abstract.CaseArgument) parentSourceNode).getType()))) {
+      Abstract.CaseArgumentsHolder caseArgumentsHolder;
+      if (parentSourceNode instanceof Abstract.CaseArgumentsHolder) {
+        caseArgumentsHolder = (Abstract.CaseArgumentsHolder) parentSourceNode;
+      } else {
+        Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
+        if (!(parentParent instanceof Abstract.CaseArgumentsHolder)) {
+          return parentScope;
+        }
+        caseArgumentsHolder = (Abstract.CaseArgumentsHolder) parentParent;
+      }
+
+      List<? extends Abstract.CaseArgument> caseArguments = caseArgumentsHolder.getCaseArguments();
+      List<Referable> referables = new ArrayList<>(caseArguments.size());
+      for (Abstract.CaseArgument caseArgument : caseArguments) {
+        if (parentSourceNode instanceof Abstract.CaseArgument && parentSourceNode.equals(caseArgument)) {
+          break;
+        }
+        Referable ref = caseArgument.getReferable();
+        if (ref != null) {
+          referables.add(ref);
+        }
+      }
+      return referables.isEmpty() ? parentScope : new ListScope(parentScope, referables);
     }
 
     // Extend the scope with let clauses

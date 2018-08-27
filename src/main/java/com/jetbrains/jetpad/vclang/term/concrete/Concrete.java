@@ -688,20 +688,43 @@ public final class Concrete {
     }
   }
 
+  public static class CaseArgument {
+    public @Nonnull Expression expression;
+    public final @Nullable Referable referable;
+    public @Nullable Expression type;
+
+    public CaseArgument(@Nonnull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
+      this.expression = expression;
+      this.referable = referable;
+      this.type = type;
+    }
+  }
+
   public static class CaseExpression extends Expression {
     public static final byte PREC = -8;
-    private final List<Expression> myExpressions;
+    private final List<CaseArgument> myArguments;
+    private Expression myResultType;
     private final List<FunctionClause> myClauses;
 
-    public CaseExpression(Object data, List<Expression> expressions, List<FunctionClause> clauses) {
+    public CaseExpression(Object data, List<CaseArgument> arguments, Expression resultType, List<FunctionClause> clauses) {
       super(data);
-      myExpressions = expressions;
+      myArguments = arguments;
+      myResultType = resultType;
       myClauses = clauses;
     }
 
     @Nonnull
-    public List<Expression> getExpressions() {
-      return myExpressions;
+    public List<? extends CaseArgument> getArguments() {
+      return myArguments;
+    }
+
+    @Nullable
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
     }
 
     @Nonnull

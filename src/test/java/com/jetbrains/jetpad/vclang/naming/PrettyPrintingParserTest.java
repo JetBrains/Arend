@@ -170,7 +170,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     List<Concrete.FunctionClause> cfc = new ArrayList<>();
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.ZERO.getReferable(), Collections.emptyList())), cZero()));
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));
-    Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(Collections.singletonList(cVar(cx)), cfc));
+    Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(Collections.singletonList(cCaseArg(cVar(cx), null, null)), null, cfc));
 
     testExpr(ccExpr, cExpr);
   }

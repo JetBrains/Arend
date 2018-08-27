@@ -642,17 +642,28 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitCase(Concrete.CaseExpression expr, Precedence prec) {
     if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\case ");
-    new ListLayout<Concrete.Expression>(){
+    new ListLayout<Concrete.CaseArgument>(){
       @Override
-      void printListElement(PrettyPrintVisitor ppv, Expression expression) {
-        expression.accept(ppv, new Precedence(Concrete.Expression.PREC));
+      void printListElement(PrettyPrintVisitor ppv, Concrete.CaseArgument caseArg) {
+        caseArg.expression.accept(ppv, new Precedence(Concrete.Expression.PREC));
+        if (caseArg.referable != null) {
+          ppv.myBuilder.append(" \\as ").append(caseArg.referable.textRepresentation());
+        }
+        if (caseArg.type != null) {
+          ppv.myBuilder.append(" : ");
+          caseArg.type.accept(ppv, new Precedence(Expression.PREC));
+        }
       }
 
       @Override
       String getSeparator() {
         return ", ";
       }
-    }.doPrettyPrint(this, expr.getExpressions(), noIndent);
+    }.doPrettyPrint(this, expr.getArguments(), noIndent);
+    if (expr.getResultType() != null) {
+      myBuilder.append(" \\return");
+      expr.getResultType().accept(this, new Precedence(Expression.PREC));
+    }
     myBuilder.append(" \\with");
     prettyPrintClauses(Collections.emptyList(), expr.getClauses(), true);
     myIndent -= INDENT;
