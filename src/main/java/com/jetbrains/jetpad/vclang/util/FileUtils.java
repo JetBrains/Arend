@@ -31,6 +31,7 @@ public class FileUtils {
 
   private static final String MODULE_NAME_START_SYMBOL_REGEX = "a-zA-Z_"; // "~!@#$%^&*\\-+=<>?/|:;\\[\\]a-zA-Z_"
   private static final String MODULE_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9']*";
+  private static final String LIBRARY_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9\\-.']*";
 
   public static String libraryName(String fileName) {
     if (!fileName.endsWith(LIBRARY_EXTENSION)) {
@@ -38,11 +39,11 @@ public class FileUtils {
     }
 
     String libName = fileName.substring(0, fileName.length() - LIBRARY_EXTENSION.length());
-    return libName.matches(MODULE_NAME_REGEX) ? libName : null;
+    return libName.matches(LIBRARY_NAME_REGEX) ? libName : null;
   }
 
   public static boolean isLibraryName(String name) {
-    return name.matches(MODULE_NAME_REGEX);
+    return name.matches(LIBRARY_NAME_REGEX);
   }
 
   public static boolean isModuleName(String name) {
