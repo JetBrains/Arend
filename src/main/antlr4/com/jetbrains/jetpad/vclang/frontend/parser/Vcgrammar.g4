@@ -46,9 +46,13 @@ functionBody  : '=>' expr     # withoutElim
               | elim? clauses # withElim
               ;
 
-dataBody : elim constructorClause*                      # dataClauses
+dataBody : elim constructorClauses                      # dataClauses
          | ('=>' '|'? constructor)? ('|' constructor)*  # dataConstructors
          ;
+
+constructorClauses : '{' constructorClause* '}' # conClausesWithBraces
+                   | constructorClause*         # conClausesWithoutBraces
+                   ;
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
@@ -110,8 +114,8 @@ argument : atomFieldsAcc                # argumentExplicit
          | POSTFIX                      # argumentPostfix
          ;
 
-clauses : ('|' clause)*                 # clausesWithoutBraces
-        | '{' clause? ('|' clause)* '}' # clausesWithBraces
+clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
+        | ('|' clause)*                 # clausesWithoutBraces
         ;
 
 coClauses : coClause*                         # coClausesWithoutBraces

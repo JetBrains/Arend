@@ -548,7 +548,17 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
 
   private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<InternalConcreteLocatedReferable> constructors) {
     if (ctx instanceof DataClausesContext) {
-      for (ConstructorClauseContext clauseCtx : ((DataClausesContext) ctx).constructorClause()) {
+      ConstructorClausesContext conClauses = ((DataClausesContext) ctx).constructorClauses();
+      List<ConstructorClauseContext> clauseCtxList;
+      if (conClauses instanceof ConClausesWithBracesContext) {
+        clauseCtxList = ((ConClausesWithBracesContext) conClauses).constructorClause();
+      } else if (conClauses instanceof ConClausesWithoutBracesContext) {
+        clauseCtxList = ((ConClausesWithoutBracesContext) conClauses).constructorClause();
+      } else {
+        clauseCtxList = Collections.emptyList();
+      }
+
+      for (ConstructorClauseContext clauseCtx : clauseCtxList) {
         try {
           List<Concrete.Pattern> patterns = new ArrayList<>(clauseCtx.pattern().size());
           for (PatternContext patternCtx : clauseCtx.pattern()) {
