@@ -73,6 +73,7 @@ message Definition {
             repeated Telescope param = 3;
             repeated Clause clause = 4;
             Body conditions = 5;
+            int32 number_of_interval_parameters = 6;
         }
     }
     message FunctionData {

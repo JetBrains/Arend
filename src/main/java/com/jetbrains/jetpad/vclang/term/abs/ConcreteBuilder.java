@@ -202,7 +202,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         for (Abstract.Constructor constructor : absConstructors) {
           TCReferable constructorRef = myReferableConverter.toDataLocatedReferable(constructor.getReferable());
           if (constructorRef != null) {
-            constructors.add(new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses())));
+            Concrete.Constructor cons = new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses()));
+            Abstract.Expression resultType = constructor.getResultType();
+            if (resultType != null) {
+              cons.setResultType(resultType.accept(this, null));
+            }
+            constructors.add(cons);
           } else {
             myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Internal error: cannot locate constructor", constructor));
           }

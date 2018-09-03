@@ -65,7 +65,7 @@ public abstract class NameResolverTestCase extends ParserTestCase {
     return resolveNamesDefGroup(text, 0);
   }
 
-  ConcreteLocatedReferable resolveNamesDef(String text, int errors) {
+  protected ConcreteLocatedReferable resolveNamesDef(String text, int errors) {
     return (ConcreteLocatedReferable) resolveNamesDefGroup(text, errors).getReferable();
   }
 

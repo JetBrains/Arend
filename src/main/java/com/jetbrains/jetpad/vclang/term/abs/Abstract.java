@@ -198,6 +198,7 @@ public final class Abstract {
     @Override @Nonnull LocatedReferable getReferable();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
+    @Nullable Expression getResultType();
   }
 
   public interface ClassField extends ReferableDefinition, ParametersHolder {

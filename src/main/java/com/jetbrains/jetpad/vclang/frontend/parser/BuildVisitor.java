@@ -578,21 +578,22 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     List<Concrete.Constructor> result = new ArrayList<>(conContexts.size());
     for (ConstructorContext conCtx : conContexts) {
       try {
-        List<Concrete.FunctionClause> clauses;
+        List<Concrete.FunctionClause> clauses = new ArrayList<>();
         List<ClauseContext> clauseCtxs = conCtx.clause();
         ElimContext elimCtx = conCtx.elim();
         if (elimCtx != null || !clauseCtxs.isEmpty()) {
-          clauses = new ArrayList<>(clauseCtxs.size());
           for (ClauseContext clauseCtx : clauseCtxs) {
             clauses.add(visitClause(clauseCtx));
           }
-        } else {
-          clauses = Collections.emptyList();
         }
 
         InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele()), visitElim(elimCtx), clauses);
         reference.setDefinition(constructor);
+        ExprContext type = conCtx.expr();
+        if (type != null) {
+          constructor.setResultType(visitExpr(type));
+        }
         constructors.add(reference);
         result.add(constructor);
       } catch (ParseException ignored) {

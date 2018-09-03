@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.core.sort.Sort;
 import com.jetbrains.jetpad.vclang.error.Error;
 import com.jetbrains.jetpad.vclang.error.IncorrectExpressionException;
 import com.jetbrains.jetpad.vclang.naming.reference.*;
+import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -586,6 +587,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort) {
     Constructor constructor = new Constructor(def.getData(), dataDefinition);
     constructor.setPatterns(patterns);
+    constructor.setNumberOfIntervalParameters(def.getNumberOfIntervalParameters());
     List<DependentLink> elimParams = null;
     Sort sort;
 
@@ -604,6 +606,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             constructor.setParameters(EmptyDependentLink.getInstance());
             return null;
           }
+        }
+
+        if (def.getResultType() != null) {
+          Type resultType = myVisitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
+          if (resultType != null) {
+            Expression type = resultType.getExpr().normalize(NormalizeVisitor.Mode.WHNF);
+            while (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
+              type = ((DataCallExpression) type).getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF);
+              if (type instanceof LamExpression) {
+                type = ((LamExpression) type).getBody().normalize(NormalizeVisitor.Mode.WHNF);
+              } else {
+                type = null;
+              }
+            }
+            Expression expectedType = constructor.getDataTypeExpression(Sort.STD);
+            if (type == null || !type.equals(expectedType)) {
+              myVisitor.getErrorReporter().report(new TypecheckingError("Expected an iterated path type in " + expectedType, def.getResultType()));
+            }
+          }
+          def.setResultType(null);
         }
 
         constructor.setParameters(list.getFirst());

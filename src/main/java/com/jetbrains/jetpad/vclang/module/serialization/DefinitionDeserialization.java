@@ -176,6 +176,7 @@ public class DefinitionDeserialization {
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
       }
+      constructor.setNumberOfIntervalParameters(constructorProto.getNumberOfIntervalParameters());
       dataDef.addConstructor(constructor);
     }
 

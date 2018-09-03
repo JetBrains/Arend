@@ -250,11 +250,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
   }
 
   @Override
-  protected void visitClause(Concrete.Clause clause) {
+  protected void visitClause(Concrete.Clause clause, Void params) {
     if (clause.getPatterns() != null) {
       visitPatterns(clause.getPatterns());
     }
-    super.visitClause(clause);
+    super.visitClause(clause, null);
   }
 
   private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, List<Concrete.ClassFieldImpl> result) {
@@ -270,7 +270,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       } else if (classFieldImpl.getImplementedField() instanceof TypedReferable) {
         ClassReferable classRef = ((TypedReferable) classFieldImpl.getImplementedField()).getTypeClassReference();
         if (classRef != null) {
-          visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
+          visitClassFieldImpls(classFieldImpl.subClassFieldImpls, null);
           Object data = classFieldImpl.getData();
           classFieldImpl.implementation = new Concrete.NewExpression(data, new Concrete.ClassExtExpression(data, new Concrete.ReferenceExpression(data, classRef), classFieldImpl.subClassFieldImpls));
           result.add(classFieldImpl);
@@ -291,7 +291,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
   }
 
   @Override
-  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, Void params) {
     List<Concrete.ClassFieldImpl> originalClassFieldImpls = new ArrayList<>(classFieldImpls);
     classFieldImpls.clear();
     for (Concrete.ClassFieldImpl classFieldImpl : originalClassFieldImpls) {

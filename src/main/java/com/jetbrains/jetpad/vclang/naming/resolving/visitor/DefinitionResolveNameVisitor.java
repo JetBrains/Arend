@@ -176,7 +176,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
-    exprVisitor.visitParameters(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters(), null);
 
     Concrete.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -193,7 +193,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (body instanceof Concrete.ElimFunctionBody) {
       context.clear();
       addNotEliminatedParameters(def.getParameters(), ((Concrete.ElimFunctionBody) body).getEliminatedReferences(), context);
-      exprVisitor.visitClauses(((Concrete.ElimFunctionBody) body).getClauses());
+      exprVisitor.visitClauses(((Concrete.ElimFunctionBody) body).getClauses(), null);
     }
 
     def.setResolved();
@@ -247,7 +247,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
-    exprVisitor.visitParameters(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
     } else {
@@ -278,13 +278,16 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
-      exprVisitor.visitParameters(def.getParameters());
+      exprVisitor.visitParameters(def.getParameters(), null);
+      if (def.getResultType() != null) {
+        def.setResultType(def.getResultType().accept(exprVisitor, null));
+      }
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
     }
 
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       addNotEliminatedParameters(def.getParameters(), def.getEliminatedReferences(), context);
-      exprVisitor.visitClauses(def.getClauses());
+      exprVisitor.visitClauses(def.getClauses(), null);
     }
   }
 
@@ -354,7 +357,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
-    exprVisitor.visitParameters(def.getParameters());
+    exprVisitor.visitParameters(def.getParameters(), null);
     def.setResultType(def.getResultType().accept(exprVisitor, null));
     Referable typeRef = def.getReferenceInType();
     if (typeRef instanceof ClassReferable) {

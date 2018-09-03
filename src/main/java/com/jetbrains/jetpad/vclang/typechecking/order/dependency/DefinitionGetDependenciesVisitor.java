@@ -94,6 +94,9 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
     for (Concrete.TypeParameter param : def.getParameters()) {
       param.getType().accept(myVisitor, null);
     }
+    if (def.getResultType() != null) {
+      def.getResultType().accept(myVisitor, null);
+    }
     if (!def.getEliminatedReferences().isEmpty()) {
       for (Concrete.FunctionClause clause : def.getClauses()) {
         for (Concrete.Pattern pattern : clause.getPatterns()) {

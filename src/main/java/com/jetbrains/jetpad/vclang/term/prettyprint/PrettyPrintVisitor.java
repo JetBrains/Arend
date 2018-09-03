@@ -1081,6 +1081,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       prettyPrintParameter(parameter, Concrete.ReferenceExpression.PREC);
     }
 
+    if (def.getResultType() != null) {
+      myBuilder.append(" : ");
+      def.getResultType().accept(this, new Precedence(Expression.PREC));
+    }
+
     if (!def.getEliminatedReferences().isEmpty() || !def.getClauses().isEmpty()) {
       myBuilder.append(' ');
       prettyPrintEliminatedReferences(def.getEliminatedReferences(), false);

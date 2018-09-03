@@ -25,6 +25,7 @@ public class Constructor extends Definition implements Function {
   private Patterns myPatterns;
   private Body myConditions;
   private List<ClauseBase> myClauses;
+  private int myNumberOfIntervalParameters;
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -69,17 +70,24 @@ public class Constructor extends Definition implements Function {
     myParameters = parameters;
   }
 
+  public int getNumberOfIntervalParameters() {
+    return myNumberOfIntervalParameters;
+  }
+
+  public void setNumberOfIntervalParameters(int numberOfIntervalParameters) {
+    myNumberOfIntervalParameters = numberOfIntervalParameters;
+  }
+
   public DataDefinition getDataType() {
     return myDataType;
   }
 
   public DependentLink getDataTypeParameters() {
-    assert myParameters != null;
     return myDataType.status().headerIsOK() ? (myPatterns == null ? myDataType.getParameters() : myPatterns.getFirstBinding()) : EmptyDependentLink.getInstance();
   }
 
   public List<Expression> matchDataTypeArguments(List<Expression> arguments) {
-    assert myParameters != null && myDataType.status().headerIsOK();
+    assert myDataType.status().headerIsOK();
     if (myPatterns == null) {
       return arguments;
     } else {
@@ -93,7 +101,7 @@ public class Constructor extends Definition implements Function {
   }
 
   public DataCallExpression getDataTypeExpression(Sort sortArgument, List<? extends Expression> dataTypeArguments) {
-    assert myParameters != null && myDataType.status().headerIsOK();
+    assert myDataType.status().headerIsOK();
 
     List<Expression> arguments;
     if (myPatterns == null) {

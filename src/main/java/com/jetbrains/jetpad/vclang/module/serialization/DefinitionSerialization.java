@@ -131,6 +131,7 @@ public class DefinitionSerialization {
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
+      cBuilder.setNumberOfIntervalParameters(constructor.getNumberOfIntervalParameters());
 
       builder.addConstructor(cBuilder.build());
     }

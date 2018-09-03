@@ -107,7 +107,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
   }
 
-  protected void visitParameter(Concrete.Parameter parameter) {
+  protected void visitParameter(Concrete.Parameter parameter, Void params) {
     if (parameter instanceof Concrete.TypeParameter) {
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
     }
@@ -139,7 +139,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters());
+      visitParameters(expr.getParameters(), null);
       expr.body = expr.body.accept(this, null);
       return expr;
     }
@@ -148,7 +148,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters());
+      visitParameters(expr.getParameters(), null);
       expr.codomain = expr.codomain.accept(this, null);
       return expr;
     }
@@ -157,7 +157,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
-      visitParameters(expr.getParameters());
+      visitParameters(expr.getParameters(), null);
       return expr;
     }
   }
@@ -179,7 +179,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         expr.setResultType(expr.getResultType().accept(this, null));
       }
     }
-    visitClauses(expr.getClauses());
+    visitClauses(expr.getClauses(), null);
     return expr;
   }
 
@@ -190,7 +190,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  protected void visitClause(Concrete.Clause clause) {
+  protected void visitClause(Concrete.Clause clause, Void params) {
     if (clause instanceof Concrete.FunctionClause) {
       Concrete.FunctionClause functionClause = (Concrete.FunctionClause) clause;
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
@@ -318,7 +318,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Concrete.LetClause clause : expr.getClauses()) {
         try (Utils.ContextSaver ignored1 = new Utils.ContextSaver(myContext)) {
-          visitParameters(clause.getParameters());
+          visitParameters(clause.getParameters(), null);
           if (clause.resultType != null) {
             clause.resultType = clause.resultType.accept(this, null);
           }

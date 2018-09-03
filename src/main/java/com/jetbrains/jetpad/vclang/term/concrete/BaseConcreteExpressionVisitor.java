@@ -8,9 +8,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   public Concrete.Expression visitApp(Concrete.AppExpression expr, P params) {
     // It is important that we process arguments first since setFunction modifies the list of arguments.
     for (Concrete.Argument argument : expr.getArguments()) {
-      argument.expression = argument.expression.accept(this, null);
+      argument.expression = argument.expression.accept(this, params);
     }
-    expr.setFunction(expr.getFunction().accept(this, null));
+    expr.setFunction(expr.getFunction().accept(this, params));
     return expr;
   }
 
@@ -24,29 +24,29 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  protected void visitParameter(Concrete.Parameter parameter) {
+  protected void visitParameter(Concrete.Parameter parameter, P params) {
     if (parameter instanceof Concrete.TypeParameter) {
-      ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
+      ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, params);
     }
   }
 
-  public void visitParameters(List<? extends Concrete.Parameter> parameters) {
+  public void visitParameters(List<? extends Concrete.Parameter> parameters, P params) {
     for (Concrete.Parameter parameter : parameters) {
-      visitParameter(parameter);
+      visitParameter(parameter, params);
     }
   }
 
   @Override
   public Concrete.Expression visitLam(Concrete.LamExpression expr, P params) {
-    visitParameters(expr.getParameters());
-    expr.body = expr.body.accept(this, null);
+    visitParameters(expr.getParameters(), params);
+    expr.body = expr.body.accept(this, params);
     return expr;
   }
 
   @Override
   public Concrete.Expression visitPi(Concrete.PiExpression expr, P params) {
-    visitParameters(expr.getParameters());
-    expr.codomain = expr.codomain.accept(this, null);
+    visitParameters(expr.getParameters(), params);
+    expr.codomain = expr.codomain.accept(this, params);
     return expr;
   }
 
@@ -63,7 +63,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitGoal(Concrete.GoalExpression expr, P params) {
     if (expr.expression != null) {
-      expr.expression = expr.expression.accept(this, null);
+      expr.expression = expr.expression.accept(this, params);
     }
     return expr;
   }
@@ -71,85 +71,85 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitTuple(Concrete.TupleExpression expr, P params) {
     for (int i = 0; i < expr.getFields().size(); i++) {
-      expr.getFields().set(i, expr.getFields().get(i).accept(this, null));
+      expr.getFields().set(i, expr.getFields().get(i).accept(this, params));
     }
     return expr;
   }
 
   @Override
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, P params) {
-    visitParameters(expr.getParameters());
+    visitParameters(expr.getParameters(), params);
     return expr;
   }
 
   @Override
   public Concrete.Expression visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params) {
     if (expr.getSequence().size() == 1) {
-      return expr.getSequence().get(0).expression.accept(this, null);
+      return expr.getSequence().get(0).expression.accept(this, params);
     }
 
     for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
-      elem.expression = elem.expression.accept(this, null);
+      elem.expression = elem.expression.accept(this, params);
     }
     return expr;
   }
 
-  protected void visitClause(Concrete.Clause clause) {
+  protected void visitClause(Concrete.Clause clause, P params) {
     if (clause instanceof Concrete.FunctionClause && ((Concrete.FunctionClause) clause).expression != null) {
-      ((Concrete.FunctionClause) clause).expression = ((Concrete.FunctionClause) clause).expression.accept(this, null);
+      ((Concrete.FunctionClause) clause).expression = ((Concrete.FunctionClause) clause).expression.accept(this, params);
     }
   }
 
-  public void visitClauses(Collection<? extends Concrete.FunctionClause> clauses) {
+  public void visitClauses(Collection<? extends Concrete.FunctionClause> clauses, P params) {
     for (Concrete.FunctionClause clause : clauses) {
-      visitClause(clause);
+      visitClause(clause, params);
     }
   }
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, P params) {
     for (Concrete.CaseArgument caseArg : expr.getArguments()) {
-      caseArg.expression = caseArg.expression.accept(this, null);
+      caseArg.expression = caseArg.expression.accept(this, params);
       if (caseArg.type != null) {
-        caseArg.type = caseArg.type.accept(this, null);
+        caseArg.type = caseArg.type.accept(this, params);
       }
     }
     if (expr.getResultType() != null) {
-      expr.setResultType(expr.getResultType().accept(this, null));
+      expr.setResultType(expr.getResultType().accept(this, params));
     }
-    visitClauses(expr.getClauses());
+    visitClauses(expr.getClauses(), params);
     return expr;
   }
 
   @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, P params) {
-    expr.expression = expr.expression.accept(this, null);
+    expr.expression = expr.expression.accept(this, params);
     return expr;
   }
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, P params) {
-    expr.baseClassExpression = expr.baseClassExpression.accept(this, null);
-    visitClassFieldImpls(expr.getStatements());
+    expr.baseClassExpression = expr.baseClassExpression.accept(this, params);
+    visitClassFieldImpls(expr.getStatements(), params);
     return expr;
   }
 
-  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl) {
+  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, P params) {
     if (classFieldImpl.implementation != null) {
-      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
+      classFieldImpl.implementation = classFieldImpl.implementation.accept(this, params);
     }
-    visitClassFieldImpls(classFieldImpl.subClassFieldImpls);
+    visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
   }
 
-  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, P params) {
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
-      visitClassFieldImpl(classFieldImpl);
+      visitClassFieldImpl(classFieldImpl, params);
     }
   }
 
   @Override
   public Concrete.Expression visitNew(Concrete.NewExpression expr, P params) {
-    expr.expression = expr.expression.accept(this, null);
+    expr.expression = expr.expression.accept(this, params);
     return expr;
   }
 
@@ -157,11 +157,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   public Concrete.Expression visitLet(Concrete.LetExpression expr, P params) {
     for (Concrete.LetClause clause : expr.getClauses()) {
       if (clause.resultType != null) {
-        clause.resultType = clause.resultType.accept(this, null);
+        clause.resultType = clause.resultType.accept(this, params);
       }
-      clause.term = clause.term.accept(this, null);
+      clause.term = clause.term.accept(this, params);
     }
-    expr.expression = expr.expression.accept(this, null);
+    expr.expression = expr.expression.accept(this, params);
     return expr;
   }
 
@@ -179,18 +179,18 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, P params) {
-    visitParameters(def.getParameters());
+    visitParameters(def.getParameters(), params);
 
     if (def.getResultType() != null) {
-      def.setResultType(def.getResultType().accept(this, null));
+      def.setResultType(def.getResultType().accept(this, params));
     }
 
     Concrete.FunctionBody body = def.getBody();
     if (body instanceof Concrete.TermFunctionBody) {
-      ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, null));
+      ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, params));
     }
     if (body instanceof Concrete.ElimFunctionBody) {
-      visitClauses(((Concrete.ElimFunctionBody) body).getClauses());
+      visitClauses(((Concrete.ElimFunctionBody) body).getClauses(), params);
     }
 
     return null;
@@ -198,12 +198,15 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Void visitData(Concrete.DataDefinition def, P params) {
-    visitParameters(def.getParameters());
+    visitParameters(def.getParameters(), params);
     for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-      visitClause(clause);
+      visitClause(clause, params);
       for (Concrete.Constructor constructor : clause.getConstructors()) {
-        visitParameters(constructor.getParameters());
-        visitClauses(constructor.getClauses());
+        visitParameters(constructor.getParameters(), params);
+        if (constructor.getResultType() != null) {
+          constructor.setResultType(constructor.getResultType().accept(this, params));
+        }
+        visitClauses(constructor.getClauses(), params);
       }
     }
     return null;
@@ -212,16 +215,16 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Void visitClass(Concrete.ClassDefinition def, P params) {
     for (Concrete.ClassField field : def.getFields()) {
-      field.setResultType(field.getResultType().accept(this, null));
+      field.setResultType(field.getResultType().accept(this, params));
     }
-    visitClassFieldImpls(def.getImplementations());
+    visitClassFieldImpls(def.getImplementations(), params);
     return null;
   }
 
   @Override
   public Void visitInstance(Concrete.Instance def, P params) {
-    visitParameters(def.getParameters());
-    visitClassFieldImpls(def.getClassFieldImpls());
+    visitParameters(def.getParameters(), params);
+    visitClassFieldImpls(def.getClassFieldImpls(), params);
     def.setResultType(def.getResultType().accept(this, params));
     return null;
   }
