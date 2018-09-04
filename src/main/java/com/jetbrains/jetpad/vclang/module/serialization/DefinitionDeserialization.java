@@ -76,6 +76,8 @@ public class DefinitionDeserialization {
           return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
         case HAS_ERRORS:
           return Definition.TypeCheckingStatus.HAS_ERRORS;
+        case HAS_WARNINGS:
+          return Definition.TypeCheckingStatus.HAS_WARNINGS;
         case NO_ERRORS:
           return Definition.TypeCheckingStatus.NO_ERRORS;
         default:

@@ -18,11 +18,7 @@ public class LocatingModuleScopeProvider implements ModuleScopeProvider {
   @Nullable
   @Override
   public Scope forModule(@Nonnull ModulePath module) {
-    for (Library library : myLibraryManager.getRegisteredLibraries()) {
-      if (library.containsModule(module)) {
-        return library.getModuleScopeProvider().forModule(module);
-      }
-    }
-    return null;
+    Library library = myLibraryManager.getModuleLibrary(module);
+    return library != null ? library.getModuleScopeProvider().forModule(module) : null;
   }
 }

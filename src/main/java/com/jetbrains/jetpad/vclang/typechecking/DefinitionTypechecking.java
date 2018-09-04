@@ -27,7 +27,10 @@ import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporterCounter;
-import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.FieldsImplementationError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.NonPositiveDataError;
+import com.jetbrains.jetpad.vclang.typechecking.error.local.TypecheckingError;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.GlobalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.instance.pool.LocalInstancePool;
 import com.jetbrains.jetpad.vclang.typechecking.patternmatching.ConditionsChecking;
@@ -260,10 +263,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               ClassField classifyingField = classDef.getClassifyingField();
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);
-                Expression oldInstance = localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
-                if (oldInstance != null) {
-                  myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
-                }
+                // Expression oldInstance =
+                  localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
+                // if (oldInstance != null) {
+                //   myVisitor.getErrorReporter().report(new DuplicateInstanceError(oldInstance, reference, parameter));
+                // }
               }
             }
           }
@@ -345,7 +349,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
-    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
     if (setBodyNull) {
       typedDef.setBody(null);
     }
@@ -562,8 +566,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
-    if (myVisitor.hasErrors() && dataDefinition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+    if (dataDefinition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+      dataDefinition.setStatus(myVisitor.getStatus());
     }
     return countingErrorReporter.getErrorsNumber() == 0;
   }
@@ -825,7 +829,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
-    typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : visitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : visitor.getStatus());
     typedDef.updateSorts();
   }
 
@@ -904,7 +908,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     ClassCallExpression typecheckedResultType = (ClassCallExpression) result.expression;
     myVisitor.checkAllImplemented(typecheckedResultType, def);
     typedDef.setResultType(result.expression);
-    typedDef.setStatus(myVisitor.hasErrors() ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS);
+    typedDef.setStatus(myVisitor.getStatus());
 
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
     if (classifyingField != null) {

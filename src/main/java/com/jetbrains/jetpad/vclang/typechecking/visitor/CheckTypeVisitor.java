@@ -64,7 +64,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private final TypecheckerState myState;
   private Map<Referable, Binding> myContext;
   private Set<Binding> myFreeBindings;
-  private boolean myHasErrors = false;
+  private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
   private LocalErrorReporter myErrorReporter;
   private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final ImplicitArgsInference myArgsInference;
@@ -254,15 +254,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter = errorReporter;
     }
 
+    private void setStatus(Error error) {
+      myStatus = myStatus.max(error.level == Error.Level.ERROR ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.HAS_WARNINGS);
+    }
+
     @Override
     public void report(LocalError localError) {
-      myHasErrors = true;
+      setStatus(localError);
       myErrorReporter.report(localError);
     }
 
     @Override
     public void report(GeneralError error) {
-      myHasErrors = true;
+      setStatus(error);
       myErrorReporter.report(error);
     }
   }
@@ -279,7 +283,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public void setHasErrors() {
-    myHasErrors = true;
+    myStatus = Definition.TypeCheckingStatus.HAS_ERRORS;
   }
 
   public TypecheckerState getTypecheckingState() {
@@ -332,8 +336,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return myEquations;
   }
 
-  public boolean hasErrors() {
-    return myHasErrors;
+  public Definition.TypeCheckingStatus getStatus() {
+    return myStatus;
   }
 
   private static Sort getSortOf(Expression expr) {
@@ -895,12 +899,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Result exprResult = null;
     if (expr.getExpression() != null) {
       LocalErrorReporter errorReporter = myErrorReporter;
-      boolean hasErrors = myHasErrors;
+      Definition.TypeCheckingStatus status = myStatus;
       errors = new ArrayList<>();
       myErrorReporter = new ListLocalErrorReporter(errors);
       exprResult = checkExpr(expr.getExpression(), expectedType);
       myErrorReporter = errorReporter;
-      myHasErrors = hasErrors;
+      myStatus = status;
     }
 
     TypecheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
