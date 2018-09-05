@@ -3,7 +3,7 @@
 You need to have [JRE 8](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html) installed on your computer to use Arend.
 Arend is available either as an [IntelliJ IDEA](https://www.jetbrains.com/idea) plugin (see [this section](#intellij-idea-plugin) for the installation instructions) or as a console applications (see [this section](#console-application) for the installation instructions).
 
-## IntelliJ IDEA Plugin
+# IntelliJ IDEA Plugin
 
 To install the IntelliJ IDEA plugin, follow the instructions below.
 
@@ -41,7 +41,7 @@ You should see the following error message:
 You can read more about IntelliJ IDEA [here](https://www.jetbrains.com/help/idea/discover-intellij-idea.html).
 To learn more about Arend, see the [tutorial](tutorial) and the [language reference](language-reference).
 
-## Console Application
+# Console Application
 
 To install the console application, follow the instructions below.
 
