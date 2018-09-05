@@ -1,48 +1,48 @@
 {
     "docs": [
         {
-            "location": "/", 
-            "text": "Arend\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.", 
+            "location": "/",
+            "text": "Arend\n\u00b6\n\n\nSo, you want to prove something, huh?\n\n\nGood for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and \ninstall\n it!\n\n\nInstallation\n\u00b6\n\n\n\n\nDownload the jar and hopefully it will work.\n\n\nNow define your first \nfunction\n.",
             "title": "Overview"
-        }, 
+        },
         {
-            "location": "/#arend", 
-            "text": "So, you want to prove something, huh?  Good for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and  install  it!", 
+            "location": "/#arend",
+            "text": "So, you want to prove something, huh?  Good for you! You\u2019ll definitely find Arend to be the best way to formalise your proofs.\nJud go ahead and  install  it!",
             "title": "Arend"
-        }, 
+        },
         {
-            "location": "/#installation", 
-            "text": "Download the jar and hopefully it will work.  Now define your first  function .", 
+            "location": "/#installation",
+            "text": "Download the jar and hopefully it will work.  Now define your first  function .",
             "title": "Installation"
-        }, 
+        },
         {
-            "location": "/tutorial/", 
-            "text": "Arend Tutorial\n\n\nHere is the data type for booleans in Arend:\n\n\n\\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true =\n Unit\n    | false =\n Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true =\n false\n    | false =\n true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A =\n \\elim b\n    | true =\n then\n    | false =\n else\n\n\n\n\nHere is some fine algebra for you reading pleasure:\n\n\n\\open ::Data::Bool\n\n\\class Semigroup {\n  | X : \\Type0\n  | op : X -\n X -\n X\n  | assoc : \\Pi (x y z : X) -\n op (op x y) z = op x (op y z)\n}\n\n\\function\nxor-semigroup =\n \\new Semigroup { X =\n Bool | op =\n xor | assoc =\n {?} }\n\n\\function\nand-semigroup =\n \\new Semigroup { X =\n Bool | op =\n and | assoc =\n {?} }\n\n\\class Monoid {\n  | S : Semigroup\n  | id : S.X\n  | lunit : \\Pi (x : S.X) -\n S.op id x = x\n  | runit : \\Pi (x : S.X) -\n S.op x id = x\n}\n\n\\function\nxor-monoid =\n \\new Monoid {\n  | S =\n xor-semigroup\n  | id =\n false\n  | lunit =\n {?}\n  | runit =\n {?}\n}\n\n\\function\nand-monoid =\n \\new Monoid {\n  | S =\n and-semigroup\n  | id =\n true\n  | lunit =\n {?}\n  | runit =\n {?}\n}\n\n\\class Group {\n  | M : Monoid\n  | inv : M.S.X -\n M.S.X\n  | linv : \\Pi (x : M.S.X) -\n M.S.op (inv x) x = M.id\n  | rinv : \\Pi (x : M.S.X) -\n M.S.op x (inv x) = M.id\n}\n\n\\function\nxor-group =\n \\new Group {\n  | M =\n xor-monoid\n  | inv =\n {?}\n  | linv =\n {?}\n  | rinv =\n {?}\n}\n\n\\class AbelianGroup {\n  | G : Group\n  | comm : \\Pi (x y : G.M.S.X) -\n G.M.S.op x y = G.M.S.op y x\n}\n\n\\function\nxor-abelian =\n \\new AbelianGroup {\n  | G =\n xor-group\n  | comm =\n {?}\n}\n\n{-\n\\class Ring {\n  | A : AbelianGroup\n  | M : Monoid { S : Semigroup { X =\n A.G.M.S.X } }\n  | ldistr : \\Pi (x y z : A.G.M.S.X) -\n M.S.op x (A.G.M.S.op y z) = A.G.M.S.op (M.S.op x y) (M.S.op x z)\n  | rdistr : \\Pi (x y z : A.G.M.S.X) -\n M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)\n}\n\n\\function\nxor-ring =\n \\new Ring {\n  | A =\n xor-abelian\n  | M =\n and-monoid\n  | distr =\n {?}\n}\n\n\\function\nmul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id\n    =\n {?}\n-}", 
+            "location": "/tutorial/",
+            "text": "Arend Tutorial\n\u00b6\n\n\nHere is the data type for booleans in Arend:\n\n\n\\import Data.Unit\n\\import Data.Empty\n\n\\data Bool | true | false\n\n\\func True (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\func not (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\func if {A : \\Type} (b : Bool) (then else : A) : A \\elim b\n    | true => then\n    | false => else\n\n\n\n\nHere is some fine algebra for you reading pleasure:\n\n\n\\import Data.Bool\n\n\\class Semigroup {\n  | X : \\Type0\n  | op : X -> X -> X\n  | assoc : \\Pi (x y z : X) -> op (op x y) z = op x (op y z)\n}\n\n\\func xor-semigroup => \\new Semigroup { X => Bool | op => xor | assoc => {?} }\n\n\\func and-semigroup => \\new Semigroup { X => Bool | op => and | assoc => {?} }\n\n\\class Monoid {\n  | S : Semigroup\n  | id : S.X\n  | lunit : \\Pi (x : S.X) -> S.op id x = x\n  | runit : \\Pi (x : S.X) -> S.op x id = x\n}\n\n\\func xor-monoid => \\new Monoid {\n  | S => xor-semigroup\n  | id => false\n  | lunit => {?}\n  | runit => {?}\n}\n\n\\func and-monoid => \\new Monoid {\n  | S => and-semigroup\n  | id => true\n  | lunit => {?}\n  | runit => {?}\n}\n\n\\class Group {\n  | M : Monoid\n  | inv : M.S.X -> M.S.X\n  | linv : \\Pi (x : M.S.X) -> M.S.op (inv x) x = M.id\n  | rinv : \\Pi (x : M.S.X) -> M.S.op x (inv x) = M.id\n}\n\n\\func xor-group => \\new Group {\n  | M => xor-monoid\n  | inv => {?}\n  | linv => {?}\n  | rinv => {?}\n}\n\n\\class AbelianGroup {\n  | G : Group\n  | comm : \\Pi (x y : G.M.S.X) -> G.M.S.op x y = G.M.S.op y x\n}\n\n\\func xor-abelian => \\new AbelianGroup {\n  | G => xor-group\n  | comm => {?}\n}\n\n{-\n\\class Ring {\n  | A : AbelianGroup\n  | M : Monoid { S : Semigroup { X => A.G.M.S.X } }\n  | ldistr : \\Pi (x y z : A.G.M.S.X) -> M.S.op x (A.G.M.S.op y z) = A.G.M.S.op (M.S.op x y) (M.S.op x z)\n  | rdistr : \\Pi (x y z : A.G.M.S.X) -> M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)\n}\n\n\\func xor-ring => \\new Ring {\n  | A => xor-abelian\n  | M => and-monoid\n  | distr => {?}\n}\n\n\\func mul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id\n    => {?}\n-}",
             "title": "Tutorial"
-        }, 
+        },
         {
-            "location": "/tutorial/#arend-tutorial", 
-            "text": "Here is the data type for booleans in Arend:  \\open ::Data::Unit\n\\open ::Data::Empty\n\n\\data Bool | true | false\n\n\\function\nTrue (b : Bool) : \\Prop\n    | true =  Unit\n    | false =  Empty\n\n\\function\nnot (b : Bool) : Bool\n    | true =  false\n    | false =  true\n\n\\function\nif {A : \\Type} (b : Bool) (then else : A) : A =  \\elim b\n    | true =  then\n    | false =  else  Here is some fine algebra for you reading pleasure:  \\open ::Data::Bool\n\n\\class Semigroup {\n  | X : \\Type0\n  | op : X -  X -  X\n  | assoc : \\Pi (x y z : X) -  op (op x y) z = op x (op y z)\n}\n\n\\function\nxor-semigroup =  \\new Semigroup { X =  Bool | op =  xor | assoc =  {?} }\n\n\\function\nand-semigroup =  \\new Semigroup { X =  Bool | op =  and | assoc =  {?} }\n\n\\class Monoid {\n  | S : Semigroup\n  | id : S.X\n  | lunit : \\Pi (x : S.X) -  S.op id x = x\n  | runit : \\Pi (x : S.X) -  S.op x id = x\n}\n\n\\function\nxor-monoid =  \\new Monoid {\n  | S =  xor-semigroup\n  | id =  false\n  | lunit =  {?}\n  | runit =  {?}\n}\n\n\\function\nand-monoid =  \\new Monoid {\n  | S =  and-semigroup\n  | id =  true\n  | lunit =  {?}\n  | runit =  {?}\n}\n\n\\class Group {\n  | M : Monoid\n  | inv : M.S.X -  M.S.X\n  | linv : \\Pi (x : M.S.X) -  M.S.op (inv x) x = M.id\n  | rinv : \\Pi (x : M.S.X) -  M.S.op x (inv x) = M.id\n}\n\n\\function\nxor-group =  \\new Group {\n  | M =  xor-monoid\n  | inv =  {?}\n  | linv =  {?}\n  | rinv =  {?}\n}\n\n\\class AbelianGroup {\n  | G : Group\n  | comm : \\Pi (x y : G.M.S.X) -  G.M.S.op x y = G.M.S.op y x\n}\n\n\\function\nxor-abelian =  \\new AbelianGroup {\n  | G =  xor-group\n  | comm =  {?}\n}\n\n{-\n\\class Ring {\n  | A : AbelianGroup\n  | M : Monoid { S : Semigroup { X =  A.G.M.S.X } }\n  | ldistr : \\Pi (x y z : A.G.M.S.X) -  M.S.op x (A.G.M.S.op y z) = A.G.M.S.op (M.S.op x y) (M.S.op x z)\n  | rdistr : \\Pi (x y z : A.G.M.S.X) -  M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)\n}\n\n\\function\nxor-ring =  \\new Ring {\n  | A =  xor-abelian\n  | M =  and-monoid\n  | distr =  {?}\n}\n\n\\function\nmul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id\n    =  {?}\n-}", 
+            "location": "/tutorial/#arend-tutorial",
+            "text": "Here is the data type for booleans in Arend:  \\import Data.Unit\n\\import Data.Empty\n\n\\data Bool | true | false\n\n\\func True (b : Bool) : \\Prop\n    | true => Unit\n    | false => Empty\n\n\\func not (b : Bool) : Bool\n    | true => false\n    | false => true\n\n\\func if {A : \\Type} (b : Bool) (then else : A) : A \\elim b\n    | true => then\n    | false => else  Here is some fine algebra for you reading pleasure:  \\import Data.Bool\n\n\\class Semigroup {\n  | X : \\Type0\n  | op : X -> X -> X\n  | assoc : \\Pi (x y z : X) -> op (op x y) z = op x (op y z)\n}\n\n\\func xor-semigroup => \\new Semigroup { X => Bool | op => xor | assoc => {?} }\n\n\\func and-semigroup => \\new Semigroup { X => Bool | op => and | assoc => {?} }\n\n\\class Monoid {\n  | S : Semigroup\n  | id : S.X\n  | lunit : \\Pi (x : S.X) -> S.op id x = x\n  | runit : \\Pi (x : S.X) -> S.op x id = x\n}\n\n\\func xor-monoid => \\new Monoid {\n  | S => xor-semigroup\n  | id => false\n  | lunit => {?}\n  | runit => {?}\n}\n\n\\func and-monoid => \\new Monoid {\n  | S => and-semigroup\n  | id => true\n  | lunit => {?}\n  | runit => {?}\n}\n\n\\class Group {\n  | M : Monoid\n  | inv : M.S.X -> M.S.X\n  | linv : \\Pi (x : M.S.X) -> M.S.op (inv x) x = M.id\n  | rinv : \\Pi (x : M.S.X) -> M.S.op x (inv x) = M.id\n}\n\n\\func xor-group => \\new Group {\n  | M => xor-monoid\n  | inv => {?}\n  | linv => {?}\n  | rinv => {?}\n}\n\n\\class AbelianGroup {\n  | G : Group\n  | comm : \\Pi (x y : G.M.S.X) -> G.M.S.op x y = G.M.S.op y x\n}\n\n\\func xor-abelian => \\new AbelianGroup {\n  | G => xor-group\n  | comm => {?}\n}\n\n{-\n\\class Ring {\n  | A : AbelianGroup\n  | M : Monoid { S : Semigroup { X => A.G.M.S.X } }\n  | ldistr : \\Pi (x y z : A.G.M.S.X) -> M.S.op x (A.G.M.S.op y z) = A.G.M.S.op (M.S.op x y) (M.S.op x z)\n  | rdistr : \\Pi (x y z : A.G.M.S.X) -> M.S.op (A.G.M.S.op y z) x = A.G.M.S.op (M.S.op y x) (M.S.op z x)\n}\n\n\\func xor-ring => \\new Ring {\n  | A => xor-abelian\n  | M => and-monoid\n  | distr => {?}\n}\n\n\\func mul-zero (R : Ring) (x : R.A.G.M.S.X) : M.S.op x R.A.G.M.id = R.A.G.M.id\n    => {?}\n-}",
             "title": "Arend Tutorial"
-        }, 
+        },
         {
-            "location": "/language-reference/definitions/", 
-            "text": "There are three kinds of definitions in Arend.\n\n\nFunction\n\n\nUse the \n\\function\n keyword.\n\n\nData\n\n\nUse the \n\\data\n keyword.\n\n\nClass\n\n\nUse the \n\\class\n keyword.", 
+            "location": "/language-reference/definitions/",
+            "text": "There are three kinds of definitions in Arend.\n\n\nFunction\n\u00b6\n\n\nUse the \n\\func\n keyword.\n\n\nData\n\u00b6\n\n\nUse the \n\\data\n keyword.\n\n\nClass\n\u00b6\n\n\nUse the \n\\class\n keyword.",
             "title": "Definitions"
-        }, 
+        },
         {
-            "location": "/language-reference/definitions/#function", 
-            "text": "Use the  \\function  keyword.", 
+            "location": "/language-reference/definitions/#function",
+            "text": "Use the  \\func  keyword.",
             "title": "Function"
-        }, 
+        },
         {
-            "location": "/language-reference/definitions/#data", 
-            "text": "Use the  \\data  keyword.", 
+            "location": "/language-reference/definitions/#data",
+            "text": "Use the  \\data  keyword.",
             "title": "Data"
-        }, 
+        },
         {
-            "location": "/language-reference/definitions/#class", 
-            "text": "Use the  \\class  keyword.", 
+            "location": "/language-reference/definitions/#class",
+            "text": "Use the  \\class  keyword.",
             "title": "Class"
         }
     ]

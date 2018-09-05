@@ -2,7 +2,7 @@ site_name: Arend
 site_url: http://arend.top/
 site_description: Arend is good at maths. You aren’t.
 
-repo_url: https://github.com/valis/vclang
+repo_url: https://github.com/JetBrains/vclang
 edit_uri: edit/master/docs/
 
 pages:
@@ -20,7 +20,8 @@ extra_javascript:
 extra_css:
     - css/custom-highlight.css
 
-site_dir: build/site/
+docs_dir: docs_src/
+site_dir: docs/
 
 markdown_extensions:
     - toc:
