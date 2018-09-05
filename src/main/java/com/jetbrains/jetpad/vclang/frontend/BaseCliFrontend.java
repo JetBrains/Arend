@@ -112,12 +112,12 @@ public abstract class BaseCliFrontend {
   protected void addCommandOptions(Options cmdOptions) {}
 
   public CommandLine run(String[] args) {
-    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
+    CommandLine cmdLine = parseArgs(args);
+    if (cmdLine == null) {
       return null;
     }
 
-    CommandLine cmdLine = parseArgs(args);
-    if (cmdLine == null) {
+    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
       return null;
     }
 
@@ -249,8 +249,10 @@ public abstract class BaseCliFrontend {
       System.out.println("--- Done ---");
 
       // Persist updated modules
-      library.persistUpdateModules(System.err::println);
-      library.clearUpdateModules();
+      if (library.supportsPersisting()) {
+        library.persistUpdateModules(System.err::println);
+        library.clearUpdateModules();
+      }
     }
 
     return cmdLine;

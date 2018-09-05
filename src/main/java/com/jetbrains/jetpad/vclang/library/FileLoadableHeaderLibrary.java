@@ -21,7 +21,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private static final String[] Properties = {DEPS, SOURCE, BINARY, MODULES};
 
   public FileLoadableHeaderLibrary(String name, Path basePath, TypecheckerState typecheckerState) {
-    super(name, null, basePath, FileUtils.getModules(basePath, FileUtils.SERIALIZED_EXTENSION), true, Collections.emptyList(), typecheckerState);
+    super(name, null, null, Collections.emptySet(), true, Collections.emptyList(), typecheckerState);
     myBasePath = basePath;
   }
 
@@ -122,16 +122,10 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
           return false;
         }
         if (property.value.equals(BINARY)) {
-          myBinaryBasePath = Paths.get(values.get(0).value);
-          if (!Files.exists(myBinaryBasePath)) {
-            myBinaryBasePath = myBasePath.resolve(myBinaryBasePath);
-          }
+          myBinaryBasePath = myBasePath.resolve(Paths.get(values.get(0).value));
           definee = myBinaryBasePath;
         } else {
-          mySourceBasePath = Paths.get(values.get(0).value);
-          if (!Files.exists(mySourceBasePath)) {
-            mySourceBasePath = myBasePath.resolve(mySourceBasePath);
-          }
+          mySourceBasePath = myBasePath.resolve(Paths.get(values.get(0).value));
           definee = mySourceBasePath;
         }
         if (!Files.exists(definee)) {
@@ -147,7 +141,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    Path headerFile = myBinaryBasePath.resolve(getName() + FileUtils.LIBRARY_EXTENSION);
+    Path headerFile = myBasePath.resolve(getName() + FileUtils.LIBRARY_EXTENSION);
     try (BufferedReader reader = Files.newBufferedReader(headerFile)) {
       List<Token> tokens = tokenize(reader, errorReporter);
       if (tokens == null) return null;
