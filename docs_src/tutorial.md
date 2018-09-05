@@ -1,5 +1,4 @@
-Arend Tutorial
-===============
+<h1 id="tutorial">Tutorial<a class="headerlink" href="#tutorial" title="Permanent link">&para;</a></h1>
 
 Here is the data type for booleans in Arend:
 

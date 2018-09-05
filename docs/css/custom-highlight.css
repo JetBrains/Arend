@@ -1,0 +1,12 @@
+.hljs-ns-command {
+    font-style: italic;
+}
+
+.hljs-definition-type {
+    border: 1px solid #EEEEEE;
+}
+
+.hljs-hole {
+    font-weight: bold;
+    background-color: #FFFFCC;
+}
