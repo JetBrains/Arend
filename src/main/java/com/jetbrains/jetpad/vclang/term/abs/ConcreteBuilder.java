@@ -117,14 +117,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       if (term != null) {
         Object data = term.getData();
         body = new Concrete.TermFunctionBody(data, term.accept(this, null));
-        if (!def.getEliminatedExpressions().isEmpty()) {
-          myErrorReporter.report(new AbstractExpressionError(Error.Level.WARNING, "Eliminated expressions are ignored", data));
-        }
-        if (!def.getClauses().isEmpty()) {
-          myErrorReporter.report(new AbstractExpressionError(Error.Level.WARNING, "Clauses are ignored", data));
-        }
       } else {
-        body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
+        Collection<? extends Abstract.ClassFieldImpl> classFieldImpls = def.getClassFieldImpls();
+        body = classFieldImpls.isEmpty()
+          ? new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()))
+          : new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(classFieldImpls));
       }
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);

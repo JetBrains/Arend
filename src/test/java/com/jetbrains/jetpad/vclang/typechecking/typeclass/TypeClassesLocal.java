@@ -3,7 +3,6 @@ package com.jetbrains.jetpad.vclang.typechecking.typeclass;
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
-import static com.jetbrains.jetpad.vclang.typechecking.Matchers.duplicateInstanceError;
 import static com.jetbrains.jetpad.vclang.typechecking.Matchers.instanceInference;
 
 public class TypeClassesLocal extends TypeCheckingTestCase {
@@ -49,8 +48,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A : \\Type0) (x y : X { | A => A }) (a : y.A) => 0", 1);
-    assertThatErrorsAre(duplicateInstanceError());
+        "\\func f (A : \\Type0) (x y : X { | A => A }) (a : y.A) => 0");
+    // assertThatErrorsAre(duplicateInstanceError());
   }
 
   @Test
@@ -59,8 +58,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (x : X) (a : x.A) {y : X { | A => x.A } } => 0", 1);
-    assertThatErrorsAre(duplicateInstanceError());
+        "\\func f (x : X) (a : x.A) {y : X { | A => x.A } } => 0");
+    // assertThatErrorsAre(duplicateInstanceError());
   }
 
   @Test
@@ -69,8 +68,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | B : A -> Nat\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (x : X { | A => A' }) {y : X { | A => A' } } (a : A') => 0", 1);
-    assertThatErrorsAre(duplicateInstanceError());
+        "\\func f (A' : \\Type0) (x : X { | A => A' }) {y : X { | A => A' } } (a : A') => 0");
+    // assertThatErrorsAre(duplicateInstanceError());
   }
 
   @Test
@@ -97,8 +96,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (x : X) (y : X { | A => x.A }) : x.A => a", 1);
-    assertThatErrorsAre(duplicateInstanceError());
+        "\\func f (x : X) (y : X { | A => x.A }) : x.A => a");
+    // assertThatErrorsAre(duplicateInstanceError());
   }
 
   @Test
@@ -116,8 +115,8 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
         "\\class X (A : \\Type0) {\n" +
         "  | a : A\n" +
         "}\n" +
-        "\\func f (A' : \\Type0) (y : X { | A => A' }) (x : X { | A => A' }) : A' => a", 1);
-    assertThatErrorsAre(duplicateInstanceError());
+        "\\func f (A' : \\Type0) (y : X { | A => A' }) (x : X { | A => A' }) : A' => a");
+    // assertThatErrorsAre(duplicateInstanceError());
   }
 
   @Test

@@ -45,7 +45,7 @@ public abstract class Definition implements Variable {
     HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_ERRORS, HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_WARNINGS, HAS_WARNINGS, NO_ERRORS;
 
     public boolean bodyIsOK() {
-      return this == HAS_ERRORS || this == HAS_WARNINGS || this == NO_ERRORS;
+      return headerIsOK() && this != BODY_HAS_ERRORS && this != BODY_NEEDS_TYPE_CHECKING;
     }
 
     public boolean headerIsOK() {

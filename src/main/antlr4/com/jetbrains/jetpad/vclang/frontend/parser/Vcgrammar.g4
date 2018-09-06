@@ -42,8 +42,9 @@ fieldSyn : ID '=>' precedence ID;
 
 classCall : atomFieldsAcc;
 
-functionBody  : '=>' expr     # withoutElim
-              | elim? clauses # withElim
+functionBody  : '=>' expr             # withoutElim
+              | '\\cowith' coClauses  # cowithElim
+              | elim? clauses         # withElim
               ;
 
 dataBody : elim constructorClauses                      # dataClauses

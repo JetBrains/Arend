@@ -834,10 +834,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (body instanceof Concrete.TermFunctionBody) {
       myBuilder.append("=> ");
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, new Precedence(Concrete.Expression.PREC));
+    } else if (body instanceof Concrete.CoelimFunctionBody) {
+      myBuilder.append("\\cowith");
+      visitClassFieldImpls(body.getClassFieldImpls());
     } else {
-      Concrete.ElimFunctionBody elimFunctionBody = (Concrete.ElimFunctionBody) body;
-      prettyPrintEliminatedReferences(elimFunctionBody.getEliminatedReferences(), false);
-      prettyPrintClauses(Collections.emptyList(), elimFunctionBody.getClauses(), false);
+      prettyPrintEliminatedReferences(body.getEliminatedReferences(), false);
+      prettyPrintClauses(Collections.emptyList(), body.getClauses(), false);
     }
   }
 

@@ -189,9 +189,8 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, null));
     }
-    if (body instanceof Concrete.ElimFunctionBody) {
-      visitClauses(((Concrete.ElimFunctionBody) body).getClauses());
-    }
+    visitClauses(body.getClauses());
+    visitClassFieldImpls(body.getClassFieldImpls());
 
     return null;
   }

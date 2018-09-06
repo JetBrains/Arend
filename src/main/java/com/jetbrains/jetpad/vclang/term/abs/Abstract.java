@@ -170,7 +170,7 @@ public final class Abstract {
     <R> R accept(AbstractDefinitionVisitor<? extends R> visitor);
   }
 
-  public interface FunctionDefinition extends Definition, EliminatedExpressionsHolder {
+  public interface FunctionDefinition extends Definition, EliminatedExpressionsHolder, ClassReferenceHolder {
     @Nullable Expression getResultType();
     @Nullable Expression getTerm();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();

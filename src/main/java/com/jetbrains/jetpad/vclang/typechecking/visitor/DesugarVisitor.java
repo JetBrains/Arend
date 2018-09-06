@@ -64,8 +64,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
       def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
-      if (def.getBody() instanceof Concrete.ElimFunctionBody && ((Concrete.ElimFunctionBody) def.getBody()).getEliminatedReferences().isEmpty()) {
-        for (Concrete.FunctionClause clause : ((Concrete.ElimFunctionBody) def.getBody()).getClauses()) {
+      if (def.getBody().getEliminatedReferences().isEmpty()) {
+        for (Concrete.FunctionClause clause : def.getBody().getClauses()) {
           clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter));
         }
       }
@@ -292,6 +292,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   @Override
   protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+    if (classFieldImpls.isEmpty()) {
+      return;
+    }
+
     List<Concrete.ClassFieldImpl> originalClassFieldImpls = new ArrayList<>(classFieldImpls);
     classFieldImpls.clear();
     for (Concrete.ClassFieldImpl classFieldImpl : originalClassFieldImpls) {
