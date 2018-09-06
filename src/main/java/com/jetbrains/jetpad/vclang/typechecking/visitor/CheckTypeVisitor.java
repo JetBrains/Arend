@@ -1291,7 +1291,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
               ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
               if (found != null) {
                 ok = false;
-                myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl));
+                myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl));
               }
             }
             if (ok) {
@@ -1320,7 +1320,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
               ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields2);
               if (found != null) {
                 ok = false;
-                myErrorReporter.report(new FieldsImplementationError(false, Collections.singletonList(found.getReferable()), impl2.proj2));
+                myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl2.proj2));
               }
             }
             if (ok) {
