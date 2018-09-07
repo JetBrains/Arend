@@ -40,6 +40,7 @@ public class LexicalScope implements Scope {
 
   private void addSubgroups(Collection<? extends Group> subgroups, List<Referable> elements) {
     for (Group subgroup : subgroups) {
+      addReferable(subgroup.getReferable(), elements);
       for (Group.InternalReferable constructor : subgroup.getConstructors()) {
         if (constructor.isVisible()) {
           addReferable(constructor.getReferable(), elements);
@@ -50,7 +51,6 @@ public class LexicalScope implements Scope {
           addReferable(field.getReferable(), elements);
         }
       }
-      addReferable(subgroup.getReferable(), elements);
     }
   }
 
@@ -123,16 +123,16 @@ public class LexicalScope implements Scope {
   }
 
   private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
+    Referable ref = group.getReferable();
+    if (ref.textRepresentation().equals(name)) {
+      return resolveRef ? ref : LexicalScope.opened(group);
+    }
+
     if (resolveRef) {
       GlobalReferable result = resolveInternal(group, name, true);
       if (result != null) {
         return result;
       }
-    }
-
-    Referable ref = group.getReferable();
-    if (ref.textRepresentation().equals(name)) {
-      return resolveRef ? ref : LexicalScope.opened(group);
     }
 
     return null;
