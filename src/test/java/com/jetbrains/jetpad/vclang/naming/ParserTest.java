@@ -393,4 +393,25 @@ public class ParserTest extends NameResolverTestCase {
       "\\func g (A : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
   }
+
+  @Test
+  public void commentTest() {
+    resolveNamesModule(
+      "\\func f => 0\n" +
+      "------------\n" +
+      "\\func g => 0" +
+      "------------ foo\n" +
+      "{------\n" +
+      "bar\n" +
+      "------}\n" +
+      "\\func h => g");
+  }
+
+  @Test
+  public void commentDefTest() {
+    resolveNamesModule(
+      "\\func --x => --|\n" +
+      "\\func --% => --x\n" +
+      "\\func --| => --%");
+  }
 }

@@ -210,7 +210,7 @@ COLON : ':';
 ARROW : '->';
 UNDERSCORE : '_';
 WS : [ \t\r\n]+ -> skip;
-LINE_COMMENT : '--' ~[\r\n]* -> skip;
+LINE_COMMENT : '--' '-'* ([ \t] ~[\r\n]*)? [\r\n] -> skip;
 COMMENT : '{-' .*? '-}' -> skip;
 fragment START_CHAR : [~!@#$%^&*\-+=<>?/|:;[\]a-zA-Z_];
 ID : START_CHAR (START_CHAR | [0-9'])*;
