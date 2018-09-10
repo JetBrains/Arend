@@ -7,10 +7,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.TypedBinding;
 import com.jetbrains.jetpad.vclang.core.context.binding.Variable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
 import com.jetbrains.jetpad.vclang.core.definition.*;
-import com.jetbrains.jetpad.vclang.core.elimtree.Body;
-import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
-import com.jetbrains.jetpad.vclang.core.elimtree.IntervalElim;
-import com.jetbrains.jetpad.vclang.core.elimtree.LeafElimTree;
+import com.jetbrains.jetpad.vclang.core.elimtree.*;
 import com.jetbrains.jetpad.vclang.core.expr.*;
 import com.jetbrains.jetpad.vclang.core.expr.type.ExpectedType;
 import com.jetbrains.jetpad.vclang.core.expr.type.Type;
@@ -39,7 +36,7 @@ import com.jetbrains.jetpad.vclang.util.Pair;
 
 import java.util.*;
 
-import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.parameter;
+import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
 public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean, List<Clause>> {
@@ -584,11 +581,56 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
+  private Expression normalizePathExpression(Expression type, Constructor constructor, Concrete.SourceNode sourceNode) {
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    if (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
+      List<Expression> pathArgs = ((DataCallExpression) type).getDefCallArguments();
+      Expression lamExpr = pathArgs.get(0).normalize(NormalizeVisitor.Mode.WHNF);
+      if (lamExpr instanceof LamExpression) {
+        Expression newType = normalizePathExpression(((LamExpression) lamExpr).getBody(), constructor, sourceNode);
+        if (newType == null) {
+          return null;
+        } else {
+          List<Expression> args = new ArrayList<>(3);
+          args.add(new LamExpression(((LamExpression) lamExpr).getResultSort(), ((LamExpression) lamExpr).getParameters(), newType));
+          args.add(pathArgs.get(1));
+          args.add(pathArgs.get(2));
+          return new DataCallExpression(Prelude.PATH, ((DataCallExpression) type).getSortArgument(), args);
+        }
+      } else {
+        type = null;
+      }
+    }
+
+    Expression expectedType = constructor.getDataTypeExpression(Sort.STD);
+    if (type == null || !type.equals(expectedType)) {
+      myVisitor.getErrorReporter().report(new TypecheckingError("Expected an iterated path type in " + expectedType, sourceNode));
+      return null;
+    }
+
+    return type;
+  }
+
+  private Expression addAts(Expression expression, DependentLink param, Expression type) {
+    while (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
+      List<Expression> args = new ArrayList<>(5);
+      args.addAll(((DataCallExpression) type).getDefCallArguments());
+      args.add(expression);
+      LamExpression lamExpr = (LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0);
+      args.add(new ReferenceExpression(param));
+      expression = new FunCallExpression(Prelude.AT, ((DataCallExpression) type).getSortArgument(), args);
+      type = lamExpr.getBody();
+      param = param.getNext();
+    }
+    return expression;
+  }
+
   private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort) {
     Constructor constructor = new Constructor(def.getData(), dataDefinition);
     constructor.setPatterns(patterns);
-    constructor.setNumberOfIntervalParameters(def.getNumberOfIntervalParameters());
     List<DependentLink> elimParams = null;
+    Expression constructorType = null;
+    LinkList list = new LinkList();
     Sort sort;
 
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
@@ -596,7 +638,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         myVisitor.getTypecheckingState().record(def.getData(), constructor);
         dataDefinition.addConstructor(constructor);
 
-        LinkList list = new LinkList();
         sort = typeCheckParameters(def.getParameters(), list, null, userSort);
 
         int index = 0;
@@ -611,19 +652,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (def.getResultType() != null) {
           Type resultType = myVisitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
           if (resultType != null) {
-            Expression type = resultType.getExpr().normalize(NormalizeVisitor.Mode.WHNF);
-            while (type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH) {
-              type = ((DataCallExpression) type).getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF);
-              if (type instanceof LamExpression) {
-                type = ((LamExpression) type).getBody().normalize(NormalizeVisitor.Mode.WHNF);
-              } else {
-                type = null;
-              }
-            }
-            Expression expectedType = constructor.getDataTypeExpression(Sort.STD);
-            if (type == null || !type.equals(expectedType)) {
-              myVisitor.getErrorReporter().report(new TypecheckingError("Expected an iterated path type in " + expectedType, def.getResultType()));
-            }
+            constructorType = normalizePathExpression(resultType.getExpr(), constructor, def.getResultType());
           }
           def.setResultType(null);
         }
@@ -646,6 +675,47 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           ConditionsChecking.check(body, clauses, constructor, def, myVisitor.getErrorReporter());
         }
+      }
+    }
+
+    if (constructorType != null) {
+      int numberOfNewParameters = 0;
+      for (Expression type = constructorType; type instanceof DataCallExpression && ((DataCallExpression) type).getDefinition() == Prelude.PATH; type = ((LamExpression) ((DataCallExpression) type).getDefCallArguments().get(0)).getBody()) {
+        numberOfNewParameters++;
+      }
+
+      if (numberOfNewParameters != 0) {
+        DependentLink newParam = new TypedDependentLink(true, "i" + numberOfNewParameters, Interval(), EmptyDependentLink.getInstance());
+        for (int i = numberOfNewParameters - 1; i >= 1; i--) {
+          newParam = new UntypedDependentLink("i" + i, newParam);
+        }
+        list.append(newParam);
+        constructor.setParameters(list.getFirst());
+        constructor.setNumberOfIntervalParameters(numberOfNewParameters);
+
+        List<Pair<Expression,Expression>> pairs;
+        ElimTree elimTree;
+        if (constructor.getBody() instanceof IntervalElim) {
+          pairs = ((IntervalElim) constructor.getBody()).getCases();
+          for (int i = 0; i < pairs.size(); i++) {
+            pairs.set(i, new Pair<>(addAts(pairs.get(i).proj1, newParam, constructorType), addAts(pairs.get(i).proj2, newParam, constructorType)));
+          }
+          elimTree = ((IntervalElim) constructor.getBody()).getOtherwise();
+        } else {
+          pairs = new ArrayList<>();
+          elimTree = constructor.getBody() instanceof ElimTree ? (ElimTree) constructor.getBody() : null;
+        }
+
+        while (constructorType instanceof DataCallExpression && ((DataCallExpression) constructorType).getDefinition() == Prelude.PATH) {
+          List<Expression> pathArgs = ((DataCallExpression) constructorType).getDefCallArguments();
+          LamExpression lamExpr = (LamExpression) pathArgs.get(0);
+          constructorType = lamExpr.getBody();
+          pairs.add(new Pair<>(addAts(pathArgs.get(1), newParam, constructorType.subst(lamExpr.getParameters(), Left())), addAts(pathArgs.get(2), newParam, constructorType.subst(lamExpr.getParameters(), Right()))));
+          constructorType = constructorType.subst(lamExpr.getParameters(), new ReferenceExpression(newParam));
+          newParam = newParam.getNext();
+        }
+
+        constructor.setBody(new IntervalElim(list.getFirst(), pairs, elimTree));
       }
     }
 

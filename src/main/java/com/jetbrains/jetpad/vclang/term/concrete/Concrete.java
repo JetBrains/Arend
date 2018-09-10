@@ -1306,7 +1306,6 @@ public final class Concrete {
     private final List<ReferenceExpression> myEliminatedReferences;
     private final List<FunctionClause> myClauses;
     private Expression myResultType;
-    private int myNumberOfIntervalParameters;
 
     public Constructor(TCReferable referable, DataDefinition dataType, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, List<FunctionClause> clauses) {
       super(referable);
@@ -1343,14 +1342,6 @@ public final class Concrete {
 
     public void setResultType(Expression resultType) {
       myResultType = resultType;
-    }
-
-    public int getNumberOfIntervalParameters() {
-      return myNumberOfIntervalParameters;
-    }
-
-    public void setNumberOfIntervalParameters(int numberOfIntervalParameters) {
-      myNumberOfIntervalParameters = numberOfIntervalParameters;
     }
 
     @Override
