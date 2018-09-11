@@ -14,7 +14,7 @@ public class LongName {
   }
 
   public String[] toArray() {
-    return myPath.toArray(new String[myPath.size()]);
+    return myPath.toArray(new String[0]);
   }
 
   public String getLastName() {

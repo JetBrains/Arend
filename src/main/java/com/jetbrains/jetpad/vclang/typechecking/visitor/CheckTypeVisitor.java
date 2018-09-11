@@ -147,6 +147,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new Result(expression, type);
     }
 
+    public DependentLink getExplicitParameter() {
+      for (DependentLink link : myParameters) {
+        if (link.isExplicit()) {
+          return link;
+        }
+      }
+      return EmptyDependentLink.getInstance();
+    }
+
     @Override
     public DependentLink getParameter() {
       return myParameters.get(0);

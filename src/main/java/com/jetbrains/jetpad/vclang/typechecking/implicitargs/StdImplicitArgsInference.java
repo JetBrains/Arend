@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
+import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
@@ -24,10 +25,9 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
+import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.refDoc;
@@ -241,10 +241,123 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
     }
 
-    for (Concrete.Argument argument : expr.getArguments()) {
-      result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+    if (result instanceof CheckTypeVisitor.DefCallResult) {
+      // Check for parameters that have pi type which we might not infer.
+      // In this case, we defer typechecking of the corresponding argument.
+      List<Pair<InferenceVariable,Concrete.Argument>> deferredArguments = null;
+      for (Concrete.Argument argument : expr.getArguments()) {
+        if (argument.isExplicit() && result instanceof CheckTypeVisitor.DefCallResult && ((CheckTypeVisitor.DefCallResult) result).getDefinition() != Prelude.PATH_CON) {
+          result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false);
+        }
+        if (result != null && shouldBeDeferred(argument, result)) {
+          if (deferredArguments == null) {
+            deferredArguments = new ArrayList<>();
+          }
+          InferenceVariable var = new ExpressionInferenceVariable(result.getParameter().getTypeExpr(), argument.expression, myVisitor.getAllBindings());
+          deferredArguments.add(new Pair<>(var, argument));
+          result = result.applyExpression(new InferenceReferenceExpression(var, myVisitor.getEquations()), myVisitor.getErrorReporter(), fun);
+        } else {
+          result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+        }
+      }
+      if (deferredArguments != null) {
+        for (Pair<InferenceVariable, Concrete.Argument> pair : deferredArguments) {
+          CheckTypeVisitor.Result argResult = myVisitor.checkExpr(pair.proj2.expression, pair.proj1.getType());
+          Expression argResultExpr = argResult == null ? new ErrorExpression(null, null) : argResult.expression;
+          pair.proj1.solve(myVisitor.getEquations(), argResultExpr);
+        }
+      }
+    } else {
+      for (Concrete.Argument argument : expr.getArguments()) {
+        result = inferArg(result, argument.expression, argument.isExplicit(), fun);
+      }
     }
+
     return result;
+  }
+
+  private boolean shouldBeDeferred(Concrete.Argument argument, CheckTypeVisitor.TResult result) {
+    if (!(argument.getExpression() instanceof Concrete.LamExpression && result instanceof CheckTypeVisitor.DefCallResult)) {
+      return false;
+    }
+    DependentLink param = argument.isExplicit() ? ((CheckTypeVisitor.DefCallResult) result).getExplicitParameter() : result.getParameter();
+    if (!param.hasNext() || !argument.isExplicit() && param.isExplicit()) {
+      return false;
+    }
+
+    // Collect inference variables that appear in pi parameters of the expected type of the argument.
+    Set<InferenceVariable> suspiciousParameters = null;
+    Expression type = param.getTypeExpr();
+    while (type instanceof PiExpression) {
+      Expression paramType = ((PiExpression) type).getParameters().getTypeExpr();
+      if (paramType instanceof InferenceReferenceExpression) {
+        InferenceVariable var = ((InferenceReferenceExpression) paramType).getVariable();
+        boolean found = false;
+        if (!var.isSolved()) {
+          for (Expression argExpr : ((CheckTypeVisitor.DefCallResult) result).getArguments()) {
+            if (argExpr instanceof InferenceReferenceExpression && ((InferenceReferenceExpression) argExpr).getVariable() == var) {
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          if (suspiciousParameters == null) {
+            suspiciousParameters = new HashSet<>();
+          }
+          suspiciousParameters.add(var);
+        }
+      }
+      type = ((PiExpression) type).getCodomain();
+    }
+
+    if (suspiciousParameters == null) {
+      return false;
+    }
+
+    List<DependentLink> parameters = new ArrayList<>();
+    type = param.getTypeExpr();
+    while (type instanceof PiExpression) {
+      for (SingleDependentLink link = ((PiExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
+        parameters.add(link);
+      }
+      type = ((PiExpression) type).getCodomain();
+    }
+
+    // If the type of a suspicious parameter is explicitly specified in the lambda of the argument, ignore it.
+    int i = 0;
+    Concrete.Expression argExpr = argument.expression;
+    while (argExpr instanceof Concrete.LamExpression) {
+      for (Concrete.Parameter parameter : ((Concrete.LamExpression) argExpr).getParameters()) {
+        int n = parameter instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) parameter).getReferableList().size() : 1;
+        for (; n > 0; n--) {
+          // If we checked all parameters and didn't find problems, then everything is fine, return false.
+          if (i >= parameters.size()) {
+            return false;
+          }
+          // Skip implicit parameters of lambda.
+          if (!parameter.getExplicit() && parameters.get(i).isExplicit()) {
+            continue;
+          }
+          type = parameters.get(i).getTypeExpr();
+          // If we found a suspicious parameter for which the type is not specified in lambda, then return true.
+          if (type instanceof InferenceReferenceExpression &&
+              suspiciousParameters.remove(((InferenceReferenceExpression) type).getVariable()) &&
+              (parameter.getExplicit() != parameters.get(i).isExplicit() || !(parameter instanceof Concrete.TypeParameter))) {
+            return true;
+          }
+          // Skip implicit parameters of pi.
+          if (parameter.getExplicit() && !parameters.get(i).isExplicit()) {
+            n++;
+          }
+          i++;
+        }
+      }
+      argExpr = ((Concrete.LamExpression) argExpr).body;
+    }
+
+    return false;
   }
 
   @Override
