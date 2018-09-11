@@ -399,12 +399,13 @@ public class ParserTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\func f => 0\n" +
       "------------\n" +
-      "\\func g => 0" +
+      "\\func g => 0\n" +
       "------------ foo\n" +
       "{------\n" +
       "bar\n" +
       "------}\n" +
-      "\\func h => g");
+      "\\func h => g\n" +
+      "--");
   }
 
   @Test
