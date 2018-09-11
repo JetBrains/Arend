@@ -1,5 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
+import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 
 import javax.annotation.Nonnull;
@@ -17,7 +18,11 @@ public class CachingScope implements Scope {
 
   private CachingScope(Scope scope) {
     myScope = scope;
-    scope.find(ref -> { myElements.putIfAbsent(ref.textRepresentation(), ref); return false; });
+    scope.find(ref -> {
+      String name = ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation();
+      myElements.putIfAbsent(name, ref);
+      return false;
+    });
   }
 
   public static Scope make(Scope scope) {
