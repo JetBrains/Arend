@@ -1,0 +1,17 @@
+<h1 id="language-reference">Language Reference<a class="headerlink" href="#language-reference" title="Permanent link">&para;</a></h1>
+
+* [Lexical Structure](lexical-structure)
+* [Definitions](definitions)
+    * [Modules](definitions/modules)
+    * [Functions](definitions/functions)
+    * [Data](definitions/data)
+    * [Records](definitions/records)
+    * [Classes](definitions/classes)
+    * [Instances](definitions/instances)
+    * [Implicit Arguments](definitions/implicit-arguments)
+    * [Coercion](definitions/coercion)
+* [Expressions](expressions)
+    * [Goals](expressions/goals)
+    * [Universes](expressions/universes)
+    * [Let](expressions/let)
+    * [Case](expressions/case)

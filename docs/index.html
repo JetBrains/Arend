@@ -7,14 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Arend is good at maths. You aren’t.">
   
-  <link rel="shortcut icon" href="./img/favicon.ico">
+  <link rel="shortcut icon" href="img/favicon.ico">
   <title>Overview - Arend</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
-  <link rel="stylesheet" href="./css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="./css/theme_extra.css" type="text/css" />
-  <link rel="stylesheet" href="./css/highlight.css">
-  <link href="./css/custom-highlight.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="css/custom-highlight.css" rel="stylesheet">
   
   <script>
     // Current page data
@@ -23,9 +23,10 @@
     var mkdocs_page_url = "/";
   </script>
   
-  <script src="./js/jquery-2.1.1.min.js"></script>
-  <script src="./js/modernizr-2.8.3.min.js"></script>
-  <script type="text/javascript" src="./js/highlight.pack.js"></script> 
+  <script src="js/jquery-2.1.1.min.js" defer></script>
+  <script src="js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
   
 </head>
 
@@ -39,7 +40,7 @@
         <a href="." class="icon icon-home"> Arend</a>
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -63,7 +64,21 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="tutorial/">Tutorial</a>
+    <span class="caption-text">Tutorial</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="tutorial/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="tutorial/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="tutorial/pattern-matching/">Pattern Matching</a>
+                </li>
+    </ul>
 	    </li>
           
             <li class="toctree-l1">
@@ -72,7 +87,67 @@
     <ul class="subnav">
                 <li class="">
                     
+    <a class="" href="language-reference/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/lexical-structure/">Lexical Structure</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="language-reference/definitions/">Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/modules/">Modules</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/functions/">Function Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/records/">Records</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/classes/">Classes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/instances/">Instances</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/implicit-arguments/">Implicit Arguments</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/definitions/coercion/">Coercion</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/expressions/">Expressions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/expressions/goals/">Goals</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/expressions/universes/">Universes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/expressions/let/">Let</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="language-reference/expressions/case/">Case</a>
                 </li>
     </ul>
 	    </li>
@@ -115,9 +190,9 @@
                 <h1 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h1>
 
 <p>Arend (aka vclang) is a theorem prover based on <a href="https://ncatlab.org/nlab/show/homotopy+type+theory">Homotopy Type Theory</a>.
-For the installation instructions, see <a href="./getting-started">this section</a>.
-The section <a href="./language-reference">Language Reference</a> contains a description of the Arend language.
-For a tutorial, see <a href="./tutorial">this section</a>.</p>
+For the installation instructions, see <a href="getting-started">this section</a>.
+The section <a href="language-reference">Language Reference</a> contains a description of the Arend language.
+For a tutorial, see <a href="tutorial">this section</a>.</p>
               
             </div>
           </div>
@@ -142,18 +217,18 @@ For a tutorial, see <a href="./tutorial">this section</a>.</p>
 
   Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
 </footer>
-	  
+      
         </div>
       </div>
 
     </section>
-    
+
   </div>
 
   <div class="rst-versions" role="note" style="cursor: pointer">
     <span class="rst-current-version" data-toggle="rst-current-version">
       
-          <a href="https://github.com/JetBrains/vclang" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+          <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
       
@@ -161,13 +236,15 @@ For a tutorial, see <a href="./tutorial">this section</a>.</p>
       
     </span>
 </div>
-    <script src="./js/theme.js"></script>
-      <script src="./js/highlight-arend.min.js"></script>
+    <script>var base_url = '.';</script>
+    <script src="js/theme.js" defer></script>
+      <script src="js/highlight-arend.min.js" defer></script>
+      <script src="search/main.js" defer></script>
 
 </body>
 </html>
 
 <!--
-MkDocs version : 0.16.3
-Build Date UTC : 2018-09-05 20:00:40
+MkDocs version : 1.0.4
+Build Date UTC : 2018-09-12 14:49:40
 -->

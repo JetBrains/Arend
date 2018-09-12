@@ -13,7 +13,7 @@
 
   <link rel="stylesheet" href="../css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
-  <link rel="stylesheet" href="../css/highlight.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
   <link href="../css/custom-highlight.css" rel="stylesheet">
   
   <script>
@@ -23,9 +23,10 @@
     var mkdocs_page_url = "/getting-started/";
   </script>
   
-  <script src="../js/jquery-2.1.1.min.js"></script>
-  <script src="../js/modernizr-2.8.3.min.js"></script>
-  <script type="text/javascript" src="../js/highlight.pack.js"></script> 
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
   
 </head>
 
@@ -39,7 +40,7 @@
         <a href=".." class="icon icon-home"> Arend</a>
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -69,7 +70,21 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="../tutorial/">Tutorial</a>
+    <span class="caption-text">Tutorial</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../tutorial/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../tutorial/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../tutorial/pattern-matching/">Pattern Matching</a>
+                </li>
+    </ul>
 	    </li>
           
             <li class="toctree-l1">
@@ -78,7 +93,67 @@
     <ul class="subnav">
                 <li class="">
                     
+    <a class="" href="../language-reference/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/lexical-structure/">Lexical Structure</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../language-reference/definitions/">Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/modules/">Modules</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/functions/">Function Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/records/">Records</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/classes/">Classes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/instances/">Instances</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/implicit-arguments/">Implicit Arguments</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/definitions/coercion/">Coercion</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/expressions/">Expressions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/expressions/goals/">Goals</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/expressions/universes/">Universes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/expressions/let/">Let</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../language-reference/expressions/case/">Case</a>
                 </li>
     </ul>
 	    </li>
@@ -122,7 +197,7 @@
 
 <p>You need to have <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html">JRE 8</a> installed on your computer to use Arend.
 Arend is available either as an <a href="https://www.jetbrains.com/idea">IntelliJ IDEA</a> plugin (see <a href="#intellij-idea-plugin">this section</a> for the installation instructions) or as a console applications (see <a href="#console-application">this section</a> for the installation instructions).</p>
-<h2 id="intellij-idea-plugin">IntelliJ IDEA Plugin<a class="headerlink" href="#intellij-idea-plugin" title="Permanent link">&para;</a></h2>
+<h1 id="intellij-idea-plugin">IntelliJ IDEA Plugin<a class="headerlink" href="#intellij-idea-plugin" title="Permanent link">&para;</a></h1>
 <p>To install the IntelliJ IDEA plugin, follow the instructions below.</p>
 <ul>
 <li>Download (either community or ultimate version of) <a href="https://www.jetbrains.com/idea">IntelliJ IDEA</a>.</li>
@@ -156,8 +231,8 @@ You should see the following error message:</p>
 </code></pre>
 
 <p>You can read more about IntelliJ IDEA <a href="https://www.jetbrains.com/help/idea/discover-intellij-idea.html">here</a>.
-To learn more about Arend, see the <a href="../tutorial">tutorial</a> and the <a href="../language-reference">language reference</a>.</p>
-<h2 id="console-application">Console Application<a class="headerlink" href="#console-application" title="Permanent link">&para;</a></h2>
+To learn more about Arend, see the <a href="tutorial">tutorial</a> and the <a href="language-reference">language reference</a>.</p>
+<h1 id="console-application">Console Application<a class="headerlink" href="#console-application" title="Permanent link">&para;</a></h1>
 <p>To install the console application, follow the instructions below.</p>
 <ul>
 <li>Download the vclang <a href="http://valis.github.io/vclang.jar">jar file</a>. You can also get the latest version of the plugin by following instructions on <a href="https://github.com/JetBrains/vclang/blob/master/README.md">this page</a>.</li>
@@ -226,7 +301,7 @@ Number of modules with errors: 1
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../tutorial/" class="btn btn-neutral float-right" title="Tutorial">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../tutorial/" class="btn btn-neutral float-right" title="Table of Contents">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
         <a href=".." class="btn btn-neutral" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
@@ -245,18 +320,18 @@ Number of modules with errors: 1
 
   Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
 </footer>
-	  
+      
         </div>
       </div>
 
     </section>
-    
+
   </div>
 
   <div class="rst-versions" role="note" style="cursor: pointer">
     <span class="rst-current-version" data-toggle="rst-current-version">
       
-          <a href="https://github.com/JetBrains/vclang" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+          <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
         <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
@@ -266,8 +341,10 @@ Number of modules with errors: 1
       
     </span>
 </div>
-    <script src="../js/theme.js"></script>
-      <script src="../js/highlight-arend.min.js"></script>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../js/highlight-arend.min.js" defer></script>
+      <script src="../search/main.js" defer></script>
 
 </body>
 </html>

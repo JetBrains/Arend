@@ -5,12 +5,30 @@ site_description: Arend is good at maths. You aren’t.
 repo_url: https://github.com/JetBrains/vclang
 edit_uri: edit/master/docs/
 
-pages:
+nav:
     - Overview: index.md
     - Getting Started: getting-started.md
-    - Tutorial: tutorial.md
+    - Tutorial:
+        - Table of Contents: tutorial/index.md
+        - Functions: tutorial/functions.md
+        - Pattern Matching: tutorial/pattern-matching.md
     - Language Reference:
+        - Table of Contents: language-reference/index.md
+        - Lexical Structure: language-reference/lexical-structure.md
         - Definitions: language-reference/definitions.md
+        - Modules: language-reference/definitions/modules.md
+        - Function Definitions: language-reference/definitions/functions.md
+        - Data Definitions: language-reference/definitions/data.md
+        - Records: language-reference/definitions/records.md
+        - Classes: language-reference/definitions/classes.md
+        - Instances: language-reference/definitions/instances.md
+        - Implicit Arguments: language-reference/definitions/implicit-arguments.md
+        - Coercion: language-reference/definitions/coercion.md
+        - Expressions: language-reference/expressions.md
+        - Goals: language-reference/expressions/goals.md
+        - Universes: language-reference/expressions/universes.md
+        - Let: language-reference/expressions/let.md
+        - Case: language-reference/expressions/case.md
 
 theme: readthedocs
 
