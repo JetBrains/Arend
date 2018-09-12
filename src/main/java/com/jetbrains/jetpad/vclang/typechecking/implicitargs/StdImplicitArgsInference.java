@@ -1,6 +1,5 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
-import com.jetbrains.jetpad.vclang.core.context.binding.inference.ExpressionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.FunctionInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.TypeClassInferenceVariable;
@@ -25,9 +24,10 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.typechecking.error.local.*;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CheckTypeVisitor;
-import com.jetbrains.jetpad.vclang.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.jetbrains.jetpad.vclang.core.expr.ExpressionFactory.*;
 import static com.jetbrains.jetpad.vclang.error.doc.DocFactory.refDoc;
@@ -241,6 +241,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
     }
 
+    /*
     if (result instanceof CheckTypeVisitor.DefCallResult) {
       // Check for parameters that have pi type which we might not infer.
       // In this case, we defer typechecking of the corresponding argument.
@@ -268,14 +269,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         }
       }
     } else {
+    */
       for (Concrete.Argument argument : expr.getArguments()) {
         result = inferArg(result, argument.expression, argument.isExplicit(), fun);
       }
-    }
+    // }
 
     return result;
   }
 
+  /*
   private boolean shouldBeDeferred(Concrete.Argument argument, CheckTypeVisitor.TResult result) {
     if (!(argument.getExpression() instanceof Concrete.LamExpression && result instanceof CheckTypeVisitor.DefCallResult)) {
       return false;
@@ -359,6 +362,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     return false;
   }
+  */
 
   @Override
   public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Concrete.Expression expr) {

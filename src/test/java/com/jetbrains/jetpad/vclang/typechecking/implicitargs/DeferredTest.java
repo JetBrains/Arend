@@ -1,9 +1,11 @@
 package com.jetbrains.jetpad.vclang.typechecking.implicitargs;
 
 import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class DeferredTest extends TypeCheckingTestCase {
+  @Ignore
   @Test
   public void sigmaTest() {
     typeCheckModule(
@@ -11,6 +13,7 @@ public class DeferredTest extends TypeCheckingTestCase {
       "\\func test (x : \\Sigma Nat Nat) (s : x = (0,0)) => pmap (\\lam t => t.1) s");
   }
 
+  @Ignore
   @Test
   public void piTest() {
     typeCheckModule(
