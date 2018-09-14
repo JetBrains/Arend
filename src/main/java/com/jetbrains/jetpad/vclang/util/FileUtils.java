@@ -13,7 +13,7 @@ import java.util.Set;
 public class FileUtils {
   public static final String EXTENSION = ".vc";
   public static final String SERIALIZED_EXTENSION = ".vcc";
-  public static final String LIBRARY_EXTENSION = ".vcl";
+  public static final String LIBRARY_CONFIG_FILE = "vclang.yaml";
 
   private static Path baseFile(Path root, ModulePath modulePath) {
     return root.resolve(Paths.get("", modulePath.toArray()));
@@ -32,15 +32,6 @@ public class FileUtils {
   private static final String MODULE_NAME_START_SYMBOL_REGEX = "a-zA-Z_"; // "~!@#$%^&*\\-+=<>?/|:;\\[\\]a-zA-Z_"
   private static final String MODULE_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9']*";
   private static final String LIBRARY_NAME_REGEX = "[" + MODULE_NAME_START_SYMBOL_REGEX + "][" + MODULE_NAME_START_SYMBOL_REGEX + "0-9\\-.']*";
-
-  public static String libraryName(String fileName) {
-    if (!fileName.endsWith(LIBRARY_EXTENSION)) {
-      return null;
-    }
-
-    String libName = fileName.substring(0, fileName.length() - LIBRARY_EXTENSION.length());
-    return libName.matches(LIBRARY_NAME_REGEX) ? libName : null;
-  }
 
   public static boolean isLibraryName(String name) {
     return name.matches(LIBRARY_NAME_REGEX);

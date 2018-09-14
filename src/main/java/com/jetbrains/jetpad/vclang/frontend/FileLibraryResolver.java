@@ -1,11 +1,13 @@
 package com.jetbrains.jetpad.vclang.frontend;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.FileLoadableHeaderLibrary;
-import com.jetbrains.jetpad.vclang.library.FileSourceLibrary;
 import com.jetbrains.jetpad.vclang.library.Library;
+import com.jetbrains.jetpad.vclang.library.LibraryConfig;
 import com.jetbrains.jetpad.vclang.library.UnmodifiableSourceLibrary;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
+import com.jetbrains.jetpad.vclang.library.error.LibraryIOError;
 import com.jetbrains.jetpad.vclang.library.error.MultipleLibraries;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
@@ -13,7 +15,6 @@ import com.jetbrains.jetpad.vclang.util.FileUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -22,7 +23,7 @@ public class FileLibraryResolver implements LibraryResolver {
   private final List<Path> myLibDirs;
   private final TypecheckerState myTypecheckerState;
   private final ErrorReporter myErrorReporter;
-  private final Map<String, FileSourceLibrary> myLibraries = new HashMap<>();
+  private final Map<String, FileLoadableHeaderLibrary> myLibraries = new HashMap<>();
 
   public FileLibraryResolver(List<Path> libDirs, TypecheckerState typecheckerState, ErrorReporter errorReporter) {
     myLibDirs = libDirs;
@@ -30,19 +31,38 @@ public class FileLibraryResolver implements LibraryResolver {
     myErrorReporter = errorReporter;
   }
 
-  private FileSourceLibrary getLibrary(Path basePath, String libName) {
-    return new FileLoadableHeaderLibrary(libName, basePath, myTypecheckerState);
-  }
-
-  private static Path findLibrary(Path libDir, String libName) {
-    try (DirectoryStream<Path> stream = Files.newDirectoryStream(libDir, file -> Files.isDirectory(file))) {
-      for (Path dir : stream) {
-        if (Files.exists(dir.resolve(libName + FileUtils.LIBRARY_EXTENSION))) {
-          return dir;
+  private FileLoadableHeaderLibrary getLibrary(Path headerFile) {
+    try {
+      LibraryConfig config = new YAMLMapper().readValue(headerFile.toFile(), LibraryConfig.class);
+      if (config.getName() == null) {
+        Path parent = headerFile.getParent();
+        Path fileName = parent == null ? null : parent.getFileName();
+        if (fileName != null) {
+          config.setName(fileName.toString());
+        } else {
+          return null;
         }
       }
+      if (config.getSourcesDir() == null) {
+        config.setSourcesDir(headerFile.getParent().toString());
+      }
+      if (config.getOutputDir() == null) {
+        config.setOutputDir(headerFile.getParent().resolve(".output").toString());
+      }
+      return new FileLoadableHeaderLibrary(config, headerFile, myTypecheckerState);
     } catch (IOException e) {
-      System.err.println(e.getLocalizedMessage());
+      myErrorReporter.report(new LibraryIOError(headerFile.toString(), "Failed to read header file", e.getLocalizedMessage()));
+      return null;
+    }
+  }
+
+  private FileLoadableHeaderLibrary findLibrary(Path libDir, String libName) {
+    Path header = libDir.resolve(libName).resolve(FileUtils.LIBRARY_CONFIG_FILE);
+    if (Files.exists(header)) {
+      FileLoadableHeaderLibrary library = getLibrary(header);
+      if (library != null && library.getName().equals(libName)) {
+        return library;
+      }
     }
     return null;
   }
@@ -56,31 +76,28 @@ public class FileLibraryResolver implements LibraryResolver {
   }
 
   public UnmodifiableSourceLibrary registerLibrary(Path libPath) {
-    String libName = FileUtils.libraryName(libPath.getFileName().toString());
-    if (libName != null) {
-      libPath = libPath.getParent();
-      if (libPath == null) {
-        libPath = FileUtils.getCurrentDirectory();
-      }
+    if (Files.isDirectory(libPath)) {
+      libPath = libPath.resolve(FileUtils.LIBRARY_CONFIG_FILE);
+    }
 
-      FileSourceLibrary library = getLibrary(libPath, libName);
-      FileSourceLibrary prevLibrary = myLibraries.putIfAbsent(libName, library);
-      if (prevLibrary != null) {
-        if (!prevLibrary.getBinaryBasePath().equals(library.getBinaryBasePath())) {
-          List<String> libraries = new ArrayList<>(2);
-          libraries.add(prevLibrary.getName() + " (" + prevLibrary.getBinaryBasePath() + ")");
-          libraries.add(library.getName() + " (" + library.getBinaryBasePath() + ")");
-          myErrorReporter.report(new MultipleLibraries(libraries));
-          return null;
-        } else {
-          return prevLibrary;
-        }
+    FileLoadableHeaderLibrary library = getLibrary(libPath);
+    if (library == null) {
+      return null;
+    }
+
+    FileLoadableHeaderLibrary prevLibrary = myLibraries.putIfAbsent(library.getName(), library);
+    if (prevLibrary != null) {
+      if (!prevLibrary.getHeaderFile().equals(library.getHeaderFile())) {
+        List<String> libraries = new ArrayList<>(2);
+        libraries.add(prevLibrary.getName() + " (" + prevLibrary.getHeaderFile() + ")");
+        libraries.add(library.getName() + " (" + library.getHeaderFile() + ")");
+        myErrorReporter.report(new MultipleLibraries(libraries));
+        return null;
       } else {
-        return library;
+        return prevLibrary;
       }
     } else {
-      myErrorReporter.report(LibraryError.illegalName(libPath.toString()));
-      return null;
+      return library;
     }
   }
 
@@ -91,25 +108,24 @@ public class FileLibraryResolver implements LibraryResolver {
       return null;
     }
 
-    FileSourceLibrary library = myLibraries.get(name);
+    FileLoadableHeaderLibrary library = myLibraries.get(name);
     if (library != null) {
       return library;
     }
 
-    Path libPath = findLibrary(FileUtils.getCurrentDirectory(), name);
-    if (libPath == null) {
+    library = findLibrary(FileUtils.getCurrentDirectory(), name);
+    if (library == null) {
       for (Path libDir : myLibDirs) {
-        libPath = findLibrary(libDir, name);
-        if (libPath != null) {
+        library = findLibrary(libDir, name);
+        if (library != null) {
           break;
         }
       }
     }
 
-    if (libPath == null) {
+    if (library == null) {
       myErrorReporter.report(LibraryError.notFound(name));
     } else {
-      library = getLibrary(libPath, name);
       myLibraries.put(name, library);
     }
 

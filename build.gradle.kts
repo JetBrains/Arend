@@ -18,6 +18,8 @@ dependencies {
     compile("com.google.guava:guava:26.0-jre")
     compile("com.google.protobuf:protobuf-java:3.6.1")
     compile("com.google.code.findbugs:jsr305:3.0.2")
+    compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.9.6")
 
     testCompile("junit:junit:4.12")
     testCompile("org.hamcrest:hamcrest-library:1.3")
@@ -56,8 +58,8 @@ java.sourceSets {
 idea {
     module {
         generatedSourceDirs.add(genSrcDir)
-        outputDir = file("$buildDir/classes/main")
-        testOutputDir = file("$buildDir/classes/test")
+        outputDir = file("$buildDir/classes/java/main")
+        testOutputDir = file("$buildDir/classes/java/test")
     }
 }
 

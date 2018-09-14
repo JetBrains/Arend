@@ -68,6 +68,7 @@ public abstract class StreamRawSource implements Source {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
           if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadRaw(module)) {
+            sourceLoader.getLibrary().onGroupLoaded(modulePath, null, true);
             return false;
           }
         }
