@@ -5,12 +5,12 @@
 All Arend's _keywords_ begin with `\`.
 The complete list of keywords:
 
-[\open](../definitions/modules) [\import](../definitions/modules) [\hiding](../definitions/modules) \as [\using](../definitions/modules)
-[\truncated](../definitions/data) [\data](../definitions/data) [\func](../definitions/functions) [\class](../definitions/classes) [\record](../definitions/records) [\extends](../definitions/records) [\module](../definitions/modules) [\instance](../definitions/instances) [\coerce](../definitions/coercion)
-\with \elim \cowith [\where](../definitions/modules)
-[\infix](../definitions) [\infixl](../definitions) [\infixr](../definitions) [\fix](../definitions) [\fixl](../definitions) [\fixr](../definitions)
-\new \Pi \Sigma \lam [\let](../expressions/let) [\in]((../expressions/let)) [\case](../expressions/case) [\return](../expressions/case)
-\lp \lh \suc \max \levels [\Prop](../expressions/universes) [\Set](../expressions/universes) [\Type](../expressions/universes).
+[\open](../definitions/modules/#open-commands) [\import](../definitions/modules/#import-commands) [\hiding](../definitions/modules/#open-commands) [\as](../definitions/modules/#open-commands) [\using](../definitions/modules/#open-commands)
+[\truncated](../definitions/data) [\data](../definitions/data) [\func](../definitions/functions) [\class](../definitions/classes) [\record](../definitions/records) [\extends](../definitions/records) [\module](../definitions/modules/#modules) [\instance](../definitions/instances) [\coerce](../definitions/coercion)
+[\with](../definitions/functions/#pattern-matching) [\elim](../definitions/functions/#elim) [\cowith](../definitions/functions/#copattern-matching) [\where](../definitions/modules/#where-blocks)
+[\infix](../definitions/#infix-operators) [\infixl](../definitions/#infix-operators) [\infixr](../definitions/#infix-operators) [\fix](../definitions/#precedence) [\fixl](../definitions/#precedence) [\fixr](../definitions/#precedence)
+[\new](../expressions/class-ext) [\Pi](../expressions/pi) [\Sigma](../expressions/sigma) [\lam](../expressions/pi) [\let](../expressions/let) [\in]((../expressions/let)) [\case](../expressions/case) [\return](../expressions/case)
+[\lp](../expressions/universes) [\lh](../expressions/universes) [\suc](../expressions/universes) [\max](../expressions/universes) [\levels](../expressions/universes) [\Prop](../expressions/universes) [\Set](../expressions/universes) [\Type](../expressions/universes).
 
 ## Numerals
 

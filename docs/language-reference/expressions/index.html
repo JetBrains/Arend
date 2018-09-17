@@ -100,11 +100,19 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../definitions/parameters/">Parameters</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../definitions/functions/">Function Definitions</a>
                 </li>
                 <li class="">
                     
     <a class="" href="../definitions/data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../definitions/hits/">Higher Inductive Types</a>
                 </li>
                 <li class="">
                     
@@ -120,10 +128,6 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../definitions/implicit-arguments/">Implicit Arguments</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="../definitions/coercion/">Coercion</a>
                 </li>
                 <li class=" current">
@@ -131,6 +135,15 @@
     <a class="current" href="./">Expressions</a>
     <ul class="subnav">
             
+    <li class="toctree-l3"><a href="#evaluation">Evaluation</a></li>
+    
+
+    <li class="toctree-l3"><a href="#types">Types</a></li>
+    
+
+    <li class="toctree-l3"><a href="#defcalls">Defcalls</a></li>
+    
+
     </ul>
                 </li>
                 <li class="">
@@ -148,6 +161,18 @@
                 <li class="">
                     
     <a class="" href="case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="pi/">Pi types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="sigma/">Sigma types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="class-ext/">Class extensions</a>
                 </li>
     </ul>
 	    </li>
@@ -193,7 +218,42 @@
               
                 <h1 id="expressions">Expressions<a class="headerlink" href="#expressions" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>An expression denotes a value which may depend on some variables.
+The basic example of an expression is simply a variable <code>x</code>.
+Of course, <code>x</code> must be defined somewhere in order for such an expression to make sense.
+It can be either a parameter (of a <a href="../definitions/parameters">definition</a>, or a <a href="pi">lambda expression</a>, or a <a href="pi">pi expression</a>, or a <a href="sigma">sigma expression</a>),
+a variable define in a <a href="let">let expression</a>, or a variable defined in a <a href="../definitions/functions/#pattern-matching">pattern</a>.</p>
+<p>If <code>e</code>, <code>e_1</code>, ... <code>e_n</code> are expressions and <code>x_1</code>, ... <code>x_n</code> are variables, then we will write <code>e[e_1/x_1, ... e_n/x_n]</code> for the <em>substitution</em> operation.
+This is a meta-operation, that is it is a function on the set of expressions of the language and not an expression itself.
+The expression <code>e[e_1/x_1, ... e_n/x_n]</code> is simply <code>e</code> in which every occurrence of each of the variables <code>x_i</code> is replaced with the expression <code>e_i</code>.</p>
+<h2 id="evaluation">Evaluation<a class="headerlink" href="#evaluation" title="Permanent link">&para;</a></h2>
+<p>There is a binary relation <code>=&gt;</code> on the set of expressions called the <em>reduction relation</em>.
+If <code>e_1 =&gt; ... =&gt; e_n</code>, we will say that <code>e_1</code> <em>reduces</em> to <code>e_n</code>.
+If there is no <code>e'</code> such that <code>e =&gt; e'</code>, we will say that <code>e</code> is a <em>normal form</em>.
+If <code>e</code> reduces to <code>e'</code> and <code>e'</code> is a normal form, we will say that <code>e'</code> is a <em>normal form</em> of <code>e</code> and that <code>e</code> <em>evaluates</em> to <code>e'</code>.
+Every expression has a unique normal form.</p>
+<p>The relation <code>=&gt;</code> is a meta-relation on the set of expressions of the language, that is you cannot refer to it explicitly in the language.
+This relation is used by the typechecker to compare expressions.
+The typechecker never compares expressions directly.
+To compare expressions <code>e_1</code> and <code>e_2</code>, it first evaluates their normal forms and then compares them.
+Since normal forms always exist, the comparison algorithm always terminates, but it is easy to write an expression that does not evaluate in any reasonable time.</p>
+<h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
+<p>Every expression has a type.
+A type is an expression which has type <code>\Type</code>.
+The expression <code>\Type</code> is discussed in <a href="universes">this section</a>.
+Every variable has a type which is specified when the variable is defined (or can be inferred).
+An expression of the form <code>x</code> has the type of the variable <code>x</code>.</p>
+<p>The type of an expression usually can be inferred automatically, but sometimes it is useful to specify it explicitly.
+An expression of the form <code>(e : E)</code> (parentheses are necessary) is equivalent to <code>e</code>, but also has an explicit type annotation.
+In this expression, <code>e</code> must have type <code>E</code> and the type of the whole expression is also <code>E</code> (since it is equivalent to <code>e</code>).</p>
+<h2 id="defcalls">Defcalls<a class="headerlink" href="#defcalls" title="Permanent link">&para;</a></h2>
+<p>A <em>defcall</em> is an expression of the form <code>f a_1 ... a_n</code>, where <code>f</code> is a definition with n parameters
+(an exception is classes and records in which case only expressions without arguments are called defcalls, see <a href="class-ext">this section</a> for the discussion of such expressions).</p>
+<p>If <code>f</code> is a definition with parameters <code>x_1</code>, ... <code>x_n</code> and the result type <code>R</code>, then the type of a defcall <code>f a_1 ... a_n</code> is <code>R[a_1/x_1, ... a_n/x_n]</code>.
+If <code>f</code> is either a class, a record, a data type, a constructor without conditions, an instance, or a function defined by copattern matching, then <code>f a_1 ... a_n</code> is a normal form whenever <code>a_1</code>, ... <code>a_n</code> are.
+If <code>f</code> is a function defined as <code>\func f (x_1 : A_1) ... (x_n : A_n) =&gt; e</code>, then <code>f a_1 ... a_n</code> reduces to <code>e[a_1/x_1, ... a_n/x_n]</code>.
+If <code>f</code> is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="../definitions/functions/#pattern-matching">this section</a>.
+If <code>f</code> is an instance or a function defined by copattern matching, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="../definitions/instances">this section</a>.</p>
               
             </div>
           </div>

@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../../img/favicon.ico">
-  <title>Implicit Arguments - Arend</title>
+  <title>Parameters - Arend</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
@@ -18,9 +18,9 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Implicit Arguments";
-    var mkdocs_page_input_path = "language-reference/definitions/implicit-arguments.md";
-    var mkdocs_page_url = "/language-reference/definitions/implicit-arguments/";
+    var mkdocs_page_name = "Parameters";
+    var mkdocs_page_input_path = "language-reference/definitions/parameters.md";
+    var mkdocs_page_url = "/language-reference/definitions/parameters/";
   </script>
   
   <script src="../../../js/jquery-2.1.1.min.js" defer></script>
@@ -98,6 +98,19 @@
                     
     <a class="" href="../modules/">Modules</a>
                 </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Parameters</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#syntax">Syntax</a></li>
+    
+
+    <li class="toctree-l3"><a href="#implicit-arguments">Implicit arguments</a></li>
+    
+
+    </ul>
+                </li>
                 <li class="">
                     
     <a class="" href="../functions/">Function Definitions</a>
@@ -105,6 +118,10 @@
                 <li class="">
                     
     <a class="" href="../data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../hits/">Higher Inductive Types</a>
                 </li>
                 <li class="">
                     
@@ -117,13 +134,6 @@
                 <li class="">
                     
     <a class="" href="../instances/">Instances</a>
-                </li>
-                <li class=" current">
-                    
-    <a class="current" href="./">Implicit Arguments</a>
-    <ul class="subnav">
-            
-    </ul>
                 </li>
                 <li class="">
                     
@@ -148,6 +158,18 @@
                 <li class="">
                     
     <a class="" href="../../expressions/case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/pi/">Pi types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/sigma/">Sigma types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/class-ext/">Class extensions</a>
                 </li>
     </ul>
 	    </li>
@@ -178,10 +200,10 @@
         
       
     
-    <li>Implicit Arguments</li>
+    <li>Parameters</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/definitions/implicit-arguments.md"
+        <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/definitions/parameters.md"
           class="icon icon-github"> Edit on GitHub</a>
       
     </li>
@@ -191,9 +213,62 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="implicit-arguments">Implicit Arguments<a class="headerlink" href="#implicit-arguments" title="Permanent link">&para;</a></h1>
+                <h1 id="parameters">Parameters<a class="headerlink" href="#implicit-arguments" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>Most kinds of definitions can have parameters.
+A parameter can be named or unnamed, explicit or implicit.
+Implicit parameters are always named.
+An unnamed parameter is simply an expression which denotes the type of the parameter.</p>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<p>A named explicit parameter has the form <code>(x : T)</code>, where <code>x</code> is the name of the parameter and <code>T</code> is an expression which denotes the type of the parameter.
+An implicit parameter has the form <code>{x : T}</code>, where <code>x</code> and <code>T</code> are the same as before.</p>
+<p>Parameters are specified after the name of a definition.
+For example, all of the definitions below have three parameters: <code>x1</code> of type <code>A1</code>, <code>x2</code> of type <code>A2</code>, and <code>x3</code> of type <code>A3</code>.</p>
+<pre><code class="arend">\func f {x1 : A1} {x2 : A2} {x3 : A3} =&gt; 0
+\data D (x1 : A1) (x2 : A2) (x3 : A3)
+\class C (x1 : A1) {x2 : A2} (x3 : A3)
+</code></pre>
+
+<p>If several consecutive parameters have the same type, it can be specified only once by using the following syntax: <code>x_1 ... x_n : T</code>.
+For example, the following function has two implicit parameters of type <code>A1</code>, three explicit parameters of type <code>A2</code>, and one explicit parameter of type <code>A3</code>:</p>
+<pre><code class="arend">\func f {x1 x2 : A1} (y1 y2 y3 : A2) (z : A3) =&gt; 0
+</code></pre>
+
+<p>This definition is equivalent to the following one:</p>
+<pre><code class="arend">\func f {x1 : A1} {x2 : A1} (y1 : A2) (y2 : A2) (y3 : A2) (z : A3) =&gt; 0
+</code></pre>
+
+<p>Parameters can be refered from the types of subsequent parameters and from the body of the definition.
+In the example above, parameters <code>x1</code> and <code>x2</code> may appear in <code>A2</code> and <code>A3</code>, parameters <code>y1</code>, <code>y2</code>, and <code>y3</code> may appear in <code>A3</code>, and all of the parameters may appear in the expression after <code>=&gt;</code>.</p>
+<p>If a pattern is never used anywhere, its name can be replaced with <code>_</code>.
+Such a name cannot be refered to, so this simply indicated that this parameter is ignored.</p>
+<h2 id="implicit-arguments">Implicit arguments<a class="headerlink" href="#implicit-arguments" title="Permanent link">&para;</a></h2>
+<p>Let <code>f</code> be a definition with parameters of types <code>A_1</code>, ... <code>A_n</code>.
+If all of the parameters are explicit, then to we can form an expression of the form <code>f a_1 ... a_n</code>, where <code>a_i</code> is an expression of type <code>A_i</code>.
+Such an expression invokes <code>f</code> with the specified arguments.
+If some of the parameters of <code>f</code> are implicit, then corresponding arguments must be omitted.
+For example, consider the following code:</p>
+<pre><code class="arend">\func f (x : A1) {y y' : A2} (z : A3) {z : A4} =&gt; 0
+\func g =&gt; f a1 a3
+</code></pre>
+
+<p>In the expression <code>f a1 a3</code>, arguments corresponding to parameters <code>y</code>, <code>y'</code>, and <code>z</code> are omitted.
+The typechecker tries to infer these parameters and reports an error if it fails to do so.
+We can ask typechecker to try to infer an explicit parameter by writing <code>_</code> instead of the corresponding argument:</p>
+<pre><code class="arend">\func f (x : A1) {y y' : A2} (z : A3) {z : A4} =&gt; 0
+\func g =&gt; f _ a3
+</code></pre>
+
+<p>In the example above, the typechecker will try to infer the argument corresponding to <code>x</code>.
+The expression <code>_</code> can be written actually anywhere at all.
+The typechecker infers omitted expressions only when there is a unique solution that makes the definition in which they appear to typecheck.</p>
+<p>Finally, if the typechecker cannot infer an implicit argument, it can be specified explicitly by writing <code>{e}</code>.
+For example, to specify explicitly the second and the last arguments of <code>f</code>, we can write the following code:</p>
+<pre><code class="arend">\func f (x : A1) {y y' : A2} (z : A3) {z : A4} =&gt; 0
+\func g =&gt; f _ {a2} a3 {a4}
+</code></pre>
+
+<p>In this example, arguments corresponding to <code>x</code> and <code>y'</code> are left implicit and other arguments are explicitly specified.</p>
               
             </div>
           </div>
@@ -201,10 +276,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../coercion/" class="btn btn-neutral float-right" title="Coercion">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../functions/" class="btn btn-neutral float-right" title="Function Definitions">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../instances/" class="btn btn-neutral" title="Instances"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../modules/" class="btn btn-neutral" title="Modules"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -234,10 +309,10 @@
           <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../instances/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../modules/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../coercion/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../functions/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

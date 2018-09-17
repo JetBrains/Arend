@@ -98,16 +98,39 @@
                     
     <a class="" href="../modules/">Modules</a>
                 </li>
+                <li class="">
+                    
+    <a class="" href="../parameters/">Parameters</a>
+                </li>
                 <li class=" current">
                     
     <a class="current" href="./">Function Definitions</a>
     <ul class="subnav">
             
+    <li class="toctree-l3"><a href="#non-recursive-functions">Non-recursive functions</a></li>
+    
+
+    <li class="toctree-l3"><a href="#pattern-matching">Pattern matching</a></li>
+    
+
+    <li class="toctree-l3"><a href="#elim">Elim</a></li>
+    
+
+    <li class="toctree-l3"><a href="#recursive-functions">Recursive functions</a></li>
+    
+
+    <li class="toctree-l3"><a href="#copattern-matching">Copattern matching</a></li>
+    
+
     </ul>
                 </li>
                 <li class="">
                     
     <a class="" href="../data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../hits/">Higher Inductive Types</a>
                 </li>
                 <li class="">
                     
@@ -120,10 +143,6 @@
                 <li class="">
                     
     <a class="" href="../instances/">Instances</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../implicit-arguments/">Implicit Arguments</a>
                 </li>
                 <li class="">
                     
@@ -148,6 +167,18 @@
                 <li class="">
                     
     <a class="" href="../../expressions/case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/pi/">Pi types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/sigma/">Sigma types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/class-ext/">Class extensions</a>
                 </li>
     </ul>
 	    </li>
@@ -193,7 +224,145 @@
               
                 <h1 id="functions">Functions Definitions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>Functions in Arend are functions in the mathematical sense.
+They can have arbitrary arity.
+In particular, constants in Arend are just functions of arity 0.
+A definition of a function consists of its name, a signature which consists of a list of parameters and (possibly) a result type, and a body which is an expression that describes the behaviour of the function.</p>
+<h2 id="non-recursive-functions">Non-recursive functions<a class="headerlink" href="#non-recursive-functions" title="Permanent link">&para;</a></h2>
+<p>To define a non-recursive function, write <code>\func f p_1 ... p_n =&gt; e</code>, where <code>f</code> is the name of the function, <code>p_1</code>, ... <code>p_n</code> are named <a href="../parameters">parameters</a>, and <code>e</code> is an expression which denotes the result of the function.
+You can also specify the result type of the function by writing <code>\func f p_1 ... p_n : T =&gt; e</code>, where <code>T</code> is an expression which denotes the result type.
+In this case, <code>e</code> must have type <code>T</code>.
+Often the typechecker can infer the result type, so usually you don't have to specify it explicitly.</p>
+<p>For example, to define the identity function on type <code>A</code>, write the following code:</p>
+<pre><code class="arend">\func id (x : A) =&gt; x
+</code></pre>
+
+<p>A function with three parameters that returns the second one can be defined as follows:</p>
+<pre><code class="arend">\func second (x : A) (y : B) (z : C) =&gt; y
+</code></pre>
+
+<p>You can explicitly specify the result types of these functions.
+The definitions above are equivalent to the following definitions:</p>
+<pre><code class="arend">\func id (x : A) : A =&gt; x
+\func second (x : A) (y : B) (z : C) : B =&gt; y
+</code></pre>
+
+<p>Parameters of a function may appear in its body and in its result type.</p>
+<h2 id="pattern-matching">Pattern matching<a class="headerlink" href="#pattern-matching" title="Permanent link">&para;</a></h2>
+<p>Functions can be defined by recursion.
+If <code>D</code> is a <a href="../data">data type</a> with constructors <code>con1</code> and <code>con2 Nat</code>.
+Then you can define a function which maps <code>D</code> to natural numbers in such a way that <code>con1</code> is mapped to <code>0</code> and <code>con2 n</code> is mapped to <code>suc n</code>:</p>
+<pre><code class="arend">\func f (d : D) : Nat
+  | con1 =&gt; 0
+  | con2 n =&gt; suc n
+</code></pre>
+
+<p>The result type of a recursive function must be specified explicitly.
+The general form of a recursive function is</p>
+<pre><code class="arend">\func f (x_1 : T_1) ... (x_n : T_n) : R
+  | p^1_1, ... p^1_n =&gt; e_1
+  ...
+  | p^k_1, ... p^k_n =&gt; e_k
+</code></pre>
+
+<p>where <code>p^i_j</code> is a pattern of type <code>T_i</code> and <code>e_i</code> is an expression of type <code>R[p^i_1/x_1, ... p^i_n/x_n]</code> (see <a href="../../expressions">this section</a> for the discussion of the substitution operation and types of expressions).
+Note that variables <code>x_1</code>, ... <code>x_n</code> are not visible in expressions <code>e_i</code>.
+If a pattern <code>p^i_j</code> contains a variable <code>x</code> as a subpattern of type <code>T</code>, then this variable may appear in expression <code>e_i</code> and it will have the type <code>T</code>.
+If some of the parameters of <code>f</code> are implicit, corresponding patterns must be omitted.
+They can be specified explicitly by surrounding them in <code>{ }</code>.</p>
+<p>A pattern of type <code>T</code> can have one of the following forms:</p>
+<ul>
+<li>A variable. If this variable is not used anywhere, its name can be replaces with <code>_</code>.</li>
+<li><code>con s_1 ... s_m</code>, where <code>con (y_1 : A_1) ... (y_m : A_m)</code> is a constructor of a data type <code>D</code> and <code>s_1</code> ... <code>s_m</code> are patterns.
+  In this case, <code>T</code> must be equal to <code>D</code> and pattern <code>s_i</code> must have type <code>A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]</code>.
+  If some of the parameters of <code>con</code> are implicit, corresponding patterns must be omitted.
+  They can be specified explicitly by surrounding them in <code>{ }</code>.</li>
+<li><code>(s_1, ... s_m)</code>, where <code>s_1</code> ... <code>s_m</code> are patterns.
+  In this case, <code>T</code> must be either a <a href="../../expressions/sigma">Sigma type</a> with parameters <code>(y_1 : A_1) ... (y_m : A_m)</code> or a <a href="../classes">class</a> (or a <a href="../records">record</a>) with fields <code>y_1 : A_1</code>, ... <code>y_m : A_m</code>.
+  The pattern <code>s_i</code> will have type <code>A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]</code>.
+  If <code>m</code> equals to 0, then <code>T</code> also may be a data type without constructors.
+  In this case, the right hand side <code>=&gt; e_i</code> of the clause in which such a pattern appears must be omitted.</li>
+</ul>
+<p>Now, let us discuss how expressions of the form <code>f a_1 ... a_n</code> evaluate (see <a href="../../expressions/#evaluation">this section</a> for the definition of the reduction and evaluation relations).
+To reduce an expression <code>E = f a_1 ... a_n</code>, we first evaluate expressions <code>a_1</code>, ... <code>a_n</code> and match them with the patterns in the definition of <code>f</code> top to bottom, left to right.
+If all patterns <code>p^i_1</code>, ... <code>p^i_n</code> matches with <code>a_1</code>, ... <code>a_n</code> for some i, then <code>E</code> reduces to <code>e_i[b_1/y_1, ... b_k/y_k]</code>,
+where <code>y_1</code>, ... <code>y_k</code> are variables that appear in <code>p^i_1</code>, ... <code>p^i_n</code> and <code>b_1</code>, ... <code>b_k</code> are subexpressions of <code>a_1</code>, ... <code>a_n</code> corresponding to these variables.
+If some argument cannot be matched with a pattern <code>con s_1 ... s_m</code> because it is of the form <code>con' ...</code> for some constructor <code>con'</code> different from <code>con</code>, then the evaluator skips the clause with this patterns and tries the next one.
+If some argument cannot be matched with a pattern because it is not a constructor, then <code>E</code> does not reduce.
+If none of the clauses match with arguments, then <code>E</code> also does not reduce.
+Variables and patterns of the form <code>(s_1, ... s_m)</code> match with any expression.</p>
+<p>Let us consider an example.
+Let <code>B</code> be a data type with two constructors <code>T</code> and <code>F</code>.
+Consider the following function:</p>
+<pre><code class="arend">\func g (b b' : B) : Nat
+  | T, _ =&gt; 0
+  | _, T =&gt; 1
+  | _, _ =&gt; 2
+</code></pre>
+
+<p>Let <code>x</code> be a variable and let <code>e</code> be an arbitrary expression.
+If the first argument of <code>g a_1 a_2</code> is <code>T</code>, then the expression reduces to <code>0</code>, if it is <code>x</code>, then expression does not reduce since the first pattern fails to match with <code>x</code>.
+If the first argument is <code>F</code>, then the evaluator tries to match the second argument:</p>
+<pre><code class="arend">g T e =&gt; 0
+g x e -- does not reduce
+g F T =&gt; 1
+g F F =&gt; 2
+g F x -- does not reduce
+</code></pre>
+
+<p>You can also write <code>\func f p_1 ... p_n : R \with { | c_1 ... | c_n }</code>.
+The keyword <code>\with</code> and curly braces are optional and do not affect the defined function.</p>
+<h2 id="elim">Elim<a class="headerlink" href="#elim" title="Permanent link">&para;</a></h2>
+<p>It is often true that we only need to pattern match on a single parameter of a function (or a few parameters), but the function has much more parameters.
+Then we need to repeat parameters on which we do not pattern match in each clause, which is inconvenient.
+In this case, we can use the <code>\elim</code> construction:</p>
+<pre><code class="arend">\func f (x_1 : A_1) ... (x_n : A_n) : R \elim x_{i_1}, ... x_{i_m}
+  | p^1_1, ... p^1_m =&gt; e_1
+  ...
+  | p^k_1, ... p^k_m =&gt; e_k
+</code></pre>
+
+<p>where i_1, ... i_m are integers such that 1 ≤ i_1 &lt; ... &lt; i_m ≤ n.
+In this case, parameters <code>x_{i_1}</code>, ... <code>x_{i_m}</code> are <em>eliminated</em> and are not visible in expressions <code>e_1</code>, ... <code>e_k</code>.
+Other parameters of <code>f</code> are still visible in these expressions.
+Note that it does not matter whether a parameter <code>x_i</code> is explicit or implicit when it is eliminated; the corresponding pattern is always explicit.</p>
+<p>As an example, consider the following function which chooses one of its arguments depending on the value of its other argument:</p>
+<pre><code class="arend">\func if (b : B) (t e : X) : X \elim b
+  | T =&gt; t
+  | F =&gt; e
+</code></pre>
+
+<h2 id="recursive-functions">Recursive functions<a class="headerlink" href="#recursive-functions" title="Permanent link">&para;</a></h2>
+<p>Functions defined by pattern matching can be recursive.
+That is, if <code>f</code> is a function as described above, then a reference to <code>f</code> may occur inside expressions <code>e_1</code>, ... <code>e_k</code>.
+Every function in Arend is a total function.
+Thus, not every recursive definition is allowed.
+In order for such a definition to be valid, the recursion must be <em>structural</em>.
+This roughly means that the arguments to recursive calls of <code>f</code> must be subexpressions of the arguments to the function itself.</p>
+<p>Function may also be mutually recursive.
+That is, we can have several functions which refer to each other.
+In this case, there must be a linear order on the set of these functions <code>f_1</code>, ... <code>f_n</code> such that the signature of <code>f_i</code> refers only to previous functions.
+The bodies of the functions may refer to each other as long as the whole recursive system is structural.</p>
+<h2 id="copattern-matching">Copattern matching<a class="headerlink" href="#copattern-matching" title="Permanent link">&para;</a></h2>
+<p>If the result type of a function is a record or a class, then a function can also be define by <em>copattern matching</em> which has the following syntax:</p>
+<pre><code class="arend">\func f (x_1 : A_1) ... (x_n : A_n) : C \cowith
+  | c_1
+  ...
+  | c_k
+</code></pre>
+
+<p>where <code>c_1</code>, ... <code>c_k</code> are <em>coclauses</em>.
+See <a href="../instances">this section</a> for a definition of coclauses.
+Such a function has the same semantics as a definition of an instance as described there.
+It also can be equivalently written as follows:</p>
+<pre><code class="arend">\func f (x_1 : A_1) ... (x_n : A_n) =&gt; \new C {
+  | c_1
+  ...
+  | c_k
+}
+</code></pre>
+
+<p>See <a href="../../expressions/class-ext">this section</a> for the description of the involved constructions.</p>
               
             </div>
           </div>
@@ -204,7 +373,7 @@
         <a href="../data/" class="btn btn-neutral float-right" title="Data Definitions">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../modules/" class="btn btn-neutral" title="Modules"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../parameters/" class="btn btn-neutral" title="Parameters"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -234,7 +403,7 @@
           <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../modules/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../parameters/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
         <span style="margin-left: 15px"><a href="../data/" style="color: #fcfcfc">Next &raquo;</a></span>
