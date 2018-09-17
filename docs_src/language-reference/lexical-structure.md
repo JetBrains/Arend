@@ -5,12 +5,12 @@
 All Arend's _keywords_ begin with `\`.
 The complete list of keywords:
 
-[\open](../definitions/modules/#open-commands) [\import](../definitions/modules/#import-commands) [\hiding](../definitions/modules/#open-commands) [\as](../definitions/modules/#open-commands) [\using](../definitions/modules/#open-commands)
-[\truncated](../definitions/data) [\data](../definitions/data) [\func](../definitions/functions) [\class](../definitions/classes) [\record](../definitions/records) [\extends](../definitions/records) [\module](../definitions/modules/#modules) [\instance](../definitions/instances) [\coerce](../definitions/coercion)
-[\with](../definitions/functions/#pattern-matching) [\elim](../definitions/functions/#elim) [\cowith](../definitions/functions/#copattern-matching) [\where](../definitions/modules/#where-blocks)
-[\infix](../definitions/#infix-operators) [\infixl](../definitions/#infix-operators) [\infixr](../definitions/#infix-operators) [\fix](../definitions/#precedence) [\fixl](../definitions/#precedence) [\fixr](../definitions/#precedence)
-[\new](../expressions/class-ext) [\Pi](../expressions/pi) [\Sigma](../expressions/sigma) [\lam](../expressions/pi) [\let](../expressions/let) [\in]((../expressions/let)) [\case](../expressions/case) [\return](../expressions/case)
-[\lp](../expressions/universes) [\lh](../expressions/universes) [\suc](../expressions/universes) [\max](../expressions/universes) [\levels](../expressions/universes) [\Prop](../expressions/universes) [\Set](../expressions/universes) [\Type](../expressions/universes).
+[\open](/language-reference/definitions/modules/#open-commands) [\import](/language-reference/definitions/modules/#import-commands) [\hiding](/language-reference/definitions/modules/#open-commands) [\as](/language-reference/definitions/modules/#open-commands) [\using](/language-reference/definitions/modules/#open-commands)
+[\truncated](/language-reference/definitions/data) [\data](/language-reference/definitions/data) [\func](/language-reference/definitions/functions) [\class](/language-reference/definitions/classes) [\record](/language-reference/definitions/records) [\extends](/language-reference/definitions/records) [\module](/language-reference/definitions/modules/#modules) [\instance](/language-reference/definitions/instances) [\coerce](/language-reference/definitions/coercion)
+[\with](/language-reference/definitions/functions/#pattern-matching) [\elim](/language-reference/definitions/functions/#elim) [\cowith](/language-reference/definitions/functions/#copattern-matching) [\where](/language-reference/definitions/modules/#where-blocks)
+[\infix](/language-reference/definitions/#infix-operators) [\infixl](/language-reference/definitions/#infix-operators) [\infixr](/language-reference/definitions/#infix-operators) [\fix](/language-reference/definitions/#precedence) [\fixl](/language-reference/definitions/#precedence) [\fixr](/language-reference/definitions/#precedence)
+[\new](/language-reference/expressions/class-ext) [\Pi](/language-reference/expressions/pi) [\Sigma](/language-reference/expressions/sigma) [\lam](/language-reference/expressions/pi) [\let](/language-reference/expressions/let) [\in]((/language-reference/expressions/let)) [\case](/language-reference/expressions/case) [\return](/language-reference/expressions/case)
+[\lp](/language-reference/expressions/universes) [\lh](/language-reference/expressions/universes) [\suc](/language-reference/expressions/universes) [\max](/language-reference/expressions/universes) [\levels](/language-reference/expressions/universes) [\Prop](/language-reference/expressions/universes) [\Set](/language-reference/expressions/universes) [\Type](/language-reference/expressions/universes).
 
 ## Numerals
 
@@ -31,7 +31,7 @@ Examples:
 
 A _postfix notation_ is an identifier followed by `` ` ``.
 An _infix notation_ is an identifier surrounded by `` ` ``.
-Both of these notations are described in [this section](../definitions).
+Both of these notations are described in [this section](/language-reference/definitions).
 
 ## Comments
 

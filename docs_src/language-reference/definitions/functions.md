@@ -7,7 +7,7 @@ A definition of a function consists of its name, a signature which consists of a
 
 ## Non-recursive functions
 
-To define a non-recursive function, write `\func f p_1 ... p_n => e`, where `f` is the name of the function, `p_1`, ... `p_n` are named [parameters](../parameters), and `e` is an expression which denotes the result of the function.
+To define a non-recursive function, write `\func f p_1 ... p_n => e`, where `f` is the name of the function, `p_1`, ... `p_n` are named [parameters](/language-reference/definitions/parameters), and `e` is an expression which denotes the result of the function.
 You can also specify the result type of the function by writing `\func f p_1 ... p_n : T => e`, where `T` is an expression which denotes the result type.
 In this case, `e` must have type `T`.
 Often the typechecker can infer the result type, so usually you don't have to specify it explicitly.
@@ -37,7 +37,7 @@ Parameters of a function may appear in its body and in its result type.
 ## Pattern matching
 
 Functions can be defined by recursion.
-If `D` is a [data type](../data) with constructors `con1` and `con2 Nat`.
+If `D` is a [data type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
 Then you can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
 
 ```arend
@@ -56,7 +56,7 @@ The general form of a recursive function is
   | p^k_1, ... p^k_n => e_k
 ```
 
-where `p^i_j` is a pattern of type `T_i` and `e_i` is an expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](../../expressions) for the discussion of the substitution operation and types of expressions).
+where `p^i_j` is a pattern of type `T_i` and `e_i` is an expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the discussion of the substitution operation and types of expressions).
 Note that variables `x_1`, ... `x_n` are not visible in expressions `e_i`.
 If a pattern `p^i_j` contains a variable `x` as a subpattern of type `T`, then this variable may appear in expression `e_i` and it will have the type `T`.
 If some of the parameters of `f` are implicit, corresponding patterns must be omitted.
@@ -70,12 +70,12 @@ A pattern of type `T` can have one of the following forms:
   If some of the parameters of `con` are implicit, corresponding patterns must be omitted.
   They can be specified explicitly by surrounding them in `{ }`.
 * `(s_1, ... s_m)`, where `s_1` ... `s_m` are patterns.
-  In this case, `T` must be either a [Sigma type](../../expressions/sigma) with parameters `(y_1 : A_1) ... (y_m : A_m)` or a [class](../classes) (or a [record](../records)) with fields `y_1 : A_1`, ... `y_m : A_m`.
+  In this case, `T` must be either a [Sigma type](/language-reference/expressions/sigma) with parameters `(y_1 : A_1) ... (y_m : A_m)` or a [class](/language-reference/definitions/classes) (or a [record](/language-reference/definitions/records)) with fields `y_1 : A_1`, ... `y_m : A_m`.
   The pattern `s_i` will have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
   If `m` equals to 0, then `T` also may be a data type without constructors.
   In this case, the right hand side `=> e_i` of the clause in which such a pattern appears must be omitted.
 
-Now, let us discuss how expressions of the form `f a_1 ... a_n` evaluate (see [this section](../../expressions/#evaluation) for the definition of the reduction and evaluation relations).
+Now, let us discuss how expressions of the form `f a_1 ... a_n` evaluate (see [this section](/language-reference/expressions/#evaluation) for the definition of the reduction and evaluation relations).
 To reduce an expression `E = f a_1 ... a_n`, we first evaluate expressions `a_1`, ... `a_n` and match them with the patterns in the definition of `f` top to bottom, left to right.
 If all patterns `p^i_1`, ... `p^i_n` matches with `a_1`, ... `a_n` for some i, then `E` reduces to `e_i[b_1/y_1, ... b_k/y_k]`,
 where `y_1`, ... `y_k` are variables that appear in `p^i_1`, ... `p^i_n` and `b_1`, ... `b_k` are subexpressions of `a_1`, ... `a_n` corresponding to these variables.
@@ -162,7 +162,7 @@ If the result type of a function is a record or a class, then a function can als
 ```
 
 where `c_1`, ... `c_k` are _coclauses_.
-See [this section](../instances) for a definition of coclauses.
+See [this section](/language-reference/definitions/instances) for a definition of coclauses.
 Such a function has the same semantics as a definition of an instance as described there.
 It also can be equivalently written as follows:
 
@@ -174,4 +174,4 @@ It also can be equivalently written as follows:
 }
 ```
 
-See [this section](../../expressions/class-ext) for the description of the involved constructions.
+See [this section](/language-reference/expressions/class-ext) for the description of the involved constructions.

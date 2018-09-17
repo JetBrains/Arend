@@ -229,7 +229,7 @@ They can have arbitrary arity.
 In particular, constants in Arend are just functions of arity 0.
 A definition of a function consists of its name, a signature which consists of a list of parameters and (possibly) a result type, and a body which is an expression that describes the behaviour of the function.</p>
 <h2 id="non-recursive-functions">Non-recursive functions<a class="headerlink" href="#non-recursive-functions" title="Permanent link">&para;</a></h2>
-<p>To define a non-recursive function, write <code>\func f p_1 ... p_n =&gt; e</code>, where <code>f</code> is the name of the function, <code>p_1</code>, ... <code>p_n</code> are named <a href="../parameters">parameters</a>, and <code>e</code> is an expression which denotes the result of the function.
+<p>To define a non-recursive function, write <code>\func f p_1 ... p_n =&gt; e</code>, where <code>f</code> is the name of the function, <code>p_1</code>, ... <code>p_n</code> are named <a href="/language-reference/definitions/parameters">parameters</a>, and <code>e</code> is an expression which denotes the result of the function.
 You can also specify the result type of the function by writing <code>\func f p_1 ... p_n : T =&gt; e</code>, where <code>T</code> is an expression which denotes the result type.
 In this case, <code>e</code> must have type <code>T</code>.
 Often the typechecker can infer the result type, so usually you don't have to specify it explicitly.</p>
@@ -250,7 +250,7 @@ The definitions above are equivalent to the following definitions:</p>
 <p>Parameters of a function may appear in its body and in its result type.</p>
 <h2 id="pattern-matching">Pattern matching<a class="headerlink" href="#pattern-matching" title="Permanent link">&para;</a></h2>
 <p>Functions can be defined by recursion.
-If <code>D</code> is a <a href="../data">data type</a> with constructors <code>con1</code> and <code>con2 Nat</code>.
+If <code>D</code> is a <a href="/language-reference/definitions/data">data type</a> with constructors <code>con1</code> and <code>con2 Nat</code>.
 Then you can define a function which maps <code>D</code> to natural numbers in such a way that <code>con1</code> is mapped to <code>0</code> and <code>con2 n</code> is mapped to <code>suc n</code>:</p>
 <pre><code class="arend">\func f (d : D) : Nat
   | con1 =&gt; 0
@@ -265,7 +265,7 @@ The general form of a recursive function is</p>
   | p^k_1, ... p^k_n =&gt; e_k
 </code></pre>
 
-<p>where <code>p^i_j</code> is a pattern of type <code>T_i</code> and <code>e_i</code> is an expression of type <code>R[p^i_1/x_1, ... p^i_n/x_n]</code> (see <a href="../../expressions">this section</a> for the discussion of the substitution operation and types of expressions).
+<p>where <code>p^i_j</code> is a pattern of type <code>T_i</code> and <code>e_i</code> is an expression of type <code>R[p^i_1/x_1, ... p^i_n/x_n]</code> (see <a href="/language-reference/expressions">this section</a> for the discussion of the substitution operation and types of expressions).
 Note that variables <code>x_1</code>, ... <code>x_n</code> are not visible in expressions <code>e_i</code>.
 If a pattern <code>p^i_j</code> contains a variable <code>x</code> as a subpattern of type <code>T</code>, then this variable may appear in expression <code>e_i</code> and it will have the type <code>T</code>.
 If some of the parameters of <code>f</code> are implicit, corresponding patterns must be omitted.
@@ -278,12 +278,12 @@ They can be specified explicitly by surrounding them in <code>{ }</code>.</p>
   If some of the parameters of <code>con</code> are implicit, corresponding patterns must be omitted.
   They can be specified explicitly by surrounding them in <code>{ }</code>.</li>
 <li><code>(s_1, ... s_m)</code>, where <code>s_1</code> ... <code>s_m</code> are patterns.
-  In this case, <code>T</code> must be either a <a href="../../expressions/sigma">Sigma type</a> with parameters <code>(y_1 : A_1) ... (y_m : A_m)</code> or a <a href="../classes">class</a> (or a <a href="../records">record</a>) with fields <code>y_1 : A_1</code>, ... <code>y_m : A_m</code>.
+  In this case, <code>T</code> must be either a <a href="/language-reference/expressions/sigma">Sigma type</a> with parameters <code>(y_1 : A_1) ... (y_m : A_m)</code> or a <a href="/language-reference/definitions/classes">class</a> (or a <a href="/language-reference/definitions/records">record</a>) with fields <code>y_1 : A_1</code>, ... <code>y_m : A_m</code>.
   The pattern <code>s_i</code> will have type <code>A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]</code>.
   If <code>m</code> equals to 0, then <code>T</code> also may be a data type without constructors.
   In this case, the right hand side <code>=&gt; e_i</code> of the clause in which such a pattern appears must be omitted.</li>
 </ul>
-<p>Now, let us discuss how expressions of the form <code>f a_1 ... a_n</code> evaluate (see <a href="../../expressions/#evaluation">this section</a> for the definition of the reduction and evaluation relations).
+<p>Now, let us discuss how expressions of the form <code>f a_1 ... a_n</code> evaluate (see <a href="/language-reference/expressions/#evaluation">this section</a> for the definition of the reduction and evaluation relations).
 To reduce an expression <code>E = f a_1 ... a_n</code>, we first evaluate expressions <code>a_1</code>, ... <code>a_n</code> and match them with the patterns in the definition of <code>f</code> top to bottom, left to right.
 If all patterns <code>p^i_1</code>, ... <code>p^i_n</code> matches with <code>a_1</code>, ... <code>a_n</code> for some i, then <code>E</code> reduces to <code>e_i[b_1/y_1, ... b_k/y_k]</code>,
 where <code>y_1</code>, ... <code>y_k</code> are variables that appear in <code>p^i_1</code>, ... <code>p^i_n</code> and <code>b_1</code>, ... <code>b_k</code> are subexpressions of <code>a_1</code>, ... <code>a_n</code> corresponding to these variables.
@@ -352,7 +352,7 @@ The bodies of the functions may refer to each other as long as the whole recursi
 </code></pre>
 
 <p>where <code>c_1</code>, ... <code>c_k</code> are <em>coclauses</em>.
-See <a href="../instances">this section</a> for a definition of coclauses.
+See <a href="/language-reference/definitions/instances">this section</a> for a definition of coclauses.
 Such a function has the same semantics as a definition of an instance as described there.
 It also can be equivalently written as follows:</p>
 <pre><code class="arend">\func f (x_1 : A_1) ... (x_n : A_n) =&gt; \new C {
@@ -362,7 +362,7 @@ It also can be equivalently written as follows:</p>
 }
 </code></pre>
 
-<p>See <a href="../../expressions/class-ext">this section</a> for the description of the involved constructions.</p>
+<p>See <a href="/language-reference/expressions/class-ext">this section</a> for the description of the involved constructions.</p>
               
             </div>
           </div>

@@ -221,8 +221,8 @@
 <p>An expression denotes a value which may depend on some variables.
 The basic example of an expression is simply a variable <code>x</code>.
 Of course, <code>x</code> must be defined somewhere in order for such an expression to make sense.
-It can be either a parameter (of a <a href="../definitions/parameters">definition</a>, or a <a href="pi">lambda expression</a>, or a <a href="pi">pi expression</a>, or a <a href="sigma">sigma expression</a>),
-a variable define in a <a href="let">let expression</a>, or a variable defined in a <a href="../definitions/functions/#pattern-matching">pattern</a>.</p>
+It can be either a parameter (of a <a href="/language-reference/definitions/parameters">definition</a>, or a <a href="/language-reference/expressions/pi">lambda expression</a>, or a <a href="/language-reference/expressions/pi">pi expression</a>, or a <a href="/language-reference/expressions/sigma">sigma expression</a>),
+a variable define in a <a href="/language-reference/expressions/let">let expression</a>, or a variable defined in a <a href="/language-reference/definitions/functions/#pattern-matching">pattern</a>.</p>
 <p>If <code>e</code>, <code>e_1</code>, ... <code>e_n</code> are expressions and <code>x_1</code>, ... <code>x_n</code> are variables, then we will write <code>e[e_1/x_1, ... e_n/x_n]</code> for the <em>substitution</em> operation.
 This is a meta-operation, that is it is a function on the set of expressions of the language and not an expression itself.
 The expression <code>e[e_1/x_1, ... e_n/x_n]</code> is simply <code>e</code> in which every occurrence of each of the variables <code>x_i</code> is replaced with the expression <code>e_i</code>.</p>
@@ -240,7 +240,7 @@ Since normal forms always exist, the comparison algorithm always terminates, but
 <h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
 <p>Every expression has a type.
 A type is an expression which has type <code>\Type</code>.
-The expression <code>\Type</code> is discussed in <a href="universes">this section</a>.
+The expression <code>\Type</code> is discussed in <a href="/language-reference/expressions/universes">this section</a>.
 Every variable has a type which is specified when the variable is defined (or can be inferred).
 An expression of the form <code>x</code> has the type of the variable <code>x</code>.</p>
 <p>The type of an expression usually can be inferred automatically, but sometimes it is useful to specify it explicitly.
@@ -248,12 +248,12 @@ An expression of the form <code>(e : E)</code> (parentheses are necessary) is eq
 In this expression, <code>e</code> must have type <code>E</code> and the type of the whole expression is also <code>E</code> (since it is equivalent to <code>e</code>).</p>
 <h2 id="defcalls">Defcalls<a class="headerlink" href="#defcalls" title="Permanent link">&para;</a></h2>
 <p>A <em>defcall</em> is an expression of the form <code>f a_1 ... a_n</code>, where <code>f</code> is a definition with n parameters
-(an exception is classes and records in which case only expressions without arguments are called defcalls, see <a href="class-ext">this section</a> for the discussion of such expressions).</p>
+(an exception is classes and records in which case only expressions without arguments are called defcalls, see <a href="/language-reference/expressions/class-ext">this section</a> for the discussion of such expressions).</p>
 <p>If <code>f</code> is a definition with parameters <code>x_1</code>, ... <code>x_n</code> and the result type <code>R</code>, then the type of a defcall <code>f a_1 ... a_n</code> is <code>R[a_1/x_1, ... a_n/x_n]</code>.
 If <code>f</code> is either a class, a record, a data type, a constructor without conditions, an instance, or a function defined by copattern matching, then <code>f a_1 ... a_n</code> is a normal form whenever <code>a_1</code>, ... <code>a_n</code> are.
 If <code>f</code> is a function defined as <code>\func f (x_1 : A_1) ... (x_n : A_n) =&gt; e</code>, then <code>f a_1 ... a_n</code> reduces to <code>e[a_1/x_1, ... a_n/x_n]</code>.
-If <code>f</code> is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="../definitions/functions/#pattern-matching">this section</a>.
-If <code>f</code> is an instance or a function defined by copattern matching, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="../definitions/instances">this section</a>.</p>
+If <code>f</code> is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="/language-reference/definitions/functions/#pattern-matching">this section</a>.
+If <code>f</code> is an instance or a function defined by copattern matching, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="/language-reference/definitions/instances">this section</a>.</p>
               
             </div>
           </div>

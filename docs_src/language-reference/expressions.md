@@ -3,8 +3,8 @@
 An expression denotes a value which may depend on some variables.
 The basic example of an expression is simply a variable `x`.
 Of course, `x` must be defined somewhere in order for such an expression to make sense.
-It can be either a parameter (of a [definition](../definitions/parameters), or a [lambda expression](pi), or a [pi expression](pi), or a [sigma expression](sigma)),
-a variable define in a [let expression](let), or a variable defined in a [pattern](../definitions/functions/#pattern-matching).
+It can be either a parameter (of a [definition](/language-reference/definitions/parameters), or a [lambda expression](/language-reference/expressions/pi), or a [pi expression](/language-reference/expressions/pi), or a [sigma expression](/language-reference/expressions/sigma)),
+a variable define in a [let expression](/language-reference/expressions/let), or a variable defined in a [pattern](/language-reference/definitions/functions/#pattern-matching).
 
 If `e`, `e_1`, ... `e_n` are expressions and `x_1`, ... `x_n` are variables, then we will write `e[e_1/x_1, ... e_n/x_n]` for the _substitution_ operation.
 This is a meta-operation, that is it is a function on the set of expressions of the language and not an expression itself.
@@ -28,7 +28,7 @@ Since normal forms always exist, the comparison algorithm always terminates, but
 
 Every expression has a type.
 A type is an expression which has type `\Type`.
-The expression `\Type` is discussed in [this section](universes).
+The expression `\Type` is discussed in [this section](/language-reference/expressions/universes).
 Every variable has a type which is specified when the variable is defined (or can be inferred).
 An expression of the form `x` has the type of the variable `x`.
 
@@ -39,10 +39,10 @@ In this expression, `e` must have type `E` and the type of the whole expression 
 ## Defcalls
 
 A _defcall_ is an expression of the form `f a_1 ... a_n`, where `f` is a definition with n parameters
-(an exception is classes and records in which case only expressions without arguments are called defcalls, see [this section](class-ext) for the discussion of such expressions).
+(an exception is classes and records in which case only expressions without arguments are called defcalls, see [this section](/language-reference/expressions/class-ext) for the discussion of such expressions).
 
 If `f` is a definition with parameters `x_1`, ... `x_n` and the result type `R`, then the type of a defcall `f a_1 ... a_n` is `R[a_1/x_1, ... a_n/x_n]`.
 If `f` is either a class, a record, a data type, a constructor without conditions, an instance, or a function defined by copattern matching, then `f a_1 ... a_n` is a normal form whenever `a_1`, ... `a_n` are.
 If `f` is a function defined as `\func f (x_1 : A_1) ... (x_n : A_n) => e`, then `f a_1 ... a_n` reduces to `e[a_1/x_1, ... a_n/x_n]`.
-If `f` is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](../definitions/functions/#pattern-matching).
-If `f` is an instance or a function defined by copattern matching, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](../definitions/instances).
+If `f` is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](/language-reference/definitions/functions/#pattern-matching).
+If `f` is an instance or a function defined by copattern matching, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](/language-reference/definitions/instances).
