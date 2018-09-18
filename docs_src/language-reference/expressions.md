@@ -27,6 +27,7 @@ Since normal forms always exist, the comparison algorithm always terminates, but
 ## Types
 
 Every expression has a type.
+The fact that an expression `e` has type `E` is denoted by `e : E`.
 A type is an expression which has type `\Type`.
 The expression `\Type` is discussed in [this section](/language-reference/expressions/universes).
 Every variable has a type which is specified when the variable is defined (or can be inferred).
@@ -46,3 +47,5 @@ If `f` is either a class, a record, a data type, a constructor without condition
 If `f` is a function defined as `\func f (x_1 : A_1) ... (x_n : A_n) => e`, then `f a_1 ... a_n` reduces to `e[a_1/x_1, ... a_n/x_n]`.
 If `f` is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](/language-reference/definitions/functions/#pattern-matching).
 If `f` is an instance or a function defined by copattern matching, then the evaluation of defcalls `f a_1 ... a_n` is described in [this section](/language-reference/definitions/instances).
+
+If `f` has n parameters and k < n, you can write `f a_1 ... a_k` and such an expression is equivalent to `\lam a_{k+1} ... a_n => f a_1 ... a_n`.

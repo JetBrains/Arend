@@ -156,6 +156,14 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="let/">Let</a>
                 </li>
                 <li class="">
@@ -164,15 +172,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="pi/">Pi types</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="sigma/">Sigma types</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -239,6 +243,7 @@ To compare expressions <code>e_1</code> and <code>e_2</code>, it first evaluates
 Since normal forms always exist, the comparison algorithm always terminates, but it is easy to write an expression that does not evaluate in any reasonable time.</p>
 <h2 id="types">Types<a class="headerlink" href="#types" title="Permanent link">&para;</a></h2>
 <p>Every expression has a type.
+The fact that an expression <code>e</code> has type <code>E</code> is denoted by <code>e : E</code>.
 A type is an expression which has type <code>\Type</code>.
 The expression <code>\Type</code> is discussed in <a href="/language-reference/expressions/universes">this section</a>.
 Every variable has a type which is specified when the variable is defined (or can be inferred).
@@ -254,6 +259,7 @@ If <code>f</code> is either a class, a record, a data type, a constructor withou
 If <code>f</code> is a function defined as <code>\func f (x_1 : A_1) ... (x_n : A_n) =&gt; e</code>, then <code>f a_1 ... a_n</code> reduces to <code>e[a_1/x_1, ... a_n/x_n]</code>.
 If <code>f</code> is a function defined by pattern matching or a constructor with conditions, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="/language-reference/definitions/functions/#pattern-matching">this section</a>.
 If <code>f</code> is an instance or a function defined by copattern matching, then the evaluation of defcalls <code>f a_1 ... a_n</code> is described in <a href="/language-reference/definitions/instances">this section</a>.</p>
+<p>If <code>f</code> has n parameters and k &lt; n, you can write <code>f a_1 ... a_k</code> and such an expression is equivalent to <code>\lam a_{k+1} ... a_n =&gt; f a_1 ... a_n</code>.</p>
               
             </div>
           </div>

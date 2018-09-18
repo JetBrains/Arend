@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../../img/favicon.ico">
-  <title>Pi types - Arend</title>
+  <title>Pi Types - Arend</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
@@ -18,7 +18,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Pi types";
+    var mkdocs_page_name = "Pi Types";
     var mkdocs_page_input_path = "language-reference/expressions/pi.md";
     var mkdocs_page_url = "/language-reference/expressions/pi/";
   </script>
@@ -142,6 +142,17 @@
                     
     <a class="" href="../universes/">Universes</a>
                 </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Pi Types</a>
+    <ul class="subnav">
+            
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../sigma/">Sigma Types</a>
+                </li>
                 <li class="">
                     
     <a class="" href="../let/">Let</a>
@@ -150,20 +161,13 @@
                     
     <a class="" href="../case/">Case</a>
                 </li>
-                <li class=" current">
-                    
-    <a class="current" href="./">Pi types</a>
-    <ul class="subnav">
-            
-    </ul>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../sigma/">Sigma types</a>
-                </li>
                 <li class="">
                     
     <a class="" href="../class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -194,7 +198,7 @@
         
       
     
-    <li>Pi types</li>
+    <li>Pi Types</li>
     <li class="wy-breadcrumbs-aside">
       
         <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/expressions/pi.md"
@@ -207,9 +211,20 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="pi">Pi expressions<a class="headerlink" href="#pi" title="Permanent link">&para;</a></h1>
+                <h1 id="pi">Pi Types<a class="headerlink" href="#pi" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>A pi type is a type of (dependent) functions.
+If <code>p_1</code>, ... <code>p_n</code> are named or unnamed parameters and <code>B</code> is a type, then <code>\Pi p_1 ... p_n -&gt; B</code> is also a type.
+If <code>B</code> does not refer to variables defined in the parameters, you can write <code>A_1 -&gt; ... A_n -&gt; B</code> instead, where <code>A_i</code> are types of the parameters.
+If <code>A_i</code> has type <code>\Type p_i h_i</code> and <code>B</code> has type <code>\Type p h</code>, then the type of the pi type is <code>\Type p_max h</code>, where <code>p_max</code> is the maximum of <code>p_1</code>, ... <code>p_n</code>, and <code>p</code>.
+Note that the homotopy level of the pi type is simply the homotopy level of the codomain.</p>
+<p>An expression of the form <code>\Pi p_1 ... p_n -&gt; B</code> is equivalent to <code>\Pi p_1 -&gt; \Pi p_2 ... p_n -&gt; B</code>.
+Moreover, if <code>p_1</code> equals to <code>(x_1 ... x_k : A)</code>, then it is also equivalent to <code>\Pi (x_1 : A) -&gt; \Pi (x_2 ... x_k : A) -&gt; \Pi p_2 ... p_n -&gt; B</code>.</p>
+<p>A <em>lambda parameter</em> is either a variable or a named parameter.
+If <code>p_1</code>, ... <code>p_n</code> is a sequence of lambda parameters and <code>e</code> is an expression of type <code>E</code>, then <code>\lam p_1 ... p_n =&gt; e</code> is an expression which has type <code>\Pi p_1 ... p_n -&gt; E</code>.
+If some paramters miss types, then they will be inferred by the typechecker.</p>
+<p>If <code>f</code> is an expression of type <code>\Pi (x : A) -&gt; B</code> and <code>a</code> is an expression of type <code>A</code>, then <code>f a</code> is an expression of type <code>B[a/x]</code>.
+An expression of the form <code>(\lam x =&gt; b) a</code> reduces to <code>b[a/x]</code>.</p>
               
             </div>
           </div>
@@ -217,10 +232,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../sigma/" class="btn btn-neutral float-right" title="Sigma types">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../sigma/" class="btn btn-neutral float-right" title="Sigma Types">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../case/" class="btn btn-neutral" title="Case"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../universes/" class="btn btn-neutral" title="Universes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -250,7 +265,7 @@
           <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../case/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../universes/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
         <span style="margin-left: 15px"><a href="../sigma/" style="color: #fcfcfc">Next &raquo;</a></span>

@@ -2,127 +2,132 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
      <loc>http://arend.top/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/getting-started/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/tutorial/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/tutorial/functions/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/tutorial/pattern-matching/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/lexical-structure/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/modules/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/parameters/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/functions/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/data/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/hits/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/records/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/classes/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/instances/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/definitions/coercion/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/goals/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/universes/</loc>
-     <lastmod>2018-09-17</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-    <url>
-     <loc>http://arend.top/language-reference/expressions/let/</loc>
-     <lastmod>2018-09-17</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-    <url>
-     <loc>http://arend.top/language-reference/expressions/case/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/pi/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/sigma/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>http://arend.top/language-reference/expressions/let/</loc>
+     <lastmod>2018-09-18</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>http://arend.top/language-reference/expressions/case/</loc>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://arend.top/language-reference/expressions/class-ext/</loc>
-     <lastmod>2018-09-17</lastmod>
+     <lastmod>2018-09-18</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>http://arend.top/language-reference/prelude/</loc>
+     <lastmod>2018-09-18</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>

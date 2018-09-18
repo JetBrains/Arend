@@ -144,6 +144,14 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../let/">Let</a>
                 </li>
                 <li class=" current">
@@ -155,15 +163,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../pi/">Pi types</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../sigma/">Sigma types</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="../class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -209,7 +213,23 @@
               
                 <h1 id="case">Case<a class="headerlink" href="#case" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>The basic syntax of case expressions looks like this:</p>
+<pre><code class="arend">\case e_1, ... e_n \with {
+  | p_1^1, ... p_n^1 =&gt; d_1
+  ...
+  | p_1^k, ... p_n^k =&gt; d_k
+}
+</code></pre>
+
+<p>where <code>e_1</code>, ... <code>e_n</code>, <code>d_1</code>, ... <code>d_k</code> are expressions and <code>p_1^1</code>, ... <code>p_n^k</code> are patterns.
+Such an expression reduces in the same way as functions defined by pattern matching (see <a href="/language-reference/definitions/functions/#pattern-matching">this section</a>).
+If the typechecker does not know the type of a case expression, it must be specified explicitly: <code>\case e_1, ... e_n \return T \with { ... }</code>.</p>
+<p>The general syntax of case expressions looks like this: <code>\case e_1 \as x_1 : E_1, ... e_n \as x_n : E_n \return T \with { ... }</code>,
+where <code>x_1</code>, ... <code>x_n</code> are variables and <code>E_1</code>, ... <code>E_n</code> are expressions.
+The parts <code>\as x_i</code> and <code>: E_i</code> can be omitted.
+Expressions <code>E_i</code> can refer to <code>x_1</code>, ... <code>x_{i-1}</code> and <code>T</code> can refer to <code>x_1</code>, ... <code>x_n</code>.
+In this case, <code>e_i</code> must have type <code>E_i[e_1/x_1, ... e_{i-1}/x_{i-1}]</code>.
+The type of the case expression is <code>T[e_1/x_1, ... e_n/x_n]</code>.</p>
               
             </div>
           </div>
@@ -217,7 +237,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../pi/" class="btn btn-neutral float-right" title="Pi types">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../class-ext/" class="btn btn-neutral float-right" title="Class extensions">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
         <a href="../let/" class="btn btn-neutral" title="Let"><span class="icon icon-circle-arrow-left"></span> Previous</a>
@@ -253,7 +273,7 @@
         <span><a href="../let/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../pi/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../class-ext/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

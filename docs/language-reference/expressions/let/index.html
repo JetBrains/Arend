@@ -142,6 +142,14 @@
                     
     <a class="" href="../universes/">Universes</a>
                 </li>
+                <li class="">
+                    
+    <a class="" href="../pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../sigma/">Sigma Types</a>
+                </li>
                 <li class=" current">
                     
     <a class="current" href="./">Let</a>
@@ -155,15 +163,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../pi/">Pi types</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../sigma/">Sigma types</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="../class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -209,7 +213,21 @@
               
                 <h1 id="let">Let<a class="headerlink" href="#let" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>Let expressions allow us to introduce local variables.
+Such expressions have the following syntax:</p>
+<pre><code class="arend">\let | x_1 =&gt; e_1
+     ...
+     | x_n =&gt; e_n
+\in e_{n+1}
+</code></pre>
+
+<p>where <code>x_1</code>, ... <code>x_n</code> are variables and <code>e_1</code>, ... <code>e_{n+1}</code> are expressions.
+Expression <code>e_{i+1}</code> can refer to variables <code>x_1</code>, ... <code>x_i</code>.
+You can also write lambda parameters after the name of the variable.
+That is, instead of <code>| x_i =&gt; e_i</code>, you can write <code>| x_i p^i_1 ... p^i_{n_i} =&gt; e_i</code>, where <code>p^i_1</code>, ... <code>p^i_{n_i}</code> are either variables or named parameters to which <code>e_i</code> can refer.
+Such a clause is equivalent to <code>| x_i =&gt; \lam p^i_1 ... p^i_{n_i} =&gt; e_i</code>.</p>
+<p>The expression <code>\let | x_1 =&gt; e_1 ... | x_n =&gt; e_n \in e</code> reduces to <code>e[e_1/x_1, ... e_n/x_n]</code>.
+Its type is <code>\let | x_1 =&gt; e_1 ... | x_n =&gt; e_n \in E</code>, where <code>E</code> is the type of <code>e</code>.</p>
               
             </div>
           </div>
@@ -220,7 +238,7 @@
         <a href="../case/" class="btn btn-neutral float-right" title="Case">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../universes/" class="btn btn-neutral" title="Universes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../sigma/" class="btn btn-neutral" title="Sigma Types"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -250,7 +268,7 @@
           <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
-        <span><a href="../universes/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../sigma/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
         <span style="margin-left: 15px"><a href="../case/" style="color: #fcfcfc">Next &raquo;</a></span>

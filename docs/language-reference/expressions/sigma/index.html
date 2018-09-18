@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../../../img/favicon.ico">
-  <title>Sigma types - Arend</title>
+  <title>Sigma Types - Arend</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
@@ -18,7 +18,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "Sigma types";
+    var mkdocs_page_name = "Sigma Types";
     var mkdocs_page_input_path = "language-reference/expressions/sigma.md";
     var mkdocs_page_url = "/language-reference/expressions/sigma/";
   </script>
@@ -144,6 +144,17 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../pi/">Pi Types</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Sigma Types</a>
+    <ul class="subnav">
+            
+    </ul>
+                </li>
+                <li class="">
+                    
     <a class="" href="../let/">Let</a>
                 </li>
                 <li class="">
@@ -152,18 +163,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../pi/">Pi types</a>
-                </li>
-                <li class=" current">
-                    
-    <a class="current" href="./">Sigma types</a>
-    <ul class="subnav">
-            
-    </ul>
+    <a class="" href="../class-ext/">Class extensions</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="../class-ext/">Class extensions</a>
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -194,7 +198,7 @@
         
       
     
-    <li>Sigma types</li>
+    <li>Sigma Types</li>
     <li class="wy-breadcrumbs-aside">
       
         <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/expressions/sigma.md"
@@ -207,9 +211,19 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="sigma">Sigma expressions<a class="headerlink" href="#sigma" title="Permanent link">&para;</a></h1>
+                <h1 id="sigma">Sigma Types<a class="headerlink" href="#sigma" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>A sigma type is a type of (dependent) tuples.
+If <code>p_1</code>, ... <code>p_n</code> are named or unnamed parameters, then <code>\Sigma p_1 ... p_n</code> is also a type.
+If <code>A_i</code> has type <code>\Type p_i h_i</code>, then the type of the sigma type is <code>\Type p_max h_max</code>, where <code>p_max</code> is the maximum of <code>p_1</code>, ... <code>p_n</code> and <code>h_max</code> is the maximum of <code>h_1</code>, ... <code>h_n</code>.</p>
+<p>An expression of the form <code>\Sigma p_1 ... p_n (x_1 ... x_k : A) q_1 ... q_m</code> is equivalent to <code>\Sigma p_1 ... p_n (x_1 : A) ... (x_k : A) q_1 ... q_m</code>.</p>
+<p>If <code>a_i</code> is an expression of type <code>A_i[a_1/x_1, ... a_{i-1}/x_{i-1}]</code>, then <code>(a_1, ... a_n)</code> is an expression of type <code>\Sigma (x_1 : A_1) ... (x_n : A_n)</code>.
+Note that the typechecker often cannot infer the correct type of such an expression.
+If it does not know it already, it always infer the non-dependent version.
+In this case, you can simply specify the type explicitly: <code>((a_1, ... a_n) : \Sigma (x_1 : A_1) ... (x_n : A_n))</code>.
+You can also explicitly specify type of each field: <code>(b_1 : B_1, ... b_n : B_n)</code>, but <code>B_i</code> cannot refer to previous parameters, so this allows you to define only non-dependent sigma types.</p>
+<p>If <code>p</code> is an expression of type <code>\Sigma (x_1 : A_1) ... (x_n : A_n)</code> and 1 ≤ i ≤ n, then <code>p.i</code> is an expression of type <code>A_i[p.1/x_1, ... p_{i-1}/x_{i-1}]</code>.
+An expression of the form <code>(a_1, ... a_n).i</code> reduces to <code>a_i</code>.</p>
               
             </div>
           </div>
@@ -217,10 +231,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../class-ext/" class="btn btn-neutral float-right" title="Class extensions">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../let/" class="btn btn-neutral float-right" title="Let">Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../pi/" class="btn btn-neutral" title="Pi types"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../pi/" class="btn btn-neutral" title="Pi Types"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -253,7 +267,7 @@
         <span><a href="../pi/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../class-ext/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../let/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

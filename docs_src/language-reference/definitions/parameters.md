@@ -73,3 +73,6 @@ For example, to specify explicitly the second and the last arguments of `f`, we 
 ```
 
 In this example, arguments corresponding to `x` and `y'` are left implicit and other arguments are explicitly specified.
+
+If `op` is an infix operator, then we can write `x op {a_1} ... {a_n} y`, which is equivalent to `op {a_1} ... {a_n} x y`.
+That is, implicit arguments which are written immediately after an infix operator are considered to be its first arguments.

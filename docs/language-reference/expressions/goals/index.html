@@ -147,6 +147,14 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../let/">Let</a>
                 </li>
                 <li class="">
@@ -155,15 +163,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../pi/">Pi types</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../sigma/">Sigma types</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="../class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -209,7 +213,27 @@
               
                 <h1 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>A <em>goal</em> marks an unfinished expression.
+It always produce an error message which contains the expected type of a expression that should replace the goal and the context of the goal, that is the list of available variables with their types.
+A goal is writen as <code>{?}</code> or <code>{?id}</code>, where <code>id</code> is any identifier which denotes the name of the goal.
+The name of a goal only appears in error messages and does not affect the code in any way.</p>
+<p>For example, consider the following code:</p>
+<pre><code class="arend">\func f (x y : Nat) (p : x = y) : y = x
+  =&gt; {?}
+</code></pre>
+
+<p>It will produce the following error message:</p>
+<pre><code class="bash">[GOAL] test.vc:1:44:
+  Expected type: y = {Nat} x
+  Context:
+    y : Nat
+    x : Nat
+    p : x = {Nat} y
+  In: {?}
+  While processing: f
+</code></pre>
+
+<p>The information in the error message might be even more useful when the expected type or types of variables are inferred by the typechecker.</p>
               
             </div>
           </div>

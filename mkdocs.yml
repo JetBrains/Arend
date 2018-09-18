@@ -28,11 +28,12 @@ pages:
         - Expressions: language-reference/expressions.md
         - Goals: language-reference/expressions/goals.md
         - Universes: language-reference/expressions/universes.md
+        - Pi Types: language-reference/expressions/pi.md
+        - Sigma Types: language-reference/expressions/sigma.md
         - Let: language-reference/expressions/let.md
         - Case: language-reference/expressions/case.md
-        - Pi types: language-reference/expressions/pi.md
-        - Sigma types: language-reference/expressions/sigma.md
         - Class extensions: language-reference/expressions/class-ext.md
+        - Prelude: language-reference/prelude.md
 
 theme: readthedocs
 

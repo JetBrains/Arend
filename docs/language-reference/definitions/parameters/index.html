@@ -153,6 +153,14 @@
                 </li>
                 <li class="">
                     
+    <a class="" href="../../expressions/pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
     <a class="" href="../../expressions/let/">Let</a>
                 </li>
                 <li class="">
@@ -161,15 +169,11 @@
                 </li>
                 <li class="">
                     
-    <a class="" href="../../expressions/pi/">Pi types</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="../../expressions/sigma/">Sigma types</a>
-                </li>
-                <li class="">
-                    
     <a class="" href="../../expressions/class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
                 </li>
     </ul>
 	    </li>
@@ -269,6 +273,8 @@ For example, to specify explicitly the second and the last arguments of <code>f<
 </code></pre>
 
 <p>In this example, arguments corresponding to <code>x</code> and <code>y'</code> are left implicit and other arguments are explicitly specified.</p>
+<p>If <code>op</code> is an infix operator, then we can write <code>x op {a_1} ... {a_n} y</code>, which is equivalent to <code>op {a_1} ... {a_n} x y</code>.
+That is, implicit arguments which are written immediately after an infix operator are considered to be its first arguments.</p>
               
             </div>
           </div>
