@@ -9,10 +9,7 @@ import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceLevel
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.InferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.binding.inference.LambdaInferenceVariable;
 import com.jetbrains.jetpad.vclang.core.context.param.*;
-import com.jetbrains.jetpad.vclang.core.definition.ClassDefinition;
-import com.jetbrains.jetpad.vclang.core.definition.ClassField;
-import com.jetbrains.jetpad.vclang.core.definition.CoerceData;
-import com.jetbrains.jetpad.vclang.core.definition.Definition;
+import com.jetbrains.jetpad.vclang.core.definition.*;
 import com.jetbrains.jetpad.vclang.core.elimtree.Clause;
 import com.jetbrains.jetpad.vclang.core.elimtree.ElimTree;
 import com.jetbrains.jetpad.vclang.core.expr.*;
@@ -37,7 +34,6 @@ import com.jetbrains.jetpad.vclang.prelude.Prelude;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteExpressionVisitor;
 import com.jetbrains.jetpad.vclang.term.concrete.ConcreteLevelExpressionVisitor;
-import com.jetbrains.jetpad.vclang.typechecking.TypeCheckingDefCall;
 import com.jetbrains.jetpad.vclang.typechecking.TypecheckerState;
 import com.jetbrains.jetpad.vclang.typechecking.error.ListLocalErrorReporter;
 import com.jetbrains.jetpad.vclang.typechecking.error.LocalErrorReporter;
@@ -66,7 +62,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private Set<Binding> myFreeBindings;
   private Definition.TypeCheckingStatus myStatus = Definition.TypeCheckingStatus.NO_ERRORS;
   private LocalErrorReporter myErrorReporter;
-  private final TypeCheckingDefCall myTypeCheckingDefCall;
   private final ImplicitArgsInference myArgsInference;
   private final Equations myEquations;
   private GlobalInstancePool myInstancePool;
@@ -145,15 +140,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         type = new PiExpression(codSort, parameters.get(i), type);
       }
       return new Result(expression, type);
-    }
-
-    public DependentLink getExplicitParameter() {
-      for (DependentLink link : myParameters) {
-        if (link.isExplicit()) {
-          return link;
-        }
-      }
-      return EmptyDependentLink.getInstance();
     }
 
     @Override
@@ -285,7 +271,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myContext = localContext;
     myFreeBindings = new HashSet<>();
     myErrorReporter = new MyErrorReporter(errorReporter);
-    myTypeCheckingDefCall = new TypeCheckingDefCall(this);
     myArgsInference = new StdImplicitArgsInference(this);
     myEquations = new TwoStageEquations(this);
     myInstancePool = pool;
@@ -297,10 +282,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public TypecheckerState getTypecheckingState() {
     return myState;
-  }
-
-  public TypeCheckingDefCall getTypeCheckingDefCall() {
-    return myTypeCheckingDefCall;
   }
 
   public GlobalInstancePool getInstancePool() {
@@ -565,6 +546,83 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  private Definition getTypeCheckedDefinition(TCReferable definition, Concrete.Expression expr) {
+    Definition typeCheckedDefinition = myState.getTypechecked(definition);
+    if (typeCheckedDefinition == null) {
+      myErrorReporter.report(new IncorrectReferenceError(definition, expr));
+      return null;
+    }
+    if (!typeCheckedDefinition.status().headerIsOK()) {
+      myErrorReporter.report(new HasErrors(Error.Level.ERROR, definition, expr));
+      return null;
+    } else {
+      if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
+        myErrorReporter.report(new HasErrors(Error.Level.WARNING, definition, expr));
+      }
+      return typeCheckedDefinition;
+    }
+  }
+
+  private CheckTypeVisitor.TResult typeCheckDefCall(TCReferable resolvedDefinition, Concrete.ReferenceExpression expr) {
+    Definition definition = getTypeCheckedDefinition(resolvedDefinition, expr);
+    if (definition == null) {
+      return null;
+    }
+
+    Sort sortArgument;
+    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() ;
+    if (expr.getPLevel() == null && expr.getHLevel() == null) {
+      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myEquations, expr);
+    } else {
+      Level pLevel = null;
+      if (expr.getPLevel() != null) {
+        pLevel = expr.getPLevel().accept(this, LevelVariable.PVAR);
+      }
+      if (pLevel == null) {
+        if (isMin) {
+          pLevel = new Level(0);
+        } else {
+          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr.getPLevel());
+          myEquations.addVariable(pl);
+          pLevel = new Level(pl);
+        }
+      }
+
+      Level hLevel = null;
+      if (expr.getHLevel() != null) {
+        hLevel = expr.getHLevel().accept(this, LevelVariable.HVAR);
+      }
+      if (hLevel == null) {
+        if (isMin) {
+          hLevel = new Level(-1);
+        } else {
+          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr.getHLevel());
+          myEquations.addVariable(hl);
+          hLevel = new Level(hl);
+        }
+      }
+
+      sortArgument = new Sort(pLevel, hLevel);
+    }
+
+    if (expr.getPLevel() == null && expr.getHLevel() == null) {
+      Level hLevel = null;
+      if (definition instanceof DataDefinition && !sortArgument.isProp()) {
+        hLevel = ((DataDefinition) definition).getSort().getHLevel();
+      } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
+        UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).checkedCast(UniverseExpression.class);
+        if (universe != null) {
+          hLevel = universe.getSort().getHLevel();
+        }
+      }
+      if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
+        myEquations.bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+      }
+    }
+
+    return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument);
+  }
+
   public TResult visitReference(Concrete.ReferenceExpression expr) {
     Referable ref = expr.getReferent();
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
@@ -576,7 +634,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         ref = underlyingRef;
       }
     }
-    return ref instanceof TCReferable ? myTypeCheckingDefCall.typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
+    return ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
   }
 
   @Override
