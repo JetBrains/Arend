@@ -3,6 +3,7 @@ package com.jetbrains.jetpad.vclang.library;
 import com.jetbrains.jetpad.vclang.error.ErrorReporter;
 import com.jetbrains.jetpad.vclang.library.error.LibraryError;
 import com.jetbrains.jetpad.vclang.library.resolver.LibraryResolver;
+import com.jetbrains.jetpad.vclang.module.ModulePath;
 import com.jetbrains.jetpad.vclang.module.scopeprovider.ModuleScopeProvider;
 import com.jetbrains.jetpad.vclang.typechecking.instance.provider.InstanceProviderSet;
 
@@ -88,6 +89,21 @@ public class LibraryManager {
   public Library getRegisteredLibrary(String libraryName) {
     for (Library library : getRegisteredLibraries()) {
       if (library.getName().equals(libraryName)) {
+        return library;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the library which contains a specified module.
+   *
+   * @param modulePath the path to a module.
+   * @return the library with the specified module.
+   */
+  public Library getModuleLibrary(ModulePath modulePath) {
+    for (Library library : getRegisteredLibraries()) {
+      if (library.containsModule(modulePath)) {
         return library;
       }
     }

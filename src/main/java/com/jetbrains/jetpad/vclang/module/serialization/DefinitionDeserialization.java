@@ -61,12 +61,14 @@ public class DefinitionDeserialization {
   private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {
     if (typecheckDefinitionsWithErrors) {
       switch (defProto.getStatus()) {
+        case HEADER_HAS_ERRORS:
         case BODY_HAS_ERRORS:
-          return Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING;
+        case HAS_ERRORS:
+          return Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_ERRORS;
+        case HAS_WARNINGS:
+          return Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
         case NO_ERRORS:
           return Definition.TypeCheckingStatus.NO_ERRORS;
-        default:
-          return Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING;
       }
     } else {
       switch (defProto.getStatus()) {
@@ -76,12 +78,13 @@ public class DefinitionDeserialization {
           return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
         case HAS_ERRORS:
           return Definition.TypeCheckingStatus.HAS_ERRORS;
+        case HAS_WARNINGS:
+          return Definition.TypeCheckingStatus.HAS_WARNINGS;
         case NO_ERRORS:
           return Definition.TypeCheckingStatus.NO_ERRORS;
-        default:
-          throw new IllegalStateException("Unknown typechecking state");
       }
     }
+    throw new IllegalStateException("Unknown typechecking state");
   }
 
   private LamExpression checkImplementation(Expression expr, ClassDefinition classDef) throws DeserializationException {

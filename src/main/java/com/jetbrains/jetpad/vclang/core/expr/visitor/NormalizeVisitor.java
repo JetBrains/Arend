@@ -471,7 +471,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public Expression visitCase(CaseExpression expr, Mode mode) {
     Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
     if (result != null) {
-      return result;
+      return result.accept(this, mode);
     }
     if (mode == Mode.WHNF) {
       return expr;

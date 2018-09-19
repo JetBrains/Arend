@@ -455,8 +455,11 @@ public class BuildVisitor extends VcgrammarBaseVisitor {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
     if (functionBodyCtx instanceof WithElimContext) {
-      WithElimContext elimCtx = ((WithElimContext) functionBodyCtx);
+      WithElimContext elimCtx = (WithElimContext) functionBodyCtx;
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
+    } else if (functionBodyCtx instanceof CowithElimContext) {
+      CowithElimContext elimCtx = (CowithElimContext) functionBodyCtx;
+      body = new Concrete.CoelimFunctionBody(tokenPosition(elimCtx.start), visitCoClauses(elimCtx.coClauses()));
     } else {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) functionBodyCtx).expr()));
     }

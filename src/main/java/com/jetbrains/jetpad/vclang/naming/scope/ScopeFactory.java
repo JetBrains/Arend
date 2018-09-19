@@ -31,6 +31,13 @@ public class ScopeFactory {
     ChildGroup parentGroup = group instanceof ChildGroup ? ((ChildGroup) group).getParentGroup() : null;
     Scope parentScope;
     if (parentGroup == null) {
+      if (prelude && group != null) {
+        for (NamespaceCommand command : group.getNamespaceCommands()) {
+          if (command.getKind() == NamespaceCommand.Kind.IMPORT && command.getPath().equals(Prelude.MODULE_PATH.toList())) {
+            prelude = false;
+          }
+        }
+      }
       Scope preludeScope = prelude ? moduleScopeProvider.forModule(Prelude.MODULE_PATH) : null;
       if (group == null) {
         return preludeScope == null ? EmptyScope.INSTANCE : preludeScope;

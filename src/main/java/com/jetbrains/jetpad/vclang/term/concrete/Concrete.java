@@ -1107,8 +1107,28 @@ public final class Concrete {
   }
 
   public static abstract class FunctionBody extends SourceNodeImpl {
-    public FunctionBody(Object data) {
+    FunctionBody(Object data) {
       super(data);
+    }
+
+    @Nullable
+    public Expression getTerm() {
+      return null;
+    }
+
+    @Nonnull
+    public List<ClassFieldImpl> getClassFieldImpls() {
+      return Collections.emptyList();
+    }
+
+    @Nonnull
+    public List<? extends ReferenceExpression> getEliminatedReferences() {
+      return Collections.emptyList();
+    }
+
+    @Nonnull
+    public List<FunctionClause> getClauses() {
+      return Collections.emptyList();
     }
   }
 
@@ -1120,6 +1140,7 @@ public final class Concrete {
       myTerm = term;
     }
 
+    @Override
     @Nonnull
     public Expression getTerm() {
       return myTerm;
@@ -1148,6 +1169,20 @@ public final class Concrete {
     @Nonnull
     public List<FunctionClause> getClauses() {
       return myClauses;
+    }
+  }
+
+  public static class CoelimFunctionBody extends FunctionBody {
+    private final List<ClassFieldImpl> myClassFieldImpls;
+
+    public CoelimFunctionBody(Object data, List<ClassFieldImpl> classFieldImpls) {
+      super(data);
+      myClassFieldImpls = classFieldImpls;
+    }
+
+    @Nonnull
+    public List<ClassFieldImpl> getClassFieldImpls() {
+      return myClassFieldImpls;
     }
   }
 
@@ -1352,6 +1387,16 @@ public final class Concrete {
 
   // Class synonyms
 
+  public static ReferenceExpression getReferenceExpressionInType(Expression type) {
+    if (type instanceof Concrete.ClassExtExpression) {
+      type = ((ClassExtExpression) type).baseClassExpression;
+    }
+    if (type instanceof Concrete.AppExpression) {
+      type = ((AppExpression) type).getFunction();
+    }
+    return type instanceof ReferenceExpression ? (ReferenceExpression) type : null;
+  }
+
   public static class Instance extends Definition {
     private final List<Parameter> myParameters;
     private Expression myResultType;
@@ -1376,14 +1421,7 @@ public final class Concrete {
 
     @Nullable
     public ReferenceExpression getReferenceExpressionInType() {
-      Expression type = myResultType;
-      if (type instanceof Concrete.ClassExtExpression) {
-        type = ((ClassExtExpression) type).baseClassExpression;
-      }
-      if (type instanceof Concrete.AppExpression) {
-        type = ((AppExpression) type).getFunction();
-      }
-      return type instanceof ReferenceExpression ? (ReferenceExpression) type : null;
+      return Concrete.getReferenceExpressionInType(myResultType);
     }
 
     @Nullable

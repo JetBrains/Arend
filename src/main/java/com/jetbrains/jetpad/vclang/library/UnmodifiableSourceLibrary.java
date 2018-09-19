@@ -47,10 +47,12 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   @Override
   public void onGroupLoaded(ModulePath modulePath, @Nullable ChildGroup group, boolean isRaw) {
     if (isRaw) {
-      myGroups.put(modulePath, group);
       if (group == null) {
+        myGroups.remove(modulePath);
         myModuleScopeProvider.unregisterModule(modulePath);
+        myUpdatedModules.remove(modulePath);
       } else {
+        myGroups.put(modulePath, group);
         myModuleScopeProvider.registerModule(modulePath, group);
         myUpdatedModules.add(modulePath);
       }

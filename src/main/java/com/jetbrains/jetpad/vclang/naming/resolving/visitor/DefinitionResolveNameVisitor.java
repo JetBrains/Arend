@@ -124,12 +124,18 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    Referable ref = expr instanceof Concrete.ReferenceExpression ? ((Concrete.ReferenceExpression) expr).getReferent() : null;
+    if (!(expr instanceof Concrete.ReferenceExpression)) {
+      return;
+    }
+    Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
     while (ref instanceof RedirectingReferable) {
       ref = ((RedirectingReferable) ref).getOriginalReferable();
     }
     if (ref instanceof UnresolvedReference) {
-      ((UnresolvedReference) ref).tryResolve(scope);
+      ref = ((UnresolvedReference) ref).tryResolve(scope);
+      if (ref != null) {
+        ((Concrete.ReferenceExpression) expr).setReferent(ref);
+      }
     }
   }
 
@@ -186,14 +192,20 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
-    if (body instanceof Concrete.ElimFunctionBody) {
-      visitEliminatedReferences(exprVisitor, ((Concrete.ElimFunctionBody) body).getEliminatedReferences(), def.getData());
+    if (body instanceof Concrete.CoelimFunctionBody) {
+      Concrete.ReferenceExpression typeRefExpr = Concrete.getReferenceExpressionInType(def.getResultType());
+      Referable typeRef = typeRefExpr == null ? null : typeRefExpr.getReferent();
+      if (typeRef instanceof ClassReferable) {
+        exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
+      } else {
+        body.getClassFieldImpls().clear();
+      }
     }
-
     if (body instanceof Concrete.ElimFunctionBody) {
+      visitEliminatedReferences(exprVisitor, body.getEliminatedReferences(), def.getData());
       context.clear();
-      addNotEliminatedParameters(def.getParameters(), ((Concrete.ElimFunctionBody) body).getEliminatedReferences(), context);
-      exprVisitor.visitClauses(((Concrete.ElimFunctionBody) body).getClauses(), null);
+      addNotEliminatedParameters(def.getParameters(), body.getEliminatedReferences(), context);
+      exprVisitor.visitClauses(body.getClauses(), null);
     }
 
     def.setResolved();
@@ -400,6 +412,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
       LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
+      reference.resolve(convertedScope);
       Scope curScope = reference.resolveNamespace(convertedScope);
       if (curScope == null) {
         myLocalErrorReporter.report(reference.getErrorReference().getError());

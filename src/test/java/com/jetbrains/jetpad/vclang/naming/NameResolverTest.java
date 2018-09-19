@@ -603,4 +603,23 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func g' => f'", 2);
     assertThatErrorsAre(notInScope("f"), notInScope("f'"));
   }
+
+  @Test
+  public void importTest() {
+    resolveNamesModule("\\import Foo", 1);
+  }
+
+  @Test
+  public void importPrelude() {
+    resolveNamesModule(
+      "\\import Prelude\n" +
+      "\\func f : Nat => 0");
+  }
+
+  @Test
+  public void hidePrelude() {
+    resolveNamesModule(
+      "\\import Prelude()\n" +
+      "\\func f : Nat => 0", 1);
+  }
 }

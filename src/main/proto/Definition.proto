@@ -87,6 +87,7 @@ message Definition {
         BODY_HAS_ERRORS = 1;
         HAS_ERRORS = 4;
         NO_ERRORS = 5;
+        HAS_WARNINGS = 6;
     }
 
     message CoerceData {

@@ -6,6 +6,7 @@ import com.jetbrains.jetpad.vclang.term.concrete.ConcreteDefinitionVisitor;
 import com.jetbrains.jetpad.vclang.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.Collection;
+import java.util.List;
 
 public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisitor<Boolean, Void> {
   private final CollectDefCallsVisitor myVisitor;
@@ -32,19 +33,22 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       if (body instanceof Concrete.TermFunctionBody) {
         ((Concrete.TermFunctionBody) body).getTerm().accept(myVisitor, null);
       }
-      if (body instanceof Concrete.ElimFunctionBody) {
-        for (Concrete.FunctionClause clause : ((Concrete.ElimFunctionBody) body).getClauses()) {
-          for (Concrete.Pattern pattern : clause.getPatterns()) {
-            visitPattern(pattern);
-          }
-          if (clause.getExpression() != null) {
-            clause.getExpression().accept(myVisitor, null);
-          }
-        }
-      }
+      myVisitor.visitClassFieldImpls(body.getClassFieldImpls());
+      visitClauses(body.getClauses());
     }
 
     return null;
+  }
+
+  private void visitClauses(List<Concrete.FunctionClause> clauses) {
+    for (Concrete.FunctionClause clause : clauses) {
+      for (Concrete.Pattern pattern : clause.getPatterns()) {
+        visitPattern(pattern);
+      }
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(myVisitor, null);
+      }
+    }
   }
 
   @Override
@@ -98,14 +102,7 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
       def.getResultType().accept(myVisitor, null);
     }
     if (!def.getEliminatedReferences().isEmpty()) {
-      for (Concrete.FunctionClause clause : def.getClauses()) {
-        for (Concrete.Pattern pattern : clause.getPatterns()) {
-          visitPattern(pattern);
-        }
-        if (clause.getExpression() != null) {
-          clause.getExpression().accept(myVisitor, null);
-        }
-      }
+      visitClauses(def.getClauses());
     }
   }
 

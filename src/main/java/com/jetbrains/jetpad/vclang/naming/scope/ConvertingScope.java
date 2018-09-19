@@ -1,8 +1,6 @@
 package com.jetbrains.jetpad.vclang.naming.scope;
 
-import com.jetbrains.jetpad.vclang.naming.reference.LocatedReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.ModuleReferable;
-import com.jetbrains.jetpad.vclang.naming.reference.Referable;
+import com.jetbrains.jetpad.vclang.naming.reference.*;
 import com.jetbrains.jetpad.vclang.naming.reference.converter.ReferableConverter;
 
 import javax.annotation.Nonnull;
@@ -22,7 +20,21 @@ public class ConvertingScope implements Scope {
   }
 
   private Referable convertReferable(Referable referable) {
-    return referable instanceof ModuleReferable ? referable : referable instanceof LocatedReferable ? myConverter.toDataLocatedReferable((LocatedReferable) referable) : myConverter.toDataReferable(referable);
+    Referable origRef = referable instanceof RedirectingReferable ? ((RedirectingReferable) referable).getOriginalReferable() : referable;
+    while (origRef instanceof RedirectingReferable) {
+      origRef = ((RedirectingReferable) origRef).getOriginalReferable();
+    }
+
+    if (origRef instanceof ModuleReferable) {
+      return origRef;
+    }
+
+    origRef = origRef instanceof LocatedReferable ? myConverter.toDataLocatedReferable((LocatedReferable) origRef) : myConverter.toDataReferable(origRef);
+    if (referable instanceof RedirectingReferable) {
+      return new RedirectingReferableImpl(origRef, ((RedirectingReferable) referable).getPrecedence(), referable.textRepresentation());
+    } else {
+      return origRef;
+    }
   }
 
   @Nullable

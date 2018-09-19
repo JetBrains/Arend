@@ -23,6 +23,7 @@ import com.jetbrains.jetpad.vclang.util.FileUtils;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -112,12 +113,12 @@ public abstract class BaseCliFrontend {
   protected void addCommandOptions(Options cmdOptions) {}
 
   public CommandLine run(String[] args) {
-    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
+    CommandLine cmdLine = parseArgs(args);
+    if (cmdLine == null) {
       return null;
     }
 
-    CommandLine cmdLine = parseArgs(args);
-    if (cmdLine == null) {
+    if (!myLibraryManager.loadLibrary(new PreludeResourceLibrary(myTypecheckerState))) {
       return null;
     }
 
@@ -139,12 +140,7 @@ public abstract class BaseCliFrontend {
     List<LibraryDependency> libraryDependencies = new ArrayList<>();
     if (libDirStrings != null && libStrings != null) {
       for (String libString : libStrings) {
-        if (libString.endsWith(FileUtils.LIBRARY_EXTENSION)) {
-          Library library = myLibraryResolver.registerLibrary(Paths.get(libString));
-          if (library != null) {
-            libraryDependencies.add(new LibraryDependency(library.getName()));
-          }
-        } else if (FileUtils.isLibraryName(libString)) {
+        if (FileUtils.isLibraryName(libString)) {
           libraryDependencies.add(new LibraryDependency(libString));
         } else {
           System.err.println(LibraryError.illegalName(libString));
@@ -172,7 +168,7 @@ public abstract class BaseCliFrontend {
     } else {
       requestedModules = new LinkedHashSet<>();
       for (String fileName : argFiles) {
-        if (fileName.endsWith(FileUtils.LIBRARY_EXTENSION)) {
+        if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || fileName.contains(FileSystems.getDefault().getSeparator())) {
           UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(Paths.get(fileName));
           if (library != null) {
             requestedLibraries.add(library);
@@ -249,8 +245,10 @@ public abstract class BaseCliFrontend {
       System.out.println("--- Done ---");
 
       // Persist updated modules
-      library.persistUpdateModules(System.err::println);
-      library.clearUpdateModules();
+      if (library.supportsPersisting()) {
+        library.persistUpdateModules(System.err::println);
+        library.clearUpdateModules();
+      }
     }
 
     return cmdLine;

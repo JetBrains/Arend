@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../../img/favicon.ico">
+  <title>Data Definitions - Arend</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../../../css/custom-highlight.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Data Definitions";
+    var mkdocs_page_input_path = "language-reference/definitions/data.md";
+    var mkdocs_page_url = "/language-reference/definitions/data/";
+  </script>
+  
+  <script src="../../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../../.." class="icon icon-home"> Arend</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../..">Overview</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../../getting-started/">Getting Started</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Tutorial</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/pattern-matching/">Pattern Matching</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Language Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../lexical-structure/">Lexical Structure</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../">Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../modules/">Modules</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../parameters/">Parameters</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../functions/">Function Definitions</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Data Definitions</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#syntax">Syntax</a></li>
+    
+
+    <li class="toctree-l3"><a href="#inductive-definitions">Inductive definitions</a></li>
+    
+
+    <li class="toctree-l3"><a href="#truncation">Truncation</a></li>
+    
+
+    <li class="toctree-l3"><a href="#induction-induction-and-induction-recursion">Induction-induction and induction-recursion</a></li>
+    
+
+    <li class="toctree-l3"><a href="#varying-number-of-constructors">Varying number of constructors</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../hits/">Higher Inductive Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../records/">Records</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../classes/">Classes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../instances/">Instances</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../coercion/">Coercion</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/">Expressions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/goals/">Goals</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/universes/">Universes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/let/">Let</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../..">Arend</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Language Reference &raquo;</li>
+        
+      
+    
+    <li>Data Definitions</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/definitions/data.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="data">Data Definitions<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
+
+<p>Data definitions generalize allow us to define (higher) inductive types.
+Each data definition has several constructors.
+Constructors belong to the <a href="/language-reference/definitions/modules">module</a> associated to the data definition, but they are also visible in the module in which the data type is defined:</p>
+<pre><code class="arend">\data D | con1 | con2
+
+\func f =&gt; con1
+\func g =&gt; con2
+\func f' =&gt; D.con1
+\func g' =&gt; D.con2
+</code></pre>
+
+<p>In the example above, we defined a data type <code>D</code> with two constructors <code>con1</code> and <code>con2</code>.
+Functions <code>f</code> and <code>f'</code> (as well as <code>g</code> and <code>g'</code>) are equivalent.</p>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
+<p>The basic syntax of a data definition looks like this:</p>
+<pre><code class="arend">\data D p_1 ... p_n
+  | con_1 p^1_1 ... p^1_{k_1}
+  ...
+  | con_m p^m_1 ... p^m_{k_m}
+</code></pre>
+
+<p>where <code>p_1</code>, ... <code>p_n</code>, <code>p^1_1</code>, ... <code>p^m_{k_m}</code> are either named or unnamed <a href="/language-reference/definitions/parameters">parameters</a>.
+There are several extensions of this syntax which we will discuss later.
+Each row <code>con_i p^i_1 ... p^i_{k_i}</code> defines a constructor <code>con_i</code> with the specified parameters.
+Parameters <code>p_1</code>, ... <code>p_n</code> are parameters of the data type <code>D</code>, but they also become implicit parameters of constructors.</p>
+<p>Let <code>A</code>, ... <code>F</code> be some types and let <code>a</code>, ... <code>f</code> be terms of the corresponding types.
+Consider the following example:</p>
+<pre><code class="arend">\data Data A B
+  | cons {C} D E
+  | cons'
+
+\func s1 =&gt; Data a b
+\func s2 =&gt; cons d e
+\func s2' =&gt; cons {a} d e
+\func s2'' =&gt; cons {a} {b} {c} d e
+\func s3 =&gt; cons'
+\func s3' =&gt; cons' {a}
+\func s3'' =&gt; cons' {a} {b}
+</code></pre>
+
+<p>Constructor <code>cons</code> has three implicit parameters of types <code>A</code>, <code>B</code>, and <code>C</code> and two explicit parameters of types <code>D</code> and <code>E</code>.
+Constructor <code>cons'</code> has only two implicit parameters of types <code>A</code> and <code>B</code>.</p>
+<p>The type of a <a href="/language-reference/expressions/#defcalls">defcall</a> <code>con_i {a_1} ... {a_n} b_1 ... b_{k_i}</code> is <code>D a_1 ... a_n</code>.
+The type of a defcall <code>D a_1 ... a_n</code> is of the form <a href="/language-reference/expressions/universes">\h-Type p</a>.
+Levels <code>h</code> and <code>p</code> are calculated automatically, but you can also specify explicitly the level of a data type:</p>
+<pre><code class="arend">\data D p_1 ... p_n : \h-Type p
+  | con_1 p^1_1 ... p^1_{k_1}
+  ...
+  | con_m p^m_1 ... p^m_{k_m}
+</code></pre>
+
+<p>If the actual type of <code>D</code> does not fit into the specified levels, the typechecker will generate an error message.</p>
+<h2 id="inductive-definitions">Inductive definitions<a class="headerlink" href="#inductive-definitions" title="Permanent link">&para;</a></h2>
+<p>A data definition can be recursive, that is <code>D</code> may appear in parameters <code>p^1_1</code>, ... <code>p^m_{k_m}</code> (but not in <code>p_1</code>, ... <code>p_n</code>).
+Such recursive definitions are called <em>inductive data types</em>.
+They have one restriction: recursive calls to <code>D</code> may occur only in strictly positive positions.
+The set of such positions is defined inductively:</p>
+<ul>
+<li><code>D</code> occurs only in strictly positive positions in <code>D a_1 ... a_n</code> if it does not occur in <code>a_1</code>, ... <code>a_n</code>.</li>
+<li><code>D</code> occurs only in strictly positive positions in <code>\Pi (x : A) -&gt; B</code> if it occurs only in strictly positive positions in <code>B</code> and does not occur in <code>A</code>.</li>
+<li><code>D</code> occurs only in strictly positive positions in <code>Path (\lam i =&gt; B) b b'</code> if it occurs only in strictly positive positions in <code>B</code> and does not occur in <code>b</code> and <code>b'</code>.</li>
+<li><code>D</code> occurs only in strictly positive positions in any other expression if it does not occur in it.</li>
+</ul>
+<p>Moreover, every recursive defcall must be of the form <code>D x_1 ... x_n</code>, where <code>x_1</code>, ... <code>x_n</code> are variables defined in the parameters of <code>D</code>.</p>
+<h2 id="truncation">Truncation<a class="headerlink" href="#truncation" title="Permanent link">&para;</a></h2>
+<p>You can truncate data types to a specified homotopy level which is less than its actual level.
+To do this, specify explicitly the type of a data definition and write keyword <code>\truncated</code> before the definition:</p>
+<pre><code class="arend">\truncated \data D p_1 ... p_n : \h-Type p
+  | con_1 p^1_1 ... p^1_{k_1}
+  ...
+  | con_m p^m_1 ... p^m_{k_m}
+</code></pre>
+
+<p>If the actual predicative level of <code>D</code> is greater than <code>p</code>, the typechecker will generate an error message, but <code>h</code> can be any number.
+Such a data type can be eliminated only into types of the same homotopy level.
+Consider the following example:</p>
+<pre><code class="arend">\truncated \data Exists (A : \Type) (B : A -&gt; \Type) : \Prop
+  | witness (a : A) (B a)
+
+{-
+-- This function will not typecheck.
+\func extract (p : Exists (n : Nat) (n = 3)) : Nat
+  | witness a b =&gt; a
+-}
+
+\func existsSuc (p : Exists (n : Nat) (n = 3)) : Exists (n : Nat) (suc n = 4)
+  | witness n p =&gt; witness (suc n) (path (\lam i =&gt; suc (p @ i)))
+
+
+\func existsEq (p : Exists (n : Nat) (n = 3)) : 0 = 0
+  | witness n p =&gt; path (\lam _ =&gt; 0)
+</code></pre>
+
+<p>The data type <code>Exists</code> defines a proposition 'There is an <code>a : A</code> such that <code>B a</code>'.
+The function <code>extract</code> which extracts a natural number from the proof that there exists a natural number which equals to 3 is incorrect,
+but functions <code>existsSuc</code> and <code>existsEq</code> which construct another proofs are accepted.</p>
+<p>A truncated data type is (provably) equivalent to the truncation of the untrancated version of this data type.
+So, this is simply a syntax sugar that allows you to define functions over a truncated data type more easily.</p>
+<h2 id="induction-induction-and-induction-recursion">Induction-induction and induction-recursion<a class="headerlink" href="#induction-induction-and-induction-recursion" title="Permanent link">&para;</a></h2>
+<p>TODO</p>
+<h2 id="varying-number-of-constructors">Varying number of constructors<a class="headerlink" href="#varying-number-of-constructors" title="Permanent link">&para;</a></h2>
+<p>TODO</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../hits/" class="btn btn-neutral float-right" title="Higher Inductive Types">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../functions/" class="btn btn-neutral" title="Function Definitions"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Brought to you by the <a href="https://research.jetbrains.org/groups/group-for-dependent-types-and-hott">HoTT and Dependent Types Group</a> at JetBrains Research.<br>© 2017 <a href="https://www.jetbrains.com">JetBrains s.r.o</a>.</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../functions/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../hits/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../../..';</script>
+    <script src="../../../js/theme.js" defer></script>
+      <script src="../../../js/highlight-arend.min.js" defer></script>
+      <script src="../../../search/main.js" defer></script>
+
+</body>
+</html>

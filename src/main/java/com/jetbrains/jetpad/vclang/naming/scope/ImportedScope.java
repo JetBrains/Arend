@@ -50,7 +50,9 @@ public class ImportedScope implements Scope {
 
     List<Referable> result = new ArrayList<>();
     for (Triple triple : myExpectedNamesTree.map.values()) {
-      result.add(triple.referable);
+      if (triple.scope != null) {
+        result.add(triple.referable);
+      }
     }
     return result;
   }
@@ -59,7 +61,7 @@ public class ImportedScope implements Scope {
   @Override
   public Referable find(Predicate<Referable> pred) {
     for (Triple triple : myExpectedNamesTree.map.values()) {
-      if (pred.test(triple.referable)) {
+      if (triple.scope != null && pred.test(triple.referable)) {
         return triple.referable;
       }
     }
@@ -70,7 +72,7 @@ public class ImportedScope implements Scope {
   @Override
   public Referable resolveName(String name) {
     Triple triple = myExpectedNamesTree.map.get(name);
-    return triple == null ? null : triple.referable;
+    return triple == null || triple.scope == null ? null : triple.referable;
   }
 
   @Nullable
@@ -82,12 +84,7 @@ public class ImportedScope implements Scope {
     }
 
     Scope scope2 = new ImportedScope(triple.tree, myProvider, myElementsScope == null ? null : myElementsScope.resolveNamespace(name));
-    if (triple.modulePath == null) {
-      return scope2;
-    }
-
-    Scope scope1 = myProvider.forModule(triple.modulePath);
-    return scope1 == null ? scope2 : new MergeScope(scope1, scope2);
+    return triple.modulePath == null || triple.scope == null ? scope2 : new MergeScope(triple.scope, scope2);
   }
 
   @Nullable
@@ -100,15 +97,17 @@ public class ImportedScope implements Scope {
     ModuleReferable referable;
     ModulePath modulePath;
     Tree tree;
+    Scope scope;
 
-    Triple(ModuleReferable referable, ModulePath modulePath, Tree tree) {
+    Triple(ModuleReferable referable, ModulePath modulePath, Tree tree, Scope scope) {
       this.referable = referable;
       this.modulePath = modulePath;
       this.tree = tree;
+      this.scope = scope;
     }
   }
 
-  private static class Tree {
+  private class Tree {
     final Map<String, Triple> map = new LinkedHashMap<>();
 
     void addPath(List<String> path) {
@@ -121,7 +120,7 @@ public class ImportedScope implements Scope {
         final int finalI = i + 1;
         Triple triple = tree.map.computeIfAbsent(path.get(i), k -> {
           ModulePath modulePath = new ModulePath(path.subList(0, finalI));
-          return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree());
+          return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree(), finalI == path.size() ? myProvider.forModule(modulePath) : EmptyScope.INSTANCE);
         });
         if (triple.modulePath == null && finalI == path.size()) {
           triple.modulePath = triple.referable.path;

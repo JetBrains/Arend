@@ -385,7 +385,10 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     }
     if (def.getBody() instanceof Concrete.TermFunctionBody) {
       return fun2.getBody() instanceof Concrete.TermFunctionBody && compare(((Concrete.TermFunctionBody) def.getBody()).getTerm(), ((Concrete.TermFunctionBody) fun2.getBody()).getTerm());
-    } else
+    }
+    if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
+      return fun2.getBody() instanceof Concrete.CoelimFunctionBody && compareImplementStatements(def.getBody().getClassFieldImpls(), fun2.getBody().getClassFieldImpls());
+    }
     if (def.getBody() instanceof Concrete.ElimFunctionBody) {
       if (!(fun2.getBody() instanceof Concrete.ElimFunctionBody)) {
         return false;

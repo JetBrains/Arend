@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../../img/favicon.ico">
+  <title>Modules - Arend</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../../../css/custom-highlight.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Modules";
+    var mkdocs_page_input_path = "language-reference/definitions/modules.md";
+    var mkdocs_page_url = "/language-reference/definitions/modules/";
+  </script>
+  
+  <script src="../../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../../.." class="icon icon-home"> Arend</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../..">Overview</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../../getting-started/">Getting Started</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Tutorial</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/pattern-matching/">Pattern Matching</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Language Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../lexical-structure/">Lexical Structure</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../">Definitions</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Modules</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#modules">Modules</a></li>
+    
+
+    <li class="toctree-l3"><a href="#where-blocks">Where blocks</a></li>
+    
+
+    <li class="toctree-l3"><a href="#open-commands">Open commands</a></li>
+    
+
+    <li class="toctree-l3"><a href="#import-commands">Import commands</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../parameters/">Parameters</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../functions/">Function Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../hits/">Higher Inductive Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../records/">Records</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../classes/">Classes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../instances/">Instances</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../coercion/">Coercion</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/">Expressions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/goals/">Goals</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/universes/">Universes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/let/">Let</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../expressions/class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../..">Arend</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Language Reference &raquo;</li>
+        
+      
+    
+    <li>Modules</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/definitions/modules.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="modules-sec">Modules<a class="headerlink" href="#modules-sec" title="Permanent link">&para;</a></h1>
+
+<p>Every definition defined in a file is visible anywhere in this file.
+That is, the order of definitions does not matter.
+The module system allows you to define definitions in other namespaces.</p>
+<h2 id="modules">Modules<a class="headerlink" href="#modules" title="Permanent link">&para;</a></h2>
+<p>A module consists of a name and a list of definitions:</p>
+<pre><code class="arend">\module Mod \where {
+  def_1
+  ...
+  def_n
+}
+</code></pre>
+
+<p>You can refer to definitions <code>def_1</code> ... <code>def_n</code> inside module <code>Mod</code> by their names.
+To refer to them outside this module, you need to use their full names <code>Mod.def_1</code> ... <code>Mod.def_n</code>.
+For example, consider the following code:</p>
+<pre><code class="arend">\func f2 =&gt; Mod.f1
+\module Mod \where {
+  \func f1 =&gt; f2
+  \func f2 =&gt; 0
+  \func f3 =&gt; f4
+}
+\func f4 =&gt; f2
+</code></pre>
+
+<p>You cannot refer to <code>f1</code> in <code>f2</code> without <code>Mod.</code> prefix.
+Function <code>f4</code> refers to <code>f2</code> defined on the top level.
+Function <code>Mod.f2</code> hides the top level <code>f2</code> inside module <code>Mod</code>, so <code>Mod.f1</code> refers to <code>Mod.f2</code>.
+You can refer to top level functions inside modules as shown in the example where <code>Mod.f3</code> refers to <code>f4</code>.</p>
+<p>If a <code>\where</code> block contains a single definition, you can omit curly braces.</p>
+<h2 id="where-blocks">Where blocks<a class="headerlink" href="#where-blocks" title="Permanent link">&para;</a></h2>
+<p>Every definition has an associated module with the same name.
+To add definitions to this module, you can write the <code>\where</code> block at the end of this definition.
+Definitions defined in the associated module of a definition are visible inside this definition.</p>
+<pre><code class="arend">\func f =&gt; g \where \func g =&gt; 0
+\func h =&gt; f.g \where
+  \data D \where {
+    \func k =&gt; D
+    \func s =&gt; M.g.N.s
+  }
+\module M \where
+  \func g =&gt; N.s \where {
+    \module N \where {
+      \func s =&gt; E
+    }
+    \data E
+  }
+</code></pre>
+
+<p>Constructors of a <code>\data</code> definition and fields of a <code>\class</code> or a <code>\record</code> definition are defined inside the module associated to the definition, but they are also visible outside this module.</p>
+<h2 id="open-commands">Open commands<a class="headerlink" href="#open-commands" title="Permanent link">&para;</a></h2>
+<p>A module can be opened.
+This makes definitions defined inside this module visible in the current scope.
+The <code>\open</code> command affects all definitions in the current scope.</p>
+<pre><code class="arend">\func h1 =&gt; f
+\module M \where {
+  \func f =&gt; 0
+  \func g =&gt; 1
+}
+\open M
+\func h2 =&gt; g
+</code></pre>
+
+<p>The command <code>\open M (def_1, ... def_n)</code> opens only definitions <code>def_1</code>, ... <code>def_n</code>.
+Other definitions must be refered to by their full names.
+The command <code>\open M \hiding (def_1, ... def_n)</code> opens all of the definitions of <code>M</code> except for <code>def_1</code>, ... <code>def_n</code>.
+These definitions still can be refered to by their full names.
+The command <code>\open M (def_1 \as def_1', ... def_n \as def_n')</code> opens definitions <code>def_1</code>, ... <code>def_n</code>, but renames them to <code>def_1'</code>, ... <code>def_n'</code>, respectively.
+If you want to open all of the definitions and rename some of them, use the command <code>\open M \using (def_1 \as def_1', ... def_n \as def_n')</code>.</p>
+<pre><code class="arend">\module M \where {
+  \func f =&gt; 0
+  \func g =&gt; 1
+  \func h =&gt; 2
+}
+\module M1 \where {
+  \open M (f,g)
+  \func h1 =&gt; f
+  \func h2 =&gt; g
+  \func h3 =&gt; M.h -- we can refer to M.h only by its full name.
+}
+\module M2 \where {
+  \open M \hiding (f,g)
+  \func h1 =&gt; M.f -- we can refer to M.f and M.g only by their full names.
+  \func h2 =&gt; M.g
+  \func h3 =&gt; h
+}
+\module M3 \where {
+  \open M1 (h1 \as M1_h1, h2)
+  \open M2 \using (h2 \as M2_h2) \hiding (h3)
+  \func k1 =&gt; M1_h1 -- this refers to M1.h1
+  \func k2 =&gt; h1 -- this refers to M2.h1
+  \func k3 =&gt; h2 -- this refers to M1.h2
+  \func k4 =&gt; M2_h2 -- this refers to M2.h2
+  \func k5 =&gt; M1.h3 -- we can refer to M1.h3 only by its full name.
+}
+</code></pre>
+
+<p>Note that if you open a module <code>M</code> inside a module <code>M'</code> and then open <code>M'</code> inside <code>M''</code>, then definitions from <code>M</code> will not be visible in <code>M''</code>.
+You need to explicitly open <code>M</code> inside <code>M''</code> to make them visible.</p>
+<h2 id="import-commands">Import commands<a class="headerlink" href="#import-commands" title="Permanent link">&para;</a></h2>
+<p>If you have several files, you can use the <code>\import</code> command to make one of them visible in the other.
+For example, suppose that we have files <code>A.vc</code>, <code>B.vc</code>, a directory <code>Dir</code>, and a file <code>Dir/C.vc</code> with the following content:</p>
+<pre><code class="arend">-- A.vc
+\func a1 =&gt; 0
+\func a2 =&gt; 0
+  \where \func a3 =&gt; 0
+</code></pre>
+
+<pre><code class="arend">-- Dir/C.vc
+\import A
+
+\func c1 =&gt; a1
+\func c2 =&gt; a2.a3
+</code></pre>
+
+<pre><code class="arend">-- B.vc
+\import Dir.C
+
+\func b1 =&gt; c1
+-- \func b2 =&gt; a1 -- definitions from file A are not visible
+-- \func b3 =&gt; A.a1 -- you cannot refer to definitions from file A by their full names.
+\func b4 =&gt; Dir.C.c2 -- you can refer to definitions from file Dir/C.vc by their full names.
+</code></pre>
+
+<p>The <code>\import</code> command also opens the content of the imported file.
+You can use the same syntax as for <code>\open</code> commands to control which definitions will be opened.
+If you want only import a file and not open any definitions, you can write <code>\import X ()</code>.
+Then you can refer to definitions defined in file <code>X</code> by their full names:</p>
+<pre><code class="arend">-- X.vc
+\func f =&gt; 0
+</code></pre>
+
+<pre><code class="arend">-- Y.vc
+\import X()
+
+\func f =&gt; X.f
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../parameters/" class="btn btn-neutral float-right" title="Parameters">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../" class="btn btn-neutral" title="Definitions"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Brought to you by the <a href="https://research.jetbrains.org/groups/group-for-dependent-types-and-hott">HoTT and Dependent Types Group</a> at JetBrains Research.<br>© 2017 <a href="https://www.jetbrains.com">JetBrains s.r.o</a>.</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../parameters/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../../..';</script>
+    <script src="../../../js/theme.js" defer></script>
+      <script src="../../../js/highlight-arend.min.js" defer></script>
+      <script src="../../../search/main.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../../img/favicon.ico">
+  <title>Universes - Arend</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../../../css/custom-highlight.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Universes";
+    var mkdocs_page_input_path = "language-reference/expressions/universes.md";
+    var mkdocs_page_url = "/language-reference/expressions/universes/";
+  </script>
+  
+  <script src="../../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../../.." class="icon icon-home"> Arend</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../..">Overview</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../../getting-started/">Getting Started</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Tutorial</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../../tutorial/pattern-matching/">Pattern Matching</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Language Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../">Table of Contents</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../lexical-structure/">Lexical Structure</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/">Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/modules/">Modules</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/parameters/">Parameters</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/functions/">Function Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/data/">Data Definitions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/hits/">Higher Inductive Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/records/">Records</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/classes/">Classes</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/instances/">Instances</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../definitions/coercion/">Coercion</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../">Expressions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../goals/">Goals</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Universes</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#homotopy-levels">Homotopy levels</a></li>
+    
+
+    <li class="toctree-l3"><a href="#level-polymorphism">Level polymorphism</a></li>
+    
+
+    <li class="toctree-l3"><a href="#level-inference">Level inference</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../pi/">Pi Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../sigma/">Sigma Types</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../let/">Let</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../case/">Case</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../class-ext/">Class extensions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../prelude/">Prelude</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../..">Arend</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Language Reference &raquo;</li>
+        
+      
+    
+    <li>Universes</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/JetBrains/vclang/edit/master/docs/language-reference/expressions/universes.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="universes">Universes<a class="headerlink" href="#universes" title="Permanent link">&para;</a></h1>
+
+<p>A universe is a type of types.
+Since we cannot assume that there exists a type of all types, we assume a hierarchy of universes.
+That is, we have a universe <code>\Type0</code> which contains all types that do not mention universes, a universe <code>\Type1</code> which contains all types that might mention only <code>\Type0</code>, and so on.
+Thus, for every natural number n, we have an expression <code>\Type n</code> (the whitespace is optional).
+This number is called the <em>predicative level</em> of the universe.
+The expression <code>\Type n</code> has type <code>\Type (n+1)</code>.
+Universes are cumulative, that is every expression of type <code>\Type n</code> also has type <code>\Type (n+1)</code>.</p>
+<h2 id="homotopy-levels">Homotopy levels<a class="headerlink" href="#homotopy-levels" title="Permanent link">&para;</a></h2>
+<p>Universes are actually parameterized by two levels.
+The other one is called the <em>homotopy level</em>.
+The universe of predicative level p and homotopy level h is denote by <code>\h-Type p</code>.
+The homotopy level h is a number such that -1 ≤ h ≤ ∞.
+If h equals to ∞, then we write <code>\oo-Type p</code>.
+If h equals to -1, then the universe does not have a predicative level and it is denoted by <code>\Prop</code>.
+The expression <code>\h-Type p</code> has type <code>\(h+1)-Type (p+1)</code> if 0 ≤ h &lt; ∞.
+The expression <code>\Prop</code> has type <code>\0-Type 0</code>.
+The expression <code>\oo-Type p</code> has type <code>\oo-Type (p+1)</code>.
+Universes of the form <code>\0-Type p</code> can also be denoted by <code>\Set p</code>.
+The homotopy level can be also specified after the predicative level.
+That is, we can write <code>\Type p h</code> instead of <code>\h-Type p</code></p>
+<h2 id="level-polymorphism">Level polymorphism<a class="headerlink" href="#level-polymorphism" title="Permanent link">&para;</a></h2>
+<p>Every definition is considered polymorphic in both levels.
+That is, every definition has two additional parameters: one for a predicative level and one for a homotopy level.
+These parameters are denoted by <code>\lp</code> and <code>\lh</code> respectively.
+You can explicitly specify level arguments in a defcall by writing <code>\levels p h</code>, where <code>p</code> and <code>h</code> are level expressions of the corresponding kind.
+Keyword <code>\levels</code> can be often omitted (if the resulting expression is unambiguous).
+To specify the <code>\Prop</code> level, write <code>\levels \Prop</code>.
+Level expressions are defined inductively:</p>
+<ul>
+<li><code>\lp</code> is a level expression of the predicative kind and <code>\lh</code> is a level expression of the homotopy kind.</li>
+<li>A constant (that is, a natural number) is a level expression of both kinds. There is also constant <code>\inf</code> for homotopy levels.</li>
+<li><code>_</code> is a level expression of both kinds. Such an expression tells the typechecker to infer the expression.</li>
+<li>If l is a level expression, then <code>\suc l</code> is also a level expression of the same kind as l.</li>
+<li>If l1 and l2 are level expressions of the same kind, then <code>\max l1 l2</code> is also a level expression of the same kind as l1 and l2.</li>
+</ul>
+<p>Since the only level variables are <code>\lp</code> and <code>\lh</code>, the expression <code>\max l1 l2</code> is useful only when one of the levels is a constant.</p>
+<h2 id="level-inference">Level inference<a class="headerlink" href="#level-inference" title="Permanent link">&para;</a></h2>
+<p>The level arguments to a function are often can be inferred automatically.
+Moreover, both levels of a universe can also be omitted, in which case they are also will be inferred by the typechecker.
+The typechecker always tries to infer the minimal level which mentions either <code>\lp</code> or <code>\lh</code> if possible.
+Consider, for example, the following code which defines the identity function:</p>
+<pre><code class="arend">\func id {A : \Type} (a : A) =&gt; a
+</code></pre>
+
+<p>The minimal appropriate level (both predicative and homotopy) of the universe <code>\Type</code> in the definition of this function is 0,
+but it is also possible to use levels <code>\lp</code> and <code>\lh</code>, so this function is equivalent to the following one:</p>
+<pre><code class="arend">\func id' {A : \Type \lp \lh} (a : A) =&gt; a
+</code></pre>
+
+<p>Let us give a few more examples.
+We write a definition and an equivalent definition with explicitly specified levels below it.</p>
+<pre><code class="arend">\data Either (A B : \Type) | inl A | inr B
+\data Either' (A B : \Type \lp \lh) | inl A | inr B
+
+\func f =&gt; id \Type
+\func f' =&gt; id (\suc \lp) (\suc \lh) (\Type \lp \lh)
+
+\func fromEither {A : \Type} (e : Either A \Type) : \Type \elim e
+  | inl a =&gt; A
+  | inr X =&gt; X
+\func fromEither' {A : \Type \lp \lh} (e : Either (\suc \lp) (\suc \lh) A (\Type \lp \lh)) : \Type \lp \lh \elim e
+  | inl a =&gt; A
+  | inr X =&gt; X
+</code></pre>
+
+<p>The levels in parameters and in the result type of a recursive function are inferred before levels in the body.
+This means that the following function will not typecheck.</p>
+<pre><code class="arend">\func eitherToType {A : \Type} (e : Either A A) : \Type
+  | inl _ =&gt; \Type
+  | inr _ =&gt; \Type
+</code></pre>
+
+<p>We can explicitly specify the levels of the universe that appears in the result type to fix this problem:</p>
+<pre><code class="arend">\func eitherToTypeFixed {A : \Type} (e : Either A A) : \Type (\suc \lp) (\suc \lh)
+  | inl _ =&gt; \Type
+  | inr _ =&gt; \Type
+\func eitherToTypeFixed' {A : \Type \lp \lh} (e : Either \lp \lh A A) : \Type (\suc \lp) (\suc \lh)
+  | inl _ =&gt; \Type \lp \lh
+  | inr _ =&gt; \Type \lp \lh
+</code></pre>
+
+<p>If we specify constant levels instead as shown below, then the function also will typecheck, but the levels of universes in the body will also be constant:</p>
+<pre><code class="arend">\func eitherToTypeConstant {A : \Type} (e : Either A A) : \3-Type 7
+  | inl _ =&gt; \Type
+  | inr _ =&gt; \Type
+\func eitherToTypeConstant' {A : \Type \lp \lh} (e : Either \lp \lh A A) : \3-Type 7
+  | inl _ =&gt; \Set0
+  | inr _ =&gt; \Set0
+</code></pre>
+
+<p>Note that homotopy levels inferred by the typechecker are always greater than or equal to 0.
+Thus, the function <code>eitherToProp</code> does not typecheck even though <code>eitherToPropFixed</code> does:</p>
+<pre><code class="arend">\func eitherToProp {A : \Type} (e : Either A A) : \Set0
+  | inl _ =&gt; \Type
+  | inr _ =&gt; \Type
+
+\func eitherToPropFixed {A : \Type} (e : Either A A) : \Set0
+  | inl _ =&gt; \Prop
+  | inr _ =&gt; \Prop
+</code></pre>
+
+<p>Levels in the result type of a non-recursive function are inferred together with levels in the body.
+Thus, the following function typechecks:</p>
+<pre><code class="arend">\func f : \Type =&gt; \Type
+\func f' : \Type (\suc \lp) (\suc \lh) =&gt; \Type \lp \lh
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../pi/" class="btn btn-neutral float-right" title="Pi Types">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../goals/" class="btn btn-neutral" title="Goals"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Brought to you by the <a href="https://research.jetbrains.org/groups/group-for-dependent-types-and-hott">HoTT and Dependent Types Group</a> at JetBrains Research.<br>© 2017 <a href="https://www.jetbrains.com">JetBrains s.r.o</a>.</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/JetBrains/vclang/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../goals/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../pi/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../../..';</script>
+    <script src="../../../js/theme.js" defer></script>
+      <script src="../../../js/highlight-arend.min.js" defer></script>
+      <script src="../../../search/main.js" defer></script>
+
+</body>
+</html>

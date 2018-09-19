@@ -5,6 +5,7 @@ import com.jetbrains.jetpad.vclang.frontend.reference.ParsedLocalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.GlobalReferable;
 import com.jetbrains.jetpad.vclang.naming.reference.Referable;
 import com.jetbrains.jetpad.vclang.term.concrete.Concrete;
+import com.jetbrains.jetpad.vclang.term.group.ChildGroup;
 import com.jetbrains.jetpad.vclang.term.group.Group;
 import org.junit.Test;
 
@@ -392,5 +393,51 @@ public class ParserTest extends NameResolverTestCase {
       "\\func \\infix 2 qed (A : \\Prop) => A\n" +
       "\\func g (A : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => g A ==< g B >== g C qed", 1);
+  }
+
+  @Test
+  public void commentTest() {
+    ChildGroup group = resolveNamesModule(
+      "\\func f => 0\n" +
+      "------------\n" +
+      "\\func g => 0\n" +
+      "------------ foo\n" +
+      "\\func g1 => 0\n" +
+      "--foobar\n" +
+      "\\func g2 => 0\n" +
+      "------------foo\n" +
+      "\\func g3 => 0\n" +
+      "--|\n" +
+      "\\func g4 => 0\n" +
+      "--%--x\n" +
+      "{------\n" +
+      "bar\n" +
+      "------}\n" +
+      "\\func h => f g g1 g2 g3 g4\n" +
+      "--");
+    assertNotNull(get(group.getGroupScope(), "h"));
+  }
+
+  @Test
+  public void commentDefTest() {
+    resolveNamesModule(
+      "\\func x-- => |------\n" +
+      "\\func %-----y => x--\n" +
+      "\\func |------ => %-----y");
+  }
+
+  @Test
+  public void idTest() {
+    resolveNamesModule(
+      "\\func :: => -33+7\n" +
+      "\\func ->x => ::\n" +
+      "\\func x:Nat => ->x\n" +
+      "\\func -5b => x:Nat\n" +
+      "\\func -33+7 => -5b");
+  }
+
+  @Test
+  public void numberTest() {
+    resolveNamesModule("\\func f => 5f");
   }
 }
