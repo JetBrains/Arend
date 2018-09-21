@@ -14,7 +14,7 @@ For example, consider the following code:
 It will produce the following error message:
 
 ```bash
-[GOAL] test.vc:1:44:
+[GOAL] test.ard:1:44:
   Expected type: y = {Nat} x
   Context:
     y : Nat

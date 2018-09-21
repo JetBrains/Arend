@@ -1,0 +1,23 @@
+package org.arend.library.error;
+
+import org.arend.error.GeneralError;
+import org.arend.module.ModulePath;
+import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.ModuleReferable;
+
+import java.util.Collection;
+import java.util.Collections;
+
+public class PartialModuleError extends GeneralError {
+  public ModulePath modulePath;
+
+  public PartialModuleError(ModulePath modulePath) {
+    super(Level.WARNING, "Partial binary source for module '" + modulePath + "' is ignored");
+    this.modulePath = modulePath;
+  }
+
+  @Override
+  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
+    return Collections.singletonList(new ModuleReferable(modulePath));
+  }
+}

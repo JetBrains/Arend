@@ -119,17 +119,17 @@ You need to explicitly open `M` inside `M''` to make them visible.
 ## Import commands
 
 If you have several files, you can use the `\import` command to make one of them visible in the other.
-For example, suppose that we have files `A.vc`, `B.vc`, a directory `Dir`, and a file `Dir/C.vc` with the following content:
+For example, suppose that we have files `A.ard`, `B.ard`, a directory `Dir`, and a file `Dir/C.ard` with the following content:
 
 ```arend
--- A.vc
+-- A.ard
 \func a1 => 0
 \func a2 => 0
   \where \func a3 => 0
 ```
 
 ```arend
--- Dir/C.vc
+-- Dir/C.ard
 \import A
 
 \func c1 => a1
@@ -137,13 +137,13 @@ For example, suppose that we have files `A.vc`, `B.vc`, a directory `Dir`, and a
 ```
 
 ```arend
--- B.vc
+-- B.ard
 \import Dir.C
 
 \func b1 => c1
 -- \func b2 => a1 -- definitions from file A are not visible
 -- \func b3 => A.a1 -- you cannot refer to definitions from file A by their full names.
-\func b4 => Dir.C.c2 -- you can refer to definitions from file Dir/C.vc by their full names.
+\func b4 => Dir.C.c2 -- you can refer to definitions from file Dir/C.ard by their full names.
 ```
 
 The `\import` command also opens the content of the imported file.
@@ -152,12 +152,12 @@ If you want only import a file and not open any definitions, you can write `\imp
 Then you can refer to definitions defined in file `X` by their full names:
 
 ```arend
--- X.vc
+-- X.ard
 \func f => 0
 ```
 
 ```arend
--- Y.vc
+-- Y.ard
 \import X()
 
 \func f => X.f

@@ -37,10 +37,10 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
-val vclangPackage = "com.jetbrains.jetpad.vclang"
+val arendPackage = "org.arend"
 
 task<Jar>("jarDep") {
-    manifest.attributes["Main-Class"] = "$vclangPackage.frontend.ConsoleMain"
+    manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
     from(configurations.runtimeClasspath.map { if (it.isDirectory) it as Any else zipTree(it) })
     from(java.sourceSets["main"].output)
 }
@@ -66,7 +66,7 @@ idea {
 tasks.withType<AntlrTask> {
     outputDirectory = genSrcDir
     arguments.addAll(listOf(
-            "-package", "$vclangPackage.frontend.parser",
+            "-package", "$arendPackage.frontend.parser",
             "-no-listener",
             "-visitor"
     ))
@@ -89,14 +89,14 @@ tasks.withType<Wrapper> {
 val preludeOutputDir = "$buildDir/classes/java/main"
 
 task<Copy>("copyPrelude") {
-    from("lib/Prelude.vc")
+    from("lib/Prelude.ard")
     into("$preludeOutputDir/lib")
 }
 
 task<JavaExec>("prelude") {
     description = "Builds the prelude cache"
     group = "Build"
-    main = "$vclangPackage.prelude.PreludeBinaryGenerator"
+    main = "$arendPackage.prelude.PreludeBinaryGenerator"
     classpath = java.sourceSets["main"].runtimeClasspath
     args = listOf(preludeOutputDir)
     dependsOn("copyPrelude")

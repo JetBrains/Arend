@@ -8,21 +8,21 @@ Arend is available either as an [IntelliJ IDEA](https://www.jetbrains.com/idea) 
 To install the IntelliJ IDEA plugin, follow the instructions below.
 
 * Download (either community or ultimate version of) [IntelliJ IDEA](https://www.jetbrains.com/idea).
-* Download the [Arend plugin](http://valis.github.io/intellij-vclang.zip). You can also get the latest version of the plugin by following instructions on [this page](https://github.com/JetBrains/intellij-vclang/blob/dev/README.md).
-* Run Intellij IDEA, choose either **Configure | Plugins** if you are on a _Welcome screen_ or **File | Settings** from the main menu if a project is open, go to **Plugins** tab, click **Install plugin from disk**, choose downloaded `intellij-vclang.zip` file, restart Intellij IDEA.
+* Download the [Arend plugin](http://valis.github.io/intellij-arend.zip). You can also get the latest version of the plugin by following instructions on [this page](https://github.com/JetBrains/intellij-arend/blob/dev/README.md).
+* Run Intellij IDEA, choose either **Configure | Plugins** if you are on a _Welcome screen_ or **File | Settings** from the main menu if a project is open, go to **Plugins** tab, click **Install plugin from disk**, choose downloaded `intellij-arend.zip` file, restart Intellij IDEA.
 
 Let's create our first Arend project.
 Run Intellij IDEA and choose either **Create New Project** if you are on a _Welcome screen_ or **File | New | Project** from the main menu if a project is open.
-Choose **Vclang** in the list on the left, click **Next**, click **Finish**.
-You should get a new project which contains (among other files) a file `<project_name>.vcl` and an empty directory `src`.
-The `vcl` file contains a description of the project.
-<!-- You can read more about vcl files in ... TODO -->
-Create a new file `example.vc` in `src` directory.
+Choose **Arend** in the list on the left, click **Next**, click **Finish**.
+You should get a new project which contains (among other files) a file `arend.yaml` and an empty directory `src`.
+The `yaml` file contains a description of the project.
+<!-- You can read more about this configuration file in ... TODO -->
+Create a new file `example.ard` in `src` directory.
 Add the following line to this file:
 ```arend
 \func f => 0
 ```
-Right click `example.vc` file and choose `Run 'Typecheck example'` in the popup menu (you can also use shortcut `<Alt+Shift+F10>`).
+Right click `example.ard` file and choose `Run 'Typecheck example'` in the popup menu (you can also use shortcut `<Alt+Shift+F10>`).
 You should see the message _All Tests Passed_, which indicates that the typechecking was successful.
 Modify the file as follows:
 ```arend
@@ -31,7 +31,7 @@ Modify the file as follows:
 Run the typechecking again (you can use shortcut `<Shift+F10>` for this).
 You should see the following error message:
 ```bash
-[ERROR] example.vc:1:25: Type mismatch
+[ERROR] example.ard:1:25: Type mismatch
   Expected type: Nat -> Nat
     Actual type: Nat
   In: 0
@@ -45,14 +45,14 @@ To learn more about Arend, see the [tutorial](tutorial) and the [language refere
 
 To install the console application, follow the instructions below.
 
-* Download the vclang [jar file](http://valis.github.io/vclang.jar). You can also get the latest version of the plugin by following instructions on [this page](https://github.com/JetBrains/vclang/blob/master/README.md).
-* Run `java -jar vclang.jar` to check that everything is alright. You should see the following output:
-<pre><code class="bash">$ java -jar vclang.jar
+* Download the arend [jar file](http://valis.github.io/arend.jar). You can also get the latest version of the plugin by following instructions on [this page](https://github.com/JetBrains/arend/blob/master/README.md).
+* Run `java -jar arend.jar` to check that everything is alright. You should see the following output:
+<pre><code class="bash">$ java -jar arend.jar
 [INFO] Loading library prelude
 [INFO] Loaded library prelude
 Nothing to load
 </code></pre>
-To see command line options, run `java -jar vclang.jar --help`.
+To see command line options, run `java -jar arend.jar --help`.
 
 Let's create our first Arend project.
 Create a directory for your project:
@@ -60,20 +60,20 @@ Create a directory for your project:
 $ mkdir testProject
 $ cd testProject
 ```
-Create file `myProject.vcl` inside this directory.
+Create file `arend.yaml` inside this directory.
 This file contains the description of your project.
 Currently, we just need to specify the location of source files of your project.
-<!-- You can read more about vcl files in ... TODO -->
-Add the following line to `myProject.vcl`:
+<!-- You can read more about this configuration file in ... TODO -->
+Add the following line to `arend.yaml`:
 ```bash
 sourcesDir: src
 ```
 Create directory `src` which will contain source files for this project.
-Create a file `example.vc` inside `src` with the following content:
+Create a file `example.ard` inside `src` with the following content:
 ```arend
 \func f => 0
 ```
-Run `java -jar $vclang $myProject`, where `$vclang` is the path to `vclang.jar` and `$myProject` is the path to `myProject.vcl`.
+Run `java -jar $arend $myProject`, where `$arend` is the path to `arend.jar` and `$myProject` is the path to `arend.yaml`.
 You should see the following output:
 ```bash
 [INFO] Loading library prelude
@@ -85,11 +85,11 @@ You should see the following output:
 --- Done ---
 ```
 This means that module `example` was successfully typechecked.
-Modify file `example.vc` as follows:
+Modify file `example.ard` as follows:
 ```arend
 \func f : Nat -> Nat => 0
 ```
-If you run `java -jar $vclang $myProject` again, it should produce the following error message:
+If you run `java -jar $arend $myProject` again, it should produce the following error message:
 ```bash
 [INFO] Loading library prelude
 [INFO] Loaded library prelude

@@ -1,1 +1,1 @@
-rootProject.name = "vclang"
+rootProject.name = "arend"

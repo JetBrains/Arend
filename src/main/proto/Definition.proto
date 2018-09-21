@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package vclang.compiled;
-option java_package = "com.jetbrains.jetpad.vclang.module.serialization";
+package arend.compiled;
+option java_package = "org.arend.module.serialization";
 option java_outer_classname = "DefinitionProtos";
 
 import "Expression.proto";

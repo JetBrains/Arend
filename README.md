@@ -1,9 +1,9 @@
-# Vclang proof assistant
+# Arend proof assistant
 
 [![JetBrains incubator project](http://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 
-Vclang (aka Arend) is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
-See the [documentation](https://arend.top) for more information about the Vclang language.
+Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
+See the [documentation](https://arend.top) for more information about the Arend language.
 
 ## Building
 
@@ -14,6 +14,6 @@ automatically as long as you have JDK installed.
 Common tasks are
 
   - `./gradlew jarDep` — build a jar file which includes all the dependecies which can be found at `build/libs`.
-    To see the command line options of the application, run `java -jar vclang.jar --help`.
+    To see the command line options of the application, run `java -jar arend.jar --help`.
 
   - `./gradlew test` — run all tests.

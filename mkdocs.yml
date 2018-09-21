@@ -2,7 +2,7 @@ site_name: Arend
 site_url: http://arend.top/
 site_description: Arend is good at maths. You aren’t.
 
-repo_url: https://github.com/JetBrains/vclang
+repo_url: https://github.com/JetBrains/arend
 edit_uri: edit/master/docs/
 
 pages:
