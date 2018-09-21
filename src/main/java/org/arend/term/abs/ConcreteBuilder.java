@@ -197,6 +197,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       try {
         List<Concrete.Constructor> constructors = new ArrayList<>(absConstructors.size());
         for (Abstract.Constructor constructor : absConstructors) {
+          reportError(constructor.getErrorData());
           TCReferable constructorRef = myReferableConverter.toDataLocatedReferable(constructor.getReferable());
           if (constructorRef != null) {
             Concrete.Constructor cons = new Concrete.Constructor(constructorRef, data, buildTypeParameters(constructor.getParameters()), buildReferences(constructor.getEliminatedExpressions()), buildClauses(constructor.getClauses()));
