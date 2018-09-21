@@ -44,6 +44,11 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public boolean isNatural() {
+    return myInteger >= 0;
+  }
+
+  @Override
   public boolean isEqual(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? myInteger == ((SmallIntegerExpression) expr).getInteger() : expr.getBigInteger().equals(BigInteger.valueOf(myInteger));
   }

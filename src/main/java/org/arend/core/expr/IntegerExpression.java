@@ -15,6 +15,8 @@ public abstract class IntegerExpression extends Expression {
 
   public abstract boolean isZero();
 
+  public abstract boolean isNatural();
+
   public abstract boolean isEqual(IntegerExpression expr);
 
   public abstract IntegerExpression plus(IntegerExpression expr);

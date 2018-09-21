@@ -30,6 +30,11 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public boolean isNatural() {
+    return myInteger.compareTo(BigInteger.ZERO) >= 0;
+  }
+
+  @Override
   public boolean isEqual(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? myInteger.equals(BigInteger.valueOf(((SmallIntegerExpression) expr).getInteger())) : myInteger.equals(expr.getBigInteger());
   }

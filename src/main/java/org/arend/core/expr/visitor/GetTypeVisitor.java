@@ -9,6 +9,7 @@ import org.arend.error.IncorrectExpressionException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.arend.core.expr.ExpressionFactory.Int;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
@@ -152,6 +153,6 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitInteger(IntegerExpression expr, Void params) {
-    return Nat();
+    return expr.isNatural() ? Nat() : Int();
   }
 }
