@@ -148,7 +148,8 @@ public class ConstructorPattern implements Pattern {
 
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
-    List<? extends Expression> arguments = getMatchingExpressionArguments(expression.normalize(NormalizeVisitor.Mode.WHNF));
+    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
+    List<? extends Expression> arguments = getMatchingExpressionArguments(expression);
     if (arguments != null) {
       return myPatterns.match(arguments, result);
     }

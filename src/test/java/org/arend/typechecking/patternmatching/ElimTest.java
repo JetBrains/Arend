@@ -443,4 +443,14 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | zero => zero\n" +
       "  | suc n' => zero", 1);
   }
+
+  @Test
+  public void testAbsurd() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func not (b : Bool) : Bool | true => false | false => true\n" +
+      "\\data T (b : Bool) \\with | true => tt\n" +
+      "\\func f (b : Bool) (p : T (not b)) : Nat\n" +
+      "  | false, tt => 0");
+  }
 }
