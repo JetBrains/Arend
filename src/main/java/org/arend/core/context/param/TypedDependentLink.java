@@ -62,11 +62,15 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
     if (size > 0) {
       TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(exprSubst, levelSubst), EmptyDependentLink.getInstance());
-      exprSubst.add(this, new ReferenceExpression(result));
-      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1);
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
+      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1, updateSubst);
       return result;
     } else {
       return EmptyDependentLink.getInstance();

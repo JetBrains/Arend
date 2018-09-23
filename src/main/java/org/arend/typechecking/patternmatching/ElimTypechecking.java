@@ -195,7 +195,7 @@ public class ElimTypechecking {
         for (DependentLink link = parameters; link != emptyLink; link = link.getNext()) {
           index++;
         }
-        elimTree = new BranchElimTree(parameters.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, index), Collections.emptyMap());
+        elimTree = new BranchElimTree(parameters.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, index, false), Collections.emptyMap());
       }
 
       return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
@@ -361,13 +361,13 @@ public class ElimTypechecking {
       if (index == clauseDataList.get(0).patterns.size()) {
         ExtClause clauseData = clauseDataList.get(0);
         myUnusedClauses.remove(clauseData.clause);
-        DependentLink vars = clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.substitution);
+        DependentLink vars = clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.substitution, true);
         clauseData.substitution.subst(clauseData.substitution);
         return new LeafElimTree(vars, clauseData.expression.subst(clauseData.substitution));
       }
 
       // Make new list of variables
-      DependentLink vars = index == 0 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.get(0)).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, index);
+      DependentLink vars = index == 0 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.get(0)).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, index, true);
       clauseDataList.get(0).substitution.subst(clauseDataList.get(0).substitution);
       for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
         myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));

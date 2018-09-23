@@ -46,7 +46,7 @@ public class EmptyDependentLink implements SingleDependentLink {
   }
 
   @Override
-  public EmptyDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public EmptyDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
     return this;
   }
 

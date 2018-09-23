@@ -91,7 +91,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelim.setParameters(params(zNElim, sNElim, xNElim));
     nelim.setResultType(Nat());
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink nelimParams = zNElim.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2);
+    DependentLink nelimParams = zNElim.subst(new ExprSubstitution(), LevelSubstitution.EMPTY, 2, false);
     Map<Constructor, ElimTree> nelimChildren = new HashMap<>();
     nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
     nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));

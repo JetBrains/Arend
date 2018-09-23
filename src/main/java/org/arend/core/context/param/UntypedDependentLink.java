@@ -9,7 +9,7 @@ import java.util.List;
 
 public class UntypedDependentLink implements DependentLink {
   private String myName;
-  protected DependentLink myNext;
+  DependentLink myNext;
 
   public UntypedDependentLink(String name, DependentLink next) {
     assert next instanceof UntypedDependentLink || next instanceof TypedDependentLink;
@@ -17,7 +17,7 @@ public class UntypedDependentLink implements DependentLink {
     myNext = next;
   }
 
-  protected UntypedDependentLink(String name) {
+  UntypedDependentLink(String name) {
     myName = name;
     myNext = EmptyDependentLink.getInstance();
   }
@@ -82,16 +82,24 @@ public class UntypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
     if (size == 1) {
       TypedDependentLink result = new TypedDependentLink(isExplicit(), myName, getType(), EmptyDependentLink.getInstance());
-      exprSubst.add(this, new ReferenceExpression(result));
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
       return result;
     } else
     if (size > 0) {
       UntypedDependentLink result = new UntypedDependentLink(myName);
-      exprSubst.add(this, new ReferenceExpression(result));
-      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1);
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
+      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1, updateSubst);
       return result;
     } else {
       return EmptyDependentLink.getInstance();

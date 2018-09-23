@@ -16,7 +16,7 @@ public interface DependentLink extends Binding {
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size);
+  DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
   Type getType();
@@ -83,8 +83,16 @@ public interface DependentLink extends Binding {
       return result;
     }
 
+    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst, boolean updateSubst) {
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, updateSubst);
+    }
+
     public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, false);
+    }
+
+    public static DependentLink subst(DependentLink link, ExprSubstitution substitution, boolean updateSubst) {
+      return subst(link, substitution, LevelSubstitution.EMPTY, updateSubst);
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
@@ -110,7 +118,7 @@ public interface DependentLink extends Binding {
     }
 
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE);
+      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, false);
     }
   }
 

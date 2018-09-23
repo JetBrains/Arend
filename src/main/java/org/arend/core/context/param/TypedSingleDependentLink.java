@@ -21,10 +21,14 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   }
 
   @Override
-  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
     if (size > 0) {
       TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(exprSubst, levelSubst));
-      exprSubst.add(this, new ReferenceExpression(result));
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
       return result;
     } else {
       return EmptyDependentLink.getInstance();

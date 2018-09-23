@@ -11,7 +11,7 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
     super(name, next);
   }
 
-  public UntypedSingleDependentLink(String name) {
+  private UntypedSingleDependentLink(String name) {
     super(name);
   }
 
@@ -26,16 +26,24 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
   }
 
   @Override
-  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size) {
+  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
     if (size == 1) {
       TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType());
-      exprSubst.add(this, new ReferenceExpression(result));
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
       return result;
     } else
     if (size > 0) {
       UntypedSingleDependentLink result = new UntypedSingleDependentLink(getName());
-      exprSubst.add(this, new ReferenceExpression(result));
-      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1);
+      if (updateSubst) {
+        exprSubst.addSubst(this, new ReferenceExpression(result));
+      } else {
+        exprSubst.add(this, new ReferenceExpression(result));
+      }
+      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1, updateSubst);
       return result;
     } else {
       return EmptyDependentLink.getInstance();
