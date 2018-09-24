@@ -20,6 +20,8 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.DummyErrorReporter;
 import org.arend.module.ModulePath;
+import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.Scope;
 import org.arend.typechecking.TypecheckerState;
@@ -31,6 +33,7 @@ import org.arend.util.Pair;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.arend.core.expr.ExpressionFactory.parameter;
 
@@ -64,6 +67,10 @@ public class Prelude {
   public static Constructor SET_TRUNC_PATH_CON;
 
   private Prelude() {
+  }
+
+  public static boolean isInitialized() {
+    return INTERVAL != null;
   }
 
   public static void update(Definition definition) {
@@ -148,50 +155,63 @@ public class Prelude {
     }
   }
 
-  public static void fillInTypecheckerState(TypecheckerState state) {
-    state.record(NAT.getReferable(), NAT);
-    state.record(PLUS.getReferable(), PLUS);
-    state.record(MUL.getReferable(), MUL);
-    state.record(ZERO.getReferable(), ZERO);
-    state.record(SUC.getReferable(), SUC);
-    state.record(INT.getReferable(), INT);
-    state.record(POS.getReferable(), POS);
-    state.record(NEG.getReferable(), NEG);
-    state.record(FROM_NAT.getReferable(), FROM_NAT);
-    state.record(INTERVAL.getReferable(), INTERVAL);
-    state.record(LEFT.getReferable(), LEFT);
-    state.record(RIGHT.getReferable(), RIGHT);
-    state.record(PATH.getReferable(), PATH);
-    state.record(PATH_CON.getReferable(), PATH_CON);
-    state.record(PATH_INFIX.getReferable(), PATH_INFIX);
-    state.record(AT.getReferable(), AT);
-    state.record(COERCE.getReferable(), COERCE);
-    state.record(ISO.getReferable(), ISO);
+  public static void forEach(Consumer<Definition> consumer) {
+    consumer.accept(NAT);
+    consumer.accept(PLUS);
+    consumer.accept(MUL);
+    consumer.accept(ZERO);
+    consumer.accept(SUC);
+    consumer.accept(INT);
+    consumer.accept(POS);
+    consumer.accept(NEG);
+    consumer.accept(FROM_NAT);
+    consumer.accept(INTERVAL);
+    consumer.accept(LEFT);
+    consumer.accept(RIGHT);
+    consumer.accept(PATH);
+    consumer.accept(PATH_CON);
+    consumer.accept(PATH_INFIX);
+    consumer.accept(AT);
+    consumer.accept(COERCE);
+    consumer.accept(ISO);
 
-    state.record(PROP_TRUNC.getReferable(), PROP_TRUNC);
+    consumer.accept(PROP_TRUNC);
     for (Constructor constructor : PROP_TRUNC.getConstructors()) {
-      state.record(constructor.getReferable(), constructor);
+      consumer.accept(constructor);
     }
 
-    state.record(SET_TRUNC.getReferable(), SET_TRUNC);
+    consumer.accept(SET_TRUNC);
     for (Constructor constructor : SET_TRUNC.getConstructors()) {
-      state.record(constructor.getReferable(), constructor);
+      consumer.accept(constructor);
     }
   }
 
+  public static void fillInTypecheckerState(TypecheckerState state) {
+    forEach(def -> state.record(def.getReferable(), def));
+  }
+
   public static void initialize(Scope scope, TypecheckerState state) {
-    for (String name : new String[]{"Nat", "Int", "I", "Path", "=", "@", "coe", "iso", "TrP", "TrS"}) {
-      update(state.getTypechecked((TCReferable) scope.resolveName(name)));
+    for (Referable ref : scope.getElements()) {
+      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+        update(state.getTypechecked((TCReferable) ref));
+      }
     }
 
     Scope natScope = scope.resolveNamespace("Nat");
     assert natScope != null;
-    update(state.getTypechecked((TCReferable) natScope.resolveName("+")));
-    update(state.getTypechecked((TCReferable) natScope.resolveName("*")));
+    for (Referable ref : natScope.getElements()) {
+      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+        update(state.getTypechecked((TCReferable) ref));
+      }
+    }
 
     Scope intScope = scope.resolveNamespace("Int");
     assert intScope != null;
-    update(state.getTypechecked((TCReferable) intScope.resolveName("fromNat")));
+    for (Referable ref : intScope.getElements()) {
+      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+        update(state.getTypechecked((TCReferable) ref));
+      }
+    }
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {

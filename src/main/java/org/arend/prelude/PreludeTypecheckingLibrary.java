@@ -55,7 +55,7 @@ public abstract class PreludeTypecheckingLibrary extends PreludeLibrary {
 
     if (super.orderModules(ordering)) {
       synchronized (PreludeLibrary.class) {
-        if (Prelude.INTERVAL == null) {
+        if (!Prelude.isInitialized()) {
           Prelude.initialize(getPreludeScope(), getTypecheckerState());
         }
       }
