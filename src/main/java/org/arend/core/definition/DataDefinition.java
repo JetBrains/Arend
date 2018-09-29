@@ -23,6 +23,7 @@ public class DataDefinition extends Definition {
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
   private final CoerceData myCoerce = new CoerceData();
+  private List<Integer> myParametersTypecheckingOrder;
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -63,7 +64,6 @@ public class DataDefinition extends Definition {
 
   @Override
   public DependentLink getParameters() {
-    assert status().headerIsOK();
     return myParameters;
   }
 
@@ -108,6 +108,16 @@ public class DataDefinition extends Definition {
       }
     }
     return false;
+  }
+
+  @Override
+  public List<Integer> getParametersTypecheckingOrder() {
+    return myParametersTypecheckingOrder;
+  }
+
+  @Override
+  public void setParametersTypecheckingOrder(List<Integer> order) {
+    myParametersTypecheckingOrder = order;
   }
 
   @Override

@@ -16,6 +16,7 @@ public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private Expression myResultType;
   private Body myBody;
+  private List<Integer> myParametersTypecheckingOrder;
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -46,6 +47,16 @@ public class FunctionDefinition extends Definition implements Function {
 
   public void setResultType(Expression resultType) {
     myResultType = resultType;
+  }
+
+  @Override
+  public List<Integer> getParametersTypecheckingOrder() {
+    return myParametersTypecheckingOrder;
+  }
+
+  @Override
+  public void setParametersTypecheckingOrder(List<Integer> order) {
+    myParametersTypecheckingOrder = order;
   }
 
   @Override

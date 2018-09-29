@@ -160,6 +160,10 @@ public class DefinitionDeserialization {
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
+    List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
+    if (!parametersTypecheckingOrder.isEmpty()) {
+      dataDef.setParametersTypecheckingOrder(parametersTypecheckingOrder);
+    }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
 
@@ -176,6 +180,10 @@ public class DefinitionDeserialization {
         constructor.setClauses(clauses);
       }
       constructor.setParameters(defDeserializer.readParameters(constructorProto.getParamList()));
+      List<Integer> constructorParametersTypecheckingOrder = constructorProto.getParametersTypecheckingOrderList();
+      if (!parametersTypecheckingOrder.isEmpty()) {
+        constructor.setParametersTypecheckingOrder(constructorParametersTypecheckingOrder);
+      }
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
       }
@@ -289,6 +297,10 @@ public class DefinitionDeserialization {
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
+    List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
+    if (!parametersTypecheckingOrder.isEmpty()) {
+      functionDef.setParametersTypecheckingOrder(parametersTypecheckingOrder);
+    }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     }

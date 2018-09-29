@@ -41,6 +41,14 @@ public abstract class Definition implements Variable {
     return null;
   }
 
+  public List<Integer> getParametersTypecheckingOrder() {
+    return null;
+  }
+
+  public void setParametersTypecheckingOrder(List<Integer> order) {
+
+  }
+
   public enum TypeCheckingStatus {
     HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_ERRORS, HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_WARNINGS, HAS_WARNINGS, NO_ERRORS;
 

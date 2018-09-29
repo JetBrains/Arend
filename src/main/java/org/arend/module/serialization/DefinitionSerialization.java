@@ -114,6 +114,9 @@ public class DefinitionSerialization {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
     builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    if (definition.getParametersTypecheckingOrder() != null) {
+      builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
+    }
     if (definition.status().headerIsOK()) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
     }
@@ -130,6 +133,9 @@ public class DefinitionSerialization {
         cBuilder.addClause(writeClause(defSerializer, clause));
       }
       cBuilder.addAllParam(defSerializer.writeParameters(constructor.getParameters()));
+      if (constructor.getParametersTypecheckingOrder() != null) {
+        cBuilder.addAllParametersTypecheckingOrder(constructor.getParametersTypecheckingOrder());
+      }
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
@@ -206,6 +212,9 @@ public class DefinitionSerialization {
 
     if (definition.status().headerIsOK()) {
       builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+      if (definition.getParametersTypecheckingOrder() != null) {
+        builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
+      }
       if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }
     if (definition.status().bodyIsOK() && definition.getBody() != null) {

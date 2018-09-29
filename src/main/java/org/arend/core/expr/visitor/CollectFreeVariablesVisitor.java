@@ -13,7 +13,7 @@ import org.arend.core.expr.*;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Variable>, Void> {
+public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
   private Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
 
   Set<Variable> getFreeVariables(Binding binding) {
@@ -28,23 +28,8 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
   }
 
   @Override
-  public Void visitApp(AppExpression expr, Set<Variable> variables) {
-    expr.getFunction().accept(this, variables);
-    expr.getArgument().accept(this, variables);
-    return null;
-  }
-
-  @Override
   public Void visitReference(ReferenceExpression expr, Set<Variable> variables) {
     variables.add(expr.getBinding());
-    return null;
-  }
-
-  @Override
-  public Void visitInferenceReference(InferenceReferenceExpression expr, Set<Variable> variables) {
-    if (expr.getSubstExpression() != null) {
-      expr.getSubstExpression().accept(this, variables);
-    }
     return null;
   }
 
@@ -90,40 +75,6 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
   }
 
   @Override
-  public Void visitUniverse(UniverseExpression expr, Set<Variable> variables) {
-    return null;
-  }
-
-  @Override
-  public Void visitError(ErrorExpression expr, Set<Variable> variables) {
-    if (expr.getExpression() != null) {
-      expr.getExpression().accept(this, variables);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitTuple(TupleExpression expr, Set<Variable> variables) {
-    visitSigma(expr.getSigmaType(), variables);
-    for (Expression field : expr.getFields()) {
-      field.accept(this, variables);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitProj(ProjExpression expr, Set<Variable> variables) {
-    expr.getExpression().accept(this, variables);
-    return null;
-  }
-
-  @Override
-  public Void visitNew(NewExpression expr, Set<Variable> variables) {
-    visitClassCall(expr.getExpression(), variables);
-    return null;
-  }
-
-  @Override
   public Void visitLet(LetExpression expr, Set<Variable> variables) {
     visitLetClauses(0, expr, variables);
     return null;
@@ -156,7 +107,8 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
     return null;
   }
 
-  private void visitElimTree(ElimTree elimTree, Set<Variable> variables) {
+  @Override
+  protected void visitElimTree(ElimTree elimTree, Set<Variable> variables) {
     if (elimTree instanceof LeafElimTree) {
       ((LeafElimTree) elimTree).getExpression().accept(this, variables);
     } else {
@@ -167,41 +119,8 @@ public class CollectFreeVariablesVisitor extends BaseExpressionVisitor<Set<Varia
   }
 
   @Override
-  public Void visitOfType(OfTypeExpression expr, Set<Variable> variables) {
-    expr.getExpression().accept(this, variables);
-    expr.getTypeOf().accept(this, variables);
-    return null;
-  }
-
-  @Override
-  public Void visitInteger(IntegerExpression expr, Set<Variable> params) {
-    return null;
-  }
-
-  @Override
   public Void visitDefCall(DefCallExpression expr, Set<Variable> variables) {
     variables.add(expr.getDefinition());
-    for (Expression arg : expr.getDefCallArguments()) {
-      arg.accept(this, variables);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitConCall(ConCallExpression expr, Set<Variable> variables) {
-    visitDefCall(expr, variables);
-    for (Expression arg : expr.getDataTypeArguments()) {
-      arg.accept(this, variables);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitClassCall(ClassCallExpression expr, Set<Variable> variables) {
-    visitDefCall(expr, variables);
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      entry.getValue().accept(this, variables);
-    }
-    return null;
+    return super.visitDefCall(expr, variables);
   }
 }

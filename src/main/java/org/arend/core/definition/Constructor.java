@@ -26,6 +26,7 @@ public class Constructor extends Definition implements Function {
   private Body myConditions;
   private List<ClauseBase> myClauses;
   private int myNumberOfIntervalParameters;
+  private List<Integer> myParametersTypecheckingOrder;
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -135,6 +136,16 @@ public class Constructor extends Definition implements Function {
     }
 
     return myDataType.getDefCall(sortArgument, arguments);
+  }
+
+  @Override
+  public List<Integer> getParametersTypecheckingOrder() {
+    return myParametersTypecheckingOrder;
+  }
+
+  @Override
+  public void setParametersTypecheckingOrder(List<Integer> order) {
+    myParametersTypecheckingOrder = order;
   }
 
   @Override

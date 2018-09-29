@@ -12,6 +12,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.pattern.Patterns;
@@ -32,6 +33,7 @@ import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.FreeVariablesClassifier;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -268,6 +270,109 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return sort;
   }
 
+  private void calculateParametersTypecheckingOrder(Definition definition) {
+    List<DependentLink> parametersList;
+    if (definition instanceof Constructor && ((Constructor) definition).getDataTypeParameters().hasNext()) {
+      parametersList = new ArrayList<>(2);
+      parametersList.add(((Constructor) definition).getDataTypeParameters());
+      parametersList.add(definition.getParameters());
+    } else {
+      parametersList = Collections.singletonList(definition.getParameters());
+    }
+
+    LinkedHashSet<Binding> processed = new LinkedHashSet<>();
+    for (DependentLink link : parametersList) {
+      boolean isDataTypeParameter = parametersList.size() > 1 && link == parametersList.get(0);
+      for (; link.hasNext(); link = link.getNext()) {
+        if (processed.contains(link)) {
+          continue;
+        }
+        if (link.isExplicit() && !isDataTypeParameter) {
+          processed.add(link);
+        } else {
+          FreeVariablesClassifier classifier = new FreeVariablesClassifier(link);
+          boolean isDataTypeParam = isDataTypeParameter;
+          DependentLink link1 = link.getNext();
+          boolean found = false;
+          while (true) {
+            if (!link1.hasNext()) {
+              if (isDataTypeParam) {
+                link1 = parametersList.get(1);
+                isDataTypeParam = false;
+              }
+              if (!link1.hasNext()) {
+                break;
+              }
+            }
+
+            FreeVariablesClassifier.Result result = classifier.checkBinding(link1);
+            if ((result == FreeVariablesClassifier.Result.GOOD || result == FreeVariablesClassifier.Result.BOTH) && processed.contains(link1)) {
+              found = true;
+              processed.add(link);
+              break;
+            }
+            if (result == FreeVariablesClassifier.Result.GOOD && link1.isExplicit()) {
+              found = true;
+              processed.add(link);
+              Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(link1.getTypeExpr());
+              for (DependentLink link2 : parametersList) {
+                for (; link2.hasNext() && link2 != link1; link2 = link2.getNext()) {
+                  if (freeVars.contains(link2)) {
+                    processed.add(link2);
+                  }
+                }
+                if (link2 == link1) {
+                  break;
+                }
+              }
+              processed.add(link1);
+              break;
+            }
+
+            link1 = link1.getNext();
+          }
+
+          if (!found) {
+            processed.add(link);
+          }
+        }
+      }
+    }
+
+    boolean needReorder = false;
+    DependentLink link = parametersList.get(0);
+    boolean isDataTypeParameter = parametersList.size() > 1;
+    for (Binding binding : processed) {
+      if (binding != link) {
+        needReorder = true;
+        break;
+      }
+      link = link.getNext();
+      if (!link.hasNext() && isDataTypeParameter) {
+        link = parametersList.get(1);
+        isDataTypeParameter = false;
+      }
+    }
+
+    if (needReorder) {
+      Map<Binding,Integer> map = new HashMap<>();
+      int i = 0;
+      for (DependentLink link1 : parametersList) {
+        for (; link1.hasNext(); link1 = link1.getNext()) {
+          map.put(link1,i);
+          i++;
+        }
+      }
+
+      List<Integer> order = new ArrayList<>(processed.size());
+      for (Binding binding : processed) {
+        order.add(map.get(binding));
+      }
+
+      definition.setParametersTypecheckingOrder(order);
+    }
+  }
+
   private void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean recursive) {
     LinkList list = new LinkList();
 
@@ -287,6 +392,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     typedDef.setParameters(list.getFirst());
     typedDef.setResultType(expectedType);
     typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+    calculateParametersTypecheckingOrder(typedDef);
 
     if (recursive && expectedType == null) {
       myVisitor.getErrorReporter().report(new TypecheckingError(def.getBody() instanceof Concrete.CoelimFunctionBody
@@ -406,6 +512,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
     myVisitor.getTypecheckingState().record(def.getData(), dataDefinition);
+    calculateParametersTypecheckingOrder(dataDefinition);
 
     if (!paramsOk) {
       dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -659,6 +766,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         constructor.setParameters(list.getFirst());
+        calculateParametersTypecheckingOrder(constructor);
 
         if (!def.getClauses().isEmpty()) {
           elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), constructor.getParameters(), myVisitor);
@@ -1014,6 +1122,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     LinkList list = new LinkList();
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null) != null;
     typedDef.setParameters(list.getFirst());
+    calculateParametersTypecheckingOrder(typedDef);
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     if (!paramsOk) {
       return;
