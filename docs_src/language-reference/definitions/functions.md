@@ -62,6 +62,9 @@ If a pattern `p^i_j` contains a variable `x` as a subpattern of type `T`, then t
 If some of the parameters of `f` are implicit, corresponding patterns must be omitted.
 They can be specified explicitly by surrounding them in `{ }`.
 
+You can also write `\func f p_1 ... p_n : R \with { | c_1 ... | c_n } `.
+The keyword `\with` and curly braces are optional and do not affect the defined function.
+
 A pattern of type `T` can have one of the following forms:
 
 * A variable. If this variable is not used anywhere, its name can be replaces with `_`.
@@ -76,7 +79,7 @@ A pattern of type `T` can have one of the following forms:
   In this case, the right hand side `=> e_i` of the clause in which such a pattern appears must be omitted.
 
 Now, let us discuss how expressions of the form `f a_1 ... a_n` evaluate (see [this section](/language-reference/expressions/#evaluation) for the definition of the reduction and evaluation relations).
-To reduce an expression `E = f a_1 ... a_n`, we first evaluate expressions `a_1`, ... `a_n` and match them with the patterns in the definition of `f` top to bottom, left to right.
+To reduce an expression `E = f a_1 ... a_n`, we first evaluate expressions `a_1`, ... `a_n` and match them with the patterns in the definition of `f` left to right, top to bottom.
 If all patterns `p^i_1`, ... `p^i_n` matches with `a_1`, ... `a_n` for some i, then `E` reduces to `e_i[b_1/y_1, ... b_k/y_k]`,
 where `y_1`, ... `y_k` are variables that appear in `p^i_1`, ... `p^i_n` and `b_1`, ... `b_k` are subexpressions of `a_1`, ... `a_n` corresponding to these variables.
 If some argument cannot be matched with a pattern `con s_1 ... s_m` because it is of the form `con' ...` for some constructor `con'` different from `con`, then the evaluator skips the clause with this patterns and tries the next one.
@@ -107,8 +110,37 @@ g F F => 2
 g F x -- does not reduce
 ```
 
-You can also write `\func f p_1 ... p_n : R \with { | c_1 ... | c_n } `.
-The keyword `\with` and curly braces are optional and do not affect the defined function.
+Note that patterns are matched left to right, top to bottom and not the other way around.
+This means that even if a funcall matches the first clause, it may not evaluate.
+For example, consider the following definition:
+
+```arend
+\func \infix 4 < (n m : Nat) : Bool
+  | _, 0 => false
+  | 0, suc _ => true
+  | suc n, suc m => n < m
+```
+
+The funcall `n < 0` does not evaluate since it matches the first argument first, but funcalls `0 < 0` and `suc n < 0` both evaluate to `false`.
+
+Sometimes you need to write a clause in which one of the parameters is a data type without constructors.
+You can write pattern `()` which is called in this case _the absurd pattern_.
+In this case, you must omit the right hand side of the clause.
+For example, to define a function from the empty data type you can write:
+
+```arend
+\data Empty
+
+\func absurd {A : \Type} (e : Empty) : A
+  | ()
+```
+
+You can often (but not always) omit the clause with an abusrd pattern completely.
+For example, you can define function `absurd` as follows:
+
+```arend
+\func absurd {A : \Type} (e : Empty) : A
+```
 
 ## Elim
 
