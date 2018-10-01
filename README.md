@@ -3,7 +3,7 @@
 [![JetBrains incubator project](http://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 
 Arend is a theorem prover based on [Homotopy Type Theory](https://ncatlab.org/nlab/show/homotopy+type+theory).
-See the [documentation](https://arend.top) for more information about the Arend language.
+See the [documentation](https://arend.readthedocs.io) for more information about the Arend language.
 
 ## Building
 

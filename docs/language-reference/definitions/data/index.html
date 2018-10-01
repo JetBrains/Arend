@@ -216,7 +216,7 @@
     <li>Data Definitions</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/JetBrains/arend/edit/master/docs/language-reference/definitions/data.md"
+        <a href="https://github.com/JetBrains/Arend/edit/master/docs/language-reference/definitions/data.md"
           class="icon icon-github"> Edit on GitHub</a>
       
     </li>
@@ -291,7 +291,6 @@ The set of such positions is defined inductively:</p>
 <li><code>D</code> occurs only in strictly positive positions in <code>Path (\lam i =&gt; B) b b'</code> if it occurs only in strictly positive positions in <code>B</code> and does not occur in <code>b</code> and <code>b'</code>.</li>
 <li><code>D</code> occurs only in strictly positive positions in any other expression if it does not occur in it.</li>
 </ul>
-<p>Moreover, every recursive defcall must be of the form <code>D x_1 ... x_n</code>, where <code>x_1</code>, ... <code>x_n</code> are variables defined in the parameters of <code>D</code>.</p>
 <h2 id="truncation">Truncation<a class="headerlink" href="#truncation" title="Permanent link">&para;</a></h2>
 <p>You can truncate data types to a specified homotopy level which is less than its actual level.
 To do this, specify explicitly the type of a data definition and write keyword <code>\truncated</code> before the definition:</p>
@@ -327,9 +326,54 @@ but functions <code>existsSuc</code> and <code>existsEq</code> which construct a
 <p>A truncated data type is (provably) equivalent to the truncation of the untrancated version of this data type.
 So, this is simply a syntax sugar that allows you to define functions over a truncated data type more easily.</p>
 <h2 id="induction-induction-and-induction-recursion">Induction-induction and induction-recursion<a class="headerlink" href="#induction-induction-and-induction-recursion" title="Permanent link">&para;</a></h2>
-<p>TODO</p>
+<p>Two or more data types can be mutually recursive.
+This is called <em>induction-induction</em>.
+Inductive-inductive definitions also must be strictly positive.
+That is, recursive calls to the definition itself and to other recursive definitions may occur only in strictly positive positions.</p>
+<p>Data types may also be mutually recusrive with functions.
+This is called <em>induction-recursion</em>.
+Strict positivity and termination checkers work as usual for such definitions.</p>
 <h2 id="varying-number-of-constructors">Varying number of constructors<a class="headerlink" href="#varying-number-of-constructors" title="Permanent link">&para;</a></h2>
-<p>TODO</p>
+<p>Sometimes we need to define a data type which has different constructors depending on its parameters.
+The classical example is the data type of lists of fixed length.
+The data type <code>Vec A 0</code> has only one constructor <code>nil</code>, the empty list.
+The data type <code>Vec A (suc n)</code> also has one constructor <code>cons</code>, a non-empty list.
+We can define such a data type by 'pattern-matching':</p>
+<pre><code class="arend">\data Vec (A : \Type) (n : Nat) \elim n
+  | 0 =&gt; nil
+  | suc n =&gt; cons A (Vec A n)
+</code></pre>
+
+<p>The general syntax is similar to the syntax of functions defined by pattern-matching.
+After the list of parameters we can write either <code>\elim vars</code> or <code>\with</code> followed by a list of clause.</p>
+<pre><code class="arend">\data D p_1 ... p_n \with
+  | t_1, ... t_n =&gt; con_1 p^1_1 ... p^1_{k_1}
+  ...
+  | t_1', ... t_n' =&gt; con_m p^m_1 ... p^m_{k_m}
+</code></pre>
+
+<p>Each clause has a list of patterns, followed by <code>=&gt;</code>, followed by a constructor definition.
+The order of clauses does not matter.
+If a clause matches the arguments of a defcall <code>D a_1 ... a_n</code>, then the corresponding constructor is added to this data type.
+For example, we can define the following data type:</p>
+<pre><code class="arend">\data Bool | true | false
+
+\data T (b : Bool) \with
+  | true =&gt; con1
+  | true =&gt; con2
+</code></pre>
+
+<p>Data type <code>T true</code> has two constructors: <code>con1</code> and <code>con2</code>.
+Data type <code>T false</code> is empty.
+We can also define several constructors in a single clause as follows:</p>
+<pre><code class="arend">\data T (b : Bool) \with
+  | true =&gt; {
+    | con1
+    | con2
+  }
+</code></pre>
+
+<p>This definition is equivalent to the previous one.</p>
               
             </div>
           </div>
@@ -367,7 +411,7 @@ So, this is simply a syntax sugar that allows you to define functions over a tru
   <div class="rst-versions" role="note" style="cursor: pointer">
     <span class="rst-current-version" data-toggle="rst-current-version">
       
-          <a href="https://github.com/JetBrains/arend/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+          <a href="https://github.com/JetBrains/Arend/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
         <span><a href="../functions/" style="color: #fcfcfc;">&laquo; Previous</a></span>

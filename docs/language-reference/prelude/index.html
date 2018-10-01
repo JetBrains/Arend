@@ -167,6 +167,24 @@
     <a class="current" href="./">Prelude</a>
     <ul class="subnav">
             
+    <li class="toctree-l3"><a href="#nat-and-int">Nat and Int</a></li>
+    
+
+    <li class="toctree-l3"><a href="#interval">Interval</a></li>
+    
+
+    <li class="toctree-l3"><a href="#path">Path</a></li>
+    
+
+    <li class="toctree-l3"><a href="#coe">coe</a></li>
+    
+
+    <li class="toctree-l3"><a href="#iso">iso</a></li>
+    
+
+    <li class="toctree-l3"><a href="#trp-and-trs">TrP and TrS</a></li>
+    
+
     </ul>
                 </li>
     </ul>
@@ -201,7 +219,7 @@
     <li>Prelude</li>
     <li class="wy-breadcrumbs-aside">
       
-        <a href="https://github.com/JetBrains/arend/edit/master/docs/language-reference/prelude.md"
+        <a href="https://github.com/JetBrains/Arend/edit/master/docs/language-reference/prelude.md"
           class="icon icon-github"> Edit on GitHub</a>
       
     </li>
@@ -213,7 +231,45 @@
               
                 <h1 id="prelude">Prelude<a class="headerlink" href="#prelude" title="Permanent link">&para;</a></h1>
 
-<p>TODO</p>
+<p>Prelude is a built-in module which contains several definitions which behave differently from ordinary definitions.
+It is also always imported implicitly in every module.
+You can import it explicitly to hide or rename some of its definitions.</p>
+<p>We will discuss definitions in this module.
+You can find file <code>Prelude.ard</code> which contains these definitions, but note that they are only roughly correspond to actual definitions since most of them cannot be actually defined in the ordinary syntax.</p>
+<h1 id="nat-and-int">Nat and Int<a class="headerlink" href="#nat-and-int" title="Permanent link">&para;</a></h1>
+<p>The definitions of <code>Nat</code>, <code>Int</code>, <code>Nat.+</code>, <code>Nat.*</code>, and <code>Int.fromNat</code> are actually correct, you can define the same definitions in an ordinary file.
+The difference is that the definitions from Prelude are implemented more efficiently.</p>
+<h1 id="interval">Interval<a class="headerlink" href="#interval" title="Permanent link">&para;</a></h1>
+<p>The definition of the interval type <code>\data I | left | right</code> looks like the definition of the set with two elements, but this is not true actually.
+One way to think about this data type is that it has more constructors to which you cannot refer explicitly.
+This means that you cannot define a function on <code>I</code> by pattern matching.</p>
+<h1 id="path">Path<a class="headerlink" href="#path" title="Permanent link">&para;</a></h1>
+<p>The definition of <code>Path A a a'</code> is not correct.
+By the definition, it should consists of all functions <code>\Pi (i : I) -&gt; A i</code>, but actually it consists of all such functions <code>f</code> which also satisfy equations <code>f left = a</code> and <code>f right = a'</code>, where the equality is computational.
+This means that when you write <code>path f</code> the typechecker also checks that this equations hold and if they don't it produces an error message.
+For example, if you write <code>\func test : 1 = 0 =&gt; path (\lam _ =&gt; 0)</code>, you will see the following error message:</p>
+<pre><code class="bash">[ERROR] test.ard:1:23: The left path endpoint mismatch
+  Expected: 1
+    Actual: 0
+  In: path (\lam _ =&gt; 0)
+  While processing: test
+</code></pre>
+
+<p>The type of <code>Path</code> is also computed differently.
+If <code>A</code> is an (n+1)-type, then <code>Path A a a'</code> is an n-type.
+Otherwise, it has the same level as <code>A</code>.</p>
+<p>Prelude also contains an infix form of <code>Path</code> called <code>=</code> which is actually a correctly defined function.
+The definition of <code>@</code> is also correct, but the typechecker has an eta rule for this definition: <code>path (\lam i =&gt; p @ i) = p</code>.
+This rule does not hold for functions <code>@</code> defined in other files.</p>
+<h1 id="coe">coe<a class="headerlink" href="#coe" title="Permanent link">&para;</a></h1>
+<p>Function <code>coe</code> imples that <code>I</code> is contractible and that <code>=</code> satisfies the rules for ordinary identity types.
+The definition of <code>coe</code> is not correct since it pattern matches on the interval.</p>
+<h1 id="iso">iso<a class="headerlink" href="#iso" title="Permanent link">&para;</a></h1>
+<p>The definition of <code>iso</code> is not correct since it also pattern matches on the interval.
+This definition implies the univalence axiom.</p>
+<h1 id="trp-and-trs">TrP and TrS<a class="headerlink" href="#trp-and-trs" title="Permanent link">&para;</a></h1>
+<p>Data types <code>TrP</code> and <code>TrS</code> define propositional and set truncations.
+They will be either removed or replaced with some other definitions in future releases.</p>
               
             </div>
           </div>
@@ -249,7 +305,7 @@
   <div class="rst-versions" role="note" style="cursor: pointer">
     <span class="rst-current-version" data-toggle="rst-current-version">
       
-          <a href="https://github.com/JetBrains/arend/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+          <a href="https://github.com/JetBrains/Arend/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
         <span><a href="../expressions/class-ext/" style="color: #fcfcfc;">&laquo; Previous</a></span>

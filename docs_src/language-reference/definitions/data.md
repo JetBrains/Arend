@@ -77,8 +77,6 @@ The set of such positions is defined inductively:
 * `D` occurs only in strictly positive positions in `Path (\lam i => B) b b'` if it occurs only in strictly positive positions in `B` and does not occur in `b` and `b'`.
 * `D` occurs only in strictly positive positions in any other expression if it does not occur in it.
 
-Moreover, every recursive defcall must be of the form `D x_1 ... x_n`, where `x_1`, ... `x_n` are variables defined in the parameters of `D`.
-
 ## Truncation
 
 You can truncate data types to a specified homotopy level which is less than its actual level.
@@ -122,8 +120,62 @@ So, this is simply a syntax sugar that allows you to define functions over a tru
 
 ## Induction-induction and induction-recursion
 
-TODO
+Two or more data types can be mutually recursive.
+This is called _induction-induction_.
+Inductive-inductive definitions also must be strictly positive.
+That is, recursive calls to the definition itself and to other recursive definitions may occur only in strictly positive positions.
+
+Data types may also be mutually recusrive with functions.
+This is called _induction-recursion_.
+Strict positivity and termination checkers work as usual for such definitions.
 
 ## Varying number of constructors
 
-TODO
+Sometimes we need to define a data type which has different constructors depending on its parameters.
+The classical example is the data type of lists of fixed length.
+The data type `Vec A 0` has only one constructor `nil`, the empty list.
+The data type `Vec A (suc n)` also has one constructor `cons`, a non-empty list.
+We can define such a data type by 'pattern-matching':
+
+```arend
+\data Vec (A : \Type) (n : Nat) \elim n
+  | 0 => nil
+  | suc n => cons A (Vec A n)
+```
+
+The general syntax is similar to the syntax of functions defined by pattern-matching.
+After the list of parameters we can write either `\elim vars` or `\with` followed by a list of clause.
+
+```arend
+\data D p_1 ... p_n \with
+  | t_1, ... t_n => con_1 p^1_1 ... p^1_{k_1}
+  ...
+  | t_1', ... t_n' => con_m p^m_1 ... p^m_{k_m}
+```
+
+Each clause has a list of patterns, followed by `=>`, followed by a constructor definition.
+The order of clauses does not matter.
+If a clause matches the arguments of a defcall `D a_1 ... a_n`, then the corresponding constructor is added to this data type.
+For example, we can define the following data type:
+
+```arend
+\data Bool | true | false
+
+\data T (b : Bool) \with
+  | true => con1
+  | true => con2
+```
+
+Data type `T true` has two constructors: `con1` and `con2`.
+Data type `T false` is empty.
+We can also define several constructors in a single clause as follows:
+
+```arend
+\data T (b : Bool) \with
+  | true => {
+    | con1
+    | con2
+  }
+```
+
+This definition is equivalent to the previous one.
