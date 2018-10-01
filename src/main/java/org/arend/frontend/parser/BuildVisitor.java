@@ -1,5 +1,7 @@
 package org.arend.frontend.parser;
 
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.error.ErrorReporter;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
@@ -10,8 +12,6 @@ import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -606,6 +606,40 @@ public class BuildVisitor extends ArendBaseVisitor {
     return result;
   }
 
+  private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, Concrete.ClassDefinition parentClass) {
+    if (ctx instanceof ClassFieldContext) {
+      ClassFieldContext fieldCtx = (ClassFieldContext) ctx;
+      List<TeleContext> teleCtxs = fieldCtx.tele();
+      List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
+      Concrete.Expression type = visitExpr(fieldCtx.expr());
+      if (!parameters.isEmpty()) {
+        type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
+      }
+
+      ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
+      reference.setDefinition(field);
+      fields.add(field);
+    } else if (ctx instanceof ClassImplContext) {
+      Concrete.ClassFieldImpl impl = visitClassImpl((ClassImplContext) ctx);
+      if (impl != null) {
+        implementations.add(impl);
+      }
+    }
+  }
+
+  private void visitInstanceStatements(List<ClassFieldOrImplContext> ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, Concrete.ClassDefinition parentClass) {
+    for (ClassFieldOrImplContext statCtx : ctx) {
+      if (statCtx != null) {
+        try {
+          visitInstanceStatement(statCtx, fields, implementations, parentClass);
+        } catch (ParseException ignored) {
+
+        }
+      }
+    }
+  }
+
   private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, List<Group> subgroups, Concrete.ClassDefinition parentClass, ChildGroup parent) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
@@ -613,26 +647,10 @@ public class BuildVisitor extends ArendBaseVisitor {
       }
 
       try {
-        if (statementCtx instanceof ClassFieldContext) {
-          ClassFieldContext fieldCtx = (ClassFieldContext) statementCtx;
-          List<TeleContext> teleCtxs = fieldCtx.tele();
-          List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
-          Concrete.Expression type = visitExpr(fieldCtx.expr());
-          if (!parameters.isEmpty()) {
-            type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
-          }
-
-          ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-          Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
-          reference.setDefinition(field);
-          fields.add(field);
-        } else if (statementCtx instanceof ClassImplementContext) {
-          Concrete.ClassFieldImpl impl = visitClassImplement((ClassImplementContext) statementCtx);
-          if (impl != null) {
-            implementations.add(impl);
-          }
-        } else if (statementCtx instanceof ClassDefinitionContext) {
-          subgroups.add(visitDefinition(((ClassDefinitionContext) statementCtx).definition(), parent, parentClass.getData()));
+        if (statementCtx instanceof ClassFieldOrImplStatContext) {
+          visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), fields, implementations, parentClass);
+        } else if (statementCtx instanceof ClassDefinitionStatContext) {
+          subgroups.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
         } else {
           myErrorReporter.report(new ParserError(tokenPosition(statementCtx.start), "Unknown class statement"));
         }
@@ -710,8 +728,9 @@ public class BuildVisitor extends ArendBaseVisitor {
       }
     } else {
       List<Concrete.ClassField> fields = new ArrayList<>();
-      List<ClassStatContext> classStatCtxs = classBodyCtx == null ? Collections.emptyList() : ((ClassImplContext) classBodyCtx).classStat();
-      if (!classStatCtxs.isEmpty()) {
+      List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
+      List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
+      if (!classStatCtxs.isEmpty() || !classFieldOrImplCtxs.isEmpty()) {
         implementations = new ArrayList<>();
       }
 
@@ -730,6 +749,7 @@ public class BuildVisitor extends ArendBaseVisitor {
         visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
         coercingFunctions = collectCoercingFunctions(dynamicSubgroups, null);
       }
+      visitInstanceStatements(classFieldOrImplCtxs, fields, implementations, classDefinition);
 
       for (Concrete.ClassField field : fields) {
         fieldReferables1.add((ConcreteClassFieldReferable) field.getData());
@@ -753,7 +773,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
-  public Concrete.ClassFieldImpl visitClassImplement(ClassImplementContext ctx) {
+  public Concrete.ClassFieldImpl visitClassImpl(ClassImplContext ctx) {
     return visitCoClause(ctx.coClause());
   }
 

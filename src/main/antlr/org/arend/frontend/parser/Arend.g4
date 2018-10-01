@@ -14,14 +14,17 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID ('\\as' precedence ID)?;
 
-classStat : '|' precedence ID tele* ':' expr  # classField
-          | coClause                          # classImplement
-          | definition                        # classDefinition
+classFieldOrImpl : '|' precedence ID tele* ':' expr # classField
+                 | coClause                         # classImpl
+                 ;
+
+classStat : classFieldOrImpl                  # classFieldOrImplStat
+          | definition                        # classDefinitionStat
           ;
 
 definition  : funcKw precedence ID tele* (':' expr)? functionBody where?                                    # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
-            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody? where?  # defClass
+            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody where?   # defClass
             | '\\module' ID where?                                                                          # defModule
             | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
             ;
@@ -34,8 +37,9 @@ classKw   : '\\class'   # classKwClass
           | '\\record'  # classKwRecord
           ;
 
-classBody : '{' classStat* '}'                      # classImpl
+classBody : '{' classStat* '}'                                      # classBodyStats
           | '=>' atomFieldsAcc ('{' fieldSyn? ('|' fieldSyn)* '}')? # classSyn
+          | classFieldOrImpl*                                       # classBodyFieldOrImpl
           ;
 
 fieldSyn : ID '=>' precedence ID;
