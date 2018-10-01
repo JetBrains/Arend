@@ -89,6 +89,10 @@ public class ConcreteExpressionFactory {
     return Arrays.asList(args);
   }
 
+  public static List<Concrete.TelescopeParameter> cTeleArgs(Concrete.TelescopeParameter... args) {
+    return Arrays.asList(args);
+  }
+
   public static List<Concrete.TypeParameter> ctypeArgs(Concrete.TypeParameter... args) {
     return Arrays.asList(args);
   }

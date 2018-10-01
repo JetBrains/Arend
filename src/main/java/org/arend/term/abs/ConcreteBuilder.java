@@ -129,9 +129,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
-    List<Concrete.Parameter> parameters;
+    List<Concrete.TelescopeParameter> parameters;
     try {
-      parameters = buildParameters(def.getParameters());
+      parameters = buildTelescopeParameters(def.getParameters());
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       parameters = Collections.emptyList();
@@ -324,9 +324,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
-    List<Concrete.Parameter> parameters;
+    List<Concrete.TelescopeParameter> parameters;
     try {
-      parameters = buildParameters(def.getParameters());
+      parameters = buildTelescopeParameters(def.getParameters());
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       parameters = Collections.emptyList();
@@ -425,6 +425,19 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       Concrete.Parameter parameter = buildParameter(absParameter, false);
       if (parameter instanceof Concrete.TypeParameter) {
         parameters.add((Concrete.TypeParameter) parameter);
+      } else {
+        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a typed parameter", parameter.getData()));
+      }
+    }
+    return parameters;
+  }
+
+  private List<Concrete.TelescopeParameter> buildTelescopeParameters(Collection<? extends Abstract.Parameter> absParameters) {
+    List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
+    for (Abstract.Parameter absParameter : absParameters) {
+      Concrete.Parameter parameter = buildParameter(absParameter, false);
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        parameters.add((Concrete.TelescopeParameter) parameter);
       } else {
         throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a typed parameter", parameter.getData()));
       }

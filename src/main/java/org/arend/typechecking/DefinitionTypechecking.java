@@ -461,12 +461,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (def.getParameters().isEmpty()) {
           myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));
         } else {
-          Definition paramDef = null;
-          Concrete.Parameter parameter = def.getParameters().get(def.getParameters().size() - 1);
-          if (parameter instanceof Concrete.TypeParameter) {
-            paramDef = getExpressionDef(((Concrete.TypeParameter) parameter).getType());
-          }
-
+          Definition paramDef = getExpressionDef(def.getParameters().get(def.getParameters().size() - 1).getType());
           DefCallExpression resultDefCall = typedDef.getResultType().checkedCast(DefCallExpression.class);
           Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 

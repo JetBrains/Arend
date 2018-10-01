@@ -897,7 +897,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static Collection<? extends Parameter> getParameters(ReferableDefinition definition) {
+  public static Collection<? extends TypeParameter> getParameters(ReferableDefinition definition) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
@@ -1187,11 +1187,11 @@ public final class Concrete {
   }
 
   public static class FunctionDefinition extends Definition {
-    private final List<Parameter> myParameters;
+    private final List<TelescopeParameter> myParameters;
     private Expression myResultType;
     private final FunctionBody myBody;
 
-    public FunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
@@ -1208,7 +1208,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<Parameter> getParameters() {
+    public List<TelescopeParameter> getParameters() {
       return myParameters;
     }
 
@@ -1235,12 +1235,12 @@ public final class Concrete {
   public static class CoerceDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
 
-    private CoerceDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
+    private CoerceDefinition(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
       super(referable, parameters, resultType, body);
       myCoerceParent = coerceParent;
     }
 
-    public static FunctionDefinition make(TCReferable referable, List<Parameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
+    public static FunctionDefinition make(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
       return coerceParent instanceof TCReferable ? new CoerceDefinition(referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(referable, parameters, resultType, body);
     }
 
@@ -1398,11 +1398,11 @@ public final class Concrete {
   }
 
   public static class Instance extends Definition {
-    private final List<Parameter> myParameters;
+    private final List<TelescopeParameter> myParameters;
     private Expression myResultType;
     private final List<ClassFieldImpl> myClassFieldImpls;
 
-    public Instance(TCReferable referable, List<Parameter> parameters, Expression classRef, List<ClassFieldImpl> classFieldImpls) {
+    public Instance(TCReferable referable, List<TelescopeParameter> parameters, Expression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
       myParameters = parameters;
       myResultType = classRef;
@@ -1410,7 +1410,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<Parameter> getParameters() {
+    public List<TelescopeParameter> getParameters() {
       return myParameters;
     }
 

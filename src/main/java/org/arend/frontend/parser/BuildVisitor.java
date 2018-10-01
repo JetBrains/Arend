@@ -383,7 +383,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
-    List<Concrete.Parameter> parameters = visitFunctionParameters(ctx.tele());
+    List<Concrete.TelescopeParameter> parameters = visitFunctionParameters(ctx.tele());
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
     Concrete.Instance instance = new Concrete.Instance(reference, parameters, visitExpr(ctx.expr()), visitCoClauses(ctx.coClauses()));
     instance.enclosingClass = enclosingClass;
@@ -482,13 +482,13 @@ public class BuildVisitor extends ArendBaseVisitor {
     return resultGroup;
   }
 
-  private List<Concrete.Parameter> visitFunctionParameters(List<TeleContext> teleCtx) {
-    List<Concrete.Parameter> arguments = new ArrayList<>();
+  private List<Concrete.TelescopeParameter> visitFunctionParameters(List<TeleContext> teleCtx) {
+    List<Concrete.TelescopeParameter> arguments = new ArrayList<>();
     for (TeleContext tele : teleCtx) {
       List<Concrete.Parameter> args = visitLamTele(tele);
       if (args != null) {
         if (args.get(0) instanceof Concrete.TelescopeParameter) {
-          arguments.add(args.get(0));
+          arguments.add((Concrete.TelescopeParameter) args.get(0));
         } else {
           myErrorReporter.report(new ParserError(tokenPosition(tele.getStart()), "Expected a typed variable"));
         }

@@ -64,7 +64,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
-    List<Concrete.Parameter> arguments = new ArrayList<>(2);
+    List<Concrete.TelescopeParameter> arguments = new ArrayList<>(2);
     ParsedLocalReferable X = ref("X");
     ParsedLocalReferable x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));

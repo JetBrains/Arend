@@ -17,10 +17,8 @@ public class DefinitionGetDependenciesVisitor implements ConcreteDefinitionVisit
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Boolean isHeader) {
-    for (Concrete.Parameter param : def.getParameters()) {
-      if (param instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter) param).getType().accept(myVisitor, null);
-      }
+    for (Concrete.TelescopeParameter param : def.getParameters()) {
+      param.getType().accept(myVisitor, null);
     }
 
     if (isHeader) {

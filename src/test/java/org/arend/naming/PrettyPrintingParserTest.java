@@ -57,16 +57,8 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     def.accept(new PrettyPrintVisitor(builder, 0), null);
 
     Concrete.FunctionDefinition result = (Concrete.FunctionDefinition) resolveNamesDef(builder.toString()).getDefinition();
-    List<Concrete.TypeParameter> expectedArguments = new ArrayList<>();
-    for (Concrete.Parameter argument : expected.getParameters()) {
-      expectedArguments.add((Concrete.TypeParameter) argument);
-    }
-    List<Concrete.TypeParameter> actualArguments = new ArrayList<>();
-    for (Concrete.Parameter argument : result.getParameters()) {
-      actualArguments.add((Concrete.TypeParameter) argument);
-    }
-    Concrete.Expression expectedType = cPi(expectedArguments, expected.getResultType());
-    Concrete.Expression actualType = cPi(actualArguments, result.getResultType());
+    Concrete.Expression expectedType = cPi(new ArrayList<>(expected.getParameters()), expected.getResultType());
+    Concrete.Expression actualType = cPi(new ArrayList<>(result.getParameters()), result.getResultType());
     assertTrue(compareAbstract(expectedType, actualType));
     assertTrue(result.getBody() instanceof Concrete.TermFunctionBody);
     assertTrue(compareAbstract(
@@ -129,7 +121,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     ParsedLocalReferable y = ref("y");
     ParsedLocalReferable z = ref("z");
     ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, cargs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(reference, cTeleArgs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }

@@ -53,7 +53,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myErrorReporter = errorReporter;
   }
 
-  private void resolveTypeClassReference(List<Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
+  private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
     if (isType) {
       for (Concrete.Parameter parameter : parameters) {
         if (parameter.getExplicit()) {

@@ -155,10 +155,10 @@ public class Ordering {
           }
         }
       } else if (definition != null) {
-        Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition);
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
-          for (Concrete.Parameter parameter : parameters) {
-            TCClassReferable classRef = ((Concrete.TypeParameter) parameter).getType().getUnderlyingClassReferable(true);
+          for (Concrete.TypeParameter parameter : parameters) {
+            TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
             if (classRef != null) {
               for (Concrete.Instance instance : instanceProvider.getInstances()) {
                 Referable ref = instance.getReferenceInType();
