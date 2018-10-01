@@ -99,14 +99,11 @@ public class FileUtils {
           }
           return FileVisitResult.CONTINUE;
         }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path path, IOException e) {
-          e.printStackTrace();
-          return FileVisitResult.CONTINUE;
-        }
       });
+    } catch (NoSuchFileException e) {
+      System.err.println("[ERROR] No such file: " + e.getFile());
     } catch (IOException e) {
+      System.err.println("[ERROR] An exception happened while processing directory " + path);
       e.printStackTrace();
     }
     return modules;
