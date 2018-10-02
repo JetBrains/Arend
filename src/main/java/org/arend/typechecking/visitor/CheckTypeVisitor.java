@@ -1302,7 +1302,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (definition instanceof ClassField) {
         ClassField field = (ClassField) definition;
         if (baseClass.isImplemented(field) || classFieldMap.containsKey(field) || classFieldMap2.containsKey(field)) {
-          alreadyImplementedFields.add(field.getReferable());
+          alreadyImplementedFields.add((GlobalReferable) statement.getImplementedField());
           alreadyImplementedSourceNode = statement;
         } else {
           classFieldMap.put(field, statement);

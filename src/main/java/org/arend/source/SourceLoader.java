@@ -6,6 +6,7 @@ import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ModuleNotFoundError;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import java.util.Map;
  */
 public final class SourceLoader {
   private final SourceLibrary myLibrary;
+  private final ReferableConverter myReferableConverter;
   private final LibraryManager myLibraryManager;
   private final Map<ModulePath, SourceType> myLoadedModules = new HashMap<>();
   private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
@@ -25,10 +27,15 @@ public final class SourceLoader {
   public SourceLoader(SourceLibrary library, LibraryManager libraryManager) {
     myLibrary = library;
     myLibraryManager = libraryManager;
+    myReferableConverter = myLibrary.getReferableConverter();
   }
 
   public SourceLibrary getLibrary() {
     return myLibrary;
+  }
+
+  public ReferableConverter getReferableConverter() {
+    return myReferableConverter;
   }
 
   public ModuleScopeProvider getModuleScopeProvider() {

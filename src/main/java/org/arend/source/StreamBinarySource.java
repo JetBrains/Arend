@@ -66,7 +66,7 @@ public abstract class StreamBinarySource implements BinarySource {
         }
       }
 
-      ReferableConverter referableConverter = library.getReferableConverter();
+      ReferableConverter referableConverter = sourceLoader.getReferableConverter();
       myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter);
 
       ChildGroup group;

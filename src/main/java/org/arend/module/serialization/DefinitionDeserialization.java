@@ -92,7 +92,7 @@ public class DefinitionDeserialization {
       LamExpression lamExpr = (LamExpression) expr;
       if (!lamExpr.getParameters().getNext().hasNext()) {
         Expression type = lamExpr.getParameters().getTypeExpr();
-        if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition().equals(classDef)) {
+        if (type instanceof ClassCallExpression) {
           return lamExpr;
         }
       }
