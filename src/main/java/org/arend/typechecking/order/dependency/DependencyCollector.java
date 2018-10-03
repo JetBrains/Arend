@@ -20,6 +20,7 @@ public class DependencyCollector implements DependencyListener {
     myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
   }
 
+  @Override
   public Set<? extends TCReferable> update(TCReferable definition) {
     if (myState.getTypechecked(definition) == null) {
       return Collections.emptySet();

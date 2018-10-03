@@ -108,17 +108,14 @@ public class Ordering {
   public void orderDefinition(Concrete.Definition definition) {
     TypecheckingUnit typecheckingUnit = new TypecheckingUnit(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckingUnit)) {
+      myDependencyListener.update(definition.getData());
       doOrderRecursively(typecheckingUnit);
     }
   }
 
   public Definition getTypechecked(TCReferable definition) {
     Definition typechecked = myState.getTypechecked(definition);
-    if (typechecked == null || typechecked.status().needsTypeChecking()) {
-      return null;
-    } else {
-      return typechecked;
-    }
+    return typechecked == null || typechecked.status().needsTypeChecking() ? null : typechecked;
   }
 
   private enum OrderResult { REPORTED, NOT_REPORTED, RECURSION_ERROR }
@@ -239,7 +236,7 @@ public class Ordering {
         myDependencyListener.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
         if (referable.getUnderlyingReference() == null) {
           Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-          if (dependency instanceof Concrete.Definition && getTypechecked(tcReferable) == null) {
+          if (dependency instanceof Concrete.Definition && myState.getTypechecked(tcReferable) == null) {
             updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
           }
         }
