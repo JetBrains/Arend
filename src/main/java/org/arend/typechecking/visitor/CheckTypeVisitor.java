@@ -27,7 +27,6 @@ import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.DocFactory;
-import org.arend.naming.error.NotInScopeError;
 import org.arend.naming.error.WrongReferable;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
@@ -1243,7 +1242,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
     if (definition == null) {
-      myErrorReporter.report(new NotInScopeError(sourceNode.getData(), null, referable.textRepresentation()));
+      myErrorReporter.report(new TypecheckingError("Internal error: definition '" + referable.textRepresentation() + "' was not typechecked", sourceNode));
     }
     return definition;
   }

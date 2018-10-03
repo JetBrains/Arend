@@ -27,11 +27,11 @@ public class SimpleReferableConverter implements ReferableConverter {
   }
 
   public TCReferable putIfAbsent(LocatedReferable referable, TCReferable tcReferable) {
-    return myMap.putIfAbsent(new FullName(referable), tcReferable);
+    return referable.getUnderlyingReference() != null ? tcReferable : myMap.putIfAbsent(new FullName(referable), tcReferable);
   }
 
   public TCReferable computeIfAbsent(LocatedReferable referable, Function<? super FullName, ? extends TCReferable> tcReferable) {
-    return myMap.computeIfAbsent(new FullName(referable), tcReferable);
+    return referable.getUnderlyingReference() != null ? tcReferable.apply(null) : myMap.computeIfAbsent(new FullName(referable), tcReferable);
   }
 
   public TCReferable remove(LocatedReferable referable) {
