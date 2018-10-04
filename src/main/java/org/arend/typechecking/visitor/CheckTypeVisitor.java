@@ -704,7 +704,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (param.getExplicit() && expectedType.isInstance(PiExpression.class) && !expectedType.cast(PiExpression.class).getParameters().isExplicit()) {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         SingleDependentLink piParams = piExpectedType.getParameters();
-        myFreeBindings.add(piParams);
+        for (SingleDependentLink link = piParams; link.hasNext(); link = link.getNext()) {
+          myFreeBindings.add(link);
+        }
         Result bodyResult = visitLam(parameters, expr, piExpectedType.getCodomain(), argIndex + DependentLink.Helper.size(piParams));
         if (bodyResult == null) return null;
         Sort sort = PiExpression.generateUpperBound(piParams.getType().getSortOfType(), getSortOf(bodyResult.type.getType()), myEquations, expr);
