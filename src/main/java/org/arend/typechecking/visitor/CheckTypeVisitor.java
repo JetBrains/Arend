@@ -1421,10 +1421,35 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Result visitNew(Concrete.NewExpression expr, ExpectedType expectedType) {
-    Result exprResult;
-    if (expr.getExpression() instanceof Concrete.ClassExtExpression && ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression instanceof Concrete.HoleExpression && expectedType instanceof ClassCallExpression) {
-      exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, (ClassCallExpression) expectedType);
-    } else {
+    Result exprResult = null;
+    if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
+      Concrete.Expression baseExpr = ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression;
+      if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && expectedType instanceof ClassCallExpression) {
+        if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
+          myErrorReporter.report(new TypecheckingError("Cannot infer an expression", baseExpr));
+          return null;
+        }
+        if (baseExpr instanceof Concrete.ReferenceExpression) {
+          Referable ref = ((Concrete.ReferenceExpression) baseExpr).getReferent();
+          if (ref instanceof LocatedReferable) {
+            LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
+            if (underlyingRef != null) {
+              ref = underlyingRef;
+            }
+          }
+          if (!(ref instanceof TCReferable && ((ClassCallExpression) expectedType).getDefinition() == myState.getTypechecked((TCReferable) ref))) {
+            myErrorReporter.report(new TypeMismatchError(expectedType, baseExpr, baseExpr));
+            return null;
+          }
+        }
+        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, (ClassCallExpression) expectedType);
+        if (exprResult == null) {
+          return null;
+        }
+      }
+    }
+
+    if (exprResult == null){
       exprResult = checkExpr(expr.getExpression(), null);
       if (exprResult == null) {
         return null;
