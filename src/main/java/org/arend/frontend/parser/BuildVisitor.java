@@ -30,15 +30,18 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private String getVar(AtomFieldsAccContext ctx) {
-    if (!ctx.fieldAcc().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
+    if (!ctx.NUMBER().isEmpty() || !(ctx.atom() instanceof AtomLiteralContext)) {
       return null;
     }
     LiteralContext literal = ((AtomLiteralContext) ctx.atom()).literal();
     if (literal instanceof UnknownContext) {
       return "_";
     }
-    if (literal instanceof NameContext && ((NameContext) literal).ID() != null) {
-      return ((NameContext) literal).ID().getText();
+    if (literal instanceof NameContext && ((NameContext) literal).longName() != null) {
+      List<TerminalNode> ids = ((NameContext) literal).longName().ID();
+      if (ids.size() == 1) {
+        return ids.get(0).getText();
+      }
     }
     return null;
   }
@@ -176,7 +179,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
-    List<String> path = visitAtomFieldsAccPath(ctx.atomFieldsAcc());
+    List<String> path = visitLongNamePath(ctx.longName());
     if (path == null) {
       throw new ParseException();
     }
@@ -437,11 +440,12 @@ public class BuildVisitor extends ArendBaseVisitor {
     if (ctx == null) {
       return Collections.emptyList();
     }
-    List<AtomFieldsAccContext> atomFieldsAccs = ctx.atomFieldsAcc();
-    if (atomFieldsAccs != null && !atomFieldsAccs.isEmpty()) {
-      List<Concrete.Expression> expressions = new ArrayList<>(atomFieldsAccs.size());
-      for (AtomFieldsAccContext exprCtx : atomFieldsAccs) {
-        expressions.add(visitAtomFieldsAcc(exprCtx));
+    List<TerminalNode> ids = ctx.ID();
+    if (ids != null && !ids.isEmpty()) {
+      List<Concrete.Expression> expressions = new ArrayList<>(ids.size());
+      for (TerminalNode id : ids) {
+        Position position = tokenPosition(id.getSymbol());
+        expressions.add(new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, id.getText())));
       }
       return checkElimExpressions(expressions);
     } else {
@@ -684,11 +688,8 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
-    for (ClassCallContext classCallCtx : ctx.classCall()) {
-      UnresolvedReference superClassRef = visitAtomFieldsAccRef(classCallCtx.atomFieldsAcc());
-      if (superClassRef != null) {
-        superClasses.add(new Concrete.ReferenceExpression(superClassRef.getData(), superClassRef));
-      }
+    for (LongNameContext longNameCtx : ctx.longName()) {
+      superClasses.add(visitLongNameRef(longNameCtx));
     }
 
     List<? extends InternalConcreteLocatedReferable> fieldReferables;
@@ -706,12 +707,8 @@ public class BuildVisitor extends ArendBaseVisitor {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Records cannot be synonyms"));
       }
 
-      UnresolvedReference classRef = visitAtomFieldsAccRef(((ClassSynContext) classBodyCtx).atomFieldsAcc());
-      if (classRef == null) {
-        throw new ParseException();
-      }
       List<ConcreteClassFieldSynonymReferable> fieldSynonymReferables = new ArrayList<>();
-      Concrete.ReferenceExpression refExpr = new Concrete.ReferenceExpression(classRef.getData(), classRef);
+      Concrete.ReferenceExpression refExpr = visitLongNameRef(((ClassSynContext) classBodyCtx).longName());
       reference = parent instanceof FileGroup
         ? new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, myModule, refExpr)
         : new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, (TCReferable) parent.getReferable(), refExpr);
@@ -779,8 +776,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.ReferenceExpression visitName(NameContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    return new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, ctx.ID().getText()));
+    return visitLongNameRef(ctx.longName());
   }
 
   @Override
@@ -850,9 +846,14 @@ public class BuildVisitor extends ArendBaseVisitor {
       boolean ok = tele instanceof TeleLiteralContext;
       if (ok) {
         LiteralContext literalContext = ((TeleLiteralContext) tele).literal();
-        if (literalContext instanceof NameContext && ((NameContext) literalContext).ID() != null) {
-          TerminalNode id = ((NameContext) literalContext).ID();
-          parameters.add(new Concrete.NameParameter(tokenPosition(id.getSymbol()), true, new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText())));
+        if (literalContext instanceof NameContext && ((NameContext) literalContext).longName() != null) {
+          List<TerminalNode> ids = ((NameContext) literalContext).longName().ID();
+          if (ids.size() == 1) {
+            Position position = tokenPosition(ids.get(0).getSymbol());
+            parameters.add(new Concrete.NameParameter(position, true, new ParsedLocalReferable(position, ids.get(0).getText())));
+          } else {
+            ok = false;
+          }
         } else if (literalContext instanceof UnknownContext) {
           parameters.add(new Concrete.NameParameter(tokenPosition(literalContext.getStart()), true, null));
         } else {
@@ -965,7 +966,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
-    List<String> path = visitAtomFieldsAccPath(ctx.atomFieldsAcc());
+    List<String> path = visitLongNamePath(ctx.longName());
     if (path == null) {
       return null;
     }
@@ -1302,83 +1303,26 @@ public class BuildVisitor extends ArendBaseVisitor {
     return expr;
   }
 
-  private List<String> visitAtomFieldsAccPath(AtomFieldsAccContext ctx) {
-    AtomContext atomCtx = ctx.atom();
-    if (atomCtx instanceof AtomLiteralContext && ((AtomLiteralContext) atomCtx).literal() instanceof NameContext) {
-      List<String> result = new ArrayList<>();
-      result.add(((NameContext) ((AtomLiteralContext) atomCtx).literal()).ID().getText());
-      boolean ok = true;
-      for (FieldAccContext fieldAccCtx : ctx.fieldAcc()) {
-        if (fieldAccCtx instanceof ClassFieldAccContext) {
-          result.add(((ClassFieldAccContext) fieldAccCtx).ID().getText());
-        } else {
-          ok = false;
-          break;
-        }
-      }
-      if (ok) {
-        return result;
-      }
+  private List<String> visitLongNamePath(LongNameContext ctx) {
+    List<TerminalNode> ids = ctx.ID();
+    List<String> result = new ArrayList<>(ids.size());
+    for (TerminalNode id : ids) {
+      result.add(id.getText());
     }
-
-    myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Expected a reference"));
-    return null;
+    return result;
   }
 
-  private UnresolvedReference visitAtomFieldsAccRef(AtomFieldsAccContext ctx) {
-    List<String> path = visitAtomFieldsAccPath(ctx);
-    return path == null ? null : LongUnresolvedReference.make(tokenPosition(ctx.start), path);
+  private Concrete.ReferenceExpression visitLongNameRef(LongNameContext ctx) {
+    Position position = tokenPosition(ctx.start);
+    return new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, visitLongNamePath(ctx)));
   }
 
   @Override
   public Concrete.Expression visitAtomFieldsAcc(AtomFieldsAccContext ctx) {
-    List<FieldAccContext> fieldAccCtxs = ctx.fieldAcc();
-    if (fieldAccCtxs.isEmpty()) {
-      return visitExpr(ctx.atom());
+    Concrete.Expression expression = visitExpr(ctx.atom());
+    for (TerminalNode projCtx : ctx.NUMBER()) {
+      expression = new Concrete.ProjExpression(tokenPosition(projCtx.getSymbol()), expression, Integer.parseInt(projCtx.getText()) - 1);
     }
-
-    AtomContext atomCtx = ctx.atom();
-    Concrete.Expression expression = null;
-    Token errorToken = null;
-    int i = 0;
-    if (fieldAccCtxs.get(0) instanceof ClassFieldAccContext) {
-      if (atomCtx instanceof AtomLiteralContext && ((AtomLiteralContext) atomCtx).literal() instanceof NameContext) {
-        String name = ((NameContext) ((AtomLiteralContext) atomCtx).literal()).ID().getText();
-        List<String> path = new ArrayList<>();
-        for (; i < fieldAccCtxs.size(); i++) {
-          if (!(fieldAccCtxs.get(i) instanceof ClassFieldAccContext)) {
-            break;
-          }
-          path.add(((ClassFieldAccContext) fieldAccCtxs.get(i)).ID().getText());
-        }
-        Position position = tokenPosition(ctx.start);
-        expression = new Concrete.ReferenceExpression(position, new LongUnresolvedReference(position, name, path));
-      } else {
-        errorToken = ctx.start;
-      }
-    } else {
-      expression = visitExpr(atomCtx);
-    }
-
-    if (errorToken == null) {
-      for (; i < fieldAccCtxs.size(); i++) {
-        FieldAccContext fieldAccCtx = fieldAccCtxs.get(i);
-        if (fieldAccCtx instanceof ClassFieldAccContext) {
-          errorToken = fieldAccCtx.start;
-          break;
-        } else if (fieldAccCtx instanceof SigmaFieldAccContext) {
-          expression = new Concrete.ProjExpression(tokenPosition(fieldAccCtx.start), expression, Integer.parseInt(((SigmaFieldAccContext) fieldAccCtx).NUMBER().getText()) - 1);
-        } else {
-          throw new IllegalStateException();
-        }
-      }
-    }
-
-    if (errorToken != null) {
-      myErrorReporter.report(new ParserError(tokenPosition(errorToken), "Field accessors can be applied only to identifiers"));
-      throw new ParseException();
-    }
-
     return expression;
   }
 

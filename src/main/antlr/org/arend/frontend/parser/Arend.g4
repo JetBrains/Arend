@@ -3,7 +3,7 @@ grammar Arend;
 statements : statement* EOF;
 
 statement : definition                                                      # statDef
-          | nsCmd atomFieldsAcc nsUsing? ('\\hiding' '(' ID (',' ID)* ')')? # statCmd
+          | nsCmd longName nsUsing? ('\\hiding' '(' ID (',' ID)* ')')?      # statCmd
           ;
 
 nsCmd : '\\open'                        # openCmd
@@ -24,7 +24,7 @@ classStat : classFieldOrImpl                  # classFieldOrImplStat
 
 definition  : funcKw precedence ID tele* (':' expr)? functionBody where?                                    # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
-            | classKw precedence ID fieldTele* ('\\extends' classCall (',' classCall)*)? classBody where?   # defClass
+            | classKw precedence ID fieldTele* ('\\extends' longName (',' longName)*)? classBody where?     # defClass
             | '\\module' ID where?                                                                          # defModule
             | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
             ;
@@ -38,13 +38,11 @@ classKw   : '\\class'   # classKwClass
           ;
 
 classBody : '{' classStat* '}'                                      # classBodyStats
-          | '=>' atomFieldsAcc ('{' fieldSyn? ('|' fieldSyn)* '}')? # classSyn
+          | '=>' longName ('{' fieldSyn? ('|' fieldSyn)* '}')?      # classSyn
           | classFieldOrImpl*                                       # classBodyFieldOrImpl
           ;
 
 fieldSyn : ID '=>' precedence ID;
-
-classCall : atomFieldsAcc;
 
 functionBody  : '=>' expr             # withoutElim
               | '\\cowith' coClauses  # cowithElim
@@ -61,7 +59,7 @@ constructorClauses : '{' constructorClause* '}' # conClausesWithBraces
 
 constructorClause : '|' pattern (',' pattern)* '=>' (constructor | '{' '|'? constructor ('|' constructor)* '}');
 
-elim : '\\with' | '\\elim' atomFieldsAcc (',' atomFieldsAcc)*;
+elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
@@ -129,7 +127,7 @@ coClauses : coClause*                         # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' atomFieldsAcc tele* ('=>' expr | '{' coClause* '}');
+coClause : '|' longName tele* ('=>' expr | '{' coClause* '}');
 
 letClause : ID tele* typeAnnotation? '=>' expr;
 
@@ -161,10 +159,6 @@ onlyLevelExpr : onlyLevelAtom                                         # atomOnly
               | '\\max' levelAtom levelAtom                           # maxOnlyLevel
               ;
 
-fieldAcc : ID                       # classFieldAcc
-         | NUMBER                   # sigmaFieldAcc
-         ;
-
 tupleExpr : expr (':' expr)?;
 
 atom  : literal                               # atomLiteral
@@ -173,11 +167,13 @@ atom  : literal                               # atomLiteral
       | NEGATIVE_NUMBER                       # atomNegativeNumber
       ;
 
-atomFieldsAcc : atom ('.' fieldAcc)*;
+atomFieldsAcc : atom ('.' NUMBER)*;
 
 implementStatements : '{' coClause* '}';
 
-literal : ID                            # name
+longName : ID ('.' ID)*;
+
+literal : longName                      # name
         | '\\Prop'                      # prop
         | '_'                           # unknown
         | '{?' ID? ('(' expr? ')')? '}' # goal

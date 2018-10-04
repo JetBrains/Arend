@@ -441,7 +441,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "\\func + (a b : Nat) => a\n" +
       "\\func f (a b : Nat) : Nat \\elim (a + b)\n" +
       "  | zero => zero\n" +
-      "  | suc n' => zero", 1);
+      "  | suc n' => zero", -1);
   }
 
   @Test
