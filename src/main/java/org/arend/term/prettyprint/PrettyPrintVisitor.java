@@ -106,20 +106,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     if (infix) {
-      List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>();
-      // print first explicit argument
-      sequence.add(new Concrete.BinOpSequenceElem(args.get(args.size() - 2).getExpression(), Fixity.NONFIX, true));
-      // print operation
-      sequence.add(new Concrete.BinOpSequenceElem(fun, Fixity.UNKNOWN, true));
-
-      // print implicit arguments
-      for (int i = 0; i < args.size() - 2; i++) {
-        sequence.add(new Concrete.BinOpSequenceElem(args.get(i).getExpression(), Fixity.NONFIX, false));
-      }
-
-      // print second explicit argument
-      sequence.add(new Concrete.BinOpSequenceElem(args.get(args.size() - 1).getExpression(), Fixity.NONFIX, true));
-      new Concrete.BinOpSequenceExpression(null, sequence).accept(this, new Precedence(Concrete.Expression.PREC));
+      visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
       final Expression finalFun = fun;
       new BinOpLayout() {
@@ -573,6 +560,21 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     createBinOpLayout(expr.getSequence()).doPrettyPrint(this, noIndent);
     if (prec.priority > Concrete.BinOpSequenceExpression.PREC) myBuilder.append(')');
     return null;
+  }
+
+  private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, Precedence infixPrec, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
+    if (prec.priority > infixPrec.priority) myBuilder.append('(');
+    left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(infixPrec.associativity, (byte) (infixPrec.priority + 1), infixPrec.isInfix) : infixPrec);
+    myBuilder.append(' ');
+    myBuilder.append(infix.getReferent().textRepresentation());
+    for (Concrete.Argument arg : implicitArgs) {
+      myBuilder.append(" {");
+      arg.expression.accept(this, new Precedence(Expression.PREC));
+      myBuilder.append('}');
+    }
+    myBuilder.append(' ');
+    right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(infixPrec.associativity, (byte) (infixPrec.priority + 1), infixPrec.isInfix) : infixPrec);
+    if (prec.priority > infixPrec.priority) myBuilder.append(')');
   }
 
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {

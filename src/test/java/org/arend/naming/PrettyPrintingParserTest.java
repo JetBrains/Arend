@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(String expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     assertEquals(expected, builder.toString());
   }
 
@@ -43,7 +43,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
 
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), Precedence.DEFAULT);
+    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
@@ -177,13 +177,13 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       "\\func f2 => 0 + (1 + 2)\n" +
       "\\func g1 => (0 * 1) * 2\n" +
       "\\func g2 => 0 * (1 * 2)\n" +
-      "\\func h1 => 0 & (1 & 2)\n" +
+      "\\func h1 => (0 & 1) & 2\n" +
       "\\func h2 => 0 & (1 & 2)");
     testExpr("(0 + 1) + 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("f1")).getBody()).getExpression());
     testExpr("0 + (1 + 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f2")).getBody()).getExpression());
     testExpr("0 * 1 * 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("g1")).getBody()).getExpression());
     testExpr("0 * (1 * 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("g2")).getBody()).getExpression());
-    testExpr("0 & (1 & 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("h1")).getBody()).getExpression());
+    testExpr("(0 & 1) & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h1")).getBody()).getExpression());
     testExpr("0 & 1 & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h2")).getBody()).getExpression());
   }
 }
