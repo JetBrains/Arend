@@ -90,8 +90,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitApp(final Concrete.AppExpression expr, Precedence prec) {
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
-
     Concrete.Expression fun = expr.getFunction();
     List<Concrete.Argument> args = expr.getArguments();
 
@@ -108,6 +106,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     if (infix) {
       visitBinOp(args.get(args.size() - 2).getExpression(), (ReferenceExpression) fun, ((GlobalReferable) ((ReferenceExpression) fun).getReferent()).getPrecedence(), args.subList(0, args.size() - 2), args.get(args.size() - 1).getExpression(), prec);
     } else {
+      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append('(');
       final Expression finalFun = fun;
       new BinOpLayout() {
         @Override
@@ -146,9 +145,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           return " ";
         }
       }.doPrettyPrint(this, noIndent);
+      if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
     }
 
-    if (prec.priority > Concrete.AppExpression.PREC) myBuilder.append(')');
     return null;
   }
 

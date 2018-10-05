@@ -186,4 +186,14 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     testExpr("(0 & 1) & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h1")).getBody()).getExpression());
     testExpr("0 & 1 & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h2")).getBody()).getExpression());
   }
+
+  @Test
+  public void parenthesisTest() {
+    typeCheckModule(
+      "\\func \\infix 6 + (x y : Nat) => x\n" +
+      "\\func \\infixl 7 * (x y : Nat) => x\n" +
+      "\\func \\infixr 6 & (x y : Nat) => x\n" +
+      "\\func f (x y z : Nat) => ((x + suc y) * (suc y & (z & x))) * (suc (z + y))");
+    testExpr("(x + suc y) * (suc y & z & x) * suc (z + y)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f")).getBody()).getExpression());
+  }
 }
