@@ -1425,6 +1425,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
       Concrete.Expression baseExpr = ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression;
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && expectedType instanceof ClassCallExpression) {
+        ClassDefinition actualClassDef = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
           myErrorReporter.report(new TypecheckingError("Cannot infer an expression", baseExpr));
           return null;
@@ -1437,19 +1438,32 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
               ref = underlyingRef;
             }
           }
-          if (!(ref instanceof TCReferable && ((ClassCallExpression) expectedType).getDefinition() == myState.getTypechecked((TCReferable) ref))) {
+          boolean ok = ref instanceof TCReferable;
+          if (ok) {
+            Definition actualDef = myState.getTypechecked((TCReferable) ref);
+            if (actualDef instanceof ClassDefinition) {
+              ok = ((ClassDefinition) actualDef).isSubClassOf(((ClassCallExpression) expectedType).getDefinition());
+              if (actualDef != ((ClassCallExpression) expectedType).getDefinition()) {
+                actualClassDef = (ClassDefinition) actualDef;
+              }
+            } else {
+              ok = false;
+            }
+          }
+          if (!ok) {
             myErrorReporter.report(new TypeMismatchError(expectedType, baseExpr, baseExpr));
             return null;
           }
         }
-        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, (ClassCallExpression) expectedType);
+        ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, actualClassDef == null ? expectedClassCall : new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), expectedClassCall.getImplementedHere(), expectedClassCall.getSort()));
         if (exprResult == null) {
           return null;
         }
       }
     }
 
-    if (exprResult == null){
+    if (exprResult == null) {
       exprResult = checkExpr(expr.getExpression(), null);
       if (exprResult == null) {
         return null;
