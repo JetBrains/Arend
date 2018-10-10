@@ -44,16 +44,16 @@ public interface ClassReferable extends LocatedReferable {
 
   class Helper {
     public static Set<FieldReferable> getNotImplementedFields(ClassReferable classDef) {
-      Set<FieldReferable> result = getAllFields(classDef, new HashSet<>(), new HashMap<>()).keySet();
+      Set<FieldReferable> result = getAllFields(classDef, new HashSet<>(), new HashMap<>());
       removeImplemented(classDef, result, null);
       return result;
     }
 
     public static HashMap<FieldReferable, List<LocatedReferable>> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
-      HashMap<FieldReferable, List<LocatedReferable>> result = getAllFields(classDef, new HashSet<>(), superClassesFields);
-      removeImplemented(classDef, result.keySet(), superClassesFields);
+      Set<FieldReferable> fieldSet = getAllFields(classDef, new HashSet<>(), superClassesFields);
+      removeImplemented(classDef, fieldSet, superClassesFields);
       if (!argumentsExplicitness.isEmpty()) {
-        Iterator<FieldReferable> it = result.keySet().iterator();
+        Iterator<FieldReferable> it = fieldSet.iterator();
         int i = 0;
         while (it.hasNext() && i < argumentsExplicitness.size()) {
           FieldReferable field = it.next();
@@ -76,6 +76,13 @@ public interface ClassReferable extends LocatedReferable {
             i++;
           }
         }
+      }
+
+      Map<LocatedReferable, List<LocatedReferable>> renamings = getRenamings(classDef);
+      HashMap<FieldReferable, List<LocatedReferable>> result = new LinkedHashMap<>();
+      for (FieldReferable field : fieldSet) {
+        List<LocatedReferable> renamedFields = renamings.get(field);
+        result.put(field, renamedFields != null ? renamedFields : Collections.singletonList(field));
       }
       return result;
     }
@@ -124,59 +131,40 @@ public interface ClassReferable extends LocatedReferable {
       }
     }
 
-    private static HashMap<FieldReferable, List<LocatedReferable>> getAllFields(ClassReferable classDef, Set<ClassReferable> visited, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
+    private static Set<FieldReferable> getAllFields(ClassReferable classDef, Set<ClassReferable> visited, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
       if (!visited.add(classDef)) {
-        return new HashMap<>();
+        return new LinkedHashSet<>();
       }
 
-      HashMap<FieldReferable, List<LocatedReferable>> result = new LinkedHashMap<>();
+      Set<FieldReferable> result = new LinkedHashSet<>();
       ClassReferable underlyingClass = classDef.getUnderlyingReference();
       if (underlyingClass != null) {
-        HashMap<FieldReferable, List<LocatedReferable>> underlyingClassResult = getAllFields(underlyingClass, visited, superClassesFields);
-        for (Map.Entry<FieldReferable, List<LocatedReferable>> entry : underlyingClassResult.entrySet()) {
-          result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).addAll(entry.getValue());
-        }
+        result.addAll(getAllFields(underlyingClass, visited, superClassesFields));
       }
 
       for (ClassReferable superClass : classDef.getSuperClassReferences()) {
-        HashMap<FieldReferable, List<LocatedReferable>> superClassMap = getAllFields(superClass, visited, superClassesFields);
+        Set<FieldReferable> superClassSet = getAllFields(superClass, visited, superClassesFields);
         superClassesFields.compute(superClass, (k,oldFields) -> {
           if (oldFields == null) {
-            return superClassMap.keySet();
+            return superClassSet;
           } else {
-            oldFields.retainAll(superClassMap.keySet());
+            oldFields.retainAll(superClassSet);
             return oldFields;
           }
         });
-        for (Map.Entry<FieldReferable, List<LocatedReferable>> entry : superClassMap.entrySet()) {
-          if (underlyingClass == null) {
-            result.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).addAll(entry.getValue());
-          } else {
-            List<LocatedReferable> fields = result.get(entry.getKey());
-            if (fields != null) {
-              fields.addAll(entry.getValue());
-            }
-          }
+        if (underlyingClass == null) {
+          result.addAll(superClassSet);
         }
       }
 
-      Map<LocatedReferable, List<LocatedReferable>> renamings = underlyingClass == null ? Collections.emptyMap() : getRenamings(classDef);
-      for (FieldReferable field : (underlyingClass == null ? classDef : underlyingClass).getFieldReferables()) {
-        List<LocatedReferable> fields = underlyingClass == null ? result.computeIfAbsent(field, k -> new ArrayList<>()) : result.get(field);
-        if (fields != null) {
-          List<LocatedReferable> fields2 = renamings.get(field);
-          if (fields2 != null) {
-            fields.addAll(fields2);
-          } else {
-            fields.add(field);
-          }
-        }
+      if (underlyingClass == null) {
+        result.addAll(classDef.getFieldReferables());
       }
 
       return result;
     }
 
-    private static Map<LocatedReferable, List<LocatedReferable>> getRenamings(ClassReferable classDef) {
+    public static Map<LocatedReferable, List<LocatedReferable>> getRenamings(ClassReferable classDef) {
       Deque<ClassReferable> toVisit = new ArrayDeque<>();
       Set<ClassReferable> visitedClasses = new HashSet<>();
       Map<LocatedReferable, List<LocatedReferable>> renamings = new HashMap<>();
@@ -184,10 +172,6 @@ public interface ClassReferable extends LocatedReferable {
 
       while (!toVisit.isEmpty()) {
         ClassReferable classRef = toVisit.pop();
-        ClassReferable underlyingClass = classRef.getUnderlyingReference();
-        if (underlyingClass != null) {
-          classRef = underlyingClass;
-        }
         if (!visitedClasses.add(classRef)) {
           continue;
         }
