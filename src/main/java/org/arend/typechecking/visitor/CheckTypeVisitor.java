@@ -1422,8 +1422,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Result visitNew(Concrete.NewExpression expr, ExpectedType expectedType) {
     Result exprResult = null;
-    if (expr.getExpression() instanceof Concrete.ClassExtExpression) {
-      Concrete.Expression baseExpr = ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression;
+    if (expr.getExpression() instanceof Concrete.ClassExtExpression || expr.getExpression() instanceof Concrete.ReferenceExpression) {
+      Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression : expr.getExpression();
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && expectedType instanceof ClassCallExpression) {
         ClassDefinition actualClassDef = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
@@ -1456,6 +1456,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
         }
         ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
+
+        if (!(expr.getExpression() instanceof Concrete.ClassExtExpression)) {
+          return checkAllImplemented(expectedClassCall, expr) ? new Result(new NewExpression(expectedClassCall), expectedClassCall) : null;
+        }
+
         exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, actualClassDef == null ? expectedClassCall : new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), expectedClassCall.getImplementedHere(), expectedClassCall.getSort()));
         if (exprResult == null) {
           return null;

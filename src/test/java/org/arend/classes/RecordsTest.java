@@ -4,11 +4,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.definition.ClassDefinition;
-import org.arend.core.sort.Level;
-import org.arend.core.sort.Sort;
 import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Assert;
@@ -17,7 +12,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 
 import static org.arend.ExpressionFactory.Universe;
-import static org.arend.typechecking.Matchers.*;
 import static org.junit.Assert.assertEquals;
 
 public class RecordsTest extends TypeCheckingTestCase {
@@ -319,5 +313,19 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\func const' (c : C) : C { | A => c.A -> c.A } => \\new C { | A => c.A -> c.A | a => \\lam _ => c.a }\n" +
       "\\func test' (f : (C -> C) -> Nat) => f const'\n" +
       "\\func test (f : (\\Pi (c : C) -> C { | A => c.A -> c.A }) -> Nat) => f const");
+  }
+
+  @Test
+  public void missingFieldsFromExpectedType() {
+    typeCheckModule(
+      "\\record X (A : \\Type) (B : A -> A)\n" +
+      "\\func test {A : \\Type} (x : X A) : X A (x.B) => \\new X {}");
+  }
+
+  @Test
+  public void missingFieldsFromExpectedType2() {
+    typeCheckModule(
+      "\\record X (A : \\Type) (B : A -> A)\n" +
+      "\\func test {A : \\Type} (x : X A) : X A (x.B) => \\new X");
   }
 }
