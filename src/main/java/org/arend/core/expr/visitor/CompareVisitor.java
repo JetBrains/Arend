@@ -113,9 +113,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return false;
   }
 
+  private Expression removeInferenceReferenceExpressions(Expression expr) {
+    while (true) {
+      InferenceReferenceExpression refExpr = expr.checkedCast(InferenceReferenceExpression.class);
+      if (refExpr == null || refExpr.getSubstExpression() == null) {
+        return expr;
+      }
+      expr = refExpr.getSubstExpression();
+    }
+  }
+
   public boolean normalizedCompare(Expression expr1, Expression expr2) {
     Expression stuck1 = expr1.getStuckExpression();
+    if (stuck1 != null) {
+      stuck1 = removeInferenceReferenceExpressions(stuck1);
+    }
     Expression stuck2 = expr2.getStuckExpression();
+    if (stuck2 != null) {
+      stuck2 = removeInferenceReferenceExpressions(stuck2);
+    }
+
     if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
       stuck2 != null && stuck2.isError() && (stuck1 == null || !stuck1.isInstance(InferenceReferenceExpression.class))) {
       return true;
