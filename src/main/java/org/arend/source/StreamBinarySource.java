@@ -5,6 +5,7 @@ import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
 import org.arend.library.error.PartialModuleError;
 import org.arend.module.ModulePath;
+import org.arend.module.error.DeserializationError;
 import org.arend.module.error.ExceptionError;
 import org.arend.module.serialization.DeserializationException;
 import org.arend.module.serialization.ModuleDeserialization;
@@ -47,6 +48,7 @@ public abstract class StreamBinarySource implements BinarySource {
   public boolean preload(SourceLoader sourceLoader) {
     SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
+    ChildGroup group = null;
     try (InputStream inputStream = getInputStream()) {
       if (inputStream == null) {
         return false;
@@ -69,7 +71,6 @@ public abstract class StreamBinarySource implements BinarySource {
       ReferableConverter referableConverter = sourceLoader.getReferableConverter();
       myModuleDeserialization = new ModuleDeserialization(moduleProto, library.getTypecheckerState(), referableConverter);
 
-      ChildGroup group;
       if (referableConverter == null) {
         group = myModuleDeserialization.readGroup(modulePath);
         library.onGroupLoaded(modulePath, group, false);
@@ -85,9 +86,12 @@ public abstract class StreamBinarySource implements BinarySource {
 
       return true;
     } catch (IOException | DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath(), true));
+      sourceLoader.getLibraryErrorReporter().report(new DeserializationError(getModulePath(), e));
       if (!library.hasRawSources()) {
         library.onGroupLoaded(getModulePath(), null, false);
+      }
+      if (group != null) {
+        library.unloadGroup(group);
       }
       return false;
     }
@@ -100,6 +104,10 @@ public abstract class StreamBinarySource implements BinarySource {
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleDeserialization.getModuleProto().getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
         if (library.containsModule(module) && !sourceLoader.fillInBinary(module)) {
+          ChildGroup group = library.getModuleGroup(module);
+          if (group != null) {
+            library.unloadGroup(group);
+          }
           return false;
         }
       }
@@ -109,9 +117,14 @@ public abstract class StreamBinarySource implements BinarySource {
       myModuleDeserialization = null;
       return true;
     } catch (DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new ExceptionError(e, getModulePath(), true));
+      ModulePath modulePath = getModulePath();
+      sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
       if (!library.hasRawSources()) {
-        library.onGroupLoaded(getModulePath(), null, false);
+        library.onGroupLoaded(modulePath, null, false);
+      }
+      ChildGroup group = library.getModuleGroup(modulePath);
+      if (group != null) {
+        library.unloadGroup(group);
       }
       return false;
     }
