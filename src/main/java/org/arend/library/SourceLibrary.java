@@ -187,4 +187,9 @@ public abstract class SourceLibrary extends BaseLibrary {
       return source.persist(this, referableConverter, errorReporter);
     }
   }
+
+  public boolean deleteModule(ModulePath modulePath) {
+    BinarySource source = getBinarySource(modulePath);
+    return source != null && source.delete(this);
+  }
 }

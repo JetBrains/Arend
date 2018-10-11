@@ -1,5 +1,6 @@
 package org.arend.prelude;
 
+import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 import org.arend.source.StreamBinarySource;
 import org.arend.util.FileUtils;
@@ -42,5 +43,10 @@ public class PreludeResourceSource extends StreamBinarySource {
   @Override
   public boolean isAvailable() {
     return true;
+  }
+
+  @Override
+  public boolean delete(SourceLibrary library) {
+    return false;
   }
 }

@@ -27,4 +27,13 @@ public interface BinarySource extends Source {
    * @return true if the operation is successful, false otherwise
    */
   boolean persist(SourceLibrary library, ReferableConverter referableConverter, ErrorReporter errorReporter);
+
+  /**
+   * Deletes the source.
+   *
+   * @param library             the library to which this source belongs.
+   *
+   * @return true if the operation is successful, false otherwise
+   */
+  boolean delete(SourceLibrary library);
 }

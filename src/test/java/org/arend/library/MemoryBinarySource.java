@@ -48,4 +48,10 @@ public class MemoryBinarySource extends StreamBinarySource {
   public boolean isAvailable() {
     return myOutputStream != null;
   }
+
+  @Override
+  public boolean delete(SourceLibrary library) {
+    myOutputStream = null;
+    return true;
+  }
 }

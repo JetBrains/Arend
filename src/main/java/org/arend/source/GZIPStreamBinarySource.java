@@ -1,5 +1,6 @@
 package org.arend.source;
 
+import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 
 import javax.annotation.Nonnull;
@@ -49,5 +50,10 @@ public class GZIPStreamBinarySource extends StreamBinarySource {
   @Override
   public boolean isAvailable() {
     return mySource.isAvailable();
+  }
+
+  @Override
+  public boolean delete(SourceLibrary library) {
+    return mySource.delete(library);
   }
 }

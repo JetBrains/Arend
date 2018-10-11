@@ -1,5 +1,6 @@
 package org.arend.source;
 
+import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 import org.arend.util.FileUtils;
 
@@ -58,5 +59,15 @@ public class FileBinarySource extends StreamBinarySource {
   @Override
   public boolean isAvailable() {
     return Files.exists(myFile);
+  }
+
+  @Override
+  public boolean delete(SourceLibrary library) {
+    try {
+      Files.deleteIfExists(myFile);
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
   }
 }
