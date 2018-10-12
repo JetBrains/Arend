@@ -3,6 +3,7 @@ package org.arend.typechecking.instance.pool;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -54,6 +55,10 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     TCClassReferable typecheckable = classRef.getUnderlyingTypecheckable();
+    if (typecheckable == null) {
+      return null;
+    }
+
     ClassField classifyingField = null;
     if (classifyingExpression != null) {
       classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
@@ -61,7 +66,11 @@ public class GlobalInstancePool implements InstancePool {
         return null;
       }
 
-      classifyingField = ((ClassDefinition) myTypecheckerState.getTypechecked(typecheckable)).getClassifyingField();
+      Definition typechecked = myTypecheckerState.getTypechecked(typecheckable);
+      if (!(typechecked instanceof ClassDefinition)) {
+        return null;
+      }
+      classifyingField = ((ClassDefinition) typechecked).getClassifyingField();
       if (classifyingField == null) {
         return null;
       }
@@ -71,7 +80,19 @@ public class GlobalInstancePool implements InstancePool {
     for (int i = instances.size() - 1; i >= 0; i--) {
       Concrete.Instance instance = instances.get(i);
       Referable instanceRef = instance.getReferenceInType();
-      if (instanceRef instanceof ClassReferable && (isField ? ((ClassReferable) instanceRef).isSubClassOf(classRef) : (((ClassReferable) instanceRef).getUnderlyingTypecheckable()).isSubClassOf(typecheckable))) {
+      if (!(instanceRef instanceof ClassReferable)) {
+        continue;
+      }
+
+      boolean ok;
+      if (isField) {
+        ok = ((ClassReferable) instanceRef).isSubClassOf(classRef) ;
+      } else {
+        ClassReferable underlyingRef = ((ClassReferable) instanceRef).getUnderlyingTypecheckable();
+        ok = underlyingRef != null && underlyingRef.isSubClassOf(typecheckable);
+      }
+
+      if (ok) {
         FunctionDefinition instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
         if (instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression) {
           ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();

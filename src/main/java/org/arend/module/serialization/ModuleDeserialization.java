@@ -88,7 +88,7 @@ public class ModuleDeserialization {
   public void readDefinitions(ModuleProtos.Group groupProto, Group group) throws DeserializationException {
     if (groupProto.hasDefinition()) {
       LocatedReferable referable = group.getReferable();
-      if (referable.getUnderlyingReference() == null) {
+      if (!referable.isSynonym()) {
         TCReferable tcReferable = myReferableConverter.toDataLocatedReferable(referable);
         if (tcReferable == null) {
           throw new DeserializationException("Cannot locate '" + referable + "'");

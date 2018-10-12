@@ -14,9 +14,14 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
   @Override @Nonnull Collection<? extends Referable> getImplementedFields();
   @Override @Nullable TCClassReferable getUnderlyingReference();
 
-  default @Override @Nonnull TCClassReferable getUnderlyingTypecheckable() {
+  default @Override @Nullable TCClassReferable getUnderlyingTypecheckable() {
     TCClassReferable underlyingRef = getUnderlyingReference();
-    return underlyingRef != null ? underlyingRef : this;
+    return underlyingRef == null ? this : underlyingRef.isSynonym() ? null : underlyingRef;
+  }
+
+  @Override
+  default boolean isSynonym() {
+    return getUnderlyingReference() != null;
   }
 
   TCClassReferable NULL_REFERABLE = new TCClassReferable() {

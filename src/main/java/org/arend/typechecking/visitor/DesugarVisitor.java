@@ -33,12 +33,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     Deque<ClassReferable> toVisit = new ArrayDeque<>();
     toVisit.add(classRef);
     while (!toVisit.isEmpty()) {
-      classRef = toVisit.pop();
-      ClassReferable underlyingRef = classRef.getUnderlyingReference();
-      if (underlyingRef != null) {
-        classRef = underlyingRef;
-      }
-      if (!visitedClasses.add(classRef)) {
+      classRef = toVisit.pop().getUnderlyingTypecheckable();
+      if (classRef == null || !visitedClasses.add(classRef)) {
         continue;
       }
 
@@ -179,7 +175,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
-      if (ref instanceof ClassReferable) {
+      if (ref instanceof ClassReferable && ((ClassReferable) ref).getUnderlyingTypecheckable() != null) {
         List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
         Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
         Iterator<FieldReferable> it = notImplementedFields.iterator();

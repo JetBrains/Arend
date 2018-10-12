@@ -76,14 +76,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
-    if (ref instanceof LocatedReferable) {
-      LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-      if (underlyingRef != null) {
-        ref = underlyingRef;
-      }
-    }
+    ref = ref instanceof TCReferable ? ((TCReferable) ref).getUnderlyingTypecheckable() : null;
 
-    if (ref instanceof TCReferable) {
+    if (ref != null) {
       if (myFields.contains(ref)) {
         if (myFutureFields != null && myFutureFields.contains(ref)) {
           return makeErrorExpression(expr.getData());

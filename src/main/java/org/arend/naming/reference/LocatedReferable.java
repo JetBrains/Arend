@@ -13,8 +13,17 @@ public interface LocatedReferable extends GlobalReferable {
   @Nullable LocatedReferable getUnderlyingReference();
   @Nullable Reference getUnresolvedUnderlyingReference();
 
+  default @Nullable LocatedReferable getUnderlyingTypecheckable() {
+    LocatedReferable underlyingRef = getUnderlyingReference();
+    return underlyingRef == null ? this : underlyingRef.isSynonym() ? null : underlyingRef;
+  }
+
   default boolean isFieldSynonym() {
-    return getUnderlyingReference() != null;
+    return isSynonym();
+  }
+
+  default boolean isSynonym() {
+    return getUnresolvedUnderlyingReference() != null || getUnderlyingReference() != null;
   }
 
   class Helper {

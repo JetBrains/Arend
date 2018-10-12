@@ -16,6 +16,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SimpleLevelSubstitution;
+import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -50,7 +51,11 @@ public class TwoStageEquations implements Equations {
 
   private Expression getInstance(InferenceVariable variable, FieldCallExpression fieldCall, Expression expr) {
     if (variable instanceof TypeClassInferenceVariable) {
-      ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(((TypeClassInferenceVariable) variable).getClassReferable().getUnderlyingTypecheckable());
+      TCClassReferable classRef = ((TypeClassInferenceVariable) variable).getClassReferable().getUnderlyingTypecheckable();
+      ClassDefinition classDef = classRef == null ? null : (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef);
+      if (classDef == null) {
+        return null;
+      }
       if (classDef.getClassifyingField() == fieldCall.getDefinition()) {
         Expression stuck2 = expr.getStuckExpression();
         if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class) || stuck2.cast(InferenceReferenceExpression.class).getVariable() == null) {

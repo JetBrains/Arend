@@ -63,7 +63,7 @@ public abstract class NameResolvingChecker {
       if (isSynonym) {
         // Check the underlying class of a synonym
         underlyingClass = checkClass(underlyingClassRef, scope, true, true);
-        if (underlyingClass != null && underlyingClass.getUnresolvedUnderlyingReference() != null) {
+        if (underlyingClass != null && underlyingClass.isSynonym()) {
           onError(new NamingError("Expected a class, got a class synonym", underlyingClassRef.getData()));
           underlyingClass = null;
         }

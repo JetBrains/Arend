@@ -55,7 +55,17 @@ public class LocalInstancePool implements InstancePool {
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if ((isField ? instanceData.classRef.isSubClassOf(classRef) : instanceData.classRef.getUnderlyingTypecheckable().isSubClassOf(classRef.getUnderlyingTypecheckable())) && (instanceData.key == classifyingExpression || instanceData.key != null && instanceData.key.equals(classifyingExpression))) {
+
+      boolean ok;
+      if (isField) {
+        ok = instanceData.classRef.isSubClassOf(classRef);
+      } else {
+        TCClassReferable underlyingRef1 = instanceData.classRef.getUnderlyingTypecheckable();
+        TCClassReferable underlyingRef2 = classRef.getUnderlyingTypecheckable();
+        ok = underlyingRef1 != null && underlyingRef2 != null && underlyingRef1.isSubClassOf(underlyingRef2);
+      }
+
+      if (ok && (instanceData.key == classifyingExpression || instanceData.key != null && instanceData.key.equals(classifyingExpression))) {
         Expression result = instanceData.value;
         if (instanceData.key == classifyingExpression) {
           return result;

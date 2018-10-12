@@ -622,18 +622,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument);
   }
 
+  public Referable getUnderlyingTypecheckable(Referable ref, Concrete.SourceNode sourceNode) {
+    if (!(ref instanceof LocatedReferable)) {
+      return ref;
+    }
+    LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingTypecheckable();
+    if (underlyingRef == null) {
+      myErrorReporter.report(new TypecheckingError("Reference to incorrect synonym '" + ref.textRepresentation() + "'", sourceNode));
+    }
+    return underlyingRef;
+  }
+
   public TResult visitReference(Concrete.ReferenceExpression expr) {
     Referable ref = expr.getReferent();
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
-    if (ref instanceof LocatedReferable) {
-      LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-      if (underlyingRef != null) {
-        ref = underlyingRef;
-      }
-    }
-    return ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
+    ref = getUnderlyingTypecheckable(ref, expr);
+    return ref == null ? null : ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
   }
 
   @Override
@@ -1235,11 +1241,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (referable instanceof ErrorReference) {
       return null;
     }
-    if (referable instanceof LocatedReferable) {
-      LocatedReferable underlyingRef = ((LocatedReferable) referable).getUnderlyingReference();
-      if (underlyingRef != null) {
-        referable = underlyingRef;
-      }
+    referable = getUnderlyingTypecheckable(referable, sourceNode);
+    if (referable == null) {
+      return null;
     }
 
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
@@ -1431,13 +1435,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           return null;
         }
         if (baseExpr instanceof Concrete.ReferenceExpression) {
-          Referable ref = ((Concrete.ReferenceExpression) baseExpr).getReferent();
-          if (ref instanceof LocatedReferable) {
-            LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-            if (underlyingRef != null) {
-              ref = underlyingRef;
-            }
-          }
+          Referable ref = getUnderlyingTypecheckable(((Concrete.ReferenceExpression) baseExpr).getReferent(), baseExpr);
           boolean ok = ref instanceof TCReferable;
           if (ok) {
             Definition actualDef = myState.getTypechecked((TCReferable) ref);

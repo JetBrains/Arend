@@ -1,6 +1,5 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -30,14 +29,10 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
-    if (expr.getReferent() instanceof LocatedReferable) {
-      LocatedReferable ref = (LocatedReferable) expr.getReferent();
-      if (ref instanceof TCReferable) {
-        myDependencies.add((TCReferable) ref);
-      }
-      ref = ref.getUnderlyingReference();
-      if (ref instanceof TCReferable) {
-        myDependencies.add((TCReferable) ref);
+    if (expr.getReferent() instanceof TCReferable) {
+      TCReferable ref = ((TCReferable) expr.getReferent()).getUnderlyingTypecheckable();
+      if (ref != null) {
+        myDependencies.add(ref);
       }
     }
     return null;

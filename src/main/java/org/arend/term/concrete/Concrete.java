@@ -132,18 +132,11 @@ public final class Concrete {
 
     public TCClassReferable getUnderlyingClassReferable(boolean resolveClassSynonym) {
       Referable ref = getUnderlyingReferable();
-      if (!(ref instanceof LocatedReferable)) {
+      if (!(ref instanceof TCClassReferable)) {
         return null;
       }
 
-      if (resolveClassSynonym) {
-        LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingReference();
-        if (underlyingRef != null) {
-          ref = underlyingRef;
-        }
-      }
-
-      return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
+      return resolveClassSynonym ? ((TCClassReferable) ref).getUnderlyingTypecheckable() : (TCClassReferable) ref;
     }
 
     @Override

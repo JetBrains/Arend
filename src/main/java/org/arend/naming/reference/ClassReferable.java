@@ -11,12 +11,11 @@ public interface ClassReferable extends LocatedReferable {
   @Nonnull Collection<? extends Referable> getImplementedFields();
   @Override @Nullable ClassReferable getUnderlyingReference();
 
-  default @Nonnull ClassReferable getUnderlyingTypecheckable() {
+  default @Override @Nullable ClassReferable getUnderlyingTypecheckable() {
     ClassReferable underlyingRef = getUnderlyingReference();
-    return underlyingRef != null ? underlyingRef : this;
+    return underlyingRef == null ? this : underlyingRef.isSynonym() ? null : underlyingRef;
   }
 
-  @Override
   default boolean isFieldSynonym() {
     return false;
   }
@@ -59,7 +58,7 @@ public interface ClassReferable extends LocatedReferable {
           FieldReferable field = it.next();
           boolean isExplicit = field.isExplicitField();
           if (isExplicit) {
-            while (!argumentsExplicitness.get(i) && i < argumentsExplicitness.size()) {
+            while (i < argumentsExplicitness.size() && !argumentsExplicitness.get(i)) {
               i++;
             }
             if (i == argumentsExplicitness.size()) {
@@ -93,12 +92,8 @@ public interface ClassReferable extends LocatedReferable {
       toVisit.add(classDef);
 
       while (!toVisit.isEmpty()) {
-        ClassReferable classRef = toVisit.pop();
-        ClassReferable underlyingClass = classRef.getUnderlyingReference();
-        if (underlyingClass != null) {
-          classRef = underlyingClass;
-        }
-        if (!visitedClasses.add(classRef)) {
+        ClassReferable classRef = toVisit.pop().getUnderlyingTypecheckable();
+        if (classRef == null || !visitedClasses.add(classRef)) {
           continue;
         }
 
@@ -112,10 +107,7 @@ public interface ClassReferable extends LocatedReferable {
               }
             }
           } else if (fieldImpl instanceof LocatedReferable) {
-            LocatedReferable field = ((LocatedReferable) fieldImpl).getUnderlyingReference();
-            if (field == null) {
-              field = (LocatedReferable) fieldImpl;
-            }
+            LocatedReferable field = ((LocatedReferable) fieldImpl).getUnderlyingTypecheckable();
             if (field instanceof FieldReferable) {
               result.remove(field);
               if (superClassesFields != null) {
@@ -138,7 +130,7 @@ public interface ClassReferable extends LocatedReferable {
 
       Set<FieldReferable> result = new LinkedHashSet<>();
       ClassReferable underlyingClass = classDef.getUnderlyingReference();
-      if (underlyingClass != null) {
+      if (underlyingClass != null && !underlyingClass.isSynonym()) {
         result.addAll(getAllFields(underlyingClass, visited, superClassesFields));
       }
 

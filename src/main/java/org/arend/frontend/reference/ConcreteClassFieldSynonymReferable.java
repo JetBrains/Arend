@@ -8,7 +8,6 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.Precedence;
-import org.arend.term.Precedence;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,7 +46,7 @@ public class ConcreteClassFieldSynonymReferable extends ConcreteClassFieldRefera
   }
 
   @Override
-  public boolean isFieldSynonym() {
+  public boolean isSynonym() {
     return true;
   }
 }

@@ -36,7 +36,7 @@ public class ClassFieldImplScope implements Scope {
 
       if (underlyingClasses != null) {
         ClassReferable underlyingClass = classRef.getUnderlyingReference();
-        if (underlyingClass != null) {
+        if (underlyingClass != null && !underlyingClass.isSynonym()) {
           underlyingClasses.add(underlyingClass);
         }
       }

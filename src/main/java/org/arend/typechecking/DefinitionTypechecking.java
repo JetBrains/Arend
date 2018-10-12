@@ -241,9 +241,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
         if (localInstancePool != null) {
           TCClassReferable classRef = typeParameter.getType().getUnderlyingClassReferable(false);
-          if (classRef != null) {
-            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef.getUnderlyingTypecheckable());
-            if (!classDef.isRecord()) {
+          TCClassReferable underlyingClassRef = classRef == null ? null : classRef.getUnderlyingTypecheckable();
+          if (underlyingClassRef != null) {
+            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
+            if (classDef != null && !classDef.isRecord()) {
               ClassField classifyingField = classDef.getClassifyingField();
               for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
                 ReferenceExpression reference = new ReferenceExpression(link);

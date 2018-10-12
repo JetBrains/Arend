@@ -59,4 +59,9 @@ public class ConcreteClassSynonymReferable extends ConcreteClassReferable {
   public Collection<? extends Referable> getImplementedFields() {
     return Collections.emptyList();
   }
+
+  @Override
+  public boolean isSynonym() {
+    return true;
+  }
 }
