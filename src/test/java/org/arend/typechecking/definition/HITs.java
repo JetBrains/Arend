@@ -1,8 +1,10 @@
 package org.arend.typechecking.definition;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore // TODO[hits]
 public class HITs extends TypeCheckingTestCase {
   @Test
   public void typedData() {

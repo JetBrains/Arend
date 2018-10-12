@@ -100,8 +100,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private String getPostfixText(TerminalNode node) {
-    String name = node.getText();
-    return name.substring(1, name.length());
+    return node.getText().substring(1);
   }
 
   public Concrete.Expression visitExpr(ExprContext expr) {
@@ -597,10 +596,12 @@ public class BuildVisitor extends ArendBaseVisitor {
         InternalConcreteLocatedReferable reference = new InternalConcreteLocatedReferable(tokenPosition(conCtx.start), conCtx.ID().getText(), visitPrecedence(conCtx.precedence()), true, def.getData(), LocatedReferableImpl.Kind.CONSTRUCTOR);
         Concrete.Constructor constructor = new Concrete.Constructor(reference, def, visitTeles(conCtx.tele()), visitElim(elimCtx), clauses);
         reference.setDefinition(constructor);
+        /* TODO[hits]
         ExprContext type = conCtx.expr();
         if (type != null) {
           constructor.setResultType(visitExpr(type));
         }
+        */
         constructors.add(reference);
         result.add(constructor);
       } catch (ParseException ignored) {

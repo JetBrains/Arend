@@ -78,7 +78,7 @@ atomPatternOrID : atomPattern     # patternOrIDAtom
                 | ID              # patternID
                 ;
 
-constructor : precedence ID tele* (':' expr)? (elim? '{' clause? ('|' clause)* '}')?;
+constructor : precedence ID tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
 
 precedence :                            # noPrecedence
            | associativity NUMBER       # withPrecedence
