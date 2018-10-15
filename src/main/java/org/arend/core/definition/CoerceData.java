@@ -136,7 +136,6 @@ public class CoerceData {
           }
           result.expression = new ErrorExpression(result.expression, null);
         }
-        arguments.add(result.expression);
 
         substitution.add(link, result.expression);
         result = new CheckTypeVisitor.Result(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF));

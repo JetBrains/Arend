@@ -456,7 +456,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : !bodyIsOK && typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
 
-    if (def.isCoerce() && typedDef.getBody() != null) {
+    if (def.isCoerce()) {
       Definition coerceParent = myVisitor.getTypecheckingState().getTypechecked(def.getCoerceParent());
       if (coerceParent instanceof DataDefinition || coerceParent instanceof ClassDefinition) {
         if (def.getParameters().isEmpty()) {
