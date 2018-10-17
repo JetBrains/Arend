@@ -1308,7 +1308,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         ClassField field = (ClassField) definition;
         if (baseClass.isImplemented(field) || classFieldMap.containsKey(field) || classFieldMap2.containsKey(field)) {
           alreadyImplementedFields.add((GlobalReferable) statement.getImplementedField());
-          alreadyImplementedSourceNode = statement;
+          if (alreadyImplementedSourceNode == null) {
+            alreadyImplementedSourceNode = statement;
+          }
         } else {
           classFieldMap.put(field, statement);
         }
@@ -1345,59 +1347,43 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP);
 
-    if (!classFieldMap.isEmpty()) {
+    if (!classFieldMap.isEmpty() || !classFieldMap2.isEmpty()) {
       Set<ClassField> notImplementedFields = new HashSet<>();
-      Set<ClassField> notImplementedFields2 = new HashSet<>();
       for (ClassField field : baseClass.getFields()) {
+        Concrete.ClassFieldImpl impl = classFieldMap.get(field);
         Pair<Expression, Concrete.SourceNode> impl2 = classFieldMap2.get(field);
-        if (impl2 == null && resultClassCall.isImplemented(field)) {
-          continue;
-        }
+        Expression oldImpl = resultClassCall.getImplementation(field, new NewExpression(resultClassCall));
+        Expression newImpl = null;
 
-        Expression oldImpl = impl2 == null ? null : resultClassCall.getImplementation(field, new NewExpression(resultClassCall));
-        if (oldImpl == null) {
-          Concrete.ClassFieldImpl impl = classFieldMap.get(field);
-          if (impl != null) {
-            boolean ok = true;
-            if (!notImplementedFields.isEmpty()) {
-              ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
-              if (found != null) {
-                ok = false;
-                myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl));
-              }
-            }
-            if (ok) {
-              oldImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
-              fieldSet.put(field, oldImpl);
-              classFieldMap.remove(field);
-              if (classFieldMap.isEmpty()) {
-                break;
-              }
-            }
-          } else if (impl2 == null) {
-            notImplementedFields.add(field);
+        boolean ok = true;
+        if (!notImplementedFields.isEmpty()) {
+          ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
+          if (found != null) {
+            ok = false;
+            myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl != null ? impl : impl2.proj2));
           }
         }
 
-        if (impl2 != null) {
-          if (oldImpl != null) {
-            CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl2.proj2);
-            if (!cmpVisitor.compare(oldImpl, impl2.proj1)) {
-              myErrorReporter.report(new ImplementationClashError(oldImpl, field, impl2.proj1, impl2.proj2));
-              notImplementedFields2.add(field);
-            }
-          } else {
-            boolean ok = true;
-            if (!notImplementedFields2.isEmpty()) {
-              ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields2);
-              if (found != null) {
-                ok = false;
-                myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl2.proj2));
-              }
-            }
-            if (ok) {
-              fieldSet.put(field, impl2.proj1);
-            }
+        if (ok) {
+          if (impl != null) {
+            newImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
+          } else if (impl2 != null) {
+            newImpl = impl2.proj1;
+          }
+        }
+        if (newImpl != null) {
+          fieldSet.putIfAbsent(field, newImpl);
+        }
+        if (newImpl == null && oldImpl == null) {
+          notImplementedFields.add(field);
+        }
+
+        if (newImpl != null && (oldImpl != null || impl != null && impl2 != null)) {
+          CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl != null ? impl : impl2.proj2);
+          if (oldImpl != null && !cmpVisitor.compare(oldImpl, newImpl)) {
+            myErrorReporter.report(new ImplementationClashError(oldImpl, field, newImpl, impl != null ? impl : impl2.proj2));
+          } else if (impl != null && impl2 != null && !cmpVisitor.compare(impl2.proj1, newImpl)) {
+            myErrorReporter.report(new ImplementationClashError(impl2.proj1, field, newImpl, impl));
           }
         }
       }

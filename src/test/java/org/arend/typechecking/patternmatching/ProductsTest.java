@@ -122,4 +122,12 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func g1 : f (con (\\new A 5 0)) = 5 => path (\\lam _ => 5)\n" +
       "\\func g2 : f (con (\\new A 8 5)) = 4 => path (\\lam _ => 4)");
   }
+
+  @Test
+  public void dependentRecordTest() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type) | fst : A | snd : B\n" +
+      "\\func swap {A' B' : \\Type} (p : Pair A' B') : Pair p.B p.A\n" +
+      "  | (A, B, a, b) => \\new Pair { | A => B | B => A | fst => b | snd => a }");
+  }
 }
