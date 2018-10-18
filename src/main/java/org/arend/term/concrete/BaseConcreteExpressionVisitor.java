@@ -156,6 +156,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, P params) {
     for (Concrete.LetClause clause : expr.getClauses()) {
+      visitParameters(clause.getParameters(), params);
       if (clause.resultType != null) {
         clause.resultType = clause.resultType.accept(this, params);
       }
