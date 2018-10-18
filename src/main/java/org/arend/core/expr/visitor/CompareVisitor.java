@@ -356,7 +356,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return compare(fieldCall1.getArgument(), fieldCall2.getArgument());
   }
 
-  private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2) {
+  private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
     Equations.CMP origCMP = myCMP;
     for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
@@ -364,7 +364,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         myCMP = origCMP;
         return false;
       }
-      if (!compare(impl1, entry.getValue())) {
+      if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1)) {
         myCMP = origCMP;
         return false;
       }
@@ -380,20 +380,21 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
     ClassCallExpression classCall2 = expr2.cast(ClassCallExpression.class);
 
-    boolean subclass2of1Test = myCMP.equals(Equations.CMP.LE) || classCall2.getDefinition().isSubClassOf(expr1.getDefinition());
-    boolean subclass1of2Test = myCMP.equals(Equations.CMP.GE) || expr1.getDefinition().isSubClassOf(classCall2.getDefinition());
-    if (!(subclass1of2Test && subclass2of1Test)) {
-      return false;
+    if (myCMP == Equations.CMP.LE) {
+      if (!expr1.getDefinition().isSubClassOf(classCall2.getDefinition())) {
+        return false;
+      }
+      return checkSubclassImpl(expr1, classCall2, true);
     }
 
-    boolean implAllOf1Test = myCMP.equals(Equations.CMP.LE);
-    if (!implAllOf1Test) {
-      myCMP = myCMP.not();
-      implAllOf1Test = checkSubclassImpl(classCall2, expr1);
-      myCMP = myCMP.not();
+    if (myCMP == Equations.CMP.GE) {
+      if (!classCall2.getDefinition().isSubClassOf(expr1.getDefinition())) {
+        return false;
+      }
+      return checkSubclassImpl(classCall2, expr1, false);
     }
-    boolean implAllOf2Test = myCMP.equals(Equations.CMP.GE) || checkSubclassImpl(expr1, classCall2);
-    return implAllOf1Test && implAllOf2Test;
+
+    return expr1.getDefinition() == classCall2.getDefinition() && expr1.getImplementedHere().size() == classCall2.getImplementedHere().size() && checkSubclassImpl(expr1, classCall2, true);
   }
 
   @Override

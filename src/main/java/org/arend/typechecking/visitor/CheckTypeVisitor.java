@@ -1350,6 +1350,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (!classFieldMap.isEmpty() || !classFieldMap2.isEmpty()) {
       Set<ClassField> notImplementedFields = new HashSet<>();
       for (ClassField field : baseClass.getFields()) {
+        if (resultClassCall.isImplemented(field)) {
+          continue;
+        }
+
         Concrete.ClassFieldImpl impl = classFieldMap.get(field);
         Pair<Expression, Concrete.SourceNode> impl2 = classFieldMap2.get(field);
 
@@ -1374,11 +1378,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
         }
 
-        if (newImpl == null && !resultClassCall.isImplemented(field)) {
+        if (newImpl == null) {
           notImplementedFields.add(field);
-        }
-
-        if (newImpl != null) {
+        } else {
           Expression oldImpl = notImplementedFields.isEmpty() ? resultClassCall.getImplementation(field, new NewExpression(resultClassCall)) : null;
           if (oldImpl != null || impl != null && impl2 != null) {
             CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl != null ? impl : impl2.proj2);
