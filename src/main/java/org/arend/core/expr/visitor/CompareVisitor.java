@@ -148,7 +148,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     Equations.CMP origCMP = myCMP;
-    if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class)) {
+    if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class) && !expr1.isInstance(LamExpression.class)) {
       myCMP = Equations.CMP.EQ;
     }
 
