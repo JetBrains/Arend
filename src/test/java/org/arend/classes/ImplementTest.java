@@ -332,7 +332,40 @@ public class ImplementTest extends TypeCheckingTestCase {
       "}\n" +
       "\\class B \\extends A {\n" +
       "  | y => z\n" +
+      "}");
+  }
+
+  @Test
+  public void recursiveMutual() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  | y : Nat\n" +
+      "  | z : Nat\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | y => z\n" +
+      "}\n" +
+      "\\class C \\extends B {\n" +
+      "  | z => y\n" +
       "}", 1);
+  }
+
+  @Test
+  public void recursiveMutual2() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  | y : Nat\n" +
+      "  | z : Nat\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | y => z\n" +
+      "}\n" +
+      "\\class C \\extends A {\n" +
+      "  | z => y\n" +
+      "}\n" +
+      "\\class D \\extends B, C", 1);
   }
 
   @Test

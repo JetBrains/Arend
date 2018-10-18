@@ -12,6 +12,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.Pattern;
@@ -24,9 +25,13 @@ import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
+import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.LocalErrorReporterCounter;
-import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.error.local.ArgInferenceError;
+import org.arend.typechecking.error.local.FieldsImplementationError;
+import org.arend.typechecking.error.local.NonPositiveDataError;
+import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
@@ -985,8 +990,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     // Process implementations
+    Deque<ClassField> implementedFields = new ArrayDeque<>();
     if (!def.getImplementations().isEmpty()) {
       typedDef.updateSorts();
+
       for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
         ClassField field = myVisitor.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
         if (field == null) {
@@ -1016,27 +1023,32 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           classOk = false;
         }
 
-        if (result != null) {
-          Set<ClassField> futureFields = new HashSet<>();
-          boolean found = false;
-          for (ClassField classField : typedDef.getFields()) {
-            if (!found && classField == field) {
-              found = true;
-            }
-            if (found && !typedDef.isImplemented(classField)) {
-              futureFields.add(classField);
-            }
-          }
-          Variable var = result.expression.findBinding(futureFields);
-          if (var != null) {
-            errorReporter.report(new ImplementationReferenceError((ClassField) var, classFieldImpl));
-            result = null;
-          }
+        if (typedDef.getSuperClasses().size() < 2) {
+          implementedFields.add(field);
         }
-
         typedDef.implementField(field, new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
         myVisitor.getContext().clear();
         myVisitor.getFreeBindings().clear();
+      }
+    }
+
+    // Check for cycles in implementations
+    if (typedDef.getSuperClasses().size() >= 2) {
+      implementedFields.addAll(typedDef.getImplementedFields());
+    }
+    if (!implementedFields.isEmpty()) {
+      DFS dfs = new DFS(typedDef);
+      while (!implementedFields.isEmpty()) {
+        ClassField field = implementedFields.pop();
+        List<ClassField> cycle = dfs.findCycle(field);
+        if (cycle != null) {
+          errorReporter.report(CycleError.fromTypechecked(cycle));
+          implementedFields.removeAll(cycle);
+          for (ClassField dep : cycle) {
+            typedDef.removeImplementation(dep);
+          }
+          implementedFields.add(field);
+        }
       }
     }
 
@@ -1046,6 +1058,62 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
     typedDef.updateSorts();
+  }
+
+  private static class DFS {
+    private final ClassDefinition classDef;
+    private final Map<ClassField, Boolean> state = new HashMap<>();
+    private final Map<ClassField, Set<ClassField>> references = new HashMap<>();
+
+    private DFS(ClassDefinition classDef) {
+      this.classDef = classDef;
+    }
+
+    List<ClassField> findCycle(ClassField field) {
+      List<ClassField> cycle = dfs(field);
+      if (cycle != null) {
+        if (cycle.size() > 1) {
+          cycle.remove(cycle.size() - 1);
+          Collections.reverse(cycle);
+        }
+        state.entrySet().removeIf(entry -> !entry.getValue());
+        for (ClassField dep : cycle) {
+          references.put(dep, Collections.emptySet());
+        }
+      }
+      return cycle;
+    }
+
+    private List<ClassField> dfs(ClassField field) {
+      if (Boolean.TRUE.equals(state.putIfAbsent(field, false))) {
+        return null;
+      }
+
+      Set<ClassField> deps = references.computeIfAbsent(field, f -> {
+        LamExpression impl = classDef.getImplementation(field);
+        return impl != null ? FieldsCollector.getFields(impl.getBody(), classDef.getFields()) : Collections.emptySet();
+      });
+
+      for (ClassField dep : deps) {
+        Boolean st = state.get(dep);
+        if (st == null) {
+          List<ClassField> cycle = dfs(dep);
+          if (cycle != null) {
+            if (cycle.size() == 1 || cycle.get(0) != cycle.get(cycle.size() - 1)) {
+              cycle.add(dep);
+            }
+            return cycle;
+          }
+        } else if (!st) {
+          List<ClassField> cycle = new ArrayList<>();
+          cycle.add(dep);
+          return cycle;
+        }
+      }
+
+      state.put(field, true);
+      return null;
+    }
   }
 
   private static PiExpression checkFieldType(Type type, ClassDefinition parentClass) {

@@ -134,12 +134,20 @@ public class ClassDefinition extends Definition {
     return myImplemented.entrySet();
   }
 
+  public Set<? extends ClassField> getImplementedFields() {
+    return myImplemented.keySet();
+  }
+
   public LamExpression getImplementation(ClassField field) {
     return myImplemented.get(field);
   }
 
   public LamExpression implementField(ClassField field, LamExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
+  }
+
+  public void removeImplementation(ClassField field) {
+    myImplemented.computeIfPresent(field, (f,i) -> new LamExpression(i.getResultSort(), i.getParameters(), new ErrorExpression(null, null)));
   }
 
   public DependentLink getClassFieldParameters(Sort sortArgument) {

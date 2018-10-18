@@ -1352,27 +1352,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (ClassField field : baseClass.getFields()) {
         Concrete.ClassFieldImpl impl = classFieldMap.get(field);
         Pair<Expression, Concrete.SourceNode> impl2 = classFieldMap2.get(field);
-        Expression newImpl = null;
 
-        if (impl != null) {
-          newImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
-        } else if (impl2 != null) {
-          newImpl = impl2.proj1;
+        boolean ok = true;
+        if (!notImplementedFields.isEmpty() && (impl != null || impl2 != null)) {
+          ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
+          if (found != null) {
+            ok = false;
+            myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl != null ? impl : impl2.proj2));
+          }
         }
 
-        if (newImpl != null) {
-          boolean ok = true;
-          if (!notImplementedFields.isEmpty()) {
-            ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
-            if (found != null) {
-              ok = false;
-              myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl != null ? impl : impl2.proj2));
-            }
+        Expression newImpl = null;
+        if (ok) {
+          if (impl != null) {
+            newImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
+          } else if (impl2 != null) {
+            newImpl = impl2.proj1;
           }
-          if (ok) {
+          if (newImpl != null) {
             fieldSet.putIfAbsent(field, newImpl);
-          } else {
-            newImpl = null;
           }
         }
 

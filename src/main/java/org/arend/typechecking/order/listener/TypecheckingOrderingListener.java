@@ -137,10 +137,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
   public void sccFound(SCC scc) {
     for (TypecheckingUnit unit : scc.getUnits()) {
       if (!TypecheckingUnit.hasHeader(unit.getDefinition())) {
-        List<Concrete.Definition> cycle = new ArrayList<>();
+        List<TCReferable> cycle = new ArrayList<>();
         for (TypecheckingUnit unit1 : scc.getUnits()) {
           Concrete.Definition definition = unit1.getDefinition();
-          cycle.add(definition);
+          cycle.add(definition.getData());
 
           Definition typechecked = myState.getTypechecked(definition.getData());
           if (typechecked == null) {
@@ -182,7 +182,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typecheckingUnitStarted(unit.getDefinition().getData());
       Definition typechecked = Definition.newDefinition(unit.getDefinition());
       myState.record(unit.getDefinition().getData(), typechecked);
-      myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition())));
+      myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition().getData())));
       typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
@@ -227,7 +227,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         cycle.add(unit1.getDefinition());
       }
 
-      myErrorReporter.report(new CycleError(cycle));
+      myErrorReporter.report(CycleError.fromConcrete(cycle));
       for (Concrete.Definition definition : cycle) {
         typecheckingHeaderStarted(definition.getData());
         Definition typechecked = Definition.newDefinition(definition);
