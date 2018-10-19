@@ -256,4 +256,30 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func g => f", 1);
     assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
+
+  @Test
+  public void classifyingFieldLambda() {
+    typeCheckModule(
+      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\data Maybe (A : \\Type) | nothing | just A\n" +
+      "\\func fromMaybe {A : \\Type} (a : A) (m : Maybe A) : A \\elim m\n" +
+      "  | nothing => a\n" +
+      "  | just a' => a'\n" +
+      "\\instance B-inst : B Maybe | foo => just 3 | bar => fromMaybe 7\n" +
+      "\\func test1 => fromMaybe 4 foo\n" +
+      "\\func test2 => bar (just 5)\n" +
+      "\\func test3 => \\let x : Maybe Nat => foo \\in bar x");
+  }
+
+  @Test
+  public void classifyingFieldLambdaError() {
+    typeCheckModule(
+      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\data Maybe (A : \\Type) | nothing | just A\n" +
+      "\\func fromMaybe {A : \\Type} (a : A) (m : Maybe A) : A \\elim m\n" +
+      "  | nothing => a\n" +
+      "  | just a' => a'\n" +
+      "\\instance B-inst : B Maybe | foo => just 3 | bar => fromMaybe 7\n" +
+      "\\func test => bar (just (\\lam (x : Nat) => x))", 1);
+  }
 }

@@ -11,7 +11,7 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
     super(name, next);
   }
 
-  private UntypedSingleDependentLink(String name) {
+  public UntypedSingleDependentLink(String name) {
     super(name);
   }
 

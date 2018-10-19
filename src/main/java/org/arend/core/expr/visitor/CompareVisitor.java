@@ -2,9 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.context.param.*;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
@@ -145,6 +143,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (expr2.isInstance(InferenceReferenceExpression.class)) {
       InferenceVariable variable = expr2.cast(InferenceReferenceExpression.class).getVariable();
       return myEquations.add(expr1, expr2.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
+    }
+
+    Boolean dataAndApp = checkDataAndApp(expr1, expr2, true);
+    if (dataAndApp != null) {
+      return dataAndApp;
+    }
+    dataAndApp = checkDataAndApp(expr2, expr1, false);
+    if (dataAndApp != null) {
+      return dataAndApp;
     }
 
     Equations.CMP origCMP = myCMP;
@@ -313,6 +320,77 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return visitInteger(expr2.cast(IntegerExpression.class), expr1);
     }
     return visitDefCall(expr1, expr2, true);
+  }
+
+  private Boolean checkDataAndApp(Expression expr1, Expression expr2, boolean correcrtOrder) {
+    DataCallExpression dataCall1 = expr1.checkedCast(DataCallExpression.class);
+    if (dataCall1 == null) {
+      return null;
+    }
+    AppExpression app2 = expr2.checkedCast(AppExpression.class);
+    if (app2 == null) {
+      return null;
+    }
+
+    List<Expression> args = new ArrayList<>(dataCall1.getDefCallArguments().size());
+    while (true) {
+      args.add(app2.getArgument());
+      Expression fun = app2.getFunction();
+      if (fun.isInstance(AppExpression.class)) {
+        app2 = fun.cast(AppExpression.class);
+        continue;
+      }
+
+      if (!fun.isInstance(InferenceReferenceExpression.class) || args.size() > dataCall1.getDefCallArguments().size()) {
+        return null;
+      }
+      Collections.reverse(args);
+
+      Equations.CMP origCMP = myCMP;
+      for (int i = args.size() - 1; i >= 0; i--) {
+        myCMP = dataCall1.getDefinition().isCovariant(i) ? origCMP : Equations.CMP.EQ;
+        if (!compare(correcrtOrder ? dataCall1.getDefCallArguments().get(i) : args.get(i), correcrtOrder ? args.get(i) : dataCall1.getDefCallArguments().get(i))) {
+          return false;
+        }
+      }
+
+      List<Expression> newDataArgs = new ArrayList<>(dataCall1.getDefCallArguments().size());
+      int numberOfOldArgs = dataCall1.getDefCallArguments().size() - args.size();
+      newDataArgs.addAll(dataCall1.getDefCallArguments().subList(0, numberOfOldArgs));
+      Expression lam = new DataCallExpression(dataCall1.getDefinition(), dataCall1.getSortArgument(), newDataArgs);
+      Sort codSort = dataCall1.getDefinition().getSort();
+      DependentLink dataParams = dataCall1.getDefinition().getParameters();
+      for (int i = 0; i < numberOfOldArgs; i++) {
+        dataParams = dataParams.getNext();
+      }
+      SingleDependentLink firstParam = null;
+      SingleDependentLink lastParam = null;
+      for (; dataParams.hasNext(); dataParams = dataParams.getNext()) {
+        SingleDependentLink link;
+        if (dataParams instanceof TypedDependentLink) {
+          link = new TypedSingleDependentLink(dataParams.isExplicit(), dataParams.getName(), dataParams.getType());
+        } else {
+          link = new UntypedSingleDependentLink(dataParams.getName());
+        }
+        if (firstParam == null) {
+          firstParam = link;
+        }
+        if (lastParam == null) {
+          lastParam = link;
+        } else {
+          lastParam.setNext(link);
+        }
+        if (link instanceof TypedSingleDependentLink) {
+          codSort = PiExpression.generateUpperBound(link.getType().getSortOfType(), codSort, myEquations, mySourceNode);
+          lam = new LamExpression(codSort, firstParam, lam);
+          firstParam = null;
+          lastParam = null;
+        }
+      }
+
+      InferenceVariable variable = fun.cast(InferenceReferenceExpression.class).getVariable();
+      return myEquations.add(correcrtOrder ? lam : fun, correcrtOrder ? fun : lam.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
+    }
   }
 
   @Override

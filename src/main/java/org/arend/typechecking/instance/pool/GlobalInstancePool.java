@@ -60,8 +60,13 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     ClassField classifyingField = null;
+    Expression origClassifyingExpression = classifyingExpression;
     if (classifyingExpression != null) {
-      classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
+      origClassifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
+      classifyingExpression = origClassifyingExpression;
+      while (classifyingExpression.isInstance(LamExpression.class)) {
+        classifyingExpression = classifyingExpression.cast(LamExpression.class).getBody();
+      }
       if (!classifyingExpression.isInstance(DefCallExpression.class) && !classifyingExpression.isInstance(UniverseExpression.class) && !classifyingExpression.isInstance(IntegerExpression.class)) {
         return null;
       }
@@ -113,7 +118,7 @@ public class GlobalInstancePool implements InstancePool {
             }
           }
 
-          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, classifyingField == null ? null : new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, Collections.singletonMap(classifyingField, classifyingExpression), Sort.STD));
+          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, classifyingField == null ? null : new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, Collections.singletonMap(classifyingField, origClassifyingExpression), Sort.STD));
           return result == null ? new ErrorExpression(null, null) : result.expression;
         }
       }
