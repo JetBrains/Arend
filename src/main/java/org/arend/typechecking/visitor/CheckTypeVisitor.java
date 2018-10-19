@@ -984,7 +984,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     TypecheckingError error = new GoalError(expr.getName(), myContext, expectedType, exprResult == null ? null : exprResult.type, errors, expr);
     myErrorReporter.report(error);
     Expression result = new ErrorExpression(null, error);
-    return new Result(result, result);
+    return new Result(result, expectedType instanceof Expression ? (Expression) expectedType : result);
   }
 
   @Override
