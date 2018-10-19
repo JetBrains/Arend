@@ -1321,7 +1321,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
           if (classCall == null) {
             if (!type.isInstance(ErrorExpression.class)) {
-              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a class instance"), type, statement.implementation));
+              InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+              myErrorReporter.report(var == null ? new TypeMismatchError(DocFactory.text("a class"), type, statement.implementation) : var.getErrorInfer());
             }
           } else {
             if (!classCall.getDefinition().isSubClassOf((ClassDefinition) definition)) {
