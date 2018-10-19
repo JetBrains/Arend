@@ -419,7 +419,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (returnExpectedType) {
       if (result == null) {
         result = new Result(null, (Expression) expectedType);
-      } else {
+      } else if (!result.type.isInstance(ClassCallExpression.class)) { // Use the inferred type if it is a class call
         result.type = (Expression) expectedType;
       }
     }

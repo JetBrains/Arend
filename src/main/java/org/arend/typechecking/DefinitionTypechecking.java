@@ -443,7 +443,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         bodyIsOK = true;
       }
     } else {
-      CheckTypeVisitor.Result termResult = myVisitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, !(expectedType instanceof ClassCallExpression));
+      CheckTypeVisitor.Result termResult = myVisitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
       if (termResult != null) {
         if (termResult.expression != null) {
           typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
