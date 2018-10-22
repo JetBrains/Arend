@@ -341,7 +341,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         continue;
       }
 
-      if (!fun.isInstance(InferenceReferenceExpression.class) || args.size() > dataCall1.getDefCallArguments().size()) {
+      InferenceVariable variable;
+      if (fun.isInstance(InferenceReferenceExpression.class)) {
+        variable = fun.cast(InferenceReferenceExpression.class).getVariable();
+      } else if (fun.isInstance(FieldCallExpression.class)) {
+        InferenceReferenceExpression infRefExpr = fun.cast(FieldCallExpression.class).getArgument().checkedCast(InferenceReferenceExpression.class);
+        variable = infRefExpr == null ? null : infRefExpr.getVariable();
+      } else {
+        variable = null;
+      }
+      if (variable == null || args.size() > dataCall1.getDefCallArguments().size()) {
         return null;
       }
       Collections.reverse(args);
@@ -372,6 +381,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         } else {
           link = new UntypedSingleDependentLink(dataParams.getName());
         }
+        newDataArgs.add(new ReferenceExpression(link));
         if (firstParam == null) {
           firstParam = link;
         }
@@ -388,7 +398,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         }
       }
 
-      InferenceVariable variable = fun.cast(InferenceReferenceExpression.class).getVariable();
       return myEquations.add(correcrtOrder ? lam : fun, correcrtOrder ? fun : lam.subst(getSubstitution()), myCMP, variable.getSourceNode(), variable);
     }
   }

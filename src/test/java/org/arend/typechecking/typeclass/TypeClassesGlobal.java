@@ -281,5 +281,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "  | just a' => a'\n" +
       "\\instance B-inst : B Maybe | foo => just 3 | bar => fromMaybe 7\n" +
       "\\func test => bar (just (\\lam (x : Nat) => x))", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

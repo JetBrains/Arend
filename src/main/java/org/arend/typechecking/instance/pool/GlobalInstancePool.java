@@ -103,6 +103,9 @@ public class GlobalInstancePool implements InstancePool {
           ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();
           if (classifyingExpression != null) {
             Expression instanceClassifyingExpr = instanceResultType.getImplementationHere(classifyingField);
+            while (instanceClassifyingExpr instanceof LamExpression) {
+              instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
+            }
             if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
                   instanceClassifyingExpr instanceof IntegerExpression  && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
                                                                             classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
