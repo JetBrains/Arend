@@ -1204,12 +1204,75 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
     if (classifyingField != null) {
       Expression classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
-        while (classifyingExpr instanceof LamExpression) {
-          classifyingExpr = ((LamExpression) classifyingExpr).getBody();
+      Set<SingleDependentLink> params = new LinkedHashSet<>();
+      while (classifyingExpr instanceof LamExpression) {
+        for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {
+          params.add(link);
         }
-        if (!(classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DefCallExpression || classifyingExpr instanceof UniverseExpression || classifyingExpr instanceof IntegerExpression)) {
-          myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be a defCall or a universe", def.getResultType()));
+        classifyingExpr = ((LamExpression) classifyingExpr).getBody();
+      }
+
+      boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
+      if (classifyingExpr instanceof DataCallExpression) {
+        DataCallExpression dataCall = (DataCallExpression) classifyingExpr;
+        if (dataCall.getDefCallArguments().size() < params.size()) {
+          ok = false;
+        } else {
+          int i = dataCall.getDefCallArguments().size() - params.size();
+          for (SingleDependentLink param : params) {
+            if (!(dataCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) dataCall.getDefCallArguments().get(i)).getBinding() == param)) {
+              ok = false;
+              break;
+            }
+            i++;
+          }
+          if (ok) {
+            for (i = 0; i < dataCall.getDefCallArguments().size() - params.size(); i++) {
+              if (dataCall.getDefCallArguments().get(i).findBinding(params) != null) {
+                ok = false;
+                break;
+              }
+            }
+          }
         }
+      } else if (classifyingExpr instanceof ClassCallExpression) {
+        Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
+        if (implemented.size() != params.size()) {
+          ok = false;
+        } else {
+          int i = 0;
+          ClassDefinition classDef = ((ClassCallExpression) classifyingExpr).getDefinition();
+          Iterator<SingleDependentLink> it = params.iterator();
+          for (ClassField field : classDef.getFields()) {
+            Expression implementation = implemented.get(field);
+            if (implementation != null) {
+              if (i < implemented.size() - params.size()) {
+                if (implementation.findBinding(params) != null) {
+                  ok = false;
+                  break;
+                }
+                i++;
+              } else {
+                if (!(implementation instanceof ReferenceExpression && ((ReferenceExpression) implementation).getBinding() == it.next())) {
+                  ok = false;
+                  break;
+                }
+              }
+            } else {
+              if (i >= implemented.size() - params.size()) {
+                break;
+              }
+              if (!classDef.isImplemented(field)) {
+                ok = false;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (!ok) {
+        myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, or a class, or a partially applied data", def.getResultType()));
+      }
     }
     typedDef.setStatus(myVisitor.getStatus());
   }

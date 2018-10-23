@@ -283,4 +283,16 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func test => bar (just (\\lam (x : Nat) => x))", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void classifyingFieldLambdaClass() {
+    typeCheckModule(
+      "\\class B (F : \\Type -> \\Type) | foo : F Nat | bar : F Nat -> Nat\n" +
+      "\\record R {A : \\Type} | rrr : A\n" +
+      "\\func proj {A : \\Type} (r : R {A}) => r.rrr\n" +
+      "\\instance B-inst : B (\\lam A => R {A}) | foo => \\new R 3 | bar => proj\n" +
+      "\\func test1 => proj foo\n" +
+      "\\func test2 => bar (\\new R 5)\n" +
+      "\\func test3 => \\let x : R {Nat} => foo \\in bar x");
+  }
 }
