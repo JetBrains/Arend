@@ -37,11 +37,15 @@ public class ExprSubstitution {
   }
 
   public void clear() {
-    mySubstExprs.clear();
+    if (!mySubstExprs.isEmpty()) {
+      mySubstExprs.clear();
+    }
   }
 
   public void remove(Variable variable) {
-    mySubstExprs.remove(variable);
+    if (!mySubstExprs.isEmpty()) {
+      mySubstExprs.remove(variable);
+    }
   }
 
   public void add(Variable binding, Expression expression) {

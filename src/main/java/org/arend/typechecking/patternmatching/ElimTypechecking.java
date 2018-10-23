@@ -362,7 +362,7 @@ public class ElimTypechecking {
         ExtClause clauseData = clauseDataList.get(0);
         myUnusedClauses.remove(clauseData.clause);
         DependentLink vars = clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.substitution, true);
-        clauseData.substitution.subst(clauseData.substitution);
+        clauseData.substitution.subst(new ExprSubstitution(clauseData.substitution));
         return new LeafElimTree(vars, clauseData.expression.subst(clauseData.substitution));
       }
 
