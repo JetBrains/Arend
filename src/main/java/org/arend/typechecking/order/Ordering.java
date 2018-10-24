@@ -1,20 +1,20 @@
 package org.arend.typechecking.order;
 
 import org.arend.core.definition.Definition;
-import org.arend.naming.reference.*;
+import org.arend.naming.reference.LocatedReferable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
-import org.arend.typechecking.order.dependency.DefinitionGetDependenciesVisitor;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.listener.OrderingListener;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.typecheckable.TypecheckingUnit;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.visitor.CollectDefCallsVisitor;
 
 import java.util.*;
 
@@ -132,41 +132,6 @@ public class Ordering {
     return ok;
   }
 
-  private void collectInstances(InstanceProvider instanceProvider, Deque<TCReferable> referables, Set<TCReferable> result) {
-    while (!referables.isEmpty()) {
-      TCReferable referable = referables.pop();
-      if (!result.add(referable)) {
-        continue;
-      }
-
-      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-      if (definition instanceof Concrete.ClassField) {
-        ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
-        for (Concrete.Instance instance : instanceProvider.getInstances()) {
-          Referable ref = instance.getReferenceInType();
-          if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-            referables.push(instance.getData());
-          }
-        }
-      } else if (definition != null) {
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
-        if (parameters != null) {
-          for (Concrete.TypeParameter parameter : parameters) {
-            TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
-            if (classRef != null) {
-              for (Concrete.Instance instance : instanceProvider.getInstances()) {
-                Referable ref = instance.getReferenceInType();
-                if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-                  referables.push(instance.getData());
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   private OrderResult doOrderRecursively(TypecheckingUnit unit) {
     Concrete.Definition definition = unit.getDefinition();
     DefState currentState = new DefState(myIndex);
@@ -192,27 +157,15 @@ public class Ordering {
     }
 
     Set<TCReferable> dependencies = new LinkedHashSet<>();
+    InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
+    CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myConcreteProvider, instanceProvider, dependencies);
     if (definition.enclosingClass != null) {
-      dependencies.add(definition.enclosingClass);
+      visitor.addDependency(definition.enclosingClass);
     }
 
     TypecheckingOrderingListener.Recursion recursion = TypecheckingOrderingListener.Recursion.NO;
-    definition.accept(new DefinitionGetDependenciesVisitor(dependencies), unit.isHeader());
-    if (definition instanceof Concrete.ClassDefinition) {
-      new ClassFieldImplScope(((Concrete.ClassDefinition) definition).getData(), false).find(ref -> {
-        if (ref instanceof TCReferable) {
-          dependencies.remove(ref);
-        }
-        return false;
-      });
-    }
+    definition.accept(visitor, unit.isHeader());
 
-    InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
-    if (instanceProvider != null) {
-      Deque<TCReferable> deque = new ArrayDeque<>(dependencies);
-      dependencies.clear();
-      collectInstances(instanceProvider, deque, dependencies);
-    }
     if (unit.isHeader() && dependencies.contains(definition.getData())) {
       myStack.pop();
       currentState.onStack = false;

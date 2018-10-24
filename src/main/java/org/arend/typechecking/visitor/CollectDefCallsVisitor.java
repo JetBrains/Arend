@@ -1,21 +1,198 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
+import org.arend.typechecking.instance.provider.InstanceProvider;
+import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, Void> {
+public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean, Void>, ConcreteExpressionVisitor<Void, Void> {
+  private final ConcreteProvider myConcreteProvider;
+  private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;
+  private final Deque<TCReferable> myDeque = new ArrayDeque<>();
+  private Set<TCReferable> myExcluded;
 
-  public CollectDefCallsVisitor(Collection<TCReferable> dependencies) {
+  public CollectDefCallsVisitor(ConcreteProvider concreteProvider, InstanceProvider instanceProvider, Collection<TCReferable> dependencies) {
+    myConcreteProvider = concreteProvider;
+    myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
   }
 
-  public Collection<TCReferable> getDependencies() {
-    return myDependencies;
+  public void addDependency(TCReferable dependency) {
+    if (myExcluded != null && myExcluded.contains(dependency)) {
+      return;
+    }
+    if (myInstanceProvider == null) {
+      myDependencies.add(dependency);
+      return;
+    }
+
+    myDeque.push(dependency);
+    while (!myDeque.isEmpty()) {
+      TCReferable referable = myDeque.pop();
+      if (!myDependencies.add(referable)) {
+        continue;
+      }
+
+      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
+      if (definition instanceof Concrete.ClassField) {
+        ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
+        for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+          Referable ref = instance.getReferenceInType();
+          if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+            myDeque.push(instance.getData());
+          }
+        }
+      } else if (definition != null) {
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
+        if (parameters != null) {
+          for (Concrete.TypeParameter parameter : parameters) {
+            TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
+            if (classRef != null) {
+              for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+                Referable ref = instance.getReferenceInType();
+                if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+                  myDeque.push(instance.getData());
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public Void visitFunction(Concrete.FunctionDefinition def, Boolean isHeader) {
+    for (Concrete.TelescopeParameter param : def.getParameters()) {
+      param.getType().accept(this, null);
+    }
+
+    if (isHeader) {
+      Concrete.Expression resultType = def.getResultType();
+      if (resultType != null) {
+        resultType.accept(this, null);
+      }
+    } else {
+      Concrete.FunctionBody body = def.getBody();
+      if (body instanceof Concrete.TermFunctionBody) {
+        ((Concrete.TermFunctionBody) body).getTerm().accept(this, null);
+      }
+      visitClassFieldImpls(body.getClassFieldImpls());
+      visitClauses(body.getClauses());
+    }
+
+    return null;
+  }
+
+  private void visitClauses(List<Concrete.FunctionClause> clauses) {
+    for (Concrete.FunctionClause clause : clauses) {
+      for (Concrete.Pattern pattern : clause.getPatterns()) {
+        visitPattern(pattern);
+      }
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(this, null);
+      }
+    }
+  }
+
+  @Override
+  public Void visitData(Concrete.DataDefinition def, Boolean isHeader) {
+    if (isHeader) {
+      for (Concrete.TypeParameter param : def.getParameters()) {
+        param.getType().accept(this, null);
+      }
+
+      Concrete.Expression universe = def.getUniverse();
+      if (universe != null) {
+        universe.accept(this, null);
+      }
+    } else {
+      for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+        if (clause.getPatterns() != null) {
+          for (Concrete.Pattern pattern : clause.getPatterns()) {
+            visitPattern(pattern);
+          }
+        }
+        for (Concrete.Constructor constructor : clause.getConstructors()) {
+          visitConstructor(constructor);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private void visitPattern(Concrete.Pattern pattern) {
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+      if (conPattern.getConstructor() instanceof TCReferable) {
+        addDependency((TCReferable) conPattern.getConstructor());
+      }
+      for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
+        visitPattern(patternArg);
+      }
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        visitPattern(patternArg);
+      }
+    }
+  }
+
+  private void visitConstructor(Concrete.Constructor def) {
+    for (Concrete.TypeParameter param : def.getParameters()) {
+      param.getType().accept(this, null);
+    }
+    if (def.getResultType() != null) {
+      def.getResultType().accept(this, null);
+    }
+    if (!def.getEliminatedReferences().isEmpty()) {
+      visitClauses(def.getClauses());
+    }
+  }
+
+  @Override
+  public Void visitClass(Concrete.ClassDefinition def, Boolean params) {
+    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
+      visitReference(superClass, null);
+    }
+
+    myExcluded = new HashSet<>();
+    new ClassFieldImplScope(def.getData(), false).find(ref -> {
+      if (ref instanceof TCReferable) {
+        myExcluded.add((TCReferable) ref);
+      }
+      return false;
+    });
+
+    for (Concrete.ClassField field : def.getFields()) {
+      field.getResultType().accept(this, null);
+    }
+
+    visitClassFieldImpls(def.getImplementations());
+    myExcluded = null;
+    return null;
+  }
+
+  @Override
+  public Void visitInstance(Concrete.Instance def, Boolean params) {
+    for (Concrete.Parameter param : def.getParameters()) {
+      if (param instanceof Concrete.TypeParameter) {
+        ((Concrete.TypeParameter) param).getType().accept(this, null);
+      }
+    }
+
+    def.getResultType().accept(this, null);
+    visitClassFieldImpls(def.getClassFieldImpls());
+    return null;
   }
 
   @Override
@@ -32,7 +209,7 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
     if (expr.getReferent() instanceof TCReferable) {
       TCReferable ref = ((TCReferable) expr.getReferent()).getUnderlyingTypecheckable();
       if (ref != null) {
-        myDependencies.add(ref);
+        addDependency(ref);
       }
     }
     return null;
@@ -133,7 +310,7 @@ public class CollectDefCallsVisitor implements ConcreteExpressionVisitor<Void, V
     return null;
   }
 
-  public void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
+  private void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls) {
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
       if (classFieldImpl.implementation != null) {
         classFieldImpl.implementation.accept(this, null);

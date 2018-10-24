@@ -140,7 +140,9 @@ public class TypecheckingOrderingListener implements OrderingListener {
         List<TCReferable> cycle = new ArrayList<>();
         for (TypecheckingUnit unit1 : scc.getUnits()) {
           Concrete.Definition definition = unit1.getDefinition();
-          cycle.add(definition.getData());
+          if (cycle.isEmpty() || cycle.get(cycle.size() - 1) != definition.getData()) {
+            cycle.add(definition.getData());
+          }
 
           Definition typechecked = myState.getTypechecked(definition.getData());
           if (typechecked == null) {
