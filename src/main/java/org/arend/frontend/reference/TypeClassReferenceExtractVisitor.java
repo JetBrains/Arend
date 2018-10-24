@@ -88,6 +88,9 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       }
     }
 
+    while (expr instanceof Concrete.BinOpSequenceExpression && ((Concrete.BinOpSequenceExpression) expr).getSequence().size() == 1) {
+      expr = ((Concrete.BinOpSequenceExpression) expr).getSequence().get(0).expression;
+    }
     if (expr instanceof Concrete.AppExpression) {
       for (Concrete.Argument argument : ((Concrete.AppExpression) expr).getArguments()) {
         if (argument.isExplicit()) {

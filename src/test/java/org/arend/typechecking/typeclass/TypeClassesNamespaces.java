@@ -133,4 +133,12 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
       "  \\func f : n = n => path (\\lam _ => 1)\n" +
       "}");
   }
+
+  @Test
+  public void dotReference() {
+    typeCheckModule(
+      "\\class X (A : \\Type) | xxx : A\n" +
+      "\\func foo => NatX.xxx\n" +
+      "\\instance NatX : X Nat | xxx => 0");
+  }
 }

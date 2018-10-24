@@ -1397,6 +1397,7 @@ public final class Concrete {
 
     public Instance(TCReferable referable, List<TelescopeParameter> parameters, Expression classRef, List<ClassFieldImpl> classFieldImpls) {
       super(referable);
+      myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = classRef;
       myClassFieldImpls = classFieldImpls;

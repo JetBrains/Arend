@@ -295,4 +295,13 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func test2 => bar (\\new R 5)\n" +
       "\\func test3 => \\let x : R {Nat} => foo \\in bar x");
   }
+
+  @Test
+  public void whereInstance() {
+    typeCheckModule(
+      "\\class X (A : \\Type) | xxx : A\n" +
+      "\\instance IntX : X Nat | xxx => 0\n" +
+      "\\instance NatX : X Int | xxx => foo\n" +
+      "  \\where \\func foo => pos xxx");
+  }
 }

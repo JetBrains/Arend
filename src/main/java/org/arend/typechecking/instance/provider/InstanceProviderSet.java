@@ -102,11 +102,11 @@ public class InstanceProviderSet {
 
   private void processSubgroups(Scope parentScope, MyPredicate predicate, Collection<? extends Group> subgroups) {
     for (Group subgroup : subgroups) {
-      predicate.test(subgroup.getReferable());
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
       processGroup(subgroup, parentScope, predicate);
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
+      predicate.test(subgroup.getReferable());
     }
   }
 }
