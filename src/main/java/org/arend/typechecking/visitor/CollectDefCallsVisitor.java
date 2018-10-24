@@ -27,6 +27,10 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
   }
 
   public void addDependency(TCReferable dependency) {
+    addDependency(dependency, true);
+  }
+
+  private void addDependency(TCReferable dependency, boolean collectInstancesForField) {
     if (myExcluded != null && myExcluded.contains(dependency)) {
       return;
     }
@@ -44,11 +48,13 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
 
       Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
       if (definition instanceof Concrete.ClassField) {
-        ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
-        for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
-          Referable ref = instance.getReferenceInType();
-          if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-            myDeque.push(instance.getData());
+        if (collectInstancesForField) {
+          ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
+          for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+            Referable ref = instance.getReferenceInType();
+            if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+              myDeque.push(instance.getData());
+            }
           }
         }
       } else if (definition != null) {
@@ -135,7 +141,7 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
     if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
       if (conPattern.getConstructor() instanceof TCReferable) {
-        addDependency((TCReferable) conPattern.getConstructor());
+        addDependency((TCReferable) conPattern.getConstructor(), true);
       }
       for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
         visitPattern(patternArg);
@@ -197,7 +203,17 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
 
   @Override
   public Void visitApp(Concrete.AppExpression expr, Void ignore) {
-    expr.getFunction().accept(this, null);
+    if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
+      Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
+      if (ref instanceof TCReferable) {
+        TCReferable tcRef = ((TCReferable) ref).getUnderlyingTypecheckable();
+        if (tcRef != null) {
+          addDependency(tcRef, expr.getArguments().get(0).isExplicit());
+        }
+      }
+    } else {
+      expr.getFunction().accept(this, null);
+    }
     for (Concrete.Argument argument : expr.getArguments()) {
       argument.getExpression().accept(this, null);
     }
@@ -209,7 +225,7 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
     if (expr.getReferent() instanceof TCReferable) {
       TCReferable ref = ((TCReferable) expr.getReferent()).getUnderlyingTypecheckable();
       if (ref != null) {
-        addDependency(ref);
+        addDependency(ref, true);
       }
     }
     return null;

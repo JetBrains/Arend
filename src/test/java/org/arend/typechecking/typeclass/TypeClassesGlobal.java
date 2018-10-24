@@ -304,4 +304,13 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance NatX : X Int | xxx => foo\n" +
       "  \\where \\func foo => pos xxx");
   }
+
+  @Test
+  public void explicitInstance() {
+    typeCheckModule(
+      "\\class X (A : \\Type) | xxx : A\n" +
+      "\\instance NatX : X Nat | xxx => 0\n" +
+      "\\instance IntX : X Int | xxx => foo\n" +
+      "\\func foo => pos NatX.xxx");
+  }
 }
