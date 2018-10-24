@@ -662,7 +662,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       }
     }.doPrettyPrint(this, expr.getArguments(), noIndent);
     if (expr.getResultType() != null) {
-      myBuilder.append(" \\return");
+      myBuilder.append(" \\return ");
       expr.getResultType().accept(this, new Precedence(Expression.PREC));
     }
     myBuilder.append(" \\with");
