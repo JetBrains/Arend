@@ -7,6 +7,7 @@ import org.arend.util.FullName;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class SimpleReferableConverter implements ReferableConverter {
@@ -32,6 +33,10 @@ public class SimpleReferableConverter implements ReferableConverter {
 
   public TCReferable computeIfAbsent(LocatedReferable referable, Function<? super FullName, ? extends TCReferable> tcReferable) {
     return referable.isSynonym() ? tcReferable.apply(null) : myMap.computeIfAbsent(new FullName(referable), tcReferable);
+  }
+
+  public TCReferable compute(LocatedReferable referable, BiFunction<? super FullName, ? super TCReferable, ? extends TCReferable> tcReferable) {
+    return referable.isSynonym() ? tcReferable.apply(null, null) : myMap.compute(new FullName(referable), tcReferable);
   }
 
   public TCReferable remove(LocatedReferable referable) {
