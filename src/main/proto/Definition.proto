@@ -57,6 +57,8 @@ message Definition {
             Referable referable = 1;
             Expression type = 3;
             bool hasTypeClassReference = 4;
+            bool isExplicit = 5;
+            bool isParameter = 6;
         }
     }
     message DataData {

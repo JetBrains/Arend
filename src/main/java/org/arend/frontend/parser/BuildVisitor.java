@@ -621,7 +621,7 @@ public class BuildVisitor extends ArendBaseVisitor {
         type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
       }
 
-      ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+      ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
       Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
       reference.setDefinition(field);
       fields.add(field);
@@ -1237,7 +1237,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
-        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
+        ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
         Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
         fieldRef.setDefinition(field);
         fields.add(field);

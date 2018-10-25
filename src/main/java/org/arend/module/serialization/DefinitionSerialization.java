@@ -81,6 +81,8 @@ public class DefinitionSerialization {
       fBuilder.setReferable(writeReferable(field));
       fBuilder.setHasTypeClassReference(field.getReferable().getTypeClassReference() != null);
       fBuilder.setType(defSerializer.writeExpr(field.getType(Sort.STD)));
+      fBuilder.setIsExplicit(field.getReferable().isExplicitField());
+      fBuilder.setIsParameter(field.getReferable().isParameterField());
       builder.addPersonalField(fBuilder.build());
     }
 
