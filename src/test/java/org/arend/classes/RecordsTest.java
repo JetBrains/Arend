@@ -328,4 +328,24 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\record X (A : \\Type) (B : A -> A)\n" +
       "\\func test {A : \\Type} (x : X A) : X A (x.B) => \\new X");
   }
+
+  @Test
+  public void swapTest() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type)\n" +
+      "  | fst : A\n" +
+      "  | snd : B\n" +
+      "\\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith\n" +
+      "  | fst => p.snd\n" +
+      "  | snd => p.fst\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func idpe {A : \\Type} (a : A) => path (\\lam _ => a)\n" +
+      "\\func swap-inv1 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp\n" +
+      "\\func swap-inv2 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {_}\n" +
+      "\\func swap-inv3 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {p}\n" +
+      "\\func swap-inv4 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {\\new Pair A B p.fst p.snd}\n" +
+      "\\func swap-inv5 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe _\n" +
+      "\\func swap-inv6 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe p\n" +
+      "\\func swap-inv7 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe (\\new Pair A B p.fst p.snd)");
+  }
 }

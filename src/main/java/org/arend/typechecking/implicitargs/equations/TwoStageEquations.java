@@ -101,6 +101,8 @@ public class TwoStageEquations implements Equations {
       }
     }
 
+    CMP origCmp = cmp;
+
     // expr1 == ?x && expr2 /= ?y || expr1 /= ?x && expr2 == ?y
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
@@ -172,7 +174,7 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    Equation equation = new Equation(expr1, expr2, cmp, sourceNode);
+    Equation equation = new Equation(expr1, expr2, origCmp, sourceNode);
     myEquations.add(equation);
     if (expr1.isInstance(InferenceReferenceExpression.class) && expr2.isInstance(InferenceReferenceExpression.class)) {
       expr1.cast(InferenceReferenceExpression.class).getVariable().addListener(equation);
@@ -544,7 +546,7 @@ public class TwoStageEquations implements Equations {
 
     solveClassCallLowerBounds(lowerBounds);
 
-    Map<InferenceVariable, Expression> result = new HashMap<>();
+    Map<InferenceVariable, Expression> result = new LinkedHashMap<>();
     for (Iterator<Equation> iterator = myEquations.iterator(); iterator.hasNext(); ) {
       Equation equation = iterator.next();
       if (equation.expr.isInstance(InferenceReferenceExpression.class) && equation.expr.cast(InferenceReferenceExpression.class).getSubstExpression() == null) {
@@ -572,7 +574,7 @@ public class TwoStageEquations implements Equations {
   }
 
   private void solveClassCallLowerBounds(List<Equation> lowerBounds) {
-    Map<InferenceVariable, Expression> solutions = new HashMap<>();
+    Map<InferenceVariable, Expression> solutions = new LinkedHashMap<>();
     while (true) {
       boolean updated = false;
       for (Equation equation : lowerBounds) {
