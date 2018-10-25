@@ -6,6 +6,7 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.TCClassReferable;
+import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.error.local.TypeMismatchError;
@@ -38,8 +39,8 @@ public class LocalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
-    return getInstance(classifyingExpression, classRef, isField);
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, TCFieldReferable fieldRef, Equations equations, Concrete.SourceNode sourceNode) {
+    return getInstance(classifyingExpression, classRef, fieldRef, false);
   }
 
   @Override
@@ -52,12 +53,12 @@ public class LocalInstancePool implements InstancePool {
     return result;
   }
 
-  private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField) {
+  private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, TCFieldReferable fieldRef, boolean isField) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
 
       boolean ok;
-      if (isField) {
+      if (isField || fieldRef != null && (fieldRef.isFieldSynonym() || instanceData.classRef.isRenamed(fieldRef))) {
         ok = instanceData.classRef.isSubClassOf(classRef);
       } else {
         TCClassReferable underlyingRef1 = instanceData.classRef.getUnderlyingTypecheckable();
@@ -82,7 +83,7 @@ public class LocalInstancePool implements InstancePool {
   }
 
   public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, ReferenceExpression instance, Concrete.SourceNode sourceNode) {
-    Expression oldInstance = getInstance(classifyingExpression, classRef, true);
+    Expression oldInstance = getInstance(classifyingExpression, classRef, null, true);
     if (oldInstance != null) {
       return oldInstance;
     } else {

@@ -189,4 +189,37 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\instance x : X' | A => Nat", 1);
     assertThatErrorsAre(fieldsImplementation(false, Collections.singletonList(getDefinition("X.B").getReferable())));
   }
+
+  @Test
+  public void notRenamedTest1() {
+    typeCheckModule(
+      "\\class C (A : \\Type) { | f : A -> A }\n" +
+      "\\class D => C\n" +
+      "\\func foo {d : D Nat} (a : Nat) => f a");
+  }
+
+  @Test
+  public void notRenamedTest2() {
+    typeCheckModule(
+      "\\class C { | f : Nat }\n" +
+      "\\class D => C\n" +
+      "\\func foo {d : D} => f");
+  }
+
+  @Test
+  public void notRenamedTest3() {
+    typeCheckModule(
+      "\\class C (A : \\Type) { | f : A -> A }\n" +
+      "\\class D => C { f => f' }\n" +
+      "\\func foo {d : D Nat} (a : Nat) => f' a"
+    );
+  }
+
+  @Test
+  public void notRenamedTest4() {
+    typeCheckModule(
+      "\\class C { | f : Nat }\n" +
+      "\\class D => C { f => f' }\n" +
+      "\\func foo {d : D} => f'");
+  }
 }

@@ -3,6 +3,7 @@ package org.arend.core.context.binding.inference;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.naming.reference.TCClassReferable;
+import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.InstanceInferenceError;
 import org.arend.typechecking.error.local.LocalError;
@@ -13,12 +14,12 @@ import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
   private final TCClassReferable myClassRef;
-  private final boolean myField;
+  private final TCFieldReferable myFieldRef;
 
-  public TypeClassInferenceVariable(String name, Expression type, TCClassReferable classRef, boolean isField, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, TCClassReferable classRef, TCFieldReferable fieldRef, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassRef = classRef;
-    myField = isField;
+    myFieldRef = fieldRef;
   }
 
   public TCClassReferable getClassReferable() {
@@ -36,6 +37,6 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {
-    return pool.getInstance(classifyingExpression, myClassRef, myField, equations, sourceNode);
+    return pool.getInstance(classifyingExpression, myClassRef, myFieldRef, equations, sourceNode);
   }
 }

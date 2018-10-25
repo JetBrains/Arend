@@ -12,6 +12,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCClassReferable;
+import org.arend.naming.reference.TCFieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -42,9 +43,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, boolean isField, Equations equations, Concrete.SourceNode sourceNode) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, TCFieldReferable fieldRef, Equations equations, Concrete.SourceNode sourceNode) {
     if (myInstancePool != null) {
-      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, isField, equations, sourceNode);
+      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, fieldRef, equations, sourceNode);
       if (result != null) {
         return result;
       }
@@ -90,8 +91,8 @@ public class GlobalInstancePool implements InstancePool {
       }
 
       boolean ok;
-      if (isField) {
-        ok = ((ClassReferable) instanceRef).isSubClassOf(classRef) ;
+      if (fieldRef != null && (fieldRef.isFieldSynonym() || ((ClassReferable) instanceRef).isRenamed(fieldRef))) {
+        ok = ((ClassReferable) instanceRef).isSubClassOf(classRef);
       } else {
         ClassReferable underlyingRef = ((ClassReferable) instanceRef).getUnderlyingTypecheckable();
         ok = underlyingRef != null && underlyingRef.isSubClassOf(typecheckable);

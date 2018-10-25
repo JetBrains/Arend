@@ -17,9 +17,10 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.TCFieldReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
@@ -69,7 +70,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return type != null ? type.getDefinition() : null;
   }
 
-  private static TCClassReferable getClassRefFromDefCall(Concrete.Expression expr, int paramIndex) {
+  private static TCFieldReferable getFieldRefFromDefCall(Concrete.Expression expr, int paramIndex) {
     if (paramIndex != 0) {
       return null;
     }
@@ -81,11 +82,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     Referable ref = ((Concrete.ReferenceExpression) expr).getReferent();
-    if (ref instanceof TCReferable && ((TCReferable) ref).isFieldSynonym()) {
-      ref = ((TCReferable) ref).getLocatedReferableParent();
-      if (ref instanceof TCClassReferable) {
-        return (TCClassReferable) ref;
-      }
+    if (ref instanceof TCFieldReferable && ((TCFieldReferable) ref).isFieldSynonym()) {
+      return (TCFieldReferable) ref;
     }
     return null;
   }
@@ -102,16 +100,24 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
-          boolean isField = true;
-          TCClassReferable classRef = getClassRefFromDefCall(expr, i);
+          TCFieldReferable fieldRef = getFieldRefFromDefCall(expr, i);
+          TCClassReferable classRef = null;
+          if (fieldRef != null) {
+            LocatedReferable underlyingRef = fieldRef.getLocatedReferableParent();
+            if (underlyingRef instanceof TCClassReferable) {
+              classRef = (TCClassReferable) underlyingRef;
+            }
+          }
           if (classRef == null) {
-            isField = defCallResult.getDefinition() instanceof ClassField;
+            if (defCallResult.getDefinition() instanceof ClassField) {
+              fieldRef = ((ClassField) defCallResult.getDefinition()).getReferable();
+            }
             classRef = classDef.getReferable();
           }
 
           // If the class does not have a classifying field, infer instance immediately
           if (classDef.getClassifyingField() == null) {
-            Expression instance = myVisitor.getInstancePool().getInstance(null, classRef, isField, myVisitor.getEquations(), expr);
+            Expression instance = myVisitor.getInstancePool().getInstance(null, classRef, fieldRef, myVisitor.getEquations(), expr);
             if (instance == null) {
               ArgInferenceError error = new InstanceInferenceError(classRef, expr, new Expression[0]);
               myVisitor.getErrorReporter().report(error);
@@ -125,7 +131,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
           // Otherwise, generate type class inference variable
           if (classRef != null) {
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, isField, defCallResult.getDefCall(), myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, fieldRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
           }
         }
       }

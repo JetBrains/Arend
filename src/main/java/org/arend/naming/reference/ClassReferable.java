@@ -20,6 +20,25 @@ public interface ClassReferable extends LocatedReferable {
     return false;
   }
 
+  default boolean isRenamed(FieldReferable fieldRef) {
+    Set<ClassReferable> visitedClasses = new HashSet<>();
+    Deque<ClassReferable> toVisit = new ArrayDeque<>();
+    toVisit.add(this);
+    while (!toVisit.isEmpty()) {
+      ClassReferable classRef = toVisit.pop();
+      if (!visitedClasses.add(classRef)) {
+        continue;
+      }
+      for (FieldReferable classFieldRef : classRef.getFieldReferables()) {
+        if (classFieldRef.getUnderlyingReference() == fieldRef) {
+          return true;
+        }
+      }
+      toVisit.addAll(classRef.getSuperClassReferences());
+    }
+    return false;
+  }
+
   default boolean isSubClassOf(ClassReferable classRef) {
     if (this == classRef) {
       return true;
