@@ -364,12 +364,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       } else {
         oldDataArgs = new ArrayList<>();
         for (ClassField field : classCall1.getDefinition().getFields()) {
+          if (!field.getReferable().isParameterField()) {
+            break;
+          }
           Expression implementation = classCall1.getImplementedHere().get(field);
           if (implementation != null) {
             oldDataArgs.add(implementation);
-            if (oldDataArgs.size() == args.size()) {
-              break;
-            }
           } else {
             if (!classCall1.getDefinition().isImplemented(field)) {
               break;
@@ -430,14 +430,20 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         Map<ClassField, Expression> implementations = new HashMap<>();
         codSort = classCall1.getSort();
         lam = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort);
+        int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
-            PiExpression piType = field.getType(classCall1.getSortArgument());
-            Expression type = piType.getCodomain();
-            TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
-            params.add(link);
-            implementations.put(field, new ReferenceExpression(link));
-            if (implementations.size() == args.size()) {
+            if (i < oldDataArgs.size() - args.size()) {
+              implementations.put(field, classCall1.getImplementationHere(field));
+              i++;
+            } else {
+              PiExpression piType = field.getType(classCall1.getSortArgument());
+              Expression type = piType.getCodomain();
+              TypedSingleDependentLink link = new TypedSingleDependentLink(field.getReferable().isExplicitField(), field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piType.getResultSort()));
+              params.add(link);
+              implementations.put(field, new ReferenceExpression(link));
+            }
+            if (implementations.size() == oldDataArgs.size()) {
               break;
             }
           }

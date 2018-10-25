@@ -1237,7 +1237,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       } else if (classifyingExpr instanceof ClassCallExpression) {
         Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
-        if (implemented.size() != params.size()) {
+        if (implemented.size() < params.size()) {
           ok = false;
         } else {
           int i = 0;
@@ -1253,7 +1253,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
                 }
                 i++;
               } else {
-                if (!(implementation instanceof ReferenceExpression && ((ReferenceExpression) implementation).getBinding() == it.next())) {
+                if (!(implementation instanceof ReferenceExpression && it.hasNext() && ((ReferenceExpression) implementation).getBinding() == it.next())) {
                   ok = false;
                   break;
                 }
