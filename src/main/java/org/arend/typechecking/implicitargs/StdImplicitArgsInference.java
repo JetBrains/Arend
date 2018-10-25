@@ -180,6 +180,9 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       }
 
       result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false);
+      if (!result.getParameter().isExplicit()) {
+        result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false);
+      }
     }
 
     DependentLink param = result.getParameter();

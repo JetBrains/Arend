@@ -175,4 +175,18 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "\\func test : Nat => 0", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void functionImplicitPi() {
+    typeCheckModule(
+      "\\func ff {A : \\Type} : \\Pi {B : \\Type} -> A -> B -> A => \\lam a _ => a\n" +
+        "\\func g {A : \\Type} (a : A) => ff a a");
+  }
+
+  @Test
+  public void fieldImplicitPi() {
+    typeCheckModule(
+      "\\class C | ff : \\Pi {A : \\Type} -> A -> A\n" +
+        "\\func g {c : C} {A : \\Type} (a : A) => ff a");
+  }
 }
