@@ -457,11 +457,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitLet(LetExpression letExpression, Mode mode) {
     if (mode == Mode.RNF) {
+      ExprSubstitution substitution = new ExprSubstitution();
       List<LetClause> newClauses = new ArrayList<>(letExpression.getClauses().size());
       for (LetClause clause : letExpression.getClauses()) {
-        newClauses.add(new LetClause(clause.getName(), clause.getExpression().accept(this, mode)));
+        LetClause newClause = new LetClause(clause.getName(), clause.getExpression().accept(this, mode).subst(substitution));
+        substitution.add(clause, new ReferenceExpression(newClause));
+        newClauses.add(newClause);
       }
-      return new LetExpression(newClauses, letExpression.getExpression().accept(this, mode));
+      return new LetExpression(newClauses, letExpression.getExpression().accept(this, mode).subst(substitution));
     } else {
       return letExpression.getExpression().subst(letExpression.getClausesSubstitution()).accept(this, mode);
     }
