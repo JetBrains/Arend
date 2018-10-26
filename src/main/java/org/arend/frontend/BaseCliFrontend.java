@@ -1,5 +1,6 @@
 package org.arend.frontend;
 
+import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
 import org.arend.error.Error;
 import org.arend.error.GeneralError;
@@ -20,7 +21,6 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
-import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -168,15 +168,17 @@ public abstract class BaseCliFrontend {
     } else {
       requestedModules = new LinkedHashSet<>();
       for (String fileName : argFiles) {
-        if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || fileName.contains(FileSystems.getDefault().getSeparator())) {
-          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(Paths.get(fileName));
+        boolean isPath = fileName.contains(FileSystems.getDefault().getSeparator());
+        Path path = Paths.get(fileName);
+        if (fileName.endsWith(FileUtils.LIBRARY_CONFIG_FILE) || isPath && Files.isDirectory(path)) {
+          UnmodifiableSourceLibrary library = myLibraryResolver.registerLibrary(path.toAbsolutePath());
           if (library != null) {
             requestedLibraries.add(library);
           }
         } else {
           ModulePath modulePath;
-          if (fileName.endsWith(FileUtils.EXTENSION)) {
-            modulePath = FileUtils.modulePath(Paths.get(fileName), FileUtils.EXTENSION);
+          if (isPath || fileName.endsWith(FileUtils.EXTENSION)) {
+            modulePath = path.isAbsolute() ? null : FileUtils.modulePath(path, FileUtils.EXTENSION);
           } else {
             modulePath = FileUtils.modulePath(fileName);
           }
