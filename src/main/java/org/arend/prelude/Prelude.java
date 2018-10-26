@@ -57,6 +57,8 @@ public class Prelude {
   public static FunctionDefinition PATH_INFIX;
   public static Constructor PATH_CON;
 
+  public static FunctionDefinition IN_PROP;
+
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
@@ -150,6 +152,10 @@ public class Prelude {
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
         break;
+      case "inProp":
+        IN_PROP = (FunctionDefinition) definition;
+        IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
       default:
         throw new IllegalStateException();
     }
@@ -170,6 +176,7 @@ public class Prelude {
     consumer.accept(RIGHT);
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
+    consumer.accept(IN_PROP);
     consumer.accept(PATH_INFIX);
     consumer.accept(AT);
     consumer.accept(COERCE);
@@ -197,19 +204,13 @@ public class Prelude {
       }
     }
 
-    Scope natScope = scope.resolveNamespace("Nat");
-    assert natScope != null;
-    for (Referable ref : natScope.getElements()) {
-      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
-        update(state.getTypechecked((TCReferable) ref));
-      }
-    }
-
-    Scope intScope = scope.resolveNamespace("Int");
-    assert intScope != null;
-    for (Referable ref : intScope.getElements()) {
-      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
-        update(state.getTypechecked((TCReferable) ref));
+    for (String name : new String[] {"Nat", "Int", "Path"}) {
+      Scope childScope = scope.resolveNamespace(name);
+      assert childScope != null;
+      for (Referable ref : childScope.getElements()) {
+        if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+          update(state.getTypechecked((TCReferable) ref));
+        }
       }
     }
   }

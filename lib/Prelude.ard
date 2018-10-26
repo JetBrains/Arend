@@ -24,6 +24,9 @@
 
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
   | path (\Pi (i : I) -> A i)
+  \where {
+    \func inProp {A : \Prop} : \Pi (a a' : A) -> a = a'
+  }
 
 \func \infix 1 = {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
