@@ -16,6 +16,11 @@ public class SimpleTypecheckerState implements TypecheckerState {
 
   @Override
   public void record(TCReferable def, Definition res) {
+    myTypechecked.putIfAbsent(def, res);
+  }
+
+  @Override
+  public void rewrite(TCReferable def, Definition res) {
     myTypechecked.put(def, res);
   }
 

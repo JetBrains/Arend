@@ -108,7 +108,7 @@ public class Ordering {
   public void orderDefinition(Concrete.Definition definition) {
     TypecheckingUnit typecheckingUnit = new TypecheckingUnit(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckingUnit)) {
-      myDependencyListener.update(definition.getData());
+      // myDependencyListener.update(definition.getData());
       doOrderRecursively(typecheckingUnit);
     }
   }

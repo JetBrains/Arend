@@ -748,7 +748,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-        myVisitor.getTypecheckingState().record(def.getData(), constructor);
+        myVisitor.getTypecheckingState().rewrite(def.getData(), constructor);
         dataDefinition.addConstructor(constructor);
 
         sort = typeCheckParameters(def.getParameters(), list, null, userSort);
