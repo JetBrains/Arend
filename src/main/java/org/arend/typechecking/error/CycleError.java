@@ -10,16 +10,23 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.arend.error.doc.DocFactory.*;
 
 public class CycleError extends GeneralError {
   public final List<? extends GlobalReferable> cycle;
+  public final Definition cause;
 
-  public CycleError(List<? extends GlobalReferable> cycle) {
+  public CycleError(List<? extends GlobalReferable> cycle, Definition cause) {
     super(Level.ERROR, "Dependency cycle");
     this.cycle = cycle;
+    this.cause = cause;
+  }
+
+  public CycleError(List<? extends GlobalReferable> cycle) {
+    this(cycle, null);
   }
 
   public static CycleError fromConcrete(List<? extends Concrete.Definition> cycle) {
@@ -27,25 +34,25 @@ public class CycleError extends GeneralError {
     for (Concrete.Definition definition : cycle) {
       refs.add(definition.getData());
     }
-    return new CycleError(refs);
+    return new CycleError(refs, null);
   }
 
-  public static CycleError fromTypechecked(List<? extends Definition> cycle) {
+  public static CycleError fromTypechecked(List<? extends Definition> cycle, Definition cause) {
     List<GlobalReferable> refs = new ArrayList<>(cycle.size());
     for (Definition definition : cycle) {
       refs.add(definition.getReferable());
     }
-    return new CycleError(refs);
+    return new CycleError(refs, cause);
   }
 
   @Override
   public Object getCause() {
-    return cycle.get(0);
+    return cause != null ? cause : cycle.get(0);
   }
 
   @Override
   public Doc getCauseDoc(PrettyPrinterConfig src) {
-    return refDoc(cycle.get(0));
+    return refDoc(cause != null ? cause.getReferable() : cycle.get(0));
   }
 
   @Override
@@ -60,6 +67,6 @@ public class CycleError extends GeneralError {
 
   @Override
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return cycle;
+    return cause != null ? Collections.singletonList(cause.getReferable()) : cycle;
   }
 }
