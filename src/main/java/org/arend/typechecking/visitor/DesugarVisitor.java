@@ -205,7 +205,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
             i--;
           }
         }
-        return new Concrete.ClassExtExpression(expr.getData(), fun, classFieldImpls);
+        return Concrete.ClassExtExpression.make(expr.getData(), fun, classFieldImpls);
       }
     }
     return expr;
@@ -268,7 +268,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
         if (classRef != null) {
           visitClassFieldImpls(classFieldImpl.subClassFieldImpls, null);
           Object data = classFieldImpl.getData();
-          classFieldImpl.implementation = new Concrete.NewExpression(data, new Concrete.ClassExtExpression(data, new Concrete.ReferenceExpression(data, classRef), classFieldImpl.subClassFieldImpls));
+          classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), classFieldImpl.subClassFieldImpls));
           result.add(classFieldImpl);
         } else {
           ok = false;

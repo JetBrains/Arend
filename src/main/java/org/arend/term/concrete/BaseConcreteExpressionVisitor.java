@@ -129,7 +129,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, P params) {
-    expr.baseClassExpression = expr.baseClassExpression.accept(this, params);
+    expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, params));
     visitClassFieldImpls(expr.getStatements(), params);
     return expr;
   }

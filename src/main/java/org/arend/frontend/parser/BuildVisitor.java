@@ -1294,7 +1294,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      expr = new Concrete.ClassExtExpression(tokenPosition(appCtx.start), expr, visitCoClauses(implCtx.coClause()));
+      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitCoClauses(implCtx.coClause()));
     }
 
     if (newNode != null) {

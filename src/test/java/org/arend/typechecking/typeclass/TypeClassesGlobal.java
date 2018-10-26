@@ -313,4 +313,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance IntX : X Int | xxx => foo\n" +
       "\\func foo => pos NatX.xxx");
   }
+
+  @Test
+  public void instanceSyntax() {
+    typeCheckModule(
+      "\\class C (A : \\Type) | a : A\n" +
+      "\\instance NatC : C Nat { | a => 0 }\n" +
+      "\\func f : Nat => a");
+  }
 }

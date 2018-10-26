@@ -1169,12 +1169,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.Definition def, Concrete.Expression resultType, List<Concrete.ClassFieldImpl> classFieldImpls) {
-    if (resultType instanceof Concrete.ClassExtExpression) {
-      ((Concrete.ClassExtExpression) resultType).getStatements().addAll(classFieldImpls);
-    } else {
-      resultType = new Concrete.ClassExtExpression(def.getData(), resultType, classFieldImpls);
-    }
-    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(resultType, ExpectedType.OMEGA, false);
+    CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), ExpectedType.OMEGA, false);
     if (result == null || !(result.expression instanceof ClassCallExpression)) {
       return null;
     }

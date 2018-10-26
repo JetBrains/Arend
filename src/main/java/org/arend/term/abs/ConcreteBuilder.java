@@ -655,7 +655,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     Concrete.Expression result = baseClass.accept(this, null);
     if (implementations != null) {
-      result = new Concrete.ClassExtExpression(data, result, buildImplementations(implementations));
+      result = Concrete.ClassExtExpression.make(data, result, buildImplementations(implementations));
     }
     if (isNew) {
       result = new Concrete.NewExpression(data, result);

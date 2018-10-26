@@ -1419,7 +1419,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public Result visitNew(Concrete.NewExpression expr, ExpectedType expectedType) {
     Result exprResult = null;
     if (expr.getExpression() instanceof Concrete.ClassExtExpression || expr.getExpression() instanceof Concrete.ReferenceExpression) {
-      Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).baseClassExpression : expr.getExpression();
+      Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression();
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && expectedType instanceof ClassCallExpression) {
         ClassDefinition actualClassDef = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {

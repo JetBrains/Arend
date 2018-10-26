@@ -270,12 +270,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
-    expr.baseClassExpression = expr.baseClassExpression.accept(this, null);
-    ClassReferable classRef = expr.baseClassExpression.getUnderlyingClassReferable(false);
+    expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, null));
+    ClassReferable classRef = expr.getBaseClassExpression().getUnderlyingClassReferable(false);
     if (classRef != null) {
       visitClassFieldImpls(expr.getStatements(), classRef);
     } else {
-      myErrorReporter.report(new NamingError("Expected a class", expr.baseClassExpression.getData()));
+      myErrorReporter.report(new NamingError("Expected a class", expr.getBaseClassExpression().getData()));
       expr.getStatements().clear();
     }
     return expr;

@@ -346,18 +346,36 @@ public final class Concrete {
 
   public static class ClassExtExpression extends Expression {
     public static final byte PREC = 12;
-    public Expression baseClassExpression;
+    private Expression myBaseClassExpression;
     private final List<ClassFieldImpl> myDefinitions;
 
-    public ClassExtExpression(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
+    private ClassExtExpression(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
       super(data);
-      this.baseClassExpression = baseClassExpression;
+      this.myBaseClassExpression = baseClassExpression;
       myDefinitions = definitions;
+    }
+
+    public static ClassExtExpression make(Object data, Expression baseClassExpression, List<ClassFieldImpl> definitions) {
+      if (baseClassExpression instanceof ClassExtExpression) {
+        ((ClassExtExpression) baseClassExpression).getStatements().addAll(definitions);
+        return (ClassExtExpression) baseClassExpression;
+      } else {
+        return new ClassExtExpression(data, baseClassExpression, definitions);
+      }
     }
 
     @Nonnull
     public Expression getBaseClassExpression() {
-      return baseClassExpression;
+      return myBaseClassExpression;
+    }
+
+    public void setBaseClassExpression(Expression baseClassExpression) {
+      if (baseClassExpression instanceof ClassExtExpression) {
+        myBaseClassExpression = ((ClassExtExpression) baseClassExpression).getBaseClassExpression();
+        myDefinitions.addAll(0, ((ClassExtExpression) baseClassExpression).myDefinitions);
+      } else {
+        myBaseClassExpression = baseClassExpression;
+      }
     }
 
     @Nonnull
@@ -1382,7 +1400,7 @@ public final class Concrete {
 
   public static ReferenceExpression getReferenceExpressionInType(Expression type) {
     if (type instanceof Concrete.ClassExtExpression) {
-      type = ((ClassExtExpression) type).baseClassExpression;
+      type = ((ClassExtExpression) type).myBaseClassExpression;
     }
     if (type instanceof Concrete.AppExpression) {
       type = ((AppExpression) type).getFunction();
