@@ -164,7 +164,7 @@ public class ModuleDeserialization {
       }
     }
 
-    Collection<? extends Group> dynSubgroups = group.getSubgroups();
+    Collection<? extends Group> dynSubgroups = group.getDynamicSubgroups();
     if (!groupProto.getDynamicSubgroupList().isEmpty() && !dynSubgroups.isEmpty()) {
       Map<String, ModuleProtos.Group> subgroupMap = new HashMap<>();
       for (ModuleProtos.Group subgroup : groupProto.getDynamicSubgroupList()) {
