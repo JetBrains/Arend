@@ -121,7 +121,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     while (Character.isDigit(name.charAt(i))) {
       i--;
     }
-    return i + 1 == name.length() ? 0 : Integer.valueOf(name.substring(i + 1, name.length()));
+    return i + 1 == name.length() ? 0 : Integer.valueOf(name.substring(i + 1));
   }
 
   private Concrete.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
@@ -209,7 +209,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return Concrete.AppExpression.make(null, expr, concreteArguments);
   }
 
-  private static Concrete.Expression makeReference(Referable referable) {
+  private static Concrete.ReferenceExpression makeReference(Referable referable) {
     return cVar(referable == null ? new NamedUnresolvedReference(null, "\\this") : referable);
   }
 
@@ -220,9 +220,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
+    Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
-      result = Concrete.AppExpression.make(null, result, expr.getArgument().accept(this, null), false);
+      Concrete.Expression arg = expr.getArgument().accept(this, null);
+      if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM) && arg instanceof Concrete.ReferenceExpression) {
+        return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));
+      } else {
+        return Concrete.AppExpression.make(null, result, arg, false);
+      }
     }
     return result;
   }
@@ -249,12 +254,24 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
     Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
+    List<Concrete.Argument> arguments = new ArrayList<>();
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
-    for (Map.Entry<ClassField, Expression> entry : implHere) {
-      statements.add(cImplStatement(entry.getKey().getReferable(), entry.getValue().accept(this, params)));
+    boolean canBeArgument = true;
+    for (ClassField field : expr.getDefinition().getFields()) {
+      Expression implementation = expr.getImplementationHere(field);
+      if (implementation != null) {
+        if (canBeArgument && field.getReferable().isParameterField()) {
+          arguments.add(new Concrete.Argument(implementation.accept(this, null), field.getReferable().isExplicitField()));
+        } else {
+          statements.add(cImplStatement(field.getReferable(), implementation.accept(this, null)));
+          canBeArgument = false;
+        }
+      } else if (canBeArgument && !expr.getDefinition().isImplemented(field)) {
+        canBeArgument = false;
+      }
     }
 
-    Concrete.Expression defCallExpr = makeReference(expr.getDefinition().getReferable());
+    Concrete.Expression defCallExpr = Concrete.AppExpression.make(null, makeReference(expr.getDefinition().getReferable()), arguments);
     if (statements.isEmpty()) {
       return defCallExpr;
     } else {

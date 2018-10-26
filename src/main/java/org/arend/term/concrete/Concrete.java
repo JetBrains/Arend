@@ -345,7 +345,7 @@ public final class Concrete {
   }
 
   public static class ClassExtExpression extends Expression {
-    public static final byte PREC = 12;
+    public static final byte PREC = 11;
     private Expression myBaseClassExpression;
     private final List<ClassFieldImpl> myDefinitions;
 
