@@ -368,7 +368,7 @@ public class ElimTypechecking {
 
       // Make new list of variables
       DependentLink vars = index == 0 ? EmptyDependentLink.getInstance() : ((BindingPattern) clauseDataList.get(0).patterns.get(0)).getBinding().subst(clauseDataList.get(0).substitution, LevelSubstitution.EMPTY, index, true);
-      clauseDataList.get(0).substitution.subst(clauseDataList.get(0).substitution);
+      clauseDataList.get(0).substitution.subst(new ExprSubstitution(clauseDataList.get(0).substitution));
       for (DependentLink link = vars; link.hasNext(); link = link.getNext()) {
         myContext.push(new Util.PatternClauseElem(new BindingPattern(link)));
       }
@@ -379,7 +379,7 @@ public class ElimTypechecking {
         Expression newRef = new ReferenceExpression(link);
         clauseDataList.get(0).substitution.remove(link);
         for (int i = 1; i < clauseDataList.size(); i++) {
-          clauseDataList.get(i).substitution.add(((BindingPattern) clauseDataList.get(i).patterns.get(j)).getBinding(), newRef);
+          clauseDataList.get(i).substitution.addSubst(((BindingPattern) clauseDataList.get(i).patterns.get(j)).getBinding(), newRef);
         }
       }
 
