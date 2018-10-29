@@ -266,7 +266,7 @@ public abstract class NameResolvingChecker {
 
     List<Pair<NamespaceCommand, Set<String>>> namespaces = new ArrayList<>(namespaceCommands.size());
     for (NamespaceCommand cmd : namespaceCommands) {
-      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(scope, cmd).getElements();
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? scope.getImportedSubscope() : scope, cmd).getElements();
       if (!elements.isEmpty()) {
         Set<String> names = new LinkedHashSet<>();
         for (Referable ref : elements) {
