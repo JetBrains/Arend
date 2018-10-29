@@ -209,11 +209,19 @@ public abstract class NameResolvingChecker {
 
     Map<String, LocatedReferable> referables = new HashMap<>();
     for (Group.InternalReferable internalRef : group.getConstructors()) {
-      checkReference(internalRef.getReferable(), referables, null);
+      LocatedReferable ref = internalRef.getReferable();
+      String name = ref.textRepresentation();
+      if (!name.isEmpty() && !"_".equals(name)) {
+        referables.putIfAbsent(name, ref);
+      }
     }
 
     for (Group.InternalReferable internalRef : fields) {
-      checkReference(internalRef.getReferable(), referables, null);
+      LocatedReferable ref = internalRef.getReferable();
+      String name = ref.textRepresentation();
+      if (!name.isEmpty() && !"_".equals(name)) {
+        referables.putIfAbsent(name, ref);
+      }
     }
 
     for (Group subgroup : subgroups) {

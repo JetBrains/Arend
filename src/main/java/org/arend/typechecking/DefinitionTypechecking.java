@@ -21,6 +21,7 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.Error;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -572,6 +573,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
 
+      Map<String, Referable> constructorNames = new HashMap<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         myVisitor.setContext(new HashMap<>(context));
         myVisitor.setFreeBindings(new HashSet<>(freeBindings));
@@ -631,7 +633,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
           // Typecheck constructors
           Patterns patterns = result == null ? null : new Patterns(result.proj1);
-          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, userSort);
+          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, userSort, constructorNames);
           if (conSort == null) {
             dataOk = false;
             conSort = Sort.PROP;
@@ -763,7 +765,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return expression;
   }
 
-  private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort) {
+  private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort, Map<String, Referable> definedConstructors) {
     Constructor constructor = new Constructor(def.getData(), dataDefinition);
     constructor.setPatterns(patterns);
     List<DependentLink> elimParams = null;
@@ -775,6 +777,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
         myVisitor.getTypecheckingState().record(def.getData(), constructor);
         dataDefinition.addConstructor(constructor);
+        Referable prevConstructor = definedConstructors.putIfAbsent(constructor.getName(), constructor.getReferable());
+        if (prevConstructor != null) {
+          myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, constructor.getReferable(), prevConstructor));
+        }
 
         sort = typeCheckParameters(def.getParameters(), list, null, userSort);
 
@@ -978,13 +984,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     // Process fields
     Concrete.Expression previousType = null;
     ClassField previousField = null;
-    for (int i = 0; i < def.getFields().size(); i++) {
-      Concrete.ClassField field = def.getFields().get(i);
+    Map<String, Referable> fieldNames = new HashMap<>();
+    for (Concrete.ClassField field : def.getFields()) {
       if (previousType == field.getResultType()) {
         addField(field.getData(), typedDef, previousField.getType(Sort.STD), myVisitor.getTypecheckingState()).setStatus(previousField.status());
       } else {
         previousField = typecheckClassField(field, typedDef);
         previousType = field.getResultType();
+      }
+
+      Referable prev = fieldNames.putIfAbsent(field.getData().textRepresentation(), field.getData());
+      if (prev != null) {
+        myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, field.getData(), prev));
       }
     }
 
