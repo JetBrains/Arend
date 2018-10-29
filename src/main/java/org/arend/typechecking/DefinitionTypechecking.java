@@ -25,13 +25,11 @@ import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
+import org.arend.term.concrete.FreeReferablesVisitor;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.LocalErrorReporterCounter;
-import org.arend.typechecking.error.local.ArgInferenceError;
-import org.arend.typechecking.error.local.FieldsImplementationError;
-import org.arend.typechecking.error.local.NonPositiveDataError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
@@ -558,12 +556,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
-    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-      for (Concrete.Constructor constructor : clause.getConstructors()) {
-        myVisitor.getTypecheckingState().record(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
-      }
-    }
-
     LocalErrorReporter errorReporter = myVisitor.getErrorReporter();
     LocalErrorReporterCounter countingErrorReporter = new LocalErrorReporterCounter(Error.Level.ERROR, errorReporter);
     myVisitor.setErrorReporter(countingErrorReporter);
@@ -572,6 +564,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       Map<Referable, Binding> context = myVisitor.getContext();
       Set<Binding> freeBindings = myVisitor.getFreeBindings();
       PatternTypechecking dataPatternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE));
+
+      Set<TCReferable> notAllowedConstructors = new HashSet<>();
+      for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+        for (Concrete.Constructor constructor : clause.getConstructors()) {
+          notAllowedConstructors.add(constructor.getData());
+        }
+      }
 
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         myVisitor.setContext(new HashMap<>(context));
@@ -603,8 +602,34 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
 
-        // Typecheck constructors
+        // Process constructors
         for (Concrete.Constructor constructor : clause.getConstructors()) {
+          // Check that constructors do not refer to constructors defined later
+          FreeReferablesVisitor visitor = new FreeReferablesVisitor(notAllowedConstructors);
+          if (constructor.getResultType() != null) {
+            if (constructor.getResultType().accept(visitor, null) != null) {
+              myVisitor.getErrorReporter().report(new ConstructorReferenceError(constructor.getResultType()));
+              constructor.setResultType(null);
+            }
+          }
+          Iterator<Concrete.FunctionClause> it = constructor.getClauses().iterator();
+          while (it.hasNext()) {
+            Concrete.FunctionClause conClause = it.next();
+            if (visitor.visitClause(conClause) != null) {
+              myVisitor.getErrorReporter().report(new ConstructorReferenceError(conClause));
+              it.remove();
+            }
+          }
+          if (visitor.visitParameters(constructor.getParameters()) != null) {
+            myVisitor.getErrorReporter().report(new ConstructorReferenceError(constructor));
+            constructor.getParameters().clear();
+            constructor.getEliminatedReferences().clear();
+            constructor.getClauses().clear();
+            constructor.setResultType(null);
+          }
+          notAllowedConstructors.remove(constructor.getData());
+
+          // Typecheck constructors
           Patterns patterns = result == null ? null : new Patterns(result.proj1);
           Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, userSort);
           if (conSort == null) {
@@ -748,7 +773,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-        myVisitor.getTypecheckingState().rewrite(def.getData(), constructor);
+        myVisitor.getTypecheckingState().record(def.getData(), constructor);
         dataDefinition.addConstructor(constructor);
 
         sort = typeCheckParameters(def.getParameters(), list, null, userSort);

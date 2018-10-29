@@ -161,4 +161,14 @@ public class DataTest extends TypeCheckingTestCase {
       "\\truncated \\data S : \\Prop | base | loop I { | left => base | right => base }\n"+
       "\\func f (x : S) : Nat | base => 0 | loop _ => 0", 1);
   }
+
+  @Test
+  public void constructorsOrderTest() {
+    typeCheckModule(
+      "\\data D\n" +
+      "  | con1 I \\with {\n" +
+      "    | left => con2" +
+      "  }\n" +
+      "  | con2", 1);
+  }
 }
