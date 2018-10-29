@@ -1,5 +1,6 @@
 package org.arend.naming.scope;
 
+import org.arend.module.ModulePath;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
@@ -15,24 +16,28 @@ import java.util.List;
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
-  private final boolean myIgnoreOpens;
+  private final ModulePath myModule;
 
-  private LexicalScope(Scope parent, Group group, boolean ignoreOpens) {
+  private LexicalScope(Scope parent, Group group, ModulePath module) {
     myParent = parent;
     myGroup = group;
-    myIgnoreOpens = ignoreOpens;
+    myModule = module;
+  }
+
+  private boolean ignoreOpens() {
+    return myModule == null;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, false);
+    return new LexicalScope(parent, group, group.getReferable().getLocation());
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, true);
+    return new LexicalScope(EmptyScope.INSTANCE, group, null);
   }
 
   private void addReferable(Referable referable, List<Referable> elements) {
-    String name =referable.textRepresentation();
+    String name = referable.textRepresentation();
     if (!name.isEmpty() && !"_".equals(name)) {
       elements.add(referable);
     }
@@ -75,16 +80,20 @@ public class LexicalScope implements Scope {
 
     Scope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myIgnoreOpens && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
-        break;
+      if (ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+        continue;
       }
 
       Scope scope;
+      //noinspection Duplicates
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+          continue;
+        }
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null));
         }
         scope = cachingScope;
       }
@@ -165,16 +174,20 @@ public class LexicalScope implements Scope {
 
     Scope cachingScope = null;
     for (NamespaceCommand cmd : myGroup.getNamespaceCommands()) {
-      if (myIgnoreOpens && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
-        break;
+      if (ignoreOpens() && cmd.getKind() == NamespaceCommand.Kind.OPEN) {
+        continue;
       }
 
       Scope scope;
+      //noinspection Duplicates
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        if (myModule != null && cmd.getPath().equals(myModule.toList())) {
+          continue;
+        }
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null));
         }
         scope = cachingScope;
       }
@@ -206,7 +219,7 @@ public class LexicalScope implements Scope {
   @Nonnull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
-    return myIgnoreOpens ? this : new LexicalScope(myParent, myGroup, true);
+    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null);
   }
 
   @Nullable
