@@ -16,6 +16,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.error.Error;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -290,7 +291,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitError(ErrorExpression expr, Void params) {
     ExpressionProtos.Expression.Error.Builder builder = ExpressionProtos.Expression.Error.newBuilder();
-    if (expr.getExpression() != null) {
+    if (expr.getExpression() != null && expr.getError() != null && expr.getError().level == Error.Level.GOAL) {
       builder.setExpression(expr.getExpression().accept(this, null));
     }
     return ExpressionProtos.Expression.newBuilder().setError(builder).build();
