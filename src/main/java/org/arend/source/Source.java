@@ -2,7 +2,7 @@ package org.arend.source;
 
 import org.arend.module.ModulePath;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 
 /**
@@ -14,7 +14,7 @@ public interface Source {
    *
    * @return path to the source.
    */
-  @Nonnull
+  @Nullable
   ModulePath getModulePath();
 
   /**

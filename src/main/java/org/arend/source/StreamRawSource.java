@@ -1,10 +1,12 @@
 package org.arend.source;
 
+import org.antlr.v4.runtime.*;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.error.ErrorReporter;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.*;
+import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
@@ -12,7 +14,6 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ScopeFactory;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.FileGroup;
-import org.antlr.v4.runtime.*;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -22,6 +23,18 @@ import java.io.InputStream;
  * Represents a source that loads a raw module from an {@link InputStream}.
  */
 public abstract class StreamRawSource implements Source {
+  private final ModulePath myModulePath;
+
+  protected StreamRawSource(ModulePath modulePath) {
+    myModulePath = modulePath;
+  }
+
+  @Nonnull
+  @Override
+  public ModulePath getModulePath() {
+    return myModulePath;
+  }
+
   /**
    * Gets an input stream from which the source will be loaded.
    *
@@ -32,6 +45,7 @@ public abstract class StreamRawSource implements Source {
 
   @Override
   public boolean load(SourceLoader sourceLoader) {
+    SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
     ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
@@ -62,13 +76,13 @@ public abstract class StreamRawSource implements Source {
       }
 
       FileGroup result = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
-      sourceLoader.getLibrary().onGroupLoaded(modulePath, result, true);
+      library.onGroupLoaded(modulePath, result, true);
 
       for (NamespaceCommand command : result.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
-          if (sourceLoader.getLibrary().containsModule(module) && !sourceLoader.loadRaw(module)) {
-            sourceLoader.getLibrary().onGroupLoaded(modulePath, null, true);
+          if (library.containsModule(module) && !sourceLoader.loadRaw(module)) {
+            library.onGroupLoaded(modulePath, null, true);
             return false;
           }
         }
@@ -80,7 +94,7 @@ public abstract class StreamRawSource implements Source {
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath, true));
-      sourceLoader.getLibrary().onGroupLoaded(modulePath, null, true);
+      library.onGroupLoaded(modulePath, null, true);
       return false;
     }
   }

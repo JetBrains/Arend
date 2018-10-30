@@ -11,7 +11,6 @@ import java.nio.file.Path;
 
 public class FileRawSource extends StreamRawSource {
   private final Path myFile;
-  private final ModulePath myModulePath;
 
   /**
    * Creates a new {@code FileRawSource} from a path to the base directory and a path to the source.
@@ -20,20 +19,14 @@ public class FileRawSource extends StreamRawSource {
    * @param modulePath  a path to the source.
    */
   public FileRawSource(Path basePath, ModulePath modulePath) {
+    super(modulePath);
     myFile = FileUtils.sourceFile(basePath, modulePath);
-    myModulePath = modulePath;
   }
 
   @Nonnull
   @Override
   protected InputStream getInputStream() throws IOException {
     return Files.newInputStream(myFile);
-  }
-
-  @Nonnull
-  @Override
-  public ModulePath getModulePath() {
-    return myModulePath;
   }
 
   @Override

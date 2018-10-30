@@ -9,6 +9,7 @@ import org.junit.Test;
 import static org.arend.ExpressionFactory.FunCall;
 import static org.arend.ExpressionFactory.Ref;
 import static org.arend.core.expr.ExpressionFactory.Nat;
+import static org.arend.typechecking.Matchers.error;
 import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -180,13 +181,23 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   public void functionImplicitPi() {
     typeCheckModule(
       "\\func ff {A : \\Type} : \\Pi {B : \\Type} -> A -> B -> A => \\lam a _ => a\n" +
-        "\\func g {A : \\Type} (a : A) => ff a a");
+      "\\func g {A : \\Type} (a : A) => ff a a");
   }
 
   @Test
   public void fieldImplicitPi() {
     typeCheckModule(
       "\\class C | ff : \\Pi {A : \\Type} -> A -> A\n" +
-        "\\func g {c : C} {A : \\Type} (a : A) => ff a");
+      "\\func g {c : C} {A : \\Type} (a : A) => ff a");
+  }
+
+  @Test
+  public void duplicateFieldName() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "  | x : Nat\n" +
+      "}", 1);
+    assertThatErrorsAre(error());
   }
 }

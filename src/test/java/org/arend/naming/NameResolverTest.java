@@ -546,16 +546,6 @@ public class NameResolverTest extends NameResolverTestCase {
   }
 
   @Test
-  public void duplicateFieldName() {
-    resolveNamesModule(
-      "\\class A {\n" +
-      "  | x : Nat\n" +
-      "  | x : Nat\n" +
-      "}", 1);
-    assertThatErrorsAre(error());
-  }
-
-  @Test
   public void duplicateInternalExternalName() {
     resolveNamesModule(
       "\\data D | x Nat\n" +
