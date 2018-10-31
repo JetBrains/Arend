@@ -31,8 +31,8 @@ public class SimpleTypecheckerState implements TypecheckerState {
   }
 
   @Override
-  public void reset(TCReferable def) {
-    myTypechecked.remove(def);
+  public Definition reset(TCReferable def) {
+    return myTypechecked.remove(def);
   }
 
   @Override

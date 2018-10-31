@@ -7,6 +7,6 @@ public interface TypecheckerState {
   void record(TCReferable def, Definition res);
   void rewrite(TCReferable def, Definition res);
   Definition getTypechecked(TCReferable def);
-  void reset(TCReferable def);
+  Definition reset(TCReferable def);
   void reset();
 }

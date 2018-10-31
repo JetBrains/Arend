@@ -1,5 +1,6 @@
 package org.arend.typechecking.order.dependency;
 
+import org.arend.core.definition.*;
 import org.arend.naming.reference.TCReferable;
 import org.arend.typechecking.TypecheckerState;
 
@@ -53,7 +54,16 @@ public class DependencyCollector implements DependencyListener {
     }
 
     for (TCReferable updatedDef : updated) {
-      myState.reset(updatedDef);
+      Definition def = myState.reset(updatedDef);
+      if (def instanceof ClassDefinition) {
+        for (ClassField field : ((ClassDefinition) def).getPersonalFields()) {
+          myState.reset(field.getReferable());
+        }
+      } else if (def instanceof DataDefinition) {
+        for (Constructor constructor : ((DataDefinition) def).getConstructors()) {
+          myState.reset(constructor.getReferable());
+        }
+      }
     }
 
     return updated;

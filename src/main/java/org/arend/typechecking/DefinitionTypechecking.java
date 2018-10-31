@@ -171,7 +171,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       for (Concrete.ClassField field : def.getFields()) {
         ClassField typedDef = new ClassField(field.getData(), definition, new PiExpression(Sort.STD, new TypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null)));
         typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-        myVisitor.getTypecheckingState().record(field.getData(), typedDef);
+        myVisitor.getTypecheckingState().rewrite(field.getData(), typedDef);
         definition.addField(typedDef);
         definition.addPersonalField(typedDef);
       }
@@ -522,7 +522,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
-          myVisitor.getTypecheckingState().record(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
+          myVisitor.getTypecheckingState().rewrite(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
         }
       }
     } else {
@@ -775,7 +775,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-        myVisitor.getTypecheckingState().record(def.getData(), constructor);
+        myVisitor.getTypecheckingState().rewrite(def.getData(), constructor);
         dataDefinition.addConstructor(constructor);
         Referable prevConstructor = definedConstructors.putIfAbsent(constructor.getName(), constructor.getReferable());
         if (prevConstructor != null) {
@@ -1188,7 +1188,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private static ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType, TypecheckerState state) {
     ClassField typedDef = new ClassField(fieldRef, parentClass, piType);
-    state.record(fieldRef, typedDef);
+    state.rewrite(fieldRef, typedDef);
     parentClass.addField(typedDef);
     parentClass.addPersonalField(typedDef);
     return typedDef;
