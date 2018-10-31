@@ -177,7 +177,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.Expression result = fun.accept(this, null);
     boolean[] isExplicit = new boolean[args.size()];
-    getArgumentsExplicitness(expr.getFunction(), isExplicit);
+    getArgumentsExplicitness(fun, isExplicit);
     for (int index = 0; index < args.size(); index++) {
       result = visitApp(result, args.get(index), isExplicit[index]);
     }
