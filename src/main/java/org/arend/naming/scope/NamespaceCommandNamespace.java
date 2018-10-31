@@ -32,7 +32,7 @@ public class NamespaceCommandNamespace implements Scope {
     if (path.isEmpty()) {
       return EmptyScope.INSTANCE;
     }
-    parentScope = Scope.Utils.resolveNamespace(parentScope, path);
+    parentScope = parentScope == null ? null : parentScope.resolveNamespace(path);
     return parentScope == null ? EmptyScope.INSTANCE : new NamespaceCommandNamespace(parentScope, cmd);
   }
 

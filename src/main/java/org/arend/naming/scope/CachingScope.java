@@ -19,8 +19,9 @@ public class CachingScope implements Scope {
   private CachingScope(Scope scope) {
     myScope = scope;
     scope.find(ref -> {
-      String name = ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation();
-      myElements.putIfAbsent(name, ref);
+      if (!(ref instanceof ModuleReferable)) {
+        myElements.putIfAbsent(ref.textRepresentation(), ref);
+      }
       return false;
     });
   }

@@ -1,7 +1,9 @@
 package org.arend.naming;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.ListScope;
+import org.arend.prelude.Prelude;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.junit.Ignore;
@@ -611,5 +613,23 @@ public class NameResolverTest extends NameResolverTestCase {
     resolveNamesModule(
       "\\import Prelude()\n" +
       "\\func f : Nat => 0", 1);
+  }
+
+  @Test
+  public void importHidingName() {
+    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE);
+    resolveNamesModule(
+      "\\import Mod\n" +
+      "\\import Mod.Path\n" +
+      "\\func foo => Path");
+  }
+
+  @Test
+  public void importHidingNamespace() {
+    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE);
+    resolveNamesModule(
+      "\\import Mod\n" +
+      "\\import Mod.Path\n" +
+      "\\func foo => Path.path");
   }
 }

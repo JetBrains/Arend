@@ -89,6 +89,26 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
+  public Scope resolveNamespace(List<? extends String> path) {
+    if (path.isEmpty()) {
+      return EmptyScope.INSTANCE;
+    }
+
+    ImportedScope scope = this;
+    for (int i = 0; i < path.size() - 1; i++) {
+      Triple triple = scope.myExpectedNamesTree.map.get(path.get(i));
+      if (triple == null) {
+        return null;
+      }
+      scope = new ImportedScope(triple.tree, myProvider, null);
+    }
+
+    Triple triple = scope.myExpectedNamesTree.map.get(path.get(path.size() - 1));
+    return triple != null && triple.modulePath != null ? triple.scope : null;
+  }
+
+  @Nullable
+  @Override
   public ImportedScope getImportedSubscope() {
     return this;
   }

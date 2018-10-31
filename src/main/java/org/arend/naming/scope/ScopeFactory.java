@@ -155,7 +155,7 @@ public class ScopeFactory {
       if (sourceNode.equals(((Abstract.NamespaceCommandHolder) parentSourceNode).getOpenedReference())) {
         return scope;
       } else {
-        scope = Scope.Utils.resolveNamespace(scope, ((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
+        scope = scope.resolveNamespace(((Abstract.NamespaceCommandHolder) parentSourceNode).getPath());
         return scope == null ? EmptyScope.INSTANCE : scope;
       }
     }

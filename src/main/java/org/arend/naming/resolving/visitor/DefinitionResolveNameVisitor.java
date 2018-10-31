@@ -392,7 +392,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope) {
     LocatedReferable groupRef = group.getReferable();
     Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(groupRef);
-    Scope convertedScope = referableConverter == null ? scope : CachingScope.make(new ConvertingScope(referableConverter, scope));
+    Scope convertedScope = CachingScope.make(referableConverter == null ? scope : new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
     } else {
