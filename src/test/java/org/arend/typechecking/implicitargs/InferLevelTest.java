@@ -221,7 +221,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\class A {\n" +
       "  | X : \\oo-Type\n" +
       "}\n" +
-      "\\func f : A (\\levels 0 _) => \\new A { X => \\oo-Type0 }", 1);
+      "\\func f : A (\\levels 0 _) => \\new A { | X => \\oo-Type0 }", 1);
   }
 
   @Test
@@ -229,5 +229,60 @@ public class InferLevelTest extends TypeCheckingTestCase {
     typeCheckDef(
       "\\func isSur {A B : \\Set} (f : A -> B) : \\Prop =>\n" +
       "  \\Pi (b : B) -> \\Sigma (a : A) (b = f a)", 1);
+  }
+
+  @Test
+  public void idTest() {
+    typeCheckModule(
+      "\\class Functor (F : \\Type -> \\Type)\n" +
+      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
+      "\n" +
+      "\\data Maybe (A : \\Type) | nothing | just A\n" +
+      "\\func id' {A : \\Type} (a : A) => a\n" +
+      "\\func idTest : \\Type1 => id' (\\suc \\lp) (Functor Maybe)", 1);
+  }
+
+  @Test
+  public void idTest2() {
+    typeCheckModule(
+      "\\class Functor (F : \\Type -> \\Type)\n" +
+      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
+      "\n" +
+      "\\data Maybe (A : \\Type) | nothing | just A\n" +
+      "\\func id' {A : \\Type} (a : A) => a\n" +
+      "\\func idTest : \\Type2 => id' (\\suc (\\suc \\lp)) (Functor Maybe)", 1);
+  }
+
+  @Test
+  public void idTest3() {
+    typeCheckModule(
+      "\\class Functor (F : \\Type -> \\Type)\n" +
+      "  | fmap {A B : \\Type} : (A -> B) -> F A -> F B\n" +
+      "\n" +
+      "\\data Maybe (A : \\Type) | nothing | just A\n" +
+      "\\func id' {A : \\Type} (a : A) => a\n" +
+      "\\func idTest => id' (\\suc (\\suc \\lp)) (Functor Maybe)");
+  }
+
+  @Test
+  public void dataLevelsTest1() {
+    typeCheckModule(
+      "\\data D | con \\Type\n" +
+      "\\func f (d : D \\levels 1 _) : D \\levels 0 _ => d", 1);
+  }
+
+  @Test
+  public void dataLevelsTest2() {
+    typeCheckModule(
+      "\\data D | con \\Type\n" +
+      "\\func fromD (d : D) : \\Type | con A => A\n" +
+      "\\func ddd : \\Type0 => fromD (con \\Type0)", 1);
+  }
+
+  @Test
+  public void funcLevelsTest() {
+    typeCheckModule(
+      "\\func F => \\Type\n" +
+      "\\func f (d : F \\levels 1 _) : F \\levels 0 _ => d", 1);
   }
 }

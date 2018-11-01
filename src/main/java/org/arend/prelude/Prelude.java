@@ -107,6 +107,7 @@ public class Prelude {
         break;
       case "=":
         PATH_INFIX = (FunctionDefinition) definition;
+        PATH_INFIX.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1))));
         break;
       case "@": {
         AT = (FunctionDefinition) definition;

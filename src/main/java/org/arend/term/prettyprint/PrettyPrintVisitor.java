@@ -165,13 +165,13 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         myBuilder.append("\\Prop");
       } else {
         if (expr.getPLevel() != null) {
-          expr.getPLevel().accept(this, new Precedence(Expression.PREC));
+          expr.getPLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
         } else {
           myBuilder.append('_');
         }
         myBuilder.append(' ');
         if (expr.getHLevel() != null) {
-          expr.getHLevel().accept(this, new Precedence(Expression.PREC));
+          expr.getHLevel().accept(this, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
         } else {
           myBuilder.append('_');
         }
