@@ -9,7 +9,7 @@ import org.arend.core.expr.visitor.BaseExpressionVisitor;
 
 public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P, Boolean> {
   protected boolean processDefCall(DefCallExpression expression, P param) {
-    return true;
+    return false;
   }
 
   @Override

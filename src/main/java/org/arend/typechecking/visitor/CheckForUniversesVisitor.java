@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
   public static boolean findUniverse(Expression expr) {
-    return expr != null && !expr.accept(new CheckForUniversesVisitor(), null);
+    return expr != null && expr.accept(new CheckForUniversesVisitor(), null);
   }
 
   public static boolean findUniverse(Body body) {
@@ -35,6 +35,6 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    return false;
+    return true;
   }
 }

@@ -738,7 +738,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (piParams.isExplicit() && !param.getExplicit()) {
           myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
-        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.textRepresentation(), piParams.getType());
+
+        Type paramType = piParams.getType();
+        DefCallExpression defCallParamType = paramType.getExpr().checkedCast(DefCallExpression.class);
+        if (defCallParamType != null && !defCallParamType.getDefinition().hasUniverses()) { // fixes test pLevelTest
+          if (defCallParamType.getDefinition() instanceof DataDefinition) {
+            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, param), new ArrayList<>(defCallParamType.getDefCallArguments()));
+          } else if (defCallParamType.getDefinition() instanceof FunctionDefinition) {
+            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+          }
+        }
+
+        SingleDependentLink link = new TypedSingleDependentLink(piParams.isExplicit(), referable == null ? null : referable.textRepresentation(), paramType);
         if (referable != null) {
           myContext.put(referable, link);
         } else {
