@@ -56,6 +56,7 @@ public class DefinitionSerialization {
     }
 
     out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
+    out.setHasUniverses(definition.hasUniverses());
 
     final ExpressionSerialization defSerializer = new ExpressionSerialization(myCallTargetIndexProvider);
 

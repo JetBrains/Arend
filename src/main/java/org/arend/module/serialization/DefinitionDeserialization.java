@@ -56,6 +56,9 @@ public class DefinitionDeserialization {
     }
 
     def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
+    if (defProto.getHasUniverses()) {
+      def.setHasUniverses();
+    }
   }
 
   private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {

@@ -36,6 +36,7 @@ import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.FreeVariablesClassifier;
 import org.arend.util.Pair;
@@ -406,6 +407,29 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
+  private boolean checkForContravariantUniverses(Expression expr) {
+    while (expr instanceof PiExpression) {
+      if (checkForUniverses(((PiExpression) expr).getParameters())) {
+        return true;
+      }
+      expr = ((PiExpression) expr).getCodomain();
+    }
+    if (expr instanceof UniverseExpression) {
+      return false;
+    }
+    return CheckForUniversesVisitor.findUniverse(expr);
+  }
+
+  private boolean checkForUniverses(DependentLink link) {
+    for (; link.hasNext(); link = link.getNext()) {
+      link = link.getNextTyped(null);
+      if (checkForContravariantUniverses(link.getTypeExpr())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def) {
     List<Clause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
@@ -487,6 +511,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       } else {
         myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce is allowed only in \\where block of \\data and \\class", def));
       }
+    }
+
+    if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
+      typedDef.setHasUniverses();
     }
 
     return clauses;
@@ -703,6 +731,30 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (dataDefinition.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
       dataDefinition.setStatus(myVisitor.getStatus());
     }
+
+    boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());
+    if (!hasUniverses) {
+      for (Constructor constructor : dataDefinition.getConstructors()) {
+        for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          if (CheckForUniversesVisitor.findUniverse(link.getTypeExpr())) {
+            hasUniverses = true;
+            break;
+          }
+        }
+        if (hasUniverses) {
+          break;
+        }
+        if (CheckForUniversesVisitor.findUniverse(constructor.getBody())) {
+          hasUniverses = true;
+          break;
+        }
+      }
+    }
+    if (hasUniverses) {
+      dataDefinition.setHasUniverses();
+    }
+
     return countingErrorReporter.getErrorsNumber() == 0;
   }
 
@@ -1230,6 +1282,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     ClassCallExpression typecheckedResultType = typecheckCoClauses(typedDef, def, def.getResultType(), def.getClassFieldImpls());
     if (typecheckedResultType == null) {
       return;
+    }
+
+    if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType)) {
+      typedDef.setHasUniverses();
     }
 
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();

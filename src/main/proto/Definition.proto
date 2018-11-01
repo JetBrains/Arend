@@ -16,6 +16,7 @@ message Definition {
         FunctionData function = 7;
     }
     bool hasTypeClassReference = 8;
+    bool hasUniverses = 9;
 
     message Clause {
         repeated Pattern pattern = 1;

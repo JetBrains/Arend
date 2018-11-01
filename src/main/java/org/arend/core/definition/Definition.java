@@ -14,6 +14,7 @@ import java.util.List;
 public abstract class Definition implements Variable {
   private TCReferable myReferable;
   private TypeCheckingStatus myStatus;
+  private boolean myHasUniverses;
 
   public Definition(TCReferable referable, TypeCheckingStatus status) {
     myReferable = referable;
@@ -47,6 +48,14 @@ public abstract class Definition implements Variable {
 
   public void setParametersTypecheckingOrder(List<Integer> order) {
 
+  }
+
+  public boolean hasUniverses() {
+    return myHasUniverses;
+  }
+
+  public void setHasUniverses() {
+    myHasUniverses = true;
   }
 
   public enum TypeCheckingStatus {

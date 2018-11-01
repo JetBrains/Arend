@@ -268,7 +268,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void dataLevelsTest1() {
     typeCheckModule(
       "\\data D | con \\Type\n" +
-      "\\func f (d : D \\levels 1 _) : D \\levels 0 _ => d", 1);
+      "\\func f (d : D \\levels 1 0) : D \\levels 0 0 => d", 1);
   }
 
   @Test
@@ -283,6 +283,6 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void funcLevelsTest() {
     typeCheckModule(
       "\\func F => \\Type\n" +
-      "\\func f (d : F \\levels 1 _) : F \\levels 0 _ => d", 1);
+      "\\func f (d : F \\levels 1 0) : F \\levels 0 0 => d", 1);
   }
 }

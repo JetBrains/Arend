@@ -108,7 +108,7 @@ public class DataTest extends TypeCheckingTestCase {
     Concrete.Expression expr = cApps(cVar(con.getReferable()), cNat(), cZero(), cZero());
 
     CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
-    assertEquals(result.type, DataCall(def, Sort.SET0, Nat()));
+    assertEquals(result.type, DataCall(def, Sort.STD, Nat()));
   }
 
   @Test
