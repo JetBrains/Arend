@@ -250,7 +250,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\n" +
       "\\data Maybe (A : \\Type) | nothing | just A\n" +
       "\\func id' {A : \\Type} (a : A) => a\n" +
-      "\\func idTest : \\Type2 => id' (\\suc (\\suc \\lp)) (Functor Maybe)", 1);
+      "\\func idTest : \\Type1 => id' (\\suc (\\suc \\lp)) (Functor Maybe)");
   }
 
   @Test

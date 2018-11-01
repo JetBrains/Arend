@@ -247,11 +247,11 @@ public class TwoStageEquations implements Equations {
         if (oldLevel == null) {
           myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, constant, maxConstant >= constant ? maxConstant - constant : 0));
         } else {
-          if (var2 == null && oldLevel.getVar() != null) {
-            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(null, Math.max(constant, maxConstant)));
-          } else
-          if (var2 != null && oldLevel.getVar() == null) {
-            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(null, Math.max(oldLevel.getConstant(), oldLevel.getMaxConstant())));
+          if (var2 == null && oldLevel.getVar() != null || var2 != null && oldLevel.getVar() == null) {
+            int otherConstant = var2 == null ? Math.max(constant, maxConstant) : Math.max(oldLevel.getConstant(), oldLevel.getMaxConstant());
+            int thisConst = var2 == null ? oldLevel.getConstant() : constant;
+            int thisMaxConst = var2 == null ? oldLevel.getMaxAddedConstant() : maxConstant;
+            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(null, Math.max(Math.min(thisMaxConst, otherConstant), Math.min(thisConst, otherConstant))));
           } else {
             int newConst = Math.min(constant, oldLevel.getConstant());
             int newMaxConst = Math.min(maxConstant, oldLevel.getMaxConstant());
