@@ -44,7 +44,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
     }
 
     while (child != null) {
-      if (child.equals(parent)) {
+      if (child.isSubClassOf(parent)) {
         return true;
       }
       Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);
@@ -59,7 +59,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
 
   private Concrete.Expression getParentCall(TCClassReferable parent, TCClassReferable child, Concrete.Expression expr) {
     while (child != null) {
-      if (child.equals(parent)) {
+      if (child.isSubClassOf(parent)) {
         return expr;
       }
       Concrete.ClassDefinition def = myConcreteProvider.getConcreteClass(child);

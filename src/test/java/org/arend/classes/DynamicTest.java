@@ -750,4 +750,24 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertEquals(xCall, parameters.get(1).normalize(NormalizeVisitor.Mode.WHNF));
     assertEquals(xCall, parameters.get(2).normalize(NormalizeVisitor.Mode.WHNF));
   }
+
+  @Test
+  public void dynamicFunctionCall() {
+    typeCheckModule(
+      "\\class A (X : \\Type) {\n" +
+      "  \\func f => 0\n" +
+      "  \\func g => f\n" +
+      "}");
+  }
+
+  @Test
+  public void dynamicSuperFunctionCall() {
+    typeCheckModule(
+      "\\class A (X : \\Type) {\n" +
+      "  \\func f => 0\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  \\func g => A.f" +
+      "}");
+  }
 }
