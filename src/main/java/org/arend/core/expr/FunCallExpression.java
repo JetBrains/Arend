@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.prelude.Prelude;
 
 import java.util.List;
 
@@ -44,6 +45,10 @@ public class FunCallExpression extends DefCallExpression {
 
   @Override
   public Expression getStuckExpression() {
+    if (getDefinition() == Prelude.COERCE) {
+      Expression stuck = myArguments.get(2).getStuckExpression();
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
+    }
     return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
   }
 }
