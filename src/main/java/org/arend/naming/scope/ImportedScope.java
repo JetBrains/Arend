@@ -138,9 +138,15 @@ public class ImportedScope implements Scope {
       Tree tree = this;
       for (int i = 0; i < path.size(); i++) {
         final int finalI = i + 1;
-        Triple triple = tree.map.computeIfAbsent(path.get(i), k -> {
+        Triple triple = tree.map.compute(path.get(i), (k,oldTriple) -> {
           ModulePath modulePath = new ModulePath(path.subList(0, finalI));
-          return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree(), finalI == path.size() ? myProvider.forModule(modulePath) : EmptyScope.INSTANCE);
+          if (oldTriple == null) {
+            return new Triple(new ModuleReferable(modulePath), finalI == path.size() ? modulePath : null, new Tree(), finalI == path.size() ? myProvider.forModule(modulePath) : EmptyScope.INSTANCE);
+          }
+          if (oldTriple.modulePath != null || finalI != path.size()) {
+            return oldTriple;
+          }
+          return new Triple(oldTriple.referable, modulePath, oldTriple.tree, myProvider.forModule(modulePath));
         });
         if (triple.modulePath == null && finalI == path.size()) {
           triple.modulePath = triple.referable.path;

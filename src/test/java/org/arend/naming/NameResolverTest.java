@@ -1,8 +1,11 @@
 package org.arend.naming;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
+import org.arend.module.ModulePath;
+import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.ListScope;
+import org.arend.naming.scope.SingletonScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
@@ -631,5 +634,24 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
       "\\func foo => Path.path");
+  }
+
+  @Test
+  public void importOrder() {
+    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH
+      ? preludeLibrary.getModuleScopeProvider().forModule(module)
+      : module.equals(new ModulePath("Mod"))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", module))
+        : EmptyScope.INSTANCE);
+    /*
+    resolveNamesModule(
+      "\\import Mod\n" +
+      "\\import Mod.Path\n" +
+      "\\func bar => foo");
+    */
+    resolveNamesModule(
+      "\\import Mod.Path\n" +
+      "\\import Mod\n" +
+      "\\func bar => foo");
   }
 }
