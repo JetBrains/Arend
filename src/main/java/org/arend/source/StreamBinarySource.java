@@ -110,7 +110,7 @@ public abstract class StreamBinarySource implements BinarySource {
       for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleDeserialization.getModuleProto().getModuleCallTargetsList()) {
         ModulePath module = new ModulePath(moduleCallTargets.getNameList());
         if (library.containsModule(module) && !sourceLoader.fillInBinary(module)) {
-          ChildGroup group = library.getModuleGroup(module);
+          ChildGroup group = library.getModuleGroup(modulePath);
           if (group != null) {
             library.unloadGroup(group);
           }

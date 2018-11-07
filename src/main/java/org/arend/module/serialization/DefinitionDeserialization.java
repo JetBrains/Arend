@@ -124,7 +124,6 @@ public class DefinitionDeserialization {
       }
       PiExpression fieldType = checkFieldType(defDeserializer.readExpr(fieldProto.getType()), classDef);
       field.setType(fieldType);
-      classDef.addPersonalField(field);
       setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
@@ -191,7 +190,6 @@ public class DefinitionDeserialization {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
       }
       constructor.setNumberOfIntervalParameters(constructorProto.getNumberOfIntervalParameters());
-      dataDef.addConstructor(constructor);
     }
 
     if (dataProto.getMatchesOnInterval()) {
