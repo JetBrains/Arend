@@ -29,7 +29,7 @@ public class ClassFieldImplScope implements Scope {
 
   private Referable find(Predicate<Referable> pred, Deque<ClassReferable> toVisit, Set<ClassReferable> visitedClasses, Set<LocatedReferable> excludedFields, Set<ClassReferable> underlyingClasses) {
     while (!toVisit.isEmpty()) {
-      ClassReferable classRef = toVisit.pop();
+      ClassReferable classRef = toVisit.removeLast();
       if (!visitedClasses.add(classRef)) {
         continue;
       }
@@ -58,7 +58,7 @@ public class ClassFieldImplScope implements Scope {
         }
       }
 
-      Collection<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();
+      List<? extends ClassReferable> superClasses = classRef.getSuperClassReferences();
       if (myWithSuperClasses && underlyingClasses != null) {
         for (ClassReferable superClass : superClasses) {
           if (pred.test(superClass)) {
@@ -67,7 +67,9 @@ public class ClassFieldImplScope implements Scope {
         }
       }
 
-      toVisit.addAll(superClasses);
+      for (int i = superClasses.size() - 1; i >= 0; i--) {
+        toVisit.add(superClasses.get(i));
+      }
     }
 
     return null;

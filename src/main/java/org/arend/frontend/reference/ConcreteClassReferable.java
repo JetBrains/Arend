@@ -50,7 +50,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
 
   @Nonnull
   @Override
-  public Collection<? extends TCClassReferable> getSuperClassReferences() {
+  public List<? extends TCClassReferable> getSuperClassReferences() {
     if (myUnresolvedSuperClasses.isEmpty()) {
       return Collections.emptyList();
     }

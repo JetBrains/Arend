@@ -7,9 +7,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public interface TCClassReferable extends TCReferable, ClassReferable {
-  @Override @Nonnull Collection<? extends TCClassReferable> getSuperClassReferences();
+  @Override @Nonnull List<? extends TCClassReferable> getSuperClassReferences();
   @Override @Nonnull Collection<? extends TCFieldReferable> getFieldReferables();
   @Override @Nonnull Collection<? extends Referable> getImplementedFields();
   @Override @Nullable TCClassReferable getUnderlyingReference();
@@ -27,7 +28,7 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
   TCClassReferable NULL_REFERABLE = new TCClassReferable() {
     @Nonnull
     @Override
-    public Collection<? extends TCClassReferable> getSuperClassReferences() {
+    public List<? extends TCClassReferable> getSuperClassReferences() {
       return Collections.emptyList();
     }
 

@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 public interface ClassReferable extends LocatedReferable {
-  @Nonnull Collection<? extends ClassReferable> getSuperClassReferences();
+  @Nonnull List<? extends ClassReferable> getSuperClassReferences();
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @Nonnull Collection<? extends FieldReferable> getFieldReferables();
   @Nonnull Collection<? extends Referable> getImplementedFields();
