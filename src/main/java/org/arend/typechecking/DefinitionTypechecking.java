@@ -1152,7 +1152,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         ClassField field = implementedFields.pop();
         List<ClassField> cycle = dfs.findCycle(field);
         if (cycle != null) {
-          errorReporter.report(CycleError.fromTypechecked(cycle, typedDef));
+          errorReporter.report(CycleError.fromTypechecked(cycle, def));
           implementedFields.removeAll(cycle);
           for (ClassField dep : cycle) {
             typedDef.removeImplementation(dep);

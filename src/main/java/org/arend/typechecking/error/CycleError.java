@@ -3,8 +3,10 @@ package org.arend.typechecking.error;
 import org.arend.core.definition.Definition;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
+import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
@@ -17,9 +19,9 @@ import static org.arend.error.doc.DocFactory.*;
 
 public class CycleError extends GeneralError {
   public final List<? extends GlobalReferable> cycle;
-  public final Definition cause;
+  public final Concrete.SourceNode cause;
 
-  public CycleError(List<? extends GlobalReferable> cycle, Definition cause) {
+  public CycleError(List<? extends GlobalReferable> cycle, Concrete.SourceNode cause) {
     super(Level.ERROR, "Dependency cycle");
     this.cycle = cycle;
     this.cause = cause;
@@ -37,7 +39,7 @@ public class CycleError extends GeneralError {
     return new CycleError(refs, null);
   }
 
-  public static CycleError fromTypechecked(List<? extends Definition> cycle, Definition cause) {
+  public static CycleError fromTypechecked(List<? extends Definition> cycle, Concrete.SourceNode cause) {
     List<GlobalReferable> refs = new ArrayList<>(cycle.size());
     for (Definition definition : cycle) {
       refs.add(definition.getReferable());
@@ -47,12 +49,12 @@ public class CycleError extends GeneralError {
 
   @Override
   public Object getCause() {
-    return cause != null ? cause : cycle.get(0);
+    return cause != null ? cause.getData() : cycle.get(0);
   }
 
   @Override
   public Doc getCauseDoc(PrettyPrinterConfig src) {
-    return refDoc(cause != null ? cause.getReferable() : cycle.get(0));
+    return cause == null ? refDoc(cycle.get(0)) : cause.getData() instanceof Referable ? refDoc((Referable) cause.getData()) : DocFactory.ppDoc(cause, src);
   }
 
   @Override
@@ -67,6 +69,6 @@ public class CycleError extends GeneralError {
 
   @Override
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return cause != null ? Collections.singletonList(cause.getReferable()) : cycle;
+    return cause != null && cause.getData() instanceof GlobalReferable ? Collections.singletonList((GlobalReferable) cause.getData()) : cycle;
   }
 }
