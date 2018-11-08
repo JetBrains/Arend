@@ -148,6 +148,7 @@ public class DefinitionSerialization {
     }
 
     builder.setMatchesOnInterval(definition.matchesOnInterval());
+    builder.setIsTruncated(definition.isTruncated());
     int i = 0;
     for (DependentLink link = definition.getParameters(); link.hasNext(); link = link.getNext()) {
       builder.addCovariantParameter(definition.isCovariant(i++));

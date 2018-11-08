@@ -68,6 +68,7 @@ message Definition {
         Sort sort = 7;
         repeated Constructor constructor = 3;
         bool matches_on_interval = 5;
+        bool is_truncated = 16;
         repeated bool covariant_parameter = 8;
         CoerceData coerce_data = 14;
 
