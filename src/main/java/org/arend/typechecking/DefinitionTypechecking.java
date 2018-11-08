@@ -1025,12 +1025,16 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
-    typedDef.clear();
+    if (newDef) {
+      typedDef.clear();
+    }
 
     LocalErrorReporter errorReporter = myVisitor.getErrorReporter();
     boolean classOk = true;
 
-    typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    if (newDef) {
+      typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+    }
 
     List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
@@ -1042,8 +1046,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         continue;
       }
 
-      typedDef.addFields(superClass.getFields());
-      typedDef.addSuperClass(superClass);
+      if (newDef) {
+        typedDef.addFields(superClass.getFields());
+        typedDef.addSuperClass(superClass);
+      }
 
       for (Map.Entry<ClassField, LamExpression> entry : superClass.getImplemented()) {
         if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
@@ -1091,18 +1097,22 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
         }
       }
-      typedDef.setClassifyingField(classifyingField);
-      if (classifyingField != null) {
-        typedDef.getCoerceData().addCoercingField(classifyingField);
+      if (newDef) {
+        typedDef.setClassifyingField(classifyingField);
+        if (classifyingField != null) {
+          typedDef.getCoerceData().addCoercingField(classifyingField);
+        }
       }
-    } else {
+    } else if (newDef) {
       typedDef.setRecord();
     }
 
     // Process implementations
     Deque<ClassField> implementedFields = new ArrayDeque<>();
     if (!def.getImplementations().isEmpty()) {
-      typedDef.updateSorts();
+      if (newDef) {
+        typedDef.updateSorts();
+      }
 
       for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
         ClassField field = myVisitor.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
@@ -1110,7 +1120,21 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           classOk = false;
           continue;
         }
-        if (typedDef.isImplemented(field)) {
+        boolean isFieldAlreadyImplemented;
+        if (newDef) {
+          isFieldAlreadyImplemented = typedDef.isImplemented(field);
+        } else if (implementedFields.contains(field)) {
+          isFieldAlreadyImplemented = true;
+        } else {
+          isFieldAlreadyImplemented = false;
+          for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+            if (superClass.isImplemented(field)) {
+              isFieldAlreadyImplemented = true;
+              break;
+            }
+          }
+        }
+        if (isFieldAlreadyImplemented) {
           classOk = false;
           alreadyImplementFields.add(field.getReferable());
           alreadyImplementedSourceNode = classFieldImpl;
@@ -1136,7 +1160,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (typedDef.getSuperClasses().size() < 2) {
           implementedFields.add(field);
         }
-        typedDef.implementField(field, new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        if (newDef) {
+          typedDef.implementField(field, new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        }
         myVisitor.getContext().clear();
         myVisitor.getFreeBindings().clear();
       }
@@ -1166,8 +1192,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
-    typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
-    typedDef.updateSorts();
+    if (newDef) {
+      typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
+      typedDef.updateSorts();
+    }
   }
 
   private static class DFS {
