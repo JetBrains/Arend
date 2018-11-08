@@ -667,7 +667,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
           // Typecheck constructors
           Patterns patterns = result == null ? null : new Patterns(result.proj1);
-          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, userSort, constructorNames, newDef);
+          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, def.isTruncated() ? null : userSort, constructorNames, newDef);
           if (conSort == null) {
             dataOk = false;
             conSort = Sort.PROP;
