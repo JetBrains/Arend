@@ -2,7 +2,6 @@ package org.arend.module.serialization;
 
 import org.arend.core.context.LinkList;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ClauseBase;
@@ -124,7 +123,7 @@ public class DefinitionDeserialization {
       }
       PiExpression fieldType = checkFieldType(defDeserializer.readExpr(fieldProto.getType()), classDef);
       field.setType(fieldType);
-      setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
+      // setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
@@ -310,9 +309,10 @@ public class DefinitionDeserialization {
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
     }
-    setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
+    // setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
   }
 
+  // To implement this function properly, we need to serialize references to class synonyms
   private void setTypeClassReference(TCReferable referable, DependentLink parameters, Expression type) {
     if (!(referable instanceof DataLocatedReferableImpl)) {
       return;
