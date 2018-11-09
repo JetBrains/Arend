@@ -17,7 +17,7 @@ public class UntypedDependentLink implements DependentLink {
     myNext = next;
   }
 
-  UntypedDependentLink(String name) {
+  public UntypedDependentLink(String name) {
     myName = name;
     myNext = EmptyDependentLink.getInstance();
   }

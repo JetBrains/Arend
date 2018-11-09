@@ -56,8 +56,8 @@ class ExpressionDeserialization {
 
     @Override
     public void close() {
-      for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
-        myBindings.remove(i);
+      if (myBindings.size() > myTargetSize) {
+        myBindings.subList(myTargetSize, myBindings.size()).clear();
       }
     }
   }
@@ -86,7 +86,7 @@ class ExpressionDeserialization {
   // Sorts and levels
 
   private Level readLevel(LevelProtos.Level proto) throws DeserializationException {
-    Variable var;
+    LevelVariable var;
     switch (proto.getVariable()) {
       case NO_VAR:
         var = null;
@@ -104,7 +104,7 @@ class ExpressionDeserialization {
     if (var == null && constant == -10) {
       return Level.INFINITY;
     } else {
-      return new Level((LevelVariable) var, constant, proto.getMaxConstant());
+      return new Level(var, constant, proto.getMaxConstant());
     }
   }
 
@@ -150,7 +150,7 @@ class ExpressionDeserialization {
     if (proto.hasType()) {
       link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readType(proto.getType()), EmptyDependentLink.getInstance());
     } else {
-      link = new UntypedDependentLink(proto.getName(), EmptyDependentLink.getInstance());
+      link = new UntypedDependentLink(proto.getName());
     }
     registerBinding(link);
     return link;
