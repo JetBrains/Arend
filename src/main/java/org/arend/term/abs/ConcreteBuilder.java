@@ -92,7 +92,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private boolean reportError(Abstract.ErrorData errorData) {
+  @Override
+  public boolean reportError(Abstract.ErrorData errorData) {
     if (errorData != null) {
       myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, errorData.message, errorData));
       return true;
