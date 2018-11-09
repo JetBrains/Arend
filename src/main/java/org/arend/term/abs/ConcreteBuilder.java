@@ -115,14 +115,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Concrete.FunctionBody body;
     Abstract.Expression term = def.getTerm();
     try {
-      if (term != null) {
+      if (def.withTerm()) {
+        if (term == null) {
+          throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def));
+        }
         Object data = term.getData();
         body = new Concrete.TermFunctionBody(data, term.accept(this, null));
+      } else if (def.isCowith()) {
+        body = new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(def.getClassFieldImpls()));
       } else {
-        Collection<? extends Abstract.ClassFieldImpl> classFieldImpls = def.getClassFieldImpls();
-        body = classFieldImpls.isEmpty()
-          ? new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()))
-          : new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(classFieldImpls));
+        body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
       }
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);

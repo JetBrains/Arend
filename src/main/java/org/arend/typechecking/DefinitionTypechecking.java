@@ -466,7 +466,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (def.getResultType() == null) {
         myVisitor.getErrorReporter().report(new TypecheckingError("Cannot infer type of a function defined by copattern matching", def));
       } else {
-        typecheckCoClauses(typedDef, def, def.getResultType(), body.getClassFieldImpls());
+        Concrete.ReferenceExpression typeRefExpr = Concrete.getReferenceExpressionInType(def.getResultType());
+        Referable typeRef = typeRefExpr == null ? null : typeRefExpr.getReferent();
+        if (!(typeRef instanceof ClassReferable)) {
+          myVisitor.getErrorReporter().report(new TypecheckingError("Expected a class", def.getResultType()));
+          CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultType(), ExpectedType.OMEGA, false);
+          if (result != null) {
+            typedDef.setResultType(result.expression);
+            typedDef.setStatus(myVisitor.getStatus());
+          }
+        } else {
+          typecheckCoClauses(typedDef, def, def.getResultType(), body.getClassFieldImpls());
+        }
         bodyIsOK = true;
       }
     } else {
@@ -1330,6 +1341,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     calculateParametersTypecheckingOrder(typedDef);
     typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     if (!paramsOk) {
+      return;
+    }
+
+    if (!(def.getReferenceInType() instanceof ClassReferable)) {
+      myVisitor.getErrorReporter().report(new TypecheckingError("Expected a class", def.getResultType()));
       return;
     }
 
