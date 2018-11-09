@@ -470,12 +470,15 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
-    boolean isCoerce = ctx.funcKw() instanceof FuncKwCoerceContext;
-    Concrete.FunctionDefinition funDef = isCoerce
-      ? Concrete.CoerceDefinition.make(referable, visitFunctionParameters(ctx.tele()), resultType, body, parent.getReferable())
-      : new Concrete.FunctionDefinition(referable, visitFunctionParameters(ctx.tele()), resultType, body);
-    if (isCoerce && !funDef.isCoerce()) {
-      myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\coerce is not allowed on the top level"));
+    boolean isUse = ctx.funcKw() instanceof FuncKwUseContext;
+    Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
+      isUse ? (((FuncKwUseContext) ctx.funcKw()).useMod() instanceof UseCoerceContext
+              ? Concrete.FunctionDefinition.UseMod.COERCE
+              : Concrete.FunctionDefinition.UseMod.LEVEL)
+            : Concrete.FunctionDefinition.UseMod.FUNC,
+      referable, visitFunctionParameters(ctx.tele()), resultType, body, parent.getReferable());
+    if (isUse && !funDef.getUseMod().isUse()) {
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
     }
 
     funDef.enclosingClass = enclosingClass;
@@ -529,27 +532,27 @@ public class BuildVisitor extends ArendBaseVisitor {
     DataGroup resultGroup = new DataGroup(referable, constructors, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
 
-    List<TCReferable> coercingFunctions = collectCoercingFunctions(subgroups, null);
-    if (coercingFunctions != null) {
-      dataDefinition.setCoercingFunctions(coercingFunctions);
+    List<TCReferable> usedDefinitions = collectUsedDefinitions(subgroups, null);
+    if (usedDefinitions != null) {
+      dataDefinition.setUsedDefinitions(usedDefinitions);
     }
 
     return resultGroup;
   }
 
-  private List<TCReferable> collectCoercingFunctions(List<Group> groups, List<TCReferable> coercingFunctions) {
+  private List<TCReferable> collectUsedDefinitions(List<Group> groups, List<TCReferable> usedDefinitions) {
     for (Group subgroup : groups) {
       if (subgroup.getReferable() instanceof ConcreteLocatedReferable) {
         Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) subgroup.getReferable()).getDefinition();
-        if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).isCoerce()) {
-          if (coercingFunctions == null) {
-            coercingFunctions = new ArrayList<>();
+        if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getUseMod().isUse()) {
+          if (usedDefinitions == null) {
+            usedDefinitions = new ArrayList<>();
           }
-          coercingFunctions.add((TCReferable) subgroup.getReferable());
+          usedDefinitions.add((TCReferable) subgroup.getReferable());
         }
       }
     }
-    return coercingFunctions;
+    return usedDefinitions;
   }
 
   private void visitDataBody(DataBodyContext ctx, Concrete.DataDefinition def, List<InternalConcreteLocatedReferable> constructors) {
@@ -702,7 +705,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
     Concrete.ClassDefinition classDefinition = null;
-    List<TCReferable> coercingFunctions = null;
+    List<TCReferable> usedDefinitions = null;
     if (classBodyCtx instanceof ClassSynContext) {
       if (isRecord) {
         myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Records cannot be synonyms"));
@@ -745,7 +748,7 @@ public class BuildVisitor extends ArendBaseVisitor {
         List<Group> dynamicSubgroups = new ArrayList<>();
         resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
         visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
-        coercingFunctions = collectCoercingFunctions(dynamicSubgroups, null);
+        usedDefinitions = collectUsedDefinitions(dynamicSubgroups, null);
       }
       visitInstanceStatements(classFieldOrImplCtxs, fields, implementations, classDefinition);
 
@@ -761,9 +764,9 @@ public class BuildVisitor extends ArendBaseVisitor {
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
 
     if (classDefinition != null) {
-      coercingFunctions = collectCoercingFunctions(staticSubgroups, coercingFunctions);
-      if (coercingFunctions != null) {
-        classDefinition.setCoercingFunctions(coercingFunctions);
+      usedDefinitions = collectUsedDefinitions(staticSubgroups, usedDefinitions);
+      if (usedDefinitions != null) {
+        classDefinition.setUsedDefinitions(usedDefinitions);
       }
     }
 

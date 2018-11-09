@@ -492,8 +492,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : !bodyIsOK && typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
 
-    if (def.isCoerce()) {
-      Definition coerceParent = myVisitor.getTypecheckingState().getTypechecked(def.getCoerceParent());
+    if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.COERCE) {
+      Definition coerceParent = myVisitor.getTypecheckingState().getTypechecked(def.getUseParent());
       if (coerceParent instanceof DataDefinition || coerceParent instanceof ClassDefinition) {
         if (def.getParameters().isEmpty()) {
           myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));

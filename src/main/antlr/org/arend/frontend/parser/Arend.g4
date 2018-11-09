@@ -29,8 +29,12 @@ definition  : funcKw precedence ID tele* (':' expr)? functionBody where?        
             | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
             ;
 
-funcKw    : '\\func'    # funcKwFunc
-          | '\\coerce'  # funcKwCoerce
+funcKw    : '\\func'            # funcKwFunc
+          | '\\use' useMod      # funcKwUse
+          ;
+
+useMod    : '\\coerce'          # useCoerce
+          | '\\level'           # useLevel
           ;
 
 classKw   : '\\class'   # classKwClass
@@ -146,7 +150,7 @@ levelExpr : levelAtom                     # atomLevel
 
 onlyLevelAtom : '\\lp'                                                # pOnlyLevel
               | '\\lh'                                                # hOnlyLevel
-              | '\\levels' (maybeLevelAtom maybeLevelAtom | '\\Prop') # levelsOnlyLevel
+              | '\\level' (maybeLevelAtom maybeLevelAtom | '\\Prop')  # levelsOnlyLevel
               | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
 

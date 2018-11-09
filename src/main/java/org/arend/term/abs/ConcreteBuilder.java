@@ -147,9 +147,12 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       type = null;
     }
 
-    Concrete.FunctionDefinition result = def.isCoerce()
-      ? Concrete.CoerceDefinition.make(myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()))
-      : new Concrete.FunctionDefinition(myDefinition, parameters, type, body);
+    Concrete.FunctionDefinition.UseMod useMod = def.isCoerce()
+      ? Concrete.FunctionDefinition.UseMod.COERCE
+      : def.isLevel()
+        ? Concrete.FunctionDefinition.UseMod.LEVEL
+        : Concrete.FunctionDefinition.UseMod.FUNC;
+    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(useMod, myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
     return result;
   }
@@ -219,7 +222,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
     }
 
-    data.setCoercingFunctions(visitCoercingFunctions(def.getCoercingFunctions()));
+    data.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return data;
   }
 
@@ -304,20 +307,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         }
       }
 
-      classDef.setCoercingFunctions(visitCoercingFunctions(def.getCoercingFunctions()));
+      classDef.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
       return classDef;
     } else {
       return null;
     }
   }
 
-  private List<TCReferable> visitCoercingFunctions(Collection<? extends LocatedReferable> coercingFunctions) {
-    if (!coercingFunctions.isEmpty()) {
-      List<TCReferable> tcCoercingFunctions = new ArrayList<>(coercingFunctions.size());
-      for (LocatedReferable coercingFunction : coercingFunctions) {
-        tcCoercingFunctions.add(myReferableConverter.toDataLocatedReferable(coercingFunction));
+  private List<TCReferable> visitUsedDefinitions(Collection<? extends LocatedReferable> usedDefinitions) {
+    if (!usedDefinitions.isEmpty()) {
+      List<TCReferable> tcUsedDefinitions = new ArrayList<>(usedDefinitions.size());
+      for (LocatedReferable coercingFunction : usedDefinitions) {
+        tcUsedDefinitions.add(myReferableConverter.toDataLocatedReferable(coercingFunction));
       }
-      return tcCoercingFunctions;
+      return tcUsedDefinitions;
     } else {
       return Collections.emptyList();
     }

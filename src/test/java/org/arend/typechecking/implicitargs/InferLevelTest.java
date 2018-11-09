@@ -221,7 +221,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
       "\\class A {\n" +
       "  | X : \\oo-Type\n" +
       "}\n" +
-      "\\func f : A (\\levels 0 _) => \\new A { | X => \\oo-Type0 }", 1);
+      "\\func f : A (\\level 0 _) => \\new A { | X => \\oo-Type0 }", 1);
   }
 
   @Test
@@ -268,7 +268,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void dataLevelsTest1() {
     typeCheckModule(
       "\\data D | con \\Type\n" +
-      "\\func f (d : D \\levels 1 0) : D \\levels 0 0 => d", 1);
+      "\\func f (d : D \\level 1 0) : D \\level 0 0 => d", 1);
   }
 
   @Test
@@ -283,6 +283,6 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void funcLevelsTest() {
     typeCheckModule(
       "\\func F => \\Type\n" +
-      "\\func f (d : F \\levels 1 0) : F \\levels 0 0 => d", 1);
+      "\\func f (d : F \\level 1 0) : F \\level 0 0 => d", 1);
   }
 }

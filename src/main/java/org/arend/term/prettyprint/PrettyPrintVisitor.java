@@ -160,7 +160,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append(expr.getReferent().textRepresentation());
 
     if (expr.getPLevel() != null || expr.getHLevel() != null) {
-      myBuilder.append(" \\levels ");
+      myBuilder.append(" \\level ");
       if (expr.getHLevel() instanceof Concrete.NumberLevelExpression && ((Concrete.NumberLevelExpression) expr.getHLevel()).getNumber() == -1) {
         myBuilder.append("\\Prop");
       } else {

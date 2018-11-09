@@ -7,21 +7,21 @@ import static org.arend.typechecking.Matchers.typeMismatchError;
 public class CoerceTest extends TypeCheckingTestCase {
   @Test
   public void coerceTop() {
-    parseModule("\\coerce f (n : Nat) : Nat => n", 1);
+    parseModule("\\use \\coerce f (n : Nat) : Nat => n", 1);
   }
 
   @Test
   public void coerceFunction() {
     typeCheckModule(
       "\\func g => 0\n" +
-      "  \\where \\coerce f (n : Nat) : Nat => n", 1);
+      "  \\where \\use \\coerce f (n : Nat) : Nat => n", 1);
   }
 
   @Test
   public void coerceFromDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce fromNat (n : Nat) => con n\n" +
+      "  \\where \\use \\coerce fromNat (n : Nat) => con n\n" +
       "\\func f (n : Nat) : D => n");
   }
 
@@ -29,7 +29,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceFromDefError() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce fromNat (n : Nat) : D 1 => con n\n" +
+      "  \\where \\use \\coerce fromNat (n : Nat) : D 1 => con n\n" +
       "\\func f (n : Nat) : D 0 => n", 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -38,7 +38,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceFromExpr() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce fromPi (p : Nat -> D) => p 0\n" +
+      "  \\where \\use \\coerce fromPi (p : Nat -> D) => p 0\n" +
       "\\func f : D => con");
   }
 
@@ -46,7 +46,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceFromExprError() {
     typeCheckModule(
       "\\data D | con Int\n" +
-      "  \\where \\coerce fromPi (p : Nat -> D) => p 0\n" +
+      "  \\where \\use \\coerce fromPi (p : Nat -> D) => p 0\n" +
       "\\func f : D => con", 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -55,7 +55,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce toNat (d : D) : Nat | con n => n\n" +
+      "  \\where \\use \\coerce toNat (d : D) : Nat | con n => n\n" +
       "\\func f (d : D) : Nat => d");
   }
 
@@ -63,7 +63,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDefError() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce toNat (d : D 0) : Nat | con n => n\n" +
+      "  \\where \\use \\coerce toNat (d : D 0) : Nat | con n => n\n" +
       "\\func f (d : D 1) : Nat => d", 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -72,7 +72,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToExpr() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce toSigma (d : D) : \\Sigma D D => (d,d)\n" +
+      "  \\where \\use \\coerce toSigma (d : D) : \\Sigma D D => (d,d)\n" +
       "\\func f (d : D) : \\Sigma D D => d");
   }
 
@@ -80,7 +80,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToExprError() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce toSigma (d : D) : \\Sigma D D => (d,d)\n" +
+      "  \\where \\use \\coerce toSigma (d : D) : \\Sigma D D => (d,d)\n" +
       "\\func f (d : D) : \\Sigma D Nat => d", 1);
     assertThatErrorsAre(typeMismatchError());
   }
@@ -89,30 +89,30 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void incorrectCoerceFrom() {
     typeCheckModule(
       "\\data D | con\n" +
-      "  \\where \\coerce f : D => con", 1);
+      "  \\where \\use \\coerce f : D => con", 1);
   }
 
   @Test
   public void incorrectCoerce() {
     typeCheckModule(
       "\\data D | con\n" +
-      "  \\where \\coerce f (n : Nat) : Nat => n", 1);
+      "  \\where \\use \\coerce f (n : Nat) : Nat => n", 1);
   }
 
   @Test
   public void bothCoerce() {
     typeCheckModule(
       "\\data D | con\n" +
-      "  \\where \\coerce f (d : D) : D => d", 1);
+      "  \\where \\use \\coerce f (d : D) : D => d", 1);
   }
 
   @Test
   public void recursiveCoerceFromDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce fromNat (n : Nat) => con n\n" +
+      "  \\where \\use \\coerce fromNat (n : Nat) => con n\n" +
       "\\data E | con' D\n" +
-      "  \\where \\coerce fromD (d : D) => con' d\n" +
+      "  \\where \\use \\coerce fromD (d : D) => con' d\n" +
       "\\func f (n : Nat) : E => n");
   }
 
@@ -120,9 +120,9 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void recursiveCoerceToDef() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce toNat (d : D) : Nat | con n => n\n" +
+      "  \\where \\use \\coerce toNat (d : D) : Nat | con n => n\n" +
       "\\data E | con' D\n" +
-      "  \\where \\coerce toD (e : E) : D | con' d => d\n" +
+      "  \\where \\use \\coerce toD (e : E) : D | con' d => d\n" +
       "\\func f (e : E) : Nat => e");
   }
 
@@ -130,7 +130,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceSelfCall() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce f (n : Nat) : D => n", 1);
+      "  \\where \\use \\coerce f (n : Nat) : D => n", 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
@@ -138,7 +138,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceFromDefWithParameters() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce fromNat {p : Nat} (n : Nat) : D p => con n\n" +
+      "  \\where \\use \\coerce fromNat {p : Nat} (n : Nat) : D p => con n\n" +
       "\\func f : D 3 => 1");
   }
 
@@ -146,7 +146,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceFromDefWithParametersError() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\coerce fromNat {p : Nat} (n : Nat) : D => con n\n" +
+      "  \\where \\use \\coerce fromNat {p : Nat} (n : Nat) : D => con n\n" +
       "\\func f : D => 1", 1);
   }
 
@@ -154,7 +154,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDefWithParameters() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
+      "  \\where \\use \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
       "\\func f (d : D 3) : Nat => d");
   }
 
@@ -162,7 +162,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDefWithExplicitParameters() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce toNat (p : Nat) (d : D p) : Nat \\elim d | con n => n\n" +
+      "  \\where \\use \\coerce toNat (p : Nat) (d : D p) : Nat \\elim d | con n => n\n" +
       "\\func f (d : D 3) : Nat => d");
   }
 
@@ -170,7 +170,7 @@ public class CoerceTest extends TypeCheckingTestCase {
   public void coerceToDefWithParametersError() {
     typeCheckModule(
       "\\data D Nat | con Nat\n" +
-      "  \\where \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
+      "  \\where \\use \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
       "\\func f : Nat => con 2", 1);
   }
 }

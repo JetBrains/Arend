@@ -10,6 +10,6 @@ public interface PartialConcreteProvider {
   @Nullable Reference getInstanceTypeReference(GlobalReferable instance);
   boolean isRecord(ClassReferable classRef);
   boolean isInstance(GlobalReferable ref);
-  boolean isCoerce(GlobalReferable ref);
+  boolean isUse(GlobalReferable ref);
   boolean isData(GlobalReferable ref);
 }

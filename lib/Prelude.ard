@@ -15,7 +15,7 @@
   | pos Nat
   | neg Nat \with { zero => pos zero }
   \where {
-    \coerce fromNat (n : Nat) => pos n
+    \use \coerce fromNat (n : Nat) => pos n
   }
 
 \data I
@@ -47,13 +47,17 @@
   | truncP (a a' : TrP A) (i : I) \elim i {
     | left  => a
     | right => a'
+  } \where {
+    \use \level isProp {A : \Type} (a a' : TrP A) : a = a' => path (truncP a a')
   }
 
 \data TrS (A : \Type)
   | inS A
-  | truncS (a a' : TrS A) (p p' : a = a') (i j : I) \elim i, j {
+  | truncS {a a' : TrS A} (p p' : a = a') (i j : I) \elim i, j {
     | i, left  => p @ i
     | i, right => p' @ i
     | left,  _ => a
     | right, _ => a'
+  } \where {
+    \use \level isSet {A : \Type} (a a' : TrS) (p p' : a = a') : p = p' => path (\lam i => path (truncS p p' i))
   }

@@ -241,9 +241,9 @@ public class Ordering {
 
     List<TCReferable> coercingFunctions = Collections.emptyList();
     if (definition instanceof Concrete.DataDefinition) {
-      coercingFunctions = ((Concrete.DataDefinition) definition).getCoercingFunctions();
+      coercingFunctions = ((Concrete.DataDefinition) definition).getUsedDefinitions();
     } else if (definition instanceof Concrete.ClassDefinition) {
-      coercingFunctions = ((Concrete.ClassDefinition) definition).getCoercingFunctions();
+      coercingFunctions = ((Concrete.ClassDefinition) definition).getUsedDefinitions();
     }
 
     for (TCReferable coercingFunction : coercingFunctions) {

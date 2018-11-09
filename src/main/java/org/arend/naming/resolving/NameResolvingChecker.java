@@ -243,7 +243,7 @@ public abstract class NameResolvingChecker {
         checkGroup(subgroup, makeScope(subgroup, scope));
 
         if (isTopLevel) {
-          checkCoerce(subgroup.getReferable());
+          checkUse(subgroup.getReferable());
         }
       }
 
@@ -251,7 +251,7 @@ public abstract class NameResolvingChecker {
         checkGroup(subgroup, makeScope(subgroup, scope));
 
         if (isTopLevel) {
-          checkCoerce(subgroup.getReferable());
+          checkUse(subgroup.getReferable());
         }
       }
     }
@@ -316,9 +316,9 @@ public abstract class NameResolvingChecker {
     }
   }
 
-  private void checkCoerce(LocatedReferable ref) {
-    if (myConcreteProvider.isCoerce(ref)) {
-      onError(new NamingError("\\coerce is not allowed on the top level", ref));
+  private void checkUse(LocatedReferable ref) {
+    if (myConcreteProvider.isUse(ref)) {
+      onError(new NamingError("\\use is not allowed on the top level", ref));
     }
   }
 

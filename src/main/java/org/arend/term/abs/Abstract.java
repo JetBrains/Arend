@@ -175,13 +175,14 @@ public final class Abstract {
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
     boolean isCoerce();
+    boolean isLevel();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
     boolean isTruncated();
     @Nullable Expression getUniverse();
     @Nonnull Collection<? extends ConstructorClause> getClauses();
-    @Nonnull Collection<? extends LocatedReferable> getCoercingFunctions();
+    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
@@ -190,7 +191,7 @@ public final class Abstract {
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
     @Nullable Reference getUnderlyingClass();
-    @Nonnull Collection<? extends LocatedReferable> getCoercingFunctions();
+    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
   public interface Constructor extends ReferableDefinition, EliminatedExpressionsHolder {

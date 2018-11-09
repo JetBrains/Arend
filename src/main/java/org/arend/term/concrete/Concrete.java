@@ -1013,7 +1013,7 @@ public final class Concrete {
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
     private TCFieldReferable myCoercingField;
-    private List<TCReferable> myCoercingFunctions = Collections.emptyList();
+    private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
     public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
       super(referable);
@@ -1060,12 +1060,12 @@ public final class Concrete {
       return myImplementations;
     }
 
-    public List<TCReferable> getCoercingFunctions() {
-      return myCoercingFunctions;
+    public List<TCReferable> getUsedDefinitions() {
+      return myUsedDefinitions;
     }
 
-    public void setCoercingFunctions(List<TCReferable> coercingFunctions) {
-      myCoercingFunctions = coercingFunctions;
+    public void setUsedDefinitions(List<TCReferable> usedDefinitions) {
+      myUsedDefinitions = usedDefinitions;
     }
 
     @Override
@@ -1202,6 +1202,19 @@ public final class Concrete {
     private Expression myResultType;
     private final FunctionBody myBody;
 
+    public enum UseMod {
+      COERCE, LEVEL, FUNC {
+        @Override
+        public boolean isUse() {
+          return false;
+        }
+      };
+
+      public boolean isUse() {
+        return true;
+      }
+    }
+
     public FunctionDefinition(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
       myResolved = Resolved.NOT_RESOLVED;
@@ -1210,11 +1223,11 @@ public final class Concrete {
       myBody = body;
     }
 
-    public boolean isCoerce() {
-      return false;
+    public UseMod getUseMod() {
+      return UseMod.FUNC;
     }
 
-    public TCReferable getCoerceParent() {
+    public TCReferable getUseParent() {
       return null;
     }
 
@@ -1243,23 +1256,26 @@ public final class Concrete {
     }
   }
 
-  public static class CoerceDefinition extends FunctionDefinition {
+  public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
+    private final UseMod myUseMod;
 
-    private CoerceDefinition(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
+    private UseDefinition(UseMod useMod, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
       super(referable, parameters, resultType, body);
       myCoerceParent = coerceParent;
+      myUseMod = useMod;
     }
 
-    public static FunctionDefinition make(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCReferable ? new CoerceDefinition(referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(referable, parameters, resultType, body);
+    public static FunctionDefinition make(UseMod useMod, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable && useMod.isUse() ? new UseDefinition(useMod, referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(referable, parameters, resultType, body);
     }
 
-    public boolean isCoerce() {
-      return true;
+    @Override
+    public UseMod getUseMod() {
+      return myUseMod;
     }
 
-    public TCReferable getCoerceParent() {
+    public TCReferable getUseParent() {
       return myCoerceParent;
     }
   }
@@ -1270,7 +1286,7 @@ public final class Concrete {
     private final List<ConstructorClause> myConstructorClauses;
     private final boolean myIsTruncated;
     private final UniverseExpression myUniverse;
-    private List<TCReferable> myCoercingFunctions = Collections.emptyList();
+    private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
     public DataDefinition(TCReferable referable, List<TypeParameter> parameters, List<ReferenceExpression> eliminatedReferences, boolean isTruncated, UniverseExpression universe, List<ConstructorClause> constructorClauses) {
       super(referable);
@@ -1305,12 +1321,12 @@ public final class Concrete {
       return myUniverse;
     }
 
-    public List<TCReferable> getCoercingFunctions() {
-      return myCoercingFunctions;
+    public List<TCReferable> getUsedDefinitions() {
+      return myUsedDefinitions;
     }
 
-    public void setCoercingFunctions(List<TCReferable> coercingFunctions) {
-      myCoercingFunctions = coercingFunctions;
+    public void setUsedDefinitions(List<TCReferable> usedDefinitions) {
+      myUsedDefinitions = usedDefinitions;
     }
 
     @Override

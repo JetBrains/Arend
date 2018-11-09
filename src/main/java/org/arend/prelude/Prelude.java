@@ -63,7 +63,9 @@ public class Prelude {
   public static FunctionDefinition ISO;
 
   public static DataDefinition PROP_TRUNC;
+  public static FunctionDefinition PROP_TRUNC_IS_PROP;
   public static DataDefinition SET_TRUNC;
+  public static FunctionDefinition SET_TRUNC_IS_SET;
 
   public static Constructor PROP_TRUNC_PATH_CON;
   public static Constructor SET_TRUNC_PATH_CON;
@@ -140,15 +142,11 @@ public class Prelude {
       }
       case "TrP":
         PROP_TRUNC = (DataDefinition) definition;
-        PROP_TRUNC.setSort(Sort.PROP);
         PROP_TRUNC_PATH_CON = PROP_TRUNC.getConstructor("truncP");
-        PROP_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "TrS":
         SET_TRUNC = (DataDefinition) definition;
-        SET_TRUNC.setSort(Sort.SetOfLevel(new Level(LevelVariable.PVAR)));
         SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
-        SET_TRUNC.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
@@ -156,6 +154,12 @@ public class Prelude {
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "isProp":
+        PROP_TRUNC_IS_PROP = (FunctionDefinition) definition;
+        break;
+      case "isSet":
+        SET_TRUNC_IS_SET = (FunctionDefinition) definition;
         break;
       default:
         throw new IllegalStateException();
@@ -182,6 +186,8 @@ public class Prelude {
     consumer.accept(AT);
     consumer.accept(COERCE);
     consumer.accept(ISO);
+    consumer.accept(PROP_TRUNC_IS_PROP);
+    consumer.accept(SET_TRUNC_IS_SET);
 
     consumer.accept(PROP_TRUNC);
     for (Constructor constructor : PROP_TRUNC.getConstructors()) {
@@ -205,7 +211,7 @@ public class Prelude {
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Path"}) {
+    for (String name : new String[] {"Nat", "Int", "Path", "TrP", "TrS"}) {
       Scope childScope = scope.resolveNamespace(name);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {

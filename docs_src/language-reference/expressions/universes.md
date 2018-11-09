@@ -28,9 +28,9 @@ That is, we can write `\Type p h` instead of `\h-Type p`
 Every definition is considered polymorphic in both levels.
 That is, every definition has two additional parameters: one for a predicative level and one for a homotopy level.
 These parameters are denoted by `\lp` and `\lh` respectively.
-You can explicitly specify level arguments in a defcall by writing `\levels p h`, where `p` and `h` are level expressions of the corresponding kind.
-Keyword `\levels` can be often omitted (if the resulting expression is unambiguous).
-To specify the `\Prop` level, write `\levels \Prop`.
+You can explicitly specify level arguments in a defcall by writing `\level p h`, where `p` and `h` are level expressions of the corresponding kind.
+Keyword `\level` can be often omitted (if the resulting expression is unambiguous).
+To specify the `\Prop` level, write `\level \Prop`.
 Level expressions are defined inductively:
 
 * `\lp` is a level expression of the predicative kind and `\lh` is a level expression of the homotopy kind.
