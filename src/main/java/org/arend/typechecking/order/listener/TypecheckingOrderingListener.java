@@ -259,15 +259,21 @@ public class TypecheckingOrderingListener implements OrderingListener {
     Set<FunctionDefinition> functionDefinitions = new HashSet<>();
     Map<FunctionDefinition, List<Clause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
+    List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
+    List<Concrete.Definition> otherDefs = new ArrayList<>();
     for (Concrete.Definition definition : definitions) {
       Definition typechecked = myState.getTypechecked(definition.getData());
       if (typechecked instanceof DataDefinition) {
         dataDefinitions.add((DataDefinition) typechecked);
+        orderedDefinitions.add(definition);
+      } else {
+        otherDefs.add(definition);
       }
     }
+    orderedDefinitions.addAll(otherDefs);
 
     DefinitionTypechecking typechecking = new DefinitionTypechecking(null);
-    for (Concrete.Definition definition : definitions) {
+    for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyStarted(definition.getData());
 
       Definition def = myState.getTypechecked(definition.getData());

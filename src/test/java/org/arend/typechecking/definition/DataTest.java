@@ -171,4 +171,11 @@ public class DataTest extends TypeCheckingTestCase {
       "  }\n" +
       "  | con2", 1);
   }
+
+  @Test
+  public void inductionRecursion() {
+    typeCheckModule(
+      "\\func f (d : D) : \\Type | d1 => Nat | d2 x y => \\Pi (a : f x) -> f (y a)\n" +
+      "\\data D : \\Type | d1 | d2 (x : D) (f x -> D)");
+  }
 }
