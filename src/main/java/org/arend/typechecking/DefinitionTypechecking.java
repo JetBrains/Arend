@@ -31,6 +31,7 @@ import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.LocalErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
@@ -503,28 +504,118 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : !bodyIsOK && typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
 
-    if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.COERCE) {
-      Definition coerceParent = myVisitor.getTypecheckingState().getTypechecked(def.getUseParent());
-      if (coerceParent instanceof DataDefinition || coerceParent instanceof ClassDefinition) {
-        if (def.getParameters().isEmpty()) {
-          myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));
-        } else {
-          Definition paramDef = getExpressionDef(def.getParameters().get(def.getParameters().size() - 1).getType());
-          DefCallExpression resultDefCall = typedDef.getResultType().checkedCast(DefCallExpression.class);
-          Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
-
-          if ((resultDef == coerceParent) == (paramDef == coerceParent)) {
-            myVisitor.getErrorReporter().report(new TypecheckingError("Either the last parameter or the result type (but not both) of \\coerce must be the parent definition", def));
+    if (typedDef.status().headerIsOK() && def.getUseMod().isUse()) {
+      Definition useParent = myVisitor.getTypecheckingState().getTypechecked(def.getUseParent());
+      if (useParent instanceof DataDefinition || useParent instanceof ClassDefinition) {
+        if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.COERCE) {
+          if (def.getParameters().isEmpty()) {
+            myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));
           } else {
-            if (resultDef == coerceParent) {
-              coerceParent.getCoerceData().addCoerceFrom(paramDef, typedDef);
+            Definition paramDef = getExpressionDef(def.getParameters().get(def.getParameters().size() - 1).getType());
+            DefCallExpression resultDefCall = typedDef.getResultType().checkedCast(DefCallExpression.class);
+            Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
+
+            if ((resultDef == useParent) == (paramDef == useParent)) {
+              myVisitor.getErrorReporter().report(new TypecheckingError("Either the last parameter or the result type (but not both) of \\coerce must be the parent definition", def));
             } else {
-              coerceParent.getCoerceData().addCoerceTo(resultDef, typedDef);
+              if (resultDef == useParent) {
+                useParent.getCoerceData().addCoerceFrom(paramDef, typedDef);
+              } else {
+                useParent.getCoerceData().addCoerceTo(resultDef, typedDef);
+              }
             }
+          }
+        } else if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.LEVEL) {
+          boolean ok = true;
+          boolean equals = true;
+          Expression type = null;
+          DependentLink link = typedDef.getParameters();
+          if (useParent instanceof DataDefinition) {
+            List<Expression> dataCallArgs = new ArrayList<>();
+            for (DependentLink dataLink = useParent.getParameters(); dataLink.hasNext(); dataLink = dataLink.getNext(), link = link.getNext()) {
+              if (!link.hasNext()) {
+                ok = false;
+                break;
+              }
+              boolean less = Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.LE);
+              if (!less) {
+                ok = false;
+                break;
+              }
+              if (equals && !Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.EQ)) {
+                equals = false;
+              }
+              dataCallArgs.add(new ReferenceExpression(link));
+            }
+
+            if (ok) {
+              if (link.hasNext()) {
+                type = new DataCallExpression((DataDefinition) useParent, Sort.STD, dataCallArgs);
+              } else {
+                ok = false;
+              }
+            }
+          } else {
+            type = new ClassCallExpression((ClassDefinition) useParent, Sort.STD);
+          }
+
+          int level = -2;
+          if (ok) {
+            List<DependentLink> parameters = new ArrayList<>();
+            for (; link.hasNext(); link = link.getNext()) {
+              parameters.add(link);
+            }
+
+            Expression resultType = typedDef.getResultType().getPiParameters(parameters, false);
+            for (int i = 0; i < parameters.size(); i++) {
+              link = parameters.get(i);
+              if (link instanceof TypedDependentLink) {
+                if (!Expression.compare(link.getTypeExpr(), type, Equations.CMP.EQ)) {
+                  ok = false;
+                  break;
+                }
+              }
+
+              List<Expression> pathArgs = new ArrayList<>();
+              pathArgs.add(type);
+              pathArgs.add(new ReferenceExpression(link));
+              i++;
+              if (i >= parameters.size()) {
+                ok = false;
+                break;
+              }
+              link = parameters.get(i);
+              if (!Expression.compare(link.getTypeExpr(), type, Equations.CMP.EQ)) {
+                ok = false;
+                break;
+              }
+
+              pathArgs.add(new ReferenceExpression(link));
+              type = new FunCallExpression(Prelude.PATH_INFIX, Sort.STD, pathArgs);
+              level++;
+            }
+
+            if (ok) {
+              if (!Expression.compare(resultType, type, Equations.CMP.EQ)) {
+                ok = false;
+              }
+            }
+          }
+
+          if (ok) {
+            if (equals) {
+              if (useParent instanceof DataDefinition) {
+                ((DataDefinition) useParent).setSort(new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
+              } else {
+                ((ClassDefinition) useParent).setSort(new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
+              }
+            }
+          } else {
+            myVisitor.getErrorReporter().report(new TypecheckingError("\\use \\level has wrong format", def));
           }
         }
       } else {
-        myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce is allowed only in \\where block of \\data and \\class", def));
+        myVisitor.getErrorReporter().report(new TypecheckingError("\\use is allowed only in \\where block of \\data and \\class", def));
       }
     }
 

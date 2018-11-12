@@ -28,7 +28,9 @@ public class PreludeResourceLibrary extends PreludeLibrary {
     synchronized (PreludeLibrary.class) {
       if (getPreludeScope() == null) {
         if (super.load(libraryManager)) {
-          Prelude.initialize(getPreludeScope(), getTypecheckerState());
+          if (!Prelude.isInitialized()) {
+            Prelude.initialize(getPreludeScope(), getTypecheckerState());
+          }
           return true;
         } else {
           return false;

@@ -122,7 +122,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   @Override
-  public Expression getPiParameters(List<SingleDependentLink> params, boolean implicitOnly) {
+  public Expression getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
     Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
     while (cod.isInstance(PiExpression.class)) {
       PiExpression piCod = cod.cast(PiExpression.class);

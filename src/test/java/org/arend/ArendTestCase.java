@@ -11,6 +11,7 @@ import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.Scope;
+import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeFileLibrary;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.SimpleTypecheckerState;
@@ -47,7 +48,7 @@ public abstract class ArendTestCase {
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
     libraryManager.loadLibrary(preludeLibrary);
-    typechecking.typecheckLibrary(preludeLibrary);
+    new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();
   }
 

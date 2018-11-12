@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface ExpectedType extends PrettyPrintable {
   ExpectedType normalize(NormalizeVisitor.Mode mode);
-  ExpectedType getPiParameters(List<SingleDependentLink> params, boolean implicitOnly);
+  ExpectedType getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly);
 
   ExpectedType OMEGA = new ExpectedType() {
     @Override
@@ -30,7 +30,7 @@ public interface ExpectedType extends PrettyPrintable {
     }
 
     @Override
-    public ExpectedType getPiParameters(List<SingleDependentLink> params, boolean implicitOnly) {
+    public ExpectedType getPiParameters(List<? super SingleDependentLink> params, boolean implicitOnly) {
       return this;
     }
   };
