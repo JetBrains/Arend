@@ -4,6 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
+import org.arend.prelude.Prelude;
 
 import java.util.*;
 
@@ -56,17 +57,28 @@ public class BranchElimTree extends ElimTree {
           newArguments.addAll(arguments.subList(index + 1, arguments.size()));
         }
       }
-    } else {
-      if (argument.isInstance(ConCallExpression.class)) {
-        ConCallExpression conCall = argument.cast(ConCallExpression.class);
-        ElimTree elimTree = myChildren.get(conCall.getDefinition());
-        if (elimTree != null) {
-          newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
-          newArguments.addAll(conCall.getDefCallArguments());
-          newArguments.addAll(arguments.subList(index + 1, arguments.size()));
-        } else {
-          return new ArrayList<>(arguments.subList(index, arguments.size()));
+    } else if (argument.isInstance(ConCallExpression.class)) {
+      ConCallExpression conCall = argument.cast(ConCallExpression.class);
+      ElimTree elimTree = myChildren.get(conCall.getDefinition());
+      if (elimTree != null) {
+        newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
+        newArguments.addAll(conCall.getDefCallArguments());
+        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+      } else {
+        return new ArrayList<>(arguments.subList(index, arguments.size()));
+      }
+    } else if (argument.isInstance(IntegerExpression.class)) {
+      IntegerExpression intExpr = argument.cast(IntegerExpression.class);
+      boolean isZero = intExpr.isZero();
+      ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
+      if (elimTree != null) {
+        newArguments = new ArrayList<>();
+        if (!isZero) {
+          newArguments.add(intExpr.pred());
         }
+        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
+      } else {
+        return new ArrayList<>(arguments.subList(index, arguments.size()));
       }
     }
     return newArguments;
@@ -92,16 +104,23 @@ public class BranchElimTree extends ElimTree {
           return elimTree.isWHNF(newArguments);
         }
       }
-    } else {
-      if (argument.isInstance(ConCallExpression.class)) {
-        ConCallExpression conCall = argument.cast(ConCallExpression.class);
-        ElimTree elimTree = myChildren.get(conCall.getDefinition());
-        if (elimTree != null) {
-          return elimTree.isWHNF(newArguments);
-        } else {
-          elimTree = myChildren.get(null);
-          return elimTree == null || elimTree.isWHNF(newArguments);
-        }
+    } else if (argument.isInstance(ConCallExpression.class)) {
+      ConCallExpression conCall = argument.cast(ConCallExpression.class);
+      ElimTree elimTree = myChildren.get(conCall.getDefinition());
+      if (elimTree != null) {
+        return elimTree.isWHNF(newArguments);
+      } else {
+        elimTree = myChildren.get(null);
+        return elimTree == null || elimTree.isWHNF(newArguments);
+      }
+    } else if (argument.isInstance(IntegerExpression.class)) {
+      IntegerExpression intExpr = argument.cast(IntegerExpression.class);
+      ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
+      if (elimTree != null) {
+        return elimTree.isWHNF(newArguments);
+      } else {
+        elimTree = myChildren.get(null);
+        return elimTree == null || elimTree.isWHNF(newArguments);
       }
     }
 
@@ -125,16 +144,23 @@ public class BranchElimTree extends ElimTree {
           return elimTree.getStuckExpression(newArguments, expression);
         }
       }
-    } else {
-      if (argument.isInstance(ConCallExpression.class)) {
-        ConCallExpression conCall = argument.cast(ConCallExpression.class);
-        ElimTree elimTree = myChildren.get(conCall.getDefinition());
-        if (elimTree != null) {
-          return elimTree.getStuckExpression(newArguments, expression);
-        } else {
-          elimTree = myChildren.get(null);
-          return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
-        }
+    } else if (argument.isInstance(ConCallExpression.class)) {
+      ConCallExpression conCall = argument.cast(ConCallExpression.class);
+      ElimTree elimTree = myChildren.get(conCall.getDefinition());
+      if (elimTree != null) {
+        return elimTree.getStuckExpression(newArguments, expression);
+      } else {
+        elimTree = myChildren.get(null);
+        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+      }
+    } else if (argument.isInstance(IntegerExpression.class)) {
+      IntegerExpression intExpr = argument.cast(IntegerExpression.class);
+      ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
+      if (elimTree != null) {
+        return elimTree.getStuckExpression(newArguments, expression);
+      } else {
+        elimTree = myChildren.get(null);
+        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
       }
     }
 

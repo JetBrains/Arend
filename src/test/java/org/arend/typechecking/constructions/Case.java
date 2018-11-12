@@ -38,4 +38,14 @@ public class Case extends TypeCheckingTestCase {
       "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func f (b : Bool) : (b = true) `Or` (b = false) => \\case b \\as x, idp : b = x \\with { | true, p => inl p | false, p => inr p }");
   }
+
+  @Test
+  public void testCaseMultipleArguments() {
+    typeCheckModule(
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func \\infix 4 < (n m : Nat) => Nat\n" +
+      "\\func f1 (n k : Nat) : Nat => \\case k \\as z, n < z \\as r, idp : r = n < z \\with { | k, T, P => 0 }\n" +
+      "\\func f2 (n k : Nat) (p : n < k) : Nat => \\case k \\as z, p \\as r : n < z, idp : r = {n < z} p \\with { | k, p, s => 0 }\n" +
+      "\\func f3 (n k : Nat) (p : n < k) : Nat => \\case k \\as z, p \\as r : n < z, idp : r = {n < k} p \\with { | k, p, s => 0 }");
+  }
 }
