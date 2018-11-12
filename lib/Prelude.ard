@@ -59,5 +59,5 @@
     | left,  _ => a
     | right, _ => a'
   } \where {
-    \use \level isSet {A : \Type} (a a' : TrS) (p p' : a = a') : p = p' => path (\lam i => path (truncS p p' i))
+    \use \level isSet {A : \Type} (a a' : TrS A) (p p' : a = a') : p = p' => path (\lam i => path (\lam j => truncS p p' j i))
   }
