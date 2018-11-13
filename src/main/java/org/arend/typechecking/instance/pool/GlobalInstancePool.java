@@ -21,6 +21,7 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
@@ -122,7 +123,14 @@ public class GlobalInstancePool implements InstancePool {
             }
           }
 
-          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, classifyingField == null ? null : new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, Collections.singletonMap(classifyingField, origClassifyingExpression), Sort.STD));
+          Expression expectedType;
+          if (classifyingField == null) {
+            expectedType = null;
+          } else {
+            Map<ClassField, Expression> implemented = Collections.singletonMap(classifyingField, origClassifyingExpression);
+            expectedType = myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, implemented, Sort.PROP), sourceNode);
+          }
+          CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
           return result == null ? new ErrorExpression(null, null) : result.expression;
         }
       }

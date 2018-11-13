@@ -329,7 +329,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return myStatus;
   }
 
-  private static Sort getSortOf(Expression expr) {
+  public static Sort getSortOf(Expression expr) {
     Sort sort = expr == null ? null : expr.toSort();
     if (sort == null) {
       assert expr != null && expr.isInstance(ErrorExpression.class);
@@ -1204,7 +1204,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private Sort generateUpperBound(List<Sort> sorts, Concrete.SourceNode sourceNode) {
+  public Sort generateUpperBound(List<Sort> sorts, Concrete.SourceNode sourceNode) {
     Sort resultSort = generateUniqueUpperBound(sorts);
     if (resultSort != null) {
       return resultSort;
@@ -1406,19 +1406,20 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    // Calculate the sort of the expression
-
-    DependentLink thisParam = ExpressionFactory.parameter("this", resultClassCall);
-    List<Sort> sorts = new ArrayList<>();
-    for (ClassField field : classCallExpr.getDefinition().getFields()) {
-      if (resultClassCall.isImplemented(field)) continue;
-      PiExpression fieldType = field.getType(classCallExpr.getSortArgument());
-      if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
-      sorts.add(getSortOf(fieldType.applyExpression(new ReferenceExpression(thisParam)).normalize(NormalizeVisitor.Mode.WHNF).getType()));
-    }
-
-    resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, generateUpperBound(sorts, expr));
+    resultClassCall = fixClassExtSort(resultClassCall, expr);
     return checkResult(expectedType, new Result(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
+  }
+
+  public ClassCallExpression fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
+    Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
+    List<Sort> sorts = new ArrayList<>();
+    for (ClassField field : classCall.getDefinition().getFields()) {
+      if (classCall.isImplemented(field)) continue;
+      PiExpression fieldType = field.getType(classCall.getSortArgument());
+      if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
+      sorts.add(getSortOf(fieldType.applyExpression(thisExpr).normalize(NormalizeVisitor.Mode.WHNF).getType()));
+    }
+    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()));
   }
 
   public Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {

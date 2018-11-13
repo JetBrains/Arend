@@ -182,7 +182,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort);
+    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()));
   }
 
   public void clear() {

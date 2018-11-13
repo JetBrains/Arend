@@ -25,7 +25,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     super(definition);
     mySortArgument = sortArgument;
     myImplementations = new HashMap<>();
-    mySort = definition.getSort();
+    mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
   }
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort) {

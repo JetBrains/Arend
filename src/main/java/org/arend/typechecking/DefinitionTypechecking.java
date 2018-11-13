@@ -527,7 +527,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         } else if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.LEVEL) {
           boolean ok = true;
-          boolean equals = true;
           Expression type = null;
           DependentLink link = typedDef.getParameters();
           if (useParent instanceof DataDefinition) {
@@ -537,13 +536,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
                 ok = false;
                 break;
               }
-              boolean less = Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.LE);
-              if (!less) {
+              if (!Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.EQ)) {
                 ok = false;
                 break;
-              }
-              if (equals && !Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.EQ)) {
-                equals = false;
               }
               dataCallArgs.add(new ReferenceExpression(link));
             }
@@ -603,12 +598,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
 
           if (ok) {
-            if (equals) {
-              if (useParent instanceof DataDefinition) {
-                ((DataDefinition) useParent).setSort(new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
-              } else {
-                ((ClassDefinition) useParent).setSort(new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
-              }
+            if (useParent instanceof DataDefinition) {
+              ((DataDefinition) useParent).setSort(new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
+            } else {
+              ((ClassDefinition) useParent).setSort(new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
             }
           } else {
             myVisitor.getErrorReporter().report(new TypecheckingError("\\use \\level has wrong format", def));
@@ -616,6 +609,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       } else {
         myVisitor.getErrorReporter().report(new TypecheckingError("\\use is allowed only in \\where block of \\data and \\class", def));
+      }
+
+      if (typedDef.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
+        typedDef.setStatus(myVisitor.getStatus());
       }
     }
 
