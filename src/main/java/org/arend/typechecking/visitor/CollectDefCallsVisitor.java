@@ -1,9 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
@@ -31,34 +28,37 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
   }
 
   private void addDependency(TCReferable dependency, boolean ignoreFirstParameter) {
-    if (myExcluded != null && myExcluded.contains(dependency)) {
+    TCReferable tcDependency = dependency.getUnderlyingTypecheckable();
+    if (tcDependency == null || myExcluded != null && myExcluded.contains(tcDependency)) {
       return;
     }
     if (myInstanceProvider == null) {
-      myDependencies.add(dependency);
+      myDependencies.add(tcDependency);
       return;
     }
 
     myDeque.push(dependency);
     while (!myDeque.isEmpty()) {
       TCReferable referable = myDeque.pop();
-      if (!myDependencies.add(referable)) {
+      TCReferable tcReferable = referable.getUnderlyingTypecheckable();
+      if (!myDependencies.add(tcReferable)) {
         continue;
       }
 
-      Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-      if (definition instanceof Concrete.ClassField) {
+      if (referable instanceof FieldReferable) {
         if (!ignoreFirstParameter) {
-          ClassReferable classRef = ((Concrete.ClassField) definition).getRelatedDefinition().getData();
-          for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
-            Referable ref = instance.getReferenceInType();
-            if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-              myDeque.push(instance.getData());
+          LocatedReferable fieldParent = referable.getLocatedReferableParent();
+          if (fieldParent instanceof ClassReferable) {
+            for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+              Referable ref = instance.getReferenceInType();
+              if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf((ClassReferable) fieldParent)) {
+                myDeque.push(instance.getData());
+              }
             }
           }
         }
-      } else if (definition != null) {
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
+      } else {
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(myConcreteProvider.getConcrete(tcReferable));
         if (parameters != null) {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
@@ -210,10 +210,7 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
       if (ref instanceof TCReferable) {
-        TCReferable tcRef = ((TCReferable) ref).getUnderlyingTypecheckable();
-        if (tcRef != null) {
-          addDependency(tcRef, !expr.getArguments().get(0).isExplicit());
-        }
+        addDependency((TCReferable) ref, !expr.getArguments().get(0).isExplicit());
       }
     } else {
       expr.getFunction().accept(this, null);
@@ -227,10 +224,7 @@ public class CollectDefCallsVisitor implements ConcreteDefinitionVisitor<Boolean
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
     if (expr.getReferent() instanceof TCReferable) {
-      TCReferable ref = ((TCReferable) expr.getReferent()).getUnderlyingTypecheckable();
-      if (ref != null) {
-        addDependency(ref, false);
-      }
+      addDependency((TCReferable) expr.getReferent(), false);
     }
     return null;
   }

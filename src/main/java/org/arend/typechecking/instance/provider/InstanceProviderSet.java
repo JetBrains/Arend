@@ -85,6 +85,7 @@ public class InstanceProviderSet {
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {
+    String groupName = group.getReferable().textRepresentation();
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends Group> subgroups = group.getSubgroups();
@@ -94,7 +95,7 @@ public class InstanceProviderSet {
 
     parentScope = CachingScope.make(LexicalScope.insideOf(group, parentScope));
     for (NamespaceCommand command : namespaceCommands) {
-      NamespaceCommandNamespace.resolveNamespace(parentScope, command).find(predicate);
+      NamespaceCommandNamespace.resolveNamespace(command.getKind() == NamespaceCommand.Kind.IMPORT ? parentScope.getImportedSubscope() : parentScope, command).find(predicate);
     }
     processSubgroups(parentScope, predicate, dynamicSubgroups);
     processSubgroups(parentScope, predicate, subgroups);
