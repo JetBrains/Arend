@@ -192,7 +192,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (!param.hasNext()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
+      CheckTypeVisitor.Result result1 = result.toResult(myVisitor);
       if (!result1.type.isError()) {
         myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result1.type, fun));
       }
@@ -333,7 +333,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
       expectedType.getPiParameters(expectedParams, true);
       if (expectedParams.size() > actualParams.size()) {
-        CheckTypeVisitor.Result result1 = result.toResult(myVisitor.getEquations());
+        CheckTypeVisitor.Result result1 = result.toResult(myVisitor);
         if (!result1.type.isError()) {
           myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
         }
