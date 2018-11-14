@@ -18,6 +18,7 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.error.Error;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.naming.error.DuplicateNameError;
@@ -32,6 +33,7 @@ import org.arend.typechecking.error.LocalErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
+import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
@@ -231,6 +233,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         DependentLink param;
+        int numberOfParameters;
         boolean oldParametersOK = true;
         if (parameter instanceof Concrete.TelescopeParameter) {
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
@@ -238,33 +241,40 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           for (Referable referable : referableList) {
             names.add(referable == null ? null : referable.textRepresentation());
           }
-          param = parameter(parameter.getExplicit(), names, paramResult);
-          index += names.size();
+          param = oldParameters != null ? oldParameters : parameter(parameter.getExplicit(), names, paramResult);
+          numberOfParameters = names.size();
+          index += numberOfParameters;
 
-          int i = 0;
-          for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
-            if (oldParameters == null) {
+          if (oldParameters == null) {
+            int i = 0;
+            for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
               myVisitor.getContext().put(referableList.get(i), link);
-            } else {
+            }
+          } else {
+            for (int i = 0; i < names.size(); i++) {
               if (oldParameters.hasNext()) {
                 myVisitor.getContext().put(referableList.get(i), oldParameters);
                 myVisitor.getFreeBindings().add(oldParameters);
                 oldParameters = oldParameters.getNext();
               } else {
                 oldParametersOK = false;
+                break;
               }
             }
           }
         } else {
-          param = parameter(parameter.getExplicit(), (String) null, paramResult);
           index++;
+          numberOfParameters = 1;
           if (oldParameters != null) {
+            param = oldParameters;
             if (oldParameters.hasNext()) {
               myVisitor.getFreeBindings().add(oldParameters);
               oldParameters = oldParameters.getNext();
             } else {
               oldParametersOK = false;
             }
+          } else {
+            param = parameter(parameter.getExplicit(), (String) null, paramResult);
           }
         }
         if (!oldParametersOK) {
@@ -279,7 +289,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
             if (classDef != null && !classDef.isRecord()) {
               ClassField classifyingField = classDef.getClassifyingField();
-              for (DependentLink link = param; link.hasNext(); link = link.getNext()) {
+              int i = 0;
+              for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
                 ReferenceExpression reference = new ReferenceExpression(link);
                 // Expression oldInstance =
                   localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
@@ -758,6 +769,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
 
       Map<String, Referable> constructorNames = new HashMap<>();
+      InstancePool instancePool = myVisitor.getInstancePool().getInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         myVisitor.setContext(new HashMap<>(context));
         myVisitor.setFreeBindings(new HashSet<>(freeBindings));
@@ -772,6 +784,15 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
           if (elimParams != null) {
             result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, myVisitor);
+            if (instancePool != null && result != null && result.proj2 != null) {
+              ExprSubstitution substitution = new ExprSubstitution();
+              DependentLink link = dataDefinition.getParameters();
+              for (Expression expr : result.proj2) {
+                substitution.add(link, expr);
+                link = link.getNext();
+              }
+              myVisitor.getInstancePool().setInstancePool(instancePool.subst(substitution));
+            }
             if (result != null && result.proj2 == null) {
               errorReporter.report(new TypecheckingError("This clause is redundant", clause));
               result = null;
@@ -831,6 +852,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           inferredSort = inferredSort.max(conSort);
         }
       }
+      myVisitor.getInstancePool().setInstancePool(instancePool);
     }
     if (newDef) {
       dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
