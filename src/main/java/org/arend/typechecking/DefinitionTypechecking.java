@@ -149,7 +149,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
     try {
       typecheckDataHeader(definition, def, localInstancePool, typechecked == null);
-      if (definition.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
+      if (definition.status().headerIsOK()) {
         typecheckDataBody(definition, def, true, Collections.singleton(definition), typechecked == null);
       }
     } catch (IncorrectExpressionException e) {
@@ -215,7 +215,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return null;
   }
 
-  private Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort) {
+  private Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters) {
     Sort sort = Sort.PROP;
     int index = 0;
 
@@ -231,6 +231,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         DependentLink param;
+        boolean oldParametersOK = true;
         if (parameter instanceof Concrete.TelescopeParameter) {
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
           List<String> names = new ArrayList<>(referableList.size());
@@ -242,11 +243,33 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
           int i = 0;
           for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
-            myVisitor.getContext().put(referableList.get(i), link);
+            if (oldParameters == null) {
+              myVisitor.getContext().put(referableList.get(i), link);
+            } else {
+              if (oldParameters.hasNext()) {
+                myVisitor.getContext().put(referableList.get(i), oldParameters);
+                myVisitor.getFreeBindings().add(oldParameters);
+                oldParameters = oldParameters.getNext();
+              } else {
+                oldParametersOK = false;
+              }
+            }
           }
         } else {
           param = parameter(parameter.getExplicit(), (String) null, paramResult);
           index++;
+          if (oldParameters != null) {
+            if (oldParameters.hasNext()) {
+              myVisitor.getFreeBindings().add(oldParameters);
+              oldParameters = oldParameters.getNext();
+            } else {
+              oldParametersOK = false;
+            }
+          }
+        }
+        if (!oldParametersOK) {
+          myVisitor.getErrorReporter().report(new TypecheckingError("Cannot typecheck definition. Try to clear cache", parameter));
+          return null;
         }
 
         if (localInstancePool != null) {
@@ -268,9 +291,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
 
-        list.append(param);
-        for (; param.hasNext(); param = param.getNext()) {
-          myVisitor.getFreeBindings().add(param);
+        if (oldParameters == null) {
+          list.append(param);
+          for (; param.hasNext(); param = param.getNext()) {
+            myVisitor.getFreeBindings().add(param);
+          }
         }
       } else {
         myVisitor.getErrorReporter().report(new ArgInferenceError(typeOfFunctionArg(++index), parameter, new Expression[0]));
@@ -278,6 +303,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
+    if (oldParameters != null) {
+      list.append(oldParameters);
+    }
     return sort;
   }
 
@@ -387,7 +415,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   private void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean recursive, boolean newDef) {
     LinkList list = new LinkList();
 
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
     Expression expectedType = null;
     Concrete.Expression resultType = def.getResultType();
     if (resultType != null) {
@@ -649,7 +677,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     LinkList list = new LinkList();
 
     Sort userSort = null;
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : dataDefinition.getParameters()) != null;
 
     if (def.getUniverse() != null) {
       Type userTypeResult = myVisitor.finalCheckType(def.getUniverse(), ExpectedType.OMEGA);
@@ -966,7 +994,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, def.getData(), prevConstructor));
         }
 
-        sort = typeCheckParameters(def.getParameters(), list, null, userSort);
+        sort = typeCheckParameters(def.getParameters(), list, null, userSort, newDef ? null : oldConstructor.getParameters());
 
         int index = 0;
         for (DependentLink link = list.getFirst(); link.hasNext(); link = link.getNext(), index++) {
@@ -1447,7 +1475,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, LocalInstancePool localInstancePool, boolean newDef) {
     LinkList list = new LinkList();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null) != null;
+    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
     if (newDef) {
       typedDef.setParameters(list.getFirst());
       calculateParametersTypecheckingOrder(typedDef);
