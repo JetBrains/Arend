@@ -3,7 +3,6 @@ package org.arend.typechecking;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -736,6 +735,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         myVisitor.setFreeBindings(new HashSet<>(freeBindings));
 
         // Typecheck patterns and compute free bindings
+        boolean patternsOK = true;
         Pair<List<Pattern>, List<Expression>> result = null;
         if (clause.getPatterns() != null) {
           if (def.getEliminatedReferences() == null) {
@@ -751,7 +751,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             if (result == null) {
               myVisitor.setContext(new HashMap<>(context));
               myVisitor.setFreeBindings(new HashSet<>(freeBindings));
-              fillInPatterns(clause.getPatterns());
+              patternsOK = false;
             }
           }
         } else {
@@ -779,8 +779,12 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               it.remove();
             }
           }
+          boolean constructorOK = patternsOK;
           if (visitor.visitParameters(constructor.getParameters()) != null) {
             myVisitor.getErrorReporter().report(new ConstructorReferenceError(constructor));
+            constructorOK = false;
+          }
+          if (!constructorOK) {
             constructor.getParameters().clear();
             constructor.getEliminatedReferences().clear();
             constructor.getClauses().clear();
@@ -893,21 +897,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
-  }
-
-  private void fillInPatterns(List<Concrete.Pattern> patterns) {
-    for (Concrete.Pattern pattern : patterns) {
-      if (pattern instanceof Concrete.NamePattern) {
-        Referable referable = ((Concrete.NamePattern) pattern).getReferable();
-        if (referable != null) {
-          myVisitor.getContext().put(referable, new TypedBinding(referable.textRepresentation(), new ErrorExpression(null, null)));
-        }
-      } else if (pattern instanceof Concrete.ConstructorPattern) {
-        fillInPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
-      } else if (pattern instanceof Concrete.TuplePattern) {
-        fillInPatterns(((Concrete.TuplePattern) pattern).getPatterns());
-      }
-    }
   }
 
   private Expression normalizePathExpression(Expression type, Constructor constructor, Concrete.SourceNode sourceNode) {

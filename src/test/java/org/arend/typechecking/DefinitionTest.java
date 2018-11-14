@@ -183,6 +183,6 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\func f (x : Nat -> Nat) => x 0\n" +
         "\\data Test (A : \\Set0) \\with\n" +
-        "  | suc n => foo (f n)", 2);
+        "  | suc n => foo (f n)", 1);
   }
 }
