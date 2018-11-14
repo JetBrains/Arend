@@ -33,13 +33,14 @@ import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.util.ComputationInterruptedException;
+import org.arend.util.Pair;
 
 import java.util.*;
 
 public class TypecheckingOrderingListener implements OrderingListener {
   private final TypecheckerState myState;
   private final DependencyListener myDependencyListener;
-  private final Map<GlobalReferable, CheckTypeVisitor> mySuspensions = new HashMap<>();
+  private final Map<GlobalReferable, Pair<CheckTypeVisitor,Boolean>> mySuspensions = new HashMap<>();
   private final ErrorReporter myErrorReporter;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
@@ -214,9 +215,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
         visitor.setHasErrors();
       }
       DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, visitor.getErrorReporter());
-      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), visitor), unit.getDefinition());
+      Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(unit.getDefinition().getData());
+      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), visitor), unit.getDefinition());
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        mySuspensions.put(unit.getDefinition().getData(), visitor);
+        mySuspensions.put(unit.getDefinition().getData(), new Pair<>(visitor, oldTypechecked == null));
       }
 
       typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
@@ -277,10 +279,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typecheckingBodyStarted(definition.getData());
 
       Definition def = myState.getTypechecked(definition.getData());
-      CheckTypeVisitor visitor = mySuspensions.remove(definition.getData());
-      if (headersAreOK && visitor != null) {
-        typechecking.setVisitor(visitor);
-        List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions);
+      Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
+      if (headersAreOK && pair != null) {
+        typechecking.setVisitor(pair.proj1);
+        List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
         if (clauses != null) {
           functionDefinitions.add((FunctionDefinition) def);
           clausesMap.put((FunctionDefinition) def, clauses);
