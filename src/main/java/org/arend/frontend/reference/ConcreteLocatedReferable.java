@@ -5,6 +5,7 @@ import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.parser.Position;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.DataContainer;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.Precedence;
@@ -13,7 +14,7 @@ import org.arend.term.concrete.Concrete;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo {
+public class ConcreteLocatedReferable extends LocatedReferableImpl implements SourceInfo, DataContainer {
   private final Position myPosition;
   private Concrete.ReferableDefinition myDefinition;
 
@@ -25,6 +26,12 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
   public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, ModulePath modulePath) {
     super(precedence, name, modulePath);
     myPosition = position;
+  }
+
+  @Nullable
+  @Override
+  public Position getData() {
+    return myPosition;
   }
 
   public Concrete.ReferableDefinition getDefinition() {

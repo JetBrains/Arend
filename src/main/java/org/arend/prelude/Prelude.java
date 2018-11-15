@@ -19,6 +19,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.DummyErrorReporter;
+import org.arend.frontend.PositionComparator;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
@@ -224,7 +225,7 @@ public class Prelude {
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
     public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider) {
-      super(instanceProviderSet, state, concreteProvider, DummyErrorReporter.INSTANCE);
+      super(instanceProviderSet, state, concreteProvider, DummyErrorReporter.INSTANCE, PositionComparator.INSTANCE);
     }
 
     @Override

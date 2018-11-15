@@ -72,7 +72,7 @@ public abstract class BaseCliFrontend {
 
   private class MyTypechecking extends TypecheckingOrderingListener {
     MyTypechecking() {
-      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter);
+      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter, PositionComparator.INSTANCE);
     }
 
     @Override

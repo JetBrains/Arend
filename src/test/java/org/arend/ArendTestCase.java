@@ -5,6 +5,7 @@ import org.arend.error.ListErrorReporter;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocStringBuilder;
 import org.arend.frontend.ConcreteReferableProvider;
+import org.arend.frontend.PositionComparator;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
@@ -40,7 +41,7 @@ public abstract class ArendTestCase {
   protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
-  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter);
+  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter, PositionComparator.INSTANCE);
 
   @Before
   public void loadPrelude() {

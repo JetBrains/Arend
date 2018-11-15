@@ -5,13 +5,12 @@ import org.arend.typechecking.error.TerminationCheckError;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void list() {
-    assertTrue(typeCheckDef("\\data List (A : \\Type0) | nil | cons A (List A)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typeCheckDef("\\data List (A : \\Type0) | nil | cons A (List A)").status(), Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
@@ -28,27 +27,27 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void plus() {
-    assertTrue(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc x' => suc (x' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc x' => suc (x' + y)").status(), Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void doubleRec() {
-    assertTrue(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => x'' + (x'' + y)").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => x'' + (x'' + y)").status(), Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
   public void functionError() {
-    assertTrue(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status(), Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
   }
 
   @Test
   public void functionError2() {
-    assertTrue(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status(), Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
   }
 
   @Test
   public void functionPartiallyApplied() {
-    assertTrue(typeCheckDef("\\func foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat \\elim x | zero => y | suc x' => z (foo z x')").status() == Definition.TypeCheckingStatus.NO_ERRORS);
+    assertSame(typeCheckDef("\\func foo (z : (Nat -> Nat) -> Nat) (x y : Nat) : Nat \\elim x | zero => y | suc x' => z (foo z x')").status(), Definition.TypeCheckingStatus.NO_ERRORS);
   }
 
   @Test
@@ -68,5 +67,15 @@ public class RecursiveTest extends TypeCheckingTestCase {
       "\\data D (n : Nat) : \\Type | con1 (f (\\lam (x : Nat) => x)) | con2\n" +
       "\\func f (n : Nat) : \\Type => D n\n" +
       "\\func g : f 0 => con2", 2);
+  }
+
+  @Test
+  public void mutualRecursionOrder() {
+    typeCheckModule(
+      "\\func g => D'\n" +
+      "\\data D : \\Type | con1 | con2 (d : D) (D' d)\n" +
+      "\\data D' (d : D) : \\Type \\with\n" +
+      "  | con1 => con1'\n" +
+      "  | con2 _ _ => con2'");
   }
 }

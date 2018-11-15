@@ -78,4 +78,10 @@ public class LocatedReferableImpl implements TCReferable {
   public String toString() {
     return myName;
   }
+
+  @Nullable
+  @Override
+  public Object getData() {
+    return null;
+  }
 }

@@ -39,25 +39,28 @@ public class Ordering {
   private final DependencyListener myDependencyListener;
   private final ReferableConverter myReferableConverter;
   private final TypecheckerState myState;
+  private final PartialComparator<TCReferable> myComparator;
   private final boolean myRefToHeaders;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, boolean refToHeaders) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
     myDependencyListener = dependencyListener;
     myReferableConverter = referableConverter;
     myState = state;
+    myComparator = comparator;
     myRefToHeaders = refToHeaders;
   }
 
-  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state) {
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
     myDependencyListener = dependencyListener;
     myReferableConverter = referableConverter;
     myState = state;
+    myComparator = comparator;
     myRefToHeaders = false;
   }
 
@@ -79,6 +82,10 @@ public class Ordering {
 
   public ReferableConverter getReferableConverter() {
     return myReferableConverter;
+  }
+
+  public PartialComparator<TCReferable> getComparator() {
+    return myComparator;
   }
 
   public void orderModules(Collection<? extends Group> modules) {
@@ -203,6 +210,7 @@ public class Ordering {
         units.add(unit);
       } while (!unit.equals(originalUnit));
       Collections.reverse(units);
+      new TypecheckingUnitComparator(myComparator).sort(units);
       scc = new SCC(units);
 
       if (myRefToHeaders) {

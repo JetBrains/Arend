@@ -26,6 +26,12 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
   }
 
   TCClassReferable NULL_REFERABLE = new TCClassReferable() {
+    @Nullable
+    @Override
+    public Object getData() {
+      return null;
+    }
+
     @Nonnull
     @Override
     public List<? extends TCClassReferable> getSuperClassReferences() {
