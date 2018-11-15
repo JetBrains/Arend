@@ -14,3 +14,4 @@ You can also explicitly specify type of each field: `(b_1 : B_1, ... b_n : B_n)`
 
 If `p` is an expression of type `\Sigma (x_1 : A_1) ... (x_n : A_n)` and 1 ≤ i ≤ n, then `p.i` is an expression of type `A_i[p.1/x_1, ... p_{i-1}/x_{i-1}]`.
 An expression of the form `(a_1, ... a_n).i` reduces to `a_i`.
+An expression of the form `(p.1, ... p.n)` is equivalent to `p`.

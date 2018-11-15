@@ -45,6 +45,7 @@ This rule does not hold for functions `@` defined in other files.
 
 Function `coe` imples that `I` is contractible and that `=` satisfies the rules for ordinary identity types.
 The definition of `coe` is not correct since it pattern matches on the interval.
+This function satisfies one additional reduction rule: `coe (\lam x => A) a i => a` if `x` is not free in `A`.
 
 # iso
 

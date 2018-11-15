@@ -15,3 +15,4 @@ If some paramters miss types, then they will be inferred by the typechecker.
 
 If `f` is an expression of type `\Pi (x : A) -> B` and `a` is an expression of type `A`, then `f a` is an expression of type `B[a/x]`.
 An expression of the form `(\lam x => b) a` reduces to `b[a/x]`.
+An expression of the form `\lam x => f x` is equivalent to `f` if `x` is not free in `f`.

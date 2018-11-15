@@ -16,7 +16,7 @@ Run Intellij IDEA and choose either **Create New Project** if you are on a _Welc
 Choose **Arend** in the list on the left, click **Next**, click **Finish**.
 You should get a new project which contains (among other files) a file `arend.yaml` and an empty directory `src`.
 The `yaml` file contains a description of the project.
-<!-- You can read more about this configuration file in ... TODO -->
+You can read more about this configuration file [here](libraries).
 Create a new file `example.ard` in `src` directory.
 Add the following line to this file:
 ```arend
@@ -63,7 +63,7 @@ $ cd testProject
 Create file `arend.yaml` inside this directory.
 This file contains the description of your project.
 Currently, we just need to specify the location of source files of your project.
-<!-- You can read more about this configuration file in ... TODO -->
+You can read more about this configuration file [here](libraries).
 Add the following line to `arend.yaml`:
 ```bash
 sourcesDir: src

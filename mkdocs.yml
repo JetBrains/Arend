@@ -25,6 +25,7 @@ pages:
         - Classes: language-reference/definitions/classes.md
         - Instances: language-reference/definitions/instances.md
         - Coercion: language-reference/definitions/coercion.md
+        - Levels: language-reference/definitions/levels.md
         - Expressions: language-reference/expressions.md
         - Goals: language-reference/expressions/goals.md
         - Universes: language-reference/expressions/universes.md
@@ -34,6 +35,7 @@ pages:
         - Case: language-reference/expressions/case.md
         - Class extensions: language-reference/expressions/class-ext.md
         - Prelude: language-reference/prelude.md
+    - Libraries: libraries.md
 
 theme: readthedocs
 
@@ -44,8 +46,7 @@ extra_javascript:
 extra_css:
     - css/custom-highlight.css
 
-docs_dir: docs_src/
-site_dir: docs/
+docs_dir: docs/
 
 markdown_extensions:
     - toc:
