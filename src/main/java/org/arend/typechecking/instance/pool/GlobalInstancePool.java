@@ -19,9 +19,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
@@ -62,10 +60,8 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     ClassField classifyingField = null;
-    Expression origClassifyingExpression = classifyingExpression;
     if (classifyingExpression != null) {
-      origClassifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
-      classifyingExpression = origClassifyingExpression;
+      classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
       while (classifyingExpression.isInstance(LamExpression.class)) {
         classifyingExpression = classifyingExpression.cast(LamExpression.class).getBody();
       }
@@ -123,13 +119,7 @@ public class GlobalInstancePool implements InstancePool {
             }
           }
 
-          Expression expectedType;
-          if (classifyingField == null) {
-            expectedType = null;
-          } else {
-            Map<ClassField, Expression> implemented = Collections.singletonMap(classifyingField, origClassifyingExpression);
-            expectedType = myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.STD, implemented, Sort.PROP), sourceNode);
-          }
+          Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.generateInferVars(myCheckTypeVisitor.getEquations(), sourceNode)), sourceNode);
           CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
           return result == null ? new ErrorExpression(null, null) : result.expression;
         }

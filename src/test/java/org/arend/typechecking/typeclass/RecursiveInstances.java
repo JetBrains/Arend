@@ -4,7 +4,6 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.instanceInference;
-import static org.arend.typechecking.Matchers.typeMismatchError;
 
 public class RecursiveInstances extends TypeCheckingTestCase {
   @Test
@@ -59,7 +58,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\instance B-inst : B (Data D)\n" +
       "\\instance A-inst {b : B (Data D')} : A | a => 0\n" +
       "\\func f => a", 1);
-    assertThatErrorsAre(typeMismatchError());
+    assertThatErrorsAre(instanceInference(getDefinition("B")));
   }
 
   @Test

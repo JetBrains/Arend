@@ -66,13 +66,13 @@ public class TwoStageEquations implements Equations {
     return null;
   }
 
-  private void addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
+  private boolean addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
     InferenceVariable inf1 = expr1.isInstance(InferenceReferenceExpression.class) ? expr1.cast(InferenceReferenceExpression.class).getVariable() : null;
     InferenceVariable inf2 = expr2.isInstance(InferenceReferenceExpression.class) ? expr2.cast(InferenceReferenceExpression.class).getVariable() : null;
 
     // expr1 == expr2 == ?x
     if (inf1 == inf2 && inf1 != null) {
-      return;
+      return true;
     }
 
     if (inf1 == null && inf2 == null) {
@@ -96,8 +96,8 @@ public class TwoStageEquations implements Equations {
       }
 
       if (result != null) {
-        solve(variable, result);
-        return;
+        SolveResult solveResult = solve(variable, result);
+        return solveResult != SolveResult.SOLVED || CompareVisitor.compare(this, cmp, expr1, expr2, sourceNode);
       }
     }
 
@@ -124,7 +124,7 @@ public class TwoStageEquations implements Equations {
       if (cType.isInstance(UniverseExpression.class) && cType.cast(UniverseExpression.class).getSort().isProp()) {
         if (cmp == CMP.LE) {
           myProps.push(cInf);
-          return;
+          return true;
         } else {
           cmp = CMP.EQ;
         }
@@ -133,7 +133,7 @@ public class TwoStageEquations implements Equations {
       // ?x == _
       if (cmp == CMP.EQ) {
         solve(cInf, cType);
-        return;
+        return true;
       }
 
       // ?x <> Pi
@@ -150,8 +150,7 @@ public class TwoStageEquations implements Equations {
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
-          addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
-          return;
+          return addEquation(pi.getCodomain(), newRef, cmp, sourceNode, infVar);
         }
       }
 
@@ -170,7 +169,7 @@ public class TwoStageEquations implements Equations {
             addLevelEquation(genSort.getHLevel().getVar(), sort.getHLevel().getVar(), sort.getHLevel().getConstant(), sort.getHLevel().getMaxAddedConstant(), sourceNode);
           }
         }
-        return;
+        return true;
       }
     }
 
@@ -182,6 +181,8 @@ public class TwoStageEquations implements Equations {
     } else {
       stuckVar.addListener(equation);
     }
+
+    return true;
   }
 
   @Override
@@ -293,8 +294,7 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
-    addEquation(expr1, expr2, cmp, sourceNode, stuckVar);
-    return true;
+    return addEquation(expr1, expr2, cmp, sourceNode, stuckVar);
   }
 
   @Override
@@ -613,23 +613,24 @@ public class TwoStageEquations implements Equations {
     }
   }
 
-  @SuppressWarnings("UnusedReturnValue")
-  private boolean solve(InferenceVariable var, Expression expr) {
+  private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
+
+  private SolveResult solve(InferenceVariable var, Expression expr) {
     expr = expr.normalize(NormalizeVisitor.Mode.WHNF);
     if (expr.isInstance(InferenceReferenceExpression.class) && expr.cast(InferenceReferenceExpression.class).getVariable() == var) {
-      return true;
+      return SolveResult.NOT_SOLVED;
     }
     if (myProps.contains(var) && !expr.isInstance(UniverseExpression.class)) {
       LocalError error = var.getErrorInfer(new UniverseExpression(Sort.PROP), expr);
       myVisitor.getErrorReporter().report(error);
-      return false;
+      return SolveResult.ERROR;
     }
 
     if (expr.findBinding(var)) {
       LocalError error = var.getErrorInfer(expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(null, error));
-      return false;
+      return SolveResult.ERROR;
     }
 
     Expression expectedType = var.getType();
@@ -638,18 +639,18 @@ public class TwoStageEquations implements Equations {
       Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds());
       if (result != null) {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
-        return true;
+        return SolveResult.SOLVED;
       } else {
         LocalError error = var.getErrorInfer(expr);
         myVisitor.getErrorReporter().report(error);
         var.solve(this, new ErrorExpression(null, error));
-        return false;
+        return SolveResult.ERROR;
       }
     } else {
       LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
       myVisitor.getErrorReporter().report(error);
       var.solve(this, new ErrorExpression(actualType, error));
-      return false;
+      return SolveResult.ERROR;
     }
   }
 }
