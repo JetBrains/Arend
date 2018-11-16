@@ -6,6 +6,7 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.HiddenTypedSingleDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -222,6 +223,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
+      ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
+      if (refExpr != null && refExpr.getBinding() instanceof HiddenTypedSingleDependentLink) {
+        return result;
+      }
+
       Concrete.Expression arg = expr.getArgument().accept(this, null);
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM) && arg instanceof Concrete.ReferenceExpression) {
         return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));

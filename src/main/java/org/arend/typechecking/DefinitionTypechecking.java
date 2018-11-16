@@ -179,7 +179,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
       for (Concrete.ClassField field : def.getFields()) {
-        addField(field.getData(), definition, new PiExpression(Sort.STD, new TypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null))).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        addField(field.getData(), definition, new PiExpression(Sort.STD, new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null))).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       }
     } else {
       try {
@@ -1314,7 +1314,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           continue;
         }
 
-        SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
+        SingleDependentLink parameter = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
         Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
         CheckTypeVisitor.Result result;
         if (lamImpl != null) {
@@ -1444,7 +1444,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Type typeResult = myVisitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
     PiExpression piType = checkFieldType(typeResult, parentClass);
     if (piType == null) {
-      TypedSingleDependentLink param = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
+      TypedSingleDependentLink param = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
       if (typeResult == null) {
         piType = new PiExpression(Sort.STD, param, new ErrorExpression(null, null));
       } else {
