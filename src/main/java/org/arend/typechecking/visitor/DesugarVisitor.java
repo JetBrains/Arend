@@ -2,6 +2,7 @@ package org.arend.typechecking.visitor;
 
 import org.arend.naming.error.WrongReferable;
 import org.arend.naming.reference.*;
+import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
@@ -29,18 +30,12 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
     Set<LocatedReferable> fields = new HashSet<>();
-    Set<GlobalReferable> visitedClasses = new HashSet<>();
-    Deque<ClassReferable> toVisit = new ArrayDeque<>();
-    toVisit.add(classRef);
-    while (!toVisit.isEmpty()) {
-      classRef = toVisit.pop().getUnderlyingTypecheckable();
-      if (classRef == null || !visitedClasses.add(classRef)) {
-        continue;
+    new ClassFieldImplScope(classRef, false).find(ref -> {
+      if (ref instanceof LocatedReferable) {
+        fields.add((LocatedReferable) ref);
       }
-
-      fields.addAll(classRef.getFieldReferables());
-      toVisit.addAll(classRef.getSuperClassReferences());
-    }
+      return false;
+    });
     return fields;
   }
 

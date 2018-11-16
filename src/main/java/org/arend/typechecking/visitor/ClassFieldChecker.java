@@ -76,9 +76,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable ref = expr.getReferent();
-    ref = ref instanceof TCReferable ? ((TCReferable) ref).getUnderlyingTypecheckable() : null;
-
-    if (ref != null) {
+    if (ref instanceof TCReferable) {
       if (myFields.contains(ref)) {
         if (myFutureFields != null && myFutureFields.contains(ref)) {
           return makeErrorExpression(expr.getData());
@@ -86,9 +84,10 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
           return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false);
         }
       } else {
-        Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((GlobalReferable) ref);
-        if (def != null) {
-          TCClassReferable defEnclosingClass = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getRelatedDefinition().getData() : def.getRelatedDefinition().enclosingClass;
+        ref = ((TCReferable) ref).getUnderlyingTypecheckable();
+        Concrete.ReferableDefinition def = ref == null ? null : myConcreteProvider.getConcrete((GlobalReferable) ref);
+        if (def != null && !(def instanceof Concrete.ClassField)) {
+          TCClassReferable defEnclosingClass = def.getRelatedDefinition().enclosingClass;
           if (myFutureFields != null && myClassReferable.equals(defEnclosingClass)) {
             return makeErrorExpression(expr.getData());
           }
