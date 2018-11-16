@@ -583,6 +583,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           boolean ok = true;
           Expression type = null;
           DependentLink link = typedDef.getParameters();
+          ExprSubstitution substitution = new ExprSubstitution();
           if (useParent instanceof DataDefinition) {
             List<Expression> dataCallArgs = new ArrayList<>();
             for (DependentLink dataLink = useParent.getParameters(); dataLink.hasNext(); dataLink = dataLink.getNext(), link = link.getNext()) {
@@ -590,11 +591,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
                 ok = false;
                 break;
               }
-              if (!Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr(), Equations.CMP.EQ)) {
+              if (!Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr().subst(substitution), Equations.CMP.EQ)) {
                 ok = false;
                 break;
               }
-              dataCallArgs.add(new ReferenceExpression(link));
+              ReferenceExpression refExpr = new ReferenceExpression(link);
+              dataCallArgs.add(refExpr);
+              substitution.add(dataLink, refExpr);
             }
 
             if (ok) {
