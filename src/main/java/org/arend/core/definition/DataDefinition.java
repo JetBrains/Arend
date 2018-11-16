@@ -22,7 +22,7 @@ public class DataDefinition extends Definition {
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
   private Set<Integer> myCovariantParameters;
-  private final CoerceData myCoerce = new CoerceData();
+  private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
 
   public DataDefinition(TCReferable referable) {

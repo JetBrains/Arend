@@ -17,6 +17,11 @@ import java.util.*;
 public class CoerceData {
   private Map<Definition, List<FunctionDefinition>> myMapFrom = new HashMap<>();
   private Map<Definition, List<Definition>> myMapTo = new HashMap<>();
+  private final Definition myDefinition;
+
+  public CoerceData(Definition definition) {
+    myDefinition = definition;
+  }
 
   public Set<Map.Entry<Definition, List<FunctionDefinition>>> getMapFrom() {
     return myMapFrom.entrySet();
@@ -165,7 +170,7 @@ public class CoerceData {
     CoerceData coerceData = classifyingDefinition != null ? classifyingDefinition.getCoerceData() : null;
     if (coerceData != null) {
       for (Map.Entry<Definition, List<FunctionDefinition>> entry : coerceData.myMapFrom.entrySet()) {
-        if (entry.getKey() != null && entry.getKey() != classifyingDefinition) {
+        if (entry.getKey() != null && entry.getKey() != classifyingDefinition && entry.getKey() != myDefinition) {
           myMapFrom.computeIfAbsent(entry.getKey(), k -> {
             List<FunctionDefinition> list = new ArrayList<>(entry.getValue().size() + 1);
             list.addAll(entry.getValue());
@@ -193,7 +198,7 @@ public class CoerceData {
     CoerceData coerceData = classifyingDefinition != null ? classifyingDefinition.getCoerceData() : null;
     if (coerceData != null) {
       for (Map.Entry<Definition, List<Definition>> entry : coerceData.myMapTo.entrySet()) {
-        if (entry.getKey() != null && entry.getKey() != classifyingDefinition) {
+        if (entry.getKey() != null && entry.getKey() != classifyingDefinition && entry.getKey() != myDefinition) {
           myMapTo.computeIfAbsent(entry.getKey(), k -> {
             List<Definition> list = new ArrayList<>(entry.getValue().size() + 1);
             list.add(coercingDefinition);

@@ -20,7 +20,7 @@ public class ClassDefinition extends Definition {
   private ClassField myCoercingField;
   private Sort mySort;
   private boolean myRecord = false;
-  private final CoerceData myCoerce = new CoerceData();
+  private final CoerceData myCoerce = new CoerceData(this);
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
