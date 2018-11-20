@@ -153,14 +153,18 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
+  protected void visitLetClause(Concrete.LetClause clause, P params) {
+    visitParameters(clause.getParameters(), params);
+    if (clause.resultType != null) {
+      clause.resultType = clause.resultType.accept(this, params);
+    }
+    clause.term = clause.term.accept(this, params);
+  }
+
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, P params) {
     for (Concrete.LetClause clause : expr.getClauses()) {
-      visitParameters(clause.getParameters(), params);
-      if (clause.resultType != null) {
-        clause.resultType = clause.resultType.accept(this, params);
-      }
-      clause.term = clause.term.accept(this, params);
+      visitLetClause(clause, params);
     }
     expr.expression = expr.expression.accept(this, params);
     return expr;

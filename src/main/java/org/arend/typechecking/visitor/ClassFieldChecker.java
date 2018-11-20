@@ -99,4 +99,23 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
     }
     return expr;
   }
+
+  @Override
+  public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Void params) {
+    if (expr.expression instanceof Concrete.HoleExpression && expr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.type).getReferent() instanceof ClassReferable && myClassReferable.isSubClassOf((ClassReferable) ((Concrete.ReferenceExpression) expr.type).getReferent())) {
+      return new Concrete.ReferenceExpression(expr.getData(), myThisParameter);
+    } else {
+      return super.visitTyped(expr, params);
+    }
+  }
+
+  @Override
+  protected void visitLetClause(Concrete.LetClause clause, Void params) {
+    if (clause.getParameters().isEmpty() && clause.term instanceof Concrete.HoleExpression && clause.resultType instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) clause.resultType).getReferent() instanceof ClassReferable && myClassReferable.isSubClassOf((ClassReferable) ((Concrete.ReferenceExpression) clause.resultType).getReferent())) {
+      clause.term = new Concrete.ReferenceExpression(clause.term.getData(), myThisParameter);
+      clause.resultType = null;
+    } else {
+      super.visitLetClause(clause, params);
+    }
+  }
 }
