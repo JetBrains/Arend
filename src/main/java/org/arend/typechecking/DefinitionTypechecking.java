@@ -1042,7 +1042,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
         if (constructor != null) {
           constructor.setParameters(list.getFirst());
-          calculateParametersTypecheckingOrder(constructor);
         }
 
         if (!def.getClauses().isEmpty()) {
@@ -1109,6 +1108,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     if (constructor != null) {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      calculateParametersTypecheckingOrder(constructor);
     }
     return sort;
   }

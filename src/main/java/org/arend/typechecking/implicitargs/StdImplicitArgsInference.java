@@ -261,6 +261,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
     if (result instanceof CheckTypeVisitor.DefCallResult && ((CheckTypeVisitor.DefCallResult) result).getDefinition().getParametersTypecheckingOrder() != null) {
       List<Integer> order = ((CheckTypeVisitor.DefCallResult) result).getDefinition().getParametersTypecheckingOrder();
+      List<? extends Expression> resultArgs = ((CheckTypeVisitor.DefCallResult) result).getArguments();
+      if (!resultArgs.isEmpty()) {
+        order = order.subList(resultArgs.size(), order.size());
+      }
+
       int current = 0; // Position in expr.getArguments()
       int numberOfImplicitArguments = 0; // Number of arguments not present in expr.getArguments()
       Map<Integer,Pair<InferenceVariable,Concrete.Expression>> deferredArguments = new LinkedHashMap<>();
