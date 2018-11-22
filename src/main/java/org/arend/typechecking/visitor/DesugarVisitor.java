@@ -51,6 +51,11 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Void params) {
+    if (def.enclosingClass != null && def.getUseMod().isUse()) {
+      myErrorReporter.report(new TypecheckingError("\\use is not allowed inside a class definition", def));
+      def.enclosingClass = null;
+    }
+
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {

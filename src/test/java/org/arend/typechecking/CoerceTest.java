@@ -11,6 +11,11 @@ public class CoerceTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void coerceDynamic() {
+    typeCheckModule("\\class C (n : Nat) { \\use \\coerce f (c : C) => c.n }", 1);
+  }
+
+  @Test
   public void coerceFunction() {
     typeCheckModule(
       "\\func g => 0\n" +
