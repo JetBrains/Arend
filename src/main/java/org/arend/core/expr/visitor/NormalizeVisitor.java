@@ -348,7 +348,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       fieldSet.put(entry.getKey(), entry.getValue().accept(this, mode));
     }
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort());
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort(), expr.hasUniverses());
   }
 
   @Override

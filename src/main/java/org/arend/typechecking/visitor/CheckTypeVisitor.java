@@ -1343,7 +1343,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     // Typecheck statements
 
     Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
-    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP);
+    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
 
     if (!classFieldMap.isEmpty() || !classFieldMap2.isEmpty()) {
       Set<ClassField> notImplementedFields = new HashSet<>();
@@ -1393,6 +1393,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     resultClassCall = fixClassExtSort(resultClassCall, expr);
+    resultClassCall.updateHasUniverses();
     return checkResult(expectedType, new Result(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
@@ -1405,7 +1406,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
       sorts.add(getSortOf(fieldType.applyExpression(thisExpr).normalize(NormalizeVisitor.Mode.WHNF).getType(), sourceNode));
     }
-    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()));
+    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
   }
 
   private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
@@ -1449,7 +1450,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           return checkAllImplemented(expectedClassCall, expr) ? new Result(new NewExpression(expectedClassCall), expectedClassCall) : null;
         }
 
-        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, actualClassDef == null ? expectedClassCall : new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), expectedClassCall.getImplementedHere(), expectedClassCall.getSort()));
+        if (actualClassDef != null) {
+          expectedClassCall = new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), expectedClassCall.getImplementedHere(), expectedClassCall.getSort(), actualClassDef.hasUniverses());
+          expectedClassCall.updateHasUniverses();
+        }
+        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, expectedClassCall);
         if (exprResult == null) {
           return null;
         }

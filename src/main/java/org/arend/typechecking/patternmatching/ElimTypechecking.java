@@ -517,7 +517,7 @@ public class ElimTypechecking {
                     implementations.put(field, new ReferenceExpression(link));
                     link = link.getNext();
                   }
-                  substExpr = new NewExpression(new ClassCallExpression(classDef, someConPattern.getSortArgument(), implementations, Sort.PROP));
+                  substExpr = new NewExpression(new ClassCallExpression(classDef, someConPattern.getSortArgument(), implementations, Sort.PROP, false));
                 } else {
                   substExpr = new TupleExpression(arguments, (SigmaExpression) someConPattern.getDataExpression());
                   conParameters = DependentLink.Helper.subst(conParameters, new ExprSubstitution());

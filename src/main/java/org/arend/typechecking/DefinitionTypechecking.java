@@ -453,8 +453,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private boolean checkForContravariantUniverses(Expression expr) {
     while (expr instanceof PiExpression) {
-      if (checkForUniverses(((PiExpression) expr).getParameters())) {
-        return true;
+      for (DependentLink link = ((PiExpression) expr).getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (CheckForUniversesVisitor.findUniverse(link.getTypeExpr())) {
+          return true;
+        }
       }
       expr = ((PiExpression) expr).getCodomain();
     }
@@ -1360,8 +1363,15 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (newDef) {
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
       typedDef.updateSorts();
+
+      for (ClassField field : typedDef.getFields()) {
+        if (!typedDef.isImplemented(field) && CheckForUniversesVisitor.findUniverse(field.getType(Sort.STD).getCodomain())) {
+          typedDef.setHasUniverses();
+          break;
+        }
+      }
     }
-  }
+}
 
   private void addName(Map<String, Referable> names, TCReferable data) {
     Referable prev = names.putIfAbsent(data.textRepresentation(), data);

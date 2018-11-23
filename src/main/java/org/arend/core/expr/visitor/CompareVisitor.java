@@ -434,7 +434,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       } else {
         Map<ClassField, Expression> implementations = new HashMap<>();
         codSort = classCall1.getSort();
-        lam = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort);
+        ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort, classCall1.hasUniverses());
         int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
@@ -453,6 +453,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
             }
           }
         }
+        classCall.updateHasUniverses();
+        lam = classCall;
       }
 
       for (int i = params.size() - 1; i >= 0; i--) {
@@ -529,7 +531,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
     ClassCallExpression classCall2 = expr2.checkedCast(ClassCallExpression.class);
-    if (classCall2 == null || expr1.getDefinition().hasUniverses() && !Sort.compare(expr1.getSort(), classCall2.getSort(), myCMP, myEquations, mySourceNode)) {
+    if (classCall2 == null || (expr1.hasUniverses() || classCall2.hasUniverses()) && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myEquations, mySourceNode)) {
       return false;
     }
 

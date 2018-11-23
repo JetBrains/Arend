@@ -40,6 +40,7 @@ message Expression {
         Level hLevel = 4;
         map<int32, Expression> field_set = 5;
         Sort sort = 6;
+        bool hasUniverses = 7;
     }
     message ConCall {
         int32 constructor_ref = 1;

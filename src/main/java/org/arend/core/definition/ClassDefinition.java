@@ -53,7 +53,7 @@ public class ClassDefinition extends Definition {
   }
 
   public void updateSorts() {
-    ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort);
+    ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
     mySort = Sort.PROP;
 
     for (ClassField field : myFields) {
@@ -152,7 +152,7 @@ public class ClassDefinition extends Definition {
 
   public DependentLink getClassFieldParameters(Sort sortArgument) {
     Map<ClassField, Expression> implementations = new HashMap<>();
-    Expression newExpr = new NewExpression(new ClassCallExpression(this, sortArgument, implementations, Sort.PROP));
+    Expression newExpr = new NewExpression(new ClassCallExpression(this, sortArgument, implementations, Sort.PROP, false));
     if (myFields.isEmpty()) {
       return EmptyDependentLink.getInstance();
     }
@@ -182,7 +182,7 @@ public class ClassDefinition extends Definition {
 
   @Override
   public ClassCallExpression getDefCall(Sort sortArgument, List<Expression> args) {
-    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()));
+    return new ClassCallExpression(this, sortArgument, Collections.emptyMap(), mySort.subst(sortArgument.toLevelSubstitution()), hasUniverses());
   }
 
   public void clear() {

@@ -268,7 +268,7 @@ class ExpressionDeserialization {
 
     ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
     myDependencyListener.dependsOn(myDefinition, myHeader, classDefinition.getReferable());
-    return new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()));
+    return new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {

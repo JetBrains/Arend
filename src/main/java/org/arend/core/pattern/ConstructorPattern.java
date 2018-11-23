@@ -84,7 +84,7 @@ public class ConstructorPattern implements Pattern {
     for (ClassField field : classCall.getDefinition().getFields()) {
       implementations.put(field, arguments.get(i++));
     }
-    return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP));
+    return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
   }
 
   @Override

@@ -12,6 +12,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,19 +21,40 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
   private final Map<ClassField, Expression> myImplementations;
   private final Sort mySort;
+  private boolean myHasUniverses;
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
     mySortArgument = sortArgument;
     myImplementations = new HashMap<>();
     mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
+    myHasUniverses = definition.hasUniverses();
   }
 
-  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, boolean hasUniverses) {
     super(definition);
     mySortArgument = sortArgument;
     myImplementations = implementations;
     mySort = sort;
+    myHasUniverses = hasUniverses;
+  }
+
+  public void updateHasUniverses() {
+    if (!getDefinition().hasUniverses()) {
+      myHasUniverses = false;
+      return;
+    }
+    if (myImplementations.isEmpty()) {
+      myHasUniverses = true;
+      return;
+    }
+
+    for (ClassField field : getDefinition().getFields()) {
+      if (!getDefinition().isImplemented(field) && CheckForUniversesVisitor.findUniverse(field.getType(Sort.STD).getCodomain())) {
+        myHasUniverses = true;
+        return;
+      }
+    }
   }
 
   public Map<ClassField, Expression> getImplementedHere() {
@@ -101,6 +123,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public Sort getSort() {
     return mySort;
+  }
+
+  public boolean hasUniverses() {
+    return myHasUniverses;
   }
 
   @Override

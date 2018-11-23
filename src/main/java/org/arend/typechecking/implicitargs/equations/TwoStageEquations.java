@@ -416,8 +416,6 @@ public class TwoStageEquations implements Equations {
 
   @Override
   public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
-    solveClassCalls();
-
     while (!myProps.isEmpty()) {
       InferenceVariable var = myProps.pop();
       if (!var.isSolved()) {
@@ -482,6 +480,12 @@ public class TwoStageEquations implements Equations {
         result.add(entry.getKey(), sol == null || entry.getValue() == null ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol <= -entry.getValue() ? 0 : -sol - (-entry.getValue())));
       }
     }
+
+    for (int i = 0; i < myEquations.size(); i++) {
+      Equation equation = myEquations.get(i);
+      myEquations.set(i, new Equation(equation.type.subst(result), equation.expr.subst(result), equation.cmp, equation.sourceNode));
+    }
+    solveClassCalls();
 
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
       int constant = entry.getValue().getConstant();

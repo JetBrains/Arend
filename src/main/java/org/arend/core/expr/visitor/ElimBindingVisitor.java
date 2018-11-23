@@ -106,7 +106,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
       newFieldSet.put(entry.getKey(), newImpl);
     }
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort());
+    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.hasUniverses());
   }
 
   @Override

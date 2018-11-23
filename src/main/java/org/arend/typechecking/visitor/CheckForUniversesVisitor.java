@@ -2,8 +2,10 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
+import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.UniverseExpression;
+import org.arend.core.sort.Sort;
 import org.arend.util.Pair;
 
 import java.util.Map;
@@ -33,8 +35,17 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
     return false;
   }
 
+  private boolean visitSort(Sort sort) {
+    return !sort.getPLevel().isClosed() || !sort.getHLevel().isClosed();
+  }
+
+  @Override
+  public Boolean visitDefCall(DefCallExpression expression, Void param) {
+    return expression.getDefinition().hasUniverses() && visitSort(expression.getSortArgument());
+  }
+
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
-    return true;
+    return visitSort(expression.getSort());
   }
 }
