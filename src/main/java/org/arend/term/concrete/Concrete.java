@@ -107,6 +107,14 @@ public final class Concrete {
     public List<? extends Referable> getReferableList() {
       return myReferableList;
     }
+
+    public List<String> getNames() {
+      List<String> names = new ArrayList<>(myReferableList.size());
+      for (Referable referable : myReferableList) {
+        names.add(referable == null ? null : referable.textRepresentation());
+      }
+      return names;
+    }
   }
 
   // Expressions

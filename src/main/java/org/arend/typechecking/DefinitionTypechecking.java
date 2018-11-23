@@ -238,10 +238,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         boolean oldParametersOK = true;
         if (parameter instanceof Concrete.TelescopeParameter) {
           List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
-          List<String> names = new ArrayList<>(referableList.size());
-          for (Referable referable : referableList) {
-            names.add(referable == null ? null : referable.textRepresentation());
-          }
+          List<String> names = ((Concrete.TelescopeParameter) parameter).getNames();
           param = oldParameters != null ? oldParameters : parameter(parameter.getExplicit(), names, paramResult);
           numberOfParameters = names.size();
           index += numberOfParameters;

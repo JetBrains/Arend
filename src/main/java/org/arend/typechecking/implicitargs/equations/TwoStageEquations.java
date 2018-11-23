@@ -285,7 +285,6 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(LevelVariable var, Concrete.SourceNode sourceNode) {
     if (var instanceof InferenceLevelVariable) {
-      //noinspection unchecked
       addEquation(new LevelEquation<>((InferenceLevelVariable) var), false);
     } else {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var)), sourceNode));
@@ -627,10 +626,7 @@ public class TwoStageEquations implements Equations {
     }
 
     if (expr.findBinding(var)) {
-      LocalError error = var.getErrorInfer(expr);
-      myVisitor.getErrorReporter().report(error);
-      var.solve(this, new ErrorExpression(null, error));
-      return SolveResult.ERROR;
+      return inferenceError(var, expr);
     }
 
     Expression expectedType = var.getType();
@@ -641,10 +637,7 @@ public class TwoStageEquations implements Equations {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return SolveResult.SOLVED;
       } else {
-        LocalError error = var.getErrorInfer(expr);
-        myVisitor.getErrorReporter().report(error);
-        var.solve(this, new ErrorExpression(null, error));
-        return SolveResult.ERROR;
+        return inferenceError(var, expr);
       }
     } else {
       LocalError error = var.getErrorMismatch(expectedType, actualType, expr);
@@ -652,5 +645,12 @@ public class TwoStageEquations implements Equations {
       var.solve(this, new ErrorExpression(actualType, error));
       return SolveResult.ERROR;
     }
+  }
+
+  private SolveResult inferenceError(InferenceVariable var, Expression expr) {
+    LocalError error = var.getErrorInfer(expr);
+    myVisitor.getErrorReporter().report(error);
+    var.solve(this, new ErrorExpression(null, error));
+    return SolveResult.ERROR;
   }
 }

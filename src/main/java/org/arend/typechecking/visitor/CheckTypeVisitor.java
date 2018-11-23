@@ -394,7 +394,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return false;
   }
 
-  public Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
+  private Result tResultToResult(ExpectedType expectedType, TResult result, Concrete.Expression expr) {
     if (result != null) {
       result = myArgsInference.inferTail(result, expectedType, expr);
     }
@@ -530,7 +530,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return tResultToResult(expectedType, result, expr);
   }
 
-  public CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
+  private CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
     if (expr.getReferent() instanceof UnresolvedReference || expr.getReferent() instanceof RedirectingReferable) {
       throw new IllegalStateException();
     }
@@ -680,17 +680,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return link;
   }
 
-  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param) {
-    Concrete.Expression paramType = param.getType();
-    Type argResult = checkType(paramType, ExpectedType.OMEGA);
+  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param, List<Sort> sorts) {
+    Type argResult = checkType(param.getType(), ExpectedType.OMEGA);
     if (argResult == null) return null;
+    if (sorts != null) {
+      sorts.add(argResult.getSortOfType());
+    }
 
     if (param instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = ((Concrete.TelescopeParameter) param).getReferableList();
-      List<String> names = new ArrayList<>(referableList.size());
-      for (Referable referable : referableList) {
-        names.add(referable == null ? null : referable.textRepresentation());
-      }
+      List<String> names = ((Concrete.TelescopeParameter) param).getNames();
       SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -702,8 +701,16 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
       return link;
     } else {
-      return ExpressionFactory.singleParams(param.getExplicit(), Collections.singletonList(null), argResult);
+      return new TypedSingleDependentLink(param.getExplicit(), null, argResult);
     }
+  }
+
+  private Result bodyToLam(SingleDependentLink params, Result bodyResult, Concrete.SourceNode sourceNode) {
+    if (bodyResult == null) {
+      return null;
+    }
+    Sort sort = PiExpression.generateUpperBound(params.getType().getSortOfType(), getSortOf(bodyResult.type.getType(), sourceNode), myEquations, sourceNode);
+    return new Result(new LamExpression(sort, params, bodyResult.expression), new PiExpression(sort, params, bodyResult.type));
   }
 
   private Result visitLam(List<? extends Concrete.Parameter> parameters, Concrete.LamExpression expr, Expression expectedType, int argIndex) {
@@ -720,10 +727,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         for (SingleDependentLink link = piParams; link.hasNext(); link = link.getNext()) {
           myFreeBindings.add(link);
         }
-        Result bodyResult = visitLam(parameters, expr, piExpectedType.getCodomain(), argIndex + DependentLink.Helper.size(piParams));
-        if (bodyResult == null) return null;
-        Sort sort = PiExpression.generateUpperBound(piParams.getType().getSortOfType(), getSortOf(bodyResult.type.getType(), expr), myEquations, expr);
-        return new Result(new LamExpression(sort, piParams, bodyResult.expression), new PiExpression(sort, piParams, bodyResult.type));
+        return bodyToLam(piParams, visitLam(parameters, expr, piExpectedType.getCodomain(), argIndex + DependentLink.Helper.size(piParams)), expr);
       }
     }
 
@@ -763,13 +767,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           myFreeBindings.add(link);
         }
         Expression codomain = piExpectedType.getCodomain().subst(piParams, new ReferenceExpression(link));
-        Result bodyResult = visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1);
-        if (bodyResult == null) return null;
-        Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType(), expr), myEquations, expr);
-        return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+        return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1), expr);
       }
     } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param);
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
       if (link == null) {
         return null;
       }
@@ -876,30 +877,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : expr.getParameters()) {
-          Type result = checkType(arg.getType(), ExpectedType.OMEGA);
-          if (result == null) return null;
-
-          if (arg instanceof Concrete.TelescopeParameter) {
-            List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
-            List<String> names = new ArrayList<>(referableList.size());
-            for (Referable referable : referableList) {
-              names.add(referable == null ? null : referable.textRepresentation());
-            }
-            SingleDependentLink link = ExpressionFactory.singleParams(arg.getExplicit(), names, result);
-            list.add(link);
-            int i = 0;
-            for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
-              if (referableList.get(i) != null) {
-                myContext.put(referableList.get(i), link1);
-              } else {
-                myFreeBindings.add(link1);
-              }
-            }
-          } else {
-            list.add(new TypedSingleDependentLink(arg.getExplicit(), null, result));
+          SingleDependentLink link = visitTypeParameter(arg, sorts);
+          if (link == null) {
+            return null;
           }
-
-          sorts.add(result.getSortOfType());
+          list.add(link);
         }
 
         Type result = checkType(expr.getCodomain(), ExpectedType.OMEGA);
@@ -1075,10 +1057,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
           if (arg instanceof Concrete.TelescopeParameter) {
             List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
-            List<String> names = new ArrayList<>(referableList.size());
-            for (Referable referable : referableList) {
-              names.add(referable == null ? null : referable.textRepresentation());
-            }
+            List<String> names = ((Concrete.TelescopeParameter) arg).getNames();
             DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
             list.append(link);
             int i = 0;
@@ -1211,7 +1190,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  public Sort generateUpperBound(List<Sort> sorts, Concrete.SourceNode sourceNode) {
+  private Sort generateUpperBound(List<Sort> sorts, Concrete.SourceNode sourceNode) {
     Sort resultSort = generateUniqueUpperBound(sorts);
     if (resultSort != null) {
       return resultSort;
@@ -1429,7 +1408,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()));
   }
 
-  public Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
+  private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
     CheckTypeVisitor.Result result = checkExpr(implBody, field.getType(fieldSetClass.getSortArgument()).applyExpression(new NewExpression(fieldSetClass)));
     return result != null ? result.expression : new ErrorExpression(null, null);
   }
@@ -1539,22 +1518,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Concrete.Parameter param = parameters.get(0);
     if (param instanceof Concrete.NameParameter) {
-      TypedSingleDependentLink link = visitNameParameter((Concrete.NameParameter) param, argIndex, letClause);
-      Result bodyResult = typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1);
-      if (bodyResult == null) return null;
-      Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType(), letClause), myEquations, letClause);
-      return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+      return bodyToLam(visitNameParameter((Concrete.NameParameter) param, argIndex, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
       int namesCount = param instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) param).getReferableList().size() : 1;
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param);
-      if (link == null) {
-        return null;
-      }
-
-      Result bodyResult = typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + namesCount);
-      if (bodyResult == null) return null;
-      Sort sort = PiExpression.generateUpperBound(link.getType().getSortOfType(), getSortOf(bodyResult.type.getType(), letClause), myEquations, letClause);
-      return new Result(new LamExpression(sort, link, bodyResult.expression), new PiExpression(sort, link, bodyResult.type));
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
+      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + namesCount), letClause);
     } else {
       throw new IllegalStateException();
     }

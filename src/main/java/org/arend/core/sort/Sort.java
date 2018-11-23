@@ -89,18 +89,22 @@ public class Sort {
     return new StdLevelSubstitution(myPLevel, myHLevel);
   }
 
+  private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
+    return sort.getHLevel().getConstant() == -1 && sort.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
+  }
+
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
     if (sort1.isProp()) {
       if (cmp == Equations.CMP.LE || sort2.isProp()) {
         return true;
       }
-      return sort2.getHLevel().getConstant() == -1 && sort2.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort2.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
+      return compareProp(sort2, equations, sourceNode);
     }
     if (sort2.isProp()) {
       if (cmp == Equations.CMP.GE) {
         return true;
       }
-      return sort1.getHLevel().getConstant() == -1 && sort1.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort1.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
+      return compareProp(sort1, equations, sourceNode);
     }
     return Level.compare(sort1.getPLevel(), sort2.getPLevel(), cmp, equations, sourceNode) && Level.compare(sort1.getHLevel(), sort2.getHLevel(), cmp, equations, sourceNode);
   }
