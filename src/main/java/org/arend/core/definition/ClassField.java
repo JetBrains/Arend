@@ -13,6 +13,7 @@ import java.util.List;
 
 public class ClassField extends Definition {
   private final ClassDefinition myParentClass;
+  private boolean myProperty;
   private PiExpression myType;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
@@ -41,6 +42,14 @@ public class ClassField extends Definition {
 
   public PiExpression getType(Sort sortArgument) {
     return sortArgument == Sort.STD ? myType : new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
+  }
+
+  public boolean isProperty() {
+    return myProperty;
+  }
+
+  public void setIsProperty() {
+    myProperty = true;
   }
 
   @Override

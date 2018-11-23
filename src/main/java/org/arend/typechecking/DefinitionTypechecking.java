@@ -24,6 +24,7 @@ import org.arend.error.IncorrectExpressionException;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
+import org.arend.term.ClassFieldKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
@@ -1014,10 +1015,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           myVisitor.getTypecheckingState().rewrite(def.getData(), constructor);
           dataDefinition.addConstructor(constructor);
         }
-        Referable prevConstructor = definedConstructors.putIfAbsent(def.getData().textRepresentation(), def.getData());
-        if (prevConstructor != null) {
-          myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, def.getData(), prevConstructor));
-        }
+        addName(definedConstructors, def.getData());
 
         sort = typeCheckParameters(def.getParameters(), list, null, userSort, newDef ? null : oldConstructor.getParameters());
 
@@ -1246,10 +1244,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         previousType = field.getResultType();
       }
 
-      Referable prev = fieldNames.putIfAbsent(field.getData().textRepresentation(), field.getData());
-      if (prev != null) {
-        myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, field.getData(), prev));
-      }
+      addName(fieldNames, field.getData());
     }
 
     // Process coercing field
@@ -1371,6 +1366,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
+  private void addName(Map<String, Referable> names, TCReferable data) {
+    Referable prev = names.putIfAbsent(data.textRepresentation(), data);
+    if (prev != null) {
+      myVisitor.getErrorReporter().report(new DuplicateNameError(Error.Level.ERROR, data, prev));
+    }
+  }
+
   private static class DFS {
     private final ClassDefinition classDef;
     private final Map<ClassField, Boolean> state = new HashMap<>();
@@ -1441,7 +1443,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, boolean newDef) {
-    Type typeResult = myVisitor.finalCheckType(def.getResultType(), ExpectedType.OMEGA);
+    Type typeResult = myVisitor.finalCheckType(def.getResultType(), def.getKind() == ClassFieldKind.PROPERTY ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
     PiExpression piType = checkFieldType(typeResult, parentClass);
     if (piType == null) {
       TypedSingleDependentLink param = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
@@ -1458,7 +1460,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       return null;
     }
 
+    boolean isProperty;
+    if (def.getKind() == ClassFieldKind.ANY) {
+      Expression universe = piType.getCodomain().getType();
+      isProperty = universe instanceof UniverseExpression && ((UniverseExpression) universe).getSort().isProp();
+    } else {
+      isProperty = def.getKind() == ClassFieldKind.PROPERTY;
+    }
+
     ClassField typedDef = addField(def.getData(), parentClass, piType);
+    if (isProperty) {
+      typedDef.setIsProperty();
+    }
     if (typeResult == null) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
@@ -1475,7 +1488,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
     LamExpression oldImpl = classDef.implementField(classField, implementation);
-    if (oldImpl != null && !oldImpl.substArgument(new ReferenceExpression(implementation.getParameters())).equals(implementation.getBody())) {
+    if (oldImpl != null && !classField.isProperty() && !oldImpl.substArgument(new ReferenceExpression(implementation.getParameters())).equals(implementation.getBody())) {
       alreadyImplemented.add(classField.getReferable());
       return false;
     } else {

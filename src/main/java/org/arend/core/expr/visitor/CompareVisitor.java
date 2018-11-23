@@ -508,6 +508,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
     Equations.CMP origCMP = myCMP;
     for (Map.Entry<ClassField, Expression> entry : classCall2.getImplementedHere().entrySet()) {
+      if (entry.getKey().isProperty()) {
+        continue;
+      }
+
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
       if (impl1 == null) {
         myCMP = origCMP;

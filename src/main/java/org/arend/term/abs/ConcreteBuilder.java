@@ -7,6 +7,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
@@ -240,7 +241,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               if (coercingField == null && parameter.getExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ((Concrete.TelescopeParameter) parameter).type));
+              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.FIELD, ((Concrete.TelescopeParameter) parameter).type));
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -302,7 +303,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
             }
 
-            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, type));
+            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), type));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(e.error);
           }

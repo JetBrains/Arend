@@ -3,6 +3,7 @@ package org.arend.term.abs;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.NamespaceCommand;
 
@@ -204,6 +205,7 @@ public final class Abstract {
   }
 
   public interface ClassField extends ReferableDefinition, ParametersHolder {
+    ClassFieldKind getClassFieldKind();
     /* @Nonnull */ @Nullable Expression getResultType();
   }
 

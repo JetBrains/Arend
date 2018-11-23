@@ -6,6 +6,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.*;
+import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.Precedence;
@@ -614,6 +615,21 @@ public class BuildVisitor extends ArendBaseVisitor {
     return result;
   }
 
+  @Override
+  public ClassFieldKind visitFieldPipe(FieldPipeContext ctx) {
+    return ClassFieldKind.ANY;
+  }
+
+  @Override
+  public ClassFieldKind visitFieldField(FieldFieldContext ctx) {
+    return ClassFieldKind.FIELD;
+  }
+
+  @Override
+  public ClassFieldKind visitFieldProperty(FieldPropertyContext ctx) {
+    return ClassFieldKind.PROPERTY;
+  }
+
   private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, Concrete.ClassDefinition parentClass) {
     if (ctx instanceof ClassFieldContext) {
       ClassFieldContext fieldCtx = (ClassFieldContext) ctx;
@@ -625,7 +641,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       }
 
       ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, type);
+      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), type);
       reference.setDefinition(field);
       fields.add(field);
     } else if (ctx instanceof ClassImplContext) {
@@ -1241,7 +1257,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, type);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.FIELD, type);
         fieldRef.setDefinition(field);
         fields.add(field);
 

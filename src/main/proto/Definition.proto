@@ -60,6 +60,7 @@ message Definition {
             bool hasTypeClassReference = 4;
             bool isExplicit = 5;
             bool isParameter = 6;
+            bool isProperty = 7;
         }
     }
     message DataData {

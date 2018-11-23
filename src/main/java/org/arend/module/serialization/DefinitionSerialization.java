@@ -84,6 +84,7 @@ public class DefinitionSerialization {
       fBuilder.setType(defSerializer.writeExpr(field.getType(Sort.STD)));
       fBuilder.setIsExplicit(field.getReferable().isExplicitField());
       fBuilder.setIsParameter(field.getReferable().isParameterField());
+      fBuilder.setIsProperty(field.isProperty());
       builder.addPersonalField(fBuilder.build());
     }
 

@@ -3,6 +3,7 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.naming.reference.*;
+import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.Precedence;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -1077,12 +1078,14 @@ public final class Concrete {
   public static class ClassField extends ReferableDefinition {
     private final ClassDefinition myParentClass;
     private final boolean myExplicit;
+    private final ClassFieldKind myKind;
     private Expression myResultType;
 
-    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, Expression resultType) {
+    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, Expression resultType) {
       super(referable);
       myParentClass = parentClass;
       myExplicit = isExplicit;
+      myKind = kind;
       myResultType = resultType;
     }
 
@@ -1096,12 +1099,16 @@ public final class Concrete {
        return myExplicit;
     }
 
+    public ClassFieldKind getKind() {
+      return myKind;
+    }
+
     @Nonnull
     public Expression getResultType() {
       return myResultType;
     }
 
-    public void setResultType(Concrete.Expression resultType) {
+    public void setResultType(Expression resultType) {
       myResultType = resultType;
     }
 

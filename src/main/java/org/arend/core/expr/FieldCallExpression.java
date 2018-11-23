@@ -19,6 +19,10 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   public static Expression make(ClassField definition, Sort sortArgument, Expression thisExpr) {
+    if (definition.isProperty()) {
+      return new FieldCallExpression(definition, sortArgument, thisExpr);
+    }
+
     if (thisExpr.isInstance(NewExpression.class)) {
       Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
       assert impl != null;
