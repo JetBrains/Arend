@@ -52,12 +52,12 @@ public class ClassDefinition extends Definition {
     myCoercingField = coercingField;
   }
 
-  public void updateSorts() {
+  public Sort computeSort(Map<ClassField,Expression> implemented) {
     ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
-    mySort = Sort.PROP;
+    Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
-      if (myImplemented.containsKey(field)) {
+      if (myImplemented.containsKey(field) || implemented.containsKey(field)) {
         continue;
       }
 
@@ -70,11 +70,17 @@ public class ClassDefinition extends Definition {
         .applyExpression(new ReferenceExpression(ExpressionFactory.parameter("this", thisClass)))
         .normalize(NormalizeVisitor.Mode.WHNF)
         .getType();
-      Sort sort = type == null ? null : type.toSort();
-      if (sort != null) {
-        mySort = mySort.max(sort);
+      Sort sort1 = type == null ? null : type.toSort();
+      if (sort1 != null) {
+        sort = sort.max(sort1);
       }
     }
+
+    return sort;
+  }
+
+  public void updateSort() {
+    mySort = computeSort(Collections.emptyMap());
   }
 
   public Sort getSort() {

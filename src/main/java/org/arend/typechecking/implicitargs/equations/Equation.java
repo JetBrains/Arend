@@ -18,6 +18,14 @@ public class Equation implements InferenceVariableListener {
     this.sourceNode = sourceNode;
   }
 
+  public Expression getLowerBound() {
+    return cmp == Equations.CMP.GE ? expr : type;
+  }
+
+  public Expression getUpperBound() {
+    return cmp == Equations.CMP.LE ? expr : type;
+  }
+
   @Override
   public void solved(Equations equations, InferenceReferenceExpression referenceExpression) {
     if (type.isInstance(InferenceReferenceExpression.class)) {

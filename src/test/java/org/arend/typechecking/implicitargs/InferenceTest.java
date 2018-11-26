@@ -94,4 +94,11 @@ public class InferenceTest extends TypeCheckingTestCase {
         "\\func test (A : \\Type) => E (neg A) A"
     );
   }
+
+  @Test
+  public void classIntersection() {
+    typeCheckModule(
+      "\\class C (x y : Nat)\n" +
+      "\\func f (c1 : C 1) (c2 : C 2) (p : c1 = c2) => p");
+  }
 }

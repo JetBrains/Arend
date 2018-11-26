@@ -1280,7 +1280,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Deque<ClassField> implementedFields = new ArrayDeque<>();
     if (!def.getImplementations().isEmpty()) {
       if (newDef) {
-        typedDef.updateSorts();
+        typedDef.updateSort();
       }
 
       for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
@@ -1363,7 +1363,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     if (newDef) {
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
-      typedDef.updateSorts();
+      typedDef.updateSort();
 
       typedDef.setHasUniverses(false);
       for (ClassField field : typedDef.getFields()) {
