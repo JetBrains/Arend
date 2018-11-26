@@ -56,7 +56,7 @@ public class DefinitionDeserialization {
 
     def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
     if (defProto.getHasUniverses()) {
-      def.setHasUniverses();
+      def.setHasUniverses(true);
     }
   }
 

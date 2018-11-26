@@ -140,7 +140,7 @@ public class TwoStageEquations implements Equations {
       if (cType.isInstance(PiExpression.class)) {
         PiExpression pi = cType.cast(PiExpression.class);
         Sort domSort = pi.getParameters().getType().getSortOfType();
-        Sort codSort = Sort.generateInferVars(this, sourceNode);
+        Sort codSort = Sort.generateInferVars(this, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
@@ -157,7 +157,7 @@ public class TwoStageEquations implements Equations {
       // ?x <> Type
       Sort sort = cType.toSort();
       if (sort != null) {
-        Sort genSort = Sort.generateInferVars(this, cInf.getSourceNode());
+        Sort genSort = Sort.generateInferVars(this, true, cInf.getSourceNode());
         solve(cInf, new UniverseExpression(genSort));
         if (cmp == CMP.LE) {
           Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
@@ -371,47 +371,73 @@ public class TwoStageEquations implements Equations {
   }
 
   private void calculateUnBased(LevelEquations<InferenceLevelVariable> basedEquations, Set<InferenceLevelVariable> unBased, Map<InferenceLevelVariable, Integer> basedSolution) {
-    if (myConstantUpperBounds.isEmpty()) {
-      return;
-    }
-
-    LevelVariable errorLowerBound = null;
-    InferenceLevelVariable errorVar = null;
-
+    Map<InferenceLevelVariable,Boolean> unBasedMap = new HashMap<>();
     for (InferenceLevelVariable var : basedEquations.getVariables()) {
       Level ub = myConstantUpperBounds.get(var);
       if (ub != null && (ub.getVar() == null || ub.getConstant() < basedSolution.get(var))) {
-        unBased.add(var);
+        unBasedMap.put(var, true);
       }
     }
 
-    if (!unBased.isEmpty()) {
+    if (!unBasedMap.isEmpty()) {
       Stack<InferenceLevelVariable> stack = new Stack<>();
-      for (InferenceLevelVariable var : unBased) {
+      for (InferenceLevelVariable var : unBasedMap.keySet()) {
         stack.push(var);
       }
 
+      boolean ok = true;
       while (!stack.isEmpty()) {
         InferenceLevelVariable var = stack.pop();
         Set<LevelVariable> lowerBounds = myLowerBounds.get(var);
         if (lowerBounds != null) {
           for (LevelVariable lowerBound : lowerBounds) {
             if (lowerBound instanceof InferenceLevelVariable) {
-              if (unBased.add((InferenceLevelVariable) lowerBound)) {
+              if (unBasedMap.put((InferenceLevelVariable) lowerBound, true) == null) {
                 stack.push((InferenceLevelVariable) lowerBound);
               }
-            } else if (errorLowerBound == null || errorVar == null) {
-              errorLowerBound = lowerBound;
-              errorVar = var;
+            } else if (ok) {
+              myVisitor.getErrorReporter().report(new ConstantSolveLevelEquationError(lowerBound, var.getSourceNode()));
+              ok = false;
             }
           }
         }
       }
     }
 
-    if (errorLowerBound != null && errorVar != null) {
-      myVisitor.getErrorReporter().report(new ConstantSolveLevelEquationError(errorLowerBound, errorVar.getSourceNode()));
+    for (InferenceLevelVariable variable : basedEquations.getVariables()) {
+      calculateUnBasedMap(variable, unBasedMap);
     }
+
+    for (Map.Entry<InferenceLevelVariable, Boolean> entry : unBasedMap.entrySet()) {
+      if (entry.getValue()) {
+        unBased.add(entry.getKey());
+      }
+    }
+  }
+
+  private boolean calculateUnBasedMap(InferenceLevelVariable variable, Map<InferenceLevelVariable,Boolean> unBasedMap) {
+    if (variable.isUniverseLike()) {
+      Boolean prev = unBasedMap.putIfAbsent(variable, false);
+      return prev == null ? false : prev;
+    }
+    Boolean val = unBasedMap.get(variable);
+    if (val != null) {
+      return val;
+    }
+
+    unBasedMap.put(variable, true);
+    Set<LevelVariable> lowerBounds = myLowerBounds.get(variable);
+    if (lowerBounds != null) {
+      for (LevelVariable lowerBound : lowerBounds) {
+        boolean lowerBoundIsUnBased = lowerBound instanceof InferenceLevelVariable && calculateUnBasedMap((InferenceLevelVariable) lowerBound, unBasedMap);
+        if (!lowerBoundIsUnBased) {
+          unBasedMap.put(variable, false);
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   @Override

@@ -119,7 +119,7 @@ public class GlobalInstancePool implements InstancePool {
             }
           }
 
-          Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.generateInferVars(myCheckTypeVisitor.getEquations(), sourceNode)), sourceNode);
+          Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.generateInferVars(myCheckTypeVisitor.getEquations(), instanceResultType.getDefinition().hasUniverses(), sourceNode)), sourceNode);
           CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
           return result == null ? new ErrorExpression(null, null) : result.expression;
         }

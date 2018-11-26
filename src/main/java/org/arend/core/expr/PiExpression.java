@@ -33,7 +33,7 @@ public class PiExpression extends Expression implements Type {
       return new Sort(domSort.getPLevel().max(codSort.getPLevel()), codSort.getHLevel());
     }
 
-    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, sourceNode);
+    InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, sourceNode);
     equations.addVariable(pl);
     Level pLevel = new Level(pl);
     equations.add(domSort.getPLevel(), pLevel, Equations.CMP.LE, sourceNode);

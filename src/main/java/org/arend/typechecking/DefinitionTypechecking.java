@@ -677,7 +677,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     if (newDef && (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody()))) {
-      typedDef.setHasUniverses();
+      typedDef.setHasUniverses(true);
     }
 
     return clauses;
@@ -946,7 +946,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
       if (hasUniverses) {
-        dataDefinition.setHasUniverses();
+        dataDefinition.setHasUniverses(true);
       }
     }
 
@@ -1198,6 +1198,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
     if (newDef) {
       typedDef.clear();
+      typedDef.setHasUniverses(true);
     }
 
     LocalErrorReporter errorReporter = myVisitor.getErrorReporter();
@@ -1364,9 +1365,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
       typedDef.updateSorts();
 
+      typedDef.setHasUniverses(false);
       for (ClassField field : typedDef.getFields()) {
         if (!typedDef.isImplemented(field) && CheckForUniversesVisitor.findUniverse(field.getType(Sort.STD).getCodomain())) {
-          typedDef.setHasUniverses();
+          typedDef.setHasUniverses(true);
           break;
         }
       }
@@ -1541,7 +1543,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     if (newDef && (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType))) {
-      typedDef.setHasUniverses();
+      typedDef.setHasUniverses(true);
     }
 
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();

@@ -54,8 +54,8 @@ public abstract class Definition implements Variable {
     return myHasUniverses;
   }
 
-  public void setHasUniverses() {
-    myHasUniverses = true;
+  public void setHasUniverses(boolean hasUniverses) {
+    myHasUniverses = hasUniverses;
   }
 
   public enum TypeCheckingStatus {

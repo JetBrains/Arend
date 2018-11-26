@@ -336,7 +336,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       if (expr.isInstance(ErrorExpression.class)) {
         return Sort.STD;
       }
-      Sort result = Sort.generateInferVars(myEquations, sourceNode);
+      Sort result = Sort.generateInferVars(myEquations, false, sourceNode);
       if (!CompareVisitor.compare(myEquations, Equations.CMP.LE, expr, new UniverseExpression(result), sourceNode)) {
         myErrorReporter.report(new TypeMismatchError(DocFactory.text("a type"), expr, sourceNode));
       }
@@ -476,7 +476,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return null;
       }
 
-      universe = new UniverseExpression(Sort.generateInferVars(myEquations, expr));
+      universe = new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
       InferenceReferenceExpression infExpr = stuck.checkedCast(InferenceReferenceExpression.class);
       if (infExpr != null && infExpr.getVariable() != null) {
         myEquations.add(type, universe, Equations.CMP.LE, expr, infExpr.getVariable());
@@ -578,7 +578,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Sort sortArgument;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() ;
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
-      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myEquations, expr);
+      sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myEquations, definition.hasUniverses(), expr);
     } else {
       Level pLevel = null;
       if (expr.getPLevel() != null) {
@@ -588,7 +588,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (isMin) {
           pLevel = new Level(0);
         } else {
-          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr.getPLevel());
+          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr.getPLevel());
           myEquations.addVariable(pl);
           pLevel = new Level(pl);
         }
@@ -602,7 +602,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (isMin) {
           hLevel = new Level(-1);
         } else {
-          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr.getHLevel());
+          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.hasUniverses(), expr.getHLevel());
           myEquations.addVariable(hl);
           hLevel = new Level(hl);
         }
@@ -667,7 +667,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private TypedSingleDependentLink visitNameParameter(Concrete.NameParameter param, int argIndex, Concrete.SourceNode sourceNode) {
     Referable referable = param.getReferable();
     String name = referable == null ? null : referable.textRepresentation();
-    Sort sort = Sort.generateInferVars(myEquations, sourceNode);
+    Sort sort = Sort.generateInferVars(myEquations, false, sourceNode);
     InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false, getAllBindings());
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
@@ -754,9 +754,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         DefCallExpression defCallParamType = paramType.getExpr().checkedCast(DefCallExpression.class);
         if (defCallParamType != null && !defCallParamType.getDefinition().hasUniverses()) { // fixes test pLevelTest
           if (defCallParamType.getDefinition() instanceof DataDefinition) {
-            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, param), new ArrayList<>(defCallParamType.getDefCallArguments()));
+            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, defCallParamType.getDefinition().hasUniverses(), param), new ArrayList<>(defCallParamType.getDefCallArguments()));
           } else if (defCallParamType.getDefinition() instanceof FunctionDefinition) {
-            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, defCallParamType.getDefinition().hasUniverses(), param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
           }
         }
 
@@ -910,13 +910,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (pLevel == null) {
-      InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, expr);
+      InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, true, expr);
       myEquations.addVariable(pl);
       pLevel = new Level(pl);
     }
 
     if (hLevel == null) {
-      InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, expr);
+      InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, true, expr);
       myEquations.addVariable(hl);
       hLevel = new Level(hl);
     }
@@ -1041,7 +1041,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       list.append(ExpressionFactory.parameter(null, result.type instanceof Type ? (Type) result.type : new TypeExpression(result.type, getSortOf(result.type.getType(), expr))));
     }
 
-    Sort sortArgument = Sort.generateInferVars(myEquations, expr);
+    Sort sortArgument = Sort.generateInferVars(myEquations, false, expr);
     SigmaExpression type = new SigmaExpression(sortArgument, list.getFirst());
     return checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
   }
@@ -1145,7 +1145,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, expr));
+    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
     List<Clause> resultClauses = new ArrayList<>();
     ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE)).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
@@ -1196,7 +1196,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return resultSort;
     }
 
-    Sort sortResult = Sort.generateInferVars(myEquations, sourceNode);
+    Sort sortResult = Sort.generateInferVars(myEquations, false, sourceNode);
     for (Sort sort : sorts) {
       myEquations.add(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
       myEquations.add(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);

@@ -63,8 +63,8 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    | _, right => y\n" +
       "  }\n" +
       "  \\where\n" +
-      "    \\use \\level isProp (d1 d2 : D) (p q : d1 = d2) => path (\\lam i => path (con3 d1 d2 p q i))");
-    assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), ((DataDefinition) getDefinition("D")).getSort());
+      "    \\use \\level isSet (d1 d2 : D) (p q : d1 = d2) => path (\\lam i => path (con3 d1 d2 p q i))");
+    assertEquals(Sort.SET0, ((DataDefinition) getDefinition("D")).getSort());
   }
 
   @Test

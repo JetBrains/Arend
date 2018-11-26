@@ -112,7 +112,7 @@ public class CoerceData {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.checkedCast(ClassCallExpression.class);
-        Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), sourceNode) : classCall.getSortArgument();
+        Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().hasUniverses(), sourceNode) : classCall.getSortArgument();
         result = new CheckTypeVisitor.Result(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizeVisitor.Mode.WHNF));
       } else {
         List<Expression> arguments = new ArrayList<>();
@@ -133,7 +133,7 @@ public class CoerceData {
           }
         }
 
-        Sort sortArg = Sort.generateInferVars(visitor.getEquations(), sourceNode);
+        Sort sortArg = Sort.generateInferVars(visitor.getEquations(), def.hasUniverses(), sourceNode);
         LevelSubstitution levelSubst = new StdLevelSubstitution(sortArg);
         if (!visitor.checkNormalizedResult(link.getTypeExpr().subst(substitution, levelSubst), result, sourceNode, argStrict)) {
           if (argStrict) {
