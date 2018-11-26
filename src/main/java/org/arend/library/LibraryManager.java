@@ -218,6 +218,7 @@ public class LibraryManager {
   public void unloadLibrary(Library library) {
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
+      myReverseDependencies.remove(library);
       return;
     }
 
