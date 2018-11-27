@@ -24,6 +24,8 @@ import java.io.InputStream;
  */
 public abstract class StreamRawSource implements Source {
   private final ModulePath myModulePath;
+  private FileGroup myGroup;
+  private boolean myFirstPass = true;
 
   protected StreamRawSource(ModulePath modulePath) {
     myModulePath = modulePath;
@@ -44,7 +46,7 @@ public abstract class StreamRawSource implements Source {
   protected abstract InputStream getInputStream() throws IOException;
 
   @Override
-  public boolean load(SourceLoader sourceLoader) {
+  public boolean preload(SourceLoader sourceLoader) {
     SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
     ErrorReporter errorReporter = sourceLoader.getTypecheckingErrorReporter();
@@ -52,50 +54,61 @@ public abstract class StreamRawSource implements Source {
     final CompositeErrorReporter compositeErrorReporter = new CompositeErrorReporter(errorReporter, countingErrorReporter);
 
     try {
-      ArendLexer lexer = new ArendLexer(new ANTLRInputStream(getInputStream()));
-      lexer.removeErrorListeners();
-      lexer.addErrorListener(new BaseErrorListener() {
+      BaseErrorListener errorListener = new BaseErrorListener() {
         @Override
         public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
           compositeErrorReporter.report(new ParserError(new Position(modulePath, line, pos), msg));
         }
-      });
+      };
+
+      ArendLexer lexer = new ArendLexer(new ANTLRInputStream(getInputStream()));
+      lexer.removeErrorListeners();
+      lexer.addErrorListener(errorListener);
 
       ArendParser parser = new ArendParser(new CommonTokenStream(lexer));
       parser.removeErrorListeners();
-      parser.addErrorListener(new BaseErrorListener() {
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer, Object o, int line, int pos, String msg, RecognitionException e) {
-          compositeErrorReporter.report(new ParserError(new Position(modulePath, line, pos), msg));
-        }
-      });
+      parser.addErrorListener(errorListener);
 
       ArendParser.StatementsContext tree = parser.statements();
       if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
         return false;
       }
 
-      FileGroup result = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
-      library.onGroupLoaded(modulePath, result, true);
+      myGroup = new BuildVisitor(modulePath, errorReporter).visitStatements(tree);
+      library.onGroupLoaded(modulePath, myGroup, true);
 
-      for (NamespaceCommand command : result.getNamespaceCommands()) {
+      for (NamespaceCommand command : myGroup.getNamespaceCommands()) {
         if (command.getKind() == NamespaceCommand.Kind.IMPORT) {
           ModulePath module = new ModulePath(command.getPath());
-          if (library.containsModule(module) && !sourceLoader.loadRaw(module)) {
+          if (library.containsModule(module) && !sourceLoader.preloadRaw(module)) {
             library.onGroupLoaded(modulePath, null, true);
+            myGroup = null;
             return false;
           }
         }
       }
 
-      result.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
-      new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, errorReporter).resolveGroupWithTypes(result, null, result.getGroupScope());
-      sourceLoader.getInstanceProviderSet().collectInstances(result, CachingScope.make(ScopeFactory.parentScopeForGroup(result, sourceLoader.getModuleScopeProvider(), true)), ConcreteReferableProvider.INSTANCE, null);
+      myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath, true));
       library.onGroupLoaded(modulePath, null, true);
       return false;
     }
+  }
+
+  @Override
+  public LoadResult load(SourceLoader sourceLoader) {
+    if (myGroup == null) {
+      return LoadResult.FAIL;
+    }
+
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myFirstPass, sourceLoader.getTypecheckingErrorReporter()).resolveGroup(myGroup, null, myGroup.getGroupScope());
+    if (myFirstPass) {
+      myFirstPass = false;
+      return LoadResult.CONTINUE;
+    }
+    sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(), true)), ConcreteReferableProvider.INSTANCE, null);
+    return LoadResult.SUCCESS;
   }
 }

@@ -8,7 +8,8 @@ import org.junit.Test;
 
 import static org.arend.module.ModulePath.moduleName;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class LibraryLoadingTest extends LibraryTestCase {
   @Test
@@ -25,16 +26,16 @@ public class LibraryLoadingTest extends LibraryTestCase {
     ModulePath modulePath = moduleName("A");
 
     library.addModule(modulePath, "\\func f => 0");
-    Source source1 = library.getRawSource(modulePath);
-    assertThat(source1, is(notNullValue()));
-    assertTrue(source1.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader1 = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader1.preloadRaw(modulePath));
+    sourceLoader1.loadRawSources();
     Group result1 = library.getModuleGroup(modulePath);
     assertThat(result1, is(notNullValue()));
 
     library.addModule(modulePath, "\\func g => 0");
-    Source source2 = library.getRawSource(modulePath);
-    assertThat(source2, is(notNullValue()));
-    assertTrue(source2.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader2 = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader2.preloadRaw(modulePath));
+    sourceLoader2.loadRawSources();
     Group result2 = library.getModuleGroup(modulePath);
     assertThat(result2, is(notNullValue()));
 

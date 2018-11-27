@@ -9,15 +9,6 @@ import org.arend.naming.reference.converter.ReferableConverter;
  */
 public interface BinarySource extends Source {
   /**
-   * Loads the structure of the source and its dependencies without filling in actual data.
-   *
-   * @param sourceLoader    the state of the loading process.
-   *
-   * @return true if all dependencies are available, false otherwise.
-   */
-  boolean preload(SourceLoader sourceLoader);
-
-  /**
    * Persists the source.
    *
    * @param library             the library to which this source belongs.

@@ -9,6 +9,8 @@ import java.io.File;
  * Represents a persisted module.
  */
 public interface Source {
+  enum LoadResult { SUCCESS, FAIL, CONTINUE }
+
   /**
    * Gets the path to this source.
    *
@@ -18,13 +20,23 @@ public interface Source {
   ModulePath getModulePath();
 
   /**
-   * Loads the source. Also loads all dependencies of this source.
+   * Loads the structure of the source and its dependencies.
    *
    * @param sourceLoader    the state of the loading process.
    *
-   * @return true if loading succeeded, false otherwise.
+   * @return true if all dependencies are available, false otherwise.
    */
-  boolean load(SourceLoader sourceLoader);
+  boolean preload(SourceLoader sourceLoader);
+
+  /**
+   * This method is called after all dependencies of the source were preloaded.
+   *
+   * @param sourceLoader    the state of the loading process.
+   *
+   * @return {@link LoadResult#CONTINUE} if this method must be called again,
+   *         otherwise returns either {@link LoadResult#SUCCESS} or {@link LoadResult#FAIL} depending on the result.
+   */
+  LoadResult load(SourceLoader sourceLoader);
 
   /**
    * Gets the timestamp for this source.

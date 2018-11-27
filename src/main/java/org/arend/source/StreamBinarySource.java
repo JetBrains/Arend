@@ -91,19 +91,13 @@ public abstract class StreamBinarySource implements BinarySource {
 
       return true;
     } catch (IOException | DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
-      if (!library.hasRawSources()) {
-        library.onGroupLoaded(modulePath, null, false);
-      }
-      if (group != null) {
-        library.unloadGroup(group);
-      }
+      loadingFailed(sourceLoader, modulePath, group, e);
       return false;
     }
   }
 
   @Override
-  public boolean load(SourceLoader sourceLoader) {
+  public LoadResult load(SourceLoader sourceLoader) {
     SourceLibrary library = sourceLoader.getLibrary();
     ModulePath modulePath = getModulePath();
     try {
@@ -114,24 +108,27 @@ public abstract class StreamBinarySource implements BinarySource {
           if (group != null) {
             library.unloadGroup(group);
           }
-          return false;
+          return LoadResult.FAIL;
         }
       }
 
       myModuleDeserialization.readModule(sourceLoader.getModuleScopeProvider(), library.getDependencyListener(), library.supportsTypechecking());
       library.onBinaryLoaded(modulePath, myModuleDeserialization.getModuleProto().getComplete());
       myModuleDeserialization = null;
-      return true;
+      return LoadResult.SUCCESS;
     } catch (DeserializationException e) {
-      sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
-      if (!library.hasRawSources()) {
-        library.onGroupLoaded(modulePath, null, false);
-      }
-      ChildGroup group = library.getModuleGroup(modulePath);
-      if (group != null) {
-        library.unloadGroup(group);
-      }
-      return false;
+      loadingFailed(sourceLoader, modulePath, library.getModuleGroup(modulePath), e);
+      return LoadResult.FAIL;
+    }
+  }
+
+  private void loadingFailed(SourceLoader sourceLoader, ModulePath modulePath, Group group, Exception e) {
+    sourceLoader.getLibraryErrorReporter().report(new DeserializationError(modulePath, e));
+    if (!sourceLoader.getLibrary().hasRawSources()) {
+      sourceLoader.getLibrary().onGroupLoaded(modulePath, null, false);
+    }
+    if (group != null) {
+      sourceLoader.getLibrary().unloadGroup(group);
     }
   }
 

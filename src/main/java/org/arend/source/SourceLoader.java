@@ -10,6 +10,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -21,6 +22,7 @@ public final class SourceLoader {
   private final LibraryManager myLibraryManager;
   private final Map<ModulePath, SourceType> myLoadedModules = new HashMap<>();
   private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
+  private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
 
   private enum SourceType { RAW, BINARY, BINARY_FAIL }
 
@@ -55,13 +57,16 @@ public final class SourceLoader {
   }
 
   /**
-   * Loads a raw source.
+   * Loads the structure of the source and its dependencies.
    *
    * @param modulePath  a module to load.
    * @return true if a binary source is available or if the raw source was successfully loaded, false otherwise.
    */
-  public boolean loadRaw(ModulePath modulePath) {
+  public boolean preloadRaw(ModulePath modulePath) {
     if (myLoadedModules.containsKey(modulePath)) {
+      return true;
+    }
+    if (myLoadingRawModules.containsKey(modulePath)) {
       return true;
     }
 
@@ -74,7 +79,28 @@ public final class SourceLoader {
     }
 
     myLoadedModules.put(modulePath, SourceType.RAW);
-    return rawSource.load(this);
+    myLoadingRawModules.put(modulePath, rawSource);
+    if (!rawSource.preload(this)) {
+      myLoadingRawModules.remove(modulePath);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Loads raw sources that were preloaded.
+   */
+  public void loadRawSources() {
+    while (!myLoadingRawModules.isEmpty()) {
+      for (Iterator<Source> it = myLoadingRawModules.values().iterator(); it.hasNext(); ) {
+        Source source = it.next();
+        Source.LoadResult loadResult = source.load(this);
+        if (loadResult != Source.LoadResult.CONTINUE) {
+          it.remove();
+        }
+      }
+    }
   }
 
   /**
@@ -89,9 +115,16 @@ public final class SourceLoader {
 
   boolean fillInBinary(ModulePath modulePath) {
     BinarySource binarySource = myLoadingBinaryModules.remove(modulePath);
-    if (binarySource != null && !binarySource.load(this)) {
-      myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
-      return false;
+    if (binarySource != null) {
+      Source.LoadResult result;
+      do {
+        result = binarySource.load(this);
+      } while (result == Source.LoadResult.CONTINUE);
+
+      if (result != Source.LoadResult.SUCCESS) {
+        myLoadedModules.put(modulePath, SourceType.BINARY_FAIL);
+        return false;
+      }
     }
 
     return true;

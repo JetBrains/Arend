@@ -2,7 +2,6 @@ package org.arend.library;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.scope.Scope;
-import org.arend.source.Source;
 import org.arend.source.SourceLoader;
 import org.arend.term.concrete.Concrete;
 import org.junit.Test;
@@ -27,9 +26,9 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void trivialResolution() {
     setupSources();
-    Source source = library.getRawSource(moduleName("B"));
-    assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader.preloadRaw(moduleName("B")));
+    sourceLoader.loadRawSources();
     Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
 
     Concrete.ReferenceExpression defCall = (Concrete.ReferenceExpression) ((Concrete.TermFunctionBody) ((Concrete.FunctionDefinition) ((ConcreteLocatedReferable) get(moduleB, "b")).getDefinition()).getBody()).getTerm();
@@ -41,9 +40,9 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void trivialResolutionThatLoads() {
     setupSources();
-    Source source = library.getRawSource(moduleName("A"));
-    assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader.preloadRaw(moduleName("A")));
+    sourceLoader.loadRawSources();
     Scope moduleA = library.getModuleScopeProvider().forModule(moduleName("A"));
 
     Scope moduleB = library.getModuleScopeProvider().forModule(moduleName("B"));
@@ -58,9 +57,9 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void resolutionThatLoadsMultipleModules() {
     setupSources();
-    Source source = library.getRawSource(moduleName("B", "C"));
-    assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader.preloadRaw(moduleName("B", "C")));
+    sourceLoader.loadRawSources();
     Scope moduleBC = library.getModuleScopeProvider().forModule(moduleName("B", "C"));
     Scope moduleBCE = library.getModuleScopeProvider().forModule(moduleName("B", "C", "E"));
     Scope moduleBCF = library.getModuleScopeProvider().forModule(moduleName("B", "C", "F"));
@@ -77,9 +76,9 @@ public class NameResolutionOnLoadTest extends LibraryTestCase {
   @Test
   public void mutuallyRecursiveModules() {
     setupSources();
-    Source source = library.getRawSource(moduleName("X"));
-    assertThat(source, is(notNullValue()));
-    assertTrue(source.load(new SourceLoader(library, libraryManager)));
+    SourceLoader sourceLoader = new SourceLoader(library, libraryManager);
+    assertTrue(sourceLoader.preloadRaw(moduleName("X")));
+    sourceLoader.loadRawSources();
     Scope moduleX = library.getModuleScopeProvider().forModule(moduleName("X"));
     Scope moduleY = library.getModuleScopeProvider().forModule(moduleName("Y"));
 
