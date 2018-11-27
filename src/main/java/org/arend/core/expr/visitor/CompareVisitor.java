@@ -88,9 +88,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     // Another optimization
-    if (expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition() && !expr1.cast(FunCallExpression.class).getDefinition().hasUniverses()
+    if (expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition() && (!expr1.cast(FunCallExpression.class).getDefinition().hasUniverses() || expr1.cast(FunCallExpression.class).getSortArgument().equals(expr2.cast(FunCallExpression.class).getSortArgument()))
       || expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class)
-      || expr1.isInstance(FieldCallExpression.class) && expr2.isInstance(FieldCallExpression.class) && expr1.cast(FieldCallExpression.class).getDefinition() == expr2.cast(FieldCallExpression.class).getDefinition() && !expr1.cast(FieldCallExpression.class).getDefinition().hasUniverses()
+      || expr1.isInstance(FieldCallExpression.class) && expr2.isInstance(FieldCallExpression.class) && expr1.cast(FieldCallExpression.class).getDefinition() == expr2.cast(FieldCallExpression.class).getDefinition() && (!expr1.cast(FieldCallExpression.class).getDefinition().hasUniverses() || expr1.cast(FieldCallExpression.class).getSortArgument().equals(expr2.cast(FieldCallExpression.class).getSortArgument()))
       || expr1.isInstance(ProjExpression.class) && expr2.isInstance(ProjExpression.class) && expr1.cast(ProjExpression.class).getField() == expr2.cast(ProjExpression.class).getField()) {
       Equations.CMP origCMP = myCMP;
       myCMP = Equations.CMP.EQ;
