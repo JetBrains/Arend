@@ -132,4 +132,14 @@ public class EtaEquivalence extends TypeCheckingTestCase {
       "\\record C { | n : Nat | m : Nat }\n" +
       "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
   }
+
+  @Test
+  public void sigmaTest() {
+    typeCheckModule("\\func f (x : \\Sigma Nat Nat) : x = (x.1,x.2) => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void sigmaUnitTest() {
+    typeCheckModule("\\func f (x y : \\Sigma) : x = y => path (\\lam _ => x)");
+  }
 }

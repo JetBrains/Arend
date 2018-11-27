@@ -168,10 +168,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       Expression type1 = expr1.getType();
       if (type1 != null && type1.isInstance(ClassCallExpression.class) && type1.cast(ClassCallExpression.class).isUnit()) {
         ok = compareUnit(type1.cast(ClassCallExpression.class), expr2, true);
+      } else if (type1 != null && type1.isInstance(SigmaExpression.class) && !type1.cast(SigmaExpression.class).getParameters().hasNext()) {
+        ok = true;
       } else {
         Expression type2 = expr2.getType();
         if (type2 != null && type2.isInstance(ClassCallExpression.class) && type2.cast(ClassCallExpression.class).isUnit()) {
           ok = compareUnit(type2.cast(ClassCallExpression.class), expr1, false);
+        } else if (type2 != null && type2.isInstance(SigmaExpression.class) && !type2.cast(SigmaExpression.class).getParameters().hasNext()) {
+          ok = true;
         } else {
           ok = expr1.accept(this, expr2);
         }
