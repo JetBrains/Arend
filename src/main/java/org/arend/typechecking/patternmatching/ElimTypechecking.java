@@ -451,18 +451,6 @@ public class ElimTypechecking {
       if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars && constructors.size() > constructorMap.size()) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
-            if (constructor == Prelude.PROP_TRUNC_PATH_CON) {
-              Sort sort = myExpectedType.getType().toSort();
-              if (sort != null && sort.isProp()) {
-                continue;
-              }
-            } else if (constructor == Prelude.SET_TRUNC_PATH_CON) {
-              Sort sort = myExpectedType.getType().toSort();
-              if (sort != null && sort.isSet()) {
-                continue;
-              }
-            }
-
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
               myContext.push(Util.makeDataClauseElem(constructor, someConPattern));
               for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext()) {

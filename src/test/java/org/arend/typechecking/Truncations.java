@@ -8,24 +8,31 @@ import static org.junit.Assert.assertTrue;
 public class Truncations extends TypeCheckingTestCase {
   @Test
   public void elimInProp() {
-    typeCheckDef("\\func inP-inv (P : \\Prop) (p : TrP P) : P \\elim p | inP p => p");
+    typeCheckModule(
+      "\\truncated \\data TrP (A : \\Type) : \\Prop | inP A\n" +
+      "\\func inP-inv (P : \\Prop) (p : TrP P) : P \\elim p | inP p => p");
   }
 
   @Test
   public void elimInSet1() {
-    typeCheckDef("\\func inS-inv (A : \\Set) (x : TrS A) : A \\elim x | inS x => x");
+    typeCheckModule(
+      "\\truncated \\data TrS (A : \\Type) : \\Set | inS A\n" +
+      "\\func inS-inv (A : \\Set) (x : TrS A) : A \\elim x | inS x => x");
   }
 
   @Test
   public void elimInSet2() {
-    typeCheckDef("\\func trSToNat (A : \\Type) (x : TrS A) : Nat \\elim x | inS x => 0");
+    typeCheckModule(
+      "\\truncated \\data TrS (A : \\Type) : \\Set | inS A\n" +
+      "\\func trSToNat (A : \\Type) (x : TrS A) : Nat \\elim x | inS x => 0");
   }
 
   @Test
   public void truncPEval() {
     typeCheckModule(
-        "\\func inP-inv (P : \\Prop) (p : TrP P) : P \\elim p | inP p => p\n" +
-        "\\func trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) (inP {P} (inP-inv P p)) p) => path (truncP {P} (inP {P} (inP-inv P p)) p)");
+      "\\truncated \\data TrP (A : \\Type) : \\Prop | inP A\n" +
+      "\\func inP-inv (P : \\Prop) (p : TrP P) : P \\elim p | inP p => p\n" +
+      "\\func trunc-eval (P : \\Prop) (p : TrP P) : (Path (\\lam _ => TrP P) (inP {P} (inP-inv P p)) p) => Path.inProp _ _");
   }
 
   @Test

@@ -9,7 +9,7 @@ import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.prelude.Prelude;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
@@ -761,12 +761,14 @@ public class DefCall extends TypeCheckingTestCase {
   @Test
   public void resolvedConstructorTest() {
     ChildGroup cd = resolveNamesModule(
+        "\\data TrP (A : \\Type) | inP A\n" +
         "\\func isequiv {A B : \\Type0} (f : A -> B) => 0\n" +
         "\\func inP-isequiv (P : \\Prop) => isequiv (inP {P})");
     Iterator<? extends Group> it = cd.getSubgroups().iterator();
+    LocatedReferable inP = it.next().getConstructors().iterator().next().getReferable();
     it.next();
     Concrete.FunctionDefinition lastDef = (Concrete.FunctionDefinition) ((ConcreteLocatedReferable) it.next().getReferable()).getDefinition();
-    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArguments().get(0).getExpression()).getFunction()).setReferent(Prelude.PROP_TRUNC.getConstructor("inP").getReferable());
+    ((Concrete.ReferenceExpression) ((Concrete.AppExpression) ((Concrete.AppExpression) ((Concrete.TermFunctionBody) lastDef.getBody()).getTerm()).getArguments().get(0).getExpression()).getFunction()).setReferent(inP);
     typeCheckModule(cd);
   }
 }

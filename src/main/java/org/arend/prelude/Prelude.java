@@ -63,14 +63,6 @@ public class Prelude {
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
-  public static DataDefinition PROP_TRUNC;
-  public static FunctionDefinition PROP_TRUNC_IS_PROP;
-  public static DataDefinition SET_TRUNC;
-  public static FunctionDefinition SET_TRUNC_IS_SET;
-
-  public static Constructor PROP_TRUNC_PATH_CON;
-  public static Constructor SET_TRUNC_PATH_CON;
-
   private Prelude() {
   }
 
@@ -141,26 +133,12 @@ public class Prelude {
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
-      case "TrP":
-        PROP_TRUNC = (DataDefinition) definition;
-        PROP_TRUNC_PATH_CON = PROP_TRUNC.getConstructor("truncP");
-        break;
-      case "TrS":
-        SET_TRUNC = (DataDefinition) definition;
-        SET_TRUNC_PATH_CON = SET_TRUNC.getConstructor("truncS");
-        break;
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
         break;
       case "inProp":
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
-      case "isProp":
-        PROP_TRUNC_IS_PROP = (FunctionDefinition) definition;
-        break;
-      case "isSet":
-        SET_TRUNC_IS_SET = (FunctionDefinition) definition;
         break;
       default:
         throw new IllegalStateException();
@@ -187,18 +165,6 @@ public class Prelude {
     consumer.accept(AT);
     consumer.accept(COERCE);
     consumer.accept(ISO);
-    consumer.accept(PROP_TRUNC_IS_PROP);
-    consumer.accept(SET_TRUNC_IS_SET);
-
-    consumer.accept(PROP_TRUNC);
-    for (Constructor constructor : PROP_TRUNC.getConstructors()) {
-      consumer.accept(constructor);
-    }
-
-    consumer.accept(SET_TRUNC);
-    for (Constructor constructor : SET_TRUNC.getConstructors()) {
-      consumer.accept(constructor);
-    }
   }
 
   public static void fillInTypecheckerState(TypecheckerState state) {

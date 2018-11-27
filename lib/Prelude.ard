@@ -41,23 +41,3 @@
 \func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
   | left => A
   | right => B
-
-\data TrP (A : \Type)
-  | inP A
-  | truncP (a a' : TrP A) (i : I) \elim i {
-    | left  => a
-    | right => a'
-  } \where {
-    \use \level isProp {A : \Type} (a a' : TrP A) : a = a' => path (truncP a a')
-  }
-
-\data TrS (A : \Type)
-  | inS A
-  | truncS {a a' : TrS A} (p p' : a = a') (i j : I) \elim i, j {
-    | i, left  => p @ i
-    | i, right => p' @ i
-    | left,  _ => a
-    | right, _ => a'
-  } \where {
-    \use \level isSet {A : \Type} (a a' : TrS A) (p p' : a = a') : p = p' => path (\lam i => path (\lam j => truncS p p' j i))
-  }

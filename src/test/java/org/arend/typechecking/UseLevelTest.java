@@ -5,18 +5,11 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.prelude.Prelude;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class UseLevelTest extends TypeCheckingTestCase {
-  @Test
-  public void testPrelude() {
-    assertEquals(Sort.PROP, Prelude.PROP_TRUNC.getSort());
-    assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), Prelude.SET_TRUNC.getSort());
-  }
-
   @Test
   public void testData() {
     typeCheckModule(

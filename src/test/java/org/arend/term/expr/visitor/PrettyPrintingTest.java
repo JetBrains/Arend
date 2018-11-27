@@ -125,7 +125,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     testDefinition(
       "\\class C0 {\n" +
       "  | f0 : \\Pi {X Y : \\Type0} -> X -> Y -> \\Type0\n" +
-      "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> TrP (x = y)\n" +
+      "  | f1 : \\Pi {X Y : \\Type0} (x : X) (y : Y) -> x = y\n" +
       "}");
   }
 
