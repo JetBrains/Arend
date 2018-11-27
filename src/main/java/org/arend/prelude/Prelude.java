@@ -178,7 +178,7 @@ public class Prelude {
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Path", "TrP", "TrS"}) {
+    for (String name : new String[] {"Nat", "Int", "Path"}) {
       Scope childScope = scope.resolveNamespace(name);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
