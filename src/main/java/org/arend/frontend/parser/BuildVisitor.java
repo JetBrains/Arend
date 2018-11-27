@@ -474,11 +474,13 @@ public class BuildVisitor extends ArendBaseVisitor {
     boolean isUse = ctx.funcKw() instanceof FuncKwUseContext;
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
       isUse ? (((FuncKwUseContext) ctx.funcKw()).useMod() instanceof UseCoerceContext
-              ? Concrete.FunctionDefinition.UseMod.COERCE
-              : Concrete.FunctionDefinition.UseMod.LEVEL)
-            : Concrete.FunctionDefinition.UseMod.FUNC,
+              ? Concrete.FunctionDefinition.Kind.COERCE
+              : Concrete.FunctionDefinition.Kind.LEVEL)
+            : ctx.funcKw() instanceof FuncKwLemmaContext
+              ? Concrete.FunctionDefinition.Kind.LEMMA
+              : Concrete.FunctionDefinition.Kind.FUNC,
       referable, visitFunctionParameters(ctx.tele()), resultType, body, parent.getReferable());
-    if (isUse && !funDef.getUseMod().isUse()) {
+    if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
     }
 
@@ -545,7 +547,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     for (Group subgroup : groups) {
       if (subgroup.getReferable() instanceof ConcreteLocatedReferable) {
         Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) subgroup.getReferable()).getDefinition();
-        if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getUseMod().isUse()) {
+        if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind().isUse()) {
           if (usedDefinitions == null) {
             usedDefinitions = new ArrayList<>();
           }

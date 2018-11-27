@@ -1216,9 +1216,17 @@ public final class Concrete {
     private final List<TelescopeParameter> myParameters;
     private Expression myResultType;
     private final FunctionBody myBody;
+    private final Kind myKind;
 
-    public enum UseMod {
-      COERCE, LEVEL, FUNC {
+    public enum Kind {
+      COERCE, LEVEL,
+      FUNC {
+        @Override
+        public boolean isUse() {
+          return false;
+        }
+      },
+      LEMMA {
         @Override
         public boolean isUse() {
           return false;
@@ -1230,16 +1238,17 @@ public final class Concrete {
       }
     }
 
-    public FunctionDefinition(TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body) {
       super(referable);
+      myKind = kind;
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
       myBody = body;
     }
 
-    public UseMod getUseMod() {
-      return UseMod.FUNC;
+    public Kind getKind() {
+      return myKind;
     }
 
     public TCReferable getUseParent() {
@@ -1273,21 +1282,14 @@ public final class Concrete {
 
   public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
-    private final UseMod myUseMod;
 
-    private UseDefinition(UseMod useMod, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
-      super(referable, parameters, resultType, body);
+    private UseDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
+      super(kind, referable, parameters, resultType, body);
       myCoerceParent = coerceParent;
-      myUseMod = useMod;
     }
 
-    public static FunctionDefinition make(UseMod useMod, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCReferable && useMod.isUse() ? new UseDefinition(useMod, referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(referable, parameters, resultType, body);
-    }
-
-    @Override
-    public UseMod getUseMod() {
-      return myUseMod;
+    public static FunctionDefinition make(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? Kind.FUNC : kind, referable, parameters, resultType, body);
     }
 
     public TCReferable getUseParent() {

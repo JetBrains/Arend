@@ -17,6 +17,7 @@ public class FunctionDefinition extends Definition implements Function {
   private Expression myResultType;
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
+  private boolean myLemma;
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -25,11 +26,23 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public Body getBody() {
+    return myLemma ? null : myBody;
+  }
+
+  public Body getActualBody() {
     return myBody;
   }
 
   public void setBody(Body body) {
     myBody = body;
+  }
+
+  public boolean isLemma() {
+    return myLemma;
+  }
+
+  public void setIsLemma(boolean isLemma) {
+    myLemma = isLemma;
   }
 
   @Override

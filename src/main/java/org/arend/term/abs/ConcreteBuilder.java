@@ -133,14 +133,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
-    List<Concrete.TelescopeParameter> parameters;
-    try {
-      parameters = buildTelescopeParameters(def.getParameters());
-    } catch (AbstractExpressionError.Exception e) {
-      myErrorReporter.report(e.error);
-      parameters = Collections.emptyList();
-    }
-
+    List<Concrete.TelescopeParameter> parameters = buildTelescopeParameters(def.getParameters());
     Concrete.Expression type;
     try {
       Abstract.Expression resultType = def.getResultType();
@@ -150,12 +143,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       type = null;
     }
 
-    Concrete.FunctionDefinition.UseMod useMod = def.isCoerce()
-      ? Concrete.FunctionDefinition.UseMod.COERCE
+    Concrete.FunctionDefinition.Kind kind = def.isCoerce()
+      ? Concrete.FunctionDefinition.Kind.COERCE
       : def.isLevel()
-        ? Concrete.FunctionDefinition.UseMod.LEVEL
-        : Concrete.FunctionDefinition.UseMod.FUNC;
-    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(useMod, myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
+        ? Concrete.FunctionDefinition.Kind.LEVEL
+        : def.isLemma()
+          ? Concrete.FunctionDefinition.Kind.LEMMA
+          : Concrete.FunctionDefinition.Kind.FUNC;
+    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
     return result;
   }
@@ -261,13 +256,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     reportError(def.getErrorData());
 
-    List<Concrete.ClassFieldImpl> implementations;
-    try {
-      implementations = buildImplementations(def.getClassFieldImpls());
-    } catch (AbstractExpressionError.Exception e) {
-      myErrorReporter.report(e.error);
-      implementations = Collections.emptyList();
-    }
+    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
 
     Abstract.Reference underlyingClass = def.getUnderlyingClass();
     if (underlyingClass != null && !implementations.isEmpty()) {
@@ -331,21 +320,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   @Override
   public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
-    List<Concrete.TelescopeParameter> parameters;
-    try {
-      parameters = buildTelescopeParameters(def.getParameters());
-    } catch (AbstractExpressionError.Exception e) {
-      myErrorReporter.report(e.error);
-      parameters = Collections.emptyList();
-    }
-
-    List<Concrete.ClassFieldImpl> implementations;
-    try {
-      implementations = buildImplementations(def.getClassFieldImpls());
-    } catch (AbstractExpressionError.Exception e) {
-      myErrorReporter.report(e.error);
-      implementations = Collections.emptyList();
-    }
+    List<Concrete.TelescopeParameter> parameters = buildTelescopeParameters(def.getParameters());
+    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
 
     Abstract.Expression resultType = def.getResultType();
     if (resultType == null) {
@@ -368,6 +344,15 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       elimExpressions.add(buildReference(reference));
     }
     return elimExpressions;
+  }
+
+  private List<Concrete.ClassFieldImpl> buildImplementationsSafe(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+    try {
+      return buildImplementations(absImplementations);
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(e.error);
+      return Collections.emptyList();
+    }
   }
 
   private List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
@@ -440,16 +425,21 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   private List<Concrete.TelescopeParameter> buildTelescopeParameters(Collection<? extends Abstract.Parameter> absParameters) {
-    List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
-    for (Abstract.Parameter absParameter : absParameters) {
-      Concrete.Parameter parameter = buildParameter(absParameter, false);
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        parameters.add((Concrete.TelescopeParameter) parameter);
-      } else {
-        throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a typed parameter", parameter.getData()));
+    try {
+      List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
+      for (Abstract.Parameter absParameter : absParameters) {
+        Concrete.Parameter parameter = buildParameter(absParameter, false);
+        if (parameter instanceof Concrete.TelescopeParameter) {
+          parameters.add((Concrete.TelescopeParameter) parameter);
+        } else {
+          throw new AbstractExpressionError.Exception(new AbstractExpressionError(Error.Level.ERROR, "Expected a typed parameter", parameter.getData()));
+        }
       }
+      return parameters;
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(e.error);
+      return Collections.emptyList();
     }
-    return parameters;
   }
 
   private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {

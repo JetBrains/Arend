@@ -179,6 +179,7 @@ public final class Abstract {
     boolean isCowith();
     boolean isCoerce();
     boolean isLevel();
+    boolean isLemma();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {

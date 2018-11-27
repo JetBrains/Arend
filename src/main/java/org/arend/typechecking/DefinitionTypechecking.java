@@ -428,9 +428,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Expression expectedType = null;
     Concrete.Expression resultType = def.getResultType();
     if (resultType != null) {
+      ExpectedType expectedType1 = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
       Type expectedTypeResult =
         def.getBody() instanceof Concrete.CoelimFunctionBody ? null :
-        def.getBody() instanceof Concrete.TermFunctionBody ? myVisitor.checkType(resultType, ExpectedType.OMEGA) : myVisitor.finalCheckType(resultType, ExpectedType.OMEGA);
+        def.getBody() instanceof Concrete.TermFunctionBody ? myVisitor.checkType(resultType, expectedType1) : myVisitor.finalCheckType(resultType, expectedType1);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -441,6 +442,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      typedDef.setIsLemma(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA);
       calculateParametersTypecheckingOrder(typedDef);
     }
 
@@ -514,7 +516,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         Referable typeRef = typeRefExpr == null ? null : typeRefExpr.getReferent();
         if (!(typeRef instanceof ClassReferable)) {
           myVisitor.getErrorReporter().report(new TypecheckingError("Expected a class", def.getResultType()));
-          CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultType(), ExpectedType.OMEGA, false);
+          CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultType(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
           if (newDef && result != null) {
             typedDef.setResultType(result.expression);
             typedDef.setStatus(myVisitor.getStatus());
@@ -548,19 +550,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         } else {
           if (newDef) {
             typedDef.setResultType(termResult.type);
+            if (def.getResultType() == null && def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA) {
+              Expression typeType = termResult.type.getType();
+              if (!(typeType instanceof UniverseExpression && ((UniverseExpression) typeType).getSort().equals(Sort.PROP))) {
+                typedDef.setIsLemma(false);
+                myVisitor.getErrorReporter().report(new TypeMismatchError(new UniverseExpression(Sort.PROP), typeType == null ? new ErrorExpression(null, null) : typeType, def));
+              }
+            }
           }
         }
       }
     }
 
     if (newDef) {
-      typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : !bodyIsOK && typedDef.getBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
+      typedDef.setStatus(typedDef.getResultType() == null ? Definition.TypeCheckingStatus.HEADER_HAS_ERRORS : !bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : myVisitor.getStatus());
     }
 
-    if (typedDef.status().headerIsOK() && def.getUseMod().isUse()) {
+    if (typedDef.status().headerIsOK() && def.getKind().isUse()) {
       Definition useParent = myVisitor.getTypecheckingState().getTypechecked(def.getUseParent());
       if (useParent instanceof DataDefinition || useParent instanceof ClassDefinition) {
-        if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.COERCE) {
+        if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
           if (def.getParameters().isEmpty()) {
             myVisitor.getErrorReporter().report(new TypecheckingError("\\coerce must have at least one parameter", def));
           } else {
@@ -580,7 +589,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               }
             }
           }
-        } else if (def.getUseMod() == Concrete.FunctionDefinition.UseMod.LEVEL) {
+        } else if (def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL) {
           boolean ok = true;
           Expression type = null;
           DependentLink link = typedDef.getParameters();

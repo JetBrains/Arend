@@ -35,6 +35,7 @@ definition  : funcKw precedence ID tele* (':' expr)? functionBody where?        
             ;
 
 funcKw    : '\\func'            # funcKwFunc
+          | '\\lemma'           # funcKwLemma
           | '\\use' useMod      # funcKwUse
           ;
 

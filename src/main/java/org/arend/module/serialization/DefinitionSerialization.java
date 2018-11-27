@@ -222,8 +222,9 @@ public class DefinitionSerialization {
       }
       if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }
-    if (definition.status().bodyIsOK() && definition.getBody() != null) {
-      builder.setBody(writeBody(defSerializer, definition.getBody()));
+    builder.setIsLemma(definition.isLemma());
+    if (definition.status().bodyIsOK() && definition.getActualBody() != null) {
+      builder.setBody(writeBody(defSerializer, definition.getActualBody()));
     }
 
     return builder.build();
