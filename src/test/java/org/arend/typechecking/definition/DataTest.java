@@ -25,6 +25,7 @@ import java.util.Map;
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.frontend.ConcreteExpressionFactory.*;
+import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -177,5 +178,34 @@ public class DataTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (d : D) : \\Type | d1 => Nat | d2 x y => \\Pi (a : f x) -> f (y a)\n" +
       "\\data D : \\Type | d1 | d2 (x : D) (f x -> D)");
+  }
+
+  @Test
+  public void propWithConstructors() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | suc _ => con2\n" +
+      "\\func f (n : Nat) : \\Prop => D n");
+  }
+
+  @Test
+  public void propWithConstructorsError() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | _ => con2\n" +
+      "\\func f (n : Nat) : \\Prop => D n", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void propWithConstructorsError2() {
+    typeCheckModule(
+      "\\data D (n : Nat) \\with\n" +
+      "  | 0 => con1\n" +
+      "  | 0 => con2\n" +
+      "\\func f (n : Nat) : \\Prop => D n", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

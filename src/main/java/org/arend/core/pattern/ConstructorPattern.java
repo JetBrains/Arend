@@ -173,7 +173,9 @@ public class ConstructorPattern implements Pattern {
   @Override
   public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
     if (other instanceof BindingPattern) {
-      substitution2.add(((BindingPattern) other).getBinding(), toExpression());
+      if (substitution2 != null) {
+        substitution2.add(((BindingPattern) other).getBinding(), toExpression());
+      }
       return true;
     }
 

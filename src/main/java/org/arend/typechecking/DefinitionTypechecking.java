@@ -752,9 +752,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (newDef) {
       dataDefinition.setSort(inferredSort);
     }
-    if (def.getConstructorClauses().size() > 1 || !def.getConstructorClauses().isEmpty() && def.getConstructorClauses().get(0).getConstructors().size() > 1) {
-      inferredSort = inferredSort.max(Sort.SET0);
-    }
 
     boolean dataOk = true;
     List<DependentLink> elimParams = Collections.emptyList();
@@ -866,6 +863,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
       myVisitor.getInstancePool().setInstancePool(instancePool);
+
+      if (inferredSort == Sort.PROP) {
+        boolean ok = true;
+        for (int i = 0; i < dataDefinition.getConstructors().size(); i++) {
+          Patterns patterns1 = dataDefinition.getConstructors().get(i).getPatterns();
+          for (int j = i + 1; j < dataDefinition.getConstructors().size(); j++) {
+            Patterns patterns2 = dataDefinition.getConstructors().get(j).getPatterns();
+            if (patterns1 == null || patterns2 == null || patterns1.unify(patterns2, null, null)) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) {
+            break;
+          }
+        }
+        if (!ok) {
+          inferredSort = inferredSort.max(Sort.SET0);
+        }
+      }
     }
     if (newDef) {
       dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);

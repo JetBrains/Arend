@@ -41,7 +41,7 @@ public class BindingPattern implements Pattern {
 
   @Override
   public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
-    if (!(other instanceof EmptyPattern)) {
+    if (!(other instanceof EmptyPattern) && substitution1 != null) {
       substitution1.add(myBinding, other.toExpression());
     }
     return true;
