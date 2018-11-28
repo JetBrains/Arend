@@ -132,6 +132,20 @@ public class TwoStageEquations implements Equations {
         }
       }
 
+      // If cType is not pi, classCall, universe, or a stuck expression, then solve immediately.
+      if (cmp != CMP.EQ) {
+        Expression cod = cType;
+        while (cod.isInstance(PiExpression.class)) {
+          cod = cod.cast(PiExpression.class).getCodomain();
+        }
+        if (!cod.isInstance(ClassCallExpression.class) && !cod.isInstance(UniverseExpression.class)) {
+          Expression stuck = cod.getStuckExpression();
+          if (!(stuck != null && stuck.isInstance(InferenceReferenceExpression.class) && stuck.cast(InferenceReferenceExpression.class).getSubstExpression() == null)) {
+            cmp = CMP.EQ;
+          }
+        }
+      }
+
       // ?x == _
       if (cmp == CMP.EQ) {
         solve(cInf, cType);
