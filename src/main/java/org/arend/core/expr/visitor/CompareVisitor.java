@@ -211,7 +211,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     Sort sortArgument = classCall2.getSortArgument();
 
     for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
-      if (!(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
+      if (!entry.getKey().isProperty() && !(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
         return false;
       }
     }
