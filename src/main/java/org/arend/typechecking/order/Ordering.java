@@ -193,8 +193,11 @@ public class Ordering {
         myDependencyListener.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
         if (!referable.isSynonym()) {
           Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
-          if (dependency instanceof Concrete.Definition && myState.getTypechecked(tcReferable) == null) {
-            updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
+          if (dependency instanceof Concrete.Definition) {
+            Definition typechecked = myState.getTypechecked(tcReferable);
+            if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
+              updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
+            }
           }
         }
       }

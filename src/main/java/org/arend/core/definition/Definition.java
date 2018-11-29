@@ -70,11 +70,11 @@ public abstract class Definition implements Variable {
     }
 
     public boolean isTypeChecked() {
-      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING && this != BODY_NEEDS_TYPE_CHECKING;
+      return this != HEADER_NEEDS_TYPE_CHECKING && this != BODY_NEEDS_TYPE_CHECKING;
     }
 
     public boolean needsTypeChecking() {
-      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
+      return this == HEADER_HAS_ERRORS || this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
     }
 
     public TypeCheckingStatus max(TypeCheckingStatus status) {
@@ -93,18 +93,5 @@ public abstract class Definition implements Variable {
   @Override
   public String toString() {
     return myReferable.toString();
-  }
-
-  public static Definition newDefinition(Concrete.Definition definition) {
-    if (definition instanceof Concrete.DataDefinition) {
-      return new DataDefinition(definition.getData());
-    }
-    if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
-      return new FunctionDefinition(definition.getData());
-    }
-    if (definition instanceof Concrete.ClassDefinition) {
-      return new ClassDefinition((TCClassReferable) definition.getData());
-    }
-    throw new IllegalStateException();
   }
 }

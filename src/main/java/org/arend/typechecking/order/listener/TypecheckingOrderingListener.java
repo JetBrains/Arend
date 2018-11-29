@@ -1,14 +1,19 @@
 package org.arend.typechecking.order.listener;
 
-import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
+import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.expr.ErrorExpression;
+import org.arend.core.expr.PiExpression;
+import org.arend.core.sort.Sort;
 import org.arend.error.CompositeErrorReporter;
 import org.arend.error.CountingErrorReporter;
 import org.arend.error.ErrorReporter;
 import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
@@ -138,6 +143,43 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
   }
 
+  private Definition newDefinition(Concrete.Definition definition) {
+    Definition typechecked;
+    if (definition instanceof Concrete.DataDefinition) {
+      typechecked = new DataDefinition(definition.getData());
+      ((DataDefinition) typechecked).setSort(Sort.SET0);
+      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+      for (Concrete.ConstructorClause constructorClause : ((Concrete.DataDefinition) definition).getConstructorClauses()) {
+        for (Concrete.Constructor constructor : constructorClause.getConstructors()) {
+          Constructor tcConstructor = new Constructor(constructor.getData(), (DataDefinition) typechecked);
+          tcConstructor.setParameters(EmptyDependentLink.getInstance());
+          tcConstructor.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+          ((DataDefinition) typechecked).addConstructor(tcConstructor);
+          myState.record(constructor.getData(), tcConstructor);
+        }
+      }
+    } else if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
+      typechecked = new FunctionDefinition(definition.getData());
+      ((FunctionDefinition) typechecked).setResultType(new ErrorExpression(null, null));
+      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+    } else if (definition instanceof Concrete.ClassDefinition) {
+      typechecked = new ClassDefinition((TCClassReferable) definition.getData());
+      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+      for (Concrete.ClassField field : ((Concrete.ClassDefinition) definition).getFields()) {
+        ClassField classField = new ClassField(field.getData(), (ClassDefinition) typechecked);
+        classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD)), new ErrorExpression(null, null)));
+        classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+        ((ClassDefinition) typechecked).addPersonalField(classField);
+        myState.record(classField.getReferable(), classField);
+      }
+    } else {
+      throw new IllegalStateException();
+    }
+    typechecked.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+    myState.record(definition.getData(), typechecked);
+    return typechecked;
+  }
+
   @Override
   public void sccFound(SCC scc) {
     for (TypecheckingUnit unit : scc.getUnits()) {
@@ -151,8 +193,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
           Definition typechecked = myState.getTypechecked(definition.getData());
           if (typechecked == null) {
-            typechecked = Definition.newDefinition(definition);
-            myState.record(definition.getData(), typechecked);
+            typechecked = newDefinition(definition);
           }
           if (typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
             typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
@@ -187,10 +228,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
   public void unitFound(TypecheckingUnit unit, Recursion recursion) {
     if (recursion == Recursion.IN_HEADER) {
       typecheckingUnitStarted(unit.getDefinition().getData());
-      Definition typechecked = Definition.newDefinition(unit.getDefinition());
-      myState.record(unit.getDefinition().getData(), typechecked);
       myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition().getData())));
-      typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
+      typecheckingUnitFinished(unit.getDefinition().getData(), newDefinition(unit.getDefinition()));
     } else {
       typecheck(unit, recursion == Recursion.IN_BODY);
     }
@@ -238,9 +277,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       myErrorReporter.report(CycleError.fromConcrete(cycle));
       for (Concrete.Definition definition : cycle) {
         typecheckingHeaderStarted(definition.getData());
-        Definition typechecked = Definition.newDefinition(definition);
-        myState.record(definition.getData(), typechecked);
-        typecheckingHeaderFinished(definition.getData(), typechecked);
+        typecheckingHeaderFinished(definition.getData(), newDefinition(definition));
       }
       return false;
     }

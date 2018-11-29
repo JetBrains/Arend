@@ -33,7 +33,6 @@ public class DefinitionSerialization {
 
     switch (definition.status()) {
       case HEADER_HAS_ERRORS:
-      case HEADER_NEEDS_TYPE_CHECKING:
         out.setStatus(DefinitionProtos.Definition.Status.HEADER_HAS_ERRORS);
         break;
       case BODY_HAS_ERRORS:
@@ -41,6 +40,7 @@ public class DefinitionSerialization {
       case BODY_NEEDS_TYPE_CHECKING:
         out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
         break;
+      case HEADER_NEEDS_TYPE_CHECKING:
       case HAS_ERRORS:
         out.setStatus(DefinitionProtos.Definition.Status.HAS_ERRORS);
         break;
@@ -215,12 +215,14 @@ public class DefinitionSerialization {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
-    if (definition.status().headerIsOK()) {
+    if (definition.getParameters() != null) {
       builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
       if (definition.getParametersTypecheckingOrder() != null) {
         builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
       }
-      if (definition.getResultType() != null) builder.setType(defSerializer.writeExpr(definition.getResultType()));
+    }
+    if (definition.getResultType() != null) {
+      builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }
     builder.setIsLemma(definition.isLemma());
     if (definition.status().bodyIsOK() && definition.getActualBody() != null) {

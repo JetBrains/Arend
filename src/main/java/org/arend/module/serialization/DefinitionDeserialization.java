@@ -64,6 +64,7 @@ public class DefinitionDeserialization {
     if (typecheckDefinitionsWithErrors) {
       switch (defProto.getStatus()) {
         case HEADER_HAS_ERRORS:
+          return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
         case BODY_HAS_ERRORS:
         case HAS_ERRORS:
           return Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_ERRORS;
