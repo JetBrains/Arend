@@ -319,14 +319,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     if (expr instanceof FieldCallExpression) {
-      Expression thisExpr = ((FieldCallExpression) expr).getArgument().accept(this, Mode.WHNF);
-      if (!((ClassField) expr.getDefinition()).isProperty() && !(thisExpr.isInstance(InferenceReferenceExpression.class) && thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
-        Expression type = thisExpr.getType();
-        ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
-        if (classCall != null) {
-          Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
-          if (impl != null && !impl.isInstance(NewExpression.class)) {
-            return impl.accept(this, mode);
+      boolean isProperty = ((ClassField) expr.getDefinition()).isProperty();
+      Expression thisExpr = ((FieldCallExpression) expr).getArgument();
+      if (!isProperty) {
+        thisExpr = thisExpr.accept(this, Mode.WHNF);
+        if (!(thisExpr.isInstance(InferenceReferenceExpression.class) && thisExpr.cast(InferenceReferenceExpression.class).getVariable() instanceof TypeClassInferenceVariable)) {
+          Expression type = thisExpr.getType();
+          ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
+          if (classCall != null) {
+            Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
+            if (impl != null && !impl.isInstance(NewExpression.class)) {
+              return impl.accept(this, mode);
+            }
           }
         }
       }
