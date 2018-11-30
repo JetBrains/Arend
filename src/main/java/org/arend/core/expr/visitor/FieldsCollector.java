@@ -4,6 +4,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,6 +21,10 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
   }
 
   public static Set<ClassField> getFields(Expression expr, Set<? extends ClassField> fields) {
+    if (fields.isEmpty()) {
+      return Collections.emptySet();
+    }
+
     FieldsCollector collector = new FieldsCollector(fields);
     expr.accept(collector, null);
     return collector.myResult;

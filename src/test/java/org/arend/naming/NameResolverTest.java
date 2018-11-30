@@ -3,21 +3,25 @@ package org.arend.naming;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.LocatedReferableImpl;
+import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.ListScope;
 import org.arend.naming.scope.SingletonScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.group.ChildGroup;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.arend.frontend.ConcreteExpressionFactory.*;
 import static org.arend.typechecking.Matchers.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class NameResolverTest extends NameResolverTestCase {
   @Test
@@ -597,6 +601,20 @@ public class NameResolverTest extends NameResolverTestCase {
       "\\func g => f\n" +
       "\\func g' => f'", 2);
     assertThatErrorsAre(notInScope("f"), notInScope("f'"));
+  }
+
+  @Test
+  public void openElementsTest() {
+    ChildGroup group = resolveNamesModule(
+      "\\import Prelude()\n" +
+      "\\module X \\where { \\func f => 0 }\n" +
+      "\\open X\n" +
+      "\\func g => f");
+    List<String> names = new ArrayList<>();
+    for (Referable element : group.getGroupScope().getElements()) {
+      names.add(element.textRepresentation());
+    }
+    assertEquals(Arrays.asList("X", "g", "f"), names);
   }
 
   @Test
