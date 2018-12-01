@@ -78,7 +78,7 @@ public class Sort {
   }
 
   public boolean isProp() {
-    return myHLevel.isClosed() && myHLevel.getConstant() == -1;
+    return myHLevel.isProp();
   }
 
   public boolean isSet() {

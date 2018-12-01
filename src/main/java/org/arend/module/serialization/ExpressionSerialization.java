@@ -81,7 +81,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   // Sorts and levels
 
-  private LevelProtos.Level writeLevel(Level level) {
+  LevelProtos.Level writeLevel(Level level) {
     // Level.INFINITY should be read with great care
     LevelProtos.Level.Builder builder = LevelProtos.Level.newBuilder();
     if (level.getVar() == null) {

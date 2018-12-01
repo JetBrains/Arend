@@ -53,6 +53,7 @@ message Definition {
         Sort sort = 7;
         bool is_record = 13;
         CoerceData coerce_data = 14;
+        repeated ImplLevel impl_level = 15;
 
         message Field {
             Referable referable = 1;
@@ -61,6 +62,11 @@ message Definition {
             bool isExplicit = 5;
             bool isParameter = 6;
             bool isProperty = 7;
+        }
+
+        message ImplLevel {
+            repeated int32 field = 1;
+            Level level = 2;
         }
     }
     message DataData {

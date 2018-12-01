@@ -87,4 +87,29 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    \\use \\level isProp {A : \\Type} (d1 : Trunc A) => \\lam (d2 : Trunc A) (p : d1 = d2) => \\lam (q : d1 = d2) => path (\\lam i => path (trunc d1 d2 p q i))");
     assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), ((DataDefinition) getDefinition("Trunc")).getSort());
   }
+
+  @Test
+  public void testClassFields() {
+    typeCheckModule(
+      "\\data D : \\Set\n" +
+      "\\func absurd {A : \\Type} (d : D) : A\n" +
+      "\\class C (x : Nat) (d : D)\n" +
+      "  \\where\n" +
+      "    \\use \\level isProp (x : Nat) (c1 c2 : C x) : c1 = c2 => absurd c1.d\n" +
+      "\\func f : \\Prop => C 0");
+    assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), ((DataDefinition) getDefinition("D")).getSort());
+    assertEquals(Sort.SET0, ((ClassDefinition) getDefinition("C")).getSort());
+  }
+
+  @Test
+  public void testClassFields2() {
+    typeCheckModule(
+      "\\data D\n" +
+      "\\func absurd {A : \\Type} (d : D) : A\n" +
+      "\\class C {A B : \\Type} (f : A -> B) (d : D)\n" +
+      "  \\where\n" +
+      "    \\use \\level isProp {A B : \\Type} (f : A -> B) (c1 c2 : C f) : c1 = c2 => absurd c1.d\n" +
+      "\\func f : \\Prop => C (\\lam (x : Nat) => x)");
+    assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("C")).getSort());
+  }
 }

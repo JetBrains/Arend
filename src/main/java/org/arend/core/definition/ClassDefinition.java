@@ -7,6 +7,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.TCClassReferable;
 
@@ -21,6 +22,7 @@ public class ClassDefinition extends Definition {
   private Sort mySort;
   private boolean myRecord = false;
   private final CoerceData myCoerce = new CoerceData(this);
+  private Map<Set<ClassField>, Level> myLevels = new HashMap<>();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -52,6 +54,18 @@ public class ClassDefinition extends Definition {
     myCoercingField = coercingField;
   }
 
+  public Map<? extends Set<ClassField>, ? extends Level> getLevels() {
+    return myLevels;
+  }
+
+  public void setLevels(Map<Set<ClassField>,Level> levels) {
+    myLevels = levels;
+  }
+
+  public void addLevel(Set<ClassField> fields, Level level) {
+    myLevels.put(fields, level);
+  }
+
   public Sort computeSort(Map<ClassField,Expression> implemented) {
     ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
     Sort sort = Sort.PROP;
@@ -76,7 +90,8 @@ public class ClassDefinition extends Definition {
       }
     }
 
-    return sort;
+    Level hLevel = myLevels.get(implemented.keySet());
+    return hLevel == null ? sort : hLevel.isProp() ? Sort.PROP : new Sort(sort.getPLevel(), hLevel);
   }
 
   public void updateSort() {

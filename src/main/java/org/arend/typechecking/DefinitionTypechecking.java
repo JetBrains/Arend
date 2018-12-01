@@ -592,10 +592,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         } else if (def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL) {
           boolean ok = true;
+          Set<ClassField> levelFields = null;
           Expression type = null;
           DependentLink link = typedDef.getParameters();
-          ExprSubstitution substitution = new ExprSubstitution();
           if (useParent instanceof DataDefinition) {
+            ExprSubstitution substitution = new ExprSubstitution();
             List<Expression> dataCallArgs = new ArrayList<>();
             for (DependentLink dataLink = useParent.getParameters(); dataLink.hasNext(); dataLink = dataLink.getNext(), link = link.getNext()) {
               if (!link.hasNext()) {
@@ -619,7 +620,34 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               }
             }
           } else {
-            type = new ClassCallExpression((ClassDefinition) useParent, Sort.STD);
+            ClassCallExpression classCall = null;
+            for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
+              link1 = link1.getNextTyped(null);
+              classCall = link1.getTypeExpr().checkedCast(ClassCallExpression.class);
+              if (classCall != null && classCall.getDefinition() == useParent && classCall.getSortArgument().equals(Sort.STD)) {
+                break;
+              }
+            }
+            if (classCall == null) {
+              ok = false;
+            } else {
+              Expression thisExpr = new NewExpression(classCall);
+              for (ClassField classField : classCall.getDefinition().getFields()) {
+                Expression impl = classCall.getImplementationHere(classField);
+                if (impl == null) {
+                  continue;
+                }
+                if (!(link.hasNext() && impl instanceof ReferenceExpression && ((ReferenceExpression) impl).getBinding() == link && classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr()))) {
+                  ok = false;
+                  break;
+                }
+                link = link.getNext();
+              }
+              if (!classCall.getImplementedHere().isEmpty()) {
+                levelFields = new HashSet<>(classCall.getImplementedHere().keySet());
+              }
+              type = classCall;
+            }
           }
 
           int level = -2;
@@ -668,9 +696,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           if (ok) {
             if (newDef) {
               if (useParent instanceof DataDefinition) {
-                ((DataDefinition) useParent).setSort(new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
+                ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
               } else {
-                ((ClassDefinition) useParent).setSort(new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
+                if (levelFields == null) {
+                  ((ClassDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
+                } else {
+                  ((ClassDefinition) useParent).addLevel(levelFields, new Level(level));
+                }
               }
             }
           } else {

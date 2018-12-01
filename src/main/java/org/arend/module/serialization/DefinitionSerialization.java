@@ -12,6 +12,7 @@ import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.Pattern;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.Precedence;
@@ -20,6 +21,7 @@ import org.arend.util.Pair;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DefinitionSerialization {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
@@ -109,6 +111,15 @@ public class DefinitionSerialization {
 
     if (!definition.getCoerceData().isEmpty()) {
       builder.setCoerceData(writeCoerceData(definition.getCoerceData()));
+    }
+
+    for (Map.Entry<? extends Set<ClassField>, ? extends Level> entry : definition.getLevels().entrySet()) {
+      DefinitionProtos.Definition.ClassData.ImplLevel.Builder implLevelBuild = DefinitionProtos.Definition.ClassData.ImplLevel.newBuilder();
+      for (ClassField field : entry.getKey()) {
+        implLevelBuild.addField(myCallTargetIndexProvider.getDefIndex(field));
+      }
+      implLevelBuild.setLevel(defSerializer.writeLevel(entry.getValue()));
+      builder.addImplLevel(implLevelBuild.build());
     }
 
     return builder.build();

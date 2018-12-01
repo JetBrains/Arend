@@ -1399,14 +1399,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public ClassCallExpression fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
-    List<Sort> sorts = new ArrayList<>();
+    Level hLevel = classCall.getDefinition().getLevels().get(classCall.getImplementedHere().keySet());
+    List<Sort> sorts = hLevel != null && hLevel.isProp() ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
       PiExpression fieldType = field.getType(classCall.getSortArgument());
       if (fieldType.getCodomain().isInstance(ErrorExpression.class)) continue;
-      sorts.add(getSortOf(fieldType.applyExpression(thisExpr).normalize(NormalizeVisitor.Mode.WHNF).getType(), sourceNode));
+      if (sorts != null) {
+        sorts.add(getSortOf(fieldType.applyExpression(thisExpr).normalize(NormalizeVisitor.Mode.WHNF).getType(), sourceNode));
+      }
     }
-    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
+
+    if (hLevel != null && sorts != null) {
+      for (int i = 0; i < sorts.size(); i++) {
+        sorts.set(i, new Sort(sorts.get(i).getPLevel(), hLevel));
+      }
+    }
+
+    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
   }
 
   private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {

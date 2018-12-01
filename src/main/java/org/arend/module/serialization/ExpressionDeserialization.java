@@ -85,7 +85,7 @@ class ExpressionDeserialization {
 
   // Sorts and levels
 
-  private Level readLevel(LevelProtos.Level proto) throws DeserializationException {
+  Level readLevel(LevelProtos.Level proto) throws DeserializationException {
     LevelVariable var;
     switch (proto.getVariable()) {
       case NO_VAR:

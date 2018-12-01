@@ -75,6 +75,10 @@ public class Level {
     return myVar == null;
   }
 
+  public boolean isProp() {
+    return isClosed() && getConstant() == -1;
+  }
+
   public Level add(int constant) {
     return constant == 0 || isInfinity() ? this : new Level(myVar, myConstant + constant, myMaxConstant);
   }

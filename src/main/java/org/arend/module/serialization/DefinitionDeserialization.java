@@ -9,6 +9,7 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.ClassReferableImpl;
 import org.arend.naming.reference.DataLocatedReferableImpl;
@@ -19,10 +20,7 @@ import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DefinitionDeserialization {
   private final CallTargetProvider myCallTargetProvider;
@@ -161,6 +159,19 @@ public class DefinitionDeserialization {
     }
 
     readCoerceData(classProto.getCoerceData(), classDef.getCoerceData(), classDef);
+
+    List<DefinitionProtos.Definition.ClassData.ImplLevel> implLevels = classProto.getImplLevelList();
+    if (!implLevels.isEmpty()) {
+      Map<Set<ClassField>, Level> levels = new HashMap<>();
+      for (DefinitionProtos.Definition.ClassData.ImplLevel implLevel : implLevels) {
+        Set<ClassField> fields = new HashSet<>();
+        for (Integer fieldRef : implLevel.getFieldList()) {
+          fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
+        }
+        levels.put(fields, defDeserializer.readLevel(implLevel.getLevel()));
+      }
+      classDef.setLevels(levels);
+    }
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
