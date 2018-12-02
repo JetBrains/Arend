@@ -3,6 +3,7 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.DataDefinition;
+import org.arend.core.definition.Definition;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.junit.Test;
@@ -111,5 +112,19 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    \\use \\level isProp {A B : \\Type} (f : A -> B) (c1 c2 : C f) : c1 = c2 => absurd c1.d\n" +
       "\\func f : \\Prop => C (\\lam (x : Nat) => x)");
     assertEquals(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 1)), ((ClassDefinition) getDefinition("C")).getSort());
+  }
+
+  @Test
+  public void mutualRecursion() {
+    typeCheckModule(
+      "\\func f (c : C) : c = c => path (\\lam _ => c)\n" +
+      "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1");
+  }
+
+  @Test
+  public void mutualRecursion2() {
+    typeCheckModule(
+      "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1\n" +
+      "\\func f (c : C) : c = c => path (\\lam _ => c)");
   }
 }

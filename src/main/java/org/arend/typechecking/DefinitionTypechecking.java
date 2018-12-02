@@ -432,7 +432,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       ExpectedType expectedType1 = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
       Type expectedTypeResult =
         def.getBody() instanceof Concrete.CoelimFunctionBody ? null :
-        def.getBody() instanceof Concrete.TermFunctionBody ? myVisitor.checkType(resultType, expectedType1) : myVisitor.finalCheckType(resultType, expectedType1);
+        def.getBody() instanceof Concrete.TermFunctionBody && !recursive ? myVisitor.checkType(resultType, expectedType1) : myVisitor.finalCheckType(resultType, expectedType1);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
       }
@@ -524,17 +524,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         } else {
           typecheckCoClauses(newDef ? typedDef : null, def, def.getResultType(), body.getClassFieldImpls());
+          clauses = Collections.emptyList();
         }
         bodyIsOK = true;
       }
     } else {
       CheckTypeVisitor.Result termResult = myVisitor.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
       if (termResult != null) {
+        clauses = Collections.emptyList();
         if (termResult.expression != null) {
           if (newDef) {
             typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           }
-          clauses = Collections.emptyList();
         }
         if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getBody() == null) {
           bodyIsOK = true;

@@ -4,6 +4,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
+import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
@@ -23,8 +24,10 @@ import org.arend.typechecking.DefinitionTypechecking;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.CycleError;
+import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.ProxyErrorReporter;
+import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.Ordering;
@@ -38,6 +41,7 @@ import org.arend.typechecking.typecheckable.TypecheckingUnit;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DesugarVisitor;
+import org.arend.typechecking.visitor.FindDefCallVisitor;
 import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
 
@@ -299,7 +303,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   }
 
   private void typecheckBodies(List<Concrete.Definition> definitions, boolean headersAreOK) {
-    Set<FunctionDefinition> functionDefinitions = new HashSet<>();
+    Map<FunctionDefinition,Concrete.Definition> functionDefinitions = new HashMap<>();
     Map<FunctionDefinition, List<Clause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
@@ -325,7 +329,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         typechecking.setVisitor(pair.proj1);
         List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
         if (clauses != null) {
-          functionDefinitions.add((FunctionDefinition) def);
+          functionDefinitions.put((FunctionDefinition) def, definition);
           clausesMap.put((FunctionDefinition) def, clauses);
         }
       }
@@ -334,18 +338,24 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     if (!functionDefinitions.isEmpty()) {
-      DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      for (FunctionDefinition fDef : functionDefinitions) {
-        definitionCallGraph.add(fDef, clausesMap.get(fDef), functionDefinitions);
+      FindDefCallVisitor visitor = new FindDefCallVisitor(dataDefinitions);
+      Iterator<Map.Entry<FunctionDefinition, Concrete.Definition>> it = functionDefinitions.entrySet().iterator();
+      while (it.hasNext()) {
+        Map.Entry<FunctionDefinition, Concrete.Definition> entry = it.next();
+        visitor.findDefinition(entry.getKey().getBody());
+        if (visitor.getFoundDefinition() != null) {
+          entry.getKey().setBody(null);
+          if (entry.getKey().status().headerIsOK()) {
+            entry.getKey().setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+          }
+          myErrorReporter.report(new ProxyError(entry.getKey().getReferable(), new TypecheckingError("Mutually recursive function refers to data type '" + visitor.getFoundDefinition().getName() + "'", entry.getValue())));
+          it.remove();
+          visitor.clear();
+        }
       }
-      DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
-      if (!callCategory.checkTermination()) {
-        for (FunctionDefinition fDef : functionDefinitions) {
-          fDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-        }
-        for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          myErrorReporter.report(new TerminationCheckError(entry.getKey(), functionDefinitions, entry.getValue()));
-        }
+
+      if (!functionDefinitions.isEmpty()) {
+        checkRecursiveFunctions(functionDefinitions, clausesMap);
       }
     }
   }
@@ -360,18 +370,29 @@ public class TypecheckingOrderingListener implements OrderingListener {
     List<Clause> clauses = unit.getDefinition().accept(new DefinitionTypechecking(checkTypeVisitor), recursive);
     Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
 
-    if (recursive && clauses != null) {
-      DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
-      definitionCallGraph.add((FunctionDefinition) typechecked, clauses, Collections.singleton(typechecked));
-      DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
-      if (!callCategory.checkTermination()) {
-        typechecked.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-        for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-          myErrorReporter.report(new TerminationCheckError(entry.getKey(), Collections.singleton(entry.getKey()), entry.getValue()));
-        }
-      }
+    if (recursive && typechecked instanceof FunctionDefinition) {
+      checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, unit.getDefinition()), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }
 
     typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
+  }
+
+  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {
+    DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
+    for (Map.Entry<FunctionDefinition, Concrete.Definition> entry : definitions.entrySet()) {
+      List<Clause> functionClauses = clauses.get(entry.getKey());
+      if (functionClauses != null) {
+        definitionCallGraph.add(entry.getKey(), functionClauses, definitions.keySet());
+      }
+    }
+    DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
+    if (!callCategory.checkTermination()) {
+      for (FunctionDefinition definition : definitions.keySet()) {
+        definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      }
+      for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
+        myErrorReporter.report(new TerminationCheckError(entry.getKey(), Collections.singleton(entry.getKey()), entry.getValue()));
+      }
+    }
   }
 }

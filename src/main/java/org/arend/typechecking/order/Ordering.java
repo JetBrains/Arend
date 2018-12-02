@@ -237,9 +237,6 @@ public class Ordering {
     }
     if (scc != null) {
       myOrderingListener.sccFound(scc);
-      for (TypecheckingUnit unit1 : scc.getUnits()) {
-        doOrderCoercingFunctions(unit1.getDefinition());
-      }
     }
 
     return OrderResult.REPORTED;
