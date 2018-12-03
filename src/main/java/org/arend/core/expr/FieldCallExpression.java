@@ -63,6 +63,9 @@ public class FieldCallExpression extends DefCallExpression {
 
   @Override
   public boolean isWHNF() {
+    if (getDefinition().isProperty()) {
+      return true;
+    }
     if (myArgument.isInstance(NewExpression.class)) {
       return false;
     }
