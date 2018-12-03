@@ -1,6 +1,8 @@
 package org.arend.typechecking.termination;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.Clause;
@@ -8,6 +10,7 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.type.Type;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.Pattern;
@@ -63,6 +66,18 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         myVector.add(new BindingPattern(link));
       }
       ((LeafElimTree) elimTree).getExpression().accept(this, null);
+    }
+
+    Expression resultType = myDefinition.getResultType();
+    if (resultType != null) {
+      myVector = new ArrayList<>();
+
+      for (DependentLink p = myDefinition.getParameters(); p.hasNext(); p = p.getNext()) {
+        p = p.getNextTyped(null);
+        myVector.add(new BindingPattern(p));
+      }
+
+      resultType.accept(this, null);
     }
   }
 
