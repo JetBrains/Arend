@@ -110,16 +110,14 @@ public class RecursiveTest extends TypeCheckingTestCase {
   public void parametersTest() {
     typeCheckModule(
       "\\func f (n : \\let t => g 0 \\in Nat) : Nat | 0 => 0 | suc n => g n\n" +
-      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 1);
   }
 
   @Test
-  public void parametersBodyTest() {
+  public void parametersTypeTest() {
     typeCheckModule(
       "\\func f (x : \\let t => g 0 \\in Nat) : \\Type | 0 => Nat | suc x => g x\n" +
-      "\\func g (x : Nat) : \\Type | 0 => Nat | suc x => f x", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+      "\\func g (x : Nat) : \\Type | 0 => Nat | suc x => f x", 1);
   }
 
   @Test

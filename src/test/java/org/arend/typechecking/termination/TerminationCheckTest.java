@@ -146,22 +146,6 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void threeMutualRecursiveFunctions() {
-    typeCheckModule(
-      "\\func f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
-      "\\func g (n : Nat) (x : h n = h n -> Nat) : \\Set0 => Nat\n" +
-      "\\func h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)");
-  }
-
-  @Test
-  public void threeMutualRecursiveFunctionsWithoutType() {
-    typeCheckModule(
-      "\\func f (n : Nat) (x : g n (\\lam _ => 0) -> Nat) : Nat => 0\n" +
-      "\\func g (n : Nat) (x : h n = h n -> Nat) => Nat\n" +
-      "\\func h (n : Nat) : Nat | zero => 0 | suc n => f n (\\lam _ => n)", 2);
-  }
-
-  @Test
   public void nonMonomialCallMatrixTest() {
     typeCheckModule(
       "\\data Int : \\Set0 | pos Nat | neg Nat { zero => pos zero }\n" +

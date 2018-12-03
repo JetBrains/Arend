@@ -1,5 +1,6 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
@@ -405,11 +406,19 @@ public class TypecheckingOrderingListener implements OrderingListener {
       if (functionClauses != null) {
         definitionCallGraph.add(entry.getKey(), functionClauses, definitions.keySet());
       }
+      for (DependentLink link = entry.getKey().getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (FindDefCallVisitor.findDefinition(link.getTypeExpr(), definitions.keySet()) != null) {
+          myErrorReporter.report(new ProxyError(entry.getKey().getReferable(), new TypecheckingError("Mutually recursive functions are not allowed in parameters", entry.getValue())));
+        }
+      }
     }
+
     DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
     if (!callCategory.checkTermination()) {
       for (FunctionDefinition definition : definitions.keySet()) {
         definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        definition.setBody(null);
       }
       for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
         myErrorReporter.report(new TerminationCheckError(entry.getKey(), Collections.singleton(entry.getKey()), entry.getValue()));

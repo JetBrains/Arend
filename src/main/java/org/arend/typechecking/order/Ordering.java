@@ -201,26 +201,6 @@ public class Ordering {
             Definition typechecked = myState.getTypechecked(tcReferable);
             if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
               updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
-              /*
-              if (!myRefToHeaders) {
-                List<TCReferable> coercingFunctions = Collections.emptyList();
-                if (dependency instanceof Concrete.DataDefinition) {
-                  coercingFunctions = ((Concrete.DataDefinition) dependency).getUsedDefinitions();
-                } else if (dependency instanceof Concrete.ClassDefinition) {
-                  coercingFunctions = ((Concrete.ClassDefinition) dependency).getUsedDefinitions();
-                }
-
-                for (TCReferable coercingFunction : coercingFunctions) {
-                  Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(coercingFunction);
-                  if (def instanceof Concrete.FunctionDefinition) {
-                    Concrete.FunctionDefinition.Kind kind = ((Concrete.FunctionDefinition) def).getKind();
-                    if (kind.isUse()) {
-                      updateState(currentState, new TypecheckingUnit((Concrete.Definition) def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
-                    }
-                  }
-                }
-              }
-              */
             }
           }
         }
