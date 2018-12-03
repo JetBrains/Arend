@@ -667,7 +667,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           }
         }
-        if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getBody() == null) {
+        if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
           bodyIsOK = true;
           if (newDef) {
             typedDef.setBody(null);
