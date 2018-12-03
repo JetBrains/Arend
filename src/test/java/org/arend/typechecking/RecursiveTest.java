@@ -66,14 +66,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void headerBodyTest() {
-    typeCheckModule(
-      "\\func f (x : \\let t => g 0 \\in Nat) : \\Type | 0 => Nat | suc x => g x\n" +
-      "\\func g (x : Nat) : \\Type | 0 => Nat | suc x => f x", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
-  }
-
-  @Test
   public void bodyBodyTest() {
     typeCheckModule(
       "\\func f (x : Nat) : \\Type => g 0\n" +
@@ -90,6 +82,62 @@ public class RecursiveTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void bodyBodyLemmaTest() {
+    typeCheckModule(
+      "\\lemma f (x : Nat) : x = x => g x\n" +
+      "\\lemma g (x : Nat) : x = x => f x", 2);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void bodyBodyCowithTest() {
+    typeCheckModule(
+      "\\class C (n : Nat)\n" +
+      "\\func f (x : Nat) : C \\cowith | n => C.n {g x}\n" +
+      "\\func g (x : Nat) : C \\cowith | n => C.n {f x}", 2);
+  }
+
+  @Test
+  public void bodyBodyNewTest() {
+    typeCheckModule(
+      "\\class C (n : Nat)\n" +
+      "\\func f (x : Nat) : C => \\new C (C.n {g x})\n" +
+      "\\func g (x : Nat) : C => \\new C (C.n {f x})", 2);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void parametersTest() {
+    typeCheckModule(
+      "\\func f (n : \\let t => g 0 \\in Nat) : Nat | 0 => 0 | suc n => g n\n" +
+      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 2);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void parametersBodyTest() {
+    typeCheckModule(
+      "\\func f (x : \\let t => g 0 \\in Nat) : \\Type | 0 => Nat | suc x => g x\n" +
+      "\\func g (x : Nat) : \\Type | 0 => Nat | suc x => f x", 2);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void resultTypeTestError() {
+    typeCheckModule(
+      "\\func f (n : Nat) : \\let t => g 0 \\in Nat | 0 => 0 | suc n => g n\n" +
+      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 2);
+    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
+  }
+
+  @Test
+  public void resultTypeTest() {
+    typeCheckModule(
+      "\\func f (n : Nat) : g n = g n | 0 => path (\\lam _ => g 0) | suc n => path (\\lam _ => g (suc n))\n" +
+      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => \\let t => f n \\in n");
+  }
+
+  @Test
   public void bodyBodyElimTest() {
     typeCheckModule(
       "\\func f (x : Nat) : \\Type | 0 => g 0 | suc _ => Nat\n" +
@@ -102,14 +150,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (x : Nat) : Nat | 0 => g 0 | suc n => n \n" +
       "\\func g (x : Nat) : Nat | 0 => f 0 | suc n => n", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
-  }
-
-  @Test
-  public void headerTest() {
-    typeCheckModule(
-      "\\func f (n : \\let t => g 0 \\in Nat) : Nat | 0 => 0 | suc n => g n\n" +
-      "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 2);
     assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 

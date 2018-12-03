@@ -35,8 +35,8 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
 
   private void collectIntervals() {
     ElimTree elimTree;
-    if (myDefinition.getBody() instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) myDefinition.getBody();
+    if (myDefinition.getActualBody() instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) myDefinition.getActualBody();
       myVector = new ArrayList<>();
       for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext()) {
         myVector.add(new BindingPattern(link));
@@ -54,7 +54,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
 
       elimTree = elim.getOtherwise();
     } else {
-      elimTree = (ElimTree) myDefinition.getBody();
+      elimTree = (ElimTree) myDefinition.getActualBody();
     }
 
     if (elimTree instanceof LeafElimTree) {
