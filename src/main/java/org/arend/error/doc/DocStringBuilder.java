@@ -1,5 +1,12 @@
 package org.arend.error.doc;
 
+import org.arend.naming.reference.FieldReferable;
+import org.arend.naming.reference.LocatedReferable;
+import org.arend.util.LongName;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class DocStringBuilder extends LineDocVisitor {
   private final StringBuilder myBuilder;
 
@@ -48,7 +55,16 @@ public class DocStringBuilder extends LineDocVisitor {
 
   @Override
   public Void visitReference(ReferenceDoc doc, Boolean newLine) {
-    myBuilder.append(doc.getReference().textRepresentation());
+    String name;
+    if (doc.getReference() instanceof LocatedReferable && !(doc.getReference() instanceof FieldReferable)) {
+      List<String> fullName = new ArrayList<>();
+      LocatedReferable.Helper.getLocation((LocatedReferable) doc.getReference(), fullName);
+      name = new LongName(fullName).toString();
+    } else {
+      name = doc.getReference().textRepresentation();
+    }
+
+    myBuilder.append(name);
     if (newLine) {
       myBuilder.append('\n');
     }

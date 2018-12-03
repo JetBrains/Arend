@@ -1003,6 +1003,10 @@ public final class Concrete {
       return this;
     }
 
+    public List<TCReferable> getUsedDefinitions() {
+      return Collections.emptyList();
+    }
+
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       accept(new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()), null);
@@ -1069,6 +1073,7 @@ public final class Concrete {
       return myImplementations;
     }
 
+    @Override
     public List<TCReferable> getUsedDefinitions() {
       return myUsedDefinitions;
     }
@@ -1338,6 +1343,7 @@ public final class Concrete {
       return myUniverse;
     }
 
+    @Override
     public List<TCReferable> getUsedDefinitions() {
       return myUsedDefinitions;
     }

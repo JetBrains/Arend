@@ -40,6 +40,7 @@ public class Ordering {
   private final ReferableConverter myReferableConverter;
   private final TypecheckerState myState;
   private final PartialComparator<TCReferable> myComparator;
+  private final Deque<Concrete.Definition> myDeferredDefinitions = new ArrayDeque<>();
   private final boolean myRefToHeaders;
 
   public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, boolean refToHeaders) {
@@ -117,6 +118,9 @@ public class Ordering {
     if (!myVertices.containsKey(typecheckingUnit)) {
       // myDependencyListener.update(definition.getData());
       doOrderRecursively(typecheckingUnit);
+    }
+    while (!myDeferredDefinitions.isEmpty()) {
+      doOrderRecursively(new TypecheckingUnit(myDeferredDefinitions.pop(), false));
     }
   }
 
@@ -197,6 +201,26 @@ public class Ordering {
             Definition typechecked = myState.getTypechecked(tcReferable);
             if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
               updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
+              /*
+              if (!myRefToHeaders) {
+                List<TCReferable> coercingFunctions = Collections.emptyList();
+                if (dependency instanceof Concrete.DataDefinition) {
+                  coercingFunctions = ((Concrete.DataDefinition) dependency).getUsedDefinitions();
+                } else if (dependency instanceof Concrete.ClassDefinition) {
+                  coercingFunctions = ((Concrete.ClassDefinition) dependency).getUsedDefinitions();
+                }
+
+                for (TCReferable coercingFunction : coercingFunctions) {
+                  Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(coercingFunction);
+                  if (def instanceof Concrete.FunctionDefinition) {
+                    Concrete.FunctionDefinition.Kind kind = ((Concrete.FunctionDefinition) def).getKind();
+                    if (kind.isUse()) {
+                      updateState(currentState, new TypecheckingUnit((Concrete.Definition) def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
+                    }
+                  }
+                }
+              }
+              */
             }
           }
         }
@@ -222,12 +246,16 @@ public class Ordering {
       }
 
       if (unit.isHeader() && units.size() == 1) {
+        if (unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == Concrete.FunctionDefinition.Kind.LEVEL) {
+          myOrderingListener.unitFound(unit, recursion);
+          return OrderResult.REPORTED;
+        }
         return OrderResult.NOT_REPORTED;
       }
 
       if (units.size() == 1) {
         myOrderingListener.unitFound(unit, recursion);
-        doOrderCoercingFunctions(unit.getDefinition());
+        doOrderCoercingFunctions(currentState, unit.getDefinition());
         return OrderResult.REPORTED;
       }
     }
@@ -242,23 +270,21 @@ public class Ordering {
     return OrderResult.REPORTED;
   }
 
-  private void doOrderCoercingFunctions(Concrete.Definition definition) {
-    if (myRefToHeaders) {
-      return;
-    }
-
-    List<TCReferable> coercingFunctions = Collections.emptyList();
-    if (definition instanceof Concrete.DataDefinition) {
-      coercingFunctions = ((Concrete.DataDefinition) definition).getUsedDefinitions();
-    } else if (definition instanceof Concrete.ClassDefinition) {
-      coercingFunctions = ((Concrete.ClassDefinition) definition).getUsedDefinitions();
-    }
-
-    for (TCReferable coercingFunction : coercingFunctions) {
+  private void doOrderCoercingFunctions(DefState currentState, Concrete.Definition definition) {
+    for (TCReferable coercingFunction : definition.getUsedDefinitions()) {
       myDependencyListener.dependsOn(definition.getData(), true, coercingFunction);
       Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(coercingFunction);
-      if (def instanceof Concrete.Definition) {
-        orderDefinition((Concrete.Definition) def);
+      if (def instanceof Concrete.FunctionDefinition) {
+        Concrete.FunctionDefinition.Kind kind = ((Concrete.FunctionDefinition) def).getKind();
+        if (kind.isUse()) {
+          Definition typechecked = myState.getTypechecked(def.getData());
+          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
+            updateState(currentState, new TypecheckingUnit((Concrete.Definition) def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
+            if (kind == Concrete.FunctionDefinition.Kind.LEVEL) {
+              myDeferredDefinitions.add((Concrete.Definition) def);
+            }
+          }
+        }
       }
     }
   }

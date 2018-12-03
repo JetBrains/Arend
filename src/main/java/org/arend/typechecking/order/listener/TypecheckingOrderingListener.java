@@ -263,7 +263,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       }
       DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, visitor.getErrorReporter());
       Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(unit.getDefinition().getData());
-      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), visitor), unit.getDefinition());
+      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), visitor), unit.getDefinition(), true);
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(unit.getDefinition().getData(), new Pair<>(visitor, oldTypechecked == null));
       }
@@ -361,20 +361,41 @@ public class TypecheckingOrderingListener implements OrderingListener {
   }
 
   private void typecheck(TypecheckingUnit unit, boolean recursive) {
-    typecheckingUnitStarted(unit.getDefinition().getData());
+    List<Clause> clauses;
+    Definition typechecked;
+    boolean isLevel = unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
+    if (isLevel && !unit.isHeader()) {
+      typecheckingBodyStarted(unit.getDefinition().getData());
+      Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(unit.getDefinition().getData());
+      typechecked = myState.getTypechecked(unit.getDefinition().getData());
+      clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, unit.getDefinition(), Collections.emptySet(), pair.proj2);
+    } else {
+      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter), null);
+      checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), checkTypeVisitor));
+      DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, checkTypeVisitor.getErrorReporter());
+      if (isLevel) {
+        typecheckingHeaderStarted(unit.getDefinition().getData());
+        Definition oldTypechecked = myState.getTypechecked(unit.getDefinition().getData());
+        mySuspensions.put(unit.getDefinition().getData(), new Pair<>(checkTypeVisitor, oldTypechecked == null));
+        typechecked = new DefinitionTypechecking(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), unit.getDefinition(), false);
+        typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
+        return;
+      } else {
+        typecheckingUnitStarted(unit.getDefinition().getData());
+        clauses = unit.getDefinition().accept(new DefinitionTypechecking(checkTypeVisitor), recursive);
+        typechecked = myState.getTypechecked(unit.getDefinition().getData());
+      }
+    }
 
-    CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter), null);
-    DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, checkTypeVisitor.getErrorReporter());
-    GlobalInstancePool pool = new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), checkTypeVisitor);
-    checkTypeVisitor.setInstancePool(pool);
-    List<Clause> clauses = unit.getDefinition().accept(new DefinitionTypechecking(checkTypeVisitor), recursive);
-    Definition typechecked = myState.getTypechecked(unit.getDefinition().getData());
-
-    if (recursive && typechecked instanceof FunctionDefinition) {
+    if (recursive && typechecked instanceof FunctionDefinition && clauses != null) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, unit.getDefinition()), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }
 
-    typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
+    if (isLevel && !unit.isHeader()) {
+      typecheckingBodyFinished(unit.getDefinition().getData(), typechecked);
+    } else {
+      typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
+    }
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {

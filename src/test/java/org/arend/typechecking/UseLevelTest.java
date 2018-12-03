@@ -85,7 +85,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    | _, right => y\n" +
       "  }" +
       "  \\where\n" +
-      "    \\use \\level isProp {A : \\Type} (d1 : Trunc A) => \\lam (d2 : Trunc A) (p : d1 = d2) => \\lam (q : d1 = d2) => path (\\lam i => path (trunc d1 d2 p q i))");
+      "    \\use \\level isProp {A : \\Type} (d1 : Trunc A) : \\Pi (d2 : Trunc A) (p : d1 = d2) -> \\Pi (q : d1 = d2) -> p = q => \\lam d2 p q => path (\\lam i => path (trunc d1 d2 p q i))");
     assertEquals(Sort.SetOfLevel(new Level(LevelVariable.PVAR)), ((DataDefinition) getDefinition("Trunc")).getSort());
   }
 
@@ -126,5 +126,18 @@ public class UseLevelTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1\n" +
       "\\func f (c : C) : c = c => path (\\lam _ => c)");
+  }
+
+  @Test
+  public void orderTest() {
+    typeCheckModule(
+      "\\func f : \\Prop => D\n" +
+      "\\data Empty\n" +
+      "\\func absurd {A : \\Type} (e : Empty) : A\n" +
+      "\\data D | con1 | con2 Empty \\where\n" +
+      "  \\use \\level isProp (d1 d2 : D) : d1 = d2 \\elim d1, d2\n" +
+      "    | con1, con1 => path (\\lam _ => con1)\n" +
+      "    | _, con2 e => absurd e\n" +
+      "    | con2 e, _ => absurd e");
   }
 }
