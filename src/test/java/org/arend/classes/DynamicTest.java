@@ -224,11 +224,20 @@ public class DynamicTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void dynamicInnerClass() {
+  public void dynamicClass() {
     typeCheckModule(
         "\\class A {\n" +
         "  \\class C\n" +
         "}");
+  }
+
+  @Test
+  public void dynamicModule() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\module C \\where { \\func f => 0 }\n" +
+      "}\n" +
+      "\\func g (a : A) : Nat => A.C.f {a}");
   }
 
   @Test
