@@ -175,4 +175,25 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\func id (A : \\Type) => A\n" +
       "\\func f {a : A \\1-Type} : \\Set => id c", 1);
   }
+
+  @Test
+  public void classInRecordParameter() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x : X\n" +
+      "\\record R {c : C} (y : c.X) (p : y = x) | q : x = y");
+  }
+
+  @Test
+  public void classWithArgumentInRecordParameter() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | f : X -> Nat\n" +
+      "\\record R {c : C Nat} (p : f 0 = 0) | q : f 1 = f 2");
+  }
+
+  @Test
+  public void classWithoutClassifyingFieldInRecordParameter() {
+    typeCheckModule(
+      "\\class C | n : Nat\n" +
+      "\\record R {c : C} (p : n = n) | q : n = n");
+  }
 }

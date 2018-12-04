@@ -15,15 +15,16 @@ import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class LocalInstancePool implements InstancePool {
   static private class InstanceData {
     final Expression key;
     final TCClassReferable classRef;
-    final ReferenceExpression value;
+    final Expression value;
     final Concrete.SourceNode sourceNode;
 
-    InstanceData(Expression key, TCClassReferable classRef, ReferenceExpression value, Concrete.SourceNode sourceNode) {
+    InstanceData(Expression key, TCClassReferable classRef, Expression value, Concrete.SourceNode sourceNode) {
       this.key = key;
       this.classRef = classRef;
       this.value = value;
@@ -47,7 +48,7 @@ public class LocalInstancePool implements InstancePool {
   public LocalInstancePool subst(ExprSubstitution substitution) {
     LocalInstancePool result = new LocalInstancePool(myVisitor);
     for (InstanceData data : myPool) {
-      Expression newValue = substitution.get(data.value.getBinding());
+      Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
       result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classRef, newValue != null && newValue.isInstance(ReferenceExpression.class) ? newValue.cast(ReferenceExpression.class) : data.value, data.sourceNode));
     }
     return result;
@@ -66,7 +67,7 @@ public class LocalInstancePool implements InstancePool {
         ok = underlyingRef1 != null && underlyingRef2 != null && underlyingRef1.isSubClassOf(underlyingRef2);
       }
 
-      if (ok && (instanceData.key == classifyingExpression || instanceData.key != null && instanceData.key.equals(classifyingExpression))) {
+      if (ok && Objects.equals(instanceData.key, classifyingExpression)) {
         Expression result = instanceData.value;
         if (instanceData.key == classifyingExpression) {
           return result;
@@ -82,7 +83,7 @@ public class LocalInstancePool implements InstancePool {
     return null;
   }
 
-  public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, ReferenceExpression instance, Concrete.SourceNode sourceNode) {
+  public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, Expression instance, Concrete.SourceNode sourceNode) {
     Expression oldInstance = getInstance(classifyingExpression, classRef, null, true);
     if (oldInstance != null) {
       return oldInstance;

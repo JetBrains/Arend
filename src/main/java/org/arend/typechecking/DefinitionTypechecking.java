@@ -166,6 +166,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   @Override
   public List<Clause> visitClass(Concrete.ClassDefinition def, Boolean recursive) {
     Definition typechecked = prepare(def);
+
     if (recursive) {
       myVisitor.getErrorReporter().report(new TypecheckingError("A class cannot be recursive", def));
       if (typechecked != null) {
@@ -443,7 +444,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-      typedDef.setIsLemma(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA);
+      typedDef.setIsLemma(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL);
       calculateParametersTypecheckingOrder(typedDef);
     }
 
@@ -1267,6 +1268,20 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return false;
   }
 
+  private static class LocalInstance {
+    final ClassDefinition classDefinition;
+    final TCClassReferable classReferable;
+    final ClassField instanceField;
+    final Concrete.ClassField concreteField;
+
+    LocalInstance(ClassDefinition classDefinition, TCClassReferable classReferable, ClassField instanceField, Concrete.ClassField concreteField) {
+      this.classDefinition = classDefinition;
+      this.classReferable = classReferable;
+      this.instanceField = instanceField;
+      this.concreteField = concreteField;
+    }
+  }
+
   private void typecheckClass(Concrete.ClassDefinition def, ClassDefinition typedDef, boolean newDef) {
     if (newDef) {
       typedDef.clear();
@@ -1307,14 +1322,28 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Concrete.Expression previousType = null;
     ClassField previousField = null;
     Map<String, Referable> fieldNames = new HashMap<>();
+    List<LocalInstance> localInstances = new ArrayList<>();
     for (Concrete.ClassField field : def.getFields()) {
       if (previousType == field.getResultType()) {
         if (newDef && previousField != null) {
           addField(field.getData(), typedDef, previousField.getType(Sort.STD)).setStatus(previousField.status());
         }
       } else {
-        previousField = typecheckClassField(field, typedDef, newDef);
+        previousField = typecheckClassField(field, typedDef, localInstances, newDef);
         previousType = field.getResultType();
+
+        if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
+          Concrete.Expression fieldType = previousType instanceof Concrete.PiExpression ? ((Concrete.PiExpression) previousType).codomain : previousType;
+          TCClassReferable classRef = fieldType.getUnderlyingClassReferable(false);
+          TCClassReferable underlyingClassRef = classRef == null ? null : classRef.getUnderlyingTypecheckable();
+          if (underlyingClassRef != null) {
+            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
+            if (classDef != null && !classDef.isRecord()) {
+              ClassField typecheckedField = previousField != null ? previousField : (ClassField) myVisitor.getTypecheckingState().getTypechecked(field.getData());
+              localInstances.add(new LocalInstance(classDef, classRef, typecheckedField, field));
+            }
+          }
+        }
       }
 
       addName(fieldNames, field.getData());
@@ -1537,30 +1566,36 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
-  private static PiExpression checkFieldType(Type type, ClassDefinition parentClass) {
-    if (!(type instanceof PiExpression)) {
-      return null;
-    }
-    PiExpression piExpr = (PiExpression) type;
-    if (piExpr.getParameters().getNext().hasNext()) {
-      return null;
-    }
+  private ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean newDef) {
+    boolean ok;
+    PiExpression piType;
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
+        Concrete.Expression codomain;
+        TypedSingleDependentLink thisParam = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
+        myVisitor.getFreeBindings().add(thisParam);
+        if (def.getResultType() instanceof Concrete.PiExpression) {
+          codomain = ((Concrete.PiExpression) def.getResultType()).codomain;
+          myVisitor.getContext().put(((Concrete.TelescopeParameter) ((Concrete.PiExpression) def.getResultType()).getParameters().get(0)).getReferableList().get(0), thisParam);
+        } else {
+          myVisitor.getErrorReporter().report(new TypecheckingError("Internal error: class field must have a function type", def));
+          codomain = def.getResultType();
+        }
 
-    Expression parameterType = piExpr.getParameters().getTypeExpr();
-    return parameterType instanceof ClassCallExpression && ((ClassCallExpression) parameterType).getDefinition() == parentClass ? (PiExpression) type : null;
-  }
+        if (!localInstances.isEmpty()) {
+          LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
+          myInstancePool.setInstancePool(localInstancePool);
+          for (LocalInstance localInstance : localInstances) {
+            ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
+            Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
+            localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, localInstance.instanceField.getType(Sort.STD).getSortOfType(), instance), localInstance.classReferable, instance, localInstance.concreteField);
+          }
+        }
 
-  private ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, boolean newDef) {
-    Type typeResult = myVisitor.finalCheckType(def.getResultType(), def.getKind() == ClassFieldKind.PROPERTY ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
-    PiExpression piType = checkFieldType(typeResult, parentClass);
-    if (piType == null) {
-      TypedSingleDependentLink param = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
-      if (typeResult == null) {
-        piType = new PiExpression(Sort.STD, param, new ErrorExpression(null, null));
-      } else {
-        myVisitor.getErrorReporter().report(new TypecheckingError("Internal error: class field must have a function type", def));
-        piType = new PiExpression(typeResult.getSortOfType(), param, typeResult.getExpr());
-        typeResult = null;
+        Type typeResult = myVisitor.finalCheckType(codomain, def.getKind() == ClassFieldKind.PROPERTY ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
+        myInstancePool.setInstancePool(null);
+        ok = typeResult != null;
+        piType = new PiExpression(typeResult != null ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeResult != null ? typeResult.getExpr() : new ErrorExpression(null, null));
       }
     }
 
@@ -1580,7 +1615,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (isProperty) {
       typedDef.setIsProperty();
     }
-    if (typeResult == null) {
+    if (!ok) {
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     return typedDef;
