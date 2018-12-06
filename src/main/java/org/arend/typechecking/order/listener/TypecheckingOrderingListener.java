@@ -366,8 +366,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
     Definition typechecked;
     boolean isLevel = unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
     if (isLevel && !unit.isHeader()) {
-      typecheckingBodyStarted(unit.getDefinition().getData());
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(unit.getDefinition().getData());
+      if (pair == null) {
+        return;
+      }
+      typecheckingBodyStarted(unit.getDefinition().getData());
       typechecked = myState.getTypechecked(unit.getDefinition().getData());
       clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, unit.getDefinition(), Collections.emptySet(), pair.proj2);
     } else {
