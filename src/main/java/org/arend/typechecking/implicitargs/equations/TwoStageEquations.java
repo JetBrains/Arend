@@ -727,7 +727,7 @@ public class TwoStageEquations implements Equations {
       field.getType(sortArgument).getCodomain().accept(new ProcessDefCallsVisitor<Void>() {
         @Override
         protected boolean processDefCall(DefCallExpression expression, Void param) {
-          if (expression.getDefinition() instanceof ClassField && !solution.isImplemented((ClassField) expression.getDefinition())) {
+          if (expression instanceof FieldCallExpression && classDef.getFields().contains(((FieldCallExpression) expression).getDefinition()) && !solution.isImplemented((ClassField) expression.getDefinition())) {
             implementations.remove(field);
             return true;
           }
