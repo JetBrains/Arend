@@ -6,11 +6,9 @@ import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MemoryLibrary extends UnmodifiableSourceLibrary {
   private final Map<ModulePath, MemoryRawSource> myRawSources = new LinkedHashMap<>();
@@ -53,5 +51,11 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
 
   public void removeBinarySource(ModulePath module) {
     myBinarySources.put(module, new MemoryBinarySource(module));
+  }
+
+  @Nonnull
+  @Override
+  public List<? extends LibraryDependency> getDependencies() {
+    return Collections.emptyList();
   }
 }

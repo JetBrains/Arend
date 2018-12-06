@@ -41,7 +41,7 @@ public final class SourceLoader {
   }
 
   public ModuleScopeProvider getModuleScopeProvider() {
-    return myLibraryManager.getModuleScopeProvider();
+    return myLibraryManager.getAvailableModuleScopeProvider(myLibrary);
   }
 
   public InstanceProviderSet getInstanceProviderSet() {

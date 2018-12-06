@@ -77,7 +77,7 @@ public abstract class ParserTestCase extends ArendTestCase {
     ArendParser.StatementsContext tree = _parse(text).statements();
     FileGroup group = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitStatements(tree) : null;
     if (group != null) {
-      group.setModuleScopeProvider(libraryManager.getModuleScopeProvider());
+      group.setModuleScopeProvider(moduleScopeProvider);
     }
     assertThat(errorList, containsErrors(errors));
     return group;

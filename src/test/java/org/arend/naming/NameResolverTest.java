@@ -638,7 +638,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingName() {
-    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE);
+    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE;
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -647,7 +647,7 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importHidingNamespace() {
-    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE);
+    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? preludeLibrary.getModuleScopeProvider().forModule(module) : EmptyScope.INSTANCE;
     resolveNamesModule(
       "\\import Mod\n" +
       "\\import Mod.Path\n" +
@@ -656,11 +656,11 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void importOrder() {
-    libraryManager.setModuleScopeProvider(module -> module == Prelude.MODULE_PATH
+    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH)
       ? preludeLibrary.getModuleScopeProvider().forModule(module)
       : module.equals(new ModulePath("Mod"))
         ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", module))
-        : EmptyScope.INSTANCE);
+        : EmptyScope.INSTANCE;
     /*
     resolveNamesModule(
       "\\import Mod\n" +

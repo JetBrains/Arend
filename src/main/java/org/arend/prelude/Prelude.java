@@ -40,6 +40,7 @@ import static org.arend.core.expr.ExpressionFactory.parameter;
 
 public class Prelude {
   public static final ModulePath MODULE_PATH = new ModulePath("Prelude");
+  public static final String LIBRARY_NAME = "prelude";
 
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT;

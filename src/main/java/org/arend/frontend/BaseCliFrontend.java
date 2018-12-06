@@ -9,9 +9,6 @@ import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
-import org.arend.module.scopeprovider.CachingModuleScopeProvider;
-import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
-import org.arend.module.scopeprovider.LocatingModuleScopeProvider;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
@@ -41,7 +38,7 @@ public abstract class BaseCliFrontend {
 
   private class MyLibraryManager extends LibraryManager {
     MyLibraryManager() {
-      super(myLibraryResolver, EmptyModuleScopeProvider.INSTANCE, new InstanceProviderSet(), myErrorReporter, System.err::println);
+      super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println);
     }
 
     @Override
@@ -55,10 +52,6 @@ public abstract class BaseCliFrontend {
       System.err.flush();
       System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName());
     }
-  }
-
-  public BaseCliFrontend() {
-    myLibraryManager.setModuleScopeProvider(new CachingModuleScopeProvider(new LocatingModuleScopeProvider(myLibraryManager)));
   }
 
   public LibraryManager getLibraryManager() {

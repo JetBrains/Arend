@@ -8,7 +8,7 @@ import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
-import org.arend.module.scopeprovider.EmptyModuleScopeProvider;
+import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.Scope;
@@ -37,6 +37,7 @@ import static org.junit.Assert.assertThat;
 public abstract class ArendTestCase {
   protected LibraryManager libraryManager;
   protected Library preludeLibrary;
+  protected ModuleScopeProvider moduleScopeProvider;
 
   protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
@@ -45,9 +46,9 @@ public abstract class ArendTestCase {
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, EmptyModuleScopeProvider.INSTANCE, new InstanceProviderSet(), errorReporter, errorReporter);
+    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
-    libraryManager.setModuleScopeProvider(preludeLibrary.getModuleScopeProvider());
+    moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary);
     new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();

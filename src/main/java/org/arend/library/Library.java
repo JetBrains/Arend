@@ -2,12 +2,9 @@ package org.arend.library;
 
 import org.arend.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.group.ChildGroup;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
-import org.arend.typechecking.order.listener.OrderingListener;
-import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -65,6 +62,14 @@ public interface Library {
    */
   @Nonnull
   Collection<? extends ModulePath> getLoadedModules();
+
+  /**
+   * Gets the list of dependencies of this library.
+   *
+   * @return the list of dependencies.
+   */
+  @Nonnull
+  Collection<? extends LibraryDependency> getDependencies();
 
   /**
    * Gets the group of a module.

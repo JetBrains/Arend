@@ -5,6 +5,7 @@ import org.arend.module.ModulePath;
 import org.arend.source.*;
 import org.arend.typechecking.TypecheckerState;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.List;
@@ -76,6 +77,12 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Override
   public boolean supportsPersisting() {
     return myBinaryBasePath != null;
+  }
+
+  @Nonnull
+  @Override
+  public List<? extends LibraryDependency> getDependencies() {
+    return myDependencies;
   }
 
   @Override

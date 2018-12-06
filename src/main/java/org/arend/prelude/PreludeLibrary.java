@@ -1,6 +1,7 @@
 package org.arend.prelude;
 
 import org.arend.error.ErrorReporter;
+import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
@@ -60,7 +61,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Nonnull
   @Override
   public String getName() {
-    return "prelude";
+    return Prelude.LIBRARY_NAME;
   }
 
   @Nonnull
@@ -73,6 +74,12 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Override
   public Collection<? extends ModulePath> getLoadedModules() {
     return isLoaded() ? Collections.singletonList(Prelude.MODULE_PATH) : Collections.emptyList();
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends LibraryDependency> getDependencies() {
+    return Collections.emptyList();
   }
 
   @Nullable

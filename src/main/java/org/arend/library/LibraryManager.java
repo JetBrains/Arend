@@ -4,9 +4,14 @@ import org.arend.error.ErrorReporter;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.ModulePath;
+import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.scope.Scope;
+import org.arend.prelude.Prelude;
+import org.arend.prelude.PreludeLibrary;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -15,7 +20,6 @@ import java.util.*;
  */
 public class LibraryManager {
   private final LibraryResolver myLibraryResolver;
-  private ModuleScopeProvider myModuleScopeProvider;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ErrorReporter myTypecheckingErrorReporter;
   private final ErrorReporter myLibraryErrorReporter;
@@ -27,25 +31,48 @@ public class LibraryManager {
    * Constructs new {@code LibraryManager}.
    *
    * @param libraryResolver           a library resolver.
-   * @param moduleScopeProvider       a module scope provider for the whole project.
    * @param instanceProviderSet       an instance provider set.
    * @param typecheckingErrorReporter an error reporter for errors related to typechecking and name resolving.
    * @param libraryErrorReporter      an error reporter for errors related to loading and unloading of libraries.
    */
-  public LibraryManager(LibraryResolver libraryResolver, ModuleScopeProvider moduleScopeProvider, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
+  public LibraryManager(LibraryResolver libraryResolver, @Nullable InstanceProviderSet instanceProviderSet, ErrorReporter typecheckingErrorReporter, ErrorReporter libraryErrorReporter) {
     myLibraryResolver = libraryResolver;
-    myModuleScopeProvider = moduleScopeProvider;
     myInstanceProviderSet = instanceProviderSet;
     myTypecheckingErrorReporter = typecheckingErrorReporter;
     myLibraryErrorReporter = libraryErrorReporter;
   }
 
-  public ModuleScopeProvider getModuleScopeProvider() {
-    return myModuleScopeProvider;
-  }
-
-  public void setModuleScopeProvider(ModuleScopeProvider moduleScopeProvider) {
-    myModuleScopeProvider = moduleScopeProvider;
+  /**
+   * Gets a module scope provider that can be used to get scopes of modules in a library and its dependencies.
+   * This method may be invoked only after the library is successfully loaded.
+   *
+   * @param library the library.
+   *
+   * @return a scope provider for modules in the specified library and its dependencies.
+   */
+  public @Nonnull ModuleScopeProvider getAvailableModuleScopeProvider(Library library) {
+    Collection<? extends LibraryDependency> dependencies = library.getDependencies();
+    ModuleScopeProvider libraryModuleScopeProvider = library.getModuleScopeProvider();
+    return new CachingModuleScopeProvider(modulePath -> {
+      if (modulePath.equals(Prelude.MODULE_PATH)) {
+        Library lib = getRegisteredLibrary(Prelude.LIBRARY_NAME);
+        return lib == null ? null : lib.getModuleScopeProvider().forModule(modulePath);
+      }
+      Scope scope = libraryModuleScopeProvider.forModule(modulePath);
+      if (scope != null) {
+        return scope;
+      }
+      for (LibraryDependency dependency : dependencies) {
+        Library lib = getRegisteredLibrary(dependency.name);
+        if (lib != null) {
+          scope = lib.getModuleScopeProvider().forModule(modulePath);
+          if (scope != null) {
+            return scope;
+          }
+        }
+      }
+      return null;
+    });
   }
 
   public InstanceProviderSet getInstanceProviderSet() {

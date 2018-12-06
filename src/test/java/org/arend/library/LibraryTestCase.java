@@ -10,6 +10,6 @@ public class LibraryTestCase extends ArendTestCase {
 
   @Before
   public void initialize() {
-    libraryManager.setModuleScopeProvider(module -> module.equals(Prelude.MODULE_PATH) ? PreludeLibrary.getPreludeScope() : library.getModuleScopeProvider().forModule(module));
+    moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH) ? PreludeLibrary.getPreludeScope() : library.getModuleScopeProvider().forModule(module);
   }
 }
