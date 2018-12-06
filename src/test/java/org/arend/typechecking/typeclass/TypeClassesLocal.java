@@ -196,4 +196,12 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class C | n : Nat\n" +
       "\\record R {c : C} (p : n = n) | q : n = n");
   }
+
+  @Test
+  public void classInRecordParameterAndImpl() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x : X\n" +
+      "\\record A | n : Nat\n" +
+      "\\record B {c : C Nat} \\extends A | n => x");
+  }
 }

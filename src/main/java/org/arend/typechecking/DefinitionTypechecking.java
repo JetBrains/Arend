@@ -1449,7 +1449,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           myVisitor.getContext().put(concreteParameter.getReferableList().get(0), parameter);
           myVisitor.getFreeBindings().add(parameter);
           PiExpression fieldType = field.getType(Sort.STD);
+          setClassLocalInstancePool(localInstances, parameter);
           result = myVisitor.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
+          myInstancePool.setInstancePool(null);
         } else {
           result = null;
         }
@@ -1582,16 +1584,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           codomain = def.getResultType();
         }
 
-        if (!localInstances.isEmpty()) {
-          LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
-          myInstancePool.setInstancePool(localInstancePool);
-          for (LocalInstance localInstance : localInstances) {
-            ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
-            Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
-            localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, localInstance.instanceField.getType(Sort.STD).getSortOfType(), instance), localInstance.classReferable, instance, localInstance.concreteField);
-          }
-        }
-
+        setClassLocalInstancePool(localInstances, thisParam);
         Type typeResult = myVisitor.finalCheckType(codomain, def.getKind() == ClassFieldKind.PROPERTY ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
         myInstancePool.setInstancePool(null);
         ok = typeResult != null;
@@ -1619,6 +1612,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
     }
     return typedDef;
+  }
+
+  private void setClassLocalInstancePool(List<LocalInstance> localInstances, Binding thisParam) {
+    if (!localInstances.isEmpty()) {
+      LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
+      myInstancePool.setInstancePool(localInstancePool);
+      for (LocalInstance localInstance : localInstances) {
+        ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
+        Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
+        localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, localInstance.instanceField.getType(Sort.STD).getSortOfType(), instance), localInstance.classReferable, instance, localInstance.concreteField);
+      }
+    }
   }
 
   private ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType) {

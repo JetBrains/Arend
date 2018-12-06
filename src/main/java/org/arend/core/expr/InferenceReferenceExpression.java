@@ -19,9 +19,11 @@ public class InferenceReferenceExpression extends Expression {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);
       if (!classCall.getDefinition().getFields().isEmpty()) {
         for (ClassField field : classCall.getDefinition().getFields()) {
-          Expression impl = classCall.getImplementation(field, this);
-          if (impl != null) {
-            equations.add(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl, Equations.CMP.EQ, binding.getSourceNode(), binding);
+          if (!field.isProperty()) {
+            Expression impl = classCall.getImplementation(field, this);
+            if (impl != null) {
+              equations.add(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl, Equations.CMP.EQ, binding.getSourceNode(), binding);
+            }
           }
         }
         type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
