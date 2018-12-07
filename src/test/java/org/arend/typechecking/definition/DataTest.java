@@ -208,4 +208,20 @@ public class DataTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : \\Prop => D n", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void propTruncatedData() {
+    typeCheckModule(
+      "\\truncated \\data D (A B : \\Prop) : \\Prop\n" +
+      "  | inl A\n" +
+      "  | inr B");
+  }
+
+  @Test
+  public void propSum() {
+    typeCheckModule(
+      "\\data D (A B : \\Prop) : \\Prop\n" +
+      "  | inl A\n" +
+      "  | inr B", 1);
+  }
 }

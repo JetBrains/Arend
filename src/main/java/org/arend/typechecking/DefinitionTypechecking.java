@@ -911,7 +911,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       myVisitor.getInstancePool().setInstancePool(instancePool);
 
-      if (inferredSort == Sort.PROP) {
+      if (inferredSort.equals(Sort.PROP)) {
         boolean ok = true;
         for (int i = 0; i < dataDefinition.getConstructors().size(); i++) {
           Patterns patterns1 = dataDefinition.getConstructors().get(i).getPatterns();
