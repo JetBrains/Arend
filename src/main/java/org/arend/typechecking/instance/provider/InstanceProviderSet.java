@@ -39,7 +39,6 @@ public class InstanceProviderSet {
     private final ReferableConverter referableConverter;
     private SimpleInstanceProvider instanceProvider;
     private boolean used = false;
-    boolean recordInstances = false;
 
     private MyPredicate(ConcreteProvider concreteProvider, ReferableConverter referableConverter) {
       this.concreteProvider = concreteProvider;
@@ -47,17 +46,22 @@ public class InstanceProviderSet {
       this.instanceProvider = new SimpleInstanceProvider();
     }
 
+    public LocatedReferable recordInstances(LocatedReferable ref) {
+      if (referableConverter != null && !(ref instanceof TCReferable)) {
+        ref = referableConverter.toDataLocatedReferable(ref);
+      }
+      if (ref instanceof TCReferable) {
+        myProviders.put((TCReferable) ref, instanceProvider);
+      }
+      return ref;
+    }
+
     @Override
     public boolean test(Referable ref) {
-      if (referableConverter != null && ref instanceof LocatedReferable) {
+      if (referableConverter != null && ref instanceof LocatedReferable && !(ref instanceof TCReferable)) {
         ref = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
       }
       if (ref instanceof TCReferable) {
-        if (recordInstances) {
-          myProviders.put((TCReferable) ref, instanceProvider);
-          used = true;
-        }
-
         Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
         if (instance != null) {
           if (used) {
@@ -78,14 +82,12 @@ public class InstanceProviderSet {
 
     MyPredicate predicate = new MyPredicate(concreteProvider, referableConverter);
     parentScope.find(predicate);
-    predicate.recordInstances = true;
-    predicate.test(group.getReferable());
     processGroup(group, parentScope, predicate);
+    predicate.recordInstances(group.getReferable());
     return true;
   }
 
   private void processGroup(Group group, Scope parentScope, MyPredicate predicate) {
-    String groupName = group.getReferable().textRepresentation();
     Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
     Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
     Collection<? extends Group> subgroups = group.getSubgroups();
@@ -105,9 +107,10 @@ public class InstanceProviderSet {
     for (Group subgroup : subgroups) {
       SimpleInstanceProvider instanceProvider = predicate.instanceProvider;
       processGroup(subgroup, parentScope, predicate);
+      LocatedReferable ref = predicate.recordInstances(subgroup.getReferable());
       predicate.used = true;
       predicate.instanceProvider = instanceProvider;
-      predicate.test(subgroup.getReferable());
+      predicate.test(ref);
     }
   }
 }

@@ -321,4 +321,13 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance NatC : C Nat { | a => 0 }\n" +
       "\\func f : Nat => a");
   }
+
+  @Test
+  public void whereTest() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\func f {c : C} => x {c}\n" +
+      "\\func g : Nat => f\n" +
+      "  \\where \\instance ccc : C | x => 1");
+  }
 }
