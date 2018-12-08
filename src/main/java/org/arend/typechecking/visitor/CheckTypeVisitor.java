@@ -465,7 +465,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     UniverseExpression universe = type.checkedCast(UniverseExpression.class);
     if (universe == null) {
-      Expression stuck = type.getStuckExpression();
+      Expression stuck = type.getCanonicalStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
         if (!result.type.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), result.type, expr));
@@ -474,9 +474,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       universe = new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
-      InferenceReferenceExpression infExpr = stuck.checkedCast(InferenceReferenceExpression.class);
-      if (infExpr != null && infExpr.getVariable() != null) {
-        myEquations.add(type, universe, Equations.CMP.LE, expr, infExpr.getVariable());
+      InferenceVariable infVar = stuck.getInferenceVariable();
+      if (infVar != null) {
+        myEquations.addEquation(type, universe, Equations.CMP.LE, expr, infVar, null);
       }
     }
 
@@ -1195,8 +1195,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Sort sortResult = Sort.generateInferVars(myEquations, false, sourceNode);
     for (Sort sort : sorts) {
-      myEquations.add(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
-      myEquations.add(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);
+      myEquations.addEquation(sort.getPLevel(), sortResult.getPLevel(), Equations.CMP.LE, sourceNode);
+      myEquations.addEquation(sort.getHLevel(), sortResult.getHLevel(), Equations.CMP.LE, sourceNode);
     }
     return sortResult;
   }

@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.binding.Variable;
+import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.type.ExpectedType;
@@ -202,4 +203,40 @@ public abstract class Expression implements ExpectedType {
   // This function assumes that the expression is in a WHNF.
   // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
+
+  public Expression getCanonicalStuckExpression() {
+    Expression stuck = getStuckExpression();
+    if (stuck == null) {
+      return null;
+    }
+
+    while (true) {
+      InferenceReferenceExpression refExpr = stuck.checkedCast(InferenceReferenceExpression.class);
+      if (refExpr == null || refExpr.getSubstExpression() == null) {
+        return stuck;
+      }
+      stuck = refExpr.getSubstExpression();
+    }
+  }
+
+  public InferenceVariable getStuckInferenceVariable() {
+    Expression stuck = getCanonicalStuckExpression();
+    InferenceReferenceExpression infRefExpr = stuck == null ? null : stuck.checkedCast(InferenceReferenceExpression.class);
+    return infRefExpr == null ? null : infRefExpr.getVariable();
+  }
+
+  public InferenceVariable getInferenceVariable() {
+    Expression expr = this;
+    while (true) {
+      expr = expr.checkedCast(InferenceReferenceExpression.class);
+      if (expr == null) {
+        return null;
+      }
+      InferenceVariable var = ((InferenceReferenceExpression) expr).getVariable();
+      if (var != null) {
+        return var;
+      }
+      expr = ((InferenceReferenceExpression) expr).getSubstExpression();
+    }
+  }
 }

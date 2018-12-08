@@ -17,7 +17,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar) {
+  public boolean addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2) {
     return false;
   }
 
@@ -27,7 +27,7 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public boolean add(Level expr1, Level expr2, CMP cmp, Concrete.SourceNode sourceNode) {
+  public boolean addEquation(Level expr1, Level expr2, CMP cmp, Concrete.SourceNode sourceNode) {
     return false;
   }
 

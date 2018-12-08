@@ -8,9 +8,9 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.term.concrete.Concrete;
 
 public interface Equations {
-  boolean add(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar);
+  boolean addEquation(Expression expr1, Expression expr2, CMP cmp, Concrete.SourceNode sourceNode, InferenceVariable stuckVar1, InferenceVariable stuckVar2);
   boolean solve(Expression type, Expression expr, CMP cmp, Concrete.SourceNode sourceNode);
-  boolean add(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode);
+  boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode);
   boolean addVariable(InferenceLevelVariable var);
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
   void remove(Equation equation);

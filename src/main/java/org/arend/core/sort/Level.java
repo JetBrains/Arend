@@ -142,10 +142,10 @@ public class Level {
     }
 
     if (level1.isInfinity()) {
-      return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.add(INFINITY, level2, Equations.CMP.LE, sourceNode));
+      return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.addEquation(INFINITY, level2, Equations.CMP.LE, sourceNode));
     }
     if (level2.isInfinity()) {
-      return cmp == Equations.CMP.LE || !level1.isClosed() && (equations == null || equations.add(INFINITY, level1, Equations.CMP.LE, sourceNode));
+      return cmp == Equations.CMP.LE || !level1.isClosed() && (equations == null || equations.addEquation(INFINITY, level1, Equations.CMP.LE, sourceNode));
     }
 
     if (level1.getVar() == null && cmp == Equations.CMP.LE) {
@@ -164,7 +164,7 @@ public class Level {
       if (equations == null) {
         return level1.getVar() instanceof InferenceLevelVariable || level2.getVar() instanceof InferenceLevelVariable;
       } else {
-        return equations.add(level1, level2, cmp, sourceNode);
+        return equations.addEquation(level1, level2, cmp, sourceNode);
       }
     }
   }

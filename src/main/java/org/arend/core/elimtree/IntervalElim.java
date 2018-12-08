@@ -69,6 +69,9 @@ public class IntervalElim implements Body {
     }
 
     InferenceReferenceExpression refStuck = stuck != null ? stuck.checkedCast(InferenceReferenceExpression.class) : null;
+    while (refStuck != null && refStuck.getSubstExpression() != null) {
+      refStuck = refStuck.getSubstExpression().checkedCast(InferenceReferenceExpression.class);
+    }
     for (int i = 0; i < myCases.size(); i++) {
       stuck = arguments.get(offset + i).getStuckExpression();
       if (stuck != null) {
@@ -77,6 +80,9 @@ public class IntervalElim implements Body {
         }
         if (refStuck == null) {
           refStuck = stuck.checkedCast(InferenceReferenceExpression.class);
+          while (refStuck != null && refStuck.getSubstExpression() != null) {
+            refStuck = refStuck.getSubstExpression().checkedCast(InferenceReferenceExpression.class);
+          }
         }
       }
     }

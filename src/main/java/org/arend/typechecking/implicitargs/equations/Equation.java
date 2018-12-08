@@ -28,17 +28,13 @@ public class Equation implements InferenceVariableListener {
 
   @Override
   public void solved(Equations equations, InferenceReferenceExpression referenceExpression) {
-    if (type.isInstance(InferenceReferenceExpression.class)) {
-      InferenceVariable variable = type.cast(InferenceReferenceExpression.class).getVariable();
-      if (variable != null) {
-        variable.removeListener(this);
-      }
+    InferenceVariable var1 = type.getInferenceVariable();
+    InferenceVariable var2 = expr.getInferenceVariable();
+    if (var1 != null) {
+      var1.removeListener(this);
     }
-    if (expr.isInstance(InferenceReferenceExpression.class)) {
-      InferenceVariable variable = expr.cast(InferenceReferenceExpression.class).getVariable();
-      if (variable != null) {
-        variable.removeListener(this);
-      }
+    if (var2 != null) {
+      var2.removeListener(this);
     }
     equations.remove(this);
     equations.solve(type, expr, cmp, sourceNode);

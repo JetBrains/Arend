@@ -90,7 +90,7 @@ public class Sort {
   }
 
   private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
-    return sort.getHLevel().getConstant() == -1 && sort.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.add(new Level(sort.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
+    return sort.getHLevel().getConstant() == -1 && sort.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
   }
 
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {

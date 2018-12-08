@@ -139,7 +139,14 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void recordWithoutClassifyingField() {
     typeCheckModule(
       "\\record A { | n : Nat }\n" +
-      "\\func f (a : A) : n = n => path (\\lam _ => a.n)", 2);
+      "\\func f (a : A) : n = n => path (\\lam _ => a.n)");
+  }
+
+  @Test
+  public void recordWithoutClassifyingField2() {
+    typeCheckModule(
+      "\\record A { | n : Nat }\n" +
+      "\\func f (a : A) : n = n => path (\\lam _ => n)", 3);
   }
 
   @Test
@@ -203,5 +210,12 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class C (X : \\Type) | x : X\n" +
       "\\record A | n : Nat\n" +
       "\\record B {c : C Nat} \\extends A | n => x");
+  }
+
+  @Test
+  public void binaryAndNullaryTest() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x0 : X | \\infixr 4 * : X -> X -> X\n" +
+      "\\func f {c : C} (x : c) => x0 * x");
   }
 }
