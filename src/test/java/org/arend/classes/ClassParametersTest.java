@@ -192,4 +192,12 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func f => D 0\n" +
       "\\func g => \\new D 0 { | y => 1 | z => 2 }");
   }
+
+  @Test
+  public void classImplicitParameter() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x : X\n" +
+      "\\class D {A : C} (i : A)\n" +
+      "\\func f {A : C} (i : A) => \\new D i");
+  }
 }

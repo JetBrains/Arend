@@ -62,7 +62,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
               ignoreFirstParameter = false;
-            } else {
+            } else if (!parameter.getExplicit()) {
               TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
               if (classRef != null) {
                 for (Concrete.Instance instance : myInstanceProvider.getInstances()) {

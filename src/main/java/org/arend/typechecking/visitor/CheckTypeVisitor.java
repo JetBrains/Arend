@@ -4,10 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.inference.ExpressionInferenceVariable;
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.context.binding.inference.LambdaInferenceVariable;
+import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
@@ -1420,7 +1417,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    CheckTypeVisitor.Result result = checkExpr(implBody, field.getType(fieldSetClass.getSortArgument()).applyExpression(new NewExpression(fieldSetClass)));
+    Expression type = field.getType(fieldSetClass.getSortArgument()).applyExpression(new NewExpression(fieldSetClass));
+    if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
+      return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
+    }
+
+    CheckTypeVisitor.Result result = checkExpr(implBody, type);
     return result != null ? result.expression : new ErrorExpression(null, null);
   }
 

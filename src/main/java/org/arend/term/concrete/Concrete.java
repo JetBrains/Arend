@@ -3,6 +3,7 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.naming.reference.*;
+import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.Precedence;
@@ -931,6 +932,15 @@ public final class Concrete {
       totalParameters.addAll(dataTypeParameters);
       totalParameters.addAll(parameters);
       return totalParameters;
+    }
+    if (definition instanceof ClassDefinition) {
+      List<Concrete.TypeParameter> parameters = new ArrayList<>();
+      for (ClassField field : ((ClassDefinition) definition).getFields()) {
+        if (field.getData().isParameterField()) {
+          parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), field.getResultType()));
+        }
+      }
+      return parameters;
     }
     return null;
   }
