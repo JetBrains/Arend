@@ -276,7 +276,7 @@ public class DefCall extends TypeCheckingTestCase {
   public void data2Dynamic() {
     typeCheckClass(
         "\\data D (x : Nat) (y : Nat -> Nat) | c\n" +
-        "\\func test => D.c {0} {\\lam _ => 1}", "");
+        "\\func test => D.c {_} {0} {\\lam _ => 1}", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis()), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
     test(ConCall((Constructor) getDefinition("c"), Sort.SET0, dataTypeArgs));
     testType(DataCall((DataDefinition) getDefinition("D"), Sort.SET0, dataTypeArgs));
@@ -391,7 +391,7 @@ public class DefCall extends TypeCheckingTestCase {
         "    \\data D (x : Nat) (y : Nat -> Nat) | c\n" +
         "  }\n" +
         "}\n" +
-        "\\func test => A.B.D.c {0} {\\lam _ => 1}", "");
+        "\\func test => A.B.D.c {_} {0} {\\lam _ => 1}", "");
     List<Expression> dataTypeArgs = Arrays.asList(Ref(getThis()), Zero(), Lam(singleParam(null, Nat()), Suc(Zero())));
     test(ConCall((Constructor) getDefinition("A.B.c"), Sort.SET0, dataTypeArgs));
     testType(DataCall((DataDefinition) getDefinition("A.B.D"), Sort.SET0, dataTypeArgs));

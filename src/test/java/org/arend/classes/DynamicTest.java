@@ -425,8 +425,8 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\func f : D x (\\lam y => y) => con1 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
-        "  \\func g => con2 {x} {\\lam y => y} (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => con1 {_} {x} {\\lam y => y} (path (\\lam _ => x))\n" +
+        "  \\func g => con2 {_} {x} {\\lam y => y} (path (\\lam _ => x))\n" +
         "}\n" +
         "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
         "\\func f' (a : A) => A.f {a}\n" +
@@ -777,6 +777,16 @@ public class DynamicTest extends TypeCheckingTestCase {
       "}\n" +
       "\\class B \\extends A {\n" +
       "  \\func g => A.f" +
+      "}");
+  }
+
+  @Test
+  public void dynamicFunctionCallExplicit() {
+    typeCheckModule(
+      "\\class A (X : \\Type) {\n" +
+      "  | x : X\n" +
+      "  \\func f => x\n" +
+      "  \\func g : Nat => f {\\new A Nat 0}\n" +
       "}");
   }
 }
