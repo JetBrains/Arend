@@ -13,27 +13,30 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("Duplicates")
 public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
   private final ModulePath myModule;
+  private final boolean myIgnoreOpens;
 
-  private LexicalScope(Scope parent, Group group, ModulePath module) {
+  private LexicalScope(Scope parent, Group group, ModulePath module, boolean ignoreOpens) {
     myParent = parent;
     myGroup = group;
     myModule = module;
+    myIgnoreOpens = ignoreOpens;
   }
 
   private boolean ignoreOpens() {
-    return myModule == null;
+    return myIgnoreOpens;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, group.getReferable().getLocation());
+    return new LexicalScope(parent, group, group.getReferable().getLocation(), false);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, null);
+    return new LexicalScope(EmptyScope.INSTANCE, group, null, true);
   }
 
   private void addReferable(Referable referable, List<Referable> elements) {
@@ -85,7 +88,6 @@ public class LexicalScope implements Scope {
       }
 
       Scope scope;
-      //noinspection Duplicates
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         if (myModule != null && cmd.getPath().equals(myModule.toList())) {
           continue;
@@ -93,7 +95,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, true));
         }
         scope = cachingScope;
       }
@@ -179,7 +181,6 @@ public class LexicalScope implements Scope {
       }
 
       Scope scope;
-      //noinspection Duplicates
       if (cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
         if (myModule != null && cmd.getPath().equals(myModule.toList())) {
           continue;
@@ -187,7 +188,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, true));
         }
         scope = cachingScope;
       }
@@ -219,7 +220,7 @@ public class LexicalScope implements Scope {
   @Nonnull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
-    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null);
+    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, true);
   }
 
   @Nullable
