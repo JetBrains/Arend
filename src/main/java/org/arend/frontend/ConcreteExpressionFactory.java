@@ -201,10 +201,13 @@ public class ConcreteExpressionFactory {
     return new Concrete.TuplePattern(null, isExplicit, Collections.emptyList());
   }
 
-  public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression right) {
+  public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression implicit, Concrete.Expression right) {
     List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(3);
     sequence.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
     sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), Fixity.UNKNOWN, true));
+    if (implicit != null) {
+      sequence.add(new Concrete.BinOpSequenceElem(implicit, Fixity.NONFIX, false));
+    }
     sequence.add(new Concrete.BinOpSequenceElem(right, Fixity.NONFIX, true));
     return new Concrete.BinOpSequenceExpression(null, sequence);
   }

@@ -160,7 +160,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), expr.getDefCallArguments().get(2).accept(this, null));
+        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, expr.getDefCallArguments().get(2).accept(this, null));
       }
     }
     return null;
@@ -204,7 +204,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      concreteArguments.add(new Concrete.Argument(arg.accept(this, null), parameters.isExplicit()));
+      if (!parameters.isExplicit() && !myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
+        concreteArguments.add(new Concrete.Argument(arg.accept(this, null), parameters.isExplicit()));
+      }
       parameters = parameters.getNext();
     }
     return Concrete.AppExpression.make(null, expr, concreteArguments);
