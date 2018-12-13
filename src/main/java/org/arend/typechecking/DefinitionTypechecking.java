@@ -1695,6 +1695,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
         classifyingExpr = ((LamExpression) classifyingExpr).getBody();
       }
+      if (classifyingExpr != null) {
+        classifyingExpr = classifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
+      }
 
       boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
       if (classifyingExpr instanceof DataCallExpression) {
