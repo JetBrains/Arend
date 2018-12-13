@@ -200,4 +200,13 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class D {A : C} (i : A)\n" +
       "\\func f {A : C} (i : A) => \\new D i");
   }
+
+  @Test
+  public void testImplementedField() {
+    typeCheckModule(
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
+      "\\record T {z : Nat} \\extends R { | x => z }\n" +
+      "\\func f => \\new T { | p => idp | q => idp | z => 0 }");
+  }
 }

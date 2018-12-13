@@ -4,8 +4,8 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.error.CycleError;
 import org.junit.Test;
 
-import static org.arend.typechecking.Matchers.instanceInference;
-import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.arend.typechecking.Matchers.*;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 public class TypeClassesGlobal extends TypeCheckingTestCase {
@@ -329,5 +329,16 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func f {c : C} => x {c}\n" +
       "\\func g : Nat => f\n" +
       "  \\where \\instance ccc : C | x => 1");
+  }
+
+  @Test
+  public void nonClassTest() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\func f {c : (C,C).1} => x {c}\n" +
+      "\\func g : Nat => f\n" +
+      "  \\where \\instance ccc : C | x => 1", 1);
+    assertThatErrorsAre(argInferenceError());
+    assertThatErrorsAre(not(instanceInference(getDefinition("C"))));
   }
 }

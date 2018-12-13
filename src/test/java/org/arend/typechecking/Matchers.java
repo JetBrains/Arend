@@ -187,6 +187,26 @@ public class Matchers {
     return instanceInference(definition.getReferable());
   }
 
+  public static Matcher<? super GeneralError> argInferenceError() {
+    return new LocalErrorMatcher() {
+      @Override
+      protected boolean matchesLocalError(LocalError error, Description description) {
+        if (error instanceof ArgInferenceError) {
+          description.appendText("Argument inference");
+          return true;
+        } else {
+          description.appendText("not an 'Argument inference' error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be an 'Argument inference' error");
+      }
+    };
+  }
+
   public static Matcher<? super GeneralError> missingClauses(int clauses) {
     return new LocalErrorMatcher() {
       @Override
