@@ -628,9 +628,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             typedDef.setBody(typedBody);
             typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           }
-          boolean conditionsResult = ConditionsChecking.check(typedBody, clauses, typedDef, def, myVisitor.getErrorReporter());
-          if (newDef) {
-            typedDef.setStatus(conditionsResult ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.HAS_ERRORS);
+          boolean conditionsResult = typedDef.isLemma() || ConditionsChecking.check(typedBody, clauses, typedDef, def, myVisitor.getErrorReporter());
+          if (newDef && !conditionsResult) {
+            typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           }
         } else {
           clauses = null;
