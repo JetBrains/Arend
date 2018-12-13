@@ -35,7 +35,9 @@ public class BindingPattern implements Pattern {
 
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
-    result.add(expression);
+    if (result != null) {
+      result.add(expression);
+    }
     return MatchResult.OK;
   }
 

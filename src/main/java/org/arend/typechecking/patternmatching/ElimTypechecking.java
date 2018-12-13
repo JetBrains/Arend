@@ -210,7 +210,7 @@ public class ElimTypechecking {
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
         List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
         if (!missingClause.proj2) {
-          if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions)) {
+          if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions, false)) {
             continue;
           }
 

@@ -209,11 +209,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
 
-  public Expression eval(ElimTree elimTree, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+  private Stack<Expression> makeStack(List<? extends Expression> arguments) {
     Stack<Expression> stack = new Stack<>();
     for (int i = arguments.size() - 1; i >= 0; i--) {
       stack.push(arguments.get(i));
     }
+    return stack;
+  }
+
+  public Expression eval(ElimTree elimTree, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
+    Stack<Expression> stack = makeStack(arguments);
 
     while (true) {
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -230,11 +235,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  public boolean doesEvaluate(ElimTree elimTree, List<? extends Expression> arguments) {
-    Stack<Expression> stack = new Stack<>();
-    for (int i = arguments.size() - 1; i >= 0; i--) {
-      stack.push(arguments.get(i));
-    }
+  public boolean doesEvaluate(ElimTree elimTree, List<? extends Expression> arguments, boolean might) {
+    Stack<Expression> stack = makeStack(arguments);
 
     while (true) {
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
@@ -249,7 +251,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
       elimTree = updateStack(stack, elimTree);
       if (elimTree == null) {
-        return false;
+        if (!might) {
+          return false;
+        }
+        Expression top = stack.peek();
+        return !top.isInstance(ConCallExpression.class) && !top.isInstance(IntegerExpression.class);
       }
     }
   }

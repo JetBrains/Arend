@@ -225,6 +225,18 @@ public class ConditionsTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void dataCondition2() {
+    typeCheckModule(
+      "\\data D | c | l Nat\n" +
+      "  { 3 => c\n" +
+      "  }\n" +
+      "\\data E D \\with\n" +
+      " | l 2 => e\n" +
+      "\\data E' D \\with\n" +
+      " | l (suc (suc (suc (suc x)))) => e'");
+  }
+
+  @Test
   public void dataConditionError() {
     typeCheckModule(
       "\\data D | c | c' | l I\n" +
@@ -233,6 +245,26 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "  }\n" +
       "\\data E D \\with\n" +
       " | l i => e", 1);
+  }
+
+  @Test
+  public void dataConditionError2() {
+    typeCheckModule(
+      "\\data D | c | l Nat\n" +
+      "  { 3 => c\n" +
+      "  }\n" +
+      "\\data E D \\with\n" +
+      " | l (suc (suc (suc x))) => e", 1);
+  }
+
+  @Test
+  public void dataConditionError3() {
+    typeCheckModule(
+      "\\data D | c | l Nat\n" +
+      "  { suc x => c\n" +
+      "  }\n" +
+      "\\data E D \\with\n" +
+      " | l (suc (suc x)) => e", 1);
   }
 
   @Test

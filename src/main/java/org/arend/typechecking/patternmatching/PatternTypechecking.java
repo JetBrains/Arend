@@ -6,6 +6,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
@@ -333,11 +335,6 @@ public class PatternTypechecking {
         return null;
       }
       ConCallExpression conCall = conCalls.get(0);
-      if (!myFlags.contains(Flag.ALLOW_CONDITIONS) && conCall.getDefinition().getBody() != null) {
-        myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is not allowed here", conPattern));
-        return null;
-      }
-
       ExprSubstitution substitution = new ExprSubstitution();
       int i = 0;
       for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext(), i++) {
@@ -346,6 +343,17 @@ public class PatternTypechecking {
       Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(conPattern.getPatterns(), DependentLink.Helper.subst(constructor.getParameters(), substitution, new StdLevelSubstitution(conCall.getSortArgument())), conPattern, false);
       if (conResult == null) {
         return null;
+      }
+
+      if (!myFlags.contains(Flag.ALLOW_CONDITIONS)) {
+        if (conCall.getDefinition().getBody() instanceof IntervalElim) {
+          myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with interval conditions is not allowed here", conPattern));
+          return null;
+        }
+        if (conCall.getDefinition().getBody() instanceof ElimTree && NormalizeVisitor.INSTANCE.doesEvaluate((ElimTree) conCall.getDefinition().getBody(), conResult.proj2, true)) {
+          myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is allowed only when patterns cannot evaluate", conPattern));
+          return null;
+        }
       }
 
       result.add(new ConstructorPattern(conCall, new Patterns(conResult.proj1)));
