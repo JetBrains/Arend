@@ -204,7 +204,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      if (!parameters.isExplicit() && !myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
+      if (parameters.isExplicit() || !myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
         concreteArguments.add(new Concrete.Argument(arg.accept(this, null), parameters.isExplicit()));
       }
       parameters = parameters.getNext();
