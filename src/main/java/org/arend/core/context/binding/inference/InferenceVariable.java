@@ -23,7 +23,7 @@ public abstract class InferenceVariable implements Variable {
   private final Set<Binding> myBounds;
 
   public InferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
-    myName = name;
+    myName = name == null || name.isEmpty() ? "x" : name;
     mySourceNode = sourceNode;
     myType = type;
     myListeners = Collections.emptyList();
