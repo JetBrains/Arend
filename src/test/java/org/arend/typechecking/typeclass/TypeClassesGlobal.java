@@ -341,4 +341,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     assertThatErrorsAre(argInferenceError());
     assertThatErrorsAre(not(instanceInference(getDefinition("C"))));
   }
+
+  @Test
+  public void explicitImplicitArgument() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | f : X -> X\n" +
+      "\\instance C_Nat : C Nat | f => suc\n" +
+      "\\func g => f {_} 1");
+  }
 }
