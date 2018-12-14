@@ -144,7 +144,8 @@ public interface ClassReferable extends LocatedReferable {
 
     private static Set<FieldReferable> getAllFields(ClassReferable classDef, Set<ClassReferable> visited, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
       if (!visited.add(classDef)) {
-        return new LinkedHashSet<>();
+        Set<FieldReferable> fieldSet = superClassesFields.get(classDef);
+        return fieldSet != null ? fieldSet : new LinkedHashSet<>();
       }
 
       Set<FieldReferable> result = new LinkedHashSet<>();
