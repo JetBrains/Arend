@@ -140,14 +140,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
-    if (definition == Prelude.PLUS || definition == Prelude.MUL) {
+    if (definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS) {
       Expression arg2 = defCallArgs.get(1).normalize(Mode.WHNF);
       if (arg2.isInstance(IntegerExpression.class)) {
         Expression arg1 = defCallArgs.get(0).normalize(Mode.WHNF);
         if (arg1.isInstance(IntegerExpression.class)) {
           return definition == Prelude.PLUS
             ? arg1.cast(IntegerExpression.class).plus(arg2.cast(IntegerExpression.class))
-            : arg1.cast(IntegerExpression.class).mul(arg2.cast(IntegerExpression.class));
+            : definition == Prelude.MUL
+              ? arg1.cast(IntegerExpression.class).mul(arg2.cast(IntegerExpression.class))
+              : arg1.cast(IntegerExpression.class).minus(arg2.cast(IntegerExpression.class));
         }
 
         List<Expression> newDefCallArgs = new ArrayList<>(2);

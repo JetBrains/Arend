@@ -77,11 +77,11 @@ public class ExpressionFactory {
     return ConCallExpression.make(Prelude.SUC, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 
-  public static Expression Pos(Expression expr) {
-    return ConCallExpression.make(Prelude.POS, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+  public static ConCallExpression Pos(Expression expr) {
+    return new ConCallExpression(Prelude.POS, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 
-  public static Expression Neg(Expression expr) {
-    return ConCallExpression.make(Prelude.NEG, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
+  public static ConCallExpression Neg(Expression expr) {
+    return new ConCallExpression(Prelude.NEG, Sort.SET0, Collections.emptyList(), Collections.singletonList(expr));
   }
 }

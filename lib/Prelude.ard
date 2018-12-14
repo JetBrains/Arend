@@ -9,6 +9,11 @@
     \func \infixl 7 * (x y : Nat) : Nat \elim y
       | zero => zero
       | suc y => x * y + x
+
+    \func \infixl 6 - (n m : Nat) : Int
+      | 0, m => neg m
+      | suc n, 0 => pos (suc n)
+      | suc n, suc m => n - m
   }
 
 \data Int

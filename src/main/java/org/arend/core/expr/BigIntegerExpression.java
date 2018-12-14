@@ -2,6 +2,9 @@ package org.arend.core.expr;
 
 import java.math.BigInteger;
 
+import static org.arend.core.expr.ExpressionFactory.Neg;
+import static org.arend.core.expr.ExpressionFactory.Pos;
+
 public class BigIntegerExpression extends IntegerExpression {
   private final BigInteger myInteger;
 
@@ -47,5 +50,11 @@ public class BigIntegerExpression extends IntegerExpression {
   @Override
   public BigIntegerExpression mul(IntegerExpression expr) {
     return new BigIntegerExpression(myInteger.multiply(expr.getBigInteger()));
+  }
+
+  @Override
+  public ConCallExpression minus(IntegerExpression expr) {
+    BigInteger other = expr.getBigInteger();
+    return myInteger.compareTo(other) >= 0 ? Pos(new BigIntegerExpression(myInteger.subtract(other))) : Neg(new BigIntegerExpression(other.subtract(myInteger)));
   }
 }

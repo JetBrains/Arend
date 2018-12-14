@@ -1,6 +1,13 @@
 package org.arend.core.expr;
 
+import org.arend.core.sort.Sort;
+import org.arend.prelude.Prelude;
+
 import java.math.BigInteger;
+import java.util.Collections;
+
+import static org.arend.core.expr.ExpressionFactory.Neg;
+import static org.arend.core.expr.ExpressionFactory.Pos;
 
 public class SmallIntegerExpression extends IntegerExpression {
   private final static int MAX_VALUE_TO_MULTIPLY = 45000;
@@ -75,5 +82,15 @@ public class SmallIntegerExpression extends IntegerExpression {
     }
 
     return new BigIntegerExpression(BigInteger.valueOf(myInteger).multiply(expr.getBigInteger()));
+  }
+
+  @Override
+  public ConCallExpression minus(IntegerExpression expr) {
+    if (expr instanceof SmallIntegerExpression) {
+      int other = ((SmallIntegerExpression) expr).myInteger;
+      return myInteger >= other ? Pos(new SmallIntegerExpression(myInteger - other)) : Neg(new SmallIntegerExpression(other - myInteger));
+    } else {
+      return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr);
+    }
   }
 }

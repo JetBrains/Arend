@@ -47,7 +47,7 @@ public class Prelude {
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
-  public static FunctionDefinition PLUS, MUL;
+  public static FunctionDefinition PLUS, MUL, MINUS;
 
   public static DataDefinition INT;
   public static Constructor POS, NEG;
@@ -80,6 +80,9 @@ public class Prelude {
         break;
       case "+":
         PLUS = (FunctionDefinition) definition;
+        break;
+      case "-":
+        MINUS = (FunctionDefinition) definition;
         break;
       case "*":
         MUL = (FunctionDefinition) definition;
@@ -149,6 +152,7 @@ public class Prelude {
   public static void forEach(Consumer<Definition> consumer) {
     consumer.accept(NAT);
     consumer.accept(PLUS);
+    consumer.accept(MINUS);
     consumer.accept(MUL);
     consumer.accept(ZERO);
     consumer.accept(SUC);
