@@ -10,12 +10,12 @@ import javax.annotation.Nonnull;
 public class TypecheckingError extends LocalError {
   public final Concrete.SourceNode cause;
 
-  public TypecheckingError(@Nonnull Level level, String message, Concrete.SourceNode cause) {
+  public TypecheckingError(@Nonnull Level level, String message, @Nonnull Concrete.SourceNode cause) {
     super(level, message);
     this.cause = cause;
   }
 
-  public TypecheckingError(String message, Concrete.SourceNode cause) {
+  public TypecheckingError(String message, @Nonnull Concrete.SourceNode cause) {
     super(Level.ERROR, message);
     this.cause = cause;
   }

@@ -400,7 +400,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Result checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      myErrorReporter.report(new TypecheckingError("Incomplete expression", null));
+      assert false;
+      myErrorReporter.report(new LocalError(Error.Level.ERROR, "Incomplete expression"));
       return null;
     }
 
@@ -444,7 +445,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Type checkType(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
-      myErrorReporter.report(new TypecheckingError("Incomplete expression", null));
+      assert false;
+      myErrorReporter.report(new LocalError(Error.Level.ERROR, "Incomplete expression"));
       return null;
     }
 

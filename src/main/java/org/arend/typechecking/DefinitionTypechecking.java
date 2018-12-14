@@ -983,14 +983,14 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
-          errorReporter.report(new TypecheckingError(Error.Level.WARNING, msg, def.getUniverse()));
+          errorReporter.report(new TypecheckingError(Error.Level.WARNING, msg, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
           dataDefinition.setIsTruncated(true);
         }
       }
     } else if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
       String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
-      countingErrorReporter.report(new TypecheckingError(msg, def.getUniverse()));
+      countingErrorReporter.report(new TypecheckingError(msg, def.getUniverse() == null ? def : def.getUniverse()));
     }
 
     if (newDef) {
