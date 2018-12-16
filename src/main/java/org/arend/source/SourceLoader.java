@@ -23,6 +23,7 @@ public final class SourceLoader {
   private final Map<ModulePath, SourceType> myLoadedModules = new HashMap<>();
   private final Map<ModulePath, BinarySource> myLoadingBinaryModules = new HashMap<>();
   private final Map<ModulePath, Source> myLoadingRawModules = new HashMap<>();
+  private ModuleScopeProvider myModuleScopeProvider;
 
   private enum SourceType { RAW, BINARY, BINARY_FAIL }
 
@@ -41,7 +42,10 @@ public final class SourceLoader {
   }
 
   public ModuleScopeProvider getModuleScopeProvider() {
-    return myLibraryManager.getAvailableModuleScopeProvider(myLibrary);
+    if (myModuleScopeProvider == null) {
+      myModuleScopeProvider = myLibraryManager.getAvailableModuleScopeProvider(myLibrary);
+    }
+    return myModuleScopeProvider;
   }
 
   public InstanceProviderSet getInstanceProviderSet() {

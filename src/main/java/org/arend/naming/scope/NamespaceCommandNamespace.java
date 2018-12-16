@@ -112,7 +112,7 @@ public class NamespaceCommandNamespace implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
     for (Referable hiddenRef : myNamespaceCommand.getHiddenReferences()) {
       if (hiddenRef.textRepresentation().equals(name)) {
         return null;
@@ -124,7 +124,7 @@ public class NamespaceCommandNamespace implements Scope {
       String newName = renaming.getName();
       Referable oldRef = renaming.getOldReference();
       if ((newName != null ? newName : oldRef.textRepresentation()).equals(name)) {
-        return myModuleNamespace.resolveNamespace(oldRef.textRepresentation());
+        return myModuleNamespace.resolveNamespace(oldRef.textRepresentation(), onlyInternal);
       }
     }
 
@@ -138,6 +138,6 @@ public class NamespaceCommandNamespace implements Scope {
       }
     }
 
-    return myModuleNamespace.resolveNamespace(name);
+    return myModuleNamespace.resolveNamespace(name, onlyInternal);
   }
 }

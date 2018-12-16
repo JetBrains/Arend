@@ -184,7 +184,7 @@ public class Prelude {
     }
 
     for (String name : new String[] {"Nat", "Int", "Path"}) {
-      Scope childScope = scope.resolveNamespace(name);
+      Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
         if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {

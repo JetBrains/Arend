@@ -58,4 +58,12 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   public List<? extends LibraryDependency> getDependencies() {
     return Collections.emptyList();
   }
+
+  @Override
+  public void unload() {
+    for (Map.Entry<ModulePath, MemoryRawSource> entry : myRawSources.entrySet()) {
+      entry.setValue(new MemoryRawSource(entry.getValue()));
+    }
+    super.unload();
+  }
 }

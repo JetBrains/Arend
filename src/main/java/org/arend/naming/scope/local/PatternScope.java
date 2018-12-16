@@ -59,8 +59,8 @@ public class PatternScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
-    return myParent.resolveNamespace(name);
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
+    return myParent.resolveNamespace(name, onlyInternal);
   }
 
   @Nonnull

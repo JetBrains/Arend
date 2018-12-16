@@ -13,6 +13,7 @@ import java.util.Map;
 public class CachingScope implements Scope {
   private final Map<String, Referable> myElements = new LinkedHashMap<>();
   private final Map<String, Scope> myNamespaces = new HashMap<>();
+  private final Map<String, Scope> myOnlyInternalNamespaces = new HashMap<>();
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
 
@@ -44,12 +45,13 @@ public class CachingScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
-    Scope namespace = myNamespaces.get(name);
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
+    Map<String, Scope> namespaces = onlyInternal ? myOnlyInternalNamespaces : myNamespaces;
+    Scope namespace = namespaces.get(name);
     if (namespace == null) {
-      namespace = myScope.resolveNamespace(name);
+      namespace = myScope.resolveNamespace(name, onlyInternal);
       namespace = namespace == null ? EMPTY_SCOPE : make(namespace);
-      myNamespaces.put(name, namespace);
+      namespaces.put(name, namespace);
     }
 
     return namespace == EMPTY_SCOPE ? null : namespace;

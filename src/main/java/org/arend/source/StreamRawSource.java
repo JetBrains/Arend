@@ -25,7 +25,7 @@ import java.io.InputStream;
 public abstract class StreamRawSource implements Source {
   private final ModulePath myModulePath;
   private FileGroup myGroup;
-  private boolean myFirstPass = true;
+  private byte myPass = 0;
 
   protected StreamRawSource(ModulePath modulePath) {
     myModulePath = modulePath;
@@ -88,7 +88,6 @@ public abstract class StreamRawSource implements Source {
         }
       }
 
-      myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
       return true;
     } catch (IOException e) {
       errorReporter.report(new ExceptionError(e, modulePath, true));
@@ -103,9 +102,15 @@ public abstract class StreamRawSource implements Source {
       return LoadResult.FAIL;
     }
 
-    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myFirstPass, sourceLoader.getTypecheckingErrorReporter()).resolveGroup(myGroup, null, myGroup.getGroupScope());
-    if (myFirstPass) {
-      myFirstPass = false;
+    if (myPass == 0) {
+      myGroup.setModuleScopeProvider(sourceLoader.getModuleScopeProvider());
+      myPass = 1;
+      return LoadResult.CONTINUE;
+    }
+
+    new DefinitionResolveNameVisitor(ConcreteReferableProvider.INSTANCE, myPass == 1, sourceLoader.getTypecheckingErrorReporter()).resolveGroup(myGroup, null, myGroup.getGroupScope());
+    if (myPass == 1) {
+      myPass = 2;
       return LoadResult.CONTINUE;
     }
     sourceLoader.getInstanceProviderSet().collectInstances(myGroup, CachingScope.make(ScopeFactory.parentScopeForGroup(myGroup, sourceLoader.getModuleScopeProvider(), true)), ConcreteReferableProvider.INSTANCE, null);

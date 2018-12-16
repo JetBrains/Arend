@@ -44,9 +44,9 @@ public class MergeScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
     for (Scope scope : myScopes) {
-      Scope result = scope.resolveNamespace(name);
+      Scope result = scope.resolveNamespace(name, onlyInternal);
       if (result != null) {
         return result;
       }

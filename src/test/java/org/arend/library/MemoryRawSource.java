@@ -22,6 +22,10 @@ public class MemoryRawSource extends StreamRawSource {
     this(modulePath, text, 0);
   }
 
+  public MemoryRawSource(MemoryRawSource source) {
+    this(source.getModulePath(), source.myText, source.myTimeStamp);
+  }
+
   @Nonnull
   @Override
   protected InputStream getInputStream() {

@@ -2,6 +2,7 @@ package org.arend.naming;
 
 import org.junit.Test;
 
+import static org.arend.typechecking.Matchers.notInScope;
 import static org.arend.typechecking.Matchers.warning;
 
 public class ClassesResolveTest extends NameResolverTestCase {
@@ -204,5 +205,36 @@ public class ClassesResolveTest extends NameResolverTestCase {
       "}\n" +
       "\\data D\n" +
       "\\instance D-X : X | A => D | B => \\lam n => D", 1);
+  }
+
+  @Test
+  public void openTest() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\open B(g,h)\n" +
+      "\\class B (g : Nat) \\extends A {\n" +
+      "  \\func h : Nat => 0\n" +
+      "}\n" +
+      "\\func test => g Nat.+ h");
+  }
+
+  @Test
+  public void openTest2() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\open B\n" +
+      "\\class B (g : Nat) \\extends A {\n" +
+      "  \\func h : Nat => 0\n" +
+      "}\n" +
+      "\\func test => g Nat.+ h");
+  }
+
+  @Test
+  public void openTestError() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\class B \\extends A\n" +
+      "\\open B(f)", 1);
+    assertThatErrorsAre(notInScope("f"));
   }
 }

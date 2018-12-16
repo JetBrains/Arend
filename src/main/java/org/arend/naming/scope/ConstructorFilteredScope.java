@@ -29,8 +29,8 @@ public class ConstructorFilteredScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
-    return myScope.resolveNamespace(name);
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
+    return myScope.resolveNamespace(name, onlyInternal);
   }
 
   @Nonnull

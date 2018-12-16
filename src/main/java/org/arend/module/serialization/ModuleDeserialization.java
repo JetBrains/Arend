@@ -70,7 +70,7 @@ public class ModuleDeserialization {
 
     List<ModuleProtos.CallTargetTree> subtreeList = callTargetTree.getSubtreeList();
     if (!subtreeList.isEmpty()) {
-      Scope subscope = scope.resolveNamespace(callTargetTree.getName());
+      Scope subscope = scope.resolveNamespace(callTargetTree.getName(), true);
       if (subscope == null) {
         throw new DeserializationException("Cannot resolve reference '" + callTargetTree.getName() + "' in " + module);
       }
@@ -204,7 +204,7 @@ public class ModuleDeserialization {
     }
 
     Definition def;
-    if (groupProto.hasDefinition()) {
+    if (referable instanceof TCReferable && groupProto.hasDefinition()) {
       def = readDefinition(groupProto.getDefinition(), (TCReferable) referable, true);
       myState.record((TCReferable) referable, def);
       myCallTargetProvider.putCallTarget(referableProto.getIndex(), def);
@@ -230,7 +230,7 @@ public class ModuleDeserialization {
       }
 
       group = new DataGroup(referable, internalReferables, subgroups, Collections.emptyList(), parent);
-    } else if (def instanceof ClassDefinition) {
+    } else if (referable instanceof ClassReferable && def instanceof ClassDefinition) {
       Set<Definition> invisibleRefs = new HashSet<>();
       for (Integer index : groupProto.getInvisibleInternalReferableList()) {
         invisibleRefs.add(myCallTargetProvider.getCallTarget(index));

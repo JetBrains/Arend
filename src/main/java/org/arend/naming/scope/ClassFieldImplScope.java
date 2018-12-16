@@ -99,7 +99,7 @@ public class ClassFieldImplScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
     Referable referable = resolveName(name);
     if (myWithSuperClasses && referable instanceof ClassReferable) {
       return new ClassFieldImplScope((ClassReferable) referable, true);

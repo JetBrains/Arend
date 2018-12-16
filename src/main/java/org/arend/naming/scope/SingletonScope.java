@@ -29,7 +29,7 @@ public class SingletonScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
     return myReferable.textRepresentation().equals(name) ? EmptyScope.INSTANCE : null;
   }
 

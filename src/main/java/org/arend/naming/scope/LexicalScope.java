@@ -18,25 +18,31 @@ public class LexicalScope implements Scope {
   private final Scope myParent;
   private final Group myGroup;
   private final ModulePath myModule;
-  private final boolean myIgnoreOpens;
+  private final Kind myKind;
 
-  private LexicalScope(Scope parent, Group group, ModulePath module, boolean ignoreOpens) {
+  private enum Kind { INSIDE, OPENED, OPENED_INTERNAL }
+
+  private LexicalScope(Scope parent, Group group, ModulePath module, Kind kind) {
     myParent = parent;
     myGroup = group;
     myModule = module;
-    myIgnoreOpens = ignoreOpens;
+    myKind = kind;
   }
 
   private boolean ignoreOpens() {
-    return myIgnoreOpens;
+    return myKind != Kind.INSIDE;
   }
 
   public static LexicalScope insideOf(Group group, Scope parent) {
-    return new LexicalScope(parent, group, group.getReferable().getLocation(), false);
+    return new LexicalScope(parent, group, group.getReferable().getLocation(), Kind.INSIDE);
+  }
+
+  private static LexicalScope opened(Group group, boolean onlyInternal) {
+    return new LexicalScope(EmptyScope.INSTANCE, group, null, onlyInternal ? Kind.OPENED_INTERNAL : Kind.OPENED);
   }
 
   public static LexicalScope opened(Group group) {
-    return new LexicalScope(EmptyScope.INSTANCE, group, null, true);
+    return opened(group, false);
   }
 
   private void addReferable(Referable referable, List<Referable> elements) {
@@ -70,7 +76,7 @@ public class LexicalScope implements Scope {
       addReferable(constructor.getReferable(), elements);
     }
     GlobalReferable groupRef = myGroup.getReferable();
-    if (groupRef instanceof ClassReferable) {
+    if (myKind != Kind.OPENED_INTERNAL && groupRef instanceof ClassReferable) {
       elements.addAll(new ClassFieldImplScope((ClassReferable) groupRef, false).getElements());
     } else {
       for (Group.InternalReferable field : myGroup.getFields()) {
@@ -95,7 +101,7 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED));
         }
         scope = cachingScope;
       }
@@ -106,9 +112,9 @@ public class LexicalScope implements Scope {
     return elements;
   }
 
-  private static GlobalReferable resolveInternal(Group group, String name, boolean onlyVisible) {
+  private static GlobalReferable resolveInternal(Group group, String name, boolean onlyInternal) {
     for (Group.InternalReferable internalReferable : group.getConstructors()) {
-      if (!onlyVisible || internalReferable.isVisible()) {
+      if (!onlyInternal || internalReferable.isVisible()) {
         GlobalReferable constructor = internalReferable.getReferable();
         if (constructor.textRepresentation().equals(name)) {
           return constructor;
@@ -116,9 +122,9 @@ public class LexicalScope implements Scope {
       }
     }
 
-    if (onlyVisible || !(group.getReferable() instanceof ClassReferable)) {
+    if (onlyInternal || !(group.getReferable() instanceof ClassReferable)) {
       for (Group.InternalReferable internalReferable : group.getFields()) {
-        if (!onlyVisible || internalReferable.isVisible()) {
+        if (!onlyInternal || internalReferable.isVisible()) {
           GlobalReferable field = internalReferable.getReferable();
           if (field.textRepresentation().equals(name)) {
             return field;
@@ -133,13 +139,13 @@ public class LexicalScope implements Scope {
     return null;
   }
 
-  private static Object resolveSubgroup(Group group, String name, boolean resolveRef) {
+  private static Object resolveSubgroup(Group group, String name, ResolveType resolveType) {
     Referable ref = group.getReferable();
     if (ref.textRepresentation().equals(name)) {
-      return resolveRef ? ref : LexicalScope.opened(group);
+      return resolveType == ResolveType.REF ? ref : LexicalScope.opened(group, resolveType == ResolveType.INTERNAL_SCOPE);
     }
 
-    if (resolveRef) {
+    if (resolveType == ResolveType.REF) {
       GlobalReferable result = resolveInternal(group, name, true);
       if (result != null) {
         return result;
@@ -149,26 +155,28 @@ public class LexicalScope implements Scope {
     return null;
   }
 
-  private Object resolve(String name, boolean resolveRef) {
+  private enum ResolveType { REF, SCOPE, INTERNAL_SCOPE }
+
+  private Object resolve(String name, ResolveType resolveType) {
     if (name == null || name.isEmpty() || "_".equals(name)) {
       return null;
     }
 
-    if (resolveRef) {
-      Object result = resolveInternal(myGroup, name, false);
+    if (resolveType == ResolveType.REF) {
+      Object result = resolveInternal(myGroup, name, myKind == Kind.OPENED_INTERNAL);
       if (result != null) {
         return result;
       }
     }
 
     for (Group subgroup : myGroup.getSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      Object result = resolveSubgroup(subgroup, name, resolveType);
       if (result != null) {
         return result;
       }
     }
     for (Group subgroup : myGroup.getDynamicSubgroups()) {
-      Object result = resolveSubgroup(subgroup, name, resolveRef);
+      Object result = resolveSubgroup(subgroup, name, resolveType);
       if (result != null) {
         return result;
       }
@@ -188,39 +196,39 @@ public class LexicalScope implements Scope {
         scope = getImportedSubscope();
       } else {
         if (cachingScope == null) {
-          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, true));
+          cachingScope = CachingScope.make(new LexicalScope(myParent, myGroup, null, Kind.OPENED));
         }
         scope = cachingScope;
       }
 
       scope = NamespaceCommandNamespace.resolveNamespace(scope, cmd);
-      Object result = resolveRef ? scope.resolveName(name) : scope.resolveNamespace(name);
+      Object result = resolveType == ResolveType.REF ? scope.resolveName(name) : scope.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
       if (result != null) {
         return result;
       }
     }
 
-    return resolveRef ? myParent.resolveName(name) : myParent.resolveNamespace(name);
+    return resolveType == ResolveType.REF ? myParent.resolveName(name) : myParent.resolveNamespace(name, resolveType == ResolveType.INTERNAL_SCOPE);
   }
 
   @Nullable
   @Override
   public Referable resolveName(String name) {
-    Object result = resolve(name, true);
+    Object result = resolve(name, ResolveType.REF);
     return result instanceof Referable ? (Referable) result : null;
   }
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
-    Object result = resolve(name, false);
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
+    Object result = resolve(name, onlyInternal ? ResolveType.INTERNAL_SCOPE : ResolveType.SCOPE);
     return result instanceof Scope ? (Scope) result : null;
   }
 
   @Nonnull
   @Override
   public Scope getGlobalSubscopeWithoutOpens() {
-    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, true);
+    return ignoreOpens() ? this : new LexicalScope(myParent, myGroup, null, Kind.OPENED);
   }
 
   @Nullable

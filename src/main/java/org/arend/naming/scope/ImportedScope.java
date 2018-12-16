@@ -77,13 +77,13 @@ public class ImportedScope implements Scope {
 
   @Nullable
   @Override
-  public Scope resolveNamespace(String name) {
+  public Scope resolveNamespace(String name, boolean onlyInternal) {
     Triple triple = myExpectedNamesTree.map.get(name);
     if (triple == null) {
       return null;
     }
 
-    Scope scope2 = new ImportedScope(triple.tree, myProvider, myElementsScope == null ? null : myElementsScope.resolveNamespace(name));
+    Scope scope2 = new ImportedScope(triple.tree, myProvider, myElementsScope == null ? null : myElementsScope.resolveNamespace(name, true));
     return triple.modulePath == null || triple.scope == null ? scope2 : new MergeScope(triple.scope, scope2);
   }
 
