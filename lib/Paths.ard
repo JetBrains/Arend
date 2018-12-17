@@ -1,0 +1,159 @@
+\func idp  {A : \Type} {a : A} => path (\lam _ => a)
+
+\func idpe {A : \Type} (a : A) => path (\lam _ => a)
+
+\func pmap {A B : \Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a'
+  => path (\lam i => f (p @ i))
+
+\func pmap2 {A B C : \Type} (f : A -> B -> C) {a a' : A} (p : a = a') {b b' : B} (q : b = b') : f a b = f a' b'
+  => path (\lam i => f (p @ i) (q @ i))
+
+\func transport {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => coe (\lam i => B (p @ i)) b right
+
+\func transport2 {A B : \Type} (C : A -> B -> \Type) {a a' : A} {b b' : B} (p : a = a') (q : b = b') (c : C a b) : C a' b'
+  => transport (\lam b => C a' b) q (transport (\lam a => C a b) p c)
+
+\func inv {A : \Type} {a a' : A} (p : a = a') : a' = a
+  => transport (\lam a'' => a'' = a) p idp
+
+\func concat {A : I -> \Type} {a : A left} {a' a'' : A right} (p : Path A a a') (q : a' = a'') : Path A a a''
+  => transport (Path A a) q p
+
+\func \infixr 9 *> {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => concat p q
+
+\func \infixr 9 <* {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => x = a'') (inv p) q
+
+-- squeeze i left = left; squeeze i right = i; squeeze left i = left; squeeze right i = i
+\func squeeze (i j : I)
+  => coe (\lam i => Path (\lam j => left = squeeze1 i j) (path (\lam _ => left)) (path (\lam j => squeeze1 i j))) (path (\lam _ => path (\lam _ => left))) right @ i @ j
+  \where
+    \func squeeze1 (i j : I) => coe (\lam x => left = x) (path (\lam _ => left)) j @ i
+
+-- squeezeR i left = i; squeezeR i right = right; squeezeR left i = i; squeezeR right i = right
+\func squeezeR (i j : I) =>
+  \let | p1 => \lam x3 => path (\lam _ => x3)
+       | p2 => path (\lam _ => path (\lam _ => left))
+  \in coe (\lam i => Path (\lam j => squeeze i j = i) (path (\lam x3 => squeeze i x3)) (p1 i)) p2 right @ i @ j
+
+-- The type of squares with a specified boundary
+\func Square {A : \Type} {a00 a01 a10 a11 : A} (p_0 : a00 = a10) (p_1 : a01 = a11) (p0_ : a00 = a01) (p1_ : a10 = a11)
+  => Path (\lam x => p_0 @ x = p_1 @ x) p0_ p1_
+
+\func Square_path {A : \Type} {a00 a01 a10 a11 : A} (p_0 : a00 = a10) (p_1 : a01 = a11) (p0_ : a00 = a01) (p1_ : a10 = a11)
+  : (p0_ = p_0 <* p1_ *> inv p_1) = Square p_0 p_1 p0_ p1_
+  => path (\lam i => Path (\lam x => p_0 @ squeeze x i = p_1 @ squeeze x i) p0_ (path (\lam j => p_0 @ squeezeR i j) <* p1_ *> inv (path (\lam j => p_1 @ squeezeR i j))))
+
+\func psqueeze  {A : \Type} {a a' : A} (p : a = a') (i : I) : a = p @ i
+  => path (\lam j => p @ squeeze i j)
+
+\func pmap_*>-comm {A B : \Type} (f : A -> B) {a a' a'' : A} (p : a = a') (q : a' = a'')
+  : pmap f (concat p q) = concat (pmap f p) (pmap f q)
+  => coe (\lam i => pmap f (concat p (psqueeze q i)) = concat (pmap f p) (pmap f (psqueeze q i))) idp right
+
+\func Jl {A : \Type} {a : A} (B : \Pi (a' : A) -> a = a' -> \Type) (b : B a idp) {a' : A} (p : a = a') : B a' p
+  => coe (\lam i => B (p @ i) (psqueeze p i)) b right
+
+\func inv_inv {A : \Type} {a a' : A} (p : a = a') : inv (inv p) = p
+  => Jl (\lam _ p => inv (inv p) = p) idp p
+
+\func inv_*> {A : \Type} {a a' : A} (p : a = a') : inv p *> p = idp
+  => Jl (\lam _ q => inv q *> q = idp) idp p
+
+\func inv_<* {A : \Type} {a a' : A} (p : a = a') : inv p <* p = idp
+  => Jl (\lam _ q => inv q <* q = idp) idp p
+
+\func *>_inv {A : \Type} {a a' : A} (p : a = a') : p *> inv p = idp
+  => Jl (\lam _ q => q *> inv q = idp) idp p
+
+\func idp_*> {A : \Type} {a a' : A} (p : a = a') : idp *> p = p
+  => Jl (\lam _ p => idp *> p = p) idp p
+
+\func *>_inv-comm {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : inv (p *> q) = inv q *> inv p
+  => Jl (\lam _ q => inv (p *> q) = inv q *> inv p) (inv (idp_*> (inv p))) q
+
+\func pmap_inv-comm {A B : \Type} {a a' : A} (f : A -> B) (p : a = a') : pmap f (inv p) = inv (pmap f p)
+  => Jl (\lam _ p => pmap f (inv p) = inv (pmap f p)) idp p
+
+\func *>_idp {A : \Type} {a a' : A} (p : a = a') : p *> idp = p
+  => Jl (\lam _ p => p *> idp = p) idp p
+
+\func *>-assoc {A : \Type} {a1 a2 a3 a4 : A} (p : a1 = a2) (q : a2 = a3) (r : a3 = a4) : (p *> q) *> r = p *> (q *> r)
+  => Jl (\lam _ r => (p *> q) *> r = p *> (q *> r)) idp r
+
+\func <*_*>-assoc {A : \Type} {a1 a2 a3 a4 : A} (p : a1 = a2) (q : a2 = a3) (r : a3 = a4) : (p <* q) *> r = p <* (q *> r)
+  => Jl (\lam _ r => (p <* q) *> r = p <* (q *> r)) idp r
+
+\func <*-assoc {A : \Type} {a1 a2 a3 a4 : A} (p : a1 = a2) (q : a2 = a3) (r : a3 = a4) : (p *> q) <* r = p *> (q <* r)
+  => Jl (\lam a3 q => \Pi {a4 : A} (r : a3 = a4) -> (p *> q) <* r = p *> (q <* r))
+        (\lam {_} r => Jl (\lam a3 p => \Pi {a4 : A} (r : a3 = a4) -> p <* r = p *> r) (\lam {_} r => inv (idp_*> r)) p r) q r
+
+\func \infix 2 qed {A : \Type} (a : A) : a = a => idp
+
+\func \infixr 1 >== {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => concat p q
+
+\func \infix 2 ==< {A : \Type} (a : A) {a' : A} (p : a = a') => p
+
+\func idpOver (A : I -> \Type) (a : A left) : Path A a (coe A a right) => path (coe A a)
+
+\func pathOver {A : I -> \Type} {a : A left} {a' : A right} (p : coe A a right = a') : Path A a a' => concat (idpOver A a) p
+
+\func coe_path {A : \Type} {a1 a2 a3 a4 : A} (p : a2 = a1) (q : a2 = a3) (r : a3 = a4)
+  : coe (\lam i => p @ i = r @ i) q right = inv p *> q *> r
+  => coe (\lam j => coe (\lam i => p @ i = r @ i) q j = inv (psqueeze p j) *> q *> psqueeze r j) (inv (idp_*> q)) right
+
+\func path-sym {A : \Type} (a a' : A) : (a = a') = (a' = a)
+  => path (iso inv inv inv_inv inv_inv)
+
+\func rotatePathLeft {A : \Type} {a a' a'' : A} {p : a' = a} {q : a' = a''} {r : a = a''} (t : q = p *> r) : inv p *> q = r
+  => inv p *> q          ==< pmap (\lam s => inv p *> s) t >==
+     inv p *> (p *> r)   ==< inv (*>-assoc (inv p) p r) >==
+     (inv p *> p) *> r   ==< pmap (\lam s => s *> r) (inv_*> p) >==
+     idp *> r            ==< idp_*> r >==
+     r                   `qed
+
+\func homotopy-isNatural {A B : \Type} (f g : A -> B) (h : \Pi (a : A) -> f a = g a) {a a' : A} (p : a = a') : pmap f p *> h a' = h a *> pmap g p
+  => Jl (\lam x q => pmap f q *> h x = h a *> pmap g q) (idp_*> (h a)) p
+
+\func homotopy_app-comm {A : \Type} (f : A -> A) (h : \Pi (a : A) -> f a = a) (a : A) : h (f a) = pmap f (h a)
+  => h (f a)                             ==< pmap (\lam s => h (f a) *> s) (inv (*>_inv (h a))) >==
+     h (f a) *> (h a *> inv (h a))       ==< inv (*>-assoc (h (f a)) (h a) (inv (h a))) >==
+     (h (f a) *> h a) *> inv (h a)       ==< pmap (\lam s => s *> inv (h a)) (inv (homotopy-isNatural f (\lam a => a) h (h a))) >==
+     (pmap f (h a) *> h a) *> inv (h a)  ==< *>-assoc (pmap f (h a)) (h a) (inv (h a)) >==
+     pmap f (h a) *> (h a *> inv (h a))  ==< pmap (\lam s => pmap f (h a) *> s) (*>_inv (h a)) >==
+     pmap f (h a)                        `qed
+
+\func pmapd {A : \Type} (B : A -> \Type) (f : \Pi (x : A) -> B x) {a a' : A} (p : a = a') : transport B p (f a) = f a'
+  => Jl (\lam x (q : a = x) => transport B q (f a) = f x) idp p
+
+\func transport_*> {A : \Type} (B : A -> \Type) {a a' a'' : A} (p : a = a') (q : a' = a'') (x : B a) : transport B (p *> q) x = transport B q (transport B p x)
+  => Jl (\lam a0 q' => transport B (p *> q') x = transport B q' (transport B p x)) idp q
+
+\func transport_pi {A : \Type} (B C : A -> \Type) {a a' : A} (p : a = a') (f : B a -> C a) (x : B a') : transport (\lam y => B y -> C y) p f x = transport C p (f (transport B (inv p) x))
+  => Jl (\lam z q => \Pi (x' : B z) -> transport (\lam y => B y -> C y) q f x' = transport C q (f (transport B (inv q) x')))
+        (\lam (x' : B a) => idp) p x
+
+\func transport_pathRight {A : \Type} (a0 : A) {a b : A} (p : a = b) (q : a0 = a) : transport (a0 =) p q = q *> p
+  => coe_path {A} (idpe a0) q p *> idp_*> (q *> p)
+
+\func transport_pathLeft {A : \Type} (a0 : A) {a b : A} (p : a = b) (q : a = a0) : transport (\lam x => x = a0) p q = inv p *> q
+  => coe_path {A} p q (idpe a0)
+
+\func transport_inv_id {A : \Type} (B : A -> \Type) {a b : A} (p : a = b) (x : B a) : transport B (inv p) (transport B p x) = x
+  => Jl (\lam z (p' : a = z) => transport B (inv p') (transport B p' x) = x) idp p
+
+\func transport_id_inv {A : \Type} (B : A -> \Type) {a b : A} (p : a = b) (x : B b) : transport B p (transport B (inv p) x) = x
+  => pmap (\lam p' => transport B p' (transport B (inv p) x)) (inv (inv_inv p)) *> transport_inv_id B (inv p) x
+
+\func funExt {A : \Type} (B : A -> \Type) (f g : \Pi (x : A) -> (B x)) (h : \Pi (x : A) -> (f x = g x)) : f = g
+  => path (\lam i a => h a @ i)
+
+\func SigmaExt {A : \Type} (B : A -> \Type) (x y : \Sigma (a : A) (B a)) (p : x.1 = y.1) (q : transport B p x.2 = y.2) : x = y
+    => path (\lam i => (p @ i, pathOver q @ i))
+
+\func coe_sigma {A : I -> \Type} (B : \Pi (i : I) -> A i -> \Type) (p : \Sigma (a : A left) (B left a)) (j : I)
+  :  coe (\lam i => \Sigma (a : A i) (B i a)) p j = (coe A p.1 j, coe (\lam i => B i (coe A p.1 i)) p.2 j)
+  => coe (\lam k => coe (\lam i => \Sigma (a : A i) (B i a)) p (squeeze j k) =
+                    (coe A p.1 (squeeze j k), coe (\lam i => B i (coe A p.1 i)) p.2 (squeeze j k))) idp right

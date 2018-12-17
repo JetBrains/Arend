@@ -4,15 +4,15 @@
   \where {
     \func \infixl 6 + (x y : Nat) : Nat \elim y
       | zero => x
-      | suc y => suc (x + y)
+      | suc y => Nat.suc (x + y)
 
     \func \infixl 7 * (x y : Nat) : Nat \elim y
       | zero => zero
       | suc y => x * y + x
 
     \func \infixl 6 - (n m : Nat) : Int
-      | 0, m => neg m
-      | suc n, 0 => pos (suc n)
+      | zero, m => neg m
+      | suc n, zero => pos (suc n)
       | suc n, suc m => n - m
   }
 
@@ -27,22 +27,5 @@
   | left
   | right
 
-\data Path (A : I -> \Type) (a : A left) (a' : A right)
-  | path (\Pi (i : I) -> A i)
-  \where {
-    \func inProp {A : \Prop} : \Pi (a a' : A) -> a = a'
-  }
-
 \func \infix 1 = {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
-\func \infixl 9 @ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \elim p, i
-  | _, left => a
-  | _, right => a'
-  | path f, i => f i
-
-\func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
-  | left => a
-
-\func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
-  | left => A
-  | right => B

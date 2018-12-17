@@ -1,0 +1,7 @@
+\func id {A : \Type} => \lam (x : A) => x
+
+\func -o {A B C : \Type} (f : A -> B) => \lam (g : B -> C) x => g (f x)
+
+\func o- {A B C : \Type} (g : B -> C) => \lam (f : A -> B) x => g (f x)
+
+\func \infixr 8 o {A B C : \Type} (g : B -> C) (f : A -> B) => \lam x => g (f x)
