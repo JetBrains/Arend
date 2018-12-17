@@ -14,6 +14,6 @@ public class SimpleCallTargetProvider implements CallTargetProvider {
   }
 
   public void putCallTarget(int index, Definition callTarget) {
-    myMap.put(index, callTarget);
+    myMap.putIfAbsent(index, callTarget);
   }
 }
