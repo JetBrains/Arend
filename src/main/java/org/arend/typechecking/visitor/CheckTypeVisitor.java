@@ -575,9 +575,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     Sort sortArgument;
-    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext() ;
+    boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext();
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
       sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myEquations, definition.hasUniverses(), expr);
+      Level hLevel = null;
+      if (!isMin && definition == Prelude.ISO) {
+        hLevel = new Level(sortArgument.getHLevel().getVar(), -1);
+        sortArgument = new Sort(sortArgument.getPLevel(), hLevel);
+      }
+      if (definition instanceof DataDefinition && !sortArgument.isProp()) {
+        hLevel = ((DataDefinition) definition).getSort().getHLevel();
+      } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
+        UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).checkedCast(UniverseExpression.class);
+        if (universe != null) {
+          hLevel = universe.getSort().getHLevel();
+        }
+      }
+      if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
+        myEquations.bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
+      }
     } else {
       Level pLevel = null;
       if (expr.getPLevel() != null) {
@@ -608,21 +624,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       sortArgument = new Sort(pLevel, hLevel);
-    }
-
-    if (expr.getPLevel() == null && expr.getHLevel() == null) {
-      Level hLevel = null;
-      if (definition instanceof DataDefinition && !sortArgument.isProp()) {
-        hLevel = ((DataDefinition) definition).getSort().getHLevel();
-      } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
-        UniverseExpression universe = ((FunctionDefinition) definition).getResultType().getPiParameters(null, false).checkedCast(UniverseExpression.class);
-        if (universe != null) {
-          hLevel = universe.getSort().getHLevel();
-        }
-      }
-      if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
-        myEquations.bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
-      }
     }
 
     return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument);

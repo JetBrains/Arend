@@ -1,6 +1,13 @@
 package org.arend.typechecking;
 
+import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.DataCallExpression;
+import org.arend.core.expr.FunCallExpression;
+import org.arend.core.expr.LamExpression;
+import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -199,5 +206,45 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
       "  | x : Nat\n" +
       "}", 1);
     assertThatErrorsAre(error());
+  }
+
+  @Test
+  public void isoSet() {
+    typeCheckModule("\\func setExt (A B : \\Set) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) => path {\\lam _ => \\Set} (iso f g p q)");
+    assertEquals(new UniverseExpression(Sort.SetOfLevel(new Level(LevelVariable.PVAR))), ((FunctionDefinition) getDefinition("setExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  }
+
+  @Test
+  public void isoProp() {
+    typeCheckModule(
+      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
+      "  path {\\lam _ => \\Prop} (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  }
+
+  @Test
+  public void isoSet2() {
+    typeCheckModule("\\func setExt (A B : \\Set) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Set} B => path (iso f g p q)");
+    assertEquals(new UniverseExpression(Sort.SetOfLevel(new Level(LevelVariable.PVAR))), ((FunctionDefinition) getDefinition("setExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
+  }
+
+  @Test
+  public void isoProp2() {
+    typeCheckModule(
+      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) : A = {\\Prop} B =>\n" +
+      "  path (iso f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
+  }
+
+  @Test
+  public void isoSetError() {
+    typeCheckModule("\\func setExt (A B : \\1-Type0) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Set0} B => path (iso f g p q)", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void isoPropError() {
+    typeCheckModule("\\func setExt (A B : \\Set0) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Prop} B => path (iso f g p q)", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }
