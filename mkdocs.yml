@@ -25,7 +25,7 @@ pages:
         - Classes: language-reference/definitions/classes.md
         - Instances: language-reference/definitions/instances.md
         - Coercion: language-reference/definitions/coercion.md
-        - Levels: language-reference/definitions/levels.md
+        - Level: language-reference/definitions/level.md
         - Expressions: language-reference/expressions.md
         - Goals: language-reference/expressions/goals.md
         - Universes: language-reference/expressions/universes.md

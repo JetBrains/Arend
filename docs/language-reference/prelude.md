@@ -9,7 +9,7 @@ You can find file `Prelude.ard` which contains these definitions, but note that 
 
 # Nat and Int
 
-The definitions of `Nat`, `Int`, `Nat.+`, `Nat.*`, and `Int.fromNat` are actually correct, you can define the same definitions in an ordinary file.
+The definitions of `Nat`, `Int`, `Nat.+`, `Nat.*`, `Nat.-`, and `Int.fromNat` are actually correct, you can define the same definitions in an ordinary file.
 The difference is that the definitions from Prelude are implemented more efficiently.
 
 # Interval
@@ -41,6 +41,9 @@ Prelude also contains an infix form of `Path` called `=` which is actually a cor
 The definition of `@` is also correct, but the typechecker has an eta rule for this definition: `path (\lam i => p @ i) = p`.
 This rule does not hold for functions `@` defined in other files.
 
+Finally, function `Path.inProp` is not correct since it does not have a body.
+It implies that every two element of a type in `\Prop` are equal.
+
 # coe
 
 Function `coe` imples that `I` is contractible and that `=` satisfies the rules for ordinary identity types.
@@ -51,8 +54,3 @@ This function satisfies one additional reduction rule: `coe (\lam x => A) a i =>
 
 The definition of `iso` is not correct since it also pattern matches on the interval.
 This definition implies the univalence axiom.
-
-# TrP and TrS
-
-Data types `TrP` and `TrS` define propositional and set truncations.
-They will be either removed or replaced with some other definitions in future releases.

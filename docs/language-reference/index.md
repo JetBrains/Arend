@@ -11,7 +11,7 @@
     * [Classes](definitions/classes)
     * [Instances](definitions/instances)
     * [Coercion](definitions/coercion)
-    * [Levels](definitions/levels)
+    * [Level](definitions/level)
 * [Expressions](expressions)
     * [Goals](expressions/goals)
     * [Universes](expressions/universes)

@@ -60,6 +60,9 @@ Definitions defined in the associated module of a definition are visible inside 
 ```
 
 Constructors of a `\data` definition and fields of a `\class` or a `\record` definition are defined inside the module associated to the definition, but they are also visible outside this module.
+Where blocks of `\data` and `\class` definitions may also contain special instructions that modify the definition.
+Such instructions begin with the keyword `\use`.
+They will be discussed [here](/language-reference/definitions/coercion) and [here](/language-reference/definitions/level).
 
 ## Open commands
 

@@ -19,11 +19,7 @@ hljs.registerLanguage("arend", function (hljs) {
         "\\new \\Pi \\Sigma \\lam ",
 
       built_in:
-        "Nat zero suc + * " +
-        "I left right " +
-        "Path path = @ coe iso " +
-        "TrP inP truncP " +
-        "TrS inS truncS ",
+        "Nat zero suc + * - Int pos neg fromNat I left right Path path inProp = @ coe iso",
 
       hole: "{?}"
     },
