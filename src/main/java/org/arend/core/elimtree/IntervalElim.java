@@ -34,6 +34,16 @@ public class IntervalElim implements Body {
     return myOtherwise;
   }
 
+  public int getNumberOfTotalElim() {
+    int result = 0;
+    for (Pair<Expression, Expression> pair : myCases) {
+      if (pair.proj1 != null && pair.proj2 != null) {
+        result++;
+      }
+    }
+    return result;
+  }
+
   @Override
   public boolean isWHNF(List<? extends Expression> arguments) {
     int offset = DependentLink.Helper.size(myParameters) - myCases.size();

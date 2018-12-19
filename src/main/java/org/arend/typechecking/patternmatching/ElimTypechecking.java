@@ -9,6 +9,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.GetTypeVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -33,6 +34,7 @@ public class ElimTypechecking {
   private Set<Concrete.FunctionClause> myUnusedClauses;
   private final EnumSet<PatternTypechecking.Flag> myFlags;
   private final Expression myExpectedType;
+  private final Integer myLevel;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
 
@@ -43,6 +45,14 @@ public class ElimTypechecking {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
+
+    if (flags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
+      Expression type = myExpectedType.getType();
+      Sort sort = type != null ? type.toSort() : null;
+      myLevel = sort != null && sort.getHLevel().isClosed() && sort.getHLevel() != Level.INFINITY ? sort.getHLevel().getConstant() + 1 : null;
+    } else {
+      myLevel = null;
+    }
   }
 
   public static  List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -202,7 +212,7 @@ public class ElimTypechecking {
     }
 
     myContext = new Stack<>();
-    ElimTree elimTree = clausesToElimTree(nonIntervalClauses);
+    ElimTree elimTree = clausesToElimTree(nonIntervalClauses, 0);
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
       List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
@@ -337,7 +347,7 @@ public class ElimTypechecking {
     return result;
   }
 
-  private ElimTree clausesToElimTree(List<ExtClause> clauseDataList) {
+  private ElimTree clausesToElimTree(List<ExtClause> clauseDataList, int numberOfIntervals) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       int index = 0;
       loop:
@@ -414,7 +424,7 @@ public class ElimTypechecking {
             constructors.add(conCall.getDefinition());
           }
         } else {
-          constructors = dataType.getConstructors();
+          constructors = new ArrayList<>(dataType.getConstructors());
         }
       } else {
         constructors = Collections.singletonList(BranchElimTree.TUPLE);
@@ -434,6 +444,11 @@ public class ElimTypechecking {
         }
       }
 
+      if (myLevel != null && !constructors.isEmpty() && constructors.get(0) != BranchElimTree.TUPLE) {
+        //noinspection ConstantConditions
+        constructors.removeIf(constructor -> numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0) > myLevel);
+      }
+
       boolean hasVars = false;
       Map<Constructor, List<ExtClause>> constructorMap = new LinkedHashMap<>();
       for (ExtClause clauseData : clauseDataList) {
@@ -448,7 +463,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars && constructors.size() > constructorMap.size()) {
+      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
@@ -539,7 +554,7 @@ public class ElimTypechecking {
           conClauseDataList.set(i, new ExtClause(patterns, conClauseDataList.get(i).expression, newSubstitution, conClauseDataList.get(i).clause));
         }
 
-        ElimTree elimTree = clausesToElimTree(conClauseDataList);
+        ElimTree elimTree = clausesToElimTree(conClauseDataList, myLevel == null ? 0 : numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0));
         if (elimTree == null) {
           myOK = false;
         } else {

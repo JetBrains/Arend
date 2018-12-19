@@ -277,4 +277,14 @@ public class ConditionsTest extends TypeCheckingTestCase {
       "\\data E D \\with\n" +
       " | () => e", 1);
   }
+
+  @Test
+  public void partialIntervalCondition() {
+    typeCheckModule("\\data D | con1 | con2 I { | left => con1 }");
+  }
+
+  @Test
+  public void partialIntervalConditionError() {
+    typeCheckModule("\\data D | con1 | con2 I { | left => con2 right }", 1);
+  }
 }
