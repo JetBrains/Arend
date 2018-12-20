@@ -143,4 +143,14 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "}", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void caseTest3() {
+    typeCheckModule(
+      "\\data Unit | unit\n" +
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\func f (x : D) : Unit => \\case x \\with {\n" +
+      "  | con1 => unit\n" +
+      "}");
+  }
 }

@@ -1150,7 +1150,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Check if the level of the result type is specified explicitly
-    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
     List<Clause> resultClauses = new ArrayList<>();
     Integer level = null;
     if (expr.getResultType() instanceof Concrete.TypedExpression) {
@@ -1164,8 +1163,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Try to infer level either directly or from a path type.
+    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
     if (level == null) {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
+      if (sort == null) {
+        Expression type = resultExpr.getType();
+        if (type != null) {
+          sort = type.toSort();
+        }
+      }
       if (sort != null && sort.getHLevel().isClosed()) {
         if (sort.getHLevel() != Level.INFINITY) {
           level = sort.getHLevel().getConstant();
