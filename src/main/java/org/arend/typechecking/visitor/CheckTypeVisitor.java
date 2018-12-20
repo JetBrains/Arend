@@ -1145,9 +1145,49 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
+    if (resultType == null && expectedType == null) {
+      return null;
+    }
+
+    // Check if the level of the result type is specified explicitly
     Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE)).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    Integer level = null;
+    if (expr.getResultType() instanceof Concrete.TypedExpression) {
+      Concrete.Expression typeType = ((Concrete.TypedExpression) expr.getResultType()).type;
+      if (typeType instanceof Concrete.UniverseExpression) {
+        Concrete.UniverseExpression universeType = (Concrete.UniverseExpression) typeType;
+        if (universeType.getHLevel() instanceof Concrete.NumberLevelExpression) {
+          level = ((Concrete.NumberLevelExpression) universeType.getHLevel()).getNumber();
+        }
+      }
+    }
+
+    // Try to infer level either directly or from a path type.
+    if (level == null) {
+      Sort sort = resultType == null ? null : resultType.getSortOfType();
+      if (sort != null && sort.getHLevel().isClosed()) {
+        if (sort.getHLevel() != Level.INFINITY) {
+          level = sort.getHLevel().getConstant();
+        }
+      } else if (sort == null || sort.getHLevel().getVar() instanceof InferenceLevelVariable) {
+        resultExpr = resultExpr.normalize(NormalizeVisitor.Mode.WHNF);
+        DataCallExpression dataCall = resultExpr.checkedCast(DataCallExpression.class);
+        if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
+          LamExpression lamExpr = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(LamExpression.class);
+          Expression bodyType = lamExpr == null ? null : lamExpr.getBody().getType();
+          UniverseExpression universeBodyType = bodyType == null ? null : bodyType.checkedCast(UniverseExpression.class);
+          if (universeBodyType != null && universeBodyType.getSort().getHLevel().isClosed() && universeBodyType.getSort().getHLevel() != Level.INFINITY) {
+            level = universeBodyType.getSort().getHLevel().getConstant() - 1;
+            if (level < -1) {
+              level = -1;
+            }
+          }
+        }
+      }
+    }
+
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }

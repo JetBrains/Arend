@@ -1,6 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.TypeMismatchError;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.*;
@@ -111,5 +112,35 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "  | con1, con3 _ _ => Nat\n" +
       "  | con3 _ _, con1 => Nat", 1);
     assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void caseTest() {
+    typeCheckModule(
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\func f (x : D) => \\case x \\return 0 = 0 \\with {\n" +
+      "  | con1 => path (\\lam _ => 0)\n" +
+      "}");
+  }
+
+  @Test
+  public void caseTest2() {
+    typeCheckModule(
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\data Maybe (A : \\Type) | just A | nothing\n" +
+      "\\func f (x : D) => \\case x \\return (just 0 = just 0 : \\Prop) \\with {\n" +
+      "  | con1 => path (\\lam _ => just 0)\n" +
+      "}");
+  }
+
+  @Test
+  public void caseTestError() {
+    typeCheckModule(
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\data Maybe (A : \\Type) | just A | nothing\n" +
+      "\\func f (x : D) => \\case x \\return (Nat : \\Prop) \\with {\n" +
+      "  | con1 => 0\n" +
+      "}", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

@@ -1,6 +1,8 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.Utils;
+import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.*;
@@ -20,6 +22,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.MissingClausesError;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
@@ -40,6 +43,13 @@ public class ElimTypechecking {
 
   private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
+
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, Integer level) {
+    myVisitor = visitor;
+    myExpectedType = expectedType;
+    myFlags = flags;
+    myLevel = level == null ? null : level + 1;
+  }
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
     myVisitor = visitor;
@@ -438,7 +448,20 @@ public class ElimTypechecking {
       }
 
       if (dataType != null && dataType.isTruncated()) {
-        if (!myExpectedType.getType().isLessOrEquals(new UniverseExpression(dataType.getSort()), myVisitor.getEquations(), conClauseData.clause)) {
+        Expression type = myExpectedType.getType();
+        boolean ok = false;
+        if (type != null) {
+          type = type.normalize(NormalizeVisitor.Mode.WHNF);
+          UniverseExpression universe = type.checkedCast(UniverseExpression.class);
+          if (universe != null) {
+            ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause);
+          } else {
+            InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, conClauseData.clause);
+            myVisitor.getEquations().addVariable(pl);
+            ok = type.isLessOrEquals(new UniverseExpression(new Sort(new Level(pl), dataType.getSort().getHLevel())), myVisitor.getEquations(), conClauseData.clause);
+          }
+        }
+        if (!ok) {
           myVisitor.getErrorReporter().report(new TruncatedDataError(dataType, myExpectedType, conClauseData.clause));
           myOK = false;
         }
