@@ -344,7 +344,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Result checkResult(ExpectedType expectedType, Result result, Concrete.Expression expr) {
-    if (result == null || expectedType == null) {
+    if (result == null || expectedType == null || expectedType == ExpectedType.OMEGA && result.type instanceof UniverseExpression) {
       return result;
     }
 
@@ -1329,10 +1329,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Typecheck field implementations
-    return visitClassExt(expr, expectedType, classCall);
+    return visitClassExt(expr.getStatements(), expectedType, classCall, expr);
   }
 
-  private Result visitClassExt(Concrete.ClassExtExpression expr, ExpectedType expectedType, ClassCallExpression classCallExpr) {
+  public Result visitClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, ClassCallExpression classCallExpr, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
 
     // Check for already implemented fields
@@ -1341,7 +1341,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Map<ClassField, Pair<Expression,Concrete.SourceNode>> classFieldMap2 = new HashMap<>();
     List<GlobalReferable> alreadyImplementedFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
-    for (Concrete.ClassFieldImpl statement : expr.getStatements()) {
+    for (Concrete.ClassFieldImpl statement : classFieldImpls) {
       Definition definition = referableToDefinition(statement.getImplementedField(), statement);
       if (definition == null) {
         continue;
@@ -1515,7 +1515,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           expectedClassCall = new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), expectedClassCall.getImplementedHere(), expectedClassCall.getSort(), actualClassDef.hasUniverses());
           expectedClassCall.updateHasUniverses();
         }
-        exprResult = visitClassExt((Concrete.ClassExtExpression) expr.getExpression(), null, expectedClassCall);
+        exprResult = visitClassExt(((Concrete.ClassExtExpression) expr.getExpression()).getStatements(), null, expectedClassCall, expr.getExpression());
         if (exprResult == null) {
           return null;
         }
