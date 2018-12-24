@@ -57,6 +57,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final ConcreteProvider myConcreteProvider;
   private final PartialComparator<TCReferable> myComparator;
   private boolean myTypecheckingHeaders = false;
+  private TCReferable myCurrentDefinition;
 
   public static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
 
@@ -94,6 +95,9 @@ public class TypecheckingOrderingListener implements OrderingListener {
       }
       return true;
     } catch (ComputationInterruptedException ignored) {
+      if (myCurrentDefinition != null) {
+        typecheckingInterrupted(myCurrentDefinition);
+      }
       return false;
     }
   }
@@ -103,6 +107,9 @@ public class TypecheckingOrderingListener implements OrderingListener {
       new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, false).orderModules(modules);
       return true;
     } catch (ComputationInterruptedException ignored) {
+      if (myCurrentDefinition != null) {
+        typecheckingInterrupted(myCurrentDefinition);
+      }
       return false;
     }
   }
@@ -111,6 +118,9 @@ public class TypecheckingOrderingListener implements OrderingListener {
     try {
       return library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, false));
     } catch (ComputationInterruptedException ignored) {
+      if (myCurrentDefinition != null) {
+        typecheckingInterrupted(myCurrentDefinition);
+      }
       return false;
     }
   }
@@ -120,6 +130,9 @@ public class TypecheckingOrderingListener implements OrderingListener {
       collector.feed(this);
       return true;
     } catch (ComputationInterruptedException ignored) {
+      if (myCurrentDefinition != null) {
+        typecheckingInterrupted(myCurrentDefinition);
+      }
       return false;
     }
   }
@@ -145,6 +158,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
   }
 
   public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
+
+  }
+
+  public void typecheckingInterrupted(TCReferable definition) {
 
   }
 
@@ -255,7 +272,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     if (numberOfHeaders == 1) {
-      typecheckingHeaderStarted(unit.getDefinition().getData());
+      myCurrentDefinition = unit.getDefinition().getData();
+      typecheckingHeaderStarted(myCurrentDefinition);
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
       CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
@@ -270,6 +288,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       }
 
       typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
+      myCurrentDefinition = null;
       return typechecked.status().headerIsOK();
     }
 
@@ -322,7 +341,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     DefinitionTypechecking typechecking = new DefinitionTypechecking(null);
     for (Concrete.Definition definition : orderedDefinitions) {
-      typecheckingBodyStarted(definition.getData());
+      myCurrentDefinition = definition.getData();
+      typecheckingBodyStarted(myCurrentDefinition);
 
       Definition def = myState.getTypechecked(definition.getData());
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
@@ -336,6 +356,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       }
 
       typecheckingBodyFinished(definition.getData(), def);
+      myCurrentDefinition = null;
     }
 
     if (!functionDefinitions.isEmpty()) {
@@ -370,24 +391,28 @@ public class TypecheckingOrderingListener implements OrderingListener {
       if (pair == null) {
         return;
       }
-      typecheckingBodyStarted(unit.getDefinition().getData());
-      typechecked = myState.getTypechecked(unit.getDefinition().getData());
+      myCurrentDefinition = unit.getDefinition().getData();
+      typecheckingBodyStarted(myCurrentDefinition);
+      typechecked = myState.getTypechecked(myCurrentDefinition);
       clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, unit.getDefinition(), Collections.emptySet(), pair.proj2);
     } else {
       CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter), null);
       checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), checkTypeVisitor));
       DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, checkTypeVisitor.getErrorReporter());
       if (isLevel) {
-        typecheckingHeaderStarted(unit.getDefinition().getData());
+        myCurrentDefinition = unit.getDefinition().getData();
+        typecheckingHeaderStarted(myCurrentDefinition);
         Definition oldTypechecked = myState.getTypechecked(unit.getDefinition().getData());
         mySuspensions.put(unit.getDefinition().getData(), new Pair<>(checkTypeVisitor, oldTypechecked == null));
         typechecked = new DefinitionTypechecking(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), unit.getDefinition(), false);
         typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
+        myCurrentDefinition = null;
         return;
       } else {
-        typecheckingUnitStarted(unit.getDefinition().getData());
+        myCurrentDefinition = unit.getDefinition().getData();
+        typecheckingUnitStarted(myCurrentDefinition);
         clauses = unit.getDefinition().accept(new DefinitionTypechecking(checkTypeVisitor), recursive);
-        typechecked = myState.getTypechecked(unit.getDefinition().getData());
+        typechecked = myState.getTypechecked(myCurrentDefinition);
       }
     }
 
@@ -400,6 +425,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     } else {
       typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
     }
+    myCurrentDefinition = null;
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {
