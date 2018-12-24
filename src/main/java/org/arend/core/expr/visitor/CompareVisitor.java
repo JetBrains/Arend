@@ -88,10 +88,23 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     // Another optimization
-    if (expr1.isInstance(FunCallExpression.class) && expr2.isInstance(FunCallExpression.class) && expr1.cast(FunCallExpression.class).getDefinition() == expr2.cast(FunCallExpression.class).getDefinition() && (!expr1.cast(FunCallExpression.class).getDefinition().hasUniverses() || expr1.cast(FunCallExpression.class).getSortArgument().equals(expr2.cast(FunCallExpression.class).getSortArgument()))
-      || expr1.isInstance(AppExpression.class) && expr2.isInstance(AppExpression.class)
-      || expr1.isInstance(FieldCallExpression.class) && expr2.isInstance(FieldCallExpression.class) && expr1.cast(FieldCallExpression.class).getDefinition() == expr2.cast(FieldCallExpression.class).getDefinition() && (!expr1.cast(FieldCallExpression.class).getDefinition().hasUniverses() || expr1.cast(FieldCallExpression.class).getSortArgument().equals(expr2.cast(FieldCallExpression.class).getSortArgument()))
-      || expr1.isInstance(ProjExpression.class) && expr2.isInstance(ProjExpression.class) && expr1.cast(ProjExpression.class).getField() == expr2.cast(ProjExpression.class).getField()) {
+    boolean check;
+    if (expr1.isInstance(FunCallExpression.class)) {
+      FunCallExpression funCall2 = expr2.checkedCast(FunCallExpression.class);
+      check = funCall2 != null && expr1.cast(FunCallExpression.class).getDefinition() == funCall2.getDefinition() && !funCall2.getDefinition().isLemma() && (!funCall2.getDefinition().hasUniverses() || expr1.cast(FunCallExpression.class).getSortArgument().equals(funCall2.getSortArgument()));
+    } else if (expr1.isInstance(AppExpression.class)) {
+      check = expr2.isInstance(AppExpression.class);
+    } else if (expr1.isInstance(FieldCallExpression.class)) {
+      FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+      check = fieldCall2 != null && expr1.cast(FieldCallExpression.class).getDefinition() == fieldCall2.getDefinition() && !fieldCall2.getDefinition().isProperty() && (!fieldCall2.getDefinition().hasUniverses() || expr1.cast(FieldCallExpression.class).getSortArgument().equals(fieldCall2.getSortArgument()));
+    } else if (expr1.isInstance(ProjExpression.class)) {
+      ProjExpression proj2 = expr2.checkedCast(ProjExpression.class);
+      check = proj2 != null && expr1.cast(ProjExpression.class).getField() == proj2.getField();
+    } else {
+      check = false;
+    }
+
+    if (check) {
       Equations.CMP origCMP = myCMP;
       myCMP = Equations.CMP.EQ;
       Equations equations = myEquations;
