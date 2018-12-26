@@ -320,6 +320,9 @@ public class DefinitionDeserialization {
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));
     }
+    if (functionProto.hasTypeLevel()) {
+      functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
+    }
     defDeserializer.setIsHeader(false);
     functionDef.setIsLemma(functionProto.getIsLemma());
     if (functionProto.hasBody()) {

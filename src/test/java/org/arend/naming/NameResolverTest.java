@@ -77,10 +77,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfix() {
     ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH);
-    Concrete.Definition plus = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, plusRef, Collections.emptyList(), null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
     ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), MODULE_PATH);
-    Concrete.Definition mul = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, mulRef, Collections.emptyList(), null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
 
     Concrete.Expression result = resolveNamesExpr(new ListScope(plusRef, mulRef), "0 + 1 * 2 + 3 * (4 * 5) * (6 + 7)");
@@ -91,10 +91,10 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void parserInfixError() {
     ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH);
-    Concrete.Definition plus = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, plusRef, Collections.emptyList(), null, null);
+    Concrete.Definition plus = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
     ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), MODULE_PATH);
-    Concrete.Definition mul = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, mulRef, Collections.emptyList(), null, null);
+    Concrete.Definition mul = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
   }
@@ -211,7 +211,7 @@ public class NameResolverTest extends NameResolverTestCase {
     assertEquals(3, staticNamespace.getMember("A").namespace.getMembers().size());
     assertEquals(3, ((Concrete.ClassDefinition) staticNamespace.getMember("A").abstractDefinition).getStatements().size());
     */
-    assertTrue(false);
+    fail();
   }
 
   @Ignore
@@ -253,7 +253,7 @@ public class NameResolverTest extends NameResolverTestCase {
     assertNotNull(classD);
     assertEquals(classD.getStatements().toString(), 1, classD.getStatements().size());
     */
-    assertTrue(false);
+    fail();
   }
 
   private Concrete.Definition getField(Concrete.ClassDefinition classDefinition, String name) {

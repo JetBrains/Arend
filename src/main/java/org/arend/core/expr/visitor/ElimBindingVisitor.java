@@ -249,6 +249,16 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       return null;
     }
 
+    Expression newTypeLevel;
+    if (expr.getResultTypeLevel() != null) {
+      newTypeLevel = findBindings(expr.getResultTypeLevel(), true);
+      if (newTypeLevel == null) {
+        return null;
+      }
+    } else {
+      newTypeLevel = null;
+    }
+
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), substitution);
     if (!visitDependentLink(parameters)) {
@@ -256,7 +266,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
 
     ElimTree newElimTree = findBindingInElimTree(expr.getElimTree());
-    return newElimTree == null ? null : new CaseExpression(parameters, newType.subst(substitution), newElimTree, newArgs);
+    return newElimTree == null ? null : new CaseExpression(parameters, newType.subst(substitution), newTypeLevel == null ? null : newTypeLevel.subst(substitution), newElimTree, newArgs);
   }
 
   private ElimTree findBindingInElimTree(ElimTree elimTree) {

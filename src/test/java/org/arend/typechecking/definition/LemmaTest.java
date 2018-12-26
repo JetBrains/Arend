@@ -73,4 +73,19 @@ public class LemmaTest extends TypeCheckingTestCase {
       "  | x => path (\\lam _ => 0)\n" +
       "\\func g : f.x = path (\\lam _ => 0) => path (\\lam _ => path (\\lam _ => 0))", 1);
   }
+
+  @Test
+  public void lemmaLevel() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\data Bool | true | false\n" +
+      "\\func E (b : Bool) : \\Set0 | true => Empty | false => Empty\n" +
+      "\\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()\n" +
+      "\\lemma f (b : Bool) (x : E b) : \\level (E b) (E-isProp b) => x");
+  }
+
+  @Test
+  public void lemmaLevelError() {
+    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 1);
+  }
 }

@@ -281,7 +281,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         mySubstitution.put(caseArg1.referable, caseArg2.referable);
       }
     }
-    return compare(expr1.getResultType(), case2.getResultType()) && compareFunctionClauses(expr1.getClauses(), case2.getClauses());
+    return compare(expr1.getResultType(), case2.getResultType()) && compare(expr1.getResultTypeLevel(), case2.getResultTypeLevel()) && compareFunctionClauses(expr1.getClauses(), case2.getClauses());
   }
 
   @Override
@@ -381,6 +381,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
     if ((def.getResultType() != null || fun2.getResultType() != null) && (def.getResultType() == null || fun2.getResultType() == null || !compare(def.getResultType(), fun2.getResultType()))) {
+      return false;
+    }
+    if ((def.getResultTypeLevel() != null || fun2.getResultTypeLevel() != null) && (def.getResultTypeLevel() == null || fun2.getResultTypeLevel() == null || !compare(def.getResultTypeLevel(), fun2.getResultTypeLevel()))) {
       return false;
     }
     if (def.getBody() instanceof Concrete.TermFunctionBody) {

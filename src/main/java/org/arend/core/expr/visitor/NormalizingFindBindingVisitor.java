@@ -148,7 +148,7 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
       }
     }
 
-    return findBinding(expr.getResultType(), true) || visitDependentLink(expr.getParameters()) || findBindingInElimTree(expr.getElimTree());
+    return findBinding(expr.getResultType(), true) || expr.getResultTypeLevel() != null && findBinding(expr.getResultTypeLevel(), true) || visitDependentLink(expr.getParameters()) || findBindingInElimTree(expr.getElimTree());
   }
 
   private boolean findBindingInElimTree(ElimTree elimTree) {

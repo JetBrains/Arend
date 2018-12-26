@@ -725,12 +725,14 @@ public final class Concrete {
     public static final byte PREC = -8;
     private final List<CaseArgument> myArguments;
     private Expression myResultType;
+    private Expression myResultTypeLevel;
     private final List<FunctionClause> myClauses;
 
-    public CaseExpression(Object data, List<CaseArgument> arguments, Expression resultType, List<FunctionClause> clauses) {
+    public CaseExpression(Object data, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
       super(data);
       myArguments = arguments;
       myResultType = resultType;
+      myResultTypeLevel = resultTypeLevel;
       myClauses = clauses;
     }
 
@@ -746,6 +748,15 @@ public final class Concrete {
 
     public void setResultType(Expression resultType) {
       myResultType = resultType;
+    }
+
+    @Nullable
+    public Expression getResultTypeLevel() {
+      return myResultTypeLevel;
+    }
+
+    public void setResultTypeLevel(Expression resultTypeLevel) {
+      myResultTypeLevel = resultTypeLevel;
     }
 
     @Nonnull
@@ -1230,6 +1241,7 @@ public final class Concrete {
   public static class FunctionDefinition extends Definition {
     private final List<TelescopeParameter> myParameters;
     private Expression myResultType;
+    private Expression myResultTypeLevel;
     private final FunctionBody myBody;
     private final Kind myKind;
 
@@ -1253,12 +1265,13 @@ public final class Concrete {
       }
     }
 
-    public FunctionDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body) {
+    public FunctionDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable);
       myKind = kind;
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
+      myResultTypeLevel = resultTypeLevel;
       myBody = body;
     }
 
@@ -1284,6 +1297,15 @@ public final class Concrete {
       myResultType = resultType;
     }
 
+    @Nullable
+    public Expression getResultTypeLevel() {
+      return myResultTypeLevel;
+    }
+
+    public void setResultTypeLevel(Expression resultTypeLevel) {
+      myResultTypeLevel = resultTypeLevel;
+    }
+
     @Nonnull
     public FunctionBody getBody() {
       return myBody;
@@ -1298,13 +1320,13 @@ public final class Concrete {
   public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
 
-    private UseDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, TCReferable coerceParent) {
-      super(kind, referable, parameters, resultType, body);
+    private UseDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
+      super(kind, referable, parameters, resultType, resultTypeLevel, body);
       myCoerceParent = coerceParent;
     }
 
-    public static FunctionDefinition make(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? Kind.FUNC : kind, referable, parameters, resultType, body);
+    public static FunctionDefinition make(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? Kind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
     }
 
     public TCReferable getUseParent() {

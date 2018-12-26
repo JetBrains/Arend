@@ -180,7 +180,7 @@ public class ConditionsChecking {
           children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
           children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
           children.put(null, new LeafElimTree(lamParam, AppExpression.make(conPattern.getArguments().get(0).toExpression(), lamRef)));
-          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
+          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), null, new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
         }
       }
     }
@@ -216,7 +216,7 @@ public class ConditionsChecking {
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());
         }
-        Expression expr1 = definition == null ? new CaseExpression(null, null, null, args) : definition.getDefCall(Sort.STD, args);
+        Expression expr1 = definition == null ? new CaseExpression(null, null, null, null, args) : definition.getDefCall(Sort.STD, args);
         errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }

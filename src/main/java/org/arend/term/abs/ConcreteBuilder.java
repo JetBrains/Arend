@@ -135,12 +135,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     List<Concrete.TelescopeParameter> parameters = buildTelescopeParameters(def.getParameters());
     Concrete.Expression type;
+    Concrete.Expression typeLevel;
     try {
       Abstract.Expression resultType = def.getResultType();
+      Abstract.Expression resultTypeLevel = checkResultTypeLevel(resultType, def.getResultTypeLevel());
       type = resultType == null ? null : resultType.accept(this, null);
+      typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       type = null;
+      typeLevel = null;
     }
 
     Concrete.FunctionDefinition.Kind kind = def.isCoerce()
@@ -150,7 +154,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         : def.isLemma()
           ? Concrete.FunctionDefinition.Kind.LEMMA
           : Concrete.FunctionDefinition.Kind.FUNC;
-    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
+    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
     return result;
   }
@@ -617,7 +621,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.CaseExpression visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.CaseArgument> caseArgs, @Nullable Abstract.Expression resultType, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, Void params) {
+  public Concrete.CaseExpression visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.CaseArgument> caseArgs, @Nullable Abstract.Expression resultType, @Nullable Abstract.Expression resultTypeLevel, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, Void params) {
     if (caseArgs.isEmpty()) {
       throwError(errorData);
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
@@ -629,7 +633,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
 
     reportError(errorData);
-    return new Concrete.CaseExpression(data, concreteCaseArgs, resultType == null ? null : resultType.accept(this, null), buildClauses(clauses));
+    resultTypeLevel = checkResultTypeLevel(resultType, resultTypeLevel);
+    return new Concrete.CaseExpression(data, concreteCaseArgs, resultType == null ? null : resultType.accept(this, null), resultTypeLevel == null ? null : resultTypeLevel.accept(this, null), buildClauses(clauses));
+  }
+
+  private Abstract.Expression checkResultTypeLevel(Abstract.Expression resultType, Abstract.Expression resultTypeLevel) {
+    if (resultType == null && resultTypeLevel != null) {
+      myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "The level of a type can be specified only if the type is also specified", resultTypeLevel));
+      return null;
+    } else {
+      return resultTypeLevel;
+    }
   }
 
   @Override

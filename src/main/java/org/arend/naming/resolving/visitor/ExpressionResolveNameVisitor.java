@@ -104,7 +104,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private ClassReferable getTypeClassReference(Concrete.Expression type) {
-    return myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
+    return type == null ? null : myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
   }
 
   protected void visitParameter(Concrete.Parameter parameter, Void params) {
@@ -171,12 +171,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           caseArg.type = caseArg.type.accept(this, null);
         }
         if (caseArg.referable != null) {
-          ClassReferable classRef = getTypeClassReference(expr.getResultType());
+          ClassReferable classRef = getTypeClassReference(caseArg.type);
           myContext.add(classRef == null ? caseArg.referable : new TypedRedirectingReferable(caseArg.referable, classRef));
         }
       }
       if (expr.getResultType() != null) {
         expr.setResultType(expr.getResultType().accept(this, null));
+      }
+      if (expr.getResultTypeLevel() != null) {
+        expr.setResultTypeLevel(expr.getResultTypeLevel().accept(this, null));
       }
     }
     visitClauses(expr.getClauses(), null);

@@ -95,6 +95,9 @@ public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (expr.getResultType() != null) {
       expr.getResultType().accept(this, params);
     }
+    if (expr.getResultTypeLevel() != null) {
+      expr.getResultTypeLevel().accept(this, params);
+    }
     for (Concrete.FunctionClause clause : expr.getClauses()) {
       if (clause.getExpression() != null)
         clause.getExpression().accept(this, params);

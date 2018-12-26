@@ -15,6 +15,7 @@ import java.util.List;
 public class FunctionDefinition extends Definition implements Function {
   private DependentLink myParameters;
   private Expression myResultType;
+  private Expression myResultTypeLevel;
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
   private boolean myLemma;
@@ -60,6 +61,14 @@ public class FunctionDefinition extends Definition implements Function {
 
   public void setResultType(Expression resultType) {
     myResultType = resultType;
+  }
+
+  public Expression getResultTypeLevel() {
+    return myResultTypeLevel;
+  }
+
+  public void setResultTypeLevel(Expression resultTypeLevel) {
+    myResultTypeLevel = resultTypeLevel;
   }
 
   @Override

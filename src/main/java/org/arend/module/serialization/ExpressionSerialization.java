@@ -355,6 +355,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     builder.setElimTree(writeElimTree(expr.getElimTree()));
     builder.addAllParam(writeParameters(expr.getParameters()));
     builder.setResultType(writeExpr(expr.getResultType()));
+    if (expr.getResultTypeLevel() != null) {
+      builder.setResultTypeLevel(writeExpr(expr.getResultTypeLevel()));
+    }
     for (Expression argument : expr.getArguments()) {
       builder.addArgument(writeExpr(argument));
     }

@@ -165,7 +165,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    return new CaseExpression(expr.getParameters(), expr.getResultType().accept(this, null), elimTree, expr.getArguments());
+    return new CaseExpression(expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), elimTree, expr.getArguments());
   }
 
   private ElimTree stripElimTree(ElimTree elimTree) {

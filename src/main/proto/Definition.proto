@@ -93,6 +93,7 @@ message Definition {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 7;
         Expression type = 5;
+        Expression type_level = 9;
         Body body = 6;
         bool isLemma = 8;
     }

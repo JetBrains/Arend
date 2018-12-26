@@ -453,9 +453,19 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
   }
 
+  private Pair<Concrete.Expression,Concrete.Expression> visitReturnExpr(ReturnExprContext returnExprCtx) {
+    Concrete.Expression resultType = null;
+    Concrete.Expression resultTypeLevel = null;
+    if (returnExprCtx instanceof ReturnExprExprContext) {
+      resultType = visitExpr(((ReturnExprExprContext) returnExprCtx).expr());
+    } else if (returnExprCtx instanceof ReturnExprLevelContext) {
+      resultType = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(0));
+      resultTypeLevel = visitAtomFieldsAcc(((ReturnExprLevelContext) returnExprCtx).atomFieldsAcc(1));
+    }
+    return new Pair<>(resultType, resultTypeLevel);
+  }
+
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
-    ExprContext exprCtx = ctx.expr();
-    Concrete.Expression resultType = exprCtx != null ? visitExpr(exprCtx) : null;
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
     if (functionBodyCtx instanceof WithElimContext) {
@@ -472,6 +482,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     boolean isUse = ctx.funcKw() instanceof FuncKwUseContext;
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
       isUse ? (((FuncKwUseContext) ctx.funcKw()).useMod() instanceof UseCoerceContext
               ? Concrete.FunctionDefinition.Kind.COERCE
@@ -479,7 +490,7 @@ public class BuildVisitor extends ArendBaseVisitor {
             : ctx.funcKw() instanceof FuncKwLemmaContext
               ? Concrete.FunctionDefinition.Kind.LEMMA
               : Concrete.FunctionDefinition.Kind.FUNC,
-      referable, visitFunctionParameters(ctx.tele()), resultType, body, parent.getReferable());
+      referable, visitFunctionParameters(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
     if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
     }
@@ -1391,8 +1402,8 @@ public class BuildVisitor extends ArendBaseVisitor {
       clauses.add(visitClause(clauseCtx));
     }
 
-    ExprContext exprCtx = ctx.expr();
-    return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, exprCtx == null ? null : visitExpr(exprCtx), clauses);
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+    return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
   }
 
   @Override

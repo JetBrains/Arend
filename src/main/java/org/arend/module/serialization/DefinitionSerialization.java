@@ -235,6 +235,9 @@ public class DefinitionSerialization {
     if (definition.getResultType() != null) {
       builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }
+    if (definition.getResultTypeLevel() != null) {
+      builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
+    }
     builder.setIsLemma(definition.isLemma());
     if (definition.status().bodyIsOK() && definition.getActualBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getActualBody()));

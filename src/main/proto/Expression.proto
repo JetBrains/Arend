@@ -88,6 +88,7 @@ message Expression {
         ElimTree elim_tree = 4;
         repeated Telescope param = 5;
         Expression result_type = 2;
+        Expression result_type_level = 6;
         repeated Expression argument = 3;
     }
     message New {

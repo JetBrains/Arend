@@ -194,6 +194,9 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
     }
 
     result = expr.getResultType().accept(this, null);
+    if (result == null && expr.getResultTypeLevel() != null) {
+      result = expr.getResultTypeLevel().accept(this, null);
+    }
     freeParameters(expr.getParameters());
     if (result != null) {
       return result;

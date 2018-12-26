@@ -498,7 +498,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
+    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
   }
 
   private ElimTree normalizeElimTree(ElimTree elimTree, Mode mode) {

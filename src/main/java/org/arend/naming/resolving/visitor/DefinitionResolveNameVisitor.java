@@ -184,9 +184,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
     exprVisitor.visitParameters(def.getParameters(), null);
 
-    Concrete.Expression resultType = def.getResultType();
-    if (resultType != null) {
-      def.setResultType(resultType.accept(exprVisitor, null));
+    if (def.getResultType() != null) {
+      def.setResultType(def.getResultType().accept(exprVisitor, null));
+    }
+    if (def.getResultTypeLevel() != null) {
+      def.setResultTypeLevel(def.getResultTypeLevel().accept(exprVisitor, null));
     }
 
     if (body instanceof Concrete.TermFunctionBody) {

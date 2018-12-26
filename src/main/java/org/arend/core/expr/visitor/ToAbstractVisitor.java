@@ -29,7 +29,7 @@ import java.util.*;
 import static org.arend.frontend.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS }
+  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE }
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -461,7 +461,17 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     for (Expression argument : expr.getArguments()) {
       arguments.add(new Concrete.CaseArgument(argument.accept(this, null), null, null));
     }
-    return cCase(arguments, null, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+
+    Concrete.Expression resultType = null;
+    Concrete.Expression resultTypeLevel = null;
+    if (myFlags.contains(Flag.SHOW_CASE_RESULT_TYPE)) {
+      resultType = expr.getResultType().accept(this, null);
+      if (expr.getResultType() != null) {
+        resultTypeLevel = expr.getResultTypeLevel().accept(this, null);
+      }
+    }
+
+    return cCase(arguments, resultType, resultTypeLevel, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
   }
 
   private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {

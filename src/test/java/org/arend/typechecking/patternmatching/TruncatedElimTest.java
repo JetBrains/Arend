@@ -153,4 +153,26 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "  | con1 => unit\n" +
       "}");
   }
+
+  @Test
+  public void levelTest() {
+    typeCheckModule(
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\data Empty\n" +
+      "\\data Bool | true | false\n" +
+      "\\func E (b : Bool) : \\Set0 | true => Empty | false => Empty\n" +
+      "\\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()\n" +
+      "\\func f (b : Bool) (x : E b) (d : D) : \\level (E b) (E-isProp b) \\elim d | con1 => x");
+  }
+
+  @Test
+  public void caseLevelTest() {
+    typeCheckModule(
+      "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
+      "\\data Empty\n" +
+      "\\data Bool | true | false\n" +
+      "\\func E (b : Bool) : \\Set0 | true => Empty | false => Empty\n" +
+      "\\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()\n" +
+      "\\func f (b : Bool) (x : E b) (d : D) => \\case d \\return \\level (E b) (E-isProp b) \\with { | con1 => x }");
+  }
 }

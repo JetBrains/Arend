@@ -27,11 +27,15 @@ classStat : classFieldOrImpl                  # classFieldOrImplStat
           | definition                        # classDefinitionStat
           ;
 
-definition  : funcKw precedence ID tele* (':' expr)? functionBody where?                                    # defFunction
+definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
             | classKw precedence ID fieldTele* ('\\extends' longName (',' longName)*)? classBody where?     # defClass
             | '\\module' ID where?                                                                          # defModule
             | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
+            ;
+
+returnExpr  : expr                                  # returnExprExpr
+            | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel
             ;
 
 funcKw    : '\\func'            # funcKwFunc
@@ -102,13 +106,13 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
-expr  : NEW? appExpr (implementStatements argument*)?                                             # app
-      | <assoc=right> expr '->' expr                                                              # arr
-      | '\\Pi' tele+ '->' expr                                                                    # pi
-      | '\\Sigma' tele*                                                                           # sigma
-      | '\\lam' tele+ '=>' expr                                                                   # lam
-      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                                       # let
-      | '\\case' caseArg (',' caseArg)* ('\\return' expr)? '\\with' '{' clause? ('|' clause)* '}' # case
+expr  : NEW? appExpr (implementStatements argument*)?                                                   # app
+      | <assoc=right> expr '->' expr                                                                    # arr
+      | '\\Pi' tele+ '->' expr                                                                          # pi
+      | '\\Sigma' tele*                                                                                 # sigma
+      | '\\lam' tele+ '=>' expr                                                                         # lam
+      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                                             # let
+      | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
       ;
 
 caseArg : expr ('\\as' ID)? (':' expr)?;

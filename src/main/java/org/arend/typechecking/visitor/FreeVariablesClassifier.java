@@ -201,6 +201,12 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
     if (result != Result.NONE) {
       return result;
     }
+    if (expr.getResultTypeLevel() != null) {
+      result = expr.getResultTypeLevel().accept(this, false);
+      if (result != Result.NONE) {
+        return result;
+      }
+    }
     result = visitParameters(expr.getParameters());
     if (result != Result.NONE) {
       return result;

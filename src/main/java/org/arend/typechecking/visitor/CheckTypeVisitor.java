@@ -314,10 +314,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return myErrorReporter;
   }
 
-  public void setErrorReporter(LocalErrorReporter errorReporter) {
-    myErrorReporter = new MyErrorReporter(errorReporter);
-  }
-
   public Equations getEquations() {
     return myEquations;
   }
@@ -1106,6 +1102,58 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     throw new IllegalStateException();
   }
 
+  public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Concrete.SourceNode sourceNode) {
+    boolean ok = expr != null;
+
+    int level = -2;
+    if (ok) {
+      List<DependentLink> parameters = new ArrayList<>();
+      for (; link.hasNext(); link = link.getNext()) {
+        parameters.add(link);
+      }
+
+      Expression resultType = type == null ? null : type.getPiParameters(parameters, false);
+      for (int i = 0; i < parameters.size(); i++) {
+        link = parameters.get(i);
+        if (link instanceof TypedDependentLink) {
+          if (!Expression.compare(link.getTypeExpr(), expr, Equations.CMP.EQ)) {
+            ok = false;
+            break;
+          }
+        }
+
+        List<Expression> pathArgs = new ArrayList<>();
+        pathArgs.add(expr);
+        pathArgs.add(new ReferenceExpression(link));
+        i++;
+        if (i >= parameters.size()) {
+          ok = false;
+          break;
+        }
+        link = parameters.get(i);
+        if (!Expression.compare(link.getTypeExpr(), expr, Equations.CMP.EQ)) {
+          ok = false;
+          break;
+        }
+
+        pathArgs.add(new ReferenceExpression(link));
+        expr = new FunCallExpression(Prelude.PATH_INFIX, Sort.STD, pathArgs);
+        level++;
+      }
+
+      if (ok && resultType != null && !Expression.compare(resultType, expr, Equations.CMP.EQ)) {
+        ok = false;
+      }
+    }
+
+    if (!ok) {
+      myErrorReporter.report(new TypecheckingError("\\level has wrong format", sourceNode));
+      return null;
+    } else {
+      return level;
+    }
+  }
+
   @Override
   public Result visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
@@ -1148,11 +1196,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (resultType == null && expectedType == null) {
       return null;
     }
+    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
 
     // Check if the level of the result type is specified explicitly
     List<Clause> resultClauses = new ArrayList<>();
     Integer level = null;
-    if (expr.getResultType() instanceof Concrete.TypedExpression) {
+    Expression resultTypeLevel = null;
+    if (expr.getResultTypeLevel() != null) {
+      CheckTypeVisitor.Result levelResult = finalCheckExpr(expr.getResultTypeLevel(), null, false);
+      if (levelResult != null) {
+        resultTypeLevel = levelResult.expression;
+        level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, expr.getResultTypeLevel());
+      }
+    } else if (expr.getResultType() instanceof Concrete.TypedExpression) {
       Concrete.Expression typeType = ((Concrete.TypedExpression) expr.getResultType()).type;
       if (typeType instanceof Concrete.UniverseExpression) {
         Concrete.UniverseExpression universeType = (Concrete.UniverseExpression) typeType;
@@ -1163,8 +1219,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Try to infer level either directly or from a path type.
-    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
-    if (level == null) {
+    if (level == null && expr.getResultTypeLevel() == null) {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
       if (sort == null) {
         Expression type = resultExpr.getType();
@@ -1199,7 +1254,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     ConditionsChecking.check(resultClauses, elimTree, myErrorReporter);
-    Result result = new Result(new CaseExpression(list.getFirst(), resultExpr, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
+    Result result = new Result(new CaseExpression(list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }
 

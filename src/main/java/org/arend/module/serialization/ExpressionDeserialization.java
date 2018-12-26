@@ -328,10 +328,11 @@ class ExpressionDeserialization {
     ElimTree elimTree = readElimTree(proto.getElimTree());
     DependentLink parameters = readParameters(proto.getParamList());
     Expression type = readExpr(proto.getResultType());
+    Expression typeLevel = proto.hasResultTypeLevel() ? readExpr(proto.getResultTypeLevel()) : null;
     for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
       arguments.add(readExpr(argument));
     }
-    return new CaseExpression(parameters, type, elimTree, arguments);
+    return new CaseExpression(parameters, type, typeLevel, elimTree, arguments);
   }
 
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {

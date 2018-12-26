@@ -117,6 +117,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (expr.getResultType() != null) {
       expr.setResultType(expr.getResultType().accept(this, params));
     }
+    if (expr.getResultTypeLevel() != null) {
+      expr.setResultTypeLevel(expr.getResultTypeLevel().accept(this, params));
+    }
     visitClauses(expr.getClauses(), params);
     return expr;
   }
@@ -188,6 +191,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
     if (def.getResultType() != null) {
       def.setResultType(def.getResultType().accept(this, params));
+    }
+    if (def.getResultTypeLevel() != null) {
+      def.setResultTypeLevel(def.getResultTypeLevel().accept(this, params));
     }
 
     Concrete.FunctionBody body = def.getBody();

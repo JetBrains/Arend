@@ -165,8 +165,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.CaseArgument(expression, referable, type);
   }
 
-  public static Concrete.CaseExpression cCase(List<Concrete.CaseArgument> arguments, Concrete.Expression resultType, List<Concrete.FunctionClause> clauses) {
-    return new Concrete.CaseExpression(null, arguments, resultType, clauses);
+  public static Concrete.CaseExpression cCase(List<Concrete.CaseArgument> arguments, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.FunctionClause> clauses) {
+    return new Concrete.CaseExpression(null, arguments, resultType, resultTypeLevel, clauses);
   }
 
   public static Concrete.FunctionClause cClause(List<Concrete.Pattern> patterns, Concrete.Expression expr) {

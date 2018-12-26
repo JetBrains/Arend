@@ -86,9 +86,11 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
     }
 
     if (isHeader) {
-      Concrete.Expression resultType = def.getResultType();
-      if (resultType != null) {
-        resultType.accept(this, null);
+      if (def.getResultType() != null) {
+        def.getResultType().accept(this, null);
+      }
+      if (def.getResultTypeLevel() != null) {
+        def.getResultTypeLevel().accept(this, null);
       }
     } else {
       Concrete.FunctionBody body = def.getBody();

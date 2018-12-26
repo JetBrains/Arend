@@ -9,13 +9,15 @@ import java.util.List;
 public class CaseExpression extends Expression {
   private final DependentLink myParameters;
   private final Expression myResultType;
+  private final Expression myResultTypeLevel;
   private final ElimTree myElimTree;
   private final List<Expression> myArguments;
 
-  public CaseExpression(DependentLink parameters, Expression resultType, ElimTree elimTree, List<Expression> arguments) {
+  public CaseExpression(DependentLink parameters, Expression resultType, Expression resultTypeLevel, ElimTree elimTree, List<Expression> arguments) {
     myParameters = parameters;
     myElimTree = elimTree;
     myResultType = resultType;
+    myResultTypeLevel = resultTypeLevel;
     myArguments = arguments;
   }
 
@@ -25,6 +27,10 @@ public class CaseExpression extends Expression {
 
   public Expression getResultType() {
     return myResultType;
+  }
+
+  public Expression getResultTypeLevel() {
+    return myResultTypeLevel;
   }
 
   public ElimTree getElimTree() {

@@ -172,6 +172,7 @@ public final class Abstract {
 
   public interface FunctionDefinition extends Definition, EliminatedExpressionsHolder, ClassReferenceHolder {
     @Nullable Expression getResultType();
+    @Nullable Expression getResultTypeLevel();
     @Nullable Expression getTerm();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
