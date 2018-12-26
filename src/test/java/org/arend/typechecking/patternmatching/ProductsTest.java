@@ -130,4 +130,32 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func swap {A' B' : \\Type} (p : Pair A' B') : Pair p.B p.A\n" +
       "  | (A, B, a, b) => \\new Pair { | A => B | B => A | fst => b | snd => a }");
   }
+
+  @Test
+  public void extensionRecordTest() {
+    typeCheckModule(
+      "\\record R (a : Nat)\n" +
+      "\\record S \\extends R | b : Nat\n" +
+      "\\func f (s : S) : Nat\n" +
+      "  | (a,b) => a Nat.+ b");
+  }
+
+  @Test
+  public void singleFieldTest() {
+    typeCheckModule(
+      "\\record S (a : Nat)\n" +
+      "\\func f (s : S) : Nat\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => n");
+  }
+
+  @Test
+  public void implRecordTest() {
+    typeCheckModule(
+      "\\record R (A : \\Type) (a : A)\n" +
+      "\\record S \\extends R | A => Nat | b : Nat\n" +
+      "\\func f (s : S) : Nat\n" +
+      "  | (0, m) => m\n" +
+      "  | (suc n, _) => n");
+  }
 }
