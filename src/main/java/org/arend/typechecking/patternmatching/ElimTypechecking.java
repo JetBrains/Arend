@@ -448,17 +448,19 @@ public class ElimTypechecking {
       }
 
       if (dataType != null && dataType.isTruncated()) {
-        Expression type = myExpectedType.getType();
-        boolean ok = false;
-        if (type != null) {
-          type = type.normalize(NormalizeVisitor.Mode.WHNF);
-          UniverseExpression universe = type.checkedCast(UniverseExpression.class);
-          if (universe != null) {
-            ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause);
-          } else {
-            InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, conClauseData.clause);
-            myVisitor.getEquations().addVariable(pl);
-            ok = type.isLessOrEquals(new UniverseExpression(new Sort(new Level(pl), dataType.getSort().getHLevel())), myVisitor.getEquations(), conClauseData.clause);
+        boolean ok = myLevel != null && myLevel <= dataType.getSort().getHLevel().getConstant() + 1;
+        if (!ok) {
+          Expression type = myExpectedType.getType();
+          if (type != null) {
+            type = type.normalize(NormalizeVisitor.Mode.WHNF);
+            UniverseExpression universe = type.checkedCast(UniverseExpression.class);
+            if (universe != null) {
+              ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause);
+            } else {
+              InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, false, conClauseData.clause);
+              myVisitor.getEquations().addVariable(pl);
+              ok = type.isLessOrEquals(new UniverseExpression(new Sort(new Level(pl), dataType.getSort().getHLevel())), myVisitor.getEquations(), conClauseData.clause);
+            }
           }
         }
         if (!ok) {

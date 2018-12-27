@@ -175,4 +175,15 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "\\func E-isProp (b : Bool) (x y : E b) : x = y \\elim b, x | true, () | false, ()\n" +
       "\\func f (b : Bool) (x : E b) (d : D) => \\case d \\return \\level (E b) (E-isProp b) \\with { | con1 => x }");
   }
+
+  @Test
+  public void truncatedLevelTest() {
+    typeCheckModule(
+      "\\truncated \\data \\infixr 2 || (A B : \\Type) : \\Prop\n" +
+      "    | byLeft A\n" +
+      "    | byRight B\n" +
+      "\\func rec {A B C : \\Type} (p : \\Pi (x y : C) -> x = y) (f : A -> C) (g : B -> C) (t : A || B) : \\level C p \\elim t\n" +
+      "  | byLeft a => f a\n" +
+      "  | byRight b => g b");
+  }
 }
