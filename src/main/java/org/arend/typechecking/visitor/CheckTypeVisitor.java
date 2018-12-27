@@ -1203,7 +1203,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Integer level = null;
     Expression resultTypeLevel = null;
     if (expr.getResultTypeLevel() != null) {
-      CheckTypeVisitor.Result levelResult = finalCheckExpr(expr.getResultTypeLevel(), null, false);
+      CheckTypeVisitor.Result levelResult = checkExpr(expr.getResultTypeLevel(), null);
       if (levelResult != null) {
         resultTypeLevel = levelResult.expression;
         level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, expr.getResultTypeLevel());
