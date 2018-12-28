@@ -77,7 +77,7 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
       "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
       "\\func f {A : \\Type0} {x : Y { | A => A } } (a : A) => C a\n" +
-      "\\func g : 1 = f 2 => path (\\lam _ => 1)");
+      "\\func g : 0 = f 2 => path (\\lam _ => 0)");
   }
 
   @Test
@@ -90,7 +90,7 @@ public class ClassSynonymInstances extends TypeCheckingTestCase {
       "\\instance Nat-Y : Y | A => Nat | C => \\lam n => 1\n" +
       "\\instance Nat-X : X | A => Nat | B => \\lam n => 0\n" +
       "\\func f {A : \\Type0} {x : Y { | A => A } } (a : A) => C a\n" +
-      "\\func g : 0 = f 2 => path (\\lam _ => 0)");
+      "\\func g : 1 = f 2 => path (\\lam _ => 1)");
   }
 
   @Test

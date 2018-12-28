@@ -139,7 +139,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\class A { | n : Nat }\n" +
       "\\instance a0 : A | n => 0\n" +
       "\\instance a1 : A | n => 1\n" +
-      "\\func f : n = n => path (\\lam _ => 1)");
+      "\\func f : n = n => path (\\lam _ => 0)");
   }
 
   @Test

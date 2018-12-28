@@ -80,8 +80,7 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     List<? extends Concrete.Instance> instances = myInstanceProvider.getInstances();
-    for (int i = instances.size() - 1; i >= 0; i--) {
-      Concrete.Instance instance = instances.get(i);
+    for (Concrete.Instance instance : instances) {
       Referable instanceRef = instance.getReferenceInType();
       if (!(instanceRef instanceof ClassReferable)) {
         continue;
@@ -101,13 +100,16 @@ public class GlobalInstancePool implements InstancePool {
           ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();
           if (classifyingExpression != null) {
             Expression instanceClassifyingExpr = instanceResultType.getImplementationHere(classifyingField);
+            if (instanceClassifyingExpr != null) {
+              instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
+            }
             while (instanceClassifyingExpr instanceof LamExpression) {
               instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
             }
             if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
-                  instanceClassifyingExpr instanceof IntegerExpression  && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
-                                                                            classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
-                  instanceClassifyingExpr instanceof DefCallExpression  && classifyingExpression.isInstance(DefCallExpression.class)  && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
+              instanceClassifyingExpr instanceof IntegerExpression && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
+                classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
+              instanceClassifyingExpr instanceof DefCallExpression && classifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
               continue;
             }
           }
