@@ -32,6 +32,7 @@ import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.LocalErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -531,7 +532,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
 
-        Integer level = myVisitor.getExpressionLevel(link, expectedType, ok ? type : null, def);
+        Integer level = myVisitor.getExpressionLevel(link, expectedType, ok ? type : null, DummyEquations.getInstance(), def);
         if (level != null && newDef) {
           if (useParent instanceof DataDefinition) {
             ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
@@ -577,7 +578,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (def.getResultTypeLevel() != null) {
       CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultTypeLevel(), null, false);
       if (result != null && typedDef.getResultType() != null) {
-        Integer level = myVisitor.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, typedDef.getResultType(), def.getResultTypeLevel());
+        Integer level = myVisitor.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, typedDef.getResultType(), DummyEquations.getInstance(), def.getResultTypeLevel());
         if (level != null) {
           if (def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && level != -1) {
             myErrorReporter.report(new TypecheckingError("The level of a lemma must be \\Prop", def.getResultTypeLevel()));

@@ -1102,7 +1102,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     throw new IllegalStateException();
   }
 
-  public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Concrete.SourceNode sourceNode) {
+  public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
     boolean ok = expr != null;
 
     int level = -2;
@@ -1116,7 +1116,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (int i = 0; i < parameters.size(); i++) {
         link = parameters.get(i);
         if (link instanceof TypedDependentLink) {
-          if (!Expression.compare(link.getTypeExpr(), expr, Equations.CMP.EQ)) {
+          if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, sourceNode)) {
             ok = false;
             break;
           }
@@ -1131,7 +1131,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           break;
         }
         link = parameters.get(i);
-        if (!Expression.compare(link.getTypeExpr(), expr, Equations.CMP.EQ)) {
+        if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, sourceNode)) {
           ok = false;
           break;
         }
@@ -1141,7 +1141,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         level++;
       }
 
-      if (ok && resultType != null && !Expression.compare(resultType, expr, Equations.CMP.EQ)) {
+      if (ok && resultType != null && !CompareVisitor.compare(equations, Equations.CMP.EQ, resultType, expr, sourceNode)) {
         ok = false;
       }
     }
@@ -1167,6 +1167,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     ExprSubstitution substitution = new ExprSubstitution();
     Type resultType = null;
+    Expression resultExpr;
+    Integer level = null;
+    Expression resultTypeLevel = null;
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.CaseArgument caseArg : caseArgs) {
@@ -1190,25 +1193,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (expr.getResultType() != null) {
           resultType = checkType(expr.getResultType(), ExpectedType.OMEGA);
         }
+        if (resultType == null && expectedType == null) {
+          return null;
+        }
+        resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
+
+        if (expr.getResultTypeLevel() != null) {
+          CheckTypeVisitor.Result levelResult = checkExpr(expr.getResultTypeLevel(), null);
+          if (levelResult != null) {
+            resultTypeLevel = levelResult.expression;
+            level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, myEquations, expr.getResultTypeLevel());
+          }
+        }
       }
     }
-
-    if (resultType == null && expectedType == null) {
-      return null;
-    }
-    Expression resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
 
     // Check if the level of the result type is specified explicitly
     List<Clause> resultClauses = new ArrayList<>();
-    Integer level = null;
-    Expression resultTypeLevel = null;
-    if (expr.getResultTypeLevel() != null) {
-      CheckTypeVisitor.Result levelResult = checkExpr(expr.getResultTypeLevel(), null);
-      if (levelResult != null) {
-        resultTypeLevel = levelResult.expression;
-        level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, expr.getResultTypeLevel());
-      }
-    } else if (expr.getResultType() instanceof Concrete.TypedExpression) {
+    if (expr.getResultTypeLevel() == null && expr.getResultType() instanceof Concrete.TypedExpression) {
       Concrete.Expression typeType = ((Concrete.TypedExpression) expr.getResultType()).type;
       if (typeType instanceof Concrete.UniverseExpression) {
         Concrete.UniverseExpression universeType = (Concrete.UniverseExpression) typeType;
