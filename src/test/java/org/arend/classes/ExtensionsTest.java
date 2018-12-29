@@ -283,4 +283,76 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
     assertEquals(Suc(Zero()), fieldCallK);
   }
+
+  @Test
+  public void expectedTypeExtension() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A) : A => \\new B { | A => a }", 1);
+  }
+
+  @Test
+  public void expectedTypeExtension2() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 0) : A => \\new B { | A => a }");
+  }
+
+  @Test
+  public void expectedTypeExtension3() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 1) : A => \\new B { | A => a }", 1);
+  }
+
+  @Test
+  public void expectedTypeExtension4() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A) : A 0 => \\new B { | A => a }", 1);
+  }
+
+  @Test
+  public void expectedTypeExtension5() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 0) : A 0 => \\new B { | A => a }");
+  }
+
+  @Test
+  public void expectedTypeExtension6() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+  }
+
+  @Test
+  public void expectedTypeExtension7() {
+    typeCheckModule(
+      "\\record A (x : Nat) (y : x = x)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 1);
+  }
+
+  @Test
+  public void expectedTypeExtension8() {
+    typeCheckModule(
+      "\\record A (x y : Nat)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 1) : A 0 => \\new B { | A => a }");
+  }
+
+  @Test
+  public void expectedTypeExtension9() {
+    typeCheckModule(
+      "\\record A (x y : Nat)\n" +
+      "\\record B \\extends A | x => 0\n" +
+      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 1);
+  }
 }
