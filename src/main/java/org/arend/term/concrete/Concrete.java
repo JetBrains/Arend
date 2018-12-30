@@ -1047,6 +1047,7 @@ public final class Concrete {
     private final List<ClassField> myFields;
     private final List<ClassFieldImpl> myImplementations;
     private TCFieldReferable myCoercingField;
+    private boolean myForcedCoercingField;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
     public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
@@ -1073,9 +1074,14 @@ public final class Concrete {
       return myCoercingField;
     }
 
-    public void setCoercingField(TCFieldReferable coercingField) {
-      if (myCoercingField == null && !myRecord) {
+    public boolean isForcedCoercingField() {
+      return myForcedCoercingField;
+    }
+
+    public void setCoercingField(TCFieldReferable coercingField, boolean isForced) {
+      if (myCoercingField == null) {
         myCoercingField = coercingField;
+        myForcedCoercingField = isForced;
       }
     }
 

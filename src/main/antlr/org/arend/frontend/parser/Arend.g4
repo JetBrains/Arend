@@ -208,12 +208,13 @@ typedExpr : expr                        # notTyped
           | expr ':' expr               # typed
           ;
 
-fieldTele : '(' ID+ ':' expr ')'        # explicitFieldTele
-          | '{' ID+ ':' expr '}'        # implicitFieldTele
+fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
+          | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
 USING : '\\using';
 TRUNCATED : '\\truncated';
+CLASSIFYING : '\\classifying';
 NEW : '\\new';
 NUMBER : [0-9]+;
 NEGATIVE_NUMBER : '-' [0-9]+;

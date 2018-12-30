@@ -228,16 +228,25 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private TCFieldReferable buildClassParameters(Collection<? extends Abstract.Parameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  private void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
     TCFieldReferable coercingField = null;
+    boolean isForced = false;
 
-    for (Abstract.Parameter absParameter : absParameters) {
+    for (Abstract.FieldParameter absParameter : absParameters) {
       try {
+        boolean forced = absParameter.isClassifying();
         Concrete.Parameter parameter = buildParameter(absParameter, false);
         if (parameter instanceof Concrete.TelescopeParameter) {
           for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
             if (referable instanceof TCFieldReferable) {
-              if (coercingField == null && parameter.getExplicit()) {
+              if (forced) {
+                if (isForced) {
+                  myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Class can have at most one classifying field", parameter));
+                } else {
+                  coercingField = (TCFieldReferable) referable;
+                  isForced = true;
+                }
+              } else if (coercingField == null && parameter.getExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
               fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.FIELD, ((Concrete.TelescopeParameter) parameter).type));
@@ -253,7 +262,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       }
     }
 
-    return coercingField;
+    if (coercingField != null) {
+      classDef.setCoercingField(coercingField, isForced);
+    }
   }
 
   @Override
@@ -267,7 +278,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have implementations", implementations.get(0)));
     }
 
-    List<? extends Abstract.Parameter> classParameters = def.getParameters();
+    List<? extends Abstract.FieldParameter> classParameters = def.getParameters();
     if (underlyingClass != null && !classParameters.isEmpty()) {
       myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have parameters", def));
     }
@@ -275,7 +286,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (underlyingClass == null) {
       List<Concrete.ClassField> classFields = new ArrayList<>();
       Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
-      classDef.setCoercingField(buildClassParameters(classParameters, classDef, classFields));
+      buildClassParameters(classParameters, classDef, classFields);
       setEnclosingClass(classDef, def);
 
       for (Abstract.ClassField field : def.getClassFields()) {

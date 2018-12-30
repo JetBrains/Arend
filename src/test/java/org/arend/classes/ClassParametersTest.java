@@ -209,4 +209,16 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
       "\\func f => \\new T { | p => idp | q => idp | z => 0 }");
   }
+
+  @Test
+  public void explicitClassifyingField() {
+    typeCheckModule(
+      "\\class C (n : Nat) (\\classifying A : \\Type) | a : A -> 0 = n\n" +
+      "\\func f (X : C 1) (x : X) : 0 = 1 => a x");
+  }
+
+  @Test
+  public void recordExplicitClassifyingField() {
+    typeCheckModule("\\record C (n : Nat) (\\classifying A : \\Type) | a : A -> 0 = n", 1);
+  }
 }

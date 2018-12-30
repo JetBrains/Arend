@@ -58,6 +58,10 @@ public final class Abstract {
     @Nullable Expression getType();
   }
 
+  public interface FieldParameter extends Parameter {
+    boolean isClassifying();
+  }
+
   public interface Clause extends SourceNode {
     @Nullable Object getData();
     @Nonnull List<? extends Pattern> getPatterns();
@@ -91,11 +95,11 @@ public final class Abstract {
   // Holder
 
   public interface ParametersHolder extends SourceNode {
-    @Nonnull List<? extends Abstract.Parameter> getParameters();
+    @Nonnull List<? extends Parameter> getParameters();
   }
 
   public interface LetClausesHolder extends SourceNode {
-    @Nonnull Collection<? extends Abstract.LetClause> getLetClauses();
+    @Nonnull Collection<? extends LetClause> getLetClauses();
   }
 
   public interface EliminatedExpressionsHolder extends ParametersHolder {
@@ -108,7 +112,7 @@ public final class Abstract {
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
-    @Nullable Abstract.LongReference getOpenedReference();
+    @Nullable LongReference getOpenedReference();
   }
 
   // Expression
@@ -192,6 +196,7 @@ public final class Abstract {
 
   public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
     @Override @Nonnull ClassReferable getReferable();
+    @Override @Nonnull List<? extends FieldParameter> getParameters();
     boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();

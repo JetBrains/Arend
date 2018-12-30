@@ -1350,11 +1350,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           break;
         }
       }
+      if (classifyingField != null && def.isForcedCoercingField() && def.getCoercingField() != null) {
+        myErrorReporter.report(new TypecheckingError("Field '" + def.getCoercingField().textRepresentation() + "' cannot be a classifying field since the class already has one: '" + classifyingField.getName() + "'", def));
+      }
       if (classifyingField == null && def.getCoercingField() != null) {
         Definition definition = myVisitor.getTypecheckingState().getTypechecked(def.getCoercingField());
         if (definition instanceof ClassField && ((ClassField) definition).getParentClass().equals(typedDef)) {
           classifyingField = (ClassField) definition;
-          classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
         } else {
           myErrorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
         }
@@ -1362,11 +1364,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (newDef) {
         typedDef.setClassifyingField(classifyingField);
         if (classifyingField != null) {
+          classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
           typedDef.getCoerceData().addCoercingField(classifyingField);
         }
       }
-    } else if (newDef) {
-      typedDef.setRecord();
+    } else {
+      if (def.isForcedCoercingField()) {
+        myErrorReporter.report(new TypecheckingError("Records cannot have classifying fields", def));
+      }
+      if (newDef) {
+        typedDef.setRecord();
+      }
     }
 
     // Process implementations

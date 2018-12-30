@@ -771,7 +771,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
       classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, implementations);
       reference.setDefinition(classDefinition);
-      classDefinition.setCoercingField(visitFieldTeles(ctx.fieldTele(), classDefinition, fields));
+      visitFieldTeles(ctx.fieldTele(), classDefinition, fields);
 
       if (!classStatCtxs.isEmpty()) {
         List<Group> dynamicSubgroups = new ArrayList<>();
@@ -1248,21 +1248,25 @@ public class BuildVisitor extends ArendBaseVisitor {
     return parameters;
   }
 
-  private TCFieldReferable visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
     TCFieldReferable coercingField = null;
+    boolean isForced = false;
 
     for (FieldTeleContext tele : teles) {
       boolean explicit;
       List<TerminalNode> vars;
       ExprContext exprCtx;
+      boolean forced;
       if (tele instanceof ExplicitFieldTeleContext) {
         explicit = true;
         vars = ((ExplicitFieldTeleContext) tele).ID();
         exprCtx = ((ExplicitFieldTeleContext) tele).expr();
+        forced = ((ExplicitFieldTeleContext) tele).CLASSIFYING() != null;
       } else if (tele instanceof ImplicitFieldTeleContext) {
         explicit = false;
         vars = ((ImplicitFieldTeleContext) tele).ID();
         exprCtx = ((ImplicitFieldTeleContext) tele).expr();
+        forced = ((ImplicitFieldTeleContext) tele).CLASSIFYING() != null;
       } else {
         throw new IllegalStateException();
       }
@@ -1274,13 +1278,22 @@ public class BuildVisitor extends ArendBaseVisitor {
         fieldRef.setDefinition(field);
         fields.add(field);
 
-        if (coercingField == null && explicit) {
+        if (forced) {
+          if (isForced) {
+            myErrorReporter.report(new ParserError(tokenPosition(var.getSymbol()), "Class can have at most one classifying field"));
+          } else {
+            coercingField = fieldRef;
+            isForced = true;
+          }
+        } else if (coercingField == null && explicit) {
           coercingField = fieldRef;
         }
       }
     }
 
-    return coercingField;
+    if (coercingField != null) {
+      classDef.setCoercingField(coercingField, isForced);
+    }
   }
 
   @Override
