@@ -47,7 +47,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
   @Override
   public ClassReferable visitClassField(Concrete.ClassField def, Void params) {
-    return getTypeClassReference(Collections.emptyList(), def.getResultType());
+    return getTypeClassReference(def.getParameters(), def.getResultType());
   }
 
   private Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {

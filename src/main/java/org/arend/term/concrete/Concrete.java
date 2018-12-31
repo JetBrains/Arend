@@ -948,7 +948,11 @@ public final class Concrete {
       List<Concrete.TypeParameter> parameters = new ArrayList<>();
       for (ClassField field : ((ClassDefinition) definition).getFields()) {
         if (field.getData().isParameterField()) {
-          parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), field.getResultType()));
+          Expression type = field.getResultType();
+          if (!field.getParameters().isEmpty()) {
+            type = new PiExpression(field.getParameters().get(0).getData(), field.getParameters(), type);
+          }
+          parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), type));
         }
       }
       return parameters;
@@ -1119,14 +1123,18 @@ public final class Concrete {
     private final ClassDefinition myParentClass;
     private final boolean myExplicit;
     private final ClassFieldKind myKind;
+    private final List<TypeParameter> myParameters;
     private Expression myResultType;
+    private Expression myResultTypeLevel;
 
-    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, Expression resultType) {
+    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
       super(referable);
       myParentClass = parentClass;
       myExplicit = isExplicit;
       myKind = kind;
+      myParameters = parameters;
       myResultType = resultType;
+      myResultTypeLevel = resultTypeLevel;
     }
 
     @Nonnull
@@ -1144,12 +1152,26 @@ public final class Concrete {
     }
 
     @Nonnull
+    public List<TypeParameter> getParameters() {
+      return myParameters;
+    }
+
+    @Nonnull
     public Expression getResultType() {
       return myResultType;
     }
 
     public void setResultType(Expression resultType) {
       myResultType = resultType;
+    }
+
+    @Nullable
+    public Expression getResultTypeLevel() {
+      return myResultTypeLevel;
+    }
+
+    public void setResultTypeLevel(Expression resultTypeLevel) {
+      myResultTypeLevel = resultTypeLevel;
     }
 
     @Nonnull

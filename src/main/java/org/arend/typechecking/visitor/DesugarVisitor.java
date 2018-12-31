@@ -94,27 +94,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
     Set<LocatedReferable> fields = getClassFields(def.getData());
 
-    // Process enclosing class
-    /*
-    boolean isParentField = false;
-    if (def.enclosingClass != null) {
-      Set<String> names = new HashSet<>();
-      for (Concrete.ClassField field : def.getFields()) {
-        names.add(field.getData().textRepresentation());
-      }
-
-      String name = "parent";
-      while (names.contains(name)) {
-        name = name + "'";
-      }
-
-      FieldReferableImpl thisParameter = new FieldReferableImpl(Precedence.DEFAULT, name, def.getData(), def.enclosingClass);
-      def.getFields().add(0, new Concrete.ClassField(thisParameter, def, false, new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
-      fields.add(thisParameter);
-      isParentField = true;
-    }
-    */
-
     Set<TCReferable> futureFields = new HashSet<>();
     for (Concrete.ClassField field : def.getFields()) {
       futureFields.add(field.getData());
@@ -128,17 +107,20 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       Concrete.Expression fieldType = classField.getResultType();
       Referable thisParameter = new LocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
-      if (fieldType == previousType) {
+      if (fieldType == previousType && classField.getParameters().isEmpty()) {
+        classField.getParameters().addAll(def.getFields().get(i - 1).getParameters());
         classField.setResultType(def.getFields().get(i - 1).getResultType());
+        classField.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
       } else {
-        previousType = fieldType;
-        // if (!isParentField) {
-          fieldType = fieldType.accept(classFieldChecker, null);
-        // }
-        classField.setResultType(new Concrete.PiExpression(fieldType.getData(), Collections.singletonList(new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData()))), fieldType));
+        previousType = classField.getParameters().isEmpty() ? fieldType : null;
+        classFieldChecker.visitParameters(classField.getParameters(), null);
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData())));
+        classField.setResultType(fieldType.accept(classFieldChecker, null));
+        if (classField.getResultTypeLevel() != null) {
+          classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
+        }
       }
       futureFields.remove(classField.getData());
-      // isParentField = false;
     }
 
     // Process expressions

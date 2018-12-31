@@ -186,7 +186,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
       for (Concrete.ClassField field : def.getFields()) {
-        addField(field.getData(), definition, new PiExpression(Sort.STD, new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null))).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        addField(field.getData(), definition, new PiExpression(Sort.STD, new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null)), null).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       }
     } else {
       try {
@@ -575,19 +575,31 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private Integer typecheckResultTypeLevel(Concrete.FunctionDefinition def, FunctionDefinition typedDef, boolean newDef) {
-    if (def.getResultTypeLevel() != null) {
-      CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultTypeLevel(), null, false);
-      if (result != null && typedDef.getResultType() != null) {
-        Integer level = myVisitor.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, typedDef.getResultType(), DummyEquations.getInstance(), def.getResultTypeLevel());
+    return typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
+  }
+
+  private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
+    if (resultTypeLevel != null) {
+      CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(resultTypeLevel, null, false);
+      if (result != null && resultType != null) {
+        Integer level = myVisitor.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
         if (level != null) {
-          if (def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && level != -1) {
-            myErrorReporter.report(new TypecheckingError("The level of a lemma must be \\Prop", def.getResultTypeLevel()));
-            if (newDef) {
-              typedDef.setIsLemma(false);
+          if ((isLemma || isProperty) && level != -1) {
+            myErrorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", resultTypeLevel));
+            if (newDef && funDef != null) {
+              funDef.setIsLemma(false);
+            }
+            if (isProperty) {
+              return null;
             }
           }
           if (newDef) {
-            typedDef.setResultTypeLevel(result.expression);
+            if (funDef != null) {
+              funDef.setResultTypeLevel(result.expression);
+            }
+            if (classField != null) {
+              classField.setTypeLevel(result.expression);
+            }
           }
         }
         return level;
@@ -1318,15 +1330,14 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     for (Concrete.ClassField field : def.getFields()) {
       if (previousType == field.getResultType()) {
         if (newDef && previousField != null) {
-          addField(field.getData(), typedDef, previousField.getType(Sort.STD)).setStatus(previousField.status());
+          addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel()).setStatus(previousField.status());
         }
       } else {
-        previousField = typecheckClassField(field, typedDef, localInstances, newDef);
         previousType = field.getResultType();
+        previousField = typecheckClassField(field, typedDef, localInstances, newDef);
 
         if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
-          Concrete.Expression fieldType = previousType instanceof Concrete.PiExpression ? ((Concrete.PiExpression) previousType).codomain : previousType;
-          TCClassReferable classRef = fieldType.getUnderlyingClassReferable(false);
+          TCClassReferable classRef = previousType.getUnderlyingClassReferable(false);
           TCClassReferable underlyingClassRef = classRef == null ? null : classRef.getUnderlyingTypecheckable();
           if (underlyingClassRef != null) {
             ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
@@ -1569,26 +1580,73 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean newDef) {
+    if (!def.getParameters().isEmpty()) {
+      def.setResultType(new Concrete.PiExpression(def.getParameters().get(0).getData(), new ArrayList<>(def.getParameters()), def.getResultType()));
+      def.getParameters().clear();
+    }
+
     boolean ok;
     PiExpression piType;
+    ClassField typedDef = null;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
         Concrete.Expression codomain;
         TypedSingleDependentLink thisParam = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
         myVisitor.getFreeBindings().add(thisParam);
         if (def.getResultType() instanceof Concrete.PiExpression) {
-          codomain = ((Concrete.PiExpression) def.getResultType()).codomain;
-          myVisitor.getContext().put(((Concrete.TelescopeParameter) ((Concrete.PiExpression) def.getResultType()).getParameters().get(0)).getReferableList().get(0), thisParam);
+          Concrete.PiExpression piExpr = (Concrete.PiExpression) def.getResultType();
+          if (piExpr.getParameters().size() == 1) {
+            codomain = piExpr.codomain;
+          } else {
+            codomain = new Concrete.PiExpression(piExpr.getParameters().get(1).getData(), piExpr.getParameters().subList(1, piExpr.getParameters().size()), piExpr.codomain);
+          }
+          myVisitor.getContext().put(((Concrete.TelescopeParameter) piExpr.getParameters().get(0)).getReferableList().get(0), thisParam);
         } else {
           myErrorReporter.report(new TypecheckingError("Internal error: class field must have a function type", def));
           codomain = def.getResultType();
         }
 
         setClassLocalInstancePool(localInstances, thisParam);
-        Type typeResult = myVisitor.finalCheckType(codomain, def.getKind() == ClassFieldKind.PROPERTY ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
+        Type typeResult = myVisitor.finalCheckType(codomain, def.getKind() == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
         myInstancePool.setInstancePool(null);
         ok = typeResult != null;
         piType = new PiExpression(typeResult != null ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeResult != null ? typeResult.getExpr() : new ErrorExpression(null, null));
+
+        if (def.getResultTypeLevel() != null && def.getKind() == ClassFieldKind.FIELD) {
+          myErrorReporter.report(new TypecheckingError("\\level is allowed only for properties", def.getResultTypeLevel()));
+          def.setResultTypeLevel(null);
+        }
+        if (newDef) {
+          typedDef = addField(def.getData(), parentClass, piType, null);
+        }
+
+        if (def.getResultTypeLevel() != null && def.getResultType() instanceof Concrete.PiExpression) {
+          List<Concrete.TypeParameter> parameters = ((Concrete.PiExpression) def.getResultType()).getParameters();
+          Expression resultType = piType;
+          SingleDependentLink link = EmptyDependentLink.getInstance();
+          loop:
+          for (Concrete.TypeParameter parameter : parameters) {
+            List<? extends Referable> referables = parameter instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) parameter).getReferableList() : Collections.singletonList(null);
+            for (Referable referable : referables) {
+              if (!link.hasNext()) {
+                if (!(resultType instanceof PiExpression)) {
+                  resultType = null;
+                  break loop;
+                }
+                link = ((PiExpression) resultType).getParameters();
+                resultType = ((PiExpression) resultType).getCodomain();
+              }
+              if (referable != null) {
+                myVisitor.getContext().put(referable, link);
+              }
+              myVisitor.getFreeBindings().add(link);
+              link = link.getNext();
+            }
+          }
+          if (!link.hasNext() && resultType != null) {
+            typecheckResultTypeLevel(def.getResultTypeLevel(), false, true, resultType, null, typedDef, newDef);
+          }
+        }
       }
     }
 
@@ -1604,7 +1662,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       isProperty = def.getKind() == ClassFieldKind.PROPERTY;
     }
 
-    ClassField typedDef = addField(def.getData(), parentClass, piType);
     if (isProperty) {
       typedDef.setIsProperty();
     }
@@ -1626,8 +1683,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
-  private ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType) {
-    ClassField typedDef = new ClassField(fieldRef, parentClass, piType);
+  private ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType, Expression typeLevel) {
+    ClassField typedDef = new ClassField(fieldRef, parentClass, piType, typeLevel);
     myVisitor.getTypecheckingState().rewrite(fieldRef, typedDef);
     parentClass.addField(typedDef);
     parentClass.addPersonalField(typedDef);

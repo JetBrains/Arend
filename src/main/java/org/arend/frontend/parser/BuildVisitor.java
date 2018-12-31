@@ -648,13 +648,9 @@ public class BuildVisitor extends ArendBaseVisitor {
       ClassFieldContext fieldCtx = (ClassFieldContext) ctx;
       List<TeleContext> teleCtxs = fieldCtx.tele();
       List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
-      Concrete.Expression type = visitExpr(fieldCtx.expr());
-      if (!parameters.isEmpty()) {
-        type = new Concrete.PiExpression(tokenPosition(teleCtxs.get(0).start), parameters, type);
-      }
-
+      Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(fieldCtx.returnExpr());
       ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), type);
+      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), parameters, returnPair.proj1, returnPair.proj2);
       reference.setDefinition(field);
       fields.add(field);
     } else if (ctx instanceof ClassImplContext) {
@@ -1274,7 +1270,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.FIELD, type);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.FIELD, new ArrayList<>(), type, null);
         fieldRef.setDefinition(field);
         fields.add(field);
 

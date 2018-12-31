@@ -15,16 +15,18 @@ public class ClassField extends Definition {
   private final ClassDefinition myParentClass;
   private boolean myProperty;
   private PiExpression myType;
+  private Expression myTypeLevel;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
     myParentClass = parentClass;
   }
 
-  public ClassField(TCFieldReferable referable, ClassDefinition parentClass, PiExpression type) {
+  public ClassField(TCFieldReferable referable, ClassDefinition parentClass, PiExpression type, Expression typeLevel) {
     super(referable, TypeCheckingStatus.NO_ERRORS);
     myParentClass = parentClass;
     myType = type;
+    myTypeLevel = typeLevel;
   }
 
   @Override
@@ -42,6 +44,14 @@ public class ClassField extends Definition {
 
   public PiExpression getType(Sort sortArgument) {
     return sortArgument == Sort.STD ? myType : new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
+  }
+
+  public Expression getTypeLevel() {
+    return myTypeLevel;
+  }
+
+  public void setTypeLevel(Expression typeLevel) {
+    myTypeLevel = typeLevel;
   }
 
   public boolean isProperty() {

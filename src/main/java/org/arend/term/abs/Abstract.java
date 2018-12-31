@@ -214,6 +214,7 @@ public final class Abstract {
   public interface ClassField extends ReferableDefinition, ParametersHolder {
     ClassFieldKind getClassFieldKind();
     /* @Nonnull */ @Nullable Expression getResultType();
+    @Nullable Expression getResultTypeLevel();
   }
 
   public interface ClassFieldSynonym extends ReferableDefinition {

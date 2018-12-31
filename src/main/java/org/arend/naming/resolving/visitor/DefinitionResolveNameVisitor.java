@@ -322,7 +322,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
         for (Concrete.ClassField field : def.getFields()) {
-          resolveTypeClassReference(Collections.emptyList(), field.getResultType(), scope, true);
+          resolveTypeClassReference(field.getParameters(), field.getResultType(), scope, true);
         }
       }
       def.setTypeClassReferencesResolved();
@@ -341,11 +341,21 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    for (Concrete.ClassField field : def.getFields()) {
-      try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
-        Concrete.Expression resultType = field.getResultType().accept(exprVisitor, null);
-        if (resultType != field.getResultType()) {
-          field.setResultType(resultType);
+    Concrete.Expression previousType = null;
+    for (int i = 0; i < def.getFields().size(); i++) {
+      Concrete.ClassField field = def.getFields().get(i);
+      Concrete.Expression fieldType = field.getResultType();
+      if (fieldType == previousType && field.getParameters().isEmpty()) {
+        field.setResultType(def.getFields().get(i - 1).getResultType());
+        field.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
+      } else {
+        try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
+          previousType = field.getParameters().isEmpty() ? fieldType : null;
+          exprVisitor.visitParameters(field.getParameters(), null);
+          field.setResultType(fieldType.accept(exprVisitor, null));
+          if (field.getResultTypeLevel() != null) {
+            field.setResultTypeLevel(field.getResultTypeLevel().accept(exprVisitor, null));
+          }
         }
       }
     }

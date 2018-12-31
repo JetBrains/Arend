@@ -81,9 +81,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Boolean isHeader) {
-    for (Concrete.TelescopeParameter param : def.getParameters()) {
-      param.getType().accept(this, null);
-    }
+    visitParameters(def.getParameters(), null);
 
     if (isHeader) {
       if (def.getResultType() != null) {
@@ -118,10 +116,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
   @Override
   public Void visitData(Concrete.DataDefinition def, Boolean isHeader) {
     if (isHeader) {
-      for (Concrete.TypeParameter param : def.getParameters()) {
-        param.getType().accept(this, null);
-      }
-
+      visitParameters(def.getParameters(), null);
       Concrete.Expression universe = def.getUniverse();
       if (universe != null) {
         universe.accept(this, null);
@@ -159,9 +154,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
   }
 
   private void visitConstructor(Concrete.Constructor def) {
-    for (Concrete.TypeParameter param : def.getParameters()) {
-      param.getType().accept(this, null);
-    }
+    visitParameters(def.getParameters(), null);
     if (def.getResultType() != null) {
       def.getResultType().accept(this, null);
     }
@@ -185,7 +178,11 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
     });
 
     for (Concrete.ClassField field : def.getFields()) {
+      visitParameters(field.getParameters(), null);
       field.getResultType().accept(this, null);
+      if (field.getResultTypeLevel() != null) {
+        field.getResultTypeLevel().accept(this, null);
+      }
     }
 
     visitClassFieldImpls(def.getImplementations(), null);
@@ -195,12 +192,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
 
   @Override
   public Void visitInstance(Concrete.Instance def, Boolean params) {
-    for (Concrete.Parameter param : def.getParameters()) {
-      if (param instanceof Concrete.TypeParameter) {
-        ((Concrete.TypeParameter) param).getType().accept(this, null);
-      }
-    }
-
+    visitParameters(def.getParameters(), null);
     def.getResultType().accept(this, null);
     visitClassFieldImpls(def.getClassFieldImpls(), null);
     return null;

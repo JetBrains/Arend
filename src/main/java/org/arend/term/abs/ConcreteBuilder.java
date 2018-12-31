@@ -249,7 +249,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               } else if (coercingField == null && parameter.getExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.FIELD, ((Concrete.TelescopeParameter) parameter).type));
+              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.FIELD, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -303,11 +303,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           try {
             List<? extends Abstract.Parameter> parameters = field.getParameters();
             Concrete.Expression type = resultType.accept(this, null);
-            if (!parameters.isEmpty()) {
-              type = new Concrete.PiExpression(parameters.get(0).getData(), buildTypeParameters(parameters), type);
-            }
-
-            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), type));
+            Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
+            Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
+            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters), type, typeLevel));
           } catch (AbstractExpressionError.Exception e) {
             myErrorReporter.report(e.error);
           }

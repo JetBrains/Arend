@@ -60,4 +60,36 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "}\n" +
       "\\class D \\extends B,C");
   }
+
+  @Test
+  public void propertySetLevel() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q)\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void propertyLevel() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\property f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
+      "}");
+  }
+
+  @Test
+  public void fieldLevel() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\field f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
+      "}", 1);
+  }
+
+  @Test
+  public void propertyLevel2() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | f (A : \\Type) : \\level ((\\Pi (x y : A) -> x = y) -> A) (\\lam (f g : (\\Pi (x y : A) -> x = y) -> A) => path (\\lam i (p : \\Pi (x y : A) -> x = y) => p (f p) (g p) @ i))\n" +
+      "}");
+  }
 }

@@ -58,6 +58,7 @@ message Definition {
         message Field {
             Referable referable = 1;
             Expression type = 3;
+            Expression type_level = 8;
             bool hasTypeClassReference = 4;
             bool isExplicit = 5;
             bool isParameter = 6;

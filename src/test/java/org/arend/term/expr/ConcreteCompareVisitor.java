@@ -479,7 +479,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {
     mySubstitution.put(field1.getData(), field2.getData());
-    return field1.isExplicit() == field2.isExplicit() && compare(field1.getResultType(), field2.getResultType());
+    return field1.isExplicit() == field2.isExplicit() && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType()) && compare(field1.getResultTypeLevel(), field2.getResultTypeLevel());
   }
 
   @Override

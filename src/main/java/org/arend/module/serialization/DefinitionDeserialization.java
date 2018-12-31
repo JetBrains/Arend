@@ -125,6 +125,9 @@ public class DefinitionDeserialization {
         field.setIsProperty();
       }
       field.setType(fieldType);
+      if (fieldProto.hasTypeLevel()) {
+        field.setTypeLevel(defDeserializer.readExpr(fieldProto.getTypeLevel()));
+      }
       // setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }

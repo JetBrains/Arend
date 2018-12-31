@@ -14,8 +14,8 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID ('\\as' precedence ID)?;
 
-classFieldOrImpl : fieldMod precedence ID tele* ':' expr # classField
-                 | coClause                         # classImpl
+classFieldOrImpl : fieldMod precedence ID tele* ':' returnExpr # classField
+                 | coClause                                    # classImpl
                  ;
 
 fieldMod  : '|'           # fieldPipe
