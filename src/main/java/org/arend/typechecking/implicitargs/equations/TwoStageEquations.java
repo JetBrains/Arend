@@ -458,13 +458,14 @@ public class TwoStageEquations implements Equations {
     return true;
   }
 
-  @Override
-  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
-    while (!myProps.isEmpty()) {
-      InferenceVariable var = myProps.pop();
-      if (!var.isSolved()) {
-        var.solve(this, new UniverseExpression(Sort.PROP));
-      }
+  private void solveLevelEquations(SimpleLevelSubstitution result) {
+    if (myPLevelEquations.isEmpty() &&
+        myHLevelEquations.isEmpty() &&
+        myBasedPLevelEquations.isEmpty() &&
+        myBasedHLevelEquations.isEmpty() &&
+        myBoundVariables.isEmpty() &&
+        myLowerBounds.isEmpty()) {
+      return;
     }
 
     Map<InferenceLevelVariable, Integer> basedSolution = new HashMap<>();
@@ -510,7 +511,6 @@ public class TwoStageEquations implements Equations {
     }
     unBased.addAll(pUnBased);
 
-    SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     for (InferenceLevelVariable var : unBased) {
       Integer sol = solution.get(var);
       assert sol != null || var.getType() == LevelVariable.LvlType.HLVL;
@@ -529,7 +529,28 @@ public class TwoStageEquations implements Equations {
       Equation equation = myEquations.get(i);
       myEquations.set(i, new Equation(equation.type.subst(result), equation.expr.subst(result), equation.cmp, equation.sourceNode));
     }
+
+    myPLevelEquations.clear();
+    myHLevelEquations.clear();
+    myBasedPLevelEquations.clear();
+    myBasedHLevelEquations.clear();
+    myBoundVariables.clear();
+    myLowerBounds.clear();
+  }
+
+  @Override
+  public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
+    while (!myProps.isEmpty()) {
+      InferenceVariable var = myProps.pop();
+      if (!var.isSolved()) {
+        var.solve(this, new UniverseExpression(Sort.PROP));
+      }
+    }
+
+    SimpleLevelSubstitution result = new SimpleLevelSubstitution();
+    solveLevelEquations(result);
     solveClassCalls();
+    solveLevelEquations(result); // We need the second pass since @solveClassCalls can generate new level variables
 
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
       int constant = entry.getValue().getConstant();
@@ -560,12 +581,6 @@ public class TwoStageEquations implements Equations {
     }
 
     myEquations.clear();
-    myPLevelEquations.clear();
-    myHLevelEquations.clear();
-    myBasedPLevelEquations.clear();
-    myBasedHLevelEquations.clear();
-    myBoundVariables.clear();
-    myLowerBounds.clear();
     myConstantUpperBounds.clear();
     myProps.clear();
     return result;
