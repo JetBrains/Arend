@@ -1,10 +1,6 @@
 package org.arend.core.expr;
 
-import org.arend.core.sort.Sort;
-import org.arend.prelude.Prelude;
-
 import java.math.BigInteger;
-import java.util.Collections;
 
 import static org.arend.core.expr.ExpressionFactory.Neg;
 import static org.arend.core.expr.ExpressionFactory.Pos;
@@ -58,6 +54,11 @@ public class SmallIntegerExpression extends IntegerExpression {
   @Override
   public boolean isEqual(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? myInteger == ((SmallIntegerExpression) expr).getInteger() : expr.getBigInteger().equals(BigInteger.valueOf(myInteger));
+  }
+
+  @Override
+  public int compare(IntegerExpression expr) {
+    return expr instanceof SmallIntegerExpression ? Integer.compare(myInteger, ((SmallIntegerExpression) expr).getInteger()) : BigInteger.valueOf(myInteger).compareTo(expr.getBigInteger());
   }
 
   @Override

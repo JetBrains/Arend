@@ -43,6 +43,11 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public int compare(IntegerExpression expr) {
+    return myInteger.compareTo(expr.getBigInteger());
+  }
+
+  @Override
   public BigIntegerExpression plus(IntegerExpression expr) {
     return new BigIntegerExpression(myInteger.add(expr.getBigInteger()));
   }

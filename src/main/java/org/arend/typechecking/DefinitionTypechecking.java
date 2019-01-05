@@ -11,6 +11,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -1754,8 +1755,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
+    Expression classifyingExpr;
     if (classifyingField != null) {
-      Expression classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
+      classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
       Set<SingleDependentLink> params = new LinkedHashSet<>();
       while (classifyingExpr instanceof LamExpression) {
         for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {
@@ -1828,10 +1830,109 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (!ok) {
         myErrorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, or a class, or a partially applied data", def.getResultType()));
       }
+    } else {
+      classifyingExpr = null;
+    }
+
+    boolean recOK = true;
+    for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
+      link = link.getNextTyped(null);
+      Expression type = link.getTypeExpr();
+      if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
+        ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
+        Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
+        if (classifyingImpl == null && paramClassifyingField != null) {
+          classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
+        }
+        if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
+          myErrorReporter.report(new TypecheckingError("Class parameters of an instance must be classified by a subexpression of the classifying expression", def));
+          recOK = false;
+          break;
+        }
+      }
     }
 
     if (newDef) {
-      typedDef.setStatus(myVisitor.getStatus());
+      typedDef.setStatus(recOK ? myVisitor.getStatus() : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
     }
+  }
+
+  private int compareExpressions(Expression expr1, Expression expr2) {
+    if (expr2 instanceof ErrorExpression) {
+      return 1;
+    }
+    expr1 = expr1.normalize(NormalizeVisitor.Mode.WHNF);
+
+    if (expr2 instanceof UniverseExpression) {
+      return expr1 instanceof UniverseExpression && ((UniverseExpression) expr1).getSort().equals(((UniverseExpression) expr2).getSort()) ? 0 : 1;
+    }
+
+    if (expr2 instanceof IntegerExpression) {
+      return expr1 instanceof IntegerExpression ? ((IntegerExpression) expr1).compare((IntegerExpression) expr2) : 1;
+    }
+
+    if (expr2 instanceof DataCallExpression) {
+      int cmp = 0;
+      if (expr1 instanceof DataCallExpression && ((DataCallExpression) expr1).getDefinition() == ((DataCallExpression) expr2).getDefinition()) {
+        List<Expression> args1 = ((DataCallExpression) expr1).getDefCallArguments();
+        List<Expression> args2 = ((DataCallExpression) expr2).getDefCallArguments();
+        for (int i = 0; i < args1.size(); i++) {
+          int argCmp = compareExpressions(args1.get(i), args2.get(i));
+          if (argCmp == 1) {
+            cmp = 1;
+            break;
+          }
+          if (argCmp == -1) {
+            cmp = -1;
+          }
+        }
+        if (cmp == -1) {
+          return -1;
+        }
+      }
+
+      for (Expression arg : ((DataCallExpression) expr2).getDefCallArguments()) {
+        if (compareExpressions(expr1, arg) != 1) {
+          return -1;
+        }
+      }
+
+      return cmp;
+    }
+
+    if (expr2 instanceof ClassCallExpression) {
+      int cmp = 0;
+      if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {
+        for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) expr1).getImplementedHere().entrySet()) {
+          Expression impl2 = ((ClassCallExpression) expr2).getImplementedHere().get(entry.getKey());
+          if (impl2 == null) {
+            cmp = 1;
+            break;
+          }
+
+          int argCmp = compareExpressions(entry.getValue(), impl2);
+          if (argCmp == 1) {
+            cmp = 1;
+            break;
+          }
+          if (argCmp == -1) {
+            cmp = -1;
+          }
+        }
+        if (cmp == -1) {
+          return -1;
+        }
+      }
+
+      for (Expression arg : ((ClassCallExpression) expr2).getImplementedHere().values()) {
+        if (compareExpressions(expr1, arg) != 1) {
+          return -1;
+        }
+      }
+
+      return cmp;
+    }
+
+    return Expression.compare(expr1, expr2, Equations.CMP.EQ) ? 0 : 1;
   }
 }

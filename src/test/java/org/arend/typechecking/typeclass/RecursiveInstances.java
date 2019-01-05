@@ -1,8 +1,10 @@
 package org.arend.typechecking.typeclass;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.arend.typechecking.Matchers.error;
 import static org.arend.typechecking.Matchers.instanceInference;
 
 public class RecursiveInstances extends TypeCheckingTestCase {
@@ -13,9 +15,11 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class B\n" +
       "\\instance B-inst : B\n" +
       "\\instance A-inst {b : B} : A | a => 0\n" +
-      "\\func f => a");
+      "\\func f => a", 2);
+    assertThatErrorsAre(error(), instanceInference(getDefinition("A")));
   }
 
+  @Ignore
   @Test
   public void noRecursiveInstance() {
     typeCheckModule(
@@ -26,6 +30,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
     assertThatErrorsAre(instanceInference(getDefinition("B")));
   }
 
+  @Ignore
   @Test
   public void correctRecursiveInstance() {
     typeCheckModule(
@@ -36,6 +41,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\func f => a");
   }
 
+  @Ignore
   @Test
   public void wrongRecursiveInstance() {
     typeCheckModule(
@@ -47,6 +53,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
     assertThatErrorsAre(instanceInference(getDefinition("B")));
   }
 
+  @Ignore
   @Test
   public void wrongRecursiveInstance2() {
     typeCheckModule(
@@ -61,6 +68,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
     assertThatErrorsAre(instanceInference(getDefinition("B")));
   }
 
+  @Ignore
   @Test
   public void localRecursiveInstance() {
     typeCheckModule(
@@ -108,7 +116,16 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class A (X Y : \\Set) { | x : X }\n" +
       "\\data Data (X : \\Set) | con X\n" +
       "\\instance Nat-inst : A Nat | x => 0 | Y => Nat\n" +
-      "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("A")));
+      "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 2);
+    assertThatErrorsAre(instanceInference(getDefinition("A")), error());
+  }
+
+  @Test
+  public void infRecursiveInstance() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | foo : X -> X\n" +
+      "\\instance inst (c : C Nat) : C Nat | foo => c.foo\n" +
+      "\\func f => foo 3", 2);
+    assertThatErrorsAre(error(), instanceInference(getDefinition("C")));
   }
 }
