@@ -58,7 +58,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | a' => 2\n" +
       "  | b' => 3\n" +
       "  }", 1);
-    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(getDefinition("A.a'").getReferable())));
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singleton(getDefinition("A.a'").getReferable())));
   }
 
   @Test
@@ -84,7 +84,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | a' => 2\n" +
       "  | b' => 3\n" +
       "  }", 1);
-    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(getDefinition("A.a'").getReferable())));
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singleton(getDefinition("A.a'").getReferable())));
   }
 
   @Test
@@ -93,7 +93,6 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "\\class A (a a' : Nat)\n" +
       "\\class B (b b' : Nat) \\extends A\n" +
       "\\instance I : B\n" +
-      "  | a => 1\n" +
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
       "  | b' => 3\n" +
@@ -106,10 +105,10 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "\\class A (a a' : Nat)\n" +
       "\\class B (b b' : Nat) \\extends A\n" +
       "\\instance I : B\n" +
-      "  | a => 4\n" +
+      "  | a => 1\n" +
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
-      "  | b' => 3", 1);
+      "  | b' => 3", 2);
   }
 
   @Test
@@ -117,8 +116,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
     typeCheckModule(
       "\\class A (a a' : Nat)\n" +
       "\\class B (b b' : Nat) \\extends A\n" +
-      "\\instance I : B 1\n" +
-      "  | A => \\new A { | a => 1 | a' => 2 }\n" +
+      "\\instance I : B 1 2\n" +
       "  | b => 0\n" +
       "  | b' => 3\n" +
       "\\func f : I.a = 1 => path (\\lam _ => 1)");
@@ -129,9 +127,9 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
     typeCheckModule(
       "\\class A (a a' : Nat)\n" +
       "\\class B (b b' : Nat) \\extends A\n" +
-      "\\instance I : B 4\n" +
+      "\\instance I : B 1\n" +
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
-      "  | b' => 3", 1);
+      "  | b' => 3", 2);
   }
 }

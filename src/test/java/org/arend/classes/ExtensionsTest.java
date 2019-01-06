@@ -345,7 +345,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x y : Nat)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 0 => \\new B { | A => a }");
+      "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
   }
 
   @Test

@@ -1705,14 +1705,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   private ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.Definition def, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.ClassFieldImpl> classFieldImpls, boolean newDef) {
     ClassCallExpression type;
     CheckTypeVisitor.Result result;
+    Set<ClassField> pseudoImplemented;
     if (typedDef.isLemma()) {
       CheckTypeVisitor.Result typeResult = myVisitor.finalCheckExpr(resultType, resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
       if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
         return null;
       }
       type = (ClassCallExpression) typeResult.expression;
-      result = myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, type, resultType);
+      pseudoImplemented = new HashSet<>();
+      result = myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, type, pseudoImplemented, resultType);
     } else {
+      pseudoImplemented = Collections.emptySet();
       result = myVisitor.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), ExpectedType.OMEGA, false);
       if (result == null || !(result.expression instanceof ClassCallExpression)) {
         return null;
@@ -1720,7 +1723,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       type = (ClassCallExpression) result.expression;
     }
 
-    myVisitor.checkAllImplemented((ClassCallExpression) result.expression, def);
+    myVisitor.checkAllImplemented((ClassCallExpression) result.expression, pseudoImplemented, def);
     if (newDef) {
       typedDef.setResultType(type);
       typedDef.setStatus(myVisitor.getStatus());

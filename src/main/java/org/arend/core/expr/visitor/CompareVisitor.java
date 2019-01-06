@@ -493,6 +493,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
       if (impl1 == null) {
+        LamExpression lamImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
+        impl1 = lamImpl1 == null ? null : lamImpl1.getBody();
+      }
+      if (impl1 == null) {
         myCMP = origCMP;
         return false;
       }
