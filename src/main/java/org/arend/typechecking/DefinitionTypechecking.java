@@ -1866,6 +1866,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
     expr1 = expr1.normalize(NormalizeVisitor.Mode.WHNF);
 
+    while (expr2 instanceof LamExpression) {
+      expr2 = ((LamExpression) expr2).getBody();
+    }
+
     if (expr2 instanceof UniverseExpression) {
       return expr1 instanceof UniverseExpression && ((UniverseExpression) expr1).getSort().equals(((UniverseExpression) expr2).getSort()) ? 0 : 1;
     }
