@@ -335,6 +335,30 @@ public final class Concrete {
     }
   }
 
+  public static class ThisExpression extends Expression {
+    public static final byte PREC = 12;
+    private Referable myReferent;
+
+    public ThisExpression(Object data, Referable referable) {
+      super(data);
+      myReferent = referable;
+    }
+
+    @Nonnull
+    public Referable getReferent() {
+      return myReferent;
+    }
+
+    public void setReferent(Referable referent) {
+      myReferent = referent;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitThis(this, params);
+    }
+  }
+
   public static class InferenceReferenceExpression extends Expression {
     private final InferenceVariable myVariable;
 

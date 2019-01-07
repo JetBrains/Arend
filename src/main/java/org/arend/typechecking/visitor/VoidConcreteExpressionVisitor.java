@@ -21,6 +21,11 @@ public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Void visitThis(Concrete.ThisExpression expr, P params) {
+    return null;
+  }
+
+  @Override
   public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params) {
     return null;
   }

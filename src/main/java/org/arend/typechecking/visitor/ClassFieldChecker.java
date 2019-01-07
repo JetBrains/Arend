@@ -81,7 +81,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
         if (myFutureFields != null && myFutureFields.contains(ref)) {
           return makeErrorExpression(expr.getData());
         } else {
-          return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ReferenceExpression(expr.getData(), myThisParameter), false);
+          return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ThisExpression(expr.getData(), myThisParameter), false);
         }
       } else {
         ref = ((TCReferable) ref).getUnderlyingTypecheckable();
@@ -92,11 +92,17 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
             return makeErrorExpression(expr.getData());
           }
           if (isParent(defEnclosingClass, myClassReferable)) {
-            return Concrete.AppExpression.make(expr.getData(), expr, getParentCall(defEnclosingClass, myClassReferable, new Concrete.ReferenceExpression(expr.getData(), myThisParameter)), false);
+            return Concrete.AppExpression.make(expr.getData(), expr, getParentCall(defEnclosingClass, myClassReferable, new Concrete.ThisExpression(expr.getData(), myThisParameter)), false);
           }
         }
       }
     }
+    return expr;
+  }
+
+  @Override
+  public Concrete.ThisExpression visitThis(Concrete.ThisExpression expr, Void params) {
+    expr.setReferent(myThisParameter);
     return expr;
   }
 
@@ -117,25 +123,6 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> imple
       return expr;
     } else {
       return super.visitApp(expr, params);
-    }
-  }
-
-  @Override
-  public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Void params) {
-    if (expr.expression instanceof Concrete.HoleExpression && expr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.type).getReferent() instanceof ClassReferable && myClassReferable.isSubClassOf((ClassReferable) ((Concrete.ReferenceExpression) expr.type).getReferent())) {
-      return new Concrete.ReferenceExpression(expr.getData(), myThisParameter);
-    } else {
-      return super.visitTyped(expr, params);
-    }
-  }
-
-  @Override
-  protected void visitLetClause(Concrete.LetClause clause, Void params) {
-    if (clause.getParameters().isEmpty() && clause.term instanceof Concrete.HoleExpression && clause.resultType instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) clause.resultType).getReferent() instanceof ClassReferable && myClassReferable.isSubClassOf((ClassReferable) ((Concrete.ReferenceExpression) clause.resultType).getReferent())) {
-      clause.term = new Concrete.ReferenceExpression(clause.term.getData(), myThisParameter);
-      clause.resultType = null;
-    } else {
-      super.visitLetClause(clause, params);
     }
   }
 }

@@ -20,6 +20,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Concrete.Expression visitThis(Concrete.ThisExpression expr, P params) {
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params) {
     return expr;
   }

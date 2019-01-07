@@ -81,6 +81,11 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   @Override
+  public TCReferable visitThis(Concrete.ThisExpression expr, Void params) {
+    return null;
+  }
+
+  @Override
   public TCReferable visitInferenceReference(Concrete.InferenceReferenceExpression expr, Void params) {
     return null;
   }

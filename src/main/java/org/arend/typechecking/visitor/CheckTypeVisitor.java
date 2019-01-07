@@ -525,22 +525,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return tResultToResult(expectedType, result, expr);
   }
 
-  private CheckTypeVisitor.TResult getLocalVar(Concrete.ReferenceExpression expr) {
-    if (expr.getReferent() instanceof UnresolvedReference || expr.getReferent() instanceof RedirectingReferable) {
+  private CheckTypeVisitor.TResult getLocalVar(Referable ref, Concrete.SourceNode sourceNode) {
+    if (ref instanceof UnresolvedReference || ref instanceof RedirectingReferable) {
       throw new IllegalStateException();
     }
-    if (expr.getReferent() instanceof ErrorReference) {
+    if (ref instanceof ErrorReference) {
       return null;
     }
 
-    Binding def = myContext.get(expr.getReferent());
+    Binding def = myContext.get(ref);
     if (def == null) {
-      myErrorReporter.report(new IncorrectReferenceError(expr.getReferent(), expr));
+      myErrorReporter.report(new IncorrectReferenceError(ref, sourceNode));
       return null;
     }
     Expression type = def.getTypeExpr();
     if (type == null) {
-      myErrorReporter.report(new ReferenceTypeError(expr.getReferent()));
+      myErrorReporter.report(new ReferenceTypeError(ref));
       return null;
     } else {
       return new Result(new ReferenceExpression(def), type);
@@ -642,7 +642,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
     ref = getUnderlyingTypecheckable(ref, expr);
-    return ref == null ? null : ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr);
+    return ref == null ? null : ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
   }
 
   @Override
@@ -653,6 +653,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     return tResultToResult(expectedType, result, expr);
+  }
+
+  @Override
+  public Result visitThis(Concrete.ThisExpression expr, ExpectedType expectedType) {
+    return tResultToResult(expectedType, getLocalVar(expr.getReferent(), expr), expr);
   }
 
   @Override

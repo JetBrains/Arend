@@ -184,6 +184,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
+  public Void visitThis(Concrete.ThisExpression expr, Precedence params) {
+    myBuilder.append("\\this");
+    return null;
+  }
+
+  @Override
   public Void visitInferenceReference(Concrete.InferenceReferenceExpression expr, Precedence params) {
     myBuilder.append("?").append(expr.getVariable().getName());
     return null;

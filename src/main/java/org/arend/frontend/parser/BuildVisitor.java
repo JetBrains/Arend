@@ -1308,6 +1308,11 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
+  public Concrete.ThisExpression visitAtomThis(AtomThisContext ctx) {
+    return new Concrete.ThisExpression(tokenPosition(ctx.start), null);
+  }
+
+  @Override
   public Concrete.SigmaExpression visitSigma(SigmaContext ctx) {
     return new Concrete.SigmaExpression(tokenPosition(ctx.start), visitTeles(ctx.tele()));
   }

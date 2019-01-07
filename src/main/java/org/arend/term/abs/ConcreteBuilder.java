@@ -513,6 +513,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
+  public Concrete.ThisExpression visitThis(@Nullable Object data) {
+    return new Concrete.ThisExpression(data, null);
+  }
+
+  @Override
   public Concrete.Expression visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, Void params) {
     if (body == null) {
       throwError(errorData);

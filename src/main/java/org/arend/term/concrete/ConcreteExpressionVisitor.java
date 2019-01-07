@@ -3,6 +3,7 @@ package org.arend.term.concrete;
 public interface ConcreteExpressionVisitor<P, R> {
   R visitApp(Concrete.AppExpression expr, P params);
   R visitReference(Concrete.ReferenceExpression expr, P params);
+  R visitThis(Concrete.ThisExpression expr, P params);
   R visitInferenceReference(Concrete.InferenceReferenceExpression expr, P params);
   R visitLam(Concrete.LamExpression expr, P params);
   R visitPi(Concrete.PiExpression expr, P params);

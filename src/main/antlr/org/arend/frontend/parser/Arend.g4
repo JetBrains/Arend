@@ -179,6 +179,7 @@ atom  : literal                               # atomLiteral
       | '(' (tupleExpr (',' tupleExpr)*)? ')' # tuple
       | NUMBER                                # atomNumber
       | NEGATIVE_NUMBER                       # atomNegativeNumber
+      | '\\this'                              # atomThis
       ;
 
 atomFieldsAcc : atom ('.' NUMBER)*;
