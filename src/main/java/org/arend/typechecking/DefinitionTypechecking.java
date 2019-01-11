@@ -11,7 +11,6 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -1438,7 +1437,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             typedDef.removeImplementation(dep);
             implementedHere.remove(dep);
           }
-          fieldsToCheck.add(field);
+          if (allFields.add(field)) {
+            fieldsToCheck.add(field);
+          }
         }
       }
 
@@ -1519,7 +1520,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       List<ClassField> cycle = dfs(field);
       if (cycle != null) {
         if (cycle.size() > 1) {
-          cycle.remove(cycle.size() - 1);
           Collections.reverse(cycle);
         }
         state.entrySet().removeIf(entry -> !entry.getValue());

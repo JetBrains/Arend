@@ -369,6 +369,23 @@ public class ImplementTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void recursiveEmpty() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\class A {\n" +
+      "  | x : Empty\n" +
+      "  | y : Empty\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | x => y\n" +
+      "}\n" +
+      "\\class C \\extends A {\n" +
+      "  | y => x\n" +
+      "}\n" +
+      "\\class D \\extends B, C", 1);
+  }
+
+  @Test
   public void recursiveNextImplemented() {
     typeCheckModule(
       "\\class A {\n" +

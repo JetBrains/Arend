@@ -1513,6 +1513,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
 
         Expression newImpl = null;
+        Expression oldImpl = null;
         if (ok) {
           if (impl != null) {
             newImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
@@ -1520,6 +1521,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             newImpl = impl2.proj1;
           }
           if (newImpl != null) {
+            oldImpl = notImplementedFields.isEmpty() ? resultClassCall.getImplementation(field, new NewExpression(resultClassCall)) : null;
             fieldSet.putIfAbsent(field, newImpl);
           }
         }
@@ -1527,7 +1529,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (newImpl == null) {
           notImplementedFields.add(field);
         } else {
-          Expression oldImpl = notImplementedFields.isEmpty() ? resultClassCall.getImplementation(field, new NewExpression(resultClassCall)) : null;
           if (oldImpl != null || impl != null && impl2 != null) {
             CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl != null ? impl : impl2.proj2);
             if (oldImpl != null && !cmpVisitor.compare(oldImpl, newImpl)) {
