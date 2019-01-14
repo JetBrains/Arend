@@ -1,6 +1,6 @@
 <h1 id="data">Data Definitions<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
 
-Data definitions generalize allow us to define (higher) inductive types.
+Data definitions allow us to define (higher) inductive types.
 Each data definition has several constructors.
 Constructors belong to the [module](/language-reference/definitions/modules) associated to the data definition, but they are also visible in the module in which the data type is defined:
 

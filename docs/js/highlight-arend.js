@@ -16,6 +16,7 @@ hljs.registerLanguage("arend", function (hljs) {
         "\\let \\in " +
         "\\case \\return \\elim \\with " +
         "\\where \\truncated \\cowith \\extends " +
+        "\\field \\property \\this" +
         "\\new \\Pi \\Sigma \\lam ",
 
       built_in:

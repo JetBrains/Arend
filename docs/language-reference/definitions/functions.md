@@ -184,7 +184,7 @@ The bodies of the functions may refer to each other as long as the whole recursi
 
 ## Copattern matching
 
-If the result type of a function is a record or a class, then a function can also be define by _copattern matching_ which has the following syntax:
+If the result type of a function is a [record](/language-reference/definitions/records) or a [class](/language-reference/definitions/classes), then a function can also be define by _copattern matching_ which has the following syntax:
 
 ```arend
 \func f (x_1 : A_1) ... (x_n : A_n) : C \cowith
@@ -207,3 +207,7 @@ It also can be equivalently written as follows:
 ```
 
 See [this section](/language-reference/expressions/class-ext) for the description of the involved constructions.
+
+## Lemmas
+
+TODO
