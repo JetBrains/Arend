@@ -1656,7 +1656,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     boolean isProperty;
-    if (def.getKind() == ClassFieldKind.ANY) {
+    if (typedDef.getTypeLevel() != null) {
+      isProperty = def.getKind() != ClassFieldKind.FIELD;
+    } else if (def.getKind() == ClassFieldKind.ANY) {
       Expression universe = piType.getCodomain().getType();
       isProperty = universe instanceof UniverseExpression && ((UniverseExpression) universe).getSort().isProp();
     } else {

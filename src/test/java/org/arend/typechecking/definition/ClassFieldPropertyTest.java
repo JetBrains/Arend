@@ -1,9 +1,11 @@
 package org.arend.typechecking.definition;
 
+import org.arend.core.definition.ClassField;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.typeMismatchError;
+import static org.junit.Assert.assertTrue;
 
 public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   @Test
@@ -91,5 +93,6 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class A {\n" +
       "  | f (A : \\Type) : \\level ((\\Pi (x y : A) -> x = y) -> A) (\\lam (f g : (\\Pi (x y : A) -> x = y) -> A) => path (\\lam i (p : \\Pi (x y : A) -> x = y) => p (f p) (g p) @ i))\n" +
       "}");
+    assertTrue(((ClassField) getDefinition("A.f")).isProperty());
   }
 }
