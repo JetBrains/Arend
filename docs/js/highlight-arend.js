@@ -16,7 +16,7 @@ hljs.registerLanguage("arend", function (hljs) {
         "\\let \\in " +
         "\\case \\return \\elim \\with " +
         "\\where \\truncated \\cowith \\extends " +
-        "\\field \\property \\this" +
+        "\\field \\property \\this " +
         "\\new \\Pi \\Sigma \\lam ",
 
       built_in:
@@ -79,7 +79,7 @@ hljs.registerLanguage("arend", function (hljs) {
               c: [PARENS]
             }, {
               cN: "keyword",
-              b: /:/,
+              b: /(:|\\extends)/,
               e: /\s*/,
               starts: {
                 cN: "definition-type",
@@ -120,6 +120,6 @@ hljs.registerLanguage("arend", function (hljs) {
   return {
     l: RE_LEXEMES,
     k: keywords,
-    c: [DEF_IMPORT, DEF_TELE("func"), DEF_TELE("coerce"), DEF_TELE("data"), DEF_TELE("instance"), DEF_NAMED("module"), DEF_TELE("class"), DEF_TELE("record"), DEF_NAMED("import"), DEF_NAMED("open"), hljs.NM, COMMENT]
+    c: [DEF_IMPORT, DEF_TELE("func"), DEF_TELE("lemma"), DEF_TELE("coerce"), DEF_TELE("data"), DEF_TELE("instance"), DEF_NAMED("module"), DEF_TELE("class"), DEF_TELE("record"), DEF_NAMED("import"), DEF_NAMED("open"), hljs.NM, COMMENT]
   }
 })

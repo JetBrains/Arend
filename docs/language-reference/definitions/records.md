@@ -11,7 +11,7 @@ The basic syntax looks like this:
 }
 ```
 
-You can also write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these notations, which will be discussed [here](#fields-and-properties).
+You can also write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these notations, which will be discussed [here](#properties).
 
 The type `A_i` can depend on variables `p_1`, ... `p_{i-1}`.
 The type `B_i` can depend on variables `p_1`, ... `p_n`, `f_1`, ... `f_{i-1}`.
@@ -66,7 +66,10 @@ You can also use the following syntax:
 This syntax is allowed only when the expression before `.` is a variable with an explicitly specified type which is a record.
 If `x : R` and `f` is a field of `R`, then `x.f` is equivalent to `R.f {x}`.
 
-## Fields and properties
+Records satisfy the eta rule.
+This means that the expression `\new R r.p_1 ... r.p_n r.f_1 ... r.f_k` is equivalent to `r`.
+
+## Properties
 
 Some fields can be marked as a _property_.
 To do this, you need to use the keyword `\property` instead of `\field`:
@@ -94,8 +97,93 @@ Then `test x p` evaluates to `p` if `isNeg` is not a property and does not evalu
 
 ## Extensions
 
-TODO
+An extension `S` of a record `R` is another record which adds some fields to `R` and implements some of the fields of `R`.
+The record `R` is called a _super class_ of `S`.
+
+```arend
+\record S \extends R {
+  | g_1 : C_1
+  ...
+  | g_m : C_m
+  | p_{i_1} => a_{i_1}
+  ...
+  | p_{i_q} => a_{i_q}
+  | f_{j_1} => b_{j_1}
+  ...
+  | f_{j_s} => b_{j_s}
+}
+```
+
+Here `d_i` has type `A_i` and `f_j` has type `B_j`.
+Expressions `a_i` and `b_i` may refer to any field of `S`, but implementations must not form a cycle.
+
+A record is equivalent to the sigma type consisting of all of its not implemented fields.
+For example, consider the following records:
+
+```arend
+\record C (x y : Nat) {
+  | x<=y : x <= y
+  | y<=0 : y <= 0
+}
+
+\record D \extends C {
+  | y => x
+  | x<=y => <=-reflexive x
+}
+```
+
+Then `D` is equivalent to `\Sigma (x : Nat) (x <= 0)`:
+
+```arend
+\func fromD (d : D) : \Sigma (x : Nat) (x <= 0) => (d.x, d.y<=0)
+\func toD (p : \Sigma (x : Nat) (x <= 0)) => \new D p.1 p.2
+\func fromToD (d : D) : toD (fromD d) = d => idp
+\func toFromD (p : \Sigma (x : Nat) (x <= 0)) : fromD (toD p) = p => idp
+```
+
+where `idp` is the proof by reflexivity.
+This works since both records and sigma types satisfy eta rules.
+
+A record can extend several records.
+If these records extends some base record themselves, then the fields of this base record will not be repeated in the final record.
+For example, consider the following records:
+
+```arend
+\record A (x : Nat)
+\record B \extends A
+\record C \extends A
+\record D \extends B,C
+```
+
+Then `D` has a single field `x`.
+If super classes have fields with the same name which are not defined in some common super class, then the final record will have two different fields with the same name.
+To access these fields, you need to use fully qualified names:
+
+```arend
+\record B (x : Nat)
+\record C (x : Nat)
+\record D \extends B,C
+
+\func fromD (d : D) : \Sigma Nat Nat => (B.x {d}, C.x {d})
+\func toD (p : \Sigma Nat Nat) => \new D p.1 p.2
+\func fromToD (d : D) : toD (fromD d) = d => idp
+\func toFromD (p : \Sigma Nat Nat) : fromD (toD p) = p => idp
+```
 
 ## This
 
-TODO
+Every field has additional implicit parameter.
+You can refer to it with the keyword `\this`:
+
+```arend
+\record R (X : \Type) (t : X -> X)
+
+\func f (r : R) => r.t
+
+\record S \extends R {
+  | x : X
+  | p : f \this x = x
+}
+```
+
+This keyword can appear only in arguments of definitions and these arguments also must satisfy this condition.

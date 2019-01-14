@@ -210,4 +210,7 @@ See [this section](/language-reference/expressions/class-ext) for the descriptio
 
 ## Lemmas
 
-TODO
+A lemma is a function that returns a proposition and does not evaluate.
+To define a lemma use the keyword `\lemma` instead of `\func`.
+If the result type of a lemma does not belong to `\Prop`, but is provably a proposition, you can use the keywords [\level](/language-reference/definitions/level/#level-of-a-type) to define a lemma with this result type.
+The fact that lemmas do not evaluate may greatly improve performance of typechecking if their proofs are too lengthy.
