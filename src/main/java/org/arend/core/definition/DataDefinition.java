@@ -10,10 +10,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCReferable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class DataDefinition extends Definition {
   private List<Constructor> myConstructors;
@@ -24,6 +21,7 @@ public class DataDefinition extends Definition {
   private Set<Integer> myCovariantParameters;
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
+  private List<Boolean> myGoodThisParameters = Collections.emptyList();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -118,6 +116,16 @@ public class DataDefinition extends Definition {
   @Override
   public void setParametersTypecheckingOrder(List<Integer> order) {
     myParametersTypecheckingOrder = order;
+  }
+
+  @Override
+  public List<Boolean> getGoodThisParameters() {
+    return myGoodThisParameters;
+  }
+
+  @Override
+  public void setGoodThisParameters(List<Boolean> goodThisParameters) {
+    myGoodThisParameters = goodThisParameters;
   }
 
   @Override

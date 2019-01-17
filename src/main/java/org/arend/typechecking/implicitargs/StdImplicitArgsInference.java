@@ -154,7 +154,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
 
   private CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
     if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isError()) {
-      myVisitor.checkArgument(arg, null, result instanceof CheckTypeVisitor.DefCallResult);
+      myVisitor.checkArgument(arg, null, result);
       return result;
     }
 
@@ -168,7 +168,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), myVisitor.getErrorReporter(), fun);
 
-          CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), true);
+          CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result);
           if (argResult == null) {
             return null;
           }
@@ -190,7 +190,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false);
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result instanceof CheckTypeVisitor.DefCallResult);
+    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result);
     if (argResult == null) {
       return null;
     }
@@ -215,8 +215,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     myVisitor.getErrorReporter().report(new TypecheckingError("Expected an " + (isExplicit ? "explicit" : "implicit") + " argument", sourceNode));
   }
 
-  private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, boolean allowThis) {
-    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), allowThis);
+  private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, CheckTypeVisitor.TResult result) {
+    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
     Expression argResultExpr = argResult == null ? new ErrorExpression(null, null) : argResult.expression;
     pair.proj1.solve(myVisitor.getEquations(), argResultExpr);
   }
@@ -311,14 +311,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           // If i-th argument were deferred, get it from the map and typecheck
           Pair<InferenceVariable, Concrete.Expression> pair = deferredArguments.remove(i);
           if (pair != null) {
-            typecheckDeferredArgument(pair, result instanceof CheckTypeVisitor.DefCallResult);
+            typecheckDeferredArgument(pair, result);
           }
         }
       }
 
       // Typecheck all deferred arguments
       for (Pair<InferenceVariable, Concrete.Expression> pair : deferredArguments.values()) {
-        typecheckDeferredArgument(pair, result instanceof CheckTypeVisitor.DefCallResult);
+        typecheckDeferredArgument(pair, result);
       }
 
       // Typecheck the rest of the arguments

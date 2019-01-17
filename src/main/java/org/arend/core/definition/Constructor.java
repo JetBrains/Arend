@@ -27,6 +27,7 @@ public class Constructor extends Definition implements Function {
   private List<ClauseBase> myClauses;
   private int myNumberOfIntervalParameters;
   private List<Integer> myParametersTypecheckingOrder;
+  private List<Boolean> myGoodThisParameters = Collections.emptyList();
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -146,6 +147,26 @@ public class Constructor extends Definition implements Function {
   @Override
   public void setParametersTypecheckingOrder(List<Integer> order) {
     myParametersTypecheckingOrder = order;
+  }
+
+  @Override
+  public List<Boolean> getGoodThisParameters() {
+    return myGoodThisParameters;
+  }
+
+  @Override
+  public boolean isGoodParameter(int index) {
+    if (myPatterns != null) {
+      return false;
+    }
+
+    int dataTypeParams = DependentLink.Helper.size(myDataType.getParameters());
+    return index < dataTypeParams ? myDataType.isGoodParameter(index) : super.isGoodParameter(index - dataTypeParams);
+  }
+
+  @Override
+  public void setGoodThisParameters(List<Boolean> goodThisParameters) {
+    myGoodThisParameters = goodThisParameters;
   }
 
   @Override

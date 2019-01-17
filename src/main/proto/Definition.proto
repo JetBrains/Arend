@@ -73,6 +73,7 @@ message Definition {
     message DataData {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 15;
+        repeated bool good_this_parameters = 17;
         Sort sort = 7;
         repeated Constructor constructor = 3;
         bool matches_on_interval = 5;
@@ -85,6 +86,7 @@ message Definition {
             repeated Pattern pattern = 2;
             repeated Telescope param = 3;
             repeated int32 parameters_typechecking_order = 7;
+            repeated bool good_this_parameters = 8;
             repeated Clause clause = 4;
             Body conditions = 5;
             int32 number_of_interval_parameters = 6;
@@ -93,6 +95,7 @@ message Definition {
     message FunctionData {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 7;
+        repeated bool good_this_parameters = 10;
         Expression type = 5;
         Expression type_level = 9;
         Body body = 6;

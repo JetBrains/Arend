@@ -5,10 +5,9 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
-import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
-import org.arend.term.concrete.Concrete;
 
+import java.util.Collections;
 import java.util.List;
 
 public abstract class Definition implements Variable {
@@ -47,6 +46,19 @@ public abstract class Definition implements Variable {
   }
 
   public void setParametersTypecheckingOrder(List<Integer> order) {
+
+  }
+
+  public List<Boolean> getGoodThisParameters() {
+    return Collections.emptyList();
+  }
+
+  public boolean isGoodParameter(int index) {
+    List<Boolean> goodParameters = getGoodThisParameters();
+    return index < goodParameters.size() && goodParameters.get(index);
+  }
+
+  public void setGoodThisParameters(List<Boolean> goodThisParameters) {
 
   }
 

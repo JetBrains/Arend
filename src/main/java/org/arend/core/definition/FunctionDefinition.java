@@ -10,6 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.TCReferable;
 
+import java.util.Collections;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Function {
@@ -19,6 +20,7 @@ public class FunctionDefinition extends Definition implements Function {
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
   private boolean myLemma;
+  private List<Boolean> myGoodThisParameters = Collections.emptyList();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -79,6 +81,16 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public void setParametersTypecheckingOrder(List<Integer> order) {
     myParametersTypecheckingOrder = order;
+  }
+
+  @Override
+  public List<Boolean> getGoodThisParameters() {
+    return myGoodThisParameters;
+  }
+
+  @Override
+  public void setGoodThisParameters(List<Boolean> goodThisParameters) {
+    myGoodThisParameters = goodThisParameters;
   }
 
   @Override

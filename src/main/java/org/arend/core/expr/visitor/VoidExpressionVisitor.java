@@ -3,10 +3,9 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.util.Pair;
 
 import java.util.Map;
 
@@ -57,7 +56,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     return null;
   }
 
-  private void visitParameters(DependentLink link, P params) {
+  public void visitParameters(DependentLink link, P params) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);
       link.getTypeExpr().accept(this, params);
@@ -135,6 +134,27 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         visitElimTree(entry.getValue(), params);
       }
+    }
+  }
+
+  public void visitBody(Body body, P params) {
+    ElimTree elimTree = null;
+    if (body instanceof IntervalElim) {
+      for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
+        if (pair.proj1 != null) {
+          pair.proj1.accept(this, params);
+        }
+        if (pair.proj2 != null) {
+          pair.proj2.accept(this, params);
+        }
+      }
+      elimTree = ((IntervalElim) body).getOtherwise();
+    } else if (body instanceof ElimTree) {
+      elimTree = (ElimTree) body;
+    }
+
+    if (elimTree != null) {
+      visitElimTree(elimTree, params);
     }
   }
 

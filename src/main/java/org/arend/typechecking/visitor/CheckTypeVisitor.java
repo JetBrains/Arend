@@ -655,15 +655,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return tResultToResult(expectedType, result, expr);
   }
 
-  public Result checkArgument(Concrete.Expression expr, ExpectedType expectedType, boolean allowThis) {
-    return expr instanceof Concrete.ThisExpression && allowThis
+  public Result checkArgument(Concrete.Expression expr, ExpectedType expectedType, TResult result) {
+    return expr instanceof Concrete.ThisExpression && result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size())
       ? tResultToResult(expectedType, getLocalVar(((Concrete.ThisExpression) expr).getReferent(), expr), expr)
       : checkExpr(expr, expectedType);
   }
 
   @Override
   public Result visitThis(Concrete.ThisExpression expr, ExpectedType expectedType) {
-    myErrorReporter.report(new TypecheckingError("\\this expressions are allowed only in arguments of definitions and class extensions", expr));
+    myErrorReporter.report(new TypecheckingError("\\this expressions are allowed only in appropriate arguments of definitions and class extensions", expr));
     return null;
   }
 
@@ -1427,7 +1427,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           classFieldMap.put(field, statement);
         }
       } else if (definition instanceof ClassDefinition) {
-        Result result = checkArgument(statement.implementation, null, true);
+        Result result = checkExpr(statement.implementation, null);
         if (result != null) {
           Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
           ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
@@ -1581,7 +1581,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
     }
 
-    CheckTypeVisitor.Result result = checkArgument(implBody, type, true);
+    CheckTypeVisitor.Result result = checkArgument(implBody, type, null);
     return result != null ? result.expression : new ErrorExpression(null, null);
   }
 

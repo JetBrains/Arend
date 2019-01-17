@@ -13,6 +13,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
+import org.arend.core.expr.visitor.GoodThisParametersVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.pattern.Patterns;
@@ -608,9 +609,33 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return null;
   }
 
+  private void calculateGoodThisParameters(Constructor definition) {
+    if (definition.getPatterns() != null) {
+      return;
+    }
+
+    GoodThisParametersVisitor visitor = new GoodThisParametersVisitor(definition.getParameters());
+    visitor.visitBody(definition.getBody(), null);
+    definition.setGoodThisParameters(visitor.getGoodParameters());
+  }
+
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
     Integer resultTypeLevel = expectedType == null ? null : typecheckResultTypeLevel(def, typedDef, newDef);
+
+    GoodThisParametersVisitor goodThisParametersVisitor;
+    if (newDef) {
+      goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
+      if (expectedType != null) {
+        expectedType.accept(goodThisParametersVisitor, null);
+      }
+      if (typedDef.getResultTypeLevel() != null) {
+        typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
+      }
+      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+    } else {
+      goodThisParametersVisitor = null;
+    }
 
     List<Clause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
@@ -737,8 +762,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
-    if (newDef && (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody()))) {
-      typedDef.setHasUniverses(true);
+    if (newDef) {
+      if (expectedType == null && typedDef.getResultType() != null) {
+        typedDef.getResultType().accept(goodThisParametersVisitor, null);
+      }
+      if (typedDef.getResultType() == null) {
+        typedDef.setResultType(new ErrorExpression(null, null));
+      }
+      goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
+      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
+        typedDef.setHasUniverses(true);
+      }
     }
 
     return clauses;
@@ -790,6 +825,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (newDef) {
       dataDefinition.getConstructors().clear();
     }
+    GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(dataDefinition.getParameters());
+    dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
 
     Sort userSort = dataDefinition.getSort();
     Sort inferredSort = Sort.PROP;
@@ -1028,6 +1065,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
+    if (newDef) {
+      boolean ok = true;
+      for (Constructor constructor : dataDefinition.getConstructors()) {
+        if (constructor.getPatterns() != null) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) {
+        for (Constructor constructor : dataDefinition.getConstructors()) {
+          goodThisParametersVisitor.visitParameters(constructor.getParameters(), null);
+          goodThisParametersVisitor.visitBody(constructor.getBody(), null);
+        }
+        dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      } else {
+        dataDefinition.setGoodThisParameters(Collections.emptyList());
+      }
+    }
+
     return countingErrorReporter.getErrorsNumber() == 0;
   }
 
@@ -1185,6 +1242,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (constructor != null) {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       calculateParametersTypecheckingOrder(constructor);
+      calculateGoodThisParameters(constructor);
     }
     return sort;
   }
@@ -1755,8 +1813,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       return;
     }
 
-    if (newDef && (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType))) {
-      typedDef.setHasUniverses(true);
+    if (newDef) {
+      GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
+      goodThisParametersVisitor.visitClassCall(typecheckedResultType, null);
+      if (typedDef.getResultTypeLevel() != null) {
+        typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
+      }
+      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+
+      if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType)) {
+        typedDef.setHasUniverses(true);
+      }
     }
 
     ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();

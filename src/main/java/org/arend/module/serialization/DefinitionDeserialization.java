@@ -183,6 +183,10 @@ public class DefinitionDeserialization {
     if (!parametersTypecheckingOrder.isEmpty()) {
       dataDef.setParametersTypecheckingOrder(parametersTypecheckingOrder);
     }
+    List<Boolean> goodThisParameters = dataProto.getGoodThisParametersList();
+    if (!goodThisParameters.isEmpty()) {
+      dataDef.setGoodThisParameters(goodThisParameters);
+    }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
 
@@ -202,6 +206,10 @@ public class DefinitionDeserialization {
       List<Integer> constructorParametersTypecheckingOrder = constructorProto.getParametersTypecheckingOrderList();
       if (!parametersTypecheckingOrder.isEmpty()) {
         constructor.setParametersTypecheckingOrder(constructorParametersTypecheckingOrder);
+      }
+      List<Boolean> cGoodThisParameters = constructorProto.getGoodThisParametersList();
+      if (!cGoodThisParameters.isEmpty()) {
+        constructor.setGoodThisParameters(cGoodThisParameters);
       }
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
@@ -319,6 +327,10 @@ public class DefinitionDeserialization {
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
     if (!parametersTypecheckingOrder.isEmpty()) {
       functionDef.setParametersTypecheckingOrder(parametersTypecheckingOrder);
+    }
+    List<Boolean> goodThisParameters = functionProto.getGoodThisParametersList();
+    if (!goodThisParameters.isEmpty()) {
+      functionDef.setGoodThisParameters(goodThisParameters);
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

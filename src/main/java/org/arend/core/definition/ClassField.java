@@ -9,6 +9,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.naming.reference.TCFieldReferable;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ClassField extends Definition {
@@ -60,6 +61,16 @@ public class ClassField extends Definition {
 
   public void setIsProperty() {
     myProperty = true;
+  }
+
+  @Override
+  public List<Boolean> getGoodThisParameters() {
+    return Collections.singletonList(true);
+  }
+
+  @Override
+  public DependentLink getParameters() {
+    return myType.getParameters();
   }
 
   @Override
