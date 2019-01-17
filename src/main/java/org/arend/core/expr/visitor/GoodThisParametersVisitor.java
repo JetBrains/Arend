@@ -65,8 +65,14 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitConCall(ConCallExpression expr, Void params) {
-    visitArguments(expr.getDataTypeArguments(), expr.getDefinition().getDataType().getGoodThisParameters());
-    visitArguments(expr.getDefCallArguments(), expr.getDefinition().getGoodThisParameters());
+    if (expr.getDefinition().getPatterns() == null) {
+      visitArguments(expr.getDataTypeArguments(), expr.getDefinition().getDataType().getGoodThisParameters());
+      visitArguments(expr.getDefCallArguments(), expr.getDefinition().getGoodThisParameters());
+    } else {
+      List<Expression> args = new ArrayList<>(expr.getDataTypeArguments());
+      args.addAll(expr.getDefCallArguments());
+      visitArguments(args, expr.getDefinition().getDataType().getGoodThisParameters());
+    }
     return null;
   }
 }

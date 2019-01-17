@@ -157,7 +157,7 @@ public class Constructor extends Definition implements Function {
   @Override
   public boolean isGoodParameter(int index) {
     if (myPatterns != null) {
-      return false;
+      return super.isGoodParameter(index);
     }
 
     int dataTypeParams = DependentLink.Helper.size(myDataType.getParameters());

@@ -34,7 +34,7 @@ public class ThisTest extends TypeCheckingTestCase {
       "    | zero => con1\n" +
       "    | suc n => con2 (D n)\n" +
       "}\n" +
-      "\\record S \\extends R | g : R.D");
+      "\\record S \\extends R | g : R.D 0");
   }
 
   @Test

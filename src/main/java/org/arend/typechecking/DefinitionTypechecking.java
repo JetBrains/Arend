@@ -610,11 +610,13 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private void calculateGoodThisParameters(Constructor definition) {
-    if (definition.getPatterns() != null) {
-      return;
+    GoodThisParametersVisitor visitor;
+    if (definition.getPatterns() == null) {
+      visitor = new GoodThisParametersVisitor(definition.getParameters());
+    } else {
+      visitor = new GoodThisParametersVisitor(definition.getPatterns().getFirstBinding());
+      visitor.visitParameters(definition.getParameters(), null);
     }
-
-    GoodThisParametersVisitor visitor = new GoodThisParametersVisitor(definition.getParameters());
     visitor.visitBody(definition.getBody(), null);
     definition.setGoodThisParameters(visitor.getGoodParameters());
   }
@@ -1066,23 +1068,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     if (newDef) {
-      boolean ok = true;
       for (Constructor constructor : dataDefinition.getConstructors()) {
-        if (constructor.getPatterns() != null) {
-          ok = false;
-          break;
-        }
+        goodThisParametersVisitor.visitParameters(constructor.getParameters(), null);
+        goodThisParametersVisitor.visitBody(constructor.getBody(), null);
       }
-
-      if (ok) {
-        for (Constructor constructor : dataDefinition.getConstructors()) {
-          goodThisParametersVisitor.visitParameters(constructor.getParameters(), null);
-          goodThisParametersVisitor.visitBody(constructor.getBody(), null);
-        }
-        dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-      } else {
-        dataDefinition.setGoodThisParameters(Collections.emptyList());
-      }
+      dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
