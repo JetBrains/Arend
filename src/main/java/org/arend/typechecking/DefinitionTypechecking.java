@@ -782,7 +782,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
 
       if (elimTree != null) {
-        goodThisParametersVisitor = new GoodThisParametersVisitor(elimTree);
+        goodThisParametersVisitor = new GoodThisParametersVisitor(elimTree, DependentLink.Helper.size(typedDef.getParameters()));
       } else {
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }

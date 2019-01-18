@@ -3,6 +3,10 @@ package org.arend.classes;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 public class ThisTest extends TypeCheckingTestCase {
   @Test
   public void thisRecursive() {
@@ -63,6 +67,7 @@ public class ThisTest extends TypeCheckingTestCase {
       "  | 0 => r.x\n" +
       "  | suc n => f n (\\let r' => r \\in r')\n" +
       "\\record S \\extends R | t : X | g : f 0 \\this t = t", 1);
+    assertThat(getDefinition("f").getGoodThisParameters(), is(empty()));
   }
 
   @Test

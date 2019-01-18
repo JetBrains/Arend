@@ -33,17 +33,20 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     visitParameters(parameters, null);
   }
 
-  public GoodThisParametersVisitor(ElimTree elimTree) {
+  public GoodThisParametersVisitor(ElimTree elimTree, int numberOfParameters) {
     myGoodParameters = new ArrayList<>();
+    for (int i = 0; i < numberOfParameters; i++) {
+      myGoodParameters.add(true);
+    }
     myIndexMap = new HashMap<>();
-    checkElimTree(elimTree, 0);
+    checkElimTree(elimTree, 0, 0);
   }
 
-  private void checkElimTree(ElimTree elimTree, int skip) {
+  private void checkElimTree(ElimTree elimTree, int index, int skip) {
     for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
       if (skip == 0) {
-        myIndexMap.put(link, myGoodParameters.size());
-        myGoodParameters.add(true);
+        myIndexMap.put(link, index);
+        index++;
       } else {
         skip--;
       }
@@ -53,7 +56,8 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
       ((LeafElimTree) elimTree).getExpression().accept(this, null);
     } else {
       if (skip == 0) {
-        myGoodParameters.add(false);
+        myGoodParameters.set(index, false);
+        index++;
       } else {
         skip--;
       }
@@ -63,7 +67,7 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
           entry.getKey() instanceof BranchElimTree.TupleConstructor
             ? ((BranchElimTree.TupleConstructor) entry.getKey()).getLength()
             : DependentLink.Helper.size(entry.getKey().getParameters());
-        checkElimTree(entry.getValue(), skip + toSkip);
+        checkElimTree(entry.getValue(), index, skip + toSkip);
       }
     }
   }
