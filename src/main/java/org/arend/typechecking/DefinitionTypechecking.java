@@ -771,8 +771,23 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (typedDef.getResultType() == null) {
         typedDef.setResultType(new ErrorExpression(null, null));
       }
-      goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
+
+      ElimTree elimTree;
+      if (typedDef.getActualBody() instanceof ElimTree) {
+        elimTree = (ElimTree) typedDef.getActualBody();
+      } else if (typedDef.getActualBody() instanceof IntervalElim) {
+        elimTree = ((IntervalElim) typedDef.getActualBody()).getOtherwise();
+      } else {
+        elimTree = null;
+      }
+
+      if (elimTree != null) {
+        goodThisParametersVisitor = new GoodThisParametersVisitor(elimTree);
+      } else {
+        goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
+      }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
         typedDef.setHasUniverses(true);
       }

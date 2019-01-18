@@ -1,6 +1,10 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
@@ -27,6 +31,41 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
       myIndexMap.put(link, i);
     }
     visitParameters(parameters, null);
+  }
+
+  public GoodThisParametersVisitor(ElimTree elimTree) {
+    myGoodParameters = new ArrayList<>();
+    myIndexMap = new HashMap<>();
+    checkElimTree(elimTree, 0);
+  }
+
+  private void checkElimTree(ElimTree elimTree, int skip) {
+    for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+      if (skip == 0) {
+        myIndexMap.put(link, myGoodParameters.size());
+        myGoodParameters.add(true);
+      } else {
+        skip--;
+      }
+    }
+
+    if (elimTree instanceof LeafElimTree) {
+      ((LeafElimTree) elimTree).getExpression().accept(this, null);
+    } else {
+      if (skip == 0) {
+        myGoodParameters.add(false);
+      } else {
+        skip--;
+      }
+
+      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        if (entry.getKey() == BranchElimTree.TUPLE) {
+          // checkElimTree(entry.getValue(), skip + DependentLink.Helper.size(entry.getKey().getParameters()));
+        } else {
+          checkElimTree(entry.getValue(), skip + DependentLink.Helper.size(entry.getKey().getParameters()));
+        }
+      }
+    }
   }
 
   public List<Boolean> getGoodParameters() {
