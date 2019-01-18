@@ -95,7 +95,9 @@ public class ConstructorPattern implements Pattern {
     Map<ClassField, Expression> implementations = new HashMap<>();
     int i = 0;
     for (ClassField field : classCall.getDefinition().getFields()) {
-      implementations.put(field, arguments.get(i++));
+      if (!classCall.getDefinition().isImplemented(field)) {
+        implementations.put(field, arguments.get(i++));
+      }
     }
     return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
   }

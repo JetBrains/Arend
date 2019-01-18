@@ -180,6 +180,10 @@ public class ClassDefinition extends Definition {
 
     DependentLink first = null, last = null;
     for (ClassField field : myFields) {
+      if (isImplemented(field)) {
+        continue;
+      }
+
       PiExpression piExpr = field.getType(sortArgument);
       Expression type = piExpr.applyExpression(newExpr);
       DependentLink link = new TypedDependentLink(true, field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
