@@ -98,7 +98,7 @@ Then `test x p` evaluates to `p` if `isNeg` is not a property and does not evalu
 ## Extensions
 
 An extension `S` of a record `R` is another record which adds some fields to `R` and implements some of the fields of `R`.
-The record `R` is called a _super class_ of `S`.
+The record `R` is called a _super class_ of `S` and `S` is called a _subclass_ of `R`.
 
 ```arend
 \record S \extends R {
@@ -116,6 +116,9 @@ The record `R` is called a _super class_ of `S`.
 
 Here `d_i` has type `A_i` and `f_j` has type `B_j`.
 Expressions `a_i` and `b_i` may refer to any field of `S`, but implementations must not form a cycle.
+
+The type `S` is a subtype of `R`.
+That is, every expression of type `S` also has type `R`.
 
 A record is equivalent to the sigma type consisting of all of its not implemented fields.
 For example, consider the following records:

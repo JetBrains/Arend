@@ -128,3 +128,9 @@ Thus, the following function typechecks:
 \func f : \Type => \Type
 \func f' : \Type (\suc \lp) (\suc \lh) => \Type \lp \lh
 ```
+
+A definition is marked as _universe-like_ if it contains universes or universe-like definitions applied to either `\lp` or `\lh`.
+It is often true that the level of a definition can be equal to either `c` or `\lp + c` for some constant `c`.
+If a definition is universe-like, then the inferrence algorithm uses the latter option, and it uses the former option in the other case.
+Also, if `D` is a universe-like definition, then `D \level p h` is equivalent to `D \level p' h'` only if `p = p'` and `h = h'`.
+If `D` is not universe-like, then these expressions are always equivalent.
