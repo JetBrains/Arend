@@ -441,7 +441,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     try {
       List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
       for (Abstract.Parameter absParameter : absParameters) {
-        Concrete.Parameter parameter = buildParameter(absParameter, false);
+        Concrete.Parameter parameter = buildParameter(absParameter, true);
         if (parameter instanceof Concrete.TelescopeParameter) {
           parameters.add((Concrete.TelescopeParameter) parameter);
         } else {
