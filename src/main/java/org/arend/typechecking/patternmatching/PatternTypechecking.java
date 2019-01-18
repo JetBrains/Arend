@@ -246,7 +246,7 @@ public class PatternTypechecking {
         // Either sigma or class patterns
         if (expr.isInstance(SigmaExpression.class) || expr.isInstance(ClassCallExpression.class)) {
           DependentLink newParameters = expr.isInstance(SigmaExpression.class) ? expr.cast(SigmaExpression.class).getParameters() : expr.cast(ClassCallExpression.class).getClassFieldParameters();
-          Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(((Concrete.TuplePattern) pattern).getPatterns(), newParameters, pattern, false);
+          Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(patternArgs, newParameters, pattern, false);
           if (conResult == null) {
             return null;
           }

@@ -293,9 +293,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       } else {
         NewExpression newExpr = argument.cast(NewExpression.class);
         ClassCallExpression classCall = newExpr.getExpression();
-        List<Expression> newArgs = new ArrayList<>(classCall.getDefinition().getFields().size());
+        List<Expression> newArgs = new ArrayList<>();
         for (ClassField field : classCall.getDefinition().getFields()) {
-          newArgs.add(classCall.getImplementation(field, newExpr));
+          if (!classCall.getDefinition().isImplemented(field)) {
+            newArgs.add(classCall.getImplementation(field, newExpr));
+          }
         }
         args = newArgs;
       }

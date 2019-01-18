@@ -146,7 +146,8 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\record S (a : Nat)\n" +
       "\\func f (s : S) : Nat\n" +
       "  | 0 => 0\n" +
-      "  | suc n => n");
+      "  | suc n => n\n" +
+      "\\func g : f (\\new S 2) = 1 => path (\\lam _ => 1)");
   }
 
   @Test

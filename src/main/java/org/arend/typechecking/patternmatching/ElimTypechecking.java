@@ -547,8 +547,10 @@ public class ElimTypechecking {
                   ClassDefinition classDef = (ClassDefinition) someConPattern.getDefinition();
                   DependentLink link = conParameters;
                   for (ClassField field : classDef.getFields()) {
-                    implementations.put(field, new ReferenceExpression(link));
-                    link = link.getNext();
+                    if (!classDef.isImplemented(field)) {
+                      implementations.put(field, new ReferenceExpression(link));
+                      link = link.getNext();
+                    }
                   }
                   substExpr = new NewExpression(new ClassCallExpression(classDef, someConPattern.getSortArgument(), implementations, Sort.PROP, false));
                 } else {

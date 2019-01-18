@@ -64,7 +64,9 @@ public class BranchElimTree extends ElimTree {
           NewExpression newExpr = argument.cast(NewExpression.class);
           ClassCallExpression classCall = newExpr.getExpression();
           for (ClassField field : classCall.getDefinition().getFields()) {
-            newArguments.add(classCall.getImplementation(field, newExpr));
+            if (classCall.getDefinition().isImplemented(field)) {
+              newArguments.add(classCall.getImplementation(field, newExpr));
+            }
           }
         }
         newArguments.addAll(arguments.subList(index + 1, arguments.size()));

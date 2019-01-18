@@ -343,7 +343,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       } else {
         variable = null;
       }
-      if (variable == null || dataCall1 != null && args.size() > dataCall1.getDefCallArguments().size() || classCall1 != null && args.size() > classCall1.getDefinition().getFields().size()) {
+      if (variable == null || dataCall1 != null && args.size() > dataCall1.getDefCallArguments().size() || classCall1 != null && args.size() > classCall1.getDefinition().getNumberOfNotImplementedFields()) {
         return null;
       }
       Collections.reverse(args);

@@ -1666,16 +1666,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public boolean checkAllImplemented(ClassCallExpression classCall, Set<ClassField> pseudoImplemented, Concrete.SourceNode sourceNode) {
-    int notImplemented = classCall.getDefinition().getFields().size() - classCall.getDefinition().getImplemented().size() - classCall.getImplementedHere().size();
+    int notImplemented = classCall.getDefinition().getNumberOfNotImplementedFields() - classCall.getImplementedHere().size();
     if (notImplemented == 0) {
       return true;
     } else {
       List<GlobalReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
-        if (!classCall.isImplemented(field)) {
-          if (!pseudoImplemented.contains(field)) {
-            fields.add(field.getReferable());
-          }
+        if (!classCall.isImplemented(field) && !pseudoImplemented.contains(field)) {
+          fields.add(field.getReferable());
         }
       }
       if (!fields.isEmpty()) {

@@ -79,7 +79,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   public boolean isUnit() {
-    return myImplementations.size() + getDefinition().getImplemented().size() == getDefinition().getFields().size();
+    return myImplementations.size() == getDefinition().getNumberOfNotImplementedFields();
   }
 
   public DependentLink getClassFieldParameters() {

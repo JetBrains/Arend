@@ -135,6 +135,10 @@ public class ClassDefinition extends Definition {
     return myPersonalFields;
   }
 
+  public int getNumberOfNotImplementedFields() {
+    return myFields.size() - myImplemented.size();
+  }
+
   public void addField(ClassField field) {
     myFields.add(field);
   }

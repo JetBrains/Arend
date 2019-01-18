@@ -1,7 +1,6 @@
 package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
@@ -70,15 +69,11 @@ public class ConstructorPattern implements Pattern {
   }
 
   public int getLength() {
-    if (myExpression instanceof ConCallExpression) {
-      return DependentLink.Helper.size(((ConCallExpression) myExpression).getDefinition().getParameters());
-    }
-    if (myExpression instanceof SigmaExpression) {
-      return DependentLink.Helper.size(((SigmaExpression) myExpression).getParameters());
-    }
-
-    ClassDefinition classDef = ((ClassCallExpression) myExpression).getDefinition();
-    return classDef.getFields().size() - classDef.getImplementedFields().size();
+    return myExpression instanceof ConCallExpression
+      ? DependentLink.Helper.size(((ConCallExpression) myExpression).getDefinition().getParameters())
+      : myExpression instanceof SigmaExpression
+        ? DependentLink.Helper.size(((SigmaExpression) myExpression).getParameters())
+        : ((ClassCallExpression) myExpression).getDefinition().getNumberOfNotImplementedFields();
   }
 
   public Expression toExpression(List<Expression> arguments) {
@@ -156,7 +151,9 @@ public class ConstructorPattern implements Pattern {
     }
     List<Expression> arguments = new ArrayList<>();
     for (ClassField field : ((ClassCallExpression) myExpression).getDefinition().getFields()) {
-      arguments.add(newExpr.getExpression().getImplementation(field, newExpr));
+      if (!((ClassCallExpression) myExpression).getDefinition().isImplemented(field)) {
+        arguments.add(newExpr.getExpression().getImplementation(field, newExpr));
+      }
     }
     return arguments;
   }
