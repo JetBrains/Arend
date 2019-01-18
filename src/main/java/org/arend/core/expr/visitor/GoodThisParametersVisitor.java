@@ -59,11 +59,11 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
       }
 
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        if (entry.getKey() == BranchElimTree.TUPLE) {
-          // checkElimTree(entry.getValue(), skip + DependentLink.Helper.size(entry.getKey().getParameters()));
-        } else {
-          checkElimTree(entry.getValue(), skip + DependentLink.Helper.size(entry.getKey().getParameters()));
-        }
+        int toSkip = entry.getKey() == null ? 1 :
+          entry.getKey() instanceof BranchElimTree.TupleConstructor
+            ? ((BranchElimTree.TupleConstructor) entry.getKey()).getLength()
+            : DependentLink.Helper.size(entry.getKey().getParameters());
+        checkElimTree(entry.getValue(), skip + toSkip);
       }
     }
   }

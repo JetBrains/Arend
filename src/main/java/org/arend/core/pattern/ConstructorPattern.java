@@ -1,6 +1,7 @@
 package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
@@ -66,6 +67,18 @@ public class ConstructorPattern implements Pattern {
       : myExpression instanceof SigmaExpression
         ? ((SigmaExpression) myExpression).getParameters()
         : ((ClassCallExpression) myExpression).getClassFieldParameters();
+  }
+
+  public int getLength() {
+    if (myExpression instanceof ConCallExpression) {
+      return DependentLink.Helper.size(((ConCallExpression) myExpression).getDefinition().getParameters());
+    }
+    if (myExpression instanceof SigmaExpression) {
+      return DependentLink.Helper.size(((SigmaExpression) myExpression).getParameters());
+    }
+
+    ClassDefinition classDef = ((ClassCallExpression) myExpression).getDefinition();
+    return classDef.getFields().size() - classDef.getImplementedFields().size();
   }
 
   public Expression toExpression(List<Expression> arguments) {

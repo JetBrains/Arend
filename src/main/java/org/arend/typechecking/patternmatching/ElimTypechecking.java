@@ -437,7 +437,7 @@ public class ElimTypechecking {
           constructors = new ArrayList<>(dataType.getConstructors());
         }
       } else {
-        constructors = Collections.singletonList(BranchElimTree.TUPLE);
+        constructors = Collections.singletonList(new BranchElimTree.TupleConstructor(someConPattern.getLength()));
         dataType = null;
       }
 
@@ -469,7 +469,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myLevel != null && !constructors.isEmpty() && constructors.get(0) != BranchElimTree.TUPLE) {
+      if (myLevel != null && !constructors.isEmpty() && !(constructors.get(0) instanceof BranchElimTree.TupleConstructor)) {
         //noinspection ConstantConditions
         constructors.removeIf(constructor -> numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0) > myLevel);
       }
@@ -484,7 +484,12 @@ public class ElimTypechecking {
           }
         } else {
           Definition def = ((ConstructorPattern) clauseData.patterns.get(index)).getDefinition();
-          constructorMap.computeIfAbsent(def instanceof Constructor ? (Constructor) def : BranchElimTree.TUPLE, k -> new ArrayList<>()).add(clauseData);
+          if (!(def instanceof Constructor) && !constructors.isEmpty() && constructors.get(0) instanceof BranchElimTree.TupleConstructor) {
+            def = constructors.get(0);
+          }
+          if (def instanceof Constructor) {
+            constructorMap.computeIfAbsent((Constructor) def, k -> new ArrayList<>()).add(clauseData);
+          }
         }
       }
 
@@ -535,7 +540,7 @@ public class ElimTypechecking {
               substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             } else {
-              if (constructor == BranchElimTree.TUPLE) {
+              if (constructor instanceof BranchElimTree.TupleConstructor) {
                 conParameters = someConPattern.getParameters();
                 if (someConPattern.getDefinition() instanceof ClassDefinition) {
                   Map<ClassField, Expression> implementations = new HashMap<>();

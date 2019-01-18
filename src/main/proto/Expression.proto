@@ -161,8 +161,12 @@ message ElimTree {
         Expression expr = 1;
     }
     message Branch {
+        message TupleClause {
+            int32 length = 1;
+            ElimTree elim_tree = 2;
+        }
         map<int32, ElimTree> clauses = 1;
         ElimTree null_clause = 2;
-        ElimTree tuple_clause = 3;
+        TupleClause tuple_clause = 4;
     }
 }

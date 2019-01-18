@@ -273,7 +273,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
     boolean isPatternMatching = constructor != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
-    elimTree = ((BranchElimTree) elimTree).getChild(constructor == null ? (isPatternMatching ? BranchElimTree.TUPLE : null) : constructor);
+    elimTree = constructor == null && isPatternMatching ? ((BranchElimTree) elimTree).getTupleChild() : ((BranchElimTree) elimTree).getChild(constructor);
     if (elimTree == null) {
       return null;
     }

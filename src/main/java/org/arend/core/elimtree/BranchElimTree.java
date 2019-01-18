@@ -6,20 +6,30 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
 import org.arend.prelude.Prelude;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class BranchElimTree extends ElimTree {
-  public final static Constructor TUPLE = new Constructor(null, null);
   private final Map<Constructor, ElimTree> myChildren;
+
+  public final static class TupleConstructor extends Constructor {
+    private final int myLength;
+
+    public TupleConstructor(int length) {
+      super(null, null);
+      myLength = length;
+    }
+
+    public int getLength() {
+      return myLength;
+    }
+  }
 
   public BranchElimTree(DependentLink parameters, Map<Constructor, ElimTree> children) {
     super(parameters);
     myChildren = children;
-  }
-
-  public BranchElimTree(DependentLink parameters, ElimTree child) {
-    super(parameters);
-    myChildren = Collections.singletonMap(TUPLE, child);
   }
 
   public ElimTree getChild(Constructor constructor) {
@@ -27,11 +37,16 @@ public class BranchElimTree extends ElimTree {
   }
 
   public ElimTree getTupleChild() {
-    return myChildren.get(TUPLE);
+    if (myChildren.size() == 1) {
+      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      return entry.getKey() instanceof TupleConstructor ? entry.getValue() : null;
+    } else {
+      return null;
+    }
   }
 
   public boolean isTupleTree() {
-    return myChildren.size() == 1 && myChildren.keySet().iterator().next() == TUPLE;
+    return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof TupleConstructor;
   }
 
   public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
@@ -42,20 +57,17 @@ public class BranchElimTree extends ElimTree {
     List<Expression> newArguments = null;
     if (isTupleTree()) {
       if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        ElimTree elimTree = myChildren.get(TUPLE);
-        if (elimTree != null) {
-          newArguments = new ArrayList<>();
-          if (argument.isInstance(TupleExpression.class)) {
-            newArguments.addAll(argument.cast(TupleExpression.class).getFields());
-          } else {
-            NewExpression newExpr = argument.cast(NewExpression.class);
-            ClassCallExpression classCall = newExpr.getExpression();
-            for (ClassField field : classCall.getDefinition().getFields()) {
-              newArguments.add(classCall.getImplementation(field, newExpr));
-            }
+        newArguments = new ArrayList<>();
+        if (argument.isInstance(TupleExpression.class)) {
+          newArguments.addAll(argument.cast(TupleExpression.class).getFields());
+        } else {
+          NewExpression newExpr = argument.cast(NewExpression.class);
+          ClassCallExpression classCall = newExpr.getExpression();
+          for (ClassField field : classCall.getDefinition().getFields()) {
+            newArguments.add(classCall.getImplementation(field, newExpr));
           }
-          newArguments.addAll(arguments.subList(index + 1, arguments.size()));
         }
+        newArguments.addAll(arguments.subList(index + 1, arguments.size()));
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
@@ -99,7 +111,7 @@ public class BranchElimTree extends ElimTree {
 
     if (isTupleTree()) {
       if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        ElimTree elimTree = myChildren.get(TUPLE);
+        ElimTree elimTree = getTupleChild();
         if (elimTree != null) {
           return elimTree.isWHNF(newArguments);
         }
@@ -139,7 +151,7 @@ public class BranchElimTree extends ElimTree {
 
     if (isTupleTree()) {
       if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        ElimTree elimTree = myChildren.get(TUPLE);
+        ElimTree elimTree = getTupleChild();
         if (elimTree != null) {
           return elimTree.getStuckExpression(newArguments, expression);
         }

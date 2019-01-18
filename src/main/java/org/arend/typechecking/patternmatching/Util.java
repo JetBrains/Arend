@@ -36,7 +36,7 @@ public class Util {
   }
 
   static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorPattern pattern) {
-    return constructor == BranchElimTree.TUPLE ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
+    return constructor instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
   }
 
   public static class TupleClauseElem implements DataClauseElem {
@@ -98,7 +98,7 @@ public class Util {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
         for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
           if (entry.getKey() != null) {
-            myStack.push(entry.getKey() == BranchElimTree.TUPLE ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
+            myStack.push(entry.getKey() instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
             walk(entry.getValue());
             myStack.pop();
           }
