@@ -1,6 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.missingClauses;
@@ -140,6 +141,7 @@ public class ProductsTest extends TypeCheckingTestCase {
       "  | (a,b) => a Nat.+ b");
   }
 
+  @Ignore
   @Test
   public void singleFieldTest() {
     typeCheckModule(

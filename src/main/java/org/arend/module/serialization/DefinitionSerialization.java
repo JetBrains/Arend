@@ -125,6 +125,10 @@ public class DefinitionSerialization {
       builder.addImplLevel(implLevelBuild.build());
     }
 
+    for (ClassField goodThisField : definition.getGoodThisFields()) {
+      builder.addGoodField(myCallTargetIndexProvider.getDefIndex(goodThisField));
+    }
+
     return builder.build();
   }
 

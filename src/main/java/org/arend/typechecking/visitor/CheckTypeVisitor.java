@@ -630,7 +630,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return ref;
     }
     LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingTypecheckable();
-    if (underlyingRef == null) {
+    if (underlyingRef == null && sourceNode != null) {
       myErrorReporter.report(new TypecheckingError("Reference to incorrect synonym '" + ref.textRepresentation() + "'", sourceNode));
     }
     return underlyingRef;
@@ -1359,7 +1359,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
-    if (definition == null) {
+    if (definition == null && sourceNode != null) {
       myErrorReporter.report(new TypecheckingError("Internal error: definition '" + referable.textRepresentation() + "' was not typechecked", sourceNode));
     }
     return definition;
@@ -1374,7 +1374,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return clazz.cast(definition);
     }
 
-    myErrorReporter.report(new WrongReferable(errorMsg, referable, sourceNode));
+    if (sourceNode != null) {
+      myErrorReporter.report(new WrongReferable(errorMsg, referable, sourceNode));
+    }
     return null;
   }
 
@@ -1581,7 +1583,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
     }
 
-    CheckTypeVisitor.Result result = checkArgument(implBody, type, null);
+    CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && field.isGood()
+      ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
+      : checkExpr(implBody, type);
     return result != null ? result.expression : new ErrorExpression(null, null);
   }
 

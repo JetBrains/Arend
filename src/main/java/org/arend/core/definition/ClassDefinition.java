@@ -23,6 +23,7 @@ public class ClassDefinition extends Definition {
   private boolean myRecord = false;
   private final CoerceData myCoerce = new CoerceData(this);
   private Map<Set<ClassField>, Level> myLevels = new HashMap<>();
+  private Set<ClassField> myGoodThisFields = Collections.emptySet();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -173,6 +174,18 @@ public class ClassDefinition extends Definition {
 
   public void removeImplementation(ClassField field) {
     myImplemented.computeIfPresent(field, (f,i) -> new LamExpression(i.getResultSort(), i.getParameters(), new ErrorExpression(null, null)));
+  }
+
+  public Set<? extends ClassField> getGoodThisFields() {
+    return myGoodThisFields;
+  }
+
+  public boolean isGoodField(ClassField field) {
+    return myGoodThisFields.contains(field);
+  }
+
+  public void setGoodThisFields(Set<ClassField> goodThisParameters) {
+    myGoodThisFields = goodThisParameters;
   }
 
   public DependentLink getClassFieldParameters(Sort sortArgument) {

@@ -1558,8 +1558,20 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           break;
         }
       }
+
+      GoodThisParametersVisitor visitor = new GoodThisParametersVisitor(typedDef.getPersonalFields());
+      for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
+        ClassField field = myVisitor.referableToClassField(implementation.getImplementedField(), null);
+        if (field != null) {
+          LamExpression impl = typedDef.getImplementation(field);
+          if (impl != null) {
+            impl.getBody().accept(visitor, null);
+          }
+        }
+      }
+      typedDef.setGoodThisFields(visitor.getGoodFields());
     }
-}
+  }
 
   private void addName(Map<String, Referable> names, TCReferable data) {
     Referable prev = names.putIfAbsent(data.textRepresentation(), data);

@@ -1,22 +1,23 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
-import org.arend.core.expr.ConCallExpression;
-import org.arend.core.expr.DefCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.*;
+import org.arend.core.sort.Sort;
 
 import java.util.*;
 
 public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   private final List<Boolean> myGoodParameters;
   private final Map<DependentLink, Integer> myIndexMap;
+  private final Set<ClassField> myGoodFields;
 
   public GoodThisParametersVisitor(DependentLink parameters) {
+    myGoodFields = Collections.emptySet();
     if (!parameters.hasNext()) {
       myGoodParameters = new ArrayList<>(0);
       myIndexMap = Collections.emptyMap();
@@ -34,12 +35,23 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   }
 
   public GoodThisParametersVisitor(ElimTree elimTree, int numberOfParameters) {
+    myGoodFields = Collections.emptySet();
     myGoodParameters = new ArrayList<>();
     for (int i = 0; i < numberOfParameters; i++) {
       myGoodParameters.add(true);
     }
     myIndexMap = new HashMap<>();
     checkElimTree(elimTree, 0, 0);
+  }
+
+  public GoodThisParametersVisitor(List<? extends ClassField> fields) {
+    myGoodFields = new HashSet<>(fields);
+    myGoodParameters = new ArrayList<>(0);
+    myIndexMap = Collections.emptyMap();
+
+    for (ClassField field : fields) {
+      field.getType(Sort.STD).getCodomain().accept(this, null);
+    }
   }
 
   private void checkElimTree(ElimTree elimTree, int index, int skip) {
@@ -81,6 +93,10 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     return Collections.emptyList();
   }
 
+  public Set<ClassField> getGoodFields() {
+    return myGoodFields;
+  }
+
   @Override
   public Void visitReference(ReferenceExpression expr, Void params) {
     if (expr.getBinding() instanceof DependentLink) {
@@ -94,7 +110,9 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
   private void visitArguments(List<? extends Expression> args, List<Boolean> goodParameters) {
     for (int i = 0; i < args.size(); i++) {
-      if (!(args.get(i) instanceof ReferenceExpression && i < goodParameters.size() && goodParameters.get(i))) {
+      if (args.get(i) instanceof FieldCallExpression && i < goodParameters.size() && goodParameters.get(i)) {
+        visitDefCall((FieldCallExpression) args.get(i), null);
+      } else if (!(args.get(i) instanceof ReferenceExpression && i < goodParameters.size() && goodParameters.get(i))) {
         args.get(i).accept(this, null);
       }
     }
@@ -114,8 +132,29 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     } else {
       List<Expression> args = new ArrayList<>(expr.getDataTypeArguments());
       args.addAll(expr.getDefCallArguments());
-      visitArguments(args, expr.getDefinition().getDataType().getGoodThisParameters());
+      visitArguments(args, expr.getDefinition().getGoodThisParameters());
     }
     return null;
+  }
+
+  @Override
+  public Void visitClassCall(ClassCallExpression expr, Void params) {
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      if (entry.getValue() instanceof FieldCallExpression && entry.getKey().isGood()) {
+        visitDefCall((FieldCallExpression) entry.getValue(), null);
+      } else if (!(entry.getValue() instanceof ReferenceExpression && entry.getKey().isGood())) {
+        entry.getValue().accept(this, null);
+      }
+      entry.getValue().accept(this, params);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitFieldCall(FieldCallExpression expr, Void params) {
+    if (!myGoodFields.isEmpty()) {
+      myGoodFields.remove(expr.getDefinition());
+    }
+    return super.visitFieldCall(expr, params);
   }
 }

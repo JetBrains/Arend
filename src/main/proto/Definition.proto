@@ -54,6 +54,7 @@ message Definition {
         bool is_record = 13;
         CoerceData coerce_data = 14;
         repeated ImplLevel impl_level = 15;
+        repeated int32 good_field = 16;
 
         message Field {
             Referable referable = 1;

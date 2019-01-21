@@ -175,6 +175,15 @@ public class DefinitionDeserialization {
       }
       classDef.setLevels(levels);
     }
+
+    List<Integer> goodFieldIndices = classProto.getGoodFieldList();
+    if (!goodFieldIndices.isEmpty()) {
+      Set<ClassField> goodFields = new HashSet<>();
+      for (Integer goodFieldIndex : goodFieldIndices) {
+        goodFields.add(myCallTargetProvider.getCallTarget(goodFieldIndex, ClassField.class));
+      }
+      classDef.setGoodThisFields(goodFields);
+    }
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {

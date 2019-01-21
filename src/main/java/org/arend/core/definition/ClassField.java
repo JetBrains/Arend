@@ -63,6 +63,10 @@ public class ClassField extends Definition {
     myProperty = true;
   }
 
+  public boolean isGood() {
+    return myParentClass.isGoodField(this);
+  }
+
   @Override
   public List<Boolean> getGoodThisParameters() {
     return Collections.singletonList(true);
