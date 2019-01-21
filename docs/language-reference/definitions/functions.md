@@ -194,9 +194,8 @@ If the result type of a function is a [record](/language-reference/definitions/r
 ```
 
 where `c_1`, ... `c_k` are _coclauses_.
-See [this section](/language-reference/definitions/instances) for a definition of coclauses.
-Such a function has the same semantics as a definition of an instance as described there.
-It also can be equivalently written as follows:
+A coclause is a pair consisting of a field `g` of `C` and an expression `e` written `g => e`.
+Such a function has the same semantics as a definition of an instance, that is it is equivalent to the following definition:
 
 ```arend
 \func f (x_1 : A_1) ... (x_n : A_n) => \new C {

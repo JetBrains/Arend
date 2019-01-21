@@ -18,12 +18,11 @@ pages:
         - Definitions: language-reference/definitions.md
         - Modules: language-reference/definitions/modules.md
         - Parameters: language-reference/definitions/parameters.md
-        - Function Definitions: language-reference/definitions/functions.md
-        - Data Definitions: language-reference/definitions/data.md
+        - Functions: language-reference/definitions/functions.md
+        - Data: language-reference/definitions/data.md
         - Higher Inductive Types: language-reference/definitions/hits.md
         - Records: language-reference/definitions/records.md
         - Classes: language-reference/definitions/classes.md
-        - Instances: language-reference/definitions/instances.md
         - Coercion: language-reference/definitions/coercion.md
         - Level: language-reference/definitions/level.md
         - Expressions: language-reference/expressions.md

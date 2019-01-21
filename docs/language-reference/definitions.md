@@ -1,6 +1,6 @@
 <h1 id="definitions">Definitions<a class="headerlink" href="#definitions" title="Permanent link">&para;</a></h1>
 
-Arend has the following definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/instances), and [coercions](/language-reference/definitions/coercion).
+Arend has the following definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/classes), and [coercions](/language-reference/definitions/coercion).
 Every definition has a name which must be a valid identifier as described [here](/language-reference/lexical-structure/#identifiers).
 Definitions can be referred by their names.
 If we defined a definition named `def`, then we can write the following expression: `def e_1 ... e_n`, where `e_1`, ..., `e_n` are expressions.
