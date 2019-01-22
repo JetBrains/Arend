@@ -115,23 +115,25 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             classRef = classDef.getReferable();
           }
 
-          // If the class does not have a classifying field, infer instance immediately
-          if (classDef.getClassifyingField() == null) {
-            Expression instance = myVisitor.getInstancePool().getInstance(null, classRef, fieldRef, myVisitor.getEquations(), expr);
-            if (instance == null) {
-              ArgInferenceError error = new InstanceInferenceError(classRef, expr, new Expression[0]);
-              myVisitor.getErrorReporter().report(error);
-              instance = new ErrorExpression(null, error);
+          if (defCallResult.getDefinition().isTypeClassParameter(i)) {
+            // If the class does not have a classifying field, infer instance immediately
+            if (classDef.getClassifyingField() == null) {
+              Expression instance = myVisitor.getInstancePool().getInstance(null, classRef, fieldRef, myVisitor.getEquations(), expr);
+              if (instance == null) {
+                ArgInferenceError error = new InstanceInferenceError(classRef, expr, new Expression[0]);
+                myVisitor.getErrorReporter().report(error);
+                instance = new ErrorExpression(null, error);
+              }
+              result = result.applyExpression(instance, myVisitor.getErrorReporter(), expr);
+              substitution.add(parameter, instance);
+              i++;
+              continue;
             }
-            result = result.applyExpression(instance, myVisitor.getErrorReporter(), expr);
-            substitution.add(parameter, instance);
-            i++;
-            continue;
-          }
 
-          // Otherwise, generate type class inference variable
-          if (classRef != null) {
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, fieldRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
+            // Otherwise, generate type class inference variable
+            if (classRef != null) {
+              infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, fieldRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
+            }
           }
         }
       }

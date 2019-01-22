@@ -67,9 +67,28 @@ public class ClassField extends Definition {
     return myParentClass.isGoodField(this);
   }
 
+  public boolean isTypeClass() {
+    return myParentClass.isTypeClassField(this);
+  }
+
   @Override
   public List<Boolean> getGoodThisParameters() {
     return Collections.singletonList(true);
+  }
+
+  @Override
+  public boolean isGoodParameter(int index) {
+    return index == 0;
+  }
+
+  @Override
+  public List<Boolean> getTypeClassParameters() {
+    return myParentClass.isRecord() ? Collections.emptyList() : Collections.singletonList(true);
+  }
+
+  @Override
+  public boolean isTypeClassParameter(int index) {
+    return index == 0 && !myParentClass.isRecord();
   }
 
   @Override

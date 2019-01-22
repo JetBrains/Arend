@@ -129,6 +129,10 @@ public class DefinitionSerialization {
       builder.addGoodField(myCallTargetIndexProvider.getDefIndex(goodThisField));
     }
 
+    for (ClassField typeClassField : definition.getTypeClassFields()) {
+      builder.addTypeClassField(myCallTargetIndexProvider.getDefIndex(typeClassField));
+    }
+
     return builder.build();
   }
 
@@ -140,6 +144,7 @@ public class DefinitionSerialization {
       builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
     }
     builder.addAllGoodThisParameters(definition.getGoodThisParameters());
+    builder.addAllTypeClassParameters(definition.getTypeClassParameters());
     if (definition.status().headerIsOK()) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
     }
@@ -160,6 +165,7 @@ public class DefinitionSerialization {
         cBuilder.addAllParametersTypecheckingOrder(constructor.getParametersTypecheckingOrder());
       }
       cBuilder.addAllGoodThisParameters(constructor.getGoodThisParameters());
+      cBuilder.addAllTypeClassParameters(constructor.getTypeClassParameters());
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
@@ -241,6 +247,7 @@ public class DefinitionSerialization {
         builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
       }
       builder.addAllGoodThisParameters(definition.getGoodThisParameters());
+      builder.addAllTypeClassParameters(definition.getTypeClassParameters());
     }
     if (definition.getResultType() != null) {
       builder.setType(defSerializer.writeExpr(definition.getResultType()));

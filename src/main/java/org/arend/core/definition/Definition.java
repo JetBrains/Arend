@@ -62,6 +62,19 @@ public abstract class Definition implements Variable {
 
   }
 
+  public List<Boolean> getTypeClassParameters() {
+    return Collections.emptyList();
+  }
+
+  public boolean isTypeClassParameter(int index) {
+    List<Boolean> typeClassParameters = getTypeClassParameters();
+    return index < typeClassParameters.size() && typeClassParameters.get(index);
+  }
+
+  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+
+  }
+
   public boolean hasUniverses() {
     return myHasUniverses;
   }

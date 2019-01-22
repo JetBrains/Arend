@@ -343,6 +343,17 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
   }
 
   @Test
+  public void nonClassWithFieldTest() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | x : X\n" +
+      "\\func f {c : (C Nat, C Nat).1} => x {c}\n" +
+      "\\func g : Nat => f\n" +
+      "  \\where \\instance ccc : C Nat | x => 1", 1);
+    assertThatErrorsAre(argInferenceError());
+    assertThatErrorsAre(not(instanceInference(getDefinition("C"))));
+  }
+
+  @Test
   public void explicitImplicitArgument() {
     typeCheckModule(
       "\\class C (X : \\Type) | f : X -> X\n" +

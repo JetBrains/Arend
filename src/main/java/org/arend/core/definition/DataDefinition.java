@@ -22,6 +22,7 @@ public class DataDefinition extends Definition {
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
+  private List<Boolean> myTypeClassParameters = Collections.emptyList();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -126,6 +127,16 @@ public class DataDefinition extends Definition {
   @Override
   public void setGoodThisParameters(List<Boolean> goodThisParameters) {
     myGoodThisParameters = goodThisParameters;
+  }
+
+  @Override
+  public List<Boolean> getTypeClassParameters() {
+    return myTypeClassParameters;
+  }
+
+  @Override
+  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+    myTypeClassParameters = typeClassParameters;
   }
 
   @Override

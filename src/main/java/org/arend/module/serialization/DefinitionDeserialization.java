@@ -184,6 +184,15 @@ public class DefinitionDeserialization {
       }
       classDef.setGoodThisFields(goodFields);
     }
+
+    List<Integer> typeClassFieldIndices = classProto.getTypeClassFieldList();
+    if (!typeClassFieldIndices.isEmpty()) {
+      Set<ClassField> typeClassFields = new HashSet<>();
+      for (Integer typeClassFieldIndex : typeClassFieldIndices) {
+        typeClassFields.add(myCallTargetProvider.getCallTarget(typeClassFieldIndex, ClassField.class));
+      }
+      classDef.setTypeClassFields(typeClassFields);
+    }
   }
 
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
@@ -195,6 +204,10 @@ public class DefinitionDeserialization {
     List<Boolean> goodThisParameters = dataProto.getGoodThisParametersList();
     if (!goodThisParameters.isEmpty()) {
       dataDef.setGoodThisParameters(goodThisParameters);
+    }
+    List<Boolean> typeClassParameters = dataProto.getTypeClassParametersList();
+    if (!typeClassParameters.isEmpty()) {
+      dataDef.setTypeClassParameters(typeClassParameters);
     }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
@@ -219,6 +232,10 @@ public class DefinitionDeserialization {
       List<Boolean> cGoodThisParameters = constructorProto.getGoodThisParametersList();
       if (!cGoodThisParameters.isEmpty()) {
         constructor.setGoodThisParameters(cGoodThisParameters);
+      }
+      List<Boolean> cTypeClassParameters = constructorProto.getTypeClassParametersList();
+      if (!cTypeClassParameters.isEmpty()) {
+        constructor.setTypeClassParameters(cTypeClassParameters);
       }
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
@@ -340,6 +357,10 @@ public class DefinitionDeserialization {
     List<Boolean> goodThisParameters = functionProto.getGoodThisParametersList();
     if (!goodThisParameters.isEmpty()) {
       functionDef.setGoodThisParameters(goodThisParameters);
+    }
+    List<Boolean> typeClassParameters = functionProto.getTypeClassParametersList();
+    if (!typeClassParameters.isEmpty()) {
+      functionDef.setTypeClassParameters(typeClassParameters);
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

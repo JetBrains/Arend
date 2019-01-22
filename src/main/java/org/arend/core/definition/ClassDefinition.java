@@ -24,6 +24,7 @@ public class ClassDefinition extends Definition {
   private final CoerceData myCoerce = new CoerceData(this);
   private Map<Set<ClassField>, Level> myLevels = new HashMap<>();
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
+  private Set<ClassField> myTypeClassParameters = Collections.emptySet();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -184,8 +185,20 @@ public class ClassDefinition extends Definition {
     return myGoodThisFields.contains(field);
   }
 
-  public void setGoodThisFields(Set<ClassField> goodThisParameters) {
-    myGoodThisFields = goodThisParameters;
+  public void setGoodThisFields(Set<ClassField> goodThisFields) {
+    myGoodThisFields = goodThisFields;
+  }
+
+  public Set<? extends ClassField> getTypeClassFields() {
+    return myTypeClassParameters;
+  }
+
+  public boolean isTypeClassField(ClassField field) {
+    return myTypeClassParameters.contains(field);
+  }
+
+  public void setTypeClassFields(Set<ClassField> typeClassFields) {
+    myTypeClassParameters = typeClassFields;
   }
 
   public DependentLink getClassFieldParameters(Sort sortArgument) {

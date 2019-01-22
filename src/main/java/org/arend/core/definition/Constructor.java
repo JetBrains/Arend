@@ -28,6 +28,7 @@ public class Constructor extends Definition implements Function {
   private int myNumberOfIntervalParameters;
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
+  private List<Boolean> myTypeClassParameters = Collections.emptyList();
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -167,6 +168,22 @@ public class Constructor extends Definition implements Function {
   @Override
   public void setGoodThisParameters(List<Boolean> goodThisParameters) {
     myGoodThisParameters = goodThisParameters;
+  }
+
+  @Override
+  public List<Boolean> getTypeClassParameters() {
+    return myTypeClassParameters;
+  }
+
+  @Override
+  public boolean isTypeClassParameter(int index) {
+    int dataTypeParams = DependentLink.Helper.size(myDataType.getParameters());
+    return index < dataTypeParams ? myPatterns == null && myDataType.isTypeClassParameter(index) : super.isTypeClassParameter(index - dataTypeParams);
+  }
+
+  @Override
+  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+    myTypeClassParameters = typeClassParameters;
   }
 
   @Override

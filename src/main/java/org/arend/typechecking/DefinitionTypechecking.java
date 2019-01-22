@@ -621,6 +621,29 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     definition.setGoodThisParameters(visitor.getGoodParameters());
   }
 
+  private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
+    List<Boolean> typeClassParameters = new ArrayList<>();
+    for (Concrete.TypeParameter parameter : (refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
+      Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(parameter.getType());
+      boolean isTypeClass = refExpr != null && refExpr.getReferent() instanceof ClassReferable;
+
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
+          typeClassParameters.add(isTypeClass);
+        }
+      } else {
+        typeClassParameters.add(isTypeClass);
+      }
+    }
+
+    for (Boolean isTypeClass : typeClassParameters) {
+      if (isTypeClass) {
+        def.setTypeClassParameters(typeClassParameters);
+        return;
+      }
+    }
+  }
+
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
     Integer resultTypeLevel = expectedType == null ? null : typecheckResultTypeLevel(def, typedDef, newDef);
@@ -787,6 +810,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      calculateTypeClassParameters(def, typedDef);
 
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
         typedDef.setHasUniverses(true);
@@ -1088,6 +1112,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         goodThisParametersVisitor.visitBody(constructor.getBody(), null);
       }
       dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      calculateTypeClassParameters(def, dataDefinition);
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
@@ -1248,6 +1273,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
       calculateParametersTypecheckingOrder(constructor);
       calculateGoodThisParameters(constructor);
+      calculateTypeClassParameters(def, constructor);
     }
     return sort;
   }
@@ -1570,6 +1596,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
       typedDef.setGoodThisFields(visitor.getGoodFields());
+
+      Set<ClassField> typeClassFields = new HashSet<>();
+      for (Concrete.ClassField cField : def.getFields()) {
+        if (cField.getData().isParameterField()) {
+          Concrete.Expression resultType = cField.getResultType();
+          if (resultType instanceof Concrete.PiExpression) {
+            resultType = ((Concrete.PiExpression) resultType).getCodomain();
+          }
+          Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(resultType);
+          if (refExpr != null && refExpr.getReferent() instanceof ClassReferable) {
+            ClassField field = myVisitor.referableToClassField(cField.getData(), null);
+            if (field != null) {
+              typeClassFields.add(field);
+            }
+          }
+        }
+      }
+      if (!typeClassFields.isEmpty()) {
+        typedDef.setTypeClassFields(typeClassFields);
+      }
     }
   }
 
@@ -1837,6 +1883,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
+      calculateTypeClassParameters(def, typedDef);
 
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType)) {
         typedDef.setHasUniverses(true);

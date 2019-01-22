@@ -21,6 +21,7 @@ public class FunctionDefinition extends Definition implements Function {
   private List<Integer> myParametersTypecheckingOrder;
   private boolean myLemma;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
+  private List<Boolean> myTypeClassParameters = Collections.emptyList();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -91,6 +92,16 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public void setGoodThisParameters(List<Boolean> goodThisParameters) {
     myGoodThisParameters = goodThisParameters;
+  }
+
+  @Override
+  public List<Boolean> getTypeClassParameters() {
+    return myTypeClassParameters;
+  }
+
+  @Override
+  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+    myTypeClassParameters = typeClassParameters;
   }
 
   @Override

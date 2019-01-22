@@ -3,7 +3,6 @@ package org.arend.term.concrete;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.naming.reference.*;
-import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.Precedence;
@@ -956,6 +955,9 @@ public final class Concrete {
   public static Collection<? extends TypeParameter> getParameters(ReferableDefinition definition) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
+    }
+    if (definition instanceof Instance) {
+      return ((Instance) definition).getParameters();
     }
     if (definition instanceof DataDefinition) {
       return ((DataDefinition) definition).getParameters();
