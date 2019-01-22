@@ -106,11 +106,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
     for (Concrete.Parameter parameter : parameters) {
       if (parameter.getExplicit()) {
-        if (parameter instanceof Concrete.TelescopeParameter) {
-          myArguments -= ((Concrete.TelescopeParameter) parameter).getReferableList().size();
-        } else {
-          myArguments--;
-        }
+        myArguments -= parameter.getNumberOfParameters();
         if (myArguments < 0) {
           return;
         }
@@ -153,6 +149,10 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
   }
 
   public ClassReferable getTypeClassReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression type) {
+    if (type == null) {
+      return null;
+    }
+
     myArguments = 0;
     return findClassReference(getTypeReference(parameters, type, true));
   }

@@ -68,25 +68,21 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (arg1.getExplicit() != arg2.getExplicit()) {
       return false;
     }
-    if (arg1 instanceof Concrete.TelescopeParameter && arg2 instanceof Concrete.TelescopeParameter) {
-      List<? extends Referable> list1 = ((Concrete.TelescopeParameter) arg1).getReferableList();
-      List<? extends Referable> list2 = ((Concrete.TelescopeParameter) arg2).getReferableList();
-      if (list1.size() != list2.size()) {
+
+    List<? extends Referable> list1 = arg1.getReferableList();
+    List<? extends Referable> list2 = arg2.getReferableList();
+    if (list1.size() != list2.size()) {
+      return false;
+    }
+    for (int i = 0; i < list1.size(); i++) {
+      if (list1.get(i) == null && list2.get(i) != null || list1.get(i) != null && list2.get(i) == null) {
         return false;
       }
-      for (int i = 0; i < list1.size(); i++) {
+      if (list1.get(i) != null) {
         mySubstitution.put(list1.get(i), list2.get(i));
       }
-      return compare(((Concrete.TelescopeParameter) arg1).getType(), ((Concrete.TelescopeParameter) arg2).getType());
     }
-    if (arg1 instanceof Concrete.TypeParameter && arg2 instanceof Concrete.TypeParameter) {
-      return compare(((Concrete.TypeParameter) arg1).getType(), ((Concrete.TypeParameter) arg2).getType());
-    }
-    if (arg1 instanceof Concrete.NameParameter && arg2 instanceof Concrete.NameParameter) {
-      mySubstitution.put(((Concrete.NameParameter) arg1).getReferable(), ((Concrete.NameParameter) arg2).getReferable());
-      return true;
-    }
-    return false;
+    return compare(arg1.getType(), arg2.getType());
   }
 
   private boolean compareParameters(List<? extends Concrete.Parameter> args1, List<? extends Concrete.Parameter> args2) {

@@ -224,7 +224,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     } else
     if (parameter instanceof Concrete.TelescopeParameter) {
       myBuilder.append(parameter.getExplicit() ? '(' : '{');
-      for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
+      for (Referable referable : parameter.getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
       }
 

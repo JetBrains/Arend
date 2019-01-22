@@ -95,14 +95,13 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingParserPiImplicit() {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
-    ParsedLocalReferable cx = ref("x");
     ParsedLocalReferable cy = ref("y");
     ParsedLocalReferable cz = ref("z");
     ParsedLocalReferable ct = ref("t");
     ParsedLocalReferable cx_ = ref("x'");
     ParsedLocalReferable cz_ = ref("z'");
     ParsedLocalReferable cw = ref("w");
-    Concrete.Expression expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cx, cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
+    Concrete.Expression expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
     SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
     SingleDependentLink x = singleParam("x", Universe(1));
     SingleDependentLink yz = singleParam(false, vars("y", "z"), Universe(1));
@@ -139,11 +138,10 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     Expression actual = Pi(A, Pi(a, Pi(D, Pi(x, Apps(Ref(D), Ref(x), Lam(singleParam("y", Ref(A)), Ref(a)))))));
 
     ParsedLocalReferable cx = ref("x");
-    ParsedLocalReferable cy = ref("y");
     ParsedLocalReferable ca = ref("a");
     ParsedLocalReferable cA = ref("A");
     ParsedLocalReferable cD = ref("D");
-    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cy, cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(ref("y")), cVar(ca)))))));
+    Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(null), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
 

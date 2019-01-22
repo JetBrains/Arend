@@ -61,6 +61,25 @@ public final class Concrete {
     public void setExplicit(boolean explicit) {
       myExplicit = explicit;
     }
+
+    @Nonnull
+    public abstract List<? extends Referable> getReferableList();
+
+    public abstract int getNumberOfParameters();
+
+    public List<String> getNames() {
+      List<? extends Referable> referableList = getReferableList();
+      List<String> names = new ArrayList<>(referableList.size());
+      for (Referable referable : referableList) {
+        names.add(referable == null ? null : referable.textRepresentation());
+      }
+      return names;
+    }
+
+    @Nullable
+    public Expression getType() {
+      return null;
+    }
   }
 
   public static class NameParameter extends Parameter {
@@ -74,6 +93,17 @@ public final class Concrete {
     @Nullable
     public Referable getReferable() {
       return myReferable;
+    }
+
+    @Override
+    @Nonnull
+    public List<? extends Referable> getReferableList() {
+      return Collections.singletonList(myReferable);
+    }
+
+    @Override
+    public int getNumberOfParameters() {
+      return 1;
     }
   }
 
@@ -89,6 +119,18 @@ public final class Concrete {
       this(type.getData(), explicit, type);
     }
 
+    @Override
+    @Nonnull
+    public List<? extends Referable> getReferableList() {
+      return Collections.singletonList(null);
+    }
+
+    @Override
+    public int getNumberOfParameters() {
+      return 1;
+    }
+
+    @Override
     @Nonnull
     public Expression getType() {
       return type;
@@ -103,17 +145,15 @@ public final class Concrete {
       myReferableList = referableList;
     }
 
+    @Override
     @Nonnull
     public List<? extends Referable> getReferableList() {
       return myReferableList;
     }
 
-    public List<String> getNames() {
-      List<String> names = new ArrayList<>(myReferableList.size());
-      for (Referable referable : myReferableList) {
-        names.add(referable == null ? null : referable.textRepresentation());
-      }
-      return names;
+    @Override
+    public int getNumberOfParameters() {
+      return myReferableList.size();
     }
   }
 

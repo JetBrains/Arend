@@ -237,7 +237,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         boolean forced = absParameter.isClassifying();
         Concrete.Parameter parameter = buildParameter(absParameter, false);
         if (parameter instanceof Concrete.TelescopeParameter) {
-          for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
+          for (Referable referable : parameter.getReferableList()) {
             if (referable instanceof TCFieldReferable) {
               if (forced) {
                 if (isForced) {

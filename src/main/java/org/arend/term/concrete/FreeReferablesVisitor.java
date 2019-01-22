@@ -39,15 +39,9 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   public TCReferable visitParameter(Concrete.Parameter parameter) {
-    if (parameter instanceof Concrete.NameParameter) {
-      Referable ref = ((Concrete.NameParameter) parameter).getReferable();
-      return ref instanceof TCReferable && myReferables.contains(ref) ? (TCReferable) ref : null;
-    }
-    if (parameter instanceof Concrete.TelescopeParameter) {
-      for (Referable ref : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-        if (ref instanceof TCReferable && myReferables.contains(ref)) {
-          return (TCReferable) ref;
-        }
+    for (Referable ref : parameter.getReferableList()) {
+      if (ref instanceof TCReferable && myReferables.contains(ref)) {
+        return (TCReferable) ref;
       }
     }
     return null;

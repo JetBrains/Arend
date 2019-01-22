@@ -232,17 +232,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Set<Referable> referables = eliminated.stream().map(Concrete.ReferenceExpression::getReferent).collect(Collectors.toSet());
     TypeClassReferenceExtractVisitor typeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(myConcreteProvider);
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        ClassReferable classRef = typeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), ((Concrete.TelescopeParameter) parameter).getType());
-        for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-          if (referable != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
-            context.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
-          }
-        }
-      } else if (parameter instanceof Concrete.NameParameter) {
-        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+      ClassReferable classRef = typeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), parameter.getType());
+      for (Referable referable : parameter.getReferableList()) {
         if (referable != null && !referable.textRepresentation().equals("_") && !referables.contains(referable)) {
-          context.add(referable);
+          context.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
         }
       }
     }

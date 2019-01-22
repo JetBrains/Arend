@@ -136,17 +136,9 @@ public class PatternTypechecking {
       DependentLink link = parameters;
       if (!elimParams.isEmpty()) {
         for (Concrete.Parameter parameter : abstractParameters) {
-          if (parameter instanceof Concrete.TelescopeParameter) {
-            for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-              if (!elimParams.contains(link)) {
-                myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
-              }
-              link = link.getNext();
-              i++;
-            }
-          } else if (parameter instanceof Concrete.NameParameter) {
+          for (Referable referable : parameter.getReferableList()) {
             if (!elimParams.contains(link)) {
-              myContext.put(((Concrete.NameParameter) parameter).getReferable(), ((BindingPattern) result.proj1.get(i)).getBinding());
+              myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
             i++;

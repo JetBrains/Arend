@@ -87,15 +87,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   void updateScope(Collection<? extends Concrete.Parameter> parameters) {
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-          if (referable != null && !referable.textRepresentation().equals("_")) {
-            myContext.add(referable);
-          }
-        }
-      } else
-      if (parameter instanceof Concrete.NameParameter) {
-        Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+      for (Referable referable : parameter.getReferableList()) {
         if (referable != null && !referable.textRepresentation().equals("_")) {
           myContext.add(referable);
         }
@@ -103,35 +95,23 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
-  private ClassReferable getTypeClassReference(Concrete.Expression type) {
-    return type == null ? null : myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);
-  }
-
   protected void visitParameter(Concrete.Parameter parameter, Void params) {
     if (parameter instanceof Concrete.TypeParameter) {
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
     }
 
-    if (parameter instanceof Concrete.TelescopeParameter) {
-      ClassReferable classRef = getTypeClassReference(((Concrete.TelescopeParameter) parameter).getType());
-      List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
-      for (int i = 0; i < referableList.size(); i++) {
-        Referable referable = referableList.get(i);
-        if (referable != null && !referable.textRepresentation().equals("_")) {
-          for (int j = 0; j < i; j++) {
-            Referable referable1 = referableList.get(j);
-            if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
-              myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
-            }
-          }
-          myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
-        }
-      }
-    } else
-    if (parameter instanceof Concrete.NameParameter) {
-      Referable referable = ((Concrete.NameParameter) parameter).getReferable();
+    ClassReferable classRef = myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), parameter.getType());
+    List<? extends Referable> referableList = parameter.getReferableList();
+    for (int i = 0; i < referableList.size(); i++) {
+      Referable referable = referableList.get(i);
       if (referable != null && !referable.textRepresentation().equals("_")) {
-        myContext.add(referable);
+        for (int j = 0; j < i; j++) {
+          Referable referable1 = referableList.get(j);
+          if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
+            myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
+          }
+        }
+        myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
       }
     }
   }
@@ -171,7 +151,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           caseArg.type = caseArg.type.accept(this, null);
         }
         if (caseArg.referable != null) {
-          ClassReferable classRef = getTypeClassReference(caseArg.type);
+          ClassReferable classRef = myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), caseArg.type);
           myContext.add(classRef == null ? caseArg.referable : new TypedRedirectingReferable(caseArg.referable, classRef));
         }
       }

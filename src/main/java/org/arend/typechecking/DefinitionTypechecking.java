@@ -244,8 +244,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         int numberOfParameters;
         boolean oldParametersOK = true;
         if (parameter instanceof Concrete.TelescopeParameter) {
-          List<? extends Referable> referableList = ((Concrete.TelescopeParameter) parameter).getReferableList();
-          List<String> names = ((Concrete.TelescopeParameter) parameter).getNames();
+          List<? extends Referable> referableList = parameter.getReferableList();
+          List<String> names = parameter.getNames();
           param = oldParameters != null ? oldParameters : parameter(parameter.getExplicit(), names, paramResult);
           numberOfParameters = names.size();
           index += numberOfParameters;
@@ -626,12 +626,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     for (Concrete.TypeParameter parameter : (refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
       Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(parameter.getType());
       boolean isTypeClass = refExpr != null && refExpr.getReferent() instanceof ClassReferable;
-
-      if (parameter instanceof Concrete.TelescopeParameter) {
-        for (Referable referable : ((Concrete.TelescopeParameter) parameter).getReferableList()) {
-          typeClassParameters.add(isTypeClass);
-        }
-      } else {
+      for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
         typeClassParameters.add(isTypeClass);
       }
     }
@@ -1347,11 +1342,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     int i = 0;
     Concrete.Parameter parameter = null;
     for (Concrete.Parameter parameter1 : parameters) {
-      if (parameter1 instanceof Concrete.TelescopeParameter) {
-        i += ((Concrete.TelescopeParameter) parameter1).getReferableList().size();
-      } else {
-        i++;
-      }
+      i += parameter1.getNumberOfParameters();
       if (i > index) {
         parameter = parameter1;
         break;
@@ -1547,8 +1538,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
         CheckTypeVisitor.Result result;
         if (lamImpl != null) {
-          Concrete.TelescopeParameter concreteParameter = (Concrete.TelescopeParameter) lamImpl.getParameters().get(0);
-          myVisitor.getContext().put(concreteParameter.getReferableList().get(0), parameter);
+          myVisitor.getContext().put(lamImpl.getParameters().get(0).getReferableList().get(0), parameter);
           myVisitor.getFreeBindings().add(parameter);
           PiExpression fieldType = field.getType(Sort.STD);
           setClassLocalInstancePool(localInstances, parameter);
@@ -1722,7 +1712,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           } else {
             codomain = new Concrete.PiExpression(piExpr.getParameters().get(1).getData(), piExpr.getParameters().subList(1, piExpr.getParameters().size()), piExpr.codomain);
           }
-          myVisitor.getContext().put(((Concrete.TelescopeParameter) piExpr.getParameters().get(0)).getReferableList().get(0), thisParam);
+          myVisitor.getContext().put(piExpr.getParameters().get(0).getReferableList().get(0), thisParam);
         } else {
           myErrorReporter.report(new TypecheckingError("Internal error: class field must have a function type", def));
           codomain = def.getResultType();
@@ -1748,8 +1738,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           SingleDependentLink link = EmptyDependentLink.getInstance();
           loop:
           for (Concrete.TypeParameter parameter : parameters) {
-            List<? extends Referable> referables = parameter instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) parameter).getReferableList() : Collections.singletonList(null);
-            for (Referable referable : referables) {
+            for (Referable referable : parameter.getReferableList()) {
               if (!link.hasNext()) {
                 if (!(resultType instanceof PiExpression)) {
                   resultType = null;

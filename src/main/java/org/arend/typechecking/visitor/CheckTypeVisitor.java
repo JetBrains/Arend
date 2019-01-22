@@ -696,9 +696,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (param instanceof Concrete.TelescopeParameter) {
-      List<? extends Referable> referableList = ((Concrete.TelescopeParameter) param).getReferableList();
-      List<String> names = ((Concrete.TelescopeParameter) param).getNames();
-      SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), names, argResult);
+      List<? extends Referable> referableList = param.getReferableList();
+      SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), param.getNames(), argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         if (referableList.get(i) != null) {
@@ -785,9 +784,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
       SingleDependentLink actualLink = null;
       Expression expectedBodyType = null;
-      int namesCount = param instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) param).getReferableList().size() : 1;
+      int namesCount = param.getNumberOfParameters();
       if (expectedType != null) {
-        Concrete.Expression paramType = ((Concrete.TypeParameter) param).getType();
+        Concrete.Expression paramType = param.getType();
         Expression argType = link.getTypeExpr();
 
         SingleDependentLink lamLink = link;
@@ -1064,9 +1063,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (result == null) return null;
 
           if (arg instanceof Concrete.TelescopeParameter) {
-            List<? extends Referable> referableList = ((Concrete.TelescopeParameter) arg).getReferableList();
-            List<String> names = ((Concrete.TelescopeParameter) arg).getNames();
-            DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), names, result);
+            List<? extends Referable> referableList = arg.getReferableList();
+            DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), arg.getNames(), result);
             list.append(link);
             int i = 0;
             for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
@@ -1713,9 +1711,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (param instanceof Concrete.NameParameter) {
       return bodyToLam(visitNameParameter((Concrete.NameParameter) param, argIndex, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
-      int namesCount = param instanceof Concrete.TelescopeParameter ? ((Concrete.TelescopeParameter) param).getReferableList().size() : 1;
       SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
-      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + namesCount), letClause);
+      return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + param.getNumberOfParameters()), letClause);
     } else {
       throw new IllegalStateException();
     }
