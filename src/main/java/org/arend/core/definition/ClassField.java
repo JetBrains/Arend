@@ -63,10 +63,6 @@ public class ClassField extends Definition {
     myProperty = true;
   }
 
-  public boolean isGood() {
-    return myParentClass.isGoodField(this);
-  }
-
   public boolean isTypeClass() {
     return myParentClass.isTypeClassField(this);
   }

@@ -118,4 +118,30 @@ public class ThisTest extends TypeCheckingTestCase {
       "\\func f (r : R) => R.x {\\let r' => r \\in r'}\n" +
       "\\record S \\extends R | t : X | g : f \\this t = t", 1);
   }
+
+  @Test
+  public void thisBadField() {
+    typeCheckModule(
+      "\\record R (X : \\Type) (x : X -> X)\n" +
+      "\\record F (r : R) | f (t : r.X) : R.x {\\let r' => r \\in r'} t = t\n" +
+      "\\record S \\extends R | t : X | g : F \\this", 1);
+  }
+
+  @Test
+  public void thisBadFieldSubclass() {
+    typeCheckModule(
+      "\\record R (X : \\Type) (x : X -> X)\n" +
+      "\\record F (r : R)\n" +
+      "\\record G \\extends F | f (t : r.X) : R.x {\\let r' => r \\in r'} t = t\n" +
+      "\\record S \\extends R | t : X | g : G \\this", 1);
+  }
+
+  @Test
+  public void thisBadFieldSuperclass() {
+    typeCheckModule(
+      "\\record R (X : \\Type) (x : X -> X)\n" +
+      "\\record F (r : R) | f (t : r.X) : R.x {\\let r' => r \\in r'} t = t\n" +
+      "\\record G \\extends F\n" +
+      "\\record S \\extends R | t : X | g : G \\this", 1);
+  }
 }

@@ -7,7 +7,6 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
-import org.arend.core.sort.Sort;
 
 import java.util.*;
 
@@ -44,14 +43,10 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     checkElimTree(elimTree, 0, 0);
   }
 
-  public GoodThisParametersVisitor(List<? extends ClassField> fields) {
-    myGoodFields = new HashSet<>(fields);
+  public GoodThisParametersVisitor(Set<ClassField> fields) {
+    myGoodFields = fields;
     myGoodParameters = new ArrayList<>(0);
     myIndexMap = Collections.emptyMap();
-
-    for (ClassField field : fields) {
-      field.getType(Sort.STD).getCodomain().accept(this, null);
-    }
   }
 
   private void checkElimTree(ElimTree elimTree, int index, int skip) {
@@ -94,7 +89,7 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   }
 
   public Set<ClassField> getGoodFields() {
-    return myGoodFields;
+    return myGoodFields.isEmpty() ? Collections.emptySet() : myGoodFields;
   }
 
   @Override
@@ -140,9 +135,9 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      if (entry.getValue() instanceof FieldCallExpression && entry.getKey().isGood()) {
+      if (entry.getValue() instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
         visitDefCall((FieldCallExpression) entry.getValue(), null);
-      } else if (!(entry.getValue() instanceof ReferenceExpression && entry.getKey().isGood())) {
+      } else if (!(entry.getValue() instanceof ReferenceExpression && expr.getDefinition().isGoodField(entry.getKey()))) {
         entry.getValue().accept(this, null);
       }
     }

@@ -1581,7 +1581,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
     }
 
-    CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && field.isGood()
+    CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
       ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
       : checkExpr(implBody, type);
     return result != null ? result.expression : new ErrorExpression(null, null);
