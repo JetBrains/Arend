@@ -145,7 +145,6 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
       } else if (!(entry.getValue() instanceof ReferenceExpression && entry.getKey().isGood())) {
         entry.getValue().accept(this, null);
       }
-      entry.getValue().accept(this, params);
     }
     return null;
   }

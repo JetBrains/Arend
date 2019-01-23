@@ -1761,6 +1761,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
+    GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(piType.getParameters());
+    piType.getCodomain().accept(goodThisParametersVisitor, null);
+    List<Boolean> goodThisParams = goodThisParametersVisitor.getGoodParameters();
+    if (goodThisParams.isEmpty() || !goodThisParams.get(0)) {
+      myErrorReporter.report(new TypecheckingError("The type of the field contains illegal \\this occurrence", def.getResultType()));
+      ok = false;
+      if (newDef) {
+        typedDef.setType(new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression(null, null)));
+      }
+    }
+
     if (!newDef) {
       return null;
     }
