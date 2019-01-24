@@ -5,9 +5,9 @@ import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.arend.typechecking.Matchers.notInScope;
 import static org.arend.typechecking.Matchers.typeMismatchError;
-import static junit.framework.TestCase.assertEquals;
 
 public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
@@ -207,7 +207,16 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
-      "\\func f => \\new T { | p => idp | q => idp | z => 0 }");
+      "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 1);
+  }
+
+  @Test
+  public void testImplementedField2() {
+    typeCheckModule(
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
+      "\\record T {z : Nat} \\extends R { | x => z }\n" +
+      "\\func f => \\new T { | z => 0 | p => idp | q => idp }");
   }
 
   @Test

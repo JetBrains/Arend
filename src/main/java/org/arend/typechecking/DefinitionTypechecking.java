@@ -1652,9 +1652,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       Set<ClassField> deps = references.computeIfAbsent(field, f -> {
         LamExpression impl = classDef.getImplementation(field);
-        Set<ClassField> result = FieldsCollector.getFields(field.getType(Sort.STD).getCodomain(), classDef.getFields());
+        PiExpression type = field.getType(Sort.STD);
+        Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
         if (impl != null) {
-          FieldsCollector.getFields(impl.getBody(), classDef.getFields(), result);
+          FieldsCollector.getFields(impl.getBody(), impl.getParameters(), classDef.getFields(), result);
           return result;
         }
         Concrete.ClassFieldImpl classFieldImpl = implementedHere.get(field);

@@ -411,4 +411,17 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | x => \\let p' => p \\in 0\n" +
       "}", 1);
   }
+
+  @Test
+  public void recursiveFunction() {
+    typeCheckModule(
+      "\\class A (X : \\Type) {\n" +
+      "  | x : X\n" +
+      "}\n" +
+      "\\func f (a : A Nat) => a.x\n" +
+      "\\class B \\extends A {\n" +
+      "  | X => Nat\n" +
+      "  | x => f \\this\n" +
+      "}", 1);
+  }
 }

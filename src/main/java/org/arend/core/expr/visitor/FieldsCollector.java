@@ -1,18 +1,19 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FieldCallExpression;
+import org.arend.core.expr.*;
+import org.arend.core.sort.Sort;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class FieldsCollector extends VoidExpressionVisitor<Void> {
+  private final DependentLink myThisParameter;
   private final Set<? extends ClassField> myFields;
   private final Set<ClassField> myResult;
 
-  private FieldsCollector(Set<? extends ClassField> fields, Set<ClassField> result) {
+  private FieldsCollector(DependentLink thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
+    myThisParameter = thisParameter;
     myFields = fields;
     myResult = result;
   }
@@ -21,20 +22,63 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
     return myResult;
   }
 
-  public static void getFields(Expression expr, Set<? extends ClassField> fields, Set<ClassField> result) {
+  public static void getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
     if (!fields.isEmpty()) {
-      expr.accept(new FieldsCollector(fields, result), null);
+      expr.accept(new FieldsCollector(thisParameter, fields, result), null);
     }
   }
 
-  public static Set<ClassField> getFields(Expression expr, Set<? extends ClassField> fields) {
+  public static Set<ClassField> getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields) {
     if (fields.isEmpty()) {
       return Collections.emptySet();
     }
 
     Set<ClassField> result = new HashSet<>();
-    getFields(expr, fields, result);
+    getFields(expr, thisParameter, fields, result);
     return result;
+  }
+
+  private void checkArgument(Expression argument, Expression type) {
+    argument.accept(this, null);
+    if (!(argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() == myThisParameter)) {
+      return;
+    }
+
+    ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
+    if (classCall == null) {
+      classCall = type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+    }
+    if (classCall != null) {
+      myResult.addAll(classCall.getDefinition().getFields());
+    }
+  }
+
+  private void checkArguments(DependentLink link, List<? extends Expression> arguments) {
+    for (Expression argument : arguments) {
+      checkArgument(argument, link.getTypeExpr());
+      link = link.getNext();
+    }
+  }
+
+  @Override
+  public Void visitDefCall(DefCallExpression expr, Void params) {
+    checkArguments(expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return null;
+  }
+
+  @Override
+  public Void visitConCall(ConCallExpression expr, Void params) {
+    checkArguments(expr.getDefinition().getDataTypeParameters(), expr.getDataTypeArguments());
+    checkArguments(expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    return null;
+  }
+
+  @Override
+  public Void visitClassCall(ClassCallExpression expr, Void params) {
+    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
+      checkArgument(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain());
+    }
+    return super.visitClassCall(expr, params);
   }
 
   @Override
@@ -42,6 +86,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
     if (myFields == null || myFields.contains(expr.getDefinition())) {
       myResult.add(expr.getDefinition());
     }
-    return super.visitFieldCall(expr, params);
+    expr.getArgument().accept(this, null);
+    return null;
   }
 }
