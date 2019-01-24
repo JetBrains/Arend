@@ -10,14 +10,21 @@ import java.util.Set;
 
 public class FieldsCollector extends VoidExpressionVisitor<Void> {
   private final Set<? extends ClassField> myFields;
-  private final Set<ClassField> myResult = new HashSet<>();
+  private final Set<ClassField> myResult;
 
-  public FieldsCollector(Set<? extends ClassField> fields) {
+  private FieldsCollector(Set<? extends ClassField> fields, Set<ClassField> result) {
     myFields = fields;
+    myResult = result;
   }
 
   public Set<ClassField> getResult() {
     return myResult;
+  }
+
+  public static void getFields(Expression expr, Set<? extends ClassField> fields, Set<ClassField> result) {
+    if (!fields.isEmpty()) {
+      expr.accept(new FieldsCollector(fields, result), null);
+    }
   }
 
   public static Set<ClassField> getFields(Expression expr, Set<? extends ClassField> fields) {
@@ -25,9 +32,9 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
       return Collections.emptySet();
     }
 
-    FieldsCollector collector = new FieldsCollector(fields);
-    expr.accept(collector, null);
-    return collector.myResult;
+    Set<ClassField> result = new HashSet<>();
+    getFields(expr, fields, result);
+    return result;
   }
 
   @Override

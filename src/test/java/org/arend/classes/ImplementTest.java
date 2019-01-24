@@ -399,4 +399,16 @@ public class ImplementTest extends TypeCheckingTestCase {
       "}\n" +
       "\\func test (b : B) : b.y = b.z => path (\\lam _ => 7)");
   }
+
+  @Test
+  public void recursiveType() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x : Nat\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | p : x = x\n" +
+      "  | x => \\let p' => p \\in 0\n" +
+      "}", 1);
+  }
 }

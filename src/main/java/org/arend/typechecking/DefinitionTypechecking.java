@@ -1502,11 +1502,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
       // Check for cycles in implementations
       DFS dfs = new DFS(typedDef, implementedHere);
-      Set<ClassField> allFields = new HashSet<>(implementedHere.keySet());
-      for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-        allFields.addAll(superClass.getFields());
-      }
-      Deque<ClassField> fieldsToCheck = new ArrayDeque<>(allFields);
+      Deque<ClassField> fieldsToCheck = new ArrayDeque<>(typedDef.getFields());
       while (!fieldsToCheck.isEmpty()) {
         ClassField field = fieldsToCheck.pop();
         List<ClassField> cycle = dfs.findCycle(field);
@@ -1516,9 +1512,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           for (ClassField dep : cycle) {
             typedDef.removeImplementation(dep);
             implementedHere.remove(dep);
-          }
-          if (allFields.add(field)) {
-            fieldsToCheck.add(field);
           }
         }
       }
@@ -1659,21 +1652,21 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       Set<ClassField> deps = references.computeIfAbsent(field, f -> {
         LamExpression impl = classDef.getImplementation(field);
+        Set<ClassField> result = FieldsCollector.getFields(field.getType(Sort.STD).getCodomain(), classDef.getFields());
         if (impl != null) {
-          return FieldsCollector.getFields(impl.getBody(), classDef.getFields());
+          FieldsCollector.getFields(impl.getBody(), classDef.getFields(), result);
+          return result;
         }
         Concrete.ClassFieldImpl classFieldImpl = implementedHere.get(field);
         if (classFieldImpl != null) {
           Set<TCReferable> refs = ReferablesCollector.getReferables(((Concrete.LamExpression) classFieldImpl.implementation).body, fieldReferables);
-          Set<ClassField> fieldDeps = new HashSet<>();
           for (ClassField classField : classDef.getFields()) {
             if (refs.contains(classField.getReferable())) {
-              fieldDeps.add(classField);
+              result.add(classField);
             }
           }
-          return fieldDeps;
         }
-        return Collections.emptySet();
+        return result;
       });
 
       for (ClassField dep : deps) {
