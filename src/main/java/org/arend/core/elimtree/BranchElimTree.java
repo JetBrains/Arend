@@ -1,7 +1,6 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
 import org.arend.prelude.Prelude;
@@ -57,17 +56,10 @@ public class BranchElimTree extends ElimTree {
     List<Expression> newArguments = null;
     if (isTupleTree()) {
       if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        newArguments = new ArrayList<>();
         if (argument.isInstance(TupleExpression.class)) {
-          newArguments.addAll(argument.cast(TupleExpression.class).getFields());
+          newArguments = new ArrayList<>(argument.cast(TupleExpression.class).getFields());
         } else {
-          NewExpression newExpr = argument.cast(NewExpression.class);
-          ClassCallExpression classCall = newExpr.getExpression();
-          for (ClassField field : classCall.getDefinition().getFields()) {
-            if (classCall.getDefinition().isImplemented(field)) {
-              newArguments.add(classCall.getImplementation(field, newExpr));
-            }
-          }
+          newArguments = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
         }
         newArguments.addAll(arguments.subList(index + 1, arguments.size()));
       }

@@ -291,15 +291,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       } else if (argument.isInstance(TupleExpression.class)) {
         args = argument.cast(TupleExpression.class).getFields();
       } else {
-        NewExpression newExpr = argument.cast(NewExpression.class);
-        ClassCallExpression classCall = newExpr.getExpression();
-        List<Expression> newArgs = new ArrayList<>();
-        for (ClassField field : classCall.getDefinition().getFields()) {
-          if (!classCall.getDefinition().isImplemented(field)) {
-            newArgs.add(classCall.getImplementation(field, newExpr));
-          }
-        }
-        args = newArgs;
+        args = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
       }
 
       for (int i = args.size() - 1; i >= 0; i--) {

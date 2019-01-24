@@ -14,7 +14,9 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
@@ -63,6 +65,17 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public Expression getImplementationHere(ClassField field) {
     return myImplementations.get(field);
+  }
+
+  public List<Expression> getImplementedHereList() {
+    List<Expression> result = new ArrayList<>();
+    for (ClassField field : getDefinition().getFields()) {
+      Expression impl = myImplementations.get(field);
+      if (impl != null) {
+        result.add(impl);
+      }
+    }
+    return result;
   }
 
   public Expression getImplementation(ClassField field, Expression thisExpr) {
