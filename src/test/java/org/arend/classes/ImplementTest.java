@@ -15,6 +15,7 @@ import java.util.List;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.arend.ExpressionFactory.fromPiParameters;
+import static org.arend.typechecking.Matchers.cycle;
 import static org.junit.Assert.assertEquals;
 
 public class ImplementTest extends TypeCheckingTestCase {
@@ -320,6 +321,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\class B \\extends A {\n" +
       "  | y => y\n" +
       "}", 1);
+    assertThatErrorsAre(cycle(get("y")));
   }
 
   @Test
@@ -349,6 +351,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\class C \\extends B {\n" +
       "  | z => y\n" +
       "}", 1);
+    assertThatErrorsAre(cycle(get("z"), get("y")));
   }
 
   @Test
@@ -366,6 +369,27 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | z => y\n" +
       "}\n" +
       "\\class D \\extends B, C", 1);
+    assertThatErrorsAre(cycle(get("z"), get("y")));
+  }
+
+  @Test
+  public void recursiveMutual3() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | x1 : Nat\n" +
+      "  | x2 : Nat\n" +
+      "  | x3 : Nat\n" +
+      "  | x4 : Nat\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  | x1 => x2\n" +
+      "  | x2 => x3\n" +
+      "  | x3 => x4\n" +
+      "}\n" +
+      "\\class C \\extends B {\n" +
+      "  | x4 => x1\n" +
+      "}", 1);
+    assertThatErrorsAre(cycle(get("x4"), get("x1"), get("x2"), get("x3")));
   }
 
   @Test
@@ -383,6 +407,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | y => x\n" +
       "}\n" +
       "\\class D \\extends B, C", 1);
+    assertThatErrorsAre(cycle(get("y"), get("x")));
   }
 
   @Test
@@ -410,6 +435,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | p : x = x\n" +
       "  | x => \\let p' => p \\in 0\n" +
       "}", 1);
+    assertThatErrorsAre(cycle(get("x"), get("p")));
   }
 
   @Test
@@ -423,5 +449,6 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | X => Nat\n" +
       "  | x => f \\this\n" +
       "}", 1);
+    assertThatErrorsAre(cycle(get("x")));
   }
 }

@@ -97,13 +97,17 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
   }
 
 
+  public TCReferable get(String path) {
+    return get(lastGroup.getGroupScope(), path);
+  }
+
   public Definition getDefinition(ChildGroup group, String path) {
     TCReferable ref = get(group.getGroupScope(), path);
     return ref != null ? typecheckerState.getTypechecked(ref) : null;
   }
 
   public Definition getDefinition(String path) {
-    TCReferable ref = get(lastGroup.getGroupScope(), path);
+    TCReferable ref = get(path);
     return ref != null ? typecheckerState.getTypechecked(ref) : null;
   }
 

@@ -10,13 +10,16 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.local.*;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -223,6 +226,27 @@ public class Matchers {
       @Override
       public void describeTo(Description description) {
         description.appendText("should be a 'Missing " + clauses + " clauses' error");
+      }
+    };
+  }
+
+  public static Matcher<? super GeneralError> cycle(GlobalReferable... refs) {
+    List<GlobalReferable> referables = Arrays.asList(refs);
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
+      @Override
+      protected boolean matchesSafely(GeneralError error, Description description) {
+        if (error instanceof CycleError && ((CycleError) error).cycle.equals(referables)) {
+          description.appendText("Cycle error: " + referables);
+          return true;
+        } else {
+          description.appendText(error instanceof CycleError ? "Cycle error: " + ((CycleError) error).cycle : "not a cycle error");
+          return false;
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {
+        description.appendText("should be a 'Cycle error: " + referables + "'");
       }
     };
   }

@@ -5,7 +5,10 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class FieldsCollector extends VoidExpressionVisitor<Void> {
   private final DependentLink myThisParameter;
@@ -29,10 +32,6 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
   }
 
   public static Set<ClassField> getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields) {
-    if (fields.isEmpty()) {
-      return Collections.emptySet();
-    }
-
     Set<ClassField> result = new HashSet<>();
     getFields(expr, thisParameter, fields, result);
     return result;
