@@ -35,7 +35,11 @@ Function `f4` refers to `f2` defined on the top level.
 Function `Mod.f2` hides the top level `f2` inside module `Mod`, so `Mod.f1` refers to `Mod.f2`.
 You can refer to top level functions inside modules as shown in the example where `Mod.f3` refers to `f4`.
 
-If a `\where` block contains a single definition, you can omit curly braces.
+If a `\where` block contains only one definition, curly braces around it can be omitted.
+```arend
+\module Mod \where
+  \func f1 => 0
+```
 
 ## Where blocks
 
@@ -60,14 +64,23 @@ Definitions defined in the associated module of a definition are visible inside 
 ```
 
 Constructors of a `\data` definition and fields of a `\class` or a `\record` definition are defined inside the module associated to the definition, but they are also visible outside this module.
-Where blocks of `\data` and `\class` definitions may also contain special instructions that modify the definition.
-Such instructions begin with the keyword `\use`.
-They will be discussed [here](/language-reference/definitions/coercion) and [here](/language-reference/definitions/level).
+In particular, in the following example `f1` and `f2` are defined by identical expressions.
+```arend
+\data d
+  | a
+  | b d
+
+\func f1 => b a
+\func f2 => d.b a
+```
+Normally the members of a where block do not interact with the definition to which the block is attached.
+However, where blocks of `\data` and `\class` definitions may contain special instructions that do modify the type of parent definition
+ (or e. g. introduce an automatic type coercion for it). 
+Such instructions begin with the keyword `\use` and are discussed in greater detail [here](/language-reference/definitions/coercion) and [here](/language-reference/definitions/level).
 
 ## Open commands
 
-A module can be opened.
-This makes definitions defined inside this module visible in the current scope.
+The contents of a given module can be added to the current scope by means of `\open` command (this is called 'opening' a module).
 The `\open` command affects all definitions in the current scope.
 
 ```arend
@@ -80,12 +93,15 @@ The `\open` command affects all definitions in the current scope.
 \func h2 => g
 ```
 
-The command `\open M (def_1, ... def_n)` opens only definitions `def_1`, ... `def_n`.
+The command `\open M (def_1, ... def_n)` adds only definitions `def_1`, ... `def_n` to the current scope.
 Other definitions must be refered to by their full names.
-The command `\open M \hiding (def_1, ... def_n)` opens all of the definitions of `M` except for `def_1`, ... `def_n`.
+
+The command `\open M \hiding (def_1, ... def_n)` adds all the definitions of `M` except for `def_1`, ... `def_n`.
 These definitions still can be refered to by their full names.
-The command `\open M (def_1 \as def_1', ... def_n \as def_n')` opens definitions `def_1`, ... `def_n`, but renames them to `def_1'`, ... `def_n'`, respectively.
-If you want to open all of the definitions and rename some of them, use the command `\open M \using (def_1 \as def_1', ... def_n \as def_n')`.
+
+The command `\open M (def_1 \as def_1', ... def_n \as def_n')` adds definitions `def_1`, ... `def_n` under the names `def_1'`, ... `def_n'`, respectively.
+
+The command `\open M \using (def_1 \as def_1', ... def_n \as def_n')` can be used to add to the current scope all of the definitions of `M` while renaming some of them.
 
 ```arend
 \module M \where {
@@ -121,7 +137,7 @@ You need to explicitly open `M` inside `M''` to make them visible.
 
 ## Import commands
 
-If you have several files, you can use the `\import` command to make one of them visible in the other.
+If you have several files, you can use the `\import` command to make one of them visible in another.
 For example, suppose that we have files `A.ard`, `B.ard`, a directory `Dir`, and a file `Dir/C.ard` with the following content:
 
 ```arend
@@ -151,7 +167,7 @@ For example, suppose that we have files `A.ard`, `B.ard`, a directory `Dir`, and
 
 The `\import` command also opens the content of the imported file.
 You can use the same syntax as for `\open` commands to control which definitions will be opened.
-If you want only import a file and not open any definitions, you can write `\import X ()`.
+If you want only to import a file and not to open any definitions, you can write `\import X ()`.
 Then you can refer to definitions defined in file `X` by their full names:
 
 ```arend
