@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.arend.ExpressionFactory.Universe;
 import static org.junit.Assert.assertEquals;
@@ -59,6 +60,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | f => 0\n" +
         "  | f => 1\n" +
         "}", 1);
+    assertThatErrorsAre(Matchers.fieldsImplementation(true, Collections.singletonList(get("f"))));
   }
 
   @Test

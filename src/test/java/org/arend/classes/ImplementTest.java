@@ -281,7 +281,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | x : Nat\n" +
       "  | y : x = 0\n" +
       "}\n" +
-      "\\func f => A { | y => path (\\lam _ => 0) | x => 0 }");
+      "\\func f => A { | y => path (\\lam _ => 0) | x => 0 }", 1);
   }
 
   @Test

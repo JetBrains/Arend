@@ -3,8 +3,7 @@ package org.arend.core.expr.type;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 
 public class TypeExpression implements Type {
@@ -27,12 +26,12 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public Type subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    if (exprSubstitution.isEmpty() && levelSubstitution.isEmpty()) {
+  public Type subst(SubstVisitor substVisitor) {
+    if (substVisitor.isEmpty()) {
       return this;
     }
-    Expression expr = myType.subst(exprSubstitution, levelSubstitution);
-    return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort.subst(levelSubstitution));
+    Expression expr = myType.subst(substVisitor);
+    return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort.subst(substVisitor.getLevelSubstitution()));
   }
 
   @Override

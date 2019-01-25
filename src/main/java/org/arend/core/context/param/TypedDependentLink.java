@@ -2,8 +2,7 @@ package org.arend.core.context.param;
 
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 
 import java.util.List;
 
@@ -62,15 +61,15 @@ public class TypedDependentLink implements DependentLink {
   }
 
   @Override
-  public DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
+  public DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
-      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(exprSubst, levelSubst), EmptyDependentLink.getInstance());
+      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(substVisitor), EmptyDependentLink.getInstance());
       if (updateSubst) {
-        exprSubst.addSubst(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {
-        exprSubst.add(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().add(this, new ReferenceExpression(result));
       }
-      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1, updateSubst);
+      result.myNext = myNext.subst(substVisitor, size - 1, updateSubst);
       return result;
     } else {
       return EmptyDependentLink.getInstance();

@@ -4,6 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -15,10 +16,12 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.ReplaceBindingVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.error.DummyErrorReporter;
 import org.arend.error.Error;
 import org.arend.error.GeneralError;
@@ -44,7 +47,6 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
-import org.arend.util.Pair;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -114,7 +116,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
         names.add(link.getName());
         if (link instanceof TypedDependentLink) {
-          SingleDependentLink parameter = ExpressionFactory.singleParams(link.isExplicit(), names, link.getType().subst(substitution, LevelSubstitution.EMPTY));
+          SingleDependentLink parameter = ExpressionFactory.singleParams(link.isExplicit(), names, link.getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY)));
           parameters.add(parameter);
           names.clear();
 
@@ -484,7 +486,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
-    return result.subst(new ExprSubstitution(), myEquations.solve(expr)).strip(myErrorReporter);
+    return result.subst(new SubstVisitor(new ExprSubstitution(), myEquations.solve(expr))).strip(myErrorReporter);
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -1403,13 +1405,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public Result visitClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
+    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
+    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
 
-    // Check for already implemented fields
-
-    Map<ClassField, Concrete.ClassFieldImpl> classFieldMap = new HashMap<>();
-    Map<ClassField, Pair<Expression,Concrete.SourceNode>> classFieldMap2 = new HashMap<>();
-    Set<GlobalReferable> alreadyImplementedFields = new LinkedHashSet<>();
-    Concrete.SourceNode alreadyImplementedSourceNode = null;
     for (Concrete.ClassFieldImpl statement : classFieldImpls) {
       Definition definition = referableToDefinition(statement.getImplementedField(), statement);
       if (definition == null) {
@@ -1418,13 +1416,24 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
       if (definition instanceof ClassField) {
         ClassField field = (ClassField) definition;
-        if (baseClass.isImplemented(field) || classFieldMap.containsKey(field) || classFieldMap2.containsKey(field)) {
-          alreadyImplementedFields.add((GlobalReferable) statement.getImplementedField());
-          if (alreadyImplementedSourceNode == null) {
-            alreadyImplementedSourceNode = statement;
+        Expression impl = typecheckImplementation(field, statement.implementation, resultClassCall);
+        if (impl != null) {
+          Expression oldImpl = resultClassCall.getImplementationHere(field);
+          if (oldImpl == null) {
+            LamExpression lamImpl = resultClassCall.getDefinition().getImplementation(field);
+            oldImpl = lamImpl == null ? null : lamImpl.getBody();
           }
-        } else {
-          classFieldMap.put(field, statement);
+          if (oldImpl != null) {
+            if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, statement.implementation)) {
+              myErrorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), statement));
+            }
+          } else {
+            fieldSet.put(field, impl);
+          }
+        } else if (pseudoImplemented != null) {
+          pseudoImplemented.add(field);
+        } else if (!resultClassCall.isImplemented(field)) {
+          fieldSet.put(field, new ErrorExpression(null, null));
         }
       } else if (definition instanceof ClassDefinition) {
         Result result = checkExpr(statement.implementation, null);
@@ -1440,47 +1449,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             if (!classCall.getDefinition().isSubClassOf((ClassDefinition) definition)) {
               myErrorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) definition, Sort.PROP), type, statement.implementation));
             } else {
-              boolean ok = true;
               for (ClassField field : ((ClassDefinition) definition).getFields()) {
-                boolean isOK = true;
-                LamExpression lamImpl = baseClass.getImplementation(field);
-                Expression impl = lamImpl == null ? null : lamImpl.substArgument(result.expression);
-                if (impl == null) {
-                  if (classFieldMap.containsKey(field)) {
-                    isOK = false;
-                  } else {
-                    Pair<Expression, Concrete.SourceNode> pair = classFieldMap2.get(field);
-                    impl = pair == null ? null : pair.proj1;
+                Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
+                Expression oldImpl = resultClassCall.getImplementation(field, result.expression);
+                if (oldImpl != null) {
+                  if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, statement.implementation)) {
+                    myErrorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), statement.implementation));
                   }
-                }
-                if (impl != null) {
-                  if (field.isProperty()) {
-                    continue;
-                  }
-                  Expression impl2 = classCall.getImplementation(field, result.expression);
-                  if (impl2 == null) {
-                    impl2 = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
-                  }
-                  if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, impl2, statement.implementation)) {
-                    isOK = false;
-                  }
-                }
-                if (!isOK) {
-                  ok = false;
-                  alreadyImplementedFields.add(field.getReferable());
-                  if (alreadyImplementedSourceNode == null) {
-                    alreadyImplementedSourceNode = statement;
-                  }
-                }
-                if (ok && impl == null) {
-                  classFieldMap2.put(field, new Pair<>(FieldCallExpression.make(field, classCall.getSortArgument(), result.expression), statement.implementation));
-                }
-              }
-
-              if (!ok) {
-                classFieldMap2.clear();
-                if (pseudoImplemented != null) {
-                  pseudoImplemented.addAll(((ClassDefinition) definition).getFields());
+                } else {
+                  fieldSet.put(field, impl);
                 }
               }
             }
@@ -1488,63 +1465,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
       } else {
         myErrorReporter.report(new WrongReferable("Expected either a field or a class", statement.getImplementedField(), statement));
-      }
-    }
-
-    if (!alreadyImplementedFields.isEmpty()) {
-      myErrorReporter.report(new FieldsImplementationError(true, alreadyImplementedFields, alreadyImplementedFields.size() > 1 ? expr : alreadyImplementedSourceNode));
-    }
-
-    // Typecheck statements
-
-    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
-    ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
-
-    if (!classFieldMap.isEmpty() || !classFieldMap2.isEmpty()) {
-      Set<ClassField> notImplementedFields = new HashSet<>();
-      for (ClassField field : baseClass.getFields()) {
-        if (resultClassCall.isImplemented(field)) {
-          continue;
-        }
-
-        Concrete.ClassFieldImpl impl = classFieldMap.get(field);
-        Pair<Expression, Concrete.SourceNode> impl2 = classFieldMap2.get(field);
-
-        boolean ok = true;
-        if (!notImplementedFields.isEmpty() && (impl != null || impl2 != null)) {
-          ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(resultClassCall.getSortArgument()).getCodomain(), notImplementedFields);
-          if (found != null) {
-            ok = false;
-            myErrorReporter.report(new FieldsDependentImplementationError(field.getReferable(), found.getReferable(), impl != null ? impl : impl2.proj2));
-          }
-        }
-
-        Expression newImpl = null;
-        Expression oldImpl = null;
-        if (ok) {
-          if (impl != null) {
-            newImpl = typecheckImplementation(field, impl.implementation, resultClassCall);
-          } else if (impl2 != null) {
-            newImpl = impl2.proj1;
-          }
-          if (newImpl != null) {
-            oldImpl = notImplementedFields.isEmpty() ? resultClassCall.getImplementation(field, new NewExpression(resultClassCall)) : null;
-            fieldSet.putIfAbsent(field, newImpl);
-          }
-        }
-
-        if (newImpl == null) {
-          notImplementedFields.add(field);
-        } else {
-          if (oldImpl != null || impl != null && impl2 != null) {
-            CompareVisitor cmpVisitor = new CompareVisitor(myEquations, Equations.CMP.EQ, impl != null ? impl : impl2.proj2);
-            if (oldImpl != null && !cmpVisitor.compare(oldImpl, newImpl)) {
-              myErrorReporter.report(new ImplementationClashError(oldImpl, field, newImpl, impl != null ? impl : impl2.proj2));
-            } else if (impl != null && impl2 != null && !cmpVisitor.compare(impl2.proj1, newImpl)) {
-              myErrorReporter.report(new ImplementationClashError(impl2.proj1, field, newImpl, impl));
-            }
-          }
-        }
       }
     }
 
@@ -1576,7 +1496,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    Expression type = field.getType(fieldSetClass.getSortArgument()).applyExpression(new NewExpression(fieldSetClass));
+    ClassCallExpression bindingType = new ClassCallExpression(fieldSetClass.getDefinition(), fieldSetClass.getSortArgument(), new HashMap<>(fieldSetClass.getImplementedHere()), fieldSetClass.getSort(), fieldSetClass.hasUniverses());
+    Binding binding = new TypedBinding("this", bindingType);
+    Expression type = field.getType(fieldSetClass.getSortArgument()).applyExpression(new ReferenceExpression(binding));
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
       return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
     }
@@ -1584,7 +1506,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
       ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
       : checkExpr(implBody, type);
-    return result != null ? result.expression : new ErrorExpression(null, null);
+    if (result == null) {
+      return null;
+    }
+
+    ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(binding, bindingType);
+    result.expression = result.expression.accept(visitor, null);
+    if (!visitor.isOK()) {
+      myErrorReporter.report(new TypecheckingError("The implementation depends on \\this parameter", implBody));
+      return null;
+    } else {
+      return result.expression;
+    }
   }
 
   @Override

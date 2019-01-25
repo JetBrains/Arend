@@ -13,7 +13,7 @@ import java.util.Collections;
 
 import static org.arend.core.expr.ExpressionFactory.Suc;
 import static org.arend.core.expr.ExpressionFactory.Zero;
-import static org.arend.typechecking.Matchers.error;
+import static org.arend.typechecking.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -290,6 +290,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
       "\\func f (a : A) : A => \\new B { | A => a }", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
@@ -306,6 +307,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
       "\\func f (a : A 1) : A => \\new B { | A => a }", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
@@ -314,6 +316,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
       "\\func f (a : A) : A 0 => \\new B { | A => a }", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
@@ -330,6 +333,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
       "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
@@ -337,7 +341,8 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x : Nat) (y : x = x)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 1);
+      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 2);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))), typeMismatchError());
   }
 
   @Test
@@ -346,6 +351,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record A (x y : Nat)\n" +
       "\\record B \\extends A | x => 0\n" +
       "\\func f (a : A 1) : A 0 => \\new B { | A => a }", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))));
   }
 
   @Test
@@ -353,6 +359,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record A (x y : Nat)\n" +
       "\\record B \\extends A | x => 0\n" +
-      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 1);
+      "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 2);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))), typeMismatchError());
   }
 }

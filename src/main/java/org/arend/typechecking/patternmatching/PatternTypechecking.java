@@ -14,6 +14,7 @@ import org.arend.core.pattern.*;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.error.Error;
 import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.GlobalReferable;
@@ -395,7 +396,7 @@ public class PatternTypechecking {
         link = link.getNext();
         for (; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          link.setType(link.getType().subst(substitution, LevelSubstitution.EMPTY));
+          link.setType(link.getType().subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY)));
         }
       }
     }

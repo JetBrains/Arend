@@ -24,6 +24,18 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     myLevelSubstitution = levelSubstitution;
   }
 
+  public ExprSubstitution getExprSubstitution() {
+    return myExprSubstitution;
+  }
+
+  public LevelSubstitution getLevelSubstitution() {
+    return myLevelSubstitution;
+  }
+
+  public boolean isEmpty() {
+    return myExprSubstitution.isEmpty() && myLevelSubstitution.isEmpty();
+  }
+
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
     return AppExpression.make(expr.getFunction().accept(this, null), expr.getArgument().accept(this, null));
@@ -97,7 +109,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
-    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
+    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     LamExpression result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
@@ -105,7 +117,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public PiExpression visitPi(PiExpression expr, Void params) {
-    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
+    SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     PiExpression result = new PiExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getCodomain().accept(this, null));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
@@ -113,7 +125,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    SigmaExpression result = new SigmaExpression(expr.getSort().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution));
+    SigmaExpression result = new SigmaExpression(expr.getSort().subst(myLevelSubstitution), DependentLink.Helper.subst(expr.getParameters(), this));
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
     return result;
   }
@@ -167,7 +179,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       arguments.add(arg.accept(this, null));
     }
 
-    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), myExprSubstitution, myLevelSubstitution);
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     Expression type = expr.getResultType().accept(this, null);
     Expression typeLevel = expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
@@ -175,7 +187,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   public ElimTree substElimTree(ElimTree elimTree) {
-    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), myExprSubstitution, myLevelSubstitution);
+    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), this);
     if (elimTree instanceof LeafElimTree) {
       elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
     } else {

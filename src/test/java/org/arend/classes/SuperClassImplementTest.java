@@ -58,7 +58,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | a' => 2\n" +
       "  | b' => 3\n" +
       "  }", 1);
-    assertThatErrorsAre(fieldsImplementation(true, Collections.singleton(getDefinition("A.a'").getReferable())));
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(getDefinition("A.a'").getReferable())));
   }
 
   @Test
@@ -83,8 +83,8 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | a' => 2\n" +
       "  | b' => 3\n" +
-      "  }", 1);
-    assertThatErrorsAre(fieldsImplementation(true, Collections.singleton(getDefinition("A.a'").getReferable())));
+      "}", 1);
+    assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(getDefinition("A.a'").getReferable())));
   }
 
   @Test
@@ -108,7 +108,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | a => 1\n" +
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
-      "  | b' => 3", 2);
+      "  | b' => 3");
   }
 
   @Test
@@ -130,6 +130,6 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "\\instance I : B 1\n" +
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
-      "  | b' => 3", 2);
+      "  | b' => 3");
   }
 }

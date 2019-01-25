@@ -5,6 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ public interface DependentLink extends Binding {
   DependentLink getNext();
   void setNext(DependentLink next);
   void setName(String name);
-  DependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst);
+  DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst);
   TypedDependentLink getNextTyped(List<String> names);
   boolean hasNext();
   Type getType();
@@ -83,16 +84,16 @@ public interface DependentLink extends Binding {
       return result;
     }
 
-    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst, boolean updateSubst) {
-      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, updateSubst);
+    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
+      return link.subst(new SubstVisitor(exprSubst, levelSubst), Integer.MAX_VALUE, false);
     }
 
-    public static DependentLink subst(DependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, false);
+    public static DependentLink subst(DependentLink link, SubstVisitor substVisitor) {
+      return link.subst(substVisitor, Integer.MAX_VALUE, false);
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution substitution, boolean updateSubst) {
-      return subst(link, substitution, LevelSubstitution.EMPTY, updateSubst);
+      return link.subst(new SubstVisitor(substitution, LevelSubstitution.EMPTY), Integer.MAX_VALUE, updateSubst);
     }
 
     public static DependentLink subst(DependentLink link, ExprSubstitution substitution) {
@@ -100,7 +101,7 @@ public interface DependentLink extends Binding {
     }
 
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution substitution) {
-      return subst(link, substitution, LevelSubstitution.EMPTY);
+      return subst(link, new SubstVisitor(substitution, LevelSubstitution.EMPTY));
     }
 
     public static List<DependentLink> subst(List<DependentLink> links, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
@@ -117,8 +118,8 @@ public interface DependentLink extends Binding {
       return newLinks;
     }
 
-    public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution exprSubst, LevelSubstitution levelSubst) {
-      return link.subst(exprSubst, levelSubst, Integer.MAX_VALUE, false);
+    public static SingleDependentLink subst(SingleDependentLink link, SubstVisitor substVisitor) {
+      return link.subst(substVisitor, Integer.MAX_VALUE, false);
     }
   }
 

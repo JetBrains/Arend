@@ -9,8 +9,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
@@ -69,8 +67,8 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public PiExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    return new SubstVisitor(exprSubstitution, levelSubstitution).visitPi(this, null);
+  public PiExpression subst(SubstVisitor substVisitor) {
+    return substVisitor.visitPi(this, null);
   }
 
   @Override

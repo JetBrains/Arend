@@ -4,8 +4,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 
 public class UniverseExpression extends Expression implements Type {
@@ -36,8 +35,8 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public UniverseExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    return new UniverseExpression(mySort.subst(levelSubstitution));
+  public UniverseExpression subst(SubstVisitor substVisitor) {
+    return new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
   }
 
   @Override

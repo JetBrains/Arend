@@ -13,6 +13,7 @@ import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.naming.reference.TCReferable;
 
 import java.util.ArrayList;
@@ -210,7 +211,7 @@ public class Constructor extends Definition implements Function {
       paramList.get(paramList.size() - 1).setNext(conParams);
     }
     params.addAll(DependentLink.Helper.toList(conParams));
-    resultType = resultType.subst(substitution, polySubst);
+    resultType = resultType.subst(new SubstVisitor(substitution, polySubst));
     return resultType;
   }
 

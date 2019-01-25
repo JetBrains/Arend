@@ -113,6 +113,10 @@ public abstract class Expression implements ExpectedType {
     return exprSubst.isEmpty() && levelSubst.isEmpty() ? this : accept(new SubstVisitor(exprSubst, levelSubst), null);
   }
 
+  public Expression subst(SubstVisitor substVisitor) {
+    return accept(substVisitor, null);
+  }
+
   @Override
   public Expression normalize(NormalizeVisitor.Mode mode) {
     return accept(NormalizeVisitor.INSTANCE, mode);

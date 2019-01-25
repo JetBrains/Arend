@@ -6,8 +6,6 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 
@@ -45,8 +43,8 @@ public class SigmaExpression extends Expression implements Type {
   }
 
   @Override
-  public SigmaExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    return new SubstVisitor(exprSubstitution, levelSubstitution).visitSigma(this, null);
+  public SigmaExpression subst(SubstVisitor substVisitor) {
+    return substVisitor.visitSigma(this, null);
   }
 
   @Override

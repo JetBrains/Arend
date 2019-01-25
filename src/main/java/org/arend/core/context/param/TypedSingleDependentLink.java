@@ -2,8 +2,7 @@ package org.arend.core.context.param;
 
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 
 import java.util.List;
 
@@ -21,13 +20,13 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   }
 
   @Override
-  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
+  public SingleDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
-      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(exprSubst, levelSubst));
+      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(substVisitor));
       if (updateSubst) {
-        exprSubst.addSubst(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {
-        exprSubst.add(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().add(this, new ReferenceExpression(result));
       }
       return result;
     } else {

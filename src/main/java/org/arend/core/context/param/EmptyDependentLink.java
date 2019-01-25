@@ -1,8 +1,7 @@
 package org.arend.core.context.param;
 
 import org.arend.core.expr.type.Type;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 
 import java.util.List;
 
@@ -46,7 +45,7 @@ public class EmptyDependentLink implements SingleDependentLink {
   }
 
   @Override
-  public EmptyDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
+  public EmptyDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     return this;
   }
 

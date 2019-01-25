@@ -8,8 +8,6 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
@@ -120,8 +118,8 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public ClassCallExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    return new SubstVisitor(exprSubstitution, levelSubstitution).visitClassCall(this, null);
+  public ClassCallExpression subst(SubstVisitor substVisitor) {
+    return substVisitor.visitClassCall(this, null);
   }
 
   @Override

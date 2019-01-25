@@ -8,8 +8,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 
@@ -57,8 +55,8 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public DataCallExpression subst(ExprSubstitution exprSubstitution, LevelSubstitution levelSubstitution) {
-    return new SubstVisitor(exprSubstitution, levelSubstitution).visitDataCall(this, null);
+  public DataCallExpression subst(SubstVisitor substVisitor) {
+    return substVisitor.visitDataCall(this, null);
   }
 
   @Override

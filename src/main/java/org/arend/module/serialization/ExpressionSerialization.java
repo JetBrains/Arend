@@ -75,7 +75,8 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     if (binding == null) {
       return 0;
     } else {
-      return myBindingsMap.get(binding) + 1;  // zero is reserved for null
+      Integer ref = myBindingsMap.get(binding);
+      return ref + 1;  // zero is reserved for null
     }
   }
 

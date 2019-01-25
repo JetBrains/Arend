@@ -150,7 +150,7 @@ public class Matchers {
     return new LocalErrorMatcher() {
       @Override
       protected boolean matchesLocalError(LocalError error, Description description) {
-        if (error instanceof FieldsImplementationError && ((FieldsImplementationError) error).alreadyImplemented == ((FieldsImplementationError) error).alreadyImplemented && ((FieldsImplementationError) error).fields.equals(fields)) {
+        if (error instanceof FieldsImplementationError && ((FieldsImplementationError) error).alreadyImplemented == alreadyImplemented && ((FieldsImplementationError) error).fields.equals(fields)) {
           description.appendText(error.toString());
           return true;
         } else {

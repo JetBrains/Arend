@@ -1,8 +1,7 @@
 package org.arend.core.context.param;
 
 import org.arend.core.expr.ReferenceExpression;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 
 import java.util.List;
 
@@ -26,24 +25,24 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
   }
 
   @Override
-  public SingleDependentLink subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, int size, boolean updateSubst) {
+  public SingleDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size == 1) {
       TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType());
       if (updateSubst) {
-        exprSubst.addSubst(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {
-        exprSubst.add(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().add(this, new ReferenceExpression(result));
       }
       return result;
     } else
     if (size > 0) {
       UntypedSingleDependentLink result = new UntypedSingleDependentLink(getName());
       if (updateSubst) {
-        exprSubst.addSubst(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {
-        exprSubst.add(this, new ReferenceExpression(result));
+        substVisitor.getExprSubstitution().add(this, new ReferenceExpression(result));
       }
-      result.myNext = myNext.subst(exprSubst, levelSubst, size - 1, updateSubst);
+      result.myNext = myNext.subst(substVisitor, size - 1, updateSubst);
       return result;
     } else {
       return EmptyDependentLink.getInstance();
