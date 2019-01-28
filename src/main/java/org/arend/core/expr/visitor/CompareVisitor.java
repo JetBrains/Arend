@@ -189,6 +189,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   private Boolean compareUnit(ClassCallExpression type1, Expression expr2, boolean correctOrder) {
     Expression type2 = expr2.getType();
+    type2 = type2 == null ? null : type2.normalize(NormalizeVisitor.Mode.WHNF);
     if (type2 == null || !type2.isInstance(ClassCallExpression.class)) {
       return false;
     }

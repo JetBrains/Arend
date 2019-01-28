@@ -4,7 +4,6 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -365,6 +364,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       if (!result.type.isError()) {
+        new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType);
         myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
       }
       return null;
@@ -1496,9 +1496,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    ClassCallExpression bindingType = new ClassCallExpression(fieldSetClass.getDefinition(), fieldSetClass.getSortArgument(), new HashMap<>(fieldSetClass.getImplementedHere()), fieldSetClass.getSort(), fieldSetClass.hasUniverses());
-    Binding binding = new TypedBinding("this", bindingType);
-    Expression type = field.getType(fieldSetClass.getSortArgument()).applyExpression(new ReferenceExpression(binding));
+    PiExpression piType = field.getType(fieldSetClass.getSortArgument());
+    ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(piType.getParameters(), fieldSetClass);
+    Expression type = piType.getCodomain().accept(visitor, null);
+    if (!visitor.isOK()) {
+      myErrorReporter.report(new TypecheckingError("The Type of '" + field.getName() + "' depends non-trivially on \\this parameter", implBody));
+      return null;
+    }
+
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
       return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
     }
@@ -1506,18 +1511,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
       ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
       : checkExpr(implBody, type);
-    if (result == null) {
-      return null;
-    }
-
-    ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(binding, bindingType);
-    result.expression = result.expression.accept(visitor, null);
-    if (!visitor.isOK()) {
-      myErrorReporter.report(new TypecheckingError("The implementation depends on \\this parameter", implBody));
-      return null;
-    } else {
-      return result.expression;
-    }
+    return result == null ? null : result.expression;
   }
 
   @Override
