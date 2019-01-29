@@ -380,6 +380,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | x2 : Nat\n" +
       "  | x3 : Nat\n" +
       "  | x4 : Nat\n" +
+      "  | x5 : Nat\n" +
       "}\n" +
       "\\class B \\extends A {\n" +
       "  | x1 => x2\n" +
@@ -388,6 +389,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "}\n" +
       "\\class C \\extends B {\n" +
       "  | x4 => x1\n" +
+      "  | x5 => 0\n" +
       "}", 1);
     assertThatErrorsAre(cycle(get("x4"), get("x1"), get("x2"), get("x3")));
   }
@@ -430,10 +432,12 @@ public class ImplementTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class A {\n" +
       "  | x : Nat\n" +
+      "  | y : Nat\n" +
       "}\n" +
       "\\class B \\extends A {\n" +
       "  | p : x = x\n" +
       "  | x => \\let p' => p \\in 0\n" +
+      "  | y => 0\n" +
       "}", 1);
     assertThatErrorsAre(cycle(get("x"), get("p")));
   }

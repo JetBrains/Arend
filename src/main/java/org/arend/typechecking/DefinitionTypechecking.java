@@ -1470,6 +1470,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     // Process implementations
     if (!typedDef.getSuperClasses().isEmpty() || !def.getImplementations().isEmpty()) {
       Map<ClassField,Concrete.ClassFieldImpl> implementedHere = new LinkedHashMap<>();
+      ClassField lastField = null;
       for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
         ClassField field = myVisitor.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
         if (field == null) {
@@ -1496,13 +1497,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           alreadyImplementedSourceNode = classFieldImpl;
         } else {
           implementedHere.put(field, classFieldImpl);
+          lastField = field;
         }
       }
 
       // Check for cycles in implementations
       DFS dfs = new DFS(typedDef);
+      if (implementedHere.isEmpty()) {
+        dfs.setImplementedFields(Collections.emptySet());
+      }
+      List<ClassField> cycle = null;
       for (ClassField field : typedDef.getFields()) {
-        List<ClassField> cycle = dfs.findCycle(field);
+        cycle = dfs.findCycle(field);
         if (cycle != null) {
           myErrorReporter.report(CycleError.fromTypechecked(cycle, def));
           implementedHere.clear();
@@ -1540,13 +1546,28 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         myVisitor.getFreeBindings().clear();
 
         if (result != null) {
-          List<ClassField> cycle = dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          if (newDef && entry.getKey() == lastField) {
+            dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+            dfs.setImplementedFields(implementedHere.keySet());
+            for (ClassField field : typedDef.getFields()) {
+              cycle = dfs.findCycle(field);
+              if (cycle != null) {
+                break;
+              }
+            }
+          } else {
+            cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          }
           if (cycle != null) {
             myErrorReporter.report(CycleError.fromTypechecked(cycle, def));
             implementedHere.clear();
             break;
           }
         }
+      }
+
+      if (cycle == null) {
+        typedDef.setTypecheckingFieldOrder(dfs.getFieldOrder());
       }
     }
 
@@ -1618,6 +1639,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     private final ClassDefinition classDef;
     private final Map<ClassField, Boolean> state = new HashMap<>();
     private final Map<ClassField, Set<ClassField>> references = new HashMap<>();
+    private Set<ClassField> implementedFields = null;
+    private List<ClassField> fieldOrder = null;
 
     private DFS(ClassDefinition classDef) {
       this.classDef = classDef;
@@ -1635,8 +1658,14 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     private List<ClassField> dfs(ClassField field) {
-      if (Boolean.TRUE.equals(state.putIfAbsent(field, false))) {
+      Boolean prevState = state.putIfAbsent(field, false);
+      if (Boolean.TRUE.equals(prevState)) {
         return null;
+      }
+      if (Boolean.FALSE.equals(prevState)) {
+        List<ClassField> cycle = new ArrayList<>();
+        cycle.add(field);
+        return cycle;
       }
 
       Set<ClassField> deps = references.computeIfAbsent(field, f -> {
@@ -1650,27 +1679,23 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       });
 
       for (ClassField dep : deps) {
-        Boolean st = state.get(dep);
-        if (st == null) {
-          List<ClassField> cycle = dfs(dep);
-          if (cycle != null) {
-            if (cycle.size() == 1 || cycle.get(0) != cycle.get(cycle.size() - 1)) {
-              cycle.add(dep);
-            }
-            return cycle;
+        List<ClassField> cycle = dfs(dep);
+        if (cycle != null) {
+          if (cycle.get(0) != field) {
+            cycle.add(field);
           }
-        } else if (!st) {
-          List<ClassField> cycle = new ArrayList<>();
-          cycle.add(dep);
           return cycle;
         }
       }
 
       state.put(field, true);
+      if (fieldOrder != null && !classDef.isImplemented(field) && !implementedFields.contains(field)) {
+        fieldOrder.add(field);
+      }
       return null;
     }
 
-    private List<ClassField> addDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
+    List<ClassField> checkDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
       for (ClassField dependency : dependencies) {
         if (dependency == field) {
           return Collections.singletonList(field);
@@ -1680,13 +1705,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         state.put(field, false);
         List<ClassField> cycle = dfs(dependency);
         if (cycle != null) {
-          cycle.add(1, dependency);
-          Collections.reverse(cycle.subList(2, cycle.size()));
+          Collections.reverse(cycle.subList(1, cycle.size()));
           return cycle;
         }
       }
       references.computeIfAbsent(field, f -> new HashSet<>()).addAll(dependencies);
       return null;
+    }
+
+    void addDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
+      state.clear();
+      references.computeIfAbsent(field, f -> new HashSet<>()).addAll(dependencies);
+    }
+
+    List<ClassField> getFieldOrder() {
+      return fieldOrder;
+    }
+
+    void setImplementedFields(Set<ClassField> implementedFields) {
+      this.implementedFields = implementedFields;
+      fieldOrder = new ArrayList<>();
     }
   }
 

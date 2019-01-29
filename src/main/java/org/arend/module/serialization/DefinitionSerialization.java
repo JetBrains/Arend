@@ -133,6 +133,15 @@ public class DefinitionSerialization {
       builder.addTypeClassField(myCallTargetIndexProvider.getDefIndex(typeClassField));
     }
 
+    List<? extends ClassField> fieldOrder = definition.getTypecheckingFieldOrder();
+    if (fieldOrder != null) {
+      DefinitionProtos.Definition.ClassData.FieldOrder.Builder fieldOrderBuilder = DefinitionProtos.Definition.ClassData.FieldOrder.newBuilder();
+      for (ClassField field : fieldOrder) {
+        fieldOrderBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
+      }
+      builder.setTypecheckingFieldOrder(fieldOrderBuilder.build());
+    }
+
     return builder.build();
   }
 

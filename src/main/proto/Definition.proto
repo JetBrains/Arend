@@ -56,7 +56,11 @@ message Definition {
         repeated ImplLevel impl_level = 15;
         repeated int32 good_field = 16;
         repeated int32 type_class_field = 17;
+        FieldOrder typechecking_field_order = 18;
 
+        message FieldOrder {
+            repeated int32 field = 1;
+        }
         message Field {
             Referable referable = 1;
             Expression type = 3;

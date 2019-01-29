@@ -50,11 +50,11 @@ public class ReplaceBindingVisitor extends SubstVisitor {
       if (argType != null && argType.getDefinition() != myBindingType.getDefinition()) {
         Map<ClassField, Expression> implementations = new HashMap<>();
         ClassCallExpression newType = new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false);
-        for (ClassField field : argType.getDefinition().getFields()) {
-          if (argType.getDefinition().isImplemented(field)) {
-            continue;
-          }
-
+        List<? extends ClassField> fieldOrder = argType.getDefinition().getTypecheckingFieldOrder();
+        if (fieldOrder == null) {
+          return arg.accept(this, null);
+        }
+        for (ClassField field : fieldOrder) {
           Expression impl = myBindingType.getImplementationHere(field);
           if (impl == null) {
             LamExpression lamImpl = myBindingType.getDefinition().getImplementation(field);
@@ -62,7 +62,6 @@ public class ReplaceBindingVisitor extends SubstVisitor {
               ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), newType);
               impl = lamImpl.getBody().accept(visitor, null);
               if (!visitor.isOK()) {
-                lamImpl.getBody().accept(new ReplaceBindingVisitor(lamImpl.getParameters(), newType), null);
                 impl = null;
               }
             }

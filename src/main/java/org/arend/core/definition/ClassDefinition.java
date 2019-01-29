@@ -25,6 +25,7 @@ public class ClassDefinition extends Definition {
   private Map<Set<ClassField>, Level> myLevels = new HashMap<>();
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
+  private List<ClassField> myTypecheckingFieldOrder;
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -199,6 +200,14 @@ public class ClassDefinition extends Definition {
 
   public void setTypeClassFields(Set<ClassField> typeClassFields) {
     myTypeClassParameters = typeClassFields;
+  }
+
+  public List<? extends ClassField> getTypecheckingFieldOrder() {
+    return myTypecheckingFieldOrder;
+  }
+
+  public void setTypecheckingFieldOrder(List<ClassField> fieldOrder) {
+    myTypecheckingFieldOrder = fieldOrder;
   }
 
   public DependentLink getClassFieldParameters(Sort sortArgument) {
