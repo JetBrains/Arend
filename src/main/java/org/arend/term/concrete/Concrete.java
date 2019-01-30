@@ -1658,16 +1658,13 @@ public final class Concrete {
 
   public static class NamePattern extends Pattern {
     private final @Nullable Referable myReferable;
+    public @Nullable Expression type;
 
-    public NamePattern(Object data, @Nullable Referable referable) {
-      super(data);
-      myReferable = referable;
-    }
-
-    public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable) {
+    public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
       super(data);
       setExplicit(isExplicit);
       myReferable = referable;
+      this.type = type;
     }
 
     @Nullable

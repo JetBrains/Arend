@@ -77,8 +77,8 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-pattern : atomPattern             # patternAtom
-        | ID atomPatternOrID*     # patternConstructor
+pattern : atomPattern                             # patternAtom
+        | ID atomPatternOrID* (':' expr)?         # patternConstructor
         ;
 
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit

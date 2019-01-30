@@ -9,6 +9,8 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
+import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.subst.ExprSubstitution;
@@ -37,29 +39,31 @@ import java.util.*;
 public class PatternTypechecking {
   private final LocalErrorReporter myErrorReporter;
   private final EnumSet<Flag> myFlags;
+  private final CheckTypeVisitor myVisitor;
   private Map<Referable, Binding> myContext;
 
   public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, CHECK_COVERAGE, CONTEXT_FREE }
 
-  public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags) {
+  public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags, CheckTypeVisitor visitor) {
     myErrorReporter = errorReporter;
     myFlags = flags;
+    myVisitor = visitor;
   }
 
-  private void collectBindings(List<Pattern> patterns, Collection<? super DependentLink> bindings) {
+  private void collectBindings(List<Pattern> patterns) {
     for (Pattern pattern : patterns) {
       if (pattern instanceof BindingPattern) {
-        bindings.add(((BindingPattern) pattern).getBinding());
+        myVisitor.getFreeBindings().add(((BindingPattern) pattern).getBinding());
       } else if (pattern instanceof ConstructorPattern) {
-        collectBindings(((ConstructorPattern) pattern).getArguments(), bindings);
+        collectBindings(((ConstructorPattern) pattern).getArguments());
       }
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType, CheckTypeVisitor visitor) {
-    try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(visitor.getContext())) {
+  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+    try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       // Typecheck patterns
-      Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause, visitor);
+      Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause);
       if (result == null) {
         return null;
       }
@@ -90,7 +94,7 @@ public class PatternTypechecking {
       }
       expectedType = expectedType.subst(substitution);
 
-      GlobalInstancePool globalInstancePool = visitor.getInstancePool();
+      GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
       InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
       if (instancePool != null) {
         globalInstancePool.setInstancePool(instancePool.subst(substitution));
@@ -99,9 +103,9 @@ public class PatternTypechecking {
       // Typecheck the RHS
       CheckTypeVisitor.Result tcResult;
       if (abstractParameters != null) {
-        tcResult = visitor.finalCheckExpr(clause.getExpression(), expectedType, false);
+        tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, false);
       } else {
-        tcResult = visitor.checkExpr(clause.getExpression(), expectedType);
+        tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
       }
       if (instancePool != null) {
         globalInstancePool.setInstancePool(instancePool);
@@ -110,8 +114,8 @@ public class PatternTypechecking {
     }
   }
 
-  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Concrete.SourceNode sourceNode, CheckTypeVisitor visitor) {
-    myContext = visitor.getContext();
+  public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+    myContext = myVisitor.getContext();
     if (myFlags.contains(Flag.CONTEXT_FREE)) {
       myContext.clear();
     }
@@ -148,9 +152,9 @@ public class PatternTypechecking {
       }
 
       if (myFlags.contains(Flag.CONTEXT_FREE)) {
-        visitor.getFreeBindings().clear();
+        myVisitor.getFreeBindings().clear();
       }
-      collectBindings(result.proj1, visitor.getFreeBindings());
+      collectBindings(result.proj1);
     }
 
     return result;
@@ -216,10 +220,17 @@ public class PatternTypechecking {
         }
         Referable referable = null;
         if (pattern instanceof Concrete.NamePattern) {
-          referable = ((Concrete.NamePattern) pattern).getReferable();
+          Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+          referable = namePattern.getReferable();
           String name = referable == null ? null : referable.textRepresentation();
           if (name != null) {
             parameters.setName(name);
+          }
+          if (namePattern.type != null) {
+            Type type = myVisitor.finalCheckType(namePattern.type, ExpectedType.OMEGA);
+            if (type != null && !parameters.getTypeExpr().isLessOrEquals(type.getExpr(), myVisitor.getEquations(), namePattern.type)) {
+              myErrorReporter.report(new TypeMismatchError(type.getExpr(), parameters.getTypeExpr(), namePattern.type));
+            }
           }
         }
         result.add(new BindingPattern(parameters));

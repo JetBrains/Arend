@@ -897,7 +897,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (!def.getConstructorClauses().isEmpty()) {
       Map<Referable, Binding> context = myVisitor.getContext();
       Set<Binding> freeBindings = myVisitor.getFreeBindings();
-      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(myErrorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE));
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(myErrorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), myVisitor);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -921,7 +921,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             dataOk = false;
           }
           if (elimParams != null) {
-            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def, myVisitor);
+            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def);
             if (instancePool != null && result != null && result.proj2 != null) {
               ExprSubstitution substitution = new ExprSubstitution();
               DependentLink link = dataDefinition.getParameters();

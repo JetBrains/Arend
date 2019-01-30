@@ -188,7 +188,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     }
 
     if (pattern1 instanceof Concrete.NamePattern) {
-      if (!(pattern2 instanceof Concrete.NamePattern)) {
+      if (!(pattern2 instanceof Concrete.NamePattern && compare(((Concrete.NamePattern) pattern1).type, ((Concrete.NamePattern) pattern2).type))) {
         return false;
       }
       mySubstitution.put(((Concrete.NamePattern) pattern1).getReferable(), ((Concrete.NamePattern) pattern2).getReferable());

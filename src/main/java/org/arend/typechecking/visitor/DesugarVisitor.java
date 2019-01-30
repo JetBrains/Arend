@@ -62,7 +62,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
       if (def.getBody().getEliminatedReferences().isEmpty()) {
         for (Concrete.FunctionClause clause : def.getBody().getClauses()) {
-          clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter));
+          clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
         }
       }
     }
@@ -80,7 +80,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
       if (def.getEliminatedReferences() != null && def.getEliminatedReferences().isEmpty()) {
         for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-          clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter));
+          clause.getPatterns().add(0, new Concrete.NamePattern(clause.getData(), false, thisParameter, null));
         }
       }
     }

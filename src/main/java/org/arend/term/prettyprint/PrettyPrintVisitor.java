@@ -1056,12 +1056,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     if (pattern instanceof Concrete.NamePattern) {
-      Referable referable = ((Concrete.NamePattern) pattern).getReferable();
+      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+      Referable referable = namePattern.getReferable();
       String name = referable == null ? null : referable.textRepresentation();
       if (name == null) {
         name = "_";
       }
       myBuilder.append(name);
+      if (namePattern.type != null && !name.equals("_")) {
+        myBuilder.append(" : ");
+        namePattern.type.accept(this, new Precedence(Expression.PREC));
+      }
     } else if (pattern instanceof Concrete.NumberPattern) {
       myBuilder.append(((Concrete.NumberPattern) pattern).getNumber());
     } else if (pattern instanceof Concrete.TuplePattern) {

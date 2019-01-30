@@ -188,20 +188,33 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private GlobalReferable visitPattern(Concrete.Pattern pattern, Map<String, Concrete.NamePattern> usedNames) {
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+      if (namePattern.type != null) {
+        namePattern.type = namePattern.type.accept(this, null);
+      }
+
       Referable referable = namePattern.getReferable();
       String name = referable == null ? null : referable.textRepresentation();
-      if (name == null) return null;
-      Referable ref = myParentScope.resolveName(name);
-      if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-        return (GlobalReferable) ref;
+      if (name == null) {
+        return null;
       }
+
+      if (namePattern.type == null) {
+        Referable ref = myParentScope.resolveName(name);
+        if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
+          return (GlobalReferable) ref;
+        }
+      }
+
       if (!name.equals("_")) {
         Concrete.NamePattern prev = usedNames.put(name, namePattern);
         if (prev != null) {
           myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable, prev.getReferable()));
         }
-        myContext.add(referable);
+
+        ClassReferable classRef = namePattern.type == null ? null : myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), namePattern.type);
+        myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
       }
+
       return null;
     } else if (pattern instanceof Concrete.ConstructorPattern) {
       visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns(), usedNames, false);

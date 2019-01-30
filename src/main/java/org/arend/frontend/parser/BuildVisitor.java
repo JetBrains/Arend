@@ -296,9 +296,13 @@ public class BuildVisitor extends ArendBaseVisitor {
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     List<AtomPatternOrIDContext> atomPatternOrIDs = ctx.atomPatternOrID();
     TerminalNode id = ctx.ID();
+    ExprContext typeCtx = ctx.expr();
     if (atomPatternOrIDs.isEmpty()) {
-      return new Concrete.NamePattern(tokenPosition(ctx.start), new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()));
+      return new Concrete.NamePattern(tokenPosition(ctx.start), true, new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), typeCtx == null ? null : visitExpr(typeCtx));
     } else {
+      if (typeCtx != null) {
+        myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
+      }
       List<Concrete.Pattern> patterns = new ArrayList<>(atomPatternOrIDs.size());
       for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
         patterns.add(visitAtomPattern(atomCtx));
@@ -345,7 +349,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.start);
-    return new Concrete.NamePattern(position, new ParsedLocalReferable(position, ctx.ID().getText()));
+    return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, ctx.ID().getText()), null);
   }
 
   @Override
@@ -376,7 +380,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.Pattern visitPatternAny(PatternAnyContext ctx) {
-    return new Concrete.NamePattern(tokenPosition(ctx.start), null);
+    return new Concrete.NamePattern(tokenPosition(ctx.start), true, null, null);
   }
 
   private ConcreteLocatedReferable makeReferable(Position position, String name, Precedence precedence, ChildGroup parent) {

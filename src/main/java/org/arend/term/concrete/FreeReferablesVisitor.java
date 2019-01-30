@@ -25,7 +25,14 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
 
   public TCReferable visitPattern(Concrete.Pattern pattern) {
     if (pattern instanceof Concrete.NamePattern) {
-      Referable ref = ((Concrete.NamePattern) pattern).getReferable();
+      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+      if (namePattern.type != null) {
+        TCReferable ref = namePattern.type.accept(this, null);
+        if (ref != null) {
+          return ref;
+        }
+      }
+      Referable ref = namePattern.getReferable();
       return ref instanceof TCReferable && myReferables.contains(ref) ? (TCReferable) ref : null;
     }
     if (pattern instanceof Concrete.ConstructorPattern) {

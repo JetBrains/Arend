@@ -82,6 +82,7 @@ public final class Abstract {
     @Nullable Integer getNumber();
     @Nullable Referable getHeadReference();
     @Nonnull List<? extends Pattern> getArguments();
+    @Nullable Expression getType();
   }
 
   public interface Reference extends org.arend.naming.reference.Reference, SourceNode {

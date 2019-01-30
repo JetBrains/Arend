@@ -467,11 +467,15 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (reference == null && !pattern.isUnnamed()) {
       return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()));
     } else {
+      Abstract.Expression type = pattern.getType();
       List<? extends Abstract.Pattern> args = pattern.getArguments();
       if (reference instanceof GlobalReferable || !args.isEmpty()) {
+        if (type != null) {
+          myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
+        }
         return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args));
       } else {
-        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference));
+        return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference), type == null ? null : type.accept(this, null));
       }
     }
   }

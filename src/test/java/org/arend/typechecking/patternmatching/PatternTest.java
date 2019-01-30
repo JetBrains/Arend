@@ -26,6 +26,7 @@ import java.util.*;
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.Interval;
 import static org.arend.core.expr.ExpressionFactory.Nat;
+import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.*;
 
 public class PatternTest extends TypeCheckingTestCase {
@@ -109,8 +110,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n m k : Nat)\n" +
       "  | suc n, zero, suc k => k").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -121,8 +122,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n m k : Nat)\n" +
       "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -133,8 +134,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat)\n" +
       "  | suc n, zero, suc k => k").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -153,8 +154,8 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setSort(Sort.STD);
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -164,8 +165,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n m k : Nat)\n" +
       "  | suc n m, zero, suc k => k").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -175,8 +176,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n : Nat) (i : I)\n" +
       "  | zero, i => zero").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -187,8 +188,8 @@ public class PatternTest extends TypeCheckingTestCase {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
       "\\func f (n : Nat) (i : I)\n" +
       "  | zero, left => zero").getDefinition();
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) fun.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -207,8 +208,8 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setSort(Sort.STD);
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(0, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -228,8 +229,8 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setSort(Sort.STD);
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-    List<Concrete.Pattern> patternsArgs = ((Concrete.ElimFunctionBody) funDef.getBody()).getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNotNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
     checkPatterns(patternsArgs, res.proj1, res.proj2, false);
@@ -429,5 +430,22 @@ public class PatternTest extends TypeCheckingTestCase {
       "  | suc zero => zero\n" +
       "  | n => n\n" +
       "\\func test : ff (suc (suc (suc zero))) = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void typeTest() {
+    typeCheckModule(
+      "\\class A (f : Nat)\n" +
+      "\\data D | con A\n" +
+      "\\func foo (d : D) : Nat | con (a : A) => a.f");
+  }
+
+  @Test
+  public void typeTestError() {
+    typeCheckModule(
+      "\\class A (f : Nat)\n" +
+      "\\data D | con Nat\n" +
+      "\\func foo (n : Nat) (d : D) : Nat | n, con (a : A) => n", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

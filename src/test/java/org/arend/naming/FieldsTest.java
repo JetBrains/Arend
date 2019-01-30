@@ -125,4 +125,26 @@ public class FieldsTest extends NameResolverTestCase {
       "\\func \\infixr 3 + (x y : Nat) => A\n" +
       "\\func test (a : 0 + 1) => a.g");
   }
+
+  @Test
+  public void letTest() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\func foo (b : A) => \\let a : A => b \\in a.f");
+  }
+
+  @Test
+  public void letNewTest() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\func foo => \\let a => \\new A 0 \\in a.f");
+  }
+
+  @Test
+  public void patternTest() {
+    resolveNamesModule(
+      "\\class A (f : Nat)\n" +
+      "\\data D | con A\n" +
+      "\\func foo (d : D) : Nat | con (a : A) => a.f");
+  }
 }
