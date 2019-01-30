@@ -1418,16 +1418,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         ClassField field = (ClassField) definition;
         Expression impl = typecheckImplementation(field, statement.implementation, resultClassCall);
         if (impl != null) {
-          Expression oldImpl = resultClassCall.getImplementationHere(field);
-          if (oldImpl == null) {
-            LamExpression lamImpl = resultClassCall.getDefinition().getImplementation(field);
-            oldImpl = lamImpl == null ? null : lamImpl.getBody();
+          Expression oldImpl = null;
+          if (!field.isProperty()) {
+            oldImpl = resultClassCall.getImplementationHere(field);
+            if (oldImpl == null) {
+              LamExpression lamImpl = resultClassCall.getDefinition().getImplementation(field);
+              oldImpl = lamImpl == null ? null : lamImpl.getBody();
+            }
           }
           if (oldImpl != null) {
             if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, statement.implementation)) {
               myErrorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), statement));
             }
-          } else {
+          } else if (!resultClassCall.isImplemented(field)) {
             fieldSet.put(field, impl);
           }
         } else if (pseudoImplemented != null) {
@@ -1451,12 +1454,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             } else {
               for (ClassField field : ((ClassDefinition) definition).getFields()) {
                 Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
-                Expression oldImpl = resultClassCall.getImplementation(field, result.expression);
+                Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                 if (oldImpl != null) {
                   if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, statement.implementation)) {
                     myErrorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), statement.implementation));
                   }
-                } else {
+                } else if (!resultClassCall.isImplemented(field)) {
                   fieldSet.put(field, impl);
                 }
               }
@@ -1500,7 +1503,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(piType.getParameters(), fieldSetClass);
     Expression type = piType.getCodomain().accept(visitor, null);
     if (!visitor.isOK()) {
-      myErrorReporter.report(new TypecheckingError("The Type of '" + field.getName() + "' depends non-trivially on \\this parameter", implBody));
+      myErrorReporter.report(new TypecheckingError("The type of '" + field.getName() + "' depends non-trivially on \\this parameter", implBody));
       return null;
     }
 
