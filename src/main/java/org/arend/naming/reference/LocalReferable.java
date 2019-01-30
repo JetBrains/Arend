@@ -14,4 +14,8 @@ public class LocalReferable implements Referable {
   public String textRepresentation() {
     return myName;
   }
+
+  public boolean isHidden() {
+    return false;
+  }
 }

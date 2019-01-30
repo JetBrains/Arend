@@ -123,7 +123,9 @@ class ExpressionDeserialization {
         unfixedNames.add(name.isEmpty() ? null : name);
       }
       Type type = readType(proto.getType());
-      DependentLink tele = ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
+      DependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
+        ? new TypedDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true, EmptyDependentLink.getInstance())
+        : ExpressionFactory.parameter(!proto.getIsNotExplicit(), unfixedNames, type);
       for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
         registerBinding(link);
       }
@@ -138,7 +140,9 @@ class ExpressionDeserialization {
       unfixedNames.add(name.isEmpty() ? null : name);
     }
     Type type = proto.getType() != null ? readType(proto.getType()) : null;
-    SingleDependentLink tele = ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
+    SingleDependentLink tele = proto.getIsHidden() && unfixedNames.size() == 1
+      ? new TypedSingleDependentLink(!proto.getIsNotExplicit(), unfixedNames.get(0), type, true)
+      : ExpressionFactory.singleParams(!proto.getIsNotExplicit(), unfixedNames, type);
     for (DependentLink link = tele; link.hasNext(); link = link.getNext()) {
       registerBinding(link);
     }
@@ -148,7 +152,7 @@ class ExpressionDeserialization {
   DependentLink readParameter(ExpressionProtos.SingleParameter proto) throws DeserializationException {
     DependentLink link;
     if (proto.hasType()) {
-      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readType(proto.getType()), EmptyDependentLink.getInstance());
+      link = new TypedDependentLink(!proto.getIsNotExplicit(), proto.getName(), readType(proto.getType()), proto.getIsHidden(), EmptyDependentLink.getInstance());
     } else {
       link = new UntypedDependentLink(proto.getName());
     }

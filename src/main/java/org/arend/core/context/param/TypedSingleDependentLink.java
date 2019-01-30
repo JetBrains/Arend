@@ -7,6 +7,10 @@ import org.arend.core.subst.SubstVisitor;
 import java.util.List;
 
 public class TypedSingleDependentLink extends TypedDependentLink implements SingleDependentLink {
+  public TypedSingleDependentLink(boolean isExplicit, String name, Type type, boolean isHidden) {
+    super(isExplicit, name, type, isHidden, EmptyDependentLink.getInstance());
+  }
+
   public TypedSingleDependentLink(boolean isExplicit, String name, Type type) {
     super(isExplicit, name, type, EmptyDependentLink.getInstance());
   }
@@ -22,7 +26,7 @@ public class TypedSingleDependentLink extends TypedDependentLink implements Sing
   @Override
   public SingleDependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
-      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(substVisitor));
+      TypedSingleDependentLink result = new TypedSingleDependentLink(isExplicit(), getName(), getType().subst(substVisitor), isHidden());
       if (updateSubst) {
         substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {

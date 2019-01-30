@@ -41,10 +41,12 @@ public class GoalError extends TypecheckingError {
     if (!context.isEmpty()) {
       List<Doc> contextDocs = new ArrayList<>(context.size());
       for (Map.Entry<Referable, Binding> entry : context.entrySet()) {
-        Expression type = entry.getValue().getTypeExpr();
-        contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
+        if (!entry.getValue().isHidden()) {
+          Expression type = entry.getValue().getTypeExpr();
+          contextDocs.add(hang(hList(entry.getKey() == null ? text("_") : refDoc(entry.getKey()), text(" :")), type == null ? text("{?}") : termDoc(type, ppConfig)));
+        }
       }
-      contextDoc = hang(text("Context:"), vList(contextDocs));
+      contextDoc = contextDocs.isEmpty() ? nullDoc() : hang(text("Context:"), vList(contextDocs));
     } else {
       contextDoc = nullDoc();
     }

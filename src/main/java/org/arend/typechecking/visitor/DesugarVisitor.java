@@ -41,7 +41,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   private Referable checkDefinition(Concrete.Definition def) {
     if (def.enclosingClass != null) {
-      Referable thisParameter = new LocalReferable("this");
+      Referable thisParameter = new HiddenLocalReferable("this");
       def.accept(new ClassFieldChecker(thisParameter, def.enclosingClass, myConcreteProvider, getClassFields(def.enclosingClass), null, myErrorReporter), null);
       return thisParameter;
     } else {
@@ -105,7 +105,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     for (int i = 0; i < def.getFields().size(); i++) {
       Concrete.ClassField classField = def.getFields().get(i);
       Concrete.Expression fieldType = classField.getResultType();
-      Referable thisParameter = new LocalReferable("this");
+      Referable thisParameter = new HiddenLocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
       if (fieldType == previousType && classField.getParameters().isEmpty()) {
         classField.getParameters().addAll(def.getFields().get(i - 1).getParameters());
@@ -129,7 +129,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     // Check implementations
     for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
       Concrete.Expression impl = classFieldImpl.implementation;
-      Referable thisParameter = new LocalReferable("this");
+      Referable thisParameter = new HiddenLocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
       classFieldImpl.implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(impl.getData(), def.getData()))), impl.accept(classFieldChecker, null));
     }

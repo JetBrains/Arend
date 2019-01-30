@@ -6,7 +6,6 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.context.param.HiddenTypedSingleDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -201,11 +200,22 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return arg != null ? Concrete.AppExpression.make(null, function, arg, isExplicit) : function;
   }
 
+  private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments) {
+    ReferenceExpression refExpr = arg.checkedCast(ReferenceExpression.class);
+    if (refExpr != null && refExpr.getBinding().isHidden()) {
+      if (isExplicit) {
+        arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
+      }
+    } else {
+      arguments.add(new Concrete.Argument(arg.accept(this, null), isExplicit));
+    }
+  }
+
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
       if (parameters.isExplicit() || !myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
-        concreteArguments.add(new Concrete.Argument(arg.accept(this, null), parameters.isExplicit()));
+        visitArgument(arg, parameters.isExplicit(), concreteArguments);
       }
       parameters = parameters.getNext();
     }
@@ -226,7 +236,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
-      if (refExpr != null && refExpr.getBinding() instanceof HiddenTypedSingleDependentLink) {
+      if (refExpr != null && refExpr.getBinding().isHidden()) {
         return result;
       }
 
@@ -246,7 +256,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS)) {
       List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
       for (Expression arg : expr.getDataTypeArguments()) {
-        arguments.add(new Concrete.Argument(arg.accept(this, null), false));
+        visitArgument(arg, false, arguments);
       }
       result = Concrete.AppExpression.make(null, result, arguments);
     }
@@ -269,7 +279,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       Expression implementation = expr.getImplementationHere(field);
       if (implementation != null) {
         if (canBeArgument && field.getReferable().isParameterField()) {
-          arguments.add(new Concrete.Argument(implementation.accept(this, null), field.getReferable().isExplicitField()));
+          visitArgument(implementation, field.getReferable().isExplicitField(), arguments);
         } else {
           statements.add(cImplStatement(field.getReferable(), implementation.accept(this, null)));
           canBeArgument = false;

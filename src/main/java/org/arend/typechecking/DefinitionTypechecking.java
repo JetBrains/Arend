@@ -186,7 +186,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
       for (Concrete.ClassField field : def.getFields()) {
-        addField(field.getData(), definition, new PiExpression(Sort.STD, new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD)), new ErrorExpression(null, null)), null).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        addField(field.getData(), definition, new PiExpression(Sort.STD, new TypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD), true), new ErrorExpression(null, null)), null).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
       }
     } else {
       try {
@@ -245,7 +245,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (parameter instanceof Concrete.TelescopeParameter) {
           List<? extends Referable> referableList = parameter.getReferableList();
           List<String> names = parameter.getNames();
-          param = oldParameters != null ? oldParameters : parameter(parameter.getExplicit(), names, paramResult);
+          param = oldParameters != null
+            ? oldParameters
+            : referableList.size() == 1 && referableList.get(0) instanceof HiddenLocalReferable
+              ? new TypedDependentLink(parameter.getExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
+              : parameter(parameter.getExplicit(), names, paramResult);
           numberOfParameters = names.size();
           index += numberOfParameters;
 
@@ -1522,7 +1526,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
 
       for (Map.Entry<ClassField, Concrete.ClassFieldImpl> entry : implementedHere.entrySet()) {
-        SingleDependentLink parameter = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD));
+        SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
         Concrete.LamExpression lamImpl = (Concrete.LamExpression) entry.getValue().implementation;
         CheckTypeVisitor.Result result;
         if (lamImpl != null) {
@@ -1740,7 +1744,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
         Concrete.Expression codomain;
-        TypedSingleDependentLink thisParam = new HiddenTypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD));
+        TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD), true);
         myVisitor.getFreeBindings().add(thisParam);
         if (def.getResultType() instanceof Concrete.PiExpression) {
           Concrete.PiExpression piExpr = (Concrete.PiExpression) def.getResultType();

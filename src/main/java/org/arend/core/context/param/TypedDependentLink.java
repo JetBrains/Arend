@@ -11,6 +11,16 @@ public class TypedDependentLink implements DependentLink {
   private String myName;
   private Type myType;
   private DependentLink myNext;
+  private final boolean myHidden;
+
+  public TypedDependentLink(boolean isExplicit, String name, Type type, boolean isHidden, DependentLink next) {
+    assert next != null;
+    myExplicit = isExplicit;
+    myName = name;
+    myType = type;
+    myNext = next;
+    myHidden = isHidden;
+  }
 
   public TypedDependentLink(boolean isExplicit, String name, Type type, DependentLink next) {
     assert next != null;
@@ -18,6 +28,7 @@ public class TypedDependentLink implements DependentLink {
     myName = name;
     myType = type;
     myNext = next;
+    myHidden = false;
   }
 
   @Override
@@ -63,7 +74,7 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public DependentLink subst(SubstVisitor substVisitor, int size, boolean updateSubst) {
     if (size > 0) {
-      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(substVisitor), EmptyDependentLink.getInstance());
+      TypedDependentLink result = new TypedDependentLink(myExplicit, myName, myType.subst(substVisitor), myHidden, EmptyDependentLink.getInstance());
       if (updateSubst) {
         substVisitor.getExprSubstitution().addSubst(this, new ReferenceExpression(result));
       } else {
@@ -87,6 +98,11 @@ public class TypedDependentLink implements DependentLink {
   @Override
   public boolean hasNext() {
     return true;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return myHidden;
   }
 
   @Override

@@ -5,7 +5,6 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
@@ -189,7 +188,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
       for (Concrete.ClassField field : ((Concrete.ClassDefinition) definition).getFields()) {
         ClassField classField = new ClassField(field.getData(), (ClassDefinition) typechecked);
-        classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD)), new ErrorExpression(null, null)));
+        classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression(null, null)));
         classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         ((ClassDefinition) typechecked).addPersonalField(classField);
         myState.record(classField.getReferable(), classField);

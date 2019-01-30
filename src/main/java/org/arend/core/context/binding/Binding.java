@@ -4,4 +4,8 @@ import org.arend.core.expr.Expression;
 
 public interface Binding extends Variable {
   Expression getTypeExpr();
+
+  default boolean isHidden() {
+    return false;
+  }
 }

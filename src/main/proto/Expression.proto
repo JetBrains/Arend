@@ -135,12 +135,14 @@ message SingleParameter {
     string name = 1;
     bool is_not_explicit = 2;
     Type type = 5;
+    bool is_hidden = 6;
 }
 
 message Telescope {
     repeated string name = 1;
     bool is_not_explicit = 2;
     Type type = 5;
+    bool is_hidden = 6;
 }
 
 message Binding {
