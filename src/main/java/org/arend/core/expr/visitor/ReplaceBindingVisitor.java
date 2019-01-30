@@ -17,12 +17,18 @@ import java.util.Map;
 public class ReplaceBindingVisitor extends SubstVisitor {
   private final Binding myBinding;
   private final ClassCallExpression myBindingType;
+  private final Map<ClassField, Expression> myImplementations;
   private boolean myOK = true;
 
-  public ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType) {
+  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, Expression> implementations) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myBinding = binding;
     myBindingType = bindingType;
+    myImplementations = implementations;
+  }
+
+  public ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType) {
+    this(binding, bindingType, new HashMap<>(bindingType.getImplementedHere()));
   }
 
   public boolean isOK() {
@@ -49,23 +55,22 @@ public class ReplaceBindingVisitor extends SubstVisitor {
       ClassCallExpression argType = type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
       if (argType != null && argType.getDefinition() != myBindingType.getDefinition()) {
         Map<ClassField, Expression> implementations = new HashMap<>();
-        ClassCallExpression newType = new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false);
         List<? extends ClassField> fieldOrder = argType.getDefinition().getTypecheckingFieldOrder();
         if (fieldOrder == null) {
           return arg.accept(this, null);
         }
         for (ClassField field : fieldOrder) {
-          Expression impl = myBindingType.getImplementationHere(field);
-          if (impl == null) {
+          Expression impl = myImplementations.computeIfAbsent(field, e -> {
             LamExpression lamImpl = myBindingType.getDefinition().getImplementation(field);
             if (lamImpl != null) {
-              ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), newType);
-              impl = lamImpl.getBody().accept(visitor, null);
-              if (!visitor.isOK()) {
-                impl = null;
+              ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), myBindingType, myImplementations);
+              Expression impl1 = lamImpl.getBody().accept(visitor, null);
+              if (visitor.isOK()) {
+                return impl1;
               }
             }
-          }
+            return null;
+          });
 
           if (impl != null) {
             implementations.put(field, impl);
@@ -74,7 +79,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
           }
         }
 
-        return new NewExpression(newType);
+        return new NewExpression(new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false));
       }
     }
 
