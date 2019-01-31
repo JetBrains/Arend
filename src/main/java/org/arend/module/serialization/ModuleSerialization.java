@@ -1,5 +1,7 @@
 package org.arend.module.serialization;
 
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.error.ErrorReporter;
 import org.arend.module.ModulePath;
@@ -54,9 +56,6 @@ public class ModuleSerialization {
         tree = map.computeIfAbsent(name, k -> new CallTargetTree(0));
         map = tree.subtreeMap;
       }
-      if (tree == null) {
-        throw new IllegalStateException();
-      }
       tree.index = entry.getValue();
     }
 
@@ -83,7 +82,7 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
-    if (typechecked != null && typechecked.status().isTypeChecked()) {
+    if (typechecked != null && typechecked.status().isTypeChecked() && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
