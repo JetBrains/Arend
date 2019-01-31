@@ -440,4 +440,13 @@ public class ParserTest extends NameResolverTestCase {
   public void numberTest() {
     resolveNamesModule("\\func f => 5f");
   }
+
+  @Test
+  public void nestedCommentsTest() {
+    parseModule(
+      "\\func f => 0 {- \\x\n" +
+      "{- \\y -}\n" +
+      "\\z -}\n" +
+      "\\func g => 1");
+  }
 }

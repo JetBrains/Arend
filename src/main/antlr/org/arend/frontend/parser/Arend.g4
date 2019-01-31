@@ -228,7 +228,7 @@ UNDERSCORE : '_';
 WS : [ \t\r\n]+ -> skip;
 // LINE_COMMENT : '--' '-'* ([ \t] ~[\r\n]*)? [\r\n]? -> skip;
 LINE_COMMENT : '--' ~[\r\n]* -> skip;
-COMMENT : '{-' .*? '-}' -> skip;
+COMMENT : '{-' (COMMENT|.)*? '-}' -> skip;
 fragment START_CHAR : [~!@#$%^&*\-+=<>?/|:[\]a-zA-Z_];
 ID : START_CHAR (START_CHAR | [0-9'])*;
 INFIX : '`' ID '`';
