@@ -237,6 +237,22 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void isoPropExplicit() {
+    typeCheckModule(
+      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) =>\n" +
+      "  path {\\lam _ => \\Prop} (iso \\level \\Prop f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class).getDefCallArguments().get(0).cast(LamExpression.class).getBody());
+  }
+
+  @Test
+  public void isoPropExplicit2() {
+    typeCheckModule(
+      "\\func propExt (A B : \\Prop) (f : A -> B) (g : B -> A) : A = {\\Prop} B =>\n" +
+      "  path (iso \\level \\Prop f g (\\lam _ => Path.inProp _ _) (\\lam _ => Path.inProp _ _))");
+    assertEquals(new UniverseExpression(Sort.PROP), ((FunctionDefinition) getDefinition("propExt")).getResultType().cast(FunCallExpression.class).getDefCallArguments().get(0));
+  }
+
+  @Test
   public void isoSetError() {
     typeCheckModule("\\func setExt (A B : \\1-Type0) (f : A -> B) (g : B -> A) (p : \\Pi (x : A) -> g (f x) = x) (q : \\Pi (y : B) -> f (g y) = y) : A = {\\Set0} B => path (iso f g p q)", 1);
     assertThatErrorsAre(typeMismatchError());

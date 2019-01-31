@@ -114,8 +114,8 @@ public class Level {
     if (level == null) {
       return this;
     }
-    if (level == INFINITY) {
-      return INFINITY;
+    if (level == INFINITY || myConstant == 0 && myMaxConstant == 0) {
+      return level;
     }
 
     if (level.myVar != null) {
