@@ -4,14 +4,13 @@ import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.Set;
 
-public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> implements ConcreteDefinitionVisitor<Void, Void> {
+public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private Referable myThisParameter;
   private final TCClassReferable myClassReferable;
   private final ConcreteProvider myConcreteProvider;

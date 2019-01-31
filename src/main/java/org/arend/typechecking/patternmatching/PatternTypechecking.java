@@ -227,7 +227,7 @@ public class PatternTypechecking {
             parameters.setName(name);
           }
           if (namePattern.type != null) {
-            Type type = myVisitor.finalCheckType(namePattern.type, ExpectedType.OMEGA);
+            Type type = myVisitor.checkType(namePattern.type, ExpectedType.OMEGA);
             if (type != null && !parameters.getTypeExpr().isLessOrEquals(type.getExpr(), myVisitor.getEquations(), namePattern.type)) {
               myErrorReporter.report(new TypeMismatchError(type.getExpr(), parameters.getTypeExpr(), namePattern.type));
             }

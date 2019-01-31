@@ -99,7 +99,29 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
+  protected void visitPattern(Concrete.Pattern pattern, P params) {
+    if (pattern instanceof Concrete.NamePattern) {
+      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+      if (namePattern.type != null) {
+        namePattern.type = namePattern.type.accept(this, params);
+      }
+    } else if (pattern instanceof Concrete.ConstructorPattern) {
+      for (Concrete.Pattern subPattern : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
+        visitPattern(subPattern, params);
+      }
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      for (Concrete.Pattern subPattern : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        visitPattern(subPattern, params);
+      }
+    }
+  }
+
   protected void visitClause(Concrete.Clause clause, P params) {
+    if (clause.getPatterns() != null) {
+      for (Concrete.Pattern pattern : clause.getPatterns()) {
+        visitPattern(pattern, params);
+      }
+    }
     if (clause instanceof Concrete.FunctionClause && ((Concrete.FunctionClause) clause).expression != null) {
       ((Concrete.FunctionClause) clause).expression = ((Concrete.FunctionClause) clause).expression.accept(this, params);
     }

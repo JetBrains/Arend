@@ -1,10 +1,7 @@
 package org.arend.naming.scope;
 
 import org.arend.module.scopeprovider.ModuleScopeProvider;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.ErrorReference;
-import org.arend.naming.reference.LongUnresolvedReference;
-import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.local.LetScope;
 import org.arend.naming.scope.local.ListScope;
@@ -20,6 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class ScopeFactory {
@@ -59,11 +57,6 @@ public class ScopeFactory {
     while (sourceNode != null && !(sourceNode instanceof Abstract.Definition || sourceNode instanceof Abstract.NamespaceCommandHolder)) {
       // We cannot use any references in level expressions
       if (sourceNode instanceof Abstract.LevelExpression) {
-        return false;
-      }
-
-      // We can use only constructors in patterns
-      if (sourceNode instanceof Abstract.Pattern) {
         return false;
       }
 
@@ -119,6 +112,23 @@ public class ScopeFactory {
     return true;
   }
 
+  private static void addPatternReferables(Abstract.Pattern pattern, List<Referable> referables, Scope parentScope) {
+    List<? extends Abstract.Pattern> patterns = pattern.getArguments();
+    if (patterns.isEmpty()) {
+      Referable ref = pattern.getHeadReference();
+      if (ref != null) {
+        ref = ExpressionResolveNameVisitor.resolve(ref, parentScope);
+        if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR)) {
+          referables.add(ref);
+        }
+      }
+    } else {
+      for (Abstract.Pattern subPattern : patterns) {
+        addPatternReferables(subPattern, referables, parentScope);
+      }
+    }
+  }
+
   public static Scope forSourceNode(Scope parentScope, Abstract.SourceNode sourceNode, Scope importElements) {
     if (sourceNode == null) {
       return parentScope;
@@ -129,15 +139,36 @@ public class ScopeFactory {
       return EmptyScope.INSTANCE;
     }
 
-    // We can use only constructors in patterns
-    if (sourceNode instanceof Abstract.Pattern) {
-      return new ConstructorFilteredScope(parentScope.getGlobalSubscope());
-    }
-
     Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
     if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
       sourceNode = parentSourceNode;
       parentSourceNode = sourceNode.getParentSourceNode();
+    }
+
+    // Add all references defined in previous patterns
+    if (sourceNode instanceof Abstract.Pattern) {
+      List<? extends Abstract.Pattern> patterns;
+      if (parentSourceNode instanceof Abstract.Pattern) {
+        patterns = ((Abstract.Pattern) parentSourceNode).getArguments();
+      } else if (parentSourceNode instanceof Abstract.Clause) {
+        patterns = ((Abstract.Clause) parentSourceNode).getPatterns();
+      } else {
+        patterns = Collections.emptyList();
+      }
+
+      if (patterns.isEmpty()) {
+        return parentScope;
+      }
+
+      List<Referable> referables = new ArrayList<>();
+      Scope resultScope = new ListScope(parentScope, referables);
+      for (Abstract.Pattern pattern : patterns) {
+        if (pattern.equals(sourceNode)) {
+          break;
+        }
+        addPatternReferables(pattern, referables, resultScope);
+      }
+      return resultScope;
     }
 
     // After namespace command

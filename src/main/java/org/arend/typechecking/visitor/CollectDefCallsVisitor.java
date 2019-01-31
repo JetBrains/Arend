@@ -96,21 +96,10 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
         ((Concrete.TermFunctionBody) body).getTerm().accept(this, null);
       }
       visitClassFieldImpls(body.getClassFieldImpls(), null);
-      visitClauses(body.getClauses());
+      visitClauses(body.getClauses(), null);
     }
 
     return null;
-  }
-
-  private void visitClauses(List<Concrete.FunctionClause> clauses) {
-    for (Concrete.FunctionClause clause : clauses) {
-      for (Concrete.Pattern pattern : clause.getPatterns()) {
-        visitPattern(pattern);
-      }
-      if (clause.getExpression() != null) {
-        clause.getExpression().accept(this, null);
-      }
-    }
   }
 
   @Override
@@ -125,7 +114,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         if (clause.getPatterns() != null) {
           for (Concrete.Pattern pattern : clause.getPatterns()) {
-            visitPattern(pattern);
+            visitPattern(pattern, null);
           }
         }
         for (Concrete.Constructor constructor : clause.getConstructors()) {
@@ -137,20 +126,15 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
     return null;
   }
 
-  private void visitPattern(Concrete.Pattern pattern) {
+  @Override
+  protected void visitPattern(Concrete.Pattern pattern, Void params) {
     if (pattern instanceof Concrete.ConstructorPattern) {
-      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
-      if (conPattern.getConstructor() instanceof TCReferable) {
-        myDependencies.add((TCReferable) conPattern.getConstructor());
-      }
-      for (Concrete.Pattern patternArg : conPattern.getPatterns()) {
-        visitPattern(patternArg);
-      }
-    } else if (pattern instanceof Concrete.TuplePattern) {
-      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
-        visitPattern(patternArg);
+      Referable constructor = ((Concrete.ConstructorPattern) pattern).getConstructor();
+      if (constructor instanceof TCReferable) {
+        myDependencies.add((TCReferable) constructor);
       }
     }
+    super.visitPattern(pattern, null);
   }
 
   private void visitConstructor(Concrete.Constructor def) {
@@ -159,7 +143,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
       def.getResultType().accept(this, null);
     }
     if (!def.getEliminatedReferences().isEmpty()) {
-      visitClauses(def.getClauses());
+      visitClauses(def.getClauses(), null);
     }
   }
 

@@ -89,6 +89,36 @@ public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return null;
   }
 
+  protected void visitPattern(Concrete.Pattern pattern, P params) {
+    if (pattern instanceof Concrete.NamePattern) {
+      Concrete.Expression type = ((Concrete.NamePattern) pattern).type;
+      if (type != null) {
+        type.accept(this, params);
+      }
+    } else if (pattern instanceof Concrete.ConstructorPattern) {
+      for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {
+        visitPattern(patternArg, params);
+      }
+    } else if (pattern instanceof Concrete.TuplePattern) {
+      for (Concrete.Pattern patternArg : ((Concrete.TuplePattern) pattern).getPatterns()) {
+        visitPattern(patternArg, params);
+      }
+    }
+  }
+
+  protected void visitClauses(List<Concrete.FunctionClause> clauses, P params) {
+    for (Concrete.FunctionClause clause : clauses) {
+      if (clause.getPatterns() != null) {
+        for (Concrete.Pattern pattern : clause.getPatterns()) {
+          visitPattern(pattern, params);
+        }
+      }
+      if (clause.getExpression() != null) {
+        clause.getExpression().accept(this, params);
+      }
+    }
+  }
+
   @Override
   public Void visitCase(Concrete.CaseExpression expr, P params) {
     for (Concrete.CaseArgument caseArg : expr.getArguments()) {
@@ -103,10 +133,7 @@ public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (expr.getResultTypeLevel() != null) {
       expr.getResultTypeLevel().accept(this, params);
     }
-    for (Concrete.FunctionClause clause : expr.getClauses()) {
-      if (clause.getExpression() != null)
-        clause.getExpression().accept(this, params);
-    }
+    visitClauses(expr.getClauses(), params);
     return null;
   }
 
