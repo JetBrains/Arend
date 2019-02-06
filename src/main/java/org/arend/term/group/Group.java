@@ -13,9 +13,7 @@ public interface Group {
   @Nonnull Collection<? extends Group> getSubgroups();
   @Nonnull Collection<? extends NamespaceCommand> getNamespaceCommands();
 
-  default @Nonnull Collection<? extends InternalReferable> getInternalReferables() {
-    return Collections.emptyList();
-  }
+  @Nonnull Collection<? extends InternalReferable> getInternalReferables();
 
   default @Nonnull Collection<? extends InternalReferable> getConstructors() {
     return Collections.emptyList();

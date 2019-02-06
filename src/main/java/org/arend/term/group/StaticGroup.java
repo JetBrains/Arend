@@ -4,6 +4,8 @@ import org.arend.naming.reference.LocatedReferable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class StaticGroup implements ChildGroup {
@@ -35,6 +37,12 @@ public class StaticGroup implements ChildGroup {
   @Override
   public List<SimpleNamespaceCommand> getNamespaceCommands() {
     return myNamespaceCommands;
+  }
+
+  @Nonnull
+  @Override
+  public Collection<? extends InternalReferable> getInternalReferables() {
+    return Collections.emptyList();
   }
 
   @Nullable
