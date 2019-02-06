@@ -100,15 +100,7 @@ public class ModuleSerialization {
     for (Group subgroup : group.getDynamicSubgroups()) {
       builder.addDynamicSubgroup(writeGroup(subgroup, referableConverter));
     }
-    for (Group.InternalReferable internalReferable : group.getConstructors()) {
-      if (!internalReferable.isVisible()) {
-        Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
-        if (def != null) {
-          builder.addInvisibleInternalReferable(myCallTargetIndexProvider.getDefIndex(def));
-        }
-      }
-    }
-    for (Group.InternalReferable internalReferable : group.getFields()) {
+    for (Group.InternalReferable internalReferable : group.getInternalReferables()) {
       if (!internalReferable.isVisible()) {
         Definition def = myState.getTypechecked(referableConverter.toDataLocatedReferable(internalReferable.getReferable()));
         if (def != null) {

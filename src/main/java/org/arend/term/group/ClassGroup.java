@@ -30,6 +30,12 @@ public class ClassGroup extends StaticGroup {
 
   @Nonnull
   @Override
+  public Collection<? extends InternalReferable> getInternalReferables() {
+    return myInternalGlobalReferables;
+  }
+
+  @Nonnull
+  @Override
   public Collection<? extends InternalReferable> getFields() {
     return myInternalGlobalReferables;
   }

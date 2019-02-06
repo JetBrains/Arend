@@ -208,15 +208,7 @@ public abstract class NameResolvingChecker {
     }
 
     Map<String, LocatedReferable> referables = new HashMap<>();
-    for (Group.InternalReferable internalRef : group.getConstructors()) {
-      LocatedReferable ref = internalRef.getReferable();
-      String name = ref.textRepresentation();
-      if (!name.isEmpty() && !"_".equals(name)) {
-        referables.putIfAbsent(name, ref);
-      }
-    }
-
-    for (Group.InternalReferable internalRef : fields) {
+    for (Group.InternalReferable internalRef : group.getInternalReferables()) {
       LocatedReferable ref = internalRef.getReferable();
       String name = ref.textRepresentation();
       if (!name.isEmpty() && !"_".equals(name)) {
@@ -324,12 +316,7 @@ public abstract class NameResolvingChecker {
 
   private void checkSubgroup(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables, LocatedReferable parentReferable) {
     for (Group subgroup : subgroups) {
-      for (Group.InternalReferable internalReferable : subgroup.getFields()) {
-        if (internalReferable.isVisible()) {
-          checkReference(internalReferable.getReferable(), referables, parentReferable);
-        }
-      }
-      for (Group.InternalReferable internalReferable : subgroup.getConstructors()) {
+      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
         if (internalReferable.isVisible()) {
           checkReference(internalReferable.getReferable(), referables, parentReferable);
         }

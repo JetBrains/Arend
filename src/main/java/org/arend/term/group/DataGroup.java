@@ -16,6 +16,12 @@ public class DataGroup extends StaticGroup {
 
   @Nonnull
   @Override
+  public Collection<? extends InternalReferable> getInternalReferables() {
+    return myConstructors;
+  }
+
+  @Nonnull
+  @Override
   public Collection<? extends InternalReferable> getConstructors() {
     return myConstructors;
   }

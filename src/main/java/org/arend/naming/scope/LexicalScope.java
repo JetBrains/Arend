@@ -55,14 +55,9 @@ public class LexicalScope implements Scope {
   private void addSubgroups(Collection<? extends Group> subgroups, List<Referable> elements) {
     for (Group subgroup : subgroups) {
       addReferable(subgroup.getReferable(), elements);
-      for (Group.InternalReferable constructor : subgroup.getConstructors()) {
-        if (constructor.isVisible()) {
-          addReferable(constructor.getReferable(), elements);
-        }
-      }
-      for (Group.InternalReferable field : subgroup.getFields()) {
-        if (field.isVisible()) {
-          addReferable(field.getReferable(), elements);
+      for (Group.InternalReferable internalRef : subgroup.getInternalReferables()) {
+        if (internalRef.isVisible()) {
+          addReferable(internalRef.getReferable(), elements);
         }
       }
     }
