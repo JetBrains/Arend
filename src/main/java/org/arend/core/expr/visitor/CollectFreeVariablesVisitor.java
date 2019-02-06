@@ -3,7 +3,6 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
@@ -41,7 +40,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
       return;
     }
 
-    Set<Variable> newSet = variables.isEmpty() ? variables : new HashSet<>();
+    Set<Variable> newSet = new HashSet<>();
     DependentLink link1 = link.getNextTyped(null);
     visitParameters(link1.getNext(), body, newSet);
     addFreeVariables(link1, newSet);
@@ -50,9 +49,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
       newSet.remove(link);
     }
     newSet.remove(link1);
-    if (newSet != variables) {
-      variables.addAll(newSet);
-    }
+    variables.addAll(newSet);
     link1.getTypeExpr().accept(this, variables);
   }
 
@@ -86,14 +83,12 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
       return;
     }
 
-    Set<Variable> newSet = variables.isEmpty() ? variables : new HashSet<>();
+    Set<Variable> newSet = new HashSet<>();
     visitLetClauses(index + 1, expr, newSet);
     LetClause clause = expr.getClauses().get(index);
     addFreeVariables(clause, newSet);
     newSet.remove(clause);
-    if (variables != newSet) {
-      variables.addAll(newSet);
-    }
+    variables.addAll(newSet);
     clause.getExpression().accept(this, variables);
   }
 

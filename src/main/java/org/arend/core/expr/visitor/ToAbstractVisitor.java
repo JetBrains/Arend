@@ -22,6 +22,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.patternmatching.Util;
+import org.arend.typechecking.visitor.VoidConcreteExpressionVisitor;
 
 import java.util.*;
 
@@ -316,6 +317,83 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return reference;
   }
 
+  private Concrete.Expression etaReduce(Concrete.LamExpression lamExpr) {
+    if (!(lamExpr.getBody() instanceof Concrete.AppExpression)) {
+      return lamExpr;
+    }
+    Concrete.Expression fun = ((Concrete.AppExpression) lamExpr.getBody()).getFunction();
+    List<Concrete.Argument> args = ((Concrete.AppExpression) lamExpr.getBody()).getArguments();
+    int i = args.size() - 1;
+    Set<Referable> refs = new HashSet<>();
+
+    List<Concrete.Parameter> parameters = lamExpr.getParameters();
+    loop:
+    for (int j = parameters.size() - 1; j >= 0; j--) {
+      for (int k = parameters.get(j).getReferableList().size() - 1; k >= 0; k--) {
+        Referable referable = parameters.get(j).getReferableList().get(k);
+        if (referable == null || i < 0 || !(args.get(i).getExpression() instanceof Concrete.ReferenceExpression && referable.equals(((Concrete.ReferenceExpression) args.get(i).getExpression()).getReferent()))) {
+          break loop;
+        }
+        refs.add(referable);
+        i--;
+      }
+    }
+
+    if (refs.isEmpty()) {
+      return lamExpr;
+    }
+
+    List<? extends Referable> lastRefs = parameters.get(parameters.size() - 1).getReferableList();
+    Referable lastRef = lastRefs.get(lastRefs.size() - 1);
+    VoidConcreteExpressionVisitor<Void> visitor = new VoidConcreteExpressionVisitor<Void>() {
+      @Override
+      public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
+        refs.remove(expr.getReferent());
+        return null;
+      }
+    };
+
+    fun.accept(visitor, null);
+    for (int j = 0; j <= i; j++) {
+      if (!refs.contains(lastRef)) {
+        return lamExpr;
+      }
+      args.get(j).getExpression().accept(visitor, null);
+    }
+
+    int numberOfVars = 0;
+    loop:
+    for (int j = parameters.size() - 1; j >= 0; j--) {
+      for (int k = parameters.get(j).getReferableList().size() - 1; k >= 0; k--) {
+        if (!refs.contains(parameters.get(j).getReferableList().get(k))) {
+          break loop;
+        }
+        numberOfVars++;
+      }
+    }
+    if (numberOfVars == 0) {
+      return lamExpr;
+    }
+
+    for (int j = parameters.size() - 1; j >= 0; j--) {
+      List<? extends Referable> refList = parameters.get(j).getReferableList();
+      if (numberOfVars == refList.size()) {
+        parameters = parameters.subList(0, j);
+        break;
+      }
+      if (numberOfVars < refList.size()) {
+        parameters = new ArrayList<>(parameters.subList(0, j));
+        Concrete.Parameter param = parameters.get(j);
+        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.getExplicit(), param.getReferableList().subList(0, refList.size() - numberOfVars), param.getType()));
+        break;
+      }
+      numberOfVars -= refList.size();
+    }
+
+    Concrete.Expression body = args.size() == numberOfVars ? fun : Concrete.AppExpression.make(lamExpr.body.getData(), fun, args.subList(0, args.size() - numberOfVars));
+    return parameters.isEmpty() ? body : new Concrete.LamExpression(lamExpr.getData(), parameters, body);
+  }
+
   @Override
   public Concrete.Expression visitLam(LamExpression lamExpr, Void ignore) {
     List<Concrete.Parameter> parameters = new ArrayList<>();
@@ -332,7 +410,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    return cLam(parameters, expr.accept(this, null));
+    return etaReduce(cLam(parameters, expr.accept(this, null)));
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
