@@ -464,4 +464,12 @@ public class ParserTest extends NameResolverTestCase {
       "\\func ----x => ----| ---- \\x\n" +
       "\\func --x => ----| -- ");
   }
+
+  @Test
+  public void notLineComment3() {
+    parseModule(
+      "\\func ----| => 0 --`\n" +
+      "\\func ----x => ----| --\\func\n" +
+      "\\func --x => ----| -----\\");
+  }
 }
