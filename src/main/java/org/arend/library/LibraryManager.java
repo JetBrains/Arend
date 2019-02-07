@@ -8,7 +8,6 @@ import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
-import org.arend.prelude.PreludeLibrary;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 
 import javax.annotation.Nonnull;
@@ -224,6 +223,34 @@ public class LibraryManager {
   }
 
   /**
+   * Renames a library with a given name.
+   *
+   * @param oldName  the old name of the library to be renamed.
+   * @param newName  a new name of the library.
+   *
+   * @return true if the library was successfully renamed, false otherwise.
+   */
+  public boolean renameLibrary(String oldName, String newName) {
+    Library library = getRegisteredLibrary(oldName);
+    return library != null && renameLibrary(library, newName);
+  }
+
+  /**
+   * Renames a library.
+   *
+   * @param library  the library to be renamed.
+   * @param newName  a new name of the library.
+   *
+   * @return true if the library was successfully renamed, false otherwise.
+   */
+  public boolean renameLibrary(Library library, String newName) {
+    Set<Library> dependencies = myReverseDependencies.remove(library);
+    boolean result = library.setName(newName);
+    myReverseDependencies.put(library, dependencies);
+    return result;
+  }
+
+  /**
    * Unloads a library together with all libraries depending on it and unregisters them from this library manager.
    *
    * @param libraryName  the name of the library to unload.
@@ -243,6 +270,7 @@ public class LibraryManager {
    * @param library the library to unload.
    */
   public void unloadLibrary(Library library) {
+    myFailedLibraries.remove(library);
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
       myReverseDependencies.remove(library);
@@ -250,6 +278,8 @@ public class LibraryManager {
     }
 
     Set<Library> dependencies = myReverseDependencies.remove(library);
+    library.unload();
+
     if (dependencies == null) {
       return;
     }
@@ -257,16 +287,22 @@ public class LibraryManager {
     for (Library dependency : dependencies) {
       unloadLibrary(dependency);
     }
-
-    library.unload();
   }
 
   /**
    * Unloads all libraries.
    */
   public void unload() {
-    while (!myReverseDependencies.isEmpty()) {
-      unloadLibrary(myReverseDependencies.keySet().iterator().next());
+    myFailedLibraries.clear();
+    if (!myLoadingLibraries.isEmpty()) {
+      myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
+      myReverseDependencies.clear();
+      return;
     }
+
+    for (Library library : myReverseDependencies.keySet()) {
+      library.unload();
+    }
+    myReverseDependencies.clear();
   }
 }
