@@ -403,13 +403,13 @@ public class ParserTest extends NameResolverTestCase {
       "\\func g => 0\n" +
       "------------ foo\n" +
       "\\func g1 => 0\n" +
-      "--foobar\n" +
+      "-- foobar\n" +
       "\\func g2 => 0\n" +
-      "------------foo\n" +
+      "------------ foo\n" +
       "\\func g3 => 0\n" +
-      "--|\n" +
+      "-- |\n" +
       "\\func g4 => 0\n" +
-      "--%--x\n" +
+      "-- %--x\n" +
       "{------\n" +
       "bar\n" +
       "------}\n" +
@@ -448,5 +448,20 @@ public class ParserTest extends NameResolverTestCase {
       "{- \\y -}\n" +
       "\\z -}\n" +
       "\\func g => 1");
+  }
+
+  @Test
+  public void notLineComment() {
+    parseModule(
+      "\\func --| => 0\n" +
+      "\\func g => --|");
+  }
+
+  @Test
+  public void notLineComment2() {
+    parseModule(
+      "\\func ----| => 0 --\n" +
+      "\\func ----x => ----| ---- \\x\n" +
+      "\\func --x => ----| -- ");
   }
 }
