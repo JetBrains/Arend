@@ -6,9 +6,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public class FileUtils {
   public static final String EXTENSION = ".ard";
@@ -82,8 +81,7 @@ public class FileUtils {
     System.err.println("[ERROR] " + module + " is an illegal module path");
   }
 
-  public static Set<ModulePath> getModules(Path path, String ext) {
-    Set<ModulePath> modules = new LinkedHashSet<>();
+  public static void getModules(Path path, String ext, Collection<ModulePath> modules) {
     try {
       Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
         @Override
@@ -106,6 +104,5 @@ public class FileUtils {
       System.err.println("[ERROR] An exception happened while processing directory " + path);
       e.printStackTrace();
     }
-    return modules;
   }
 }

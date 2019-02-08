@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final LibraryConfig myConfig;
@@ -37,8 +37,8 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getOutputDir());
     }
 
+    myModules = new LinkedHashSet<>();
     if (myConfig.getModules() != null) {
-      myModules = new HashSet<>();
       for (String module : myConfig.getModules()) {
         ModulePath modulePath = FileUtils.modulePath(module);
         if (modulePath != null) {
@@ -49,7 +49,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       }
     } else {
       if (mySourceBasePath != null) {
-        myModules = FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION);
+        FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myModules);
       }
     }
 
