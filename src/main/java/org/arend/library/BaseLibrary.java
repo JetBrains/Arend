@@ -31,6 +31,11 @@ public abstract class BaseLibrary implements Library {
     myTypecheckerState = typecheckerState;
   }
 
+  @Override
+  public boolean setName(String name) {
+    return false;
+  }
+
   @Nonnull
   @Override
   public TypecheckerState getTypecheckerState() {
