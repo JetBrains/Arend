@@ -154,7 +154,8 @@ public abstract class BaseCliFrontend {
     List<UnmodifiableSourceLibrary> requestedLibraries = new ArrayList<>();
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
-        requestedModules = FileUtils.getModules(sourceDir, FileUtils.EXTENSION);
+        requestedModules = new LinkedHashSet<>();
+        FileUtils.getModules(sourceDir, FileUtils.EXTENSION, requestedModules);
       } else {
         requestedModules = Collections.emptySet();
       }

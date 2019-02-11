@@ -31,11 +31,6 @@ public abstract class BaseLibrary implements Library {
     myTypecheckerState = typecheckerState;
   }
 
-  @Override
-  public boolean setName(String name) {
-    return false;
-  }
-
   @Nonnull
   @Override
   public TypecheckerState getTypecheckerState() {
@@ -124,21 +119,6 @@ public abstract class BaseLibrary implements Library {
 
     ordering.orderModules(groups);
     return true;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    SourceLibrary that = (SourceLibrary) o;
-
-    return getName().equals(that.getName());
-  }
-
-  @Override
-  public int hashCode() {
-    return getName().hashCode();
   }
 
   @Override

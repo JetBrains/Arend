@@ -24,13 +24,6 @@ public interface Library {
   String getName();
 
   /**
-   * Renames the library.
-   * @param name  a new name.
-   * @return true if the library was successfully renamed, false otherwise.
-   */
-  boolean setName(String name);
-
-  /**
    * Loads the library and its dependencies.
    * This method must register all of the library's dependencies using {@link LibraryManager#registerDependency}
    * Do not invoke this method directly; use {@link LibraryManager#loadLibrary(Library)} instead.

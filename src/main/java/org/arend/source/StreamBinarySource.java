@@ -1,5 +1,6 @@
 package org.arend.source;
 
+import com.google.protobuf.CodedInputStream;
 import org.arend.error.ErrorReporter;
 import org.arend.library.SourceLibrary;
 import org.arend.library.error.LibraryError;
@@ -59,7 +60,9 @@ public abstract class StreamBinarySource implements BinarySource {
         return false;
       }
 
-      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(inputStream);
+      CodedInputStream codedInputStream = CodedInputStream.newInstance(inputStream);
+      codedInputStream.setRecursionLimit(Integer.MAX_VALUE);
+      ModuleProtos.Module moduleProto = ModuleProtos.Module.parseFrom(codedInputStream);
       boolean isComplete = moduleProto.getComplete();
       if (!isComplete && !library.hasRawSources()) {
         sourceLoader.getLibraryErrorReporter().report(new PartialModuleError(modulePath));

@@ -3,7 +3,6 @@ package org.arend.library;
 import org.arend.error.ErrorReporter;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
-import org.arend.module.ModulePath;
 import org.arend.module.scopeprovider.CachingModuleScopeProvider;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.scope.Scope;
@@ -122,21 +121,6 @@ public class LibraryManager {
   }
 
   /**
-   * Gets the library which contains a specified module.
-   *
-   * @param modulePath the path to a module.
-   * @return the library with the specified module.
-   */
-  public Library getModuleLibrary(ModulePath modulePath) {
-    for (Library library : getRegisteredLibraries()) {
-      if (library.containsModule(modulePath)) {
-        return library;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Loads a library together with its dependencies and registers them in this library manager.
    *
    * @param libraryName  the name of the library to load.
@@ -220,34 +204,6 @@ public class LibraryManager {
    */
   public void registerDependency(Library depender, Library dependee) {
     myReverseDependencies.get(dependee).add(depender);
-  }
-
-  /**
-   * Renames a library with a given name.
-   *
-   * @param oldName  the old name of the library to be renamed.
-   * @param newName  a new name of the library.
-   *
-   * @return true if the library was successfully renamed, false otherwise.
-   */
-  public boolean renameLibrary(String oldName, String newName) {
-    Library library = getRegisteredLibrary(oldName);
-    return library != null && renameLibrary(library, newName);
-  }
-
-  /**
-   * Renames a library.
-   *
-   * @param library  the library to be renamed.
-   * @param newName  a new name of the library.
-   *
-   * @return true if the library was successfully renamed, false otherwise.
-   */
-  public boolean renameLibrary(Library library, String newName) {
-    Set<Library> dependencies = myReverseDependencies.remove(library);
-    boolean result = library.setName(newName);
-    myReverseDependencies.put(library, dependencies);
-    return result;
   }
 
   /**
