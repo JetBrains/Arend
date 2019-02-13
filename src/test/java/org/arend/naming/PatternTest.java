@@ -111,4 +111,22 @@ public class PatternTest extends NameResolverTestCase {
       "\\func f (d : D) : \\Prop => \\case d \\with { c1 x => x | c2 y => x }", 1);
     assertThatErrorsAre(Matchers.notInScope("x"));
   }
+
+  @Test
+  public void longName() {
+    resolveNamesModule(
+      "\\data D | c1 | c2\n" +
+      "\\func f (d : D) : D\n" +
+      "  | D.c1 => c1\n" +
+      "  | c2 => D.c2");
+  }
+
+  @Test
+  public void longName2() {
+    resolveNamesModule(
+      "\\func f (n : Nat) : Nat\n" +
+      "  | suc (Nat.suc Nat.zero) => 0\n" +
+      "  | Nat.zero => 1\n" +
+      "  | Nat.suc zero => 2");
+  }
 }

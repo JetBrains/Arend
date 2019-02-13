@@ -3,17 +3,16 @@ package org.arend.typechecking.error.local;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.Error;
 import org.arend.error.doc.Doc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import static org.arend.core.expr.visitor.ToAbstractVisitor.Flag.*;
 import static org.arend.error.doc.DocFactory.*;
 
 public class GoalError extends TypecheckingError {
@@ -34,6 +33,18 @@ public class GoalError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    EnumSet<ToAbstractVisitor.Flag> flags = ppConfig.getExpressionFlags().clone();
+    flags.remove(SHOW_CON_PARAMS);
+    flags.remove(SHOW_IMPLICIT_ARGS);
+    flags.remove(SHOW_TYPES_IN_LAM);
+    flags.remove(SHOW_INFERENCE_LEVEL_VARS);
+    ppConfig = new PrettyPrinterConfig() {
+      @Override
+      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+        return flags;
+      }
+    };
+
     Doc expectedDoc = expectedType == null ? nullDoc() : hang(text("Expected type:"), expectedType.prettyPrint(ppConfig));
     Doc actualDoc = actualType == null ? nullDoc() : hang(text(expectedType != null ? "  Actual type:" : "Type:"), termDoc(actualType, ppConfig));
 

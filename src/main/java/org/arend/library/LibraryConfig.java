@@ -12,7 +12,7 @@ import static org.arend.error.doc.DocFactory.*;
 public class LibraryConfig {
   private String myName;
   private String mySourcesDirectory;
-  private String myOutputDirectory;
+  private String myBinariesDirectory;
   private List<String> myModules;
   private List<String> myDependencies;
 
@@ -32,12 +32,12 @@ public class LibraryConfig {
     mySourcesDirectory = sourcesDirectory;
   }
 
-  public String getOutputDir() {
-    return myOutputDirectory;
+  public String getBinariesDir() {
+    return myBinariesDirectory;
   }
 
-  public void setOutputDir(String outputDirectory) {
-    myOutputDirectory = outputDirectory;
+  public void setBinariesDir(String binariesDirectory) {
+    myBinariesDirectory = binariesDirectory;
   }
 
   public List<String> getModules() {
@@ -65,8 +65,8 @@ public class LibraryConfig {
     if (mySourcesDirectory != null) {
       docs.add(text("sourcesDir: " + mySourcesDirectory));
     }
-    if (myOutputDirectory != null) {
-      docs.add(text("outputDir: " + myOutputDirectory));
+    if (myBinariesDirectory != null) {
+      docs.add(text("binariesDir: " + myBinariesDirectory));
     }
     if (myModules != null) {
       docs.add(hList(text("modules: ["), hSep(text(", "), myModules.stream().map(DocFactory::text).collect(Collectors.toList())), text("]")));

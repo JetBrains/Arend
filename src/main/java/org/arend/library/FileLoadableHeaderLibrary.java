@@ -33,8 +33,8 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       mySourceBasePath = myHeaderFile.getParent().resolve(myConfig.getSourcesDir());
     }
 
-    if (myConfig.getOutputDir() != null) {
-      myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getOutputDir());
+    if (myConfig.getBinariesDir() != null) {
+      myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getBinariesDir());
     }
 
     myModules = new LinkedHashSet<>();

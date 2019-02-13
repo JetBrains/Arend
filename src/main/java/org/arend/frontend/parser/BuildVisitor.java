@@ -295,10 +295,11 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternConstructor(PatternConstructorContext ctx) {
     List<AtomPatternOrIDContext> atomPatternOrIDs = ctx.atomPatternOrID();
-    TerminalNode id = ctx.ID();
+    Position position = tokenPosition(ctx.start);
+    List<String> longName = visitLongNamePath(ctx.longName());
     ExprContext typeCtx = ctx.expr();
-    if (atomPatternOrIDs.isEmpty()) {
-      return new Concrete.NamePattern(tokenPosition(ctx.start), true, new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), typeCtx == null ? null : visitExpr(typeCtx));
+    if (atomPatternOrIDs.isEmpty() && longName.size() == 1) {
+      return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), typeCtx == null ? null : visitExpr(typeCtx));
     } else {
       if (typeCtx != null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
@@ -307,7 +308,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
         patterns.add(visitAtomPattern(atomCtx));
       }
-      return new Concrete.ConstructorPattern(tokenPosition(ctx.start), new NamedUnresolvedReference(tokenPosition(id.getSymbol()), id.getText()), patterns);
+      return new Concrete.ConstructorPattern(position, LongUnresolvedReference.make(position, longName), patterns);
     }
   }
 
@@ -349,7 +350,10 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.Pattern visitPatternID(PatternIDContext ctx) {
     Position position = tokenPosition(ctx.start);
-    return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, ctx.ID().getText()), null);
+    List<String> longName = visitLongNamePath(ctx.longName());
+    return longName.size() == 1
+      ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
+      : new Concrete.ConstructorPattern(position, true, LongUnresolvedReference.make(position, longName), Collections.emptyList());
   }
 
   @Override

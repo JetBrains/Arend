@@ -78,7 +78,7 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 where : '\\where' ('{' statement* '}' | statement);
 
 pattern : atomPattern                             # patternAtom
-        | ID atomPatternOrID* (':' expr)?         # patternConstructor
+        | longName atomPatternOrID* (':' expr)?   # patternConstructor
         ;
 
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
@@ -89,7 +89,7 @@ atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
             ;
 
 atomPatternOrID : atomPattern     # patternOrIDAtom
-                | ID              # patternID
+                | longName        # patternID
                 ;
 
 constructor : precedence ID tele* /* TODO[hits] (':' expr)? */ (elim? '{' clause? ('|' clause)* '}')?;
