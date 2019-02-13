@@ -146,7 +146,7 @@ public abstract class BaseCliFrontend {
     Path sourceDir = sourceDirStr == null ? FileUtils.getCurrentDirectory() : Paths.get(sourceDirStr);
 
     String binaryDirStr = cmdLine.getOptionValue("o");
-    Path outDir = binaryDirStr != null ? Paths.get(binaryDirStr) : sourceDir.resolve(".output");
+    Path outDir = binaryDirStr != null ? Paths.get(binaryDirStr) : sourceDir.resolve(".bin");
 
     // Collect modules and libraries for which typechecking was requested
     Collection<String> argFiles = cmdLine.getArgList();
