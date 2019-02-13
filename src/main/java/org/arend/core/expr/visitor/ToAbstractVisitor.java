@@ -29,7 +29,7 @@ import java.util.*;
 import static org.arend.frontend.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE }
+  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -481,6 +481,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else if (level.getVar() == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
     } else if (level.getVar() instanceof InferenceLevelVariable) {
+      if (!myFlags.contains(Flag.SHOW_INFERENCE_LEVEL_VARS)) {
+        return null;
+      }
       result = new Concrete.InferVarLevelExpression(null, (InferenceLevelVariable) level.getVar());
     } else {
       throw new IllegalStateException();

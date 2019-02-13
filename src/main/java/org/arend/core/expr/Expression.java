@@ -23,7 +23,6 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,11 +32,7 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    Concrete.Expression expr = ToAbstractVisitor.convert(this, EnumSet.of(
-      ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
-      ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE,
-      ToAbstractVisitor.Flag.SHOW_TYPES_IN_LAM,
-      ToAbstractVisitor.Flag.SHOW_CON_PARAMS));
+    Concrete.Expression expr = ToAbstractVisitor.convert(this, PrettyPrinterConfig.DEFAULT.getExpressionFlags());
     expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
   }
