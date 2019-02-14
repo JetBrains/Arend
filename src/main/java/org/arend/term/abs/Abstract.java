@@ -29,6 +29,10 @@ public final class Abstract {
     @Nonnull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
     @Nullable ErrorData getErrorData();
+
+    default boolean isLocal() {
+      return true;
+    }
   }
 
   public static abstract class SourceNodeImpl implements SourceNode {
@@ -60,6 +64,11 @@ public final class Abstract {
 
   public interface FieldParameter extends Parameter {
     boolean isClassifying();
+
+    @Override
+    default boolean isLocal() {
+      return false;
+    }
   }
 
   public interface Clause extends SourceNode {
@@ -114,6 +123,11 @@ public final class Abstract {
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
     @Nullable LongReference getOpenedReference();
+
+    @Override
+    default boolean isLocal() {
+      return false;
+    }
   }
 
   // Expression
@@ -152,7 +166,7 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getImplementation();
   }
 
-  public interface LetClause extends ParametersHolder {
+  public interface LetClause extends ParametersHolder, SourceNode {
     @Nonnull Referable getReferable();
     @Nullable Expression getResultType();
     /* @Nonnull */ @Nullable Expression getTerm();
@@ -167,6 +181,11 @@ public final class Abstract {
 
   public interface ReferableDefinition extends SourceNode {
     /* @Nonnull */ @Nullable LocatedReferable getReferable();
+
+    @Override
+    default boolean isLocal() {
+      return false;
+    }
   }
 
   public interface Definition extends ReferableDefinition {
