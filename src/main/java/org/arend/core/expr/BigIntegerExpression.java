@@ -1,6 +1,10 @@
 package org.arend.core.expr;
 
+import org.arend.prelude.Prelude;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.arend.core.expr.ExpressionFactory.Neg;
 import static org.arend.core.expr.ExpressionFactory.Pos;
@@ -33,8 +37,8 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
-  public boolean isNatural() {
-    return myInteger.compareTo(BigInteger.ZERO) >= 0;
+  public boolean isOne() {
+    return myInteger.equals(BigInteger.ONE);
   }
 
   @Override
@@ -45,6 +49,11 @@ public class BigIntegerExpression extends IntegerExpression {
   @Override
   public int compare(IntegerExpression expr) {
     return myInteger.compareTo(expr.getBigInteger());
+  }
+
+  @Override
+  public int compare(int x) {
+    return myInteger.compareTo(BigInteger.valueOf(x));
   }
 
   @Override
@@ -61,5 +70,34 @@ public class BigIntegerExpression extends IntegerExpression {
   public ConCallExpression minus(IntegerExpression expr) {
     BigInteger other = expr.getBigInteger();
     return myInteger.compareTo(other) >= 0 ? Pos(new BigIntegerExpression(myInteger.subtract(other))) : Neg(new BigIntegerExpression(other.subtract(myInteger)));
+  }
+
+  @Override
+  public BigIntegerExpression minus(int x) {
+    return new BigIntegerExpression(myInteger.subtract(BigInteger.valueOf(x)));
+  }
+
+  @Override
+  public BigIntegerExpression div(IntegerExpression expr) {
+    return expr.isZero() ? this : new BigIntegerExpression(myInteger.divide(expr.getBigInteger()));
+  }
+
+  @Override
+  public BigIntegerExpression mod(IntegerExpression expr) {
+    return expr.isZero() ? this : new BigIntegerExpression(myInteger.remainder(expr.getBigInteger()));
+  }
+
+  @Override
+  public TupleExpression divMod(IntegerExpression expr) {
+    List<Expression> fields = new ArrayList<>(2);
+    if (expr.isZero()) {
+      fields.add(this);
+      fields.add(this);
+    } else {
+      BigInteger[] divMod = myInteger.divideAndRemainder(expr.getBigInteger());
+      fields.add(new BigIntegerExpression(divMod[0]));
+      fields.add(new BigIntegerExpression(divMod[1]));
+    }
+    return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
   }
 }

@@ -15,17 +15,27 @@ public abstract class IntegerExpression extends Expression {
 
   public abstract boolean isZero();
 
-  public abstract boolean isNatural();
+  public abstract boolean isOne();
 
   public abstract boolean isEqual(IntegerExpression expr);
 
   public abstract int compare(IntegerExpression expr);
+
+  public abstract int compare(int x);
 
   public abstract IntegerExpression plus(IntegerExpression expr);
 
   public abstract IntegerExpression mul(IntegerExpression expr);
 
   public abstract ConCallExpression minus(IntegerExpression expr);
+
+  public abstract IntegerExpression minus(int x);
+
+  public abstract IntegerExpression div(IntegerExpression expr);
+
+  public abstract IntegerExpression mod(IntegerExpression expr);
+
+  public abstract TupleExpression divMod(IntegerExpression expr);
 
   @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
