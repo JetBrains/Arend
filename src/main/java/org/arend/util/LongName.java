@@ -2,7 +2,7 @@ package org.arend.util;
 
 import java.util.List;
 
-public class LongName {
+public class LongName implements Comparable<LongName> {
   private final List<String> myPath;
 
   public LongName(List<String> path) {
@@ -34,5 +34,23 @@ public class LongName {
   @Override
   public String toString() {
     return String.join(".", myPath);
+  }
+
+  @Override
+  public int compareTo(LongName longName) {
+    List<String> theirPath = longName.myPath;
+    Integer mySize = myPath.size();
+    Integer theirSize = theirPath.size();
+    if (!mySize.equals(theirSize)) return mySize.compareTo(theirSize);
+
+    for (int i = 0; i < mySize; i++) {
+      String myName = myPath.get(i);
+      String theirName = theirPath.get(i);
+      if (!myName.equals(theirName)) {
+        return myName.compareTo(theirName);
+      }
+    }
+
+    return 0;
   }
 }
