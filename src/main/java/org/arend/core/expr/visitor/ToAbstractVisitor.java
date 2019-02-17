@@ -207,7 +207,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
       }
-    } else {
+    } else if (isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
       arguments.add(new Concrete.Argument(arg.accept(this, null), isExplicit));
     }
   }
@@ -215,7 +215,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      if (parameters.isExplicit() || !myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
+      if (parameters.isExplicit() || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
         visitArgument(arg, parameters.isExplicit(), concreteArguments);
       }
       parameters = parameters.getNext();
@@ -244,7 +244,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       Concrete.Expression arg = expr.getArgument().accept(this, null);
       if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM) && arg instanceof Concrete.ReferenceExpression) {
         return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));
-      } else {
+      } else if (myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
         return Concrete.AppExpression.make(null, result, arg, false);
       }
     }

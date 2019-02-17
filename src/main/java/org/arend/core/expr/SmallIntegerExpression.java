@@ -1,6 +1,10 @@
 package org.arend.core.expr;
 
+import org.arend.prelude.Prelude;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.arend.core.expr.ExpressionFactory.Neg;
 import static org.arend.core.expr.ExpressionFactory.Pos;
@@ -47,8 +51,8 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
-  public boolean isNatural() {
-    return myInteger >= 0;
+  public boolean isOne() {
+    return myInteger == 1;
   }
 
   @Override
@@ -59,6 +63,11 @@ public class SmallIntegerExpression extends IntegerExpression {
   @Override
   public int compare(IntegerExpression expr) {
     return expr instanceof SmallIntegerExpression ? Integer.compare(myInteger, ((SmallIntegerExpression) expr).getInteger()) : BigInteger.valueOf(myInteger).compareTo(expr.getBigInteger());
+  }
+
+  @Override
+  public int compare(int x) {
+    return Integer.compare(myInteger, x);
   }
 
   @Override
@@ -93,5 +102,57 @@ public class SmallIntegerExpression extends IntegerExpression {
     } else {
       return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr);
     }
+  }
+
+  @Override
+  public IntegerExpression minus(int x) {
+    assert x <= myInteger;
+    return new SmallIntegerExpression(myInteger - x);
+  }
+
+  @Override
+  public IntegerExpression div(IntegerExpression expr) {
+    if (expr.isZero()) {
+      return this;
+    }
+    if (expr instanceof SmallIntegerExpression) {
+      int other = ((SmallIntegerExpression) expr).getInteger();
+      return new SmallIntegerExpression(myInteger / other);
+    }
+
+    return new BigIntegerExpression(BigInteger.valueOf(myInteger).divide(expr.getBigInteger()));
+  }
+
+  @Override
+  public IntegerExpression mod(IntegerExpression expr) {
+    if (expr.isZero()) {
+      return this;
+    }
+    if (expr instanceof SmallIntegerExpression) {
+      int other = ((SmallIntegerExpression) expr).getInteger();
+      return new SmallIntegerExpression(myInteger % other);
+    }
+
+    return new BigIntegerExpression(BigInteger.valueOf(myInteger).remainder(expr.getBigInteger()));
+  }
+
+  @Override
+  public TupleExpression divMod(IntegerExpression expr) {
+    List<Expression> fields = new ArrayList<>(2);
+    if (expr.isZero()) {
+      fields.add(this);
+      fields.add(this);
+    } else {
+      if (expr instanceof SmallIntegerExpression) {
+        int other = ((SmallIntegerExpression) expr).getInteger();
+        fields.add(new SmallIntegerExpression(myInteger / other));
+        fields.add(new SmallIntegerExpression(myInteger % other));
+      } else {
+        BigInteger[] divMod = BigInteger.valueOf(myInteger).divideAndRemainder(expr.getBigInteger());
+        fields.add(new BigIntegerExpression(divMod[0]));
+        fields.add(new BigIntegerExpression(divMod[1]));
+      }
+    }
+    return new TupleExpression(fields, Prelude.DIV_MOD_TYPE);
   }
 }

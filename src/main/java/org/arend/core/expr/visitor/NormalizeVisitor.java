@@ -15,6 +15,8 @@ import org.arend.util.ComputationInterruptedException;
 
 import java.util.*;
 
+import static org.arend.core.expr.ExpressionFactory.*;
+
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
   public enum Mode { WHNF, NF, RNF }
 
@@ -102,6 +104,117 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     throw new IllegalStateException();
   }
 
+  private Expression normalizePlus(DefCallExpression expr, Mode mode) {
+    List<? extends Expression> defCallArgs = expr.getDefCallArguments();
+    Expression arg1 = defCallArgs.get(0);
+    Expression arg2 = defCallArgs.get(1).normalize(Mode.WHNF);
+    if (arg2.isInstance(IntegerExpression.class)) {
+      IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
+      if (arg1.isInstance(IntegerExpression.class)) {
+        return arg1.cast(IntegerExpression.class).plus(intExpr2);
+      }
+      if (intExpr2.isZero()) {
+        return arg1.accept(this, mode);
+      }
+
+      if (mode != Mode.WHNF) {
+        arg1 = arg1.accept(this, mode);
+      }
+      for (int i = 0; intExpr2.compare(i) > 0; i++) {
+        arg1 = Suc(arg1);
+      }
+      return arg1;
+    }
+
+    int numberOfSuc = 0;
+    for (ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class); conCall2 != null && conCall2.getDefinition() == Prelude.SUC; ) {
+      numberOfSuc++;
+      arg2 = conCall2.getDefCallArguments().get(0).normalize(Mode.WHNF);
+      conCall2 = arg2.checkedCast(ConCallExpression.class);
+    }
+
+    List<Expression> newDefCallArgs = new ArrayList<>(2);
+    newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
+    Expression result = new FunCallExpression(Prelude.PLUS, expr.getSortArgument(), newDefCallArgs);
+    for (int i = 0; i < numberOfSuc; i++) {
+      result = Suc(result);
+    }
+    return result;
+  }
+
+  private Expression normalizeMinus(DefCallExpression expr, Mode mode) {
+    List<? extends Expression> defCallArgs = expr.getDefCallArguments();
+    Expression arg1 = defCallArgs.get(0).normalize(Mode.WHNF);
+    Expression arg2 = defCallArgs.get(1);
+    if (arg1.isInstance(IntegerExpression.class)) {
+      IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
+
+      arg2 = arg2.normalize(Mode.WHNF);
+      if (arg2.isInstance(IntegerExpression.class)) {
+        return intExpr1.minus(arg2.cast(IntegerExpression.class));
+      }
+      if (intExpr1.isZero()) {
+        return mode == Mode.WHNF ? Neg(arg2) : Neg(arg2.accept(this, mode));
+      }
+
+      int numberOfSuc = 0;
+      for (ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class); conCall2 != null && conCall2.getDefinition() == Prelude.SUC; ) {
+        numberOfSuc++;
+        arg2 = conCall2.getDefCallArguments().get(0);
+        if (intExpr1.compare(numberOfSuc) == 0) {
+          return mode == Mode.WHNF ? Neg(arg2) : Neg(arg2.accept(this, mode));
+        }
+        arg2 = arg2.normalize(Mode.WHNF);
+        conCall2 = arg2.checkedCast(ConCallExpression.class);
+      }
+
+      List<Expression> newDefCallArgs = new ArrayList<>(2);
+      newDefCallArgs.add(intExpr1.minus(numberOfSuc));
+      newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
+      return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+    }
+
+    ConCallExpression conCall1 = arg1.checkedCast(ConCallExpression.class);
+    if (conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
+      arg2 = arg2.normalize(Mode.WHNF);
+      if (arg2.isInstance(IntegerExpression.class)) {
+        IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
+        if (intExpr2.isZero()) {
+          return mode == Mode.WHNF ? Pos(conCall1) : Pos(conCall1.accept(this, mode));
+        }
+
+        int numberOfSuc = 0;
+        for (; conCall1 != null && conCall1.getDefinition() == Prelude.SUC; ) {
+          numberOfSuc++;
+          if (intExpr2.compare(numberOfSuc) < 0) {
+            return mode == Mode.WHNF ? Pos(arg1) : Pos(arg1.accept(this, mode));
+          }
+          arg1 = conCall1.getDefCallArguments().get(0).normalize(Mode.WHNF);
+          conCall1 = arg1.checkedCast(ConCallExpression.class);
+        }
+
+        List<Expression> newDefCallArgs = new ArrayList<>(2);
+        newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+        newDefCallArgs.add(intExpr2.minus(numberOfSuc));
+        return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+      }
+
+      ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class);
+      while (conCall1 != null && conCall1.getDefinition() == Prelude.SUC && conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
+        arg1 = conCall1.getDefCallArguments().get(0).normalize(Mode.WHNF);
+        arg2 = conCall2.getDefCallArguments().get(0).normalize(Mode.WHNF);
+        conCall1 = arg1.checkedCast(ConCallExpression.class);
+        conCall2 = arg2.checkedCast(ConCallExpression.class);
+      }
+    }
+
+    List<Expression> newDefCallArgs = new ArrayList<>(2);
+    newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
+    return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
+  }
+
   private Expression visitDefCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
     Definition definition = expr.getDefinition();
     if (definition == Prelude.COERCE) {
@@ -139,17 +252,62 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
     }
 
+    if (definition == Prelude.MINUS) {
+      return normalizeMinus(expr, mode);
+    }
+    if (definition == Prelude.PLUS) {
+      return normalizePlus(expr, mode);
+    }
+
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
-    if (definition == Prelude.PLUS || definition == Prelude.MUL || definition == Prelude.MINUS) {
+    if (definition == Prelude.MUL || definition == Prelude.DIV_MOD || definition == Prelude.DIV || definition == Prelude.MOD) {
       Expression arg2 = defCallArgs.get(1).normalize(Mode.WHNF);
       if (arg2.isInstance(IntegerExpression.class)) {
+        IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
+        if (intExpr2.isZero()) {
+          if (definition == Prelude.MUL) {
+            return intExpr2;
+          } else if (definition == Prelude.DIV_MOD) {
+            Expression result = defCallArgs.get(0).accept(this, mode);
+            List<Expression> list = new ArrayList<>(2);
+            list.add(result);
+            list.add(result);
+            return new TupleExpression(list, Prelude.DIV_MOD_TYPE);
+          } else {
+            return defCallArgs.get(0).accept(this, mode);
+          }
+        }
+
+        if (intExpr2.isOne()) {
+          if (definition == Prelude.DIV) {
+            return defCallArgs.get(0).accept(this, mode);
+          }
+          if (definition == Prelude.MOD) {
+            return Zero();
+          }
+          if (definition == Prelude.DIV_MOD) {
+            List<Expression> list = new ArrayList<>(2);
+            list.add(defCallArgs.get(0).accept(this, mode));
+            list.add(Zero());
+            return new TupleExpression(list, Prelude.DIV_MOD_TYPE);
+          }
+        }
+
         Expression arg1 = defCallArgs.get(0).normalize(Mode.WHNF);
         if (arg1.isInstance(IntegerExpression.class)) {
-          return definition == Prelude.PLUS
-            ? arg1.cast(IntegerExpression.class).plus(arg2.cast(IntegerExpression.class))
-            : definition == Prelude.MUL
-              ? arg1.cast(IntegerExpression.class).mul(arg2.cast(IntegerExpression.class))
-              : arg1.cast(IntegerExpression.class).minus(arg2.cast(IntegerExpression.class));
+          if (definition == Prelude.MUL) {
+            return arg1.cast(IntegerExpression.class).mul(intExpr2);
+          }
+          if (definition == Prelude.DIV_MOD) {
+            return arg1.cast(IntegerExpression.class).divMod(intExpr2);
+          }
+          if (definition == Prelude.DIV) {
+            return arg1.cast(IntegerExpression.class).div(intExpr2);
+          }
+          if (definition == Prelude.MOD) {
+            return arg1.cast(IntegerExpression.class).mod(intExpr2);
+          }
+          throw new IllegalStateException();
         }
 
         List<Expression> newDefCallArgs = new ArrayList<>(2);

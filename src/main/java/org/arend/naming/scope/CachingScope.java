@@ -16,19 +16,25 @@ public class CachingScope implements Scope {
   private final Map<String, Scope> myOnlyInternalNamespaces = new HashMap<>();
   private final Scope myScope;
   private final static Scope EMPTY_SCOPE = new Scope() {};
+  private final boolean myWithModules;
 
-  private CachingScope(Scope scope) {
+  private CachingScope(Scope scope, boolean withModules) {
     myScope = scope;
+    myWithModules = withModules;
     scope.find(ref -> {
-      if (!(ref instanceof ModuleReferable)) {
-        myElements.putIfAbsent(ref.textRepresentation(), ref);
+      if (withModules || !(ref instanceof ModuleReferable)) {
+        myElements.putIfAbsent(ref instanceof ModuleReferable ? ((ModuleReferable) ref).path.getLastName() : ref.textRepresentation(), ref);
       }
       return false;
     });
   }
 
   public static Scope make(Scope scope) {
-    return scope instanceof CachingScope ? scope : new CachingScope(scope);
+    return scope instanceof CachingScope || scope instanceof ImportedScope ? scope : new CachingScope(scope, false);
+  }
+
+  public static Scope makeWithModules(Scope scope) {
+    return scope instanceof CachingScope || scope instanceof ImportedScope ? scope : new CachingScope(scope, true);
   }
 
   @Nonnull
@@ -50,7 +56,7 @@ public class CachingScope implements Scope {
     Scope namespace = namespaces.get(name);
     if (namespace == null) {
       namespace = myScope.resolveNamespace(name, onlyInternal);
-      namespace = namespace == null ? EMPTY_SCOPE : make(namespace);
+      namespace = namespace == null ? EMPTY_SCOPE : namespace instanceof CachingScope || namespace instanceof ImportedScope ? namespace : new CachingScope(namespace, myWithModules);
       namespaces.put(name, namespace);
     }
 
