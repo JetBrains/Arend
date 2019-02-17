@@ -32,11 +32,13 @@ import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.util.Pair;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.arend.core.expr.ExpressionFactory.parameter;
 
 public class Prelude {
@@ -65,6 +67,19 @@ public class Prelude {
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
+  private static DataDefinition LESS_OR_EQ;
+  private static Constructor ZERO_LESS_OR_EQ;
+  private static Constructor SUC_LESS_OR_EQ;
+
+  public static FunctionDefinition DIV_MOD;
+  public static FunctionDefinition DIV;
+  public static FunctionDefinition MOD;
+
+  public static FunctionDefinition DIV_MOD_PROPERTY;
+  public static FunctionDefinition MOD_PROPERTY;
+
+  public static SigmaExpression DIV_MOD_TYPE;
+
   private Prelude() {
   }
 
@@ -78,6 +93,7 @@ public class Prelude {
         NAT = (DataDefinition) definition;
         ZERO = NAT.getConstructor("zero");
         SUC = NAT.getConstructor("suc");
+        DIV_MOD_TYPE = new SigmaExpression(Sort.SET0, parameter(true, Arrays.asList(null, null), Nat()));
         break;
       case "+":
         PLUS = (FunctionDefinition) definition;
@@ -145,6 +161,31 @@ public class Prelude {
         IN_PROP = (FunctionDefinition) definition;
         IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
+      case "<=":
+        LESS_OR_EQ = (DataDefinition) definition;
+        ZERO_LESS_OR_EQ = LESS_OR_EQ.getConstructor("zero<=_");
+        SUC_LESS_OR_EQ = LESS_OR_EQ.getConstructor("suc<=suc");
+        break;
+      case "divMod":
+        DIV_MOD = (FunctionDefinition) definition;
+        DIV_MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "div":
+        DIV = (FunctionDefinition) definition;
+        DIV.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "mod":
+        MOD = (FunctionDefinition) definition;
+        MOD.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "divModProp":
+        DIV_MOD_PROPERTY = (FunctionDefinition) definition;
+        DIV_MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "modProp":
+        MOD_PROPERTY = (FunctionDefinition) definition;
+        MOD_PROPERTY.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
       default:
         throw new IllegalStateException();
     }
@@ -171,6 +212,14 @@ public class Prelude {
     consumer.accept(AT);
     consumer.accept(COERCE);
     consumer.accept(ISO);
+    consumer.accept(LESS_OR_EQ);
+    consumer.accept(ZERO_LESS_OR_EQ);
+    consumer.accept(SUC_LESS_OR_EQ);
+    consumer.accept(DIV_MOD);
+    consumer.accept(DIV);
+    consumer.accept(MOD);
+    consumer.accept(DIV_MOD_PROPERTY);
+    consumer.accept(MOD_PROPERTY);
   }
 
   public static void fillInTypecheckerState(TypecheckerState state) {
