@@ -1,6 +1,7 @@
 package org.arend.typechecking.error.local;
 
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
@@ -26,9 +27,16 @@ public class MissingClausesError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    PrettyPrinterConfig modPPConfig = new PrettyPrinterConfig() {
+      @Override
+      public NormalizeVisitor.Mode getNormalizationMode() {
+        return null;
+      }
+    };
+
     List<LineDoc> docs = new ArrayList<>(myMissingClauses.size());
     for (List<Expression> missingClause : myMissingClauses) {
-      docs.add(missingClause == null ? text("...") : hSep(text(", "), missingClause.stream().map(expr -> termLine(expr, ppConfig)).collect(Collectors.toList())));
+      docs.add(missingClause == null ? text("...") : hSep(text(", "), missingClause.stream().map(expr -> termLine(expr, modPPConfig)).collect(Collectors.toList())));
     }
     return vList(docs);
   }

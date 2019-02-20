@@ -242,9 +242,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
 
       Concrete.Expression arg = expr.getArgument().accept(this, null);
-      if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM) && arg instanceof Concrete.ReferenceExpression) {
+      if (arg instanceof Concrete.ReferenceExpression) {
         return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));
-      } else if (myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
+      } else {
         return Concrete.AppExpression.make(null, result, arg, false);
       }
     }

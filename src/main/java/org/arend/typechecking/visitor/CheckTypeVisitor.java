@@ -1055,13 +1055,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedTypeNorm, new Result(new TupleExpression(fields, type), type), expr);
   }
 
-  private DependentLink visitParameters(List<? extends Concrete.TypeParameter> parameters, List<Sort> resultSorts) {
+  private DependentLink visitParameters(List<? extends Concrete.TypeParameter> parameters, ExpectedType expectedType, List<Sort> resultSorts) {
     LinkList list = new LinkList();
 
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : parameters) {
-          Type result = checkType(arg.getType(), ExpectedType.OMEGA);
+          Type result = checkType(arg.getType(), expectedType == null ? ExpectedType.OMEGA : expectedType);
           if (result == null) return null;
 
           if (arg instanceof Concrete.TelescopeParameter) {
@@ -1081,7 +1081,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             list.append(link);
           }
 
-          resultSorts.add(result.getSortOfType());
+          Sort resultSort = null;
+          if (expectedType instanceof Expression) {
+            UniverseExpression universe = ((Expression) expectedType).checkedCast(UniverseExpression.class);
+            if (universe != null && universe.getSort().isProp()) {
+              resultSort = Sort.PROP;
+            }
+          }
+          resultSorts.add(resultSort == null ? result.getSortOfType() : resultSort);
         }
       }
     }
@@ -1103,7 +1110,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<Sort> sorts = new ArrayList<>(expr.getParameters().size());
-    DependentLink args = visitParameters(expr.getParameters(), sorts);
+    DependentLink args = visitParameters(expr.getParameters(), expectedType, sorts);
     if (args == null || !args.hasNext()) return null;
     Sort sort = generateUpperBound(sorts, expr);
     return checkResult(expectedType, new Result(new SigmaExpression(sort, args), new UniverseExpression(sort)), expr);

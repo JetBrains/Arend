@@ -21,7 +21,7 @@ public class LetExpression extends Expression {
   public ExprSubstitution getClausesSubstitution() {
     ExprSubstitution substitution = new ExprSubstitution();
     for (LetClause clause : myClauses) {
-      substitution.add(clause, clause.getExpression());
+      substitution.add(clause, clause.getExpression().subst(substitution));
     }
     return substitution;
   }
