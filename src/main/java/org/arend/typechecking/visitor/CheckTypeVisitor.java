@@ -364,7 +364,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       if (!result.type.isError()) {
-        new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType);
         myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
       }
       return null;

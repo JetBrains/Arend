@@ -22,6 +22,11 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public int getSmallInteger() {
+    return myInteger.intValue();
+  }
+
+  @Override
   public BigIntegerExpression suc() {
     return new BigIntegerExpression(myInteger.add(BigInteger.ONE));
   }
@@ -62,14 +67,19 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public BigIntegerExpression plus(int num) {
+    return new BigIntegerExpression(myInteger.add(BigInteger.valueOf(num)));
+  }
+
+  @Override
   public BigIntegerExpression mul(IntegerExpression expr) {
     return new BigIntegerExpression(myInteger.multiply(expr.getBigInteger()));
   }
 
   @Override
-  public ConCallExpression minus(IntegerExpression expr) {
-    BigInteger other = expr.getBigInteger();
-    return myInteger.compareTo(other) >= 0 ? Pos(new BigIntegerExpression(myInteger.subtract(other))) : Neg(new BigIntegerExpression(other.subtract(myInteger)));
+  public ConCallExpression minus(IntegerExpression expr, int add) {
+    BigInteger result = myInteger.add(BigInteger.valueOf(add)).subtract(expr.getBigInteger());
+    return result.signum() >= 0 ? Pos(new BigIntegerExpression(result)) : Neg(new BigIntegerExpression(result.negate()));
   }
 
   @Override

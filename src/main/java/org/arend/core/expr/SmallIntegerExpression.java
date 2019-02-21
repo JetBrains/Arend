@@ -28,6 +28,11 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public int getSmallInteger() {
+    return myInteger;
+  }
+
+  @Override
   public IntegerExpression suc() {
     if (myInteger < 0) {
       return new SmallIntegerExpression(myInteger + 1);
@@ -83,6 +88,12 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
+  public IntegerExpression plus(int num) {
+    int sum = myInteger + num;
+    return sum >= 0 ? new SmallIntegerExpression(sum) : new BigIntegerExpression(BigInteger.valueOf(myInteger).add(BigInteger.valueOf(num)));
+  }
+
+  @Override
   public IntegerExpression mul(IntegerExpression expr) {
     if (expr instanceof SmallIntegerExpression) {
       int other = ((SmallIntegerExpression) expr).getInteger();
@@ -95,12 +106,24 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
-  public ConCallExpression minus(IntegerExpression expr) {
+  public ConCallExpression minus(IntegerExpression expr, int add) {
     if (expr instanceof SmallIntegerExpression) {
-      int other = ((SmallIntegerExpression) expr).myInteger;
-      return myInteger >= other ? Pos(new SmallIntegerExpression(myInteger - other)) : Neg(new SmallIntegerExpression(other - myInteger));
+      int diff = myInteger - ((SmallIntegerExpression) expr).myInteger;
+      if (diff >= 0) {
+        int result = diff + add;
+        if (add <= 0 || result >= 0) {
+          return result >= 0 ? Pos(new SmallIntegerExpression(result)) : Neg(new SmallIntegerExpression(-result));
+        }
+        return Pos(new BigIntegerExpression(BigInteger.valueOf(diff).add(BigInteger.valueOf(add))));
+      } else {
+        int result = diff + add;
+        if (add >= 0 || result <= 0) {
+          return result < 0 ? Neg(new SmallIntegerExpression(-result)) : Pos(new SmallIntegerExpression(result));
+        }
+        return Neg(new BigIntegerExpression(BigInteger.valueOf(-diff).add(BigInteger.valueOf(-add))));
+      }
     } else {
-      return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr);
+      return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr, add);
     }
   }
 

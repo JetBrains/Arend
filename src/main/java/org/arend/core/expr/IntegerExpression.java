@@ -9,6 +9,8 @@ import java.math.BigInteger;
 public abstract class IntegerExpression extends Expression {
   public abstract BigInteger getBigInteger();
 
+  public abstract int getSmallInteger();
+
   public abstract IntegerExpression suc();
 
   public abstract IntegerExpression pred();
@@ -25,9 +27,11 @@ public abstract class IntegerExpression extends Expression {
 
   public abstract IntegerExpression plus(IntegerExpression expr);
 
+  public abstract IntegerExpression plus(int num);
+
   public abstract IntegerExpression mul(IntegerExpression expr);
 
-  public abstract ConCallExpression minus(IntegerExpression expr);
+  public abstract ConCallExpression minus(IntegerExpression expr, int add);
 
   public abstract IntegerExpression minus(int x);
 
