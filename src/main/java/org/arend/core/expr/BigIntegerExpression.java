@@ -77,8 +77,8 @@ public class BigIntegerExpression extends IntegerExpression {
   }
 
   @Override
-  public ConCallExpression minus(IntegerExpression expr, int add) {
-    BigInteger result = myInteger.add(BigInteger.valueOf(add)).subtract(expr.getBigInteger());
+  public ConCallExpression minus(IntegerExpression expr) {
+    BigInteger result = myInteger.subtract(expr.getBigInteger());
     return result.signum() >= 0 ? Pos(new BigIntegerExpression(result)) : Neg(new BigIntegerExpression(result.negate()));
   }
 

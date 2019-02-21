@@ -104,40 +104,23 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     throw new IllegalStateException();
   }
 
-  private Expression normalizeNat(Expression expression, int[] sucs) {
-    while (true) {
-      expression = expression.accept(this, Mode.WHNF);
-      ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
-      if (conCall != null && conCall.getDefinition() == Prelude.SUC) {
-        sucs[0]++;
-        expression = conCall.getDefCallArguments().get(0);
-      } else {
-        return expression;
-      }
-    }
-  }
-
   private Expression normalizePlus(DefCallExpression expr, Mode mode) {
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
-    int[] sucs = new int[1];
     Expression arg1 = defCallArgs.get(0);
-    Expression arg2 = normalizeNat(defCallArgs.get(1), sucs);
+    Expression arg2 = defCallArgs.get(1).accept(this, Mode.WHNF);
 
     if (arg2.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
-      arg1 = normalizeNat(arg1, sucs);
+      arg1 = arg1.accept(this, Mode.WHNF);
       if (arg1.isInstance(IntegerExpression.class)) {
-        return arg1.cast(IntegerExpression.class).plus(intExpr2).plus(sucs[0]);
+        return arg1.cast(IntegerExpression.class).plus(intExpr2);
       }
-      if (sucs[0] == 0 && intExpr2.isZero()) {
+      if (intExpr2.isZero()) {
         return arg1.accept(this, mode);
       }
 
       if (mode != Mode.WHNF) {
         arg1 = arg1.accept(this, mode);
-      }
-      for (int i = 0; i < sucs[0]; i++) {
-        arg1 = Suc(arg1);
       }
       for (int i = 0; intExpr2.compare(i) > 0; i++) {
         arg1 = Suc(arg1);
@@ -147,94 +130,88 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     List<Expression> newDefCallArgs = new ArrayList<>(2);
     newDefCallArgs.add(arg1.accept(this, mode));
-    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
     Expression result = new FunCallExpression(Prelude.PLUS, expr.getSortArgument(), newDefCallArgs);
-    for (int i = 0; i < sucs[0]; i++) {
+    ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class);
+    while (conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
       result = Suc(result);
+      arg2 = conCall2.getDefCallArguments().get(0);
+      conCall2 = arg2.checkedCast(ConCallExpression.class);
     }
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
     return result;
   }
 
   private Expression normalizeMinus(DefCallExpression expr, Mode mode) {
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
-    int[] sucs = new int[1];
-    Expression arg1 = normalizeNat(defCallArgs.get(0), sucs);
+    Expression arg1 = defCallArgs.get(0).accept(this, Mode.WHNF);
     Expression arg2 = defCallArgs.get(1);
-    int sucs1 = sucs[0];
-    sucs[0] = 0;
 
     if (arg1.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr1 = arg1.cast(IntegerExpression.class);
 
-      arg2 = normalizeNat(arg2, sucs);
+      arg2 = arg2.accept(this, Mode.WHNF);
       if (arg2.isInstance(IntegerExpression.class)) {
-        return intExpr1.minus(arg2.cast(IntegerExpression.class), sucs1 - sucs[0]);
+        return intExpr1.minus(arg2.cast(IntegerExpression.class));
       }
-      if (sucs1 == 0 && intExpr1.isZero()) {
+      if (intExpr1.isZero()) {
         return mode == Mode.WHNF ? Neg(arg2) : Neg(arg2.accept(this, mode));
       }
 
-      if (mode != Mode.WHNF) {
-        arg2 = arg2.accept(this, mode);
+      ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class);
+      while (!intExpr1.isZero() && conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
+        intExpr1 = intExpr1.pred();
+        arg2 = conCall2.getDefCallArguments().get(0);
+        conCall2 = arg2.checkedCast(ConCallExpression.class);
       }
 
-      intExpr1 = intExpr1.plus(sucs1);
-      if (intExpr1.compare(sucs[0]) <= 0) {
-        int sucs2 = sucs[0] - intExpr1.getSmallInteger();
-        for (int i = 0; i < sucs2; i++) {
-          arg2 = Suc(arg2);
-        }
-        return Neg(arg2);
+      if (conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
+        return Neg(conCall2);
       }
 
       List<Expression> newDefCallArgs = new ArrayList<>(2);
-      newDefCallArgs.add(intExpr1.minus(sucs[0]));
-      newDefCallArgs.add(arg2);
+      newDefCallArgs.add(intExpr1);
+      newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
-    if (sucs1 == 0) {
+    ConCallExpression conCall1 = arg1.checkedCast(ConCallExpression.class);
+    if (conCall1 == null || conCall1.getDefinition() != Prelude.SUC) {
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
       newDefCallArgs.add(arg2.accept(this, mode));
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
-    if (mode != Mode.WHNF) {
-      arg1 = arg1.accept(this, mode);
-    }
-
-    arg2 = normalizeNat(arg2, sucs);
+    arg2 = arg2.accept(this, Mode.WHNF);
     if (arg2.isInstance(IntegerExpression.class)) {
-      IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class).plus(sucs[0]);
-      if (intExpr2.compare(sucs1) < 0) {
-        sucs1 = sucs1 - intExpr2.getSmallInteger();
-        for (int i = 0; i < sucs1; i++) {
-          arg1 = Suc(arg1);
-        }
-        return Pos(arg1);
+      IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
+      while (!intExpr2.isZero() && conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
+        intExpr2 = intExpr2.pred();
+        arg1 = conCall1.getDefCallArguments().get(0);
+        conCall1 = arg1.checkedCast(ConCallExpression.class);
+      }
+
+      if (conCall1 != null && conCall1.getDefinition() == Prelude.SUC) {
+        return Pos(conCall1);
       }
 
       List<Expression> newDefCallArgs = new ArrayList<>(2);
-      newDefCallArgs.add(arg1);
-      newDefCallArgs.add(intExpr2.minus(sucs1));
+      newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+      newDefCallArgs.add(intExpr2);
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
-    if (mode != Mode.WHNF) {
-      arg2 = arg2.accept(this, mode);
-    }
-
-    for (int i = 0; i < sucs1 - sucs[0]; i++) {
-      arg1 = Suc(arg1);
-    }
-    for (int i = 0; i < sucs[0] - sucs1; i++) {
-      arg2 = Suc(arg2);
+    ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class);
+    while (conCall1 != null && conCall1.getDefinition() == Prelude.SUC && conCall2 != null && conCall2.getDefinition() == Prelude.SUC) {
+      arg1 = conCall1.getDefCallArguments().get(0);
+      conCall1 = arg1.checkedCast(ConCallExpression.class);
+      arg2 = conCall2.getDefCallArguments().get(0);
+      conCall2 = arg2.checkedCast(ConCallExpression.class);
     }
 
     List<Expression> newDefCallArgs = new ArrayList<>(2);
-    newDefCallArgs.add(arg1);
-    newDefCallArgs.add(arg2);
+    newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
     return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
   }
 
@@ -284,8 +261,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     List<? extends Expression> defCallArgs = expr.getDefCallArguments();
     if (definition == Prelude.MUL || definition == Prelude.DIV_MOD || definition == Prelude.DIV || definition == Prelude.MOD) {
-      int[] sucs = new int[1];
-      Expression arg2 = normalizeNat(defCallArgs.get(1), sucs);
+      Expression arg2 = defCallArgs.get(1).accept(this, Mode.WHNF);
       if (arg2.isInstance(IntegerExpression.class)) {
         IntegerExpression intExpr2 = arg2.cast(IntegerExpression.class);
         if (intExpr2.isZero()) {
@@ -317,30 +293,21 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
 
-        int sucs2 = sucs[0];
-        sucs[0] = 0;
-        Expression arg1 = normalizeNat(defCallArgs.get(0), sucs);
+        Expression arg1 = defCallArgs.get(0).accept(this, Mode.WHNF);
         if (arg1.isInstance(IntegerExpression.class)) {
           if (definition == Prelude.MUL) {
-            return arg1.cast(IntegerExpression.class).plus(sucs[0]).mul(intExpr2.plus(sucs2));
+            return arg1.cast(IntegerExpression.class).mul(intExpr2);
           }
           if (definition == Prelude.DIV_MOD) {
-            return arg1.cast(IntegerExpression.class).plus(sucs[0]).divMod(intExpr2.plus(sucs2));
+            return arg1.cast(IntegerExpression.class).divMod(intExpr2);
           }
           if (definition == Prelude.DIV) {
-            return arg1.cast(IntegerExpression.class).plus(sucs[0]).div(intExpr2.plus(sucs2));
+            return arg1.cast(IntegerExpression.class).div(intExpr2);
           }
           if (definition == Prelude.MOD) {
-            return arg1.cast(IntegerExpression.class).plus(sucs[0]).mod(intExpr2.plus(sucs2));
+            return arg1.cast(IntegerExpression.class).mod(intExpr2);
           }
           throw new IllegalStateException();
-        }
-
-        for (int i = 0; i < sucs[0]; i++) {
-          arg1 = Suc(arg1);
-        }
-        for (int i = 0; i < sucs2; i++) {
-          arg2 = Suc(arg2);
         }
 
         List<Expression> newDefCallArgs = new ArrayList<>(2);
@@ -348,15 +315,17 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         newDefCallArgs.add(arg2);
         defCallArgs = newDefCallArgs;
       } else {
-        for (int i = 0; i < sucs[0]; i++) {
-          arg2 = Suc(arg2);
-        }
-
         List<Expression> newDefCallArgs = new ArrayList<>(2);
         newDefCallArgs.add(defCallArgs.get(0));
         newDefCallArgs.add(arg2);
         defCallArgs = newDefCallArgs;
       }
+    }
+
+    if (definition == Prelude.SUC) {
+      Expression arg = defCallArgs.get(0).accept(this, mode);
+      IntegerExpression intArg = arg.checkedCast(IntegerExpression.class);
+      return intArg != null ? intArg.suc() : Suc(arg);
     }
 
     ElimTree elimTree;

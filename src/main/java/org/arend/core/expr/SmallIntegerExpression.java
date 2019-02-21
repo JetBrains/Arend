@@ -106,24 +106,12 @@ public class SmallIntegerExpression extends IntegerExpression {
   }
 
   @Override
-  public ConCallExpression minus(IntegerExpression expr, int add) {
+  public ConCallExpression minus(IntegerExpression expr) {
     if (expr instanceof SmallIntegerExpression) {
-      int diff = myInteger - ((SmallIntegerExpression) expr).myInteger;
-      if (diff >= 0) {
-        int result = diff + add;
-        if (add <= 0 || result >= 0) {
-          return result >= 0 ? Pos(new SmallIntegerExpression(result)) : Neg(new SmallIntegerExpression(-result));
-        }
-        return Pos(new BigIntegerExpression(BigInteger.valueOf(diff).add(BigInteger.valueOf(add))));
-      } else {
-        int result = diff + add;
-        if (add >= 0 || result <= 0) {
-          return result < 0 ? Neg(new SmallIntegerExpression(-result)) : Pos(new SmallIntegerExpression(result));
-        }
-        return Neg(new BigIntegerExpression(BigInteger.valueOf(-diff).add(BigInteger.valueOf(-add))));
-      }
+      int result = myInteger - ((SmallIntegerExpression) expr).myInteger;
+      return result >= 0 ? Pos(new SmallIntegerExpression(result)) : Neg(new SmallIntegerExpression(-result));
     } else {
-      return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr, add);
+      return new BigIntegerExpression(BigInteger.valueOf(myInteger)).minus(expr);
     }
   }
 

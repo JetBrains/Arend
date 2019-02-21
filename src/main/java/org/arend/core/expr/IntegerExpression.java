@@ -31,7 +31,7 @@ public abstract class IntegerExpression extends Expression {
 
   public abstract IntegerExpression mul(IntegerExpression expr);
 
-  public abstract ConCallExpression minus(IntegerExpression expr, int add);
+  public abstract ConCallExpression minus(IntegerExpression expr);
 
   public abstract IntegerExpression minus(int x);
 
