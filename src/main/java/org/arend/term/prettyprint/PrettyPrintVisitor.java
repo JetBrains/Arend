@@ -735,11 +735,33 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  public void prettyPrintLetClause(final Concrete.LetClause letClause, boolean printPipe) {
+  public void prettyPrintLetClausePattern(Concrete.LetClausePattern pattern) {
+    if (pattern.getReferable() != null) {
+      myBuilder.append(pattern.getReferable().textRepresentation());
+      if (pattern.type != null) {
+        myBuilder.append(" : ");
+        pattern.type.accept(this, new Precedence(Concrete.Expression.PREC));
+      }
+    } else {
+      myBuilder.append('(');
+      boolean first = true;
+      for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
+        if (first) {
+          first = false;
+        } else {
+          myBuilder.append(", ");
+        }
+        prettyPrintLetClausePattern(subPattern);
+      }
+      myBuilder.append(')');
+    }
+  }
+
+  public void prettyPrintLetClause(Concrete.LetClause letClause, boolean printPipe) {
     if (printPipe) {
       myBuilder.append("| ");
     }
-    myBuilder.append(letClause.getData().textRepresentation());
+    prettyPrintLetClausePattern(letClause.getPattern());
     for (Concrete.Parameter arg : letClause.getParameters()) {
       myBuilder.append(" ");
       prettyPrintParameter(arg, Concrete.LetExpression.PREC);

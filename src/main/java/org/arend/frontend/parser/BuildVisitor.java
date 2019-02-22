@@ -1428,12 +1428,38 @@ public class BuildVisitor extends ArendBaseVisitor {
     return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
   }
 
+  private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {
+    if (tuplePattern instanceof TuplePatternIDContext) {
+      TypeAnnotationContext typeAnnotation = ((TuplePatternIDContext) tuplePattern).typeAnnotation();
+      Concrete.Expression type = typeAnnotation == null ? null : visitExpr(typeAnnotation.expr());
+      return new Concrete.LetClausePattern(new ParsedLocalReferable(tokenPosition(tuplePattern.start), ((TuplePatternIDContext) tuplePattern).ID().getText()), type);
+    } else if (tuplePattern instanceof TuplePatternListContext) {
+      List<Concrete.LetClausePattern> patterns = new ArrayList<>();
+      for (TuplePatternContext subPattern : ((TuplePatternListContext) tuplePattern).tuplePattern()) {
+        patterns.add(visitLetClausePattern(subPattern));
+      }
+      return new Concrete.LetClausePattern(tokenPosition(tuplePattern.start), patterns);
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
   @Override
   public Concrete.LetClause visitLetClause(LetClauseContext ctx) {
     List<Concrete.Parameter> arguments = visitLamTeles(ctx.tele());
     TypeAnnotationContext typeAnnotationCtx = ctx.typeAnnotation();
     Concrete.Expression resultType = typeAnnotationCtx == null ? null : visitExpr(typeAnnotationCtx.expr());
-    return new Concrete.LetClause(new ParsedLocalReferable(tokenPosition(ctx.start), ctx.ID().getText()), arguments, resultType, visitExpr(ctx.expr()));
+
+    TerminalNode id = ctx.ID();
+    TuplePatternContext tuplePattern = ctx.tuplePattern();
+    if (id == null && tuplePattern instanceof TuplePatternIDContext) {
+      id = ((TuplePatternIDContext) tuplePattern).ID();
+    }
+    if (id != null) {
+      return new Concrete.LetClause(new ParsedLocalReferable(tokenPosition(ctx.start), id.getText()), arguments, resultType, visitExpr(ctx.expr()));
+    }
+
+    return new Concrete.LetClause(visitLetClausePattern(tuplePattern), resultType, visitExpr(ctx.expr()));
   }
 
   @Override

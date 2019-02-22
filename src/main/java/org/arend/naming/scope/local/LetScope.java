@@ -19,15 +19,61 @@ public class LetScope implements Scope {
     myClauses = clauses;
   }
 
+  private Referable find(Abstract.LetClausePattern pattern, Predicate<Referable> pred) {
+    Referable ref = pattern.getReferable();
+    if (ref != null) {
+      if (pred.test(ref)) {
+        return ref;
+      }
+    } else {
+      List<? extends Abstract.LetClausePattern> patterns = pattern.getPatterns();
+      for (int i = patterns.size() - 1; i >= 0; i--) {
+        ref = find(patterns.get(i), pred);
+        if (ref != null) {
+          return ref;
+        }
+      }
+    }
+    return null;
+  }
+
   @Override
   public Referable find(Predicate<Referable> pred) {
     for (int i = myClauses.size() - 1; i >= 0; i--) {
       Referable ref = myClauses.get(i).getReferable();
-      if (pred.test(ref)) {
-        return ref;
+      if (ref != null) {
+        if (pred.test(ref)) {
+          return ref;
+        }
+      } else {
+        Abstract.LetClausePattern pattern = myClauses.get(i).getPattern();
+        if (pattern != null) {
+          ref = find(pattern, pred);
+          if (ref != null) {
+            return ref;
+          }
+        }
       }
     }
     return myParent.find(pred);
+  }
+
+  private Referable resolveName(Abstract.LetClausePattern pattern, String name) {
+    Referable ref = pattern.getReferable();
+    if (ref != null) {
+      if (ref.textRepresentation().equals(name)) {
+        return ref;
+      }
+    } else {
+      List<? extends Abstract.LetClausePattern> patterns = pattern.getPatterns();
+      for (int i = patterns.size() - 1; i >= 0; i--) {
+        ref = resolveName(patterns.get(i), name);
+        if (ref != null) {
+          return ref;
+        }
+      }
+    }
+    return null;
   }
 
   @Nullable
@@ -35,8 +81,18 @@ public class LetScope implements Scope {
   public Referable resolveName(String name) {
     for (int i = myClauses.size() - 1; i >= 0; i--) {
       Referable ref = myClauses.get(i).getReferable();
-      if (ref.textRepresentation().equals(name)) {
-        return ref;
+      if (ref != null) {
+        if (ref.textRepresentation().equals(name)) {
+          return ref;
+        }
+      } else {
+        Abstract.LetClausePattern pattern = myClauses.get(i).getPattern();
+        if (pattern != null) {
+          ref = resolveName(pattern, name);
+          if (ref != null) {
+            return ref;
+          }
+        }
       }
     }
     return myParent.resolveName(name);

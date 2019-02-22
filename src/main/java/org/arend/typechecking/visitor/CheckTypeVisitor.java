@@ -1662,7 +1662,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (result == null) {
           return null;
         }
-        letResult = new LetClause(clause.getData().textRepresentation(), result.expression);
+        Referable ref = clause.getPattern().getReferable();
+        if (ref == null) {
+          myErrorReporter.report(new TypecheckingError("Patterns in \\let expressions are not supported yet", clause.getPattern()));
+          return null;
+        }
+        letResult = new LetClause(ref.textRepresentation(), result.expression);
       }
     }
     return letResult;
@@ -1678,7 +1683,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (letClause == null) {
           return null;
         }
-        myContext.put(clause.getData(), letClause);
+        myContext.put(clause.getPattern().getReferable(), letClause);
         clauses.add(letClause);
       }
 

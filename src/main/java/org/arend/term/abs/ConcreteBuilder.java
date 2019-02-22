@@ -694,6 +694,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return makeBinOpSequence(data, result, sequence);
   }
 
+  private Concrete.LetClausePattern visitLetClausePattern(Abstract.LetClausePattern pattern) {
+    Referable referable = pattern.getReferable();
+    if (referable != null) {
+      Abstract.Expression type = pattern.getType();
+      return new Concrete.LetClausePattern(myReferableConverter.toDataReferable(referable), type == null ? null : type.accept(this, null));
+    } else {
+      List<Concrete.LetClausePattern> concretePatterns = new ArrayList<>();
+      for (Abstract.LetClausePattern subPattern : pattern.getPatterns()) {
+        concretePatterns.add(visitLetClausePattern(subPattern));
+      }
+      return new Concrete.LetClausePattern(pattern, concretePatterns);
+    }
+  }
+
   @Override
   public Concrete.Expression visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, Void params) {
     if (expression == null) {
@@ -711,10 +725,21 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     for (Abstract.LetClause clause : absClauses) {
       Abstract.Expression term = clause.getTerm();
       if (term == null) {
-        myErrorReporter.report(AbstractExpressionError.incomplete(clause.getReferable()));
+        myErrorReporter.report(AbstractExpressionError.incomplete(clause));
       } else {
+        Referable referable = clause.getReferable();
+        List<? extends Abstract.Parameter> parameters = clause.getParameters();
         Abstract.Expression resultType = clause.getResultType();
-        clauses.add(new Concrete.LetClause(myReferableConverter.toDataReferable(clause.getReferable()), buildParameters(clause.getParameters()), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+        if (referable != null) {
+          clauses.add(new Concrete.LetClause(myReferableConverter.toDataReferable(referable), buildParameters(parameters), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+        } else {
+          Abstract.LetClausePattern pattern = clause.getPattern();
+          if (pattern != null) {
+            clauses.add(new Concrete.LetClause(visitLetClausePattern(pattern), resultType == null ? null : resultType.accept(this, null), term.accept(this, null)));
+          } else {
+            myErrorReporter.report(AbstractExpressionError.incomplete(clause));
+          }
+        }
       }
     }
 

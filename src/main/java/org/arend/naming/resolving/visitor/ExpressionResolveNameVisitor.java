@@ -309,6 +309,21 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
+  private void visitLetClausePattern(Concrete.LetClausePattern pattern) {
+    Referable referable = pattern.getReferable();
+    if (referable != null) {
+      if (pattern.type != null) {
+        pattern.type = pattern.type.accept(this, null);
+      }
+      ClassReferable classRef = pattern.type != null ? myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), pattern.type) : null;
+      myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
+    }
+
+    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
+      visitLetClausePattern(subPattern);
+    }
+  }
+
   @Override
   public Concrete.Expression visitLet(Concrete.LetExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
@@ -321,12 +336,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
           clause.term = clause.term.accept(this, null);
         }
 
-        ClassReferable classRef = clause.resultType != null
-          ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
-          : clause.term instanceof Concrete.NewExpression
-            ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
-            : null;
-        myContext.add(classRef == null ? clause.getData() : new TypedRedirectingReferable(clause.getData(), classRef));
+        Concrete.LetClausePattern pattern = clause.getPattern();
+        if (pattern.getReferable() != null) {
+          ClassReferable classRef = clause.resultType != null
+            ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), clause.resultType)
+            : clause.term instanceof Concrete.NewExpression
+              ? myTypeClassReferenceExtractVisitor.getTypeClassReference(clause.getParameters(), ((Concrete.NewExpression) clause.term).expression)
+              : null;
+          myContext.add(classRef == null ? pattern.getReferable() : new TypedRedirectingReferable(pattern.getReferable(), classRef));
+        } else {
+          visitLetClausePattern(pattern);
+        }
       }
 
       expr.expression = expr.expression.accept(this, null);

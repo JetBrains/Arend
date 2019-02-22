@@ -166,8 +166,15 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getImplementation();
   }
 
-  public interface LetClause extends ParametersHolder, SourceNode {
-    @Nonnull Referable getReferable();
+  public interface LetClausePattern extends SourceNode {
+    @Nullable Referable getReferable();
+    @Nullable Abstract.Expression getType();
+    @Nonnull List<? extends LetClausePattern> getPatterns();
+  }
+
+  public interface LetClause extends ParametersHolder {
+    @Nullable LetClausePattern getPattern();
+    @Nullable Referable getReferable();
     @Nullable Expression getResultType();
     /* @Nonnull */ @Nullable Expression getTerm();
   }

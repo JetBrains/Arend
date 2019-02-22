@@ -143,7 +143,11 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : '|' longName tele* ('=>' expr | '{' coClause* '}');
 
-letClause : ID tele* typeAnnotation? '=>' expr;
+letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
+
+tuplePattern : ID typeAnnotation?                       # tuplePatternID
+             | '(' tuplePattern (',' tuplePattern)* ')' # tuplePatternList
+             ;
 
 typeAnnotation : ':' expr;
 

@@ -586,23 +586,74 @@ public final class Concrete {
     }
   }
 
+  public static class LetClausePattern implements SourceNode {
+    private final Object myData;
+    private final Referable myReferable;
+    public Expression type;
+    private final List<LetClausePattern> myPatterns;
+
+    public LetClausePattern(Referable referable, Expression type) {
+      myData = referable;
+      myReferable = referable;
+      this.type = type;
+      myPatterns = Collections.emptyList();
+    }
+
+    public LetClausePattern(Object data, List<LetClausePattern> patterns) {
+      myData = data;
+      myReferable = null;
+      this.type = null;
+      myPatterns = patterns;
+    }
+
+    @Nullable
+    @Override
+    public Object getData() {
+      return myData;
+    }
+
+    public Referable getReferable() {
+      return myReferable;
+    }
+
+    public List<? extends LetClausePattern> getPatterns() {
+      return myPatterns;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintLetClausePattern(this);
+    }
+  }
+
   public static class LetClause implements SourceNode {
     private final List<Parameter> myParameters;
     public Expression resultType;
     public Expression term;
-    private final Referable myReferable;
+    private final LetClausePattern myPattern;
 
     public LetClause(Referable referable, List<Parameter> parameters, Expression resultType, Expression term) {
       myParameters = parameters;
       this.resultType = resultType;
       this.term = term;
-      myReferable = referable;
+      myPattern = new LetClausePattern(referable, (Expression) null);
     }
 
-    @Nonnull
+    public LetClause(LetClausePattern pattern, Expression resultType, Expression term) {
+      myParameters = Collections.emptyList();
+      this.resultType = resultType;
+      this.term = term;
+      myPattern = pattern;
+    }
+
+    @Nullable
     @Override
-    public Referable getData() {
-      return myReferable;
+    public Object getData() {
+      return myPattern.getData();
+    }
+
+    public LetClausePattern getPattern() {
+      return myPattern;
     }
 
     @Nonnull
