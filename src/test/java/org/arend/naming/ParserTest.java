@@ -409,11 +409,15 @@ public class ParserTest extends NameResolverTestCase {
       "\\func g3 => 0\n" +
       "-- |\n" +
       "\\func g4 => 0\n" +
+      "--\\x\n" +
+      "\\func g5 => 0\n" +
+      "--`\n" +
+      "\\func g6 => 0\n" +
       "-- %--x\n" +
       "{------\n" +
       "bar\n" +
       "------}\n" +
-      "\\func h => f g g1 g2 g3 g4\n" +
+      "\\func h => f g g1 g2 g3 g4 g5 g6\n" +
       "--");
     assertNotNull(get(group.getGroupScope(), "h"));
   }
@@ -471,5 +475,10 @@ public class ParserTest extends NameResolverTestCase {
       "\\func ----| => 0 --`\n" +
       "\\func ----x => ----| --\\func\n" +
       "\\func --x => ----| -----\\");
+  }
+
+  @Test
+  public void idBackslashTest() {
+    parseModule("\\func x\\y => 0", 1);
   }
 }
