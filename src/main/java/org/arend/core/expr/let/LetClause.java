@@ -1,6 +1,7 @@
-package org.arend.core.expr;
+package org.arend.core.expr.let;
 
 import org.arend.core.context.binding.NamedBinding;
+import org.arend.core.expr.Expression;
 
 public class LetClause extends NamedBinding {
   private LetClausePattern myPattern;
@@ -14,6 +15,10 @@ public class LetClause extends NamedBinding {
 
   public LetClausePattern getPattern() {
     return myPattern;
+  }
+
+  public void setPattern(LetClausePattern pattern) {
+    myPattern = pattern;
   }
 
   public Expression getExpression() {

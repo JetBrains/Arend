@@ -5,6 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
 import org.arend.util.Pair;
 
 import java.util.Map;

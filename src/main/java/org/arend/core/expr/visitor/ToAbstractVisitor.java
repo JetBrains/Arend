@@ -12,6 +12,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;

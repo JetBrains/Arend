@@ -11,6 +11,7 @@ import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
@@ -1684,18 +1685,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.getReferable() != null) {
-      return new LetClausePattern();
-    }
-
-    List<LetClausePattern> patterns = new ArrayList<>(pattern.getPatterns().size());
-    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-      patterns.add(typecheckLetClausePattern(subPattern));
-    }
-    return new LetClausePattern(patterns);
-  }
-
   private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
@@ -1705,16 +1694,30 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
         StringBuilder builder = new StringBuilder();
         getLetClauseName(clause.getPattern(), builder);
-        return new Pair<>(new LetClause(builder.toString(), typecheckLetClausePattern(clause.getPattern()), result.expression), result.type);
+        return new Pair<>(new LetClause(builder.toString(), null, result.expression), result.type);
       }
     }
   }
 
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean addLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
+  /*
+  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern) {
     if (pattern.getReferable() != null) {
-      myContext.put(pattern.getReferable(), new EvaluatingBinding(pattern.getReferable().textRepresentation(), expression, type));
-      return true;
+      return new NameLetClausePattern(pattern.getReferable().textRepresentation());
+    }
+
+    List<Pair<ClassField,LetClausePattern>> patterns = new ArrayList<>(pattern.getPatterns().size());
+    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
+      patterns.add(new Pair<>(typecheckLetClausePattern(subPattern)));
+    }
+    return new LetClausePattern(patterns);
+  }
+  */
+
+  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
+    if (pattern.getReferable() != null) {
+      String name = pattern.getReferable().textRepresentation();
+      myContext.put(pattern.getReferable(), new EvaluatingBinding(name, expression, type));
+      return new NameLetClausePattern(name);
     }
 
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
@@ -1724,22 +1727,25 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     int numberOfPatterns = pattern.getPatterns().size();
     if (sigma == null && classCall == null || sigma != null && DependentLink.Helper.size(sigma.getParameters()) != numberOfPatterns || notImplementedFields != null && notImplementedFields.size() != numberOfPatterns) {
       myErrorReporter.report(new TypeMismatchError("Cannot match an expression with the pattern", DocFactory.text(sigma == null && classCall == null ? "A sigma type or a record" : sigma != null ? "A sigma type with " + numberOfPatterns + " fields" : "A records with " + numberOfPatterns + " not implemented fields"), type, pattern));
-      return false;
+      return null;
     }
 
+    List<LetClausePattern> patterns = new ArrayList<>();
     DependentLink link = sigma == null ? null : sigma.getParameters();
     for (int i = 0; i < numberOfPatterns; i++) {
       assert link != null || notImplementedFields != null;
       Concrete.LetClausePattern subPattern = pattern.getPatterns().get(i);
-      if (!addLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), link != null ? link.getTypeExpr() : notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression))) {
-        return false;
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), link != null ? link.getTypeExpr() : notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression));
+      if (letClausePattern == null) {
+        return null;
       }
+      patterns.add(letClausePattern);
       if (link != null) {
         link = link.getNext();
       }
     }
 
-    return true;
+    return sigma == null ? new RecordLetClausePattern(notImplementedFields, patterns) : new TupleLetClausePattern(patterns);
   }
 
   @Override
@@ -1753,11 +1759,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           return null;
         }
         if (clause.getPattern().getReferable() != null) {
+          pair.proj1.setPattern(new NameLetClausePattern(clause.getPattern().getReferable().textRepresentation()));
           myContext.put(clause.getPattern().getReferable(), pair.proj1);
         } else {
-          if (!addLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2)) {
+          LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
+          if (pattern == null) {
             return null;
           }
+          pair.proj1.setPattern(pattern);
         }
         clauses.add(pair.proj1);
       }

@@ -10,6 +10,7 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Level;
@@ -328,15 +329,30 @@ class ExpressionDeserialization {
     return new LetExpression(clauses, readExpr(proto.getExpression()));
   }
 
-  private LetClausePattern readLetClausePattern(ExpressionProtos.Expression.Let.Pattern proto) {
-    if (proto.getIsMatching()) {
-      List<LetClausePattern> patterns = new ArrayList<>();
-      for (ExpressionProtos.Expression.Let.Pattern pattern : proto.getPatternList()) {
-        patterns.add(readLetClausePattern(pattern));
+  private LetClausePattern readLetClausePattern(ExpressionProtos.Expression.Let.Pattern proto) throws DeserializationException {
+    switch (proto.getKind()) {
+      case RECORD: {
+        List<ClassField> fields = new ArrayList<>();
+        for (Integer fieldIndex : proto.getFieldList()) {
+          fields.add(myCallTargetProvider.getCallTarget(fieldIndex, ClassField.class));
+        }
+        List<LetClausePattern> patterns = new ArrayList<>();
+        for (ExpressionProtos.Expression.Let.Pattern pattern : proto.getPatternList()) {
+          patterns.add(readLetClausePattern(pattern));
+        }
+        return new RecordLetClausePattern(fields, patterns);
       }
-      return new LetClausePattern(patterns);
-    } else {
-      return new LetClausePattern();
+      case TUPLE: {
+        List<LetClausePattern> patterns = new ArrayList<>();
+        for (ExpressionProtos.Expression.Let.Pattern pattern : proto.getPatternList()) {
+          patterns.add(readLetClausePattern(pattern));
+        }
+        return new TupleLetClausePattern(patterns);
+      }
+      case NAME:
+        return new NameLetClausePattern(proto.getName());
+      default:
+        throw new DeserializationException("Unrecognized \\let pattern kind: " + proto.getKind());
     }
   }
 

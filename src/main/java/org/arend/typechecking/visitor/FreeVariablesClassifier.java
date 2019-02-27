@@ -7,10 +7,14 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.prelude.Prelude;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeVariablesClassifier.Result> {
   public enum Result {

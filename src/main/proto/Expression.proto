@@ -87,8 +87,15 @@ message Expression {
         }
 
         message Pattern {
-            bool is_matching = 1;
-            repeated Pattern pattern = 2;
+            enum Kind {
+                NAME = 0;
+                TUPLE = 1;
+                RECORD = 2;
+            }
+            Kind kind = 1;
+            string name = 2;
+            repeated int32 field = 3;
+            repeated Pattern pattern = 4;
         }
     }
     message Case {

@@ -5,6 +5,7 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
 
 public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P, Boolean> {

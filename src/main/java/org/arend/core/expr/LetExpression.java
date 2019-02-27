@@ -1,11 +1,17 @@
 package org.arend.core.expr;
 
+import org.arend.core.definition.ClassField;
+import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LetExpression extends Expression {
   private final List<LetClause> myClauses;
@@ -40,8 +46,17 @@ public class LetExpression extends Expression {
     }
 
     NewExpression newExpr = expression.checkedCast(NewExpression.class);
-    if (newExpr != null) {
-      // TODO
+    if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
+      ClassCallExpression classCall = newExpr.getExpression();
+      Map<ClassField, Expression> implementations = new HashMap<>();
+      for (int i = 0; i < pattern.getPatterns().size(); i++) {
+        ClassField classField = pattern.getFields().get(i);
+        implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), classCall.getImplementedHere().get(classField)));
+      }
+      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+        implementations.putIfAbsent(entry.getKey(), entry.getValue());
+      }
+      return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
     }
 
     return expression;

@@ -11,6 +11,8 @@ import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
+import org.arend.core.expr.let.LetClausePattern;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
@@ -359,12 +361,21 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   private ExpressionProtos.Expression.Let.Pattern writeLetClausePattern(LetClausePattern pattern) {
     ExpressionProtos.Expression.Let.Pattern.Builder builder = ExpressionProtos.Expression.Let.Pattern.newBuilder();
     if (pattern.isMatching()) {
-      builder.setIsMatching(true);
+      List<? extends ClassField> fields = pattern.getFields();
+      if (fields != null) {
+        builder.setKind(ExpressionProtos.Expression.Let.Pattern.Kind.RECORD);
+        for (ClassField field : fields) {
+          builder.addField(myCallTargetIndexProvider.getDefIndex(field));
+        }
+      } else {
+        builder.setKind(ExpressionProtos.Expression.Let.Pattern.Kind.TUPLE);
+      }
       for (LetClausePattern subPattern : pattern.getPatterns()) {
         builder.addPattern(writeLetClausePattern(subPattern));
       }
     } else {
-      builder.setIsMatching(false);
+      builder.setKind(ExpressionProtos.Expression.Let.Pattern.Kind.NAME);
+      builder.setName(pattern.getName());
     }
     return builder.build();
   }

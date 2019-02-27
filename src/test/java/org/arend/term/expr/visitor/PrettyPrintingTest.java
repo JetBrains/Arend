@@ -2,8 +2,8 @@ package org.arend.term.expr.visitor;
 
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.LetClause;
 import org.arend.core.expr.LetExpression;
+import org.arend.core.expr.let.LetClause;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.term.Precedence;
