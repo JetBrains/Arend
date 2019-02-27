@@ -348,11 +348,25 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     for (LetClause letClause : letExpression.getClauses()) {
       builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
         .setName(letClause.getName())
+        .setPattern(writeLetClausePattern(letClause.getPattern()))
         .setExpression(writeExpr(letClause.getExpression())));
       registerBinding(letClause);
     }
     builder.setExpression(letExpression.getExpression().accept(this, null));
     return ExpressionProtos.Expression.newBuilder().setLet(builder).build();
+  }
+
+  private ExpressionProtos.Expression.Let.Pattern writeLetClausePattern(LetClausePattern pattern) {
+    ExpressionProtos.Expression.Let.Pattern.Builder builder = ExpressionProtos.Expression.Let.Pattern.newBuilder();
+    if (pattern.isMatching()) {
+      builder.setIsMatching(true);
+      for (LetClausePattern subPattern : pattern.getPatterns()) {
+        builder.addPattern(writeLetClausePattern(subPattern));
+      }
+    } else {
+      builder.setIsMatching(false);
+    }
+    return builder.build();
   }
 
   @Override

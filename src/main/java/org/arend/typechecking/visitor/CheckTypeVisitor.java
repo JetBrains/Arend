@@ -3,6 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
@@ -46,6 +47,7 @@ import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.util.Pair;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -556,7 +558,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter.report(new ReferenceTypeError(ref));
       return null;
     } else {
-      return new Result(new ReferenceExpression(def), type);
+      return new Result(def instanceof EvaluatingBinding ? ((EvaluatingBinding) def).getExpression() : new ReferenceExpression(def), type);
     }
   }
 
@@ -826,7 +828,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
             if (!argType.isError()) {
-              myErrorReporter.report(new TypeMismatchError("in an argument of the lambda", argExpectedType, argType, paramType));
+              myErrorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", argExpectedType, argType, paramType));
             }
             return null;
           }
@@ -1649,7 +1651,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (result.expression.isInstance(ErrorExpression.class)) {
           result.expression = new ErrorExpression(type.getExpr(), result.expression.cast(ErrorExpression.class).getError());
         }
-        return result.type.isInstance(ErrorExpression.class) ? new Result(result.expression, type.getExpr()) : result;
+        return new Result(result.expression, type.getExpr());
       } else {
         return checkExpr(letClause.getTerm(), null);
       }
@@ -1666,23 +1668,66 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private LetClause typecheckLetClause(Concrete.LetClause clause) {
-    LetClause letResult;
+  private void getLetClauseName(Concrete.LetClausePattern pattern, StringBuilder builder) {
+    if (pattern.getReferable() != null) {
+      builder.append(pattern.getReferable().textRepresentation());
+    } else {
+      boolean first = true;
+      for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
+        if (first) {
+          first = false;
+        } else {
+          builder.append('_');
+        }
+        getLetClauseName(subPattern, builder);
+      }
+    }
+  }
+
+  private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         Result result = typecheckLetClause(clause.getParameters(), clause, 1);
         if (result == null) {
           return null;
         }
-        Referable ref = clause.getPattern().getReferable();
-        if (ref == null) {
-          myErrorReporter.report(new TypecheckingError("Patterns in \\let expressions are not supported yet", clause.getPattern()));
-          return null;
-        }
-        letResult = new LetClause(ref.textRepresentation(), result.expression);
+        StringBuilder builder = new StringBuilder();
+        getLetClauseName(clause.getPattern(), builder);
+        return new Pair<>(new LetClause(builder.toString(), new LetClausePattern(), result.expression), result.type);
       }
     }
-    return letResult;
+  }
+
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  private boolean addLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
+    if (pattern.getReferable() != null) {
+      myContext.put(pattern.getReferable(), new EvaluatingBinding(pattern.getReferable().textRepresentation(), expression, type));
+      return true;
+    }
+
+    type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    SigmaExpression sigma = type.checkedCast(SigmaExpression.class);
+    ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
+    List<ClassField> notImplementedFields = classCall == null ? null : classCall.getNotImplementedFields();
+    int numberOfPatterns = pattern.getPatterns().size();
+    if (sigma == null && classCall == null || sigma != null && DependentLink.Helper.size(sigma.getParameters()) != numberOfPatterns || notImplementedFields != null && notImplementedFields.size() != numberOfPatterns) {
+      myErrorReporter.report(new TypeMismatchError("Cannot match an expression with the pattern", DocFactory.text(sigma == null && classCall == null ? "A sigma type or a record" : sigma != null ? "A sigma type with " + numberOfPatterns + " fields" : "A records with " + numberOfPatterns + " not implemented fields"), type, pattern));
+      return false;
+    }
+
+    DependentLink link = sigma == null ? null : sigma.getParameters();
+    for (int i = 0; i < numberOfPatterns; i++) {
+      assert link != null || notImplementedFields != null;
+      Concrete.LetClausePattern subPattern = pattern.getPatterns().get(i);
+      if (!addLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), link != null ? link.getTypeExpr() : notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression))) {
+        return false;
+      }
+      if (link != null) {
+        link = link.getNext();
+      }
+    }
+
+    return true;
   }
 
   @Override
@@ -1691,12 +1736,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
       List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
       for (Concrete.LetClause clause : abstractClauses) {
-        LetClause letClause = typecheckLetClause(clause);
-        if (letClause == null) {
+        Pair<LetClause, Expression> pair = typecheckLetClause(clause);
+        if (pair == null) {
           return null;
         }
-        myContext.put(clause.getPattern().getReferable(), letClause);
-        clauses.add(letClause);
+        if (clause.getPattern().getReferable() != null) {
+          myContext.put(clause.getPattern().getReferable(), pair.proj1);
+        } else {
+          if (!addLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2)) {
+            return null;
+          }
+        }
+        clauses.add(pair.proj1);
       }
 
       Result result = checkExpr(expr.getExpression(), expectedType);

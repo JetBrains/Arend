@@ -52,7 +52,7 @@ public class ExpressionFactory {
   }
 
   public static LetClause let(String name, Expression expression) {
-    return new LetClause(name, expression);
+    return new LetClause(name, new LetClausePattern(), expression);
   }
 
   public static List<String> vars(String... vars) {

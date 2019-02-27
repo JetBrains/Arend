@@ -77,11 +77,18 @@ message Expression {
     }
     message Let {
         repeated Clause clause = 1;
+        Pattern pattern = 3;
         Expression expression = 2;
 
         message Clause {
             string name = 1;
+            Pattern pattern = 9;
             Expression expression = 8;
+        }
+
+        message Pattern {
+            bool is_matching = 1;
+            repeated Pattern pattern = 2;
         }
     }
     message Case {

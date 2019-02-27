@@ -18,7 +18,7 @@ public class TypeMismatchError extends TypecheckingError {
   }
 
   public TypeMismatchError(String msg, PrettyPrintable expected, PrettyPrintable actual, Concrete.SourceNode sourceNode) {
-    super("Type mismatch " + msg, sourceNode);
+    super(msg, sourceNode);
     this.expected = expected;
     this.actual = actual;
   }

@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -528,7 +529,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Mode mode) {
-    return expr.getBinding() instanceof LetClause && mode != Mode.RNF ? ((LetClause) expr.getBinding()).getExpression().accept(this, mode) : expr;
+    if (mode == Mode.RNF) {
+      return expr;
+    }
+    if (expr.getBinding() instanceof LetClause) {
+      return ((LetClause) expr.getBinding()).getExpression().accept(this, mode);
+    }
+    if (expr.getBinding() instanceof EvaluatingBinding) {
+      return ((EvaluatingBinding) expr.getBinding()).getExpression();
+    }
+    return expr;
   }
 
   @Override
@@ -630,7 +640,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       ExprSubstitution substitution = new ExprSubstitution();
       List<LetClause> newClauses = new ArrayList<>(letExpression.getClauses().size());
       for (LetClause clause : letExpression.getClauses()) {
-        LetClause newClause = new LetClause(clause.getName(), clause.getExpression().accept(this, mode).subst(substitution));
+        LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
         substitution.add(clause, new ReferenceExpression(newClause));
         newClauses.add(newClause);
       }

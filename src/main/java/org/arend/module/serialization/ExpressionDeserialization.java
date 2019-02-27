@@ -321,11 +321,23 @@ class ExpressionDeserialization {
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationException {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(cProto.getName(), readExpr(cProto.getExpression()));
+      LetClause clause = new LetClause(cProto.getName(), readLetClausePattern(cProto.getPattern()), readExpr(cProto.getExpression()));
       registerBinding(clause);
       clauses.add(clause);
     }
     return new LetExpression(clauses, readExpr(proto.getExpression()));
+  }
+
+  private LetClausePattern readLetClausePattern(ExpressionProtos.Expression.Let.Pattern proto) {
+    if (proto.getIsMatching()) {
+      List<LetClausePattern> patterns = new ArrayList<>();
+      for (ExpressionProtos.Expression.Let.Pattern pattern : proto.getPatternList()) {
+        patterns.add(readLetClausePattern(pattern));
+      }
+      return new LetClausePattern(patterns);
+    } else {
+      return new LetClausePattern();
+    }
   }
 
   private CaseExpression readCase(ExpressionProtos.Expression.Case proto) throws DeserializationException {

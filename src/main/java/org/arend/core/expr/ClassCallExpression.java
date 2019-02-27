@@ -93,6 +93,16 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return myImplementations.size() == getDefinition().getNumberOfNotImplementedFields();
   }
 
+  public List<ClassField> getNotImplementedFields() {
+    List<ClassField> result = new ArrayList<>();
+    for (ClassField field : getDefinition().getFields()) {
+      if (!isImplemented(field)) {
+        result.add(field);
+      }
+    }
+    return result;
+  }
+
   public DependentLink getClassFieldParameters() {
     return getDefinition().getClassFieldParameters(getSortArgument());
   }
