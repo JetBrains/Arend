@@ -1684,6 +1684,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern) {
+    if (pattern.getReferable() != null) {
+      return new LetClausePattern();
+    }
+
+    List<LetClausePattern> patterns = new ArrayList<>(pattern.getPatterns().size());
+    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
+      patterns.add(typecheckLetClausePattern(subPattern));
+    }
+    return new LetClausePattern(patterns);
+  }
+
   private Pair<LetClause,Expression> typecheckLetClause(Concrete.LetClause clause) {
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
@@ -1693,7 +1705,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
         StringBuilder builder = new StringBuilder();
         getLetClauseName(clause.getPattern(), builder);
-        return new Pair<>(new LetClause(builder.toString(), new LetClausePattern(), result.expression), result.type);
+        return new Pair<>(new LetClause(builder.toString(), typecheckLetClausePattern(clause.getPattern()), result.expression), result.type);
       }
     }
   }
