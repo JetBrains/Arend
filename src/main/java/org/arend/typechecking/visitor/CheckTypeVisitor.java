@@ -357,19 +357,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return coercedResult;
     }
 
-    if (expectedType instanceof Expression) {
-      if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType)) {
-        result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
-        return result;
-      }
+    return expectedType instanceof Expression ? checkResultExpr((Expression) expectedType, result, expr) : result;
+  }
 
-      if (!result.type.isError()) {
-        myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
-      }
-      return null;
-    } else {
+  private Result checkResultExpr(Expression expectedType, Result result, Concrete.Expression expr) {
+    if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, expectedType)) {
+      result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return result;
     }
+
+    if (!result.type.isError()) {
+      myErrorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+    }
+    return null;
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -449,7 +449,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     Result result;
     try {
-      result = expr.accept(this, expectedType);
+      ExpectedType expectedType1 = expectedType;
+      if (expectedType instanceof Expression) {
+        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+        if (((Expression) expectedType).getStuckInferenceVariable() != null) {
+          expectedType1 = ExpectedType.OMEGA;
+        }
+      }
+
+      result = expr.accept(this, expectedType1);
+      if (expectedType1 != expectedType) {
+        result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+        result = checkResultExpr((Expression) expectedType, result, expr);
+      }
     } catch (IncorrectExpressionException e) {
       myErrorReporter.report(new TypecheckingError(e.getMessage(), expr));
       return null;

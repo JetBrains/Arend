@@ -178,4 +178,11 @@ public class CoerceTest extends TypeCheckingTestCase {
       "  \\where \\use \\coerce toNat {p : Nat} (d : D p) : Nat | con n => n\n" +
       "\\func f : Nat => con 2", 1);
   }
+
+  @Test
+  public void coerceTypeSigma() {
+    typeCheckModule(
+      "\\class Class (X : \\Type) (x : X)\n" +
+      "\\func f (C : Class) => (\\Sigma (c : C) (c = c)) = (\\Sigma)");
+  }
 }
