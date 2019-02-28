@@ -129,6 +129,7 @@ public class DefinitionDeserialization {
         field.setTypeLevel(defDeserializer.readExpr(fieldProto.getTypeLevel()));
       }
       // setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
+      field.setHideable(fieldProto.getIsHideable());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
@@ -378,6 +379,7 @@ public class DefinitionDeserialization {
     }
     defDeserializer.setIsHeader(false);
     functionDef.setIsLemma(functionProto.getIsLemma());
+    functionDef.setVisibleParameter(functionProto.getVisibleParameter());
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
     }

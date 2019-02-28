@@ -69,6 +69,7 @@ message Definition {
             bool isExplicit = 5;
             bool isParameter = 6;
             bool isProperty = 7;
+            bool isHideable = 9;
         }
 
         message ImplLevel {
@@ -109,6 +110,7 @@ message Definition {
         Expression type_level = 9;
         Body body = 6;
         bool isLemma = 8;
+        int32 visible_parameter = 12;
     }
 
     enum Status {

@@ -41,6 +41,14 @@ public abstract class Definition implements Variable {
     return null;
   }
 
+  public int getVisibleParameter() {
+    return -1;
+  }
+
+  public boolean isHideable() {
+    return getVisibleParameter() >= 0;
+  }
+
   public List<Integer> getParametersTypecheckingOrder() {
     return null;
   }

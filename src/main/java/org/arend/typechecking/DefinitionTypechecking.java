@@ -767,6 +767,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               myErrorReporter.report(new TypecheckingError("Either the last parameter or the result type (but not both) of \\coerce must be the parent definition", def));
             } else {
               if (newDef) {
+                typedDef.setVisibleParameter(DependentLink.Helper.size(typedDef.getParameters()) - 1);
                 if (resultDef == useParent) {
                   useParent.getCoerceData().addCoerceFrom(paramDef, typedDef);
                 } else {
@@ -1458,6 +1459,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (newDef) {
         typedDef.setClassifyingField(classifyingField);
         if (classifyingField != null) {
+          classifyingField.setHideable(true);
           classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
           typedDef.getCoerceData().addCoercingField(classifyingField);
         }

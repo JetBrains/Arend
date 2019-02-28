@@ -17,6 +17,7 @@ public class ClassField extends Definition {
   private boolean myProperty;
   private PiExpression myType;
   private Expression myTypeLevel;
+  private boolean myHideable;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -65,6 +66,20 @@ public class ClassField extends Definition {
 
   public boolean isTypeClass() {
     return myParentClass.isTypeClassField(this);
+  }
+
+  @Override
+  public int getVisibleParameter() {
+    return myHideable ? 0 : -1;
+  }
+
+  @Override
+  public boolean isHideable() {
+    return myHideable;
+  }
+
+  public void setHideable(boolean isHideable) {
+    myHideable = isHideable;
   }
 
   @Override

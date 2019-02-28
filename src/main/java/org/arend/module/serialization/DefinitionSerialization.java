@@ -90,6 +90,7 @@ public class DefinitionSerialization {
       fBuilder.setIsExplicit(field.getReferable().isExplicitField());
       fBuilder.setIsParameter(field.getReferable().isParameterField());
       fBuilder.setIsProperty(field.isProperty());
+      fBuilder.setIsHideable(field.isHideable());
       builder.addPersonalField(fBuilder.build());
     }
 
@@ -265,6 +266,7 @@ public class DefinitionSerialization {
       builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
     }
     builder.setIsLemma(definition.isLemma());
+    builder.setVisibleParameter(definition.getVisibleParameter());
     if (definition.status().bodyIsOK() && definition.getActualBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getActualBody()));
     }

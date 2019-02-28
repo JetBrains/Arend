@@ -38,6 +38,7 @@ public class GoalError extends TypecheckingError {
     flags.remove(SHOW_IMPLICIT_ARGS);
     flags.remove(SHOW_TYPES_IN_LAM);
     flags.remove(SHOW_INFERENCE_LEVEL_VARS);
+    flags.add(HIDE_HIDEABLE_DEFINITIONS);
     ppConfig = new PrettyPrinterConfig() {
       @Override
       public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {

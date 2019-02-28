@@ -22,6 +22,7 @@ public class FunctionDefinition extends Definition implements Function {
   private boolean myLemma;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<Boolean> myTypeClassParameters = Collections.emptyList();
+  private int myVisibleParameter = -1;
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -72,6 +73,15 @@ public class FunctionDefinition extends Definition implements Function {
 
   public void setResultTypeLevel(Expression resultTypeLevel) {
     myResultTypeLevel = resultTypeLevel;
+  }
+
+  @Override
+  public int getVisibleParameter() {
+    return myVisibleParameter;
+  }
+
+  public void setVisibleParameter(int index) {
+    myVisibleParameter = index;
   }
 
   @Override

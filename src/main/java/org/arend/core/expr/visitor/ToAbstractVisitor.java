@@ -30,7 +30,7 @@ import java.util.*;
 import static org.arend.frontend.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag { SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
+  public enum Flag { HIDE_HIDEABLE_DEFINITIONS, SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
 
   private final EnumSet<Flag> myFlags;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -230,11 +230,25 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
+    if (expr.getDefinition().isHideable() && myFlags.contains(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+      int index = 0;
+      for (DependentLink link = expr.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
+        if (index == expr.getDefinition().getVisibleParameter()) {
+          return expr.getDefCallArguments().get(index).accept(this, null);
+        }
+        index++;
+      }
+    }
+
     return visitParameters(makeReference(expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
   }
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
+    if (expr.getDefinition().isHideable() && myFlags.contains(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+      return expr.getArgument().accept(this, null);
+    }
+
     Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
     if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
