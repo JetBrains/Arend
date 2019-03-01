@@ -1,12 +1,10 @@
 package org.arend.typechecking.typeclass;
 
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.CycleError;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.*;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 public class TypeClassesGlobal extends TypeCheckingTestCase {
   @Test
@@ -109,7 +107,6 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
       "}", 1);
-    assertThatErrorsAre(instanceOf(CycleError.class));
   }
 
   // We do not check for duplicate global instances currently

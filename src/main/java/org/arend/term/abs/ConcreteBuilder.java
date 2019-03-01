@@ -153,7 +153,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         ? Concrete.FunctionDefinition.Kind.LEVEL
         : def.isLemma()
           ? Concrete.FunctionDefinition.Kind.LEMMA
-          : Concrete.FunctionDefinition.Kind.FUNC;
+          : def.isInstance()
+            ? Concrete.FunctionDefinition.Kind.INSTANCE
+            : Concrete.FunctionDefinition.Kind.FUNC;
     Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
     return result;
@@ -329,22 +331,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } else {
       return Collections.emptyList();
     }
-  }
-
-  @Override
-  public Concrete.Instance visitInstance(Abstract.InstanceDefinition def) {
-    List<Concrete.TelescopeParameter> parameters = buildTelescopeParameters(def.getParameters());
-    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
-
-    Abstract.Expression resultType = def.getResultType();
-    if (resultType == null) {
-      throwError(def.getErrorData());
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(def));
-    }
-
-    Concrete.Instance instance = new Concrete.Instance(myDefinition, parameters, resultType.accept(this, null), implementations);
-    setEnclosingClass(instance, def);
-    return instance;
   }
 
   private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {

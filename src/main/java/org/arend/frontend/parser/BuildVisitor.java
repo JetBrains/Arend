@@ -442,9 +442,23 @@ public class BuildVisitor extends ArendBaseVisitor {
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     List<Concrete.TelescopeParameter> parameters = visitFunctionParameters(ctx.tele());
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent);
-    Concrete.Instance instance = new Concrete.Instance(reference, parameters, visitExpr(ctx.expr()), visitCoClauses(ctx.coClauses()));
-    instance.enclosingClass = enclosingClass;
-    reference.setDefinition(instance);
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+
+    Concrete.FunctionBody body;
+    InstanceBodyContext bodyCtx = ctx.instanceBody();
+    if (bodyCtx instanceof InstanceWithElimContext) {
+      InstanceWithElimContext elimCtx = (InstanceWithElimContext) bodyCtx;
+      body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
+    } else if (bodyCtx instanceof InstanceCowithElimContext) {
+      InstanceCowithElimContext elimCtx = (InstanceCowithElimContext) bodyCtx;
+      body = new Concrete.CoelimFunctionBody(tokenPosition(elimCtx.start), visitCoClauses(elimCtx.coClauses()));
+    } else {
+      body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((InstanceWithoutElimContext) bodyCtx).expr()));
+    }
+
+    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.INSTANCE, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    funcDef.enclosingClass = enclosingClass;
+    reference.setDefinition(funcDef);
     List<Group> subgroups = new ArrayList<>();
     List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);

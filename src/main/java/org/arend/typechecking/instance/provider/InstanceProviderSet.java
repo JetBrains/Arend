@@ -62,8 +62,8 @@ public class InstanceProviderSet {
         ref = referableConverter.toDataLocatedReferable((LocatedReferable) ref);
       }
       if (ref instanceof TCReferable) {
-        Concrete.Instance instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
-        if (instance != null) {
+        Concrete.FunctionDefinition instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
+        if (instance != null && instance.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE) {
           if (used) {
             instanceProvider = new SimpleInstanceProvider(instanceProvider);
             used = false;

@@ -48,7 +48,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
         if (!ignoreFirstParameter) {
           LocatedReferable fieldParent = referable.getLocatedReferableParent();
           if (fieldParent instanceof ClassReferable) {
-            for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+            for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
               Referable ref = instance.getReferenceInType();
               if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf((ClassReferable) fieldParent)) {
                 myDeque.push(instance.getData());
@@ -65,7 +65,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
             } else if (!parameter.getExplicit()) {
               TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
               if (classRef != null) {
-                for (Concrete.Instance instance : myInstanceProvider.getInstances()) {
+                for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
                   Referable ref = instance.getReferenceInType();
                   if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
                     myDeque.push(instance.getData());
@@ -171,14 +171,6 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
 
     visitClassFieldImpls(def.getImplementations(), null);
     myExcluded = null;
-    return null;
-  }
-
-  @Override
-  public Void visitInstance(Concrete.Instance def, Boolean params) {
-    visitParameters(def.getParameters(), null);
-    def.getResultType().accept(this, null);
-    visitClassFieldImpls(def.getClassFieldImpls(), null);
     return null;
   }
 

@@ -219,6 +219,7 @@ public final class Abstract {
     boolean isCoerce();
     boolean isLevel();
     boolean isLemma();
+    boolean isInstance();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
@@ -253,9 +254,5 @@ public final class Abstract {
 
   public interface ClassFieldSynonym extends ReferableDefinition {
     /* @Nonnull */ @Nullable Reference getUnderlyingField();
-  }
-
-  public interface InstanceDefinition extends Definition, ParametersHolder, ClassReferenceHolder {
-    /* @Nonnull */ @Nullable Expression getResultType();
   }
 }

@@ -859,15 +859,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     myBuilder.append(def.textRepresentation());
   }
 
-  private void prettyPrintBody(Concrete.FunctionBody body) {
+  private void prettyPrintBody(Concrete.FunctionBody body, boolean isFunction) {
     if (body instanceof Concrete.TermFunctionBody) {
       myBuilder.append("=> ");
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, new Precedence(Concrete.Expression.PREC));
     } else if (body instanceof Concrete.CoelimFunctionBody) {
-      myBuilder.append("\\cowith");
+      if (isFunction) {
+        myBuilder.append("\\cowith");
+      }
       visitClassFieldImpls(body.getClassFieldImpls());
     } else {
-      prettyPrintEliminatedReferences(body.getEliminatedReferences(), false);
+      prettyPrintEliminatedReferences(body.getEliminatedReferences(), !isFunction);
       prettyPrintClauses(Collections.emptyList(), body.getClauses(), false);
     }
   }
@@ -886,7 +888,14 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitFunction(final Concrete.FunctionDefinition def, Void ignored) {
-    myBuilder.append("\\func ");
+    switch (def.getKind()) {
+      case FUNC: myBuilder.append("\\func "); break;
+      case LEMMA: myBuilder.append("\\lemma "); break;
+      case LEVEL: myBuilder.append("\\use \\level "); break;
+      case COERCE: myBuilder.append("\\use \\coerce "); break;
+      case INSTANCE: myBuilder.append("\\instance "); break;
+    }
+
     printIndent();
     prettyPrintNameWithPrecedence(def.getData());
     myBuilder.append(" ");
@@ -921,7 +930,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        pp.prettyPrintBody(def.getBody());
+        pp.prettyPrintBody(def.getBody(), def.getKind() != Concrete.FunctionDefinition.Kind.INSTANCE);
       }
 
       @Override
@@ -1011,12 +1020,12 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     return null;
   }
 
-  private void prettyPrintEliminatedReferences(List<? extends Concrete.ReferenceExpression> references, boolean isData) {
+  private void prettyPrintEliminatedReferences(List<? extends Concrete.ReferenceExpression> references, boolean printWith) {
     if (references == null) {
       return;
     }
     if (references.isEmpty()) {
-      if (isData) myBuilder.append("\\with\n");
+      if (printWith) myBuilder.append("\\with\n");
       return;
     }
 
@@ -1218,19 +1227,6 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append("}");
     }
 
-    return null;
-  }
-
-  @Override
-  public Void visitInstance(Concrete.Instance def, Void params) {
-    myBuilder.append("\\instance ");
-    prettyPrintNameWithPrecedence(def.getData());
-    if (!def.getParameters().isEmpty()) {
-      myBuilder.append(" ");
-      prettyPrintParameters(def.getParameters(), Concrete.ReferenceExpression.PREC);
-    }
-
-    visitClassFieldImpls(def.getClassFieldImpls());
     return null;
   }
 

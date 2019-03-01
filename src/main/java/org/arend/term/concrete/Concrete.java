@@ -1047,9 +1047,6 @@ public final class Concrete {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
-    if (definition instanceof Instance) {
-      return ((Instance) definition).getParameters();
-    }
     if (definition instanceof DataDefinition) {
       return ((DataDefinition) definition).getParameters();
     }
@@ -1403,6 +1400,12 @@ public final class Concrete {
         public boolean isUse() {
           return false;
         }
+      },
+      INSTANCE {
+        @Override
+        public boolean isUse() {
+          return false;
+        }
       };
 
       public boolean isUse() {
@@ -1449,6 +1452,17 @@ public final class Concrete {
 
     public void setResultTypeLevel(Expression resultTypeLevel) {
       myResultTypeLevel = resultTypeLevel;
+    }
+
+    @Nullable
+    public ReferenceExpression getReferenceExpressionInType() {
+      return Concrete.getReferenceExpressionInType(myResultType);
+    }
+
+    @Nullable
+    public Referable getReferenceInType() {
+      ReferenceExpression type = getReferenceExpressionInType();
+      return type == null ? null : type.myReferent;
     }
 
     @Nonnull
@@ -1622,55 +1636,6 @@ public final class Concrete {
       type = ((AppExpression) type).getFunction();
     }
     return type instanceof ReferenceExpression ? (ReferenceExpression) type : null;
-  }
-
-  public static class Instance extends Definition {
-    private final List<TelescopeParameter> myParameters;
-    private Expression myResultType;
-    private final List<ClassFieldImpl> myClassFieldImpls;
-
-    public Instance(TCReferable referable, List<TelescopeParameter> parameters, Expression classRef, List<ClassFieldImpl> classFieldImpls) {
-      super(referable);
-      myResolved = Resolved.NOT_RESOLVED;
-      myParameters = parameters;
-      myResultType = classRef;
-      myClassFieldImpls = classFieldImpls;
-    }
-
-    @Nonnull
-    public List<TelescopeParameter> getParameters() {
-      return myParameters;
-    }
-
-    @Nonnull
-    public Expression getResultType() {
-      return myResultType;
-    }
-
-    @Nullable
-    public ReferenceExpression getReferenceExpressionInType() {
-      return Concrete.getReferenceExpressionInType(myResultType);
-    }
-
-    @Nullable
-    public Referable getReferenceInType() {
-      ReferenceExpression type = getReferenceExpressionInType();
-      return type == null ? null : type.myReferent;
-    }
-
-    public void setResultType(Expression resultType) {
-      myResultType = resultType;
-    }
-
-    @Nonnull
-    public List<ClassFieldImpl> getClassFieldImpls() {
-      return myClassFieldImpls;
-    }
-
-    @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitInstance(this, params);
-    }
   }
 
   // Patterns

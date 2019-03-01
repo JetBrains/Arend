@@ -2,10 +2,11 @@ package org.arend.typechecking.instance.provider;
 
 import org.arend.term.concrete.Concrete;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SimpleInstanceProvider implements InstanceProvider {
-  private List<Concrete.Instance> myInstances;
+  private List<Concrete.FunctionDefinition> myInstances;
 
   public SimpleInstanceProvider() {
     myInstances = new ArrayList<>();
@@ -15,12 +16,12 @@ public class SimpleInstanceProvider implements InstanceProvider {
     myInstances = new ArrayList<>(another.myInstances);
   }
 
-  public void put(Concrete.Instance instance) {
+  public void put(Concrete.FunctionDefinition instance) {
     myInstances.add(instance);
   }
 
   @Override
-  public List<? extends Concrete.Instance> getInstances() {
+  public List<? extends Concrete.FunctionDefinition> getInstances() {
     return myInstances;
   }
 }

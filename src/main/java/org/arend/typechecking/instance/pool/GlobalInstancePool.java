@@ -79,8 +79,8 @@ public class GlobalInstancePool implements InstancePool {
       }
     }
 
-    List<? extends Concrete.Instance> instances = myInstanceProvider.getInstances();
-    for (Concrete.Instance instance : instances) {
+    List<? extends Concrete.FunctionDefinition> instances = myInstanceProvider.getInstances();
+    for (Concrete.FunctionDefinition instance : instances) {
       Referable instanceRef = instance.getReferenceInType();
       if (!(instanceRef instanceof ClassReferable)) {
         continue;

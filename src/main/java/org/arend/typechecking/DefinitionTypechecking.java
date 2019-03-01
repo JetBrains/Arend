@@ -198,32 +198,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return null;
   }
 
-  @Override
-  public List<Clause> visitInstance(Concrete.Instance def, Boolean recursive) {
-    LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
-    myInstancePool.setInstancePool(localInstancePool);
-    myVisitor.setInstancePool(myInstancePool);
-
-    Definition typechecked = prepare(def);
-    FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(def.getData());
-    if (typechecked == null) {
-      myVisitor.getTypecheckingState().record(def.getData(), definition);
-    }
-    if (recursive) {
-      myErrorReporter.report(new TypecheckingError("An instance cannot be recursive", def));
-      if (typechecked == null) {
-        definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-      }
-    } else {
-      try {
-        typecheckInstance(def, definition, localInstancePool, typechecked == null);
-      } catch (IncorrectExpressionException e) {
-        myErrorReporter.report(new TypecheckingError(e.getMessage(), def));
-      }
-    }
-    return null;
-  }
-
   private Sort typeCheckParameters(List<? extends Concrete.Parameter> parameters, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters) {
     Sort sort = Sort.PROP;
     int index = 0;
@@ -813,6 +787,115 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
         typedDef.setHasUniverses(true);
+      }
+    }
+
+    if (def.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE) {
+      ClassCallExpression typecheckedResultType = typedDef.getResultType() instanceof ClassCallExpression ? (ClassCallExpression) typedDef.getResultType() : null;
+      if (typecheckedResultType != null && !typecheckedResultType.getDefinition().isRecord()) {
+        ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
+        Expression classifyingExpr;
+        if (classifyingField != null) {
+          classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
+          Set<SingleDependentLink> params = new LinkedHashSet<>();
+          while (classifyingExpr instanceof LamExpression) {
+            for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {
+              params.add(link);
+            }
+            classifyingExpr = ((LamExpression) classifyingExpr).getBody();
+          }
+          if (classifyingExpr != null) {
+            classifyingExpr = classifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
+          }
+
+          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
+          if (classifyingExpr instanceof DataCallExpression) {
+            DataCallExpression dataCall = (DataCallExpression) classifyingExpr;
+            if (dataCall.getDefCallArguments().size() < params.size()) {
+              ok = false;
+            } else {
+              int i = dataCall.getDefCallArguments().size() - params.size();
+              for (SingleDependentLink param : params) {
+                if (!(dataCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) dataCall.getDefCallArguments().get(i)).getBinding() == param)) {
+                  ok = false;
+                  break;
+                }
+                i++;
+              }
+              if (ok) {
+                for (i = 0; i < dataCall.getDefCallArguments().size() - params.size(); i++) {
+                  if (dataCall.getDefCallArguments().get(i).findBinding(params) != null) {
+                    ok = false;
+                    break;
+                  }
+                }
+              }
+            }
+          } else if (classifyingExpr instanceof ClassCallExpression) {
+            Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
+            if (implemented.size() < params.size()) {
+              ok = false;
+            } else {
+              int i = 0;
+              ClassDefinition classDef = ((ClassCallExpression) classifyingExpr).getDefinition();
+              Iterator<SingleDependentLink> it = params.iterator();
+              for (ClassField field : classDef.getFields()) {
+                Expression implementation = implemented.get(field);
+                if (implementation != null) {
+                  if (i < implemented.size() - params.size()) {
+                    if (implementation.findBinding(params) != null) {
+                      ok = false;
+                      break;
+                    }
+                    i++;
+                  } else {
+                    if (!(implementation instanceof ReferenceExpression && it.hasNext() && ((ReferenceExpression) implementation).getBinding() == it.next())) {
+                      ok = false;
+                      break;
+                    }
+                  }
+                } else {
+                  if (i >= implemented.size() - params.size()) {
+                    break;
+                  }
+                  if (!classDef.isImplemented(field)) {
+                    ok = false;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          if (!ok) {
+            myErrorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, or a class, or a partially applied data", def.getResultType() == null ? def : def.getResultType()));
+          }
+        } else {
+          classifyingExpr = null;
+        }
+
+        boolean recOK = true;
+        for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          Expression type = link.getTypeExpr();
+          if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
+            ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
+            Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
+            if (classifyingImpl == null && paramClassifyingField != null) {
+              classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
+            }
+            if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
+              myErrorReporter.report(new TypecheckingError("Class parameters of an instance must be classified by a subexpression of the classifying expression", def));
+              recOK = false;
+              break;
+            }
+          }
+        }
+
+        if (newDef) {
+          typedDef.setStatus(recOK ? myVisitor.getStatus() : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+        }
+      } else if (!(typedDef.getResultType() instanceof ErrorExpression)) {
+        myErrorReporter.report(new TypecheckingError("An instance must return a class", def.getResultType() == null ? def : def.getResultType()));
       }
     }
 
@@ -1895,145 +1978,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       typedDef.setStatus(myVisitor.getStatus());
     }
     return type;
-  }
-
-  private void typecheckInstance(Concrete.Instance def, FunctionDefinition typedDef, LocalInstancePool localInstancePool, boolean newDef) {
-    LinkList list = new LinkList();
-    boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
-    if (newDef) {
-      typedDef.setParameters(list.getFirst());
-      calculateParametersTypecheckingOrder(typedDef);
-      typedDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    }
-    if (!paramsOk) {
-      return;
-    }
-
-    if (!(def.getReferenceInType() instanceof ClassReferable)) {
-      myErrorReporter.report(new TypecheckingError("Expected a class", def.getResultType()));
-      return;
-    }
-
-    ClassCallExpression typecheckedResultType = typecheckCoClauses(typedDef, def, def.getResultType(), null, def.getClassFieldImpls(), newDef);
-    if (typecheckedResultType == null) {
-      return;
-    }
-
-    if (newDef) {
-      GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
-      goodThisParametersVisitor.visitClassCall(typecheckedResultType, null);
-      if (typedDef.getResultTypeLevel() != null) {
-        typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
-      }
-      typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-      calculateTypeClassParameters(def, typedDef);
-
-      if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typecheckedResultType)) {
-        typedDef.setHasUniverses(true);
-      }
-    }
-
-    ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
-    Expression classifyingExpr;
-    if (classifyingField != null) {
-      classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
-      Set<SingleDependentLink> params = new LinkedHashSet<>();
-      while (classifyingExpr instanceof LamExpression) {
-        for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {
-          params.add(link);
-        }
-        classifyingExpr = ((LamExpression) classifyingExpr).getBody();
-      }
-      if (classifyingExpr != null) {
-        classifyingExpr = classifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
-      }
-
-      boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
-      if (classifyingExpr instanceof DataCallExpression) {
-        DataCallExpression dataCall = (DataCallExpression) classifyingExpr;
-        if (dataCall.getDefCallArguments().size() < params.size()) {
-          ok = false;
-        } else {
-          int i = dataCall.getDefCallArguments().size() - params.size();
-          for (SingleDependentLink param : params) {
-            if (!(dataCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) dataCall.getDefCallArguments().get(i)).getBinding() == param)) {
-              ok = false;
-              break;
-            }
-            i++;
-          }
-          if (ok) {
-            for (i = 0; i < dataCall.getDefCallArguments().size() - params.size(); i++) {
-              if (dataCall.getDefCallArguments().get(i).findBinding(params) != null) {
-                ok = false;
-                break;
-              }
-            }
-          }
-        }
-      } else if (classifyingExpr instanceof ClassCallExpression) {
-        Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
-        if (implemented.size() < params.size()) {
-          ok = false;
-        } else {
-          int i = 0;
-          ClassDefinition classDef = ((ClassCallExpression) classifyingExpr).getDefinition();
-          Iterator<SingleDependentLink> it = params.iterator();
-          for (ClassField field : classDef.getFields()) {
-            Expression implementation = implemented.get(field);
-            if (implementation != null) {
-              if (i < implemented.size() - params.size()) {
-                if (implementation.findBinding(params) != null) {
-                  ok = false;
-                  break;
-                }
-                i++;
-              } else {
-                if (!(implementation instanceof ReferenceExpression && it.hasNext() && ((ReferenceExpression) implementation).getBinding() == it.next())) {
-                  ok = false;
-                  break;
-                }
-              }
-            } else {
-              if (i >= implemented.size() - params.size()) {
-                break;
-              }
-              if (!classDef.isImplemented(field)) {
-                ok = false;
-                break;
-              }
-            }
-          }
-        }
-      }
-      if (!ok) {
-        myErrorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, or a class, or a partially applied data", def.getResultType()));
-      }
-    } else {
-      classifyingExpr = null;
-    }
-
-    boolean recOK = true;
-    for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
-      Expression type = link.getTypeExpr();
-      if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-        ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
-        Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
-        if (classifyingImpl == null && paramClassifyingField != null) {
-          classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
-        }
-        if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
-          myErrorReporter.report(new TypecheckingError("Class parameters of an instance must be classified by a subexpression of the classifying expression", def));
-          recOK = false;
-          break;
-        }
-      }
-    }
-
-    if (newDef) {
-      typedDef.setStatus(recOK ? myVisitor.getStatus() : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
-    }
   }
 
   private int compareExpressions(Expression expr1, Expression expr2) {

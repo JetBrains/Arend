@@ -179,7 +179,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
           myState.record(constructor.getData(), tcConstructor);
         }
       }
-    } else if (definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.Instance) {
+    } else if (definition instanceof Concrete.FunctionDefinition) {
       typechecked = new FunctionDefinition(definition.getData());
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression(null, null));
       typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);

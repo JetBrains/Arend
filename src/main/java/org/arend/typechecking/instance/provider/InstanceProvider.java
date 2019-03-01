@@ -5,5 +5,5 @@ import org.arend.term.concrete.Concrete;
 import java.util.List;
 
 public interface InstanceProvider {
-  List<? extends Concrete.Instance> getInstances();
+  List<? extends Concrete.FunctionDefinition> getInstances();
 }

@@ -358,35 +358,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  @Override
-  public Void visitInstance(Concrete.Instance def, Scope parentScope) {
-    if (def.getResolved() == Concrete.Resolved.RESOLVED) {
-      return null;
-    }
-
-    myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
-    if (myResolveTypeClassReferences) {
-      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
-        resolveTypeClassReference(def.getParameters(), def.getResultType(), parentScope, true);
-      }
-      def.setTypeClassReferencesResolved();
-      return null;
-    }
-
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, new ArrayList<>(), myLocalErrorReporter);
-    exprVisitor.visitParameters(def.getParameters(), null);
-    def.setResultType(def.getResultType().accept(exprVisitor, null));
-    Referable typeRef = def.getReferenceInType();
-    if (typeRef instanceof ClassReferable) {
-      exprVisitor.visitClassFieldImpls(def.getClassFieldImpls(), (ClassReferable) typeRef);
-    } else {
-      def.getClassFieldImpls().clear();
-    }
-
-    def.setResolved();
-    return null;
-  }
-
   public void resolveGroupWithTypes(Group group, ReferableConverter referableConverter, Scope scope) {
     myResolveTypeClassReferences = true;
     resolveGroup(group, referableConverter, scope);

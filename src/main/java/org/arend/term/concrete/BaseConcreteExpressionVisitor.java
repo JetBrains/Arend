@@ -276,12 +276,4 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     visitClassFieldImpls(def.getImplementations(), params);
     return null;
   }
-
-  @Override
-  public Void visitInstance(Concrete.Instance def, P params) {
-    visitParameters(def.getParameters(), params);
-    visitClassFieldImpls(def.getClassFieldImpls(), params);
-    def.setResultType(def.getResultType().accept(this, params));
-    return null;
-  }
 }

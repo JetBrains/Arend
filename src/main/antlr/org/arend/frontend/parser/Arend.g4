@@ -31,7 +31,7 @@ definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?  
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
             | classKw precedence ID fieldTele* ('\\extends' longName (',' longName)*)? classBody where?     # defClass
             | '\\module' ID where?                                                                          # defModule
-            | '\\instance' ID tele* ':' expr coClauses where?                                               # defInstance
+            | '\\instance' precedence ID tele* (':' returnExpr)? instanceBody where?                        # defInstance
             ;
 
 returnExpr  : expr                                  # returnExprExpr
@@ -61,6 +61,11 @@ fieldSyn : ID '=>' precedence ID;
 functionBody  : '=>' expr             # withoutElim
               | '\\cowith' coClauses  # cowithElim
               | elim? clauses         # withElim
+              ;
+
+instanceBody  : '=>' expr             # instanceWithoutElim
+              | '\\cowith'? coClauses # instanceCowithElim
+              | elim clauses          # instanceWithElim
               ;
 
 dataBody : elim constructorClauses                      # dataClauses

@@ -411,6 +411,9 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     }
     Concrete.FunctionDefinition fun2 = (Concrete.FunctionDefinition) def2;
 
+    if (def.getKind() != fun2.getKind()) {
+      return false;
+    }
     if (!compareParameters(def.getParameters(), fun2.getParameters())) {
       return false;
     }
@@ -514,14 +517,5 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {
     mySubstitution.put(field1.getData(), field2.getData());
     return field1.isExplicit() == field2.isExplicit() && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType()) && compare(field1.getResultTypeLevel(), field2.getResultTypeLevel());
-  }
-
-  @Override
-  public Boolean visitInstance(Concrete.Instance def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.Instance)) {
-      return false;
-    }
-    Concrete.Instance inst2 = (Concrete.Instance) def2;
-    return compareParameters(def.getParameters(), inst2.getParameters()) && compare(def.getResultType(), inst2.getResultType()) && compareImplementStatements(def.getClassFieldImpls(), inst2.getClassFieldImpls());
   }
 }

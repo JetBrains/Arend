@@ -138,19 +138,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
   }
 
   @Override
-  public Void visitInstance(Concrete.Instance def, Void params) {
-    // Add this parameter
-    Referable thisParameter = checkDefinition(def);
-    if (thisParameter != null) {
-      def.getParameters().add(0, new Concrete.TelescopeParameter(def.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(def.getData(), def.enclosingClass)));
-    }
-
-    // Process expressions
-    super.visitInstance(def, null);
-    return null;
-  }
-
-  @Override
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     // Convert class call with arguments to class extension.
     expr = (Concrete.AppExpression) super.visitApp(expr, null);

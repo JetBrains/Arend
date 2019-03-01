@@ -274,7 +274,7 @@ public class ScopeFactory {
 
     // Extend the scope with parameters
     if (parentSourceNode instanceof Abstract.ParametersHolder) {
-      if (sourceNode instanceof Abstract.Reference && parentSourceNode instanceof Abstract.InstanceDefinition) {
+      if (sourceNode instanceof Abstract.Expression && parentSourceNode instanceof Abstract.FunctionDefinition && ((Abstract.FunctionDefinition) parentSourceNode).isInstance() && sourceNode.equals(((Abstract.FunctionDefinition) parentSourceNode).getResultType())) {
         return parentScope;
       }
 

@@ -9,14 +9,14 @@ import javax.annotation.Nullable;
 public interface ConcreteProvider extends PartialConcreteProvider {
   @Nullable Concrete.ReferableDefinition getConcrete(GlobalReferable referable);
   @Nullable Concrete.FunctionDefinition getConcreteFunction(GlobalReferable referable);
-  @Nullable Concrete.Instance getConcreteInstance(GlobalReferable referable);
+  @Nullable Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable);
   @Nullable Concrete.ClassDefinition getConcreteClass(ClassReferable referable);
   @Nullable Concrete.DataDefinition getConcreteData(GlobalReferable referable);
 
   @Override
   @Nullable
   default Concrete.ReferenceExpression getInstanceTypeReference(GlobalReferable instance) {
-    Concrete.Instance concreteInstance = getConcreteInstance(instance);
+    Concrete.FunctionDefinition concreteInstance = getConcreteInstance(instance);
     return concreteInstance == null ? null : concreteInstance.getReferenceExpressionInType();
   }
 

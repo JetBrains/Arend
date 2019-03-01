@@ -32,11 +32,11 @@ public class ConcreteReferableProvider implements ConcreteProvider {
 
   @Nullable
   @Override
-  public Concrete.Instance getConcreteInstance(GlobalReferable referable) {
+  public Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable) {
     if (referable instanceof ConcreteLocatedReferable) {
       Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) referable).getDefinition();
-      if (def instanceof Concrete.Instance) {
-        return (Concrete.Instance) def;
+      if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind() == Concrete.FunctionDefinition.Kind.INSTANCE) {
+        return (Concrete.FunctionDefinition) def;
       }
     }
     return null;
