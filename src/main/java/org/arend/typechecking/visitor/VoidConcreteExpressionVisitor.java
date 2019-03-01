@@ -90,6 +90,12 @@ public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   protected void visitPattern(Concrete.Pattern pattern, P params) {
+    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
+      if (typedReferable.type != null) {
+        typedReferable.type.accept(this, params);
+      }
+    }
+
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.Expression type = ((Concrete.NamePattern) pattern).type;
       if (type != null) {

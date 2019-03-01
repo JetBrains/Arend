@@ -60,6 +60,10 @@ public class ScopeFactory {
         return false;
       }
 
+      if (sourceNode instanceof Abstract.Pattern) {
+        return true;
+      }
+
       Abstract.SourceNode parentSourceNode = sourceNode.getParentSourceNode();
       if (parentSourceNode instanceof Abstract.Expression && sourceNode instanceof Abstract.Reference) {
         sourceNode = parentSourceNode;
@@ -125,6 +129,13 @@ public class ScopeFactory {
     } else {
       for (Abstract.Pattern subPattern : patterns) {
         addPatternReferables(subPattern, referables, parentScope);
+      }
+    }
+
+    for (Abstract.TypedReferable asPattern : pattern.getAsPatterns()) {
+      Referable ref = asPattern.getReferable();
+      if (ref != null) {
+        referables.add(ref);
       }
     }
   }

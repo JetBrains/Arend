@@ -39,7 +39,7 @@ public final class Concrete {
     }
 
     @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       PrettyPrintVisitor.prettyPrint(builder, this); // TODO[pretty]: implement this properly
     }
   }
@@ -1094,7 +1094,7 @@ public final class Concrete {
     public abstract Definition getRelatedDefinition();
 
     @Override
-    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       builder.append(myReferable); // TODO[pretty]: implement this properly
     }
 
@@ -1678,10 +1678,12 @@ public final class Concrete {
   public static abstract class Pattern extends SourceNodeImpl {
     public static final byte PREC = 11;
     private boolean myExplicit;
+    private final List<TypedReferable> myAsReferables;
 
-    public Pattern(Object data) {
+    public Pattern(Object data, List<TypedReferable> asReferables) {
       super(data);
       myExplicit = true;
+      myAsReferables = asReferables;
     }
 
     public boolean isExplicit() {
@@ -1691,14 +1693,19 @@ public final class Concrete {
     public void setExplicit(boolean isExplicit) {
       myExplicit = isExplicit;
     }
+
+    @Nonnull
+    public List<TypedReferable> getAsReferables() {
+      return myAsReferables;
+    }
   }
 
   public static class NumberPattern extends Pattern {
     public final static int MAX_VALUE = 100;
     private final int myNumber;
 
-    public NumberPattern(Object data, int number) {
-      super(data);
+    public NumberPattern(Object data, int number, List<TypedReferable> asReferables) {
+      super(data, asReferables);
       myNumber = number;
     }
 
@@ -1712,7 +1719,7 @@ public final class Concrete {
     public @Nullable Expression type;
 
     public NamePattern(Object data, boolean isExplicit, @Nullable Referable referable, @Nullable Expression type) {
-      super(data);
+      super(data, Collections.emptyList());
       setExplicit(isExplicit);
       myReferable = referable;
       this.type = type;
@@ -1724,19 +1731,35 @@ public final class Concrete {
     }
   }
 
+  public static class TypedReferable extends SourceNodeImpl {
+    public final Referable referable;
+    public Expression type;
+
+    public TypedReferable(Object data, Referable referable, Expression type) {
+      super(data);
+      this.referable = referable;
+      this.type = type;
+    }
+
+    @Override
+    public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
+      new PrettyPrintVisitor(builder, 0, !ppConfig.isSingleLine()).prettyPrintTypedReferable(this);
+    }
+  }
+
   public static class ConstructorPattern extends Pattern {
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
-    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments) {
-      super(data);
+    public ConstructorPattern(Object data, boolean isExplicit, Referable constructor, List<Pattern> arguments, List<TypedReferable> asReferables) {
+      super(data, asReferables);
       setExplicit(isExplicit);
       myConstructor = constructor;
       myArguments = arguments;
     }
 
-    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments) {
-      super(data);
+    public ConstructorPattern(Object data, Referable constructor, List<Pattern> arguments, List<TypedReferable> asReferables) {
+      super(data, asReferables);
       myConstructor = constructor;
       myArguments = arguments;
     }
@@ -1759,13 +1782,13 @@ public final class Concrete {
   public static class TuplePattern extends Pattern {
     private final List<Pattern> myPatterns;
 
-    public TuplePattern(Object data, List<Pattern> patterns) {
-      super(data);
+    public TuplePattern(Object data, List<Pattern> patterns, List<TypedReferable> asReferables) {
+      super(data, asReferables);
       myPatterns = patterns;
     }
 
-    public TuplePattern(Object data, boolean isExplicit, List<Pattern> patterns) {
-      super(data);
+    public TuplePattern(Object data, boolean isExplicit, List<Pattern> patterns, List<TypedReferable> asReferables) {
+      super(data, asReferables);
       setExplicit(isExplicit);
       myPatterns = patterns;
     }

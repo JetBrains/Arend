@@ -78,6 +78,10 @@ A pattern of type `T` can have one of the following forms:
   If `m` equals to 0, then `T` also may be a data type without constructors.
   In this case, the right hand side `=> e_i` of the clause in which such a pattern appears must be omitted.
 
+Also, a constructor or a tuple pattern may be an _as-pattern_.
+This means that there might be an expressions of the form `\as x : E` after the pattern, where `x` is a variable and `E` is its type which can be omitted.
+Then `x` is equivalent to this pattern.
+
 Now, let us discuss how expressions of the form `f a_1 ... a_n` evaluate (see [this section](/language-reference/expressions/#evaluation) for the definition of the reduction and evaluation relations).
 To reduce an expression `E = f a_1 ... a_n`, we first evaluate expressions `a_1`, ... `a_n` and match them with the patterns in the definition of `f` left to right, top to bottom.
 If all patterns `p^i_1`, ... `p^i_n` matches with `a_1`, ... `a_n` for some i, then `E` reduces to `e_i[b_1/y_1, ... b_k/y_k]`,

@@ -1077,6 +1077,11 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append("{");
     }
 
+    int numberOfAs = pattern.getAsReferables().size();
+    for (int i = 0; i < numberOfAs - 1; i++) {
+      myBuilder.append('(');
+    }
+
     if (pattern instanceof Concrete.NamePattern) {
       Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
       Referable referable = namePattern.getReferable();
@@ -1116,8 +1121,28 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       if (!conPattern.getPatterns().isEmpty() && prec > Concrete.Pattern.PREC && pattern.isExplicit()) myBuilder.append(')');
     }
 
+    boolean first = true;
+    for (Concrete.TypedReferable typedReferable : pattern.getAsReferables()) {
+      if (first) {
+        first = false;
+      } else {
+        myBuilder.append(')');
+      }
+
+      myBuilder.append(" \\as ");
+      prettyPrintTypedReferable(typedReferable);
+    }
+
     if (!pattern.isExplicit()) {
       myBuilder.append("}");
+    }
+  }
+
+  public void prettyPrintTypedReferable(Concrete.TypedReferable typedReferable) {
+    myBuilder.append(typedReferable.referable.textRepresentation());
+    if (typedReferable.type != null) {
+      myBuilder.append(" : ");
+      typedReferable.type.accept(this, new Precedence(Expression.PREC));
     }
   }
 

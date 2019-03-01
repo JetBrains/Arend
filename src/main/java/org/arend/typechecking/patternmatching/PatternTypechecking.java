@@ -2,6 +2,7 @@ package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -183,6 +184,35 @@ public class PatternTypechecking {
     return null;
   }
 
+  private Type typecheckType(Concrete.Expression cType, Expression expectedType) {
+    if (cType == null) {
+      return null;
+    }
+
+    Type type = myVisitor.checkType(cType, ExpectedType.OMEGA);
+    if (type != null && !expectedType.isLessOrEquals(type.getExpr(), myVisitor.getEquations(), cType)) {
+      myErrorReporter.report(new TypeMismatchError(type.getExpr(), expectedType, cType));
+      return null;
+    }
+    return type;
+  }
+
+  private void typecheckAsPatterns(List<Concrete.TypedReferable> asPatterns, Expression expression, Expression expectedType) {
+    if (expression == null) {
+      if (!asPatterns.isEmpty()) {
+        myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "As-pattern is ignored", asPatterns.get(0)));
+      }
+      return;
+    }
+
+    for (Concrete.TypedReferable typedReferable : asPatterns) {
+      Type type = typecheckType(typedReferable.type, expectedType);
+      if (typedReferable.referable != null) {
+        myContext.put(typedReferable.referable, new EvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
+      }
+    }
+  }
+
   private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, boolean fullList) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
@@ -226,12 +256,7 @@ public class PatternTypechecking {
           if (name != null) {
             parameters.setName(name);
           }
-          if (namePattern.type != null) {
-            Type type = myVisitor.checkType(namePattern.type, ExpectedType.OMEGA);
-            if (type != null && !parameters.getTypeExpr().isLessOrEquals(type.getExpr(), myVisitor.getEquations(), namePattern.type)) {
-              myErrorReporter.report(new TypeMismatchError(type.getExpr(), parameters.getTypeExpr(), namePattern.type));
-            }
-          }
+          typecheckType(namePattern.type, parameters.getTypeExpr());
         }
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
@@ -261,9 +286,11 @@ public class PatternTypechecking {
           result.add(newPattern);
           if (conResult.proj2 == null) {
             exprs = null;
+            typecheckAsPatterns(pattern.getAsReferables(), null, null);
             parameters = parameters.getNext();
           } else {
             Expression newExpr = newPattern.toExpression(conResult.proj2);
+            typecheckAsPatterns(pattern.getAsReferables(), newExpr, parameters.getTypeExpr());
             exprs.add(newExpr);
             parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, newExpr));
           }
@@ -272,13 +299,13 @@ public class PatternTypechecking {
         } else {
           if (!patternArgs.isEmpty()) {
             if (!expr.isError()) {
-              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a Sigma-type or a class"), expr, pattern));
+              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a sigma type or a class"), expr, pattern));
             }
             return null;
           }
           if (!expr.isInstance(DataCallExpression.class)) {
             if (!expr.isError()) {
-              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type, a Sigma-type, or a class"), expr, pattern));
+              myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type, a sigma type, or a class"), expr, pattern));
             }
             return null;
           }
@@ -315,6 +342,7 @@ public class PatternTypechecking {
         }
         result.add(EmptyPattern.INSTANCE);
         exprs = null;
+        typecheckAsPatterns(pattern.getAsReferables(), null, null);
         parameters = parameters.getNext();
         continue;
       }
@@ -327,7 +355,7 @@ public class PatternTypechecking {
       if (dataCall.getDefinition() == Prelude.INT && (conPattern.getConstructor() == Prelude.ZERO.getReferable() || conPattern.getConstructor() == Prelude.SUC.getReferable())) {
         boolean isExplicit = conPattern.isExplicit();
         conPattern.setExplicit(true);
-        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern));
+        conPattern = new Concrete.ConstructorPattern(conPattern.getData(), isExplicit, Prelude.POS.getReferable(), Collections.singletonList(conPattern), conPattern.getAsReferables());
       }
 
       Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
@@ -363,9 +391,11 @@ public class PatternTypechecking {
       result.add(new ConstructorPattern(conCall, new Patterns(conResult.proj1)));
       if (conResult.proj2 == null) {
         exprs = null;
+        typecheckAsPatterns(pattern.getAsReferables(), null, null);
         parameters = parameters.getNext();
       } else {
         Expression newConCall = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), conResult.proj2);
+        typecheckAsPatterns(pattern.getAsReferables(), newConCall, parameters.getTypeExpr());
         exprs.add(newConCall);
         parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, newConCall));
       }

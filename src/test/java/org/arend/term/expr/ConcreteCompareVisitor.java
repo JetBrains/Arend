@@ -187,6 +187,21 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return false;
     }
 
+    if (pattern1.getAsReferables().size() != pattern2.getAsReferables().size()) {
+      return false;
+    }
+    for (int i = 0; i < pattern1.getAsReferables().size(); i++) {
+      if (!compare(pattern1.getAsReferables().get(i).type, pattern2.getAsReferables().get(i).type)) {
+        return false;
+      }
+      if ((pattern1.getAsReferables().get(i).referable == null) != (pattern2.getAsReferables().get(i).referable == null)) {
+        return false;
+      }
+      if (pattern1.getAsReferables().get(i).referable != null) {
+        mySubstitution.put(pattern1.getAsReferables().get(i).referable, pattern2.getAsReferables().get(i).referable);
+      }
+    }
+
     if (pattern1 instanceof Concrete.NamePattern) {
       if (!(pattern2 instanceof Concrete.NamePattern && compare(((Concrete.NamePattern) pattern1).type, ((Concrete.NamePattern) pattern2).type))) {
         return false;

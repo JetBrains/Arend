@@ -84,6 +84,12 @@ public final class Abstract {
     @Nonnull Collection<? extends Constructor> getConstructors();
   }
 
+  public interface TypedReferable extends SourceNode {
+    @Nullable Object getData();
+    @Nullable Referable getReferable();
+    @Nullable Expression getType();
+  }
+
   public interface Pattern extends SourceNode {
     @Nullable Object getData();
     boolean isUnnamed();
@@ -92,6 +98,7 @@ public final class Abstract {
     @Nullable Referable getHeadReference();
     @Nonnull List<? extends Pattern> getArguments();
     @Nullable Expression getType();
+    @Nonnull List<? extends TypedReferable> getAsPatterns();
   }
 
   public interface Reference extends org.arend.naming.reference.Reference, SourceNode {

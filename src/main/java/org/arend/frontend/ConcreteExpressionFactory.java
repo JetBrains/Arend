@@ -186,11 +186,11 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.ConstructorPattern cConPattern(boolean isExplicit, Referable referable, List<Concrete.Pattern> patternArgs) {
-    return new Concrete.ConstructorPattern(null, isExplicit, referable, patternArgs);
+    return new Concrete.ConstructorPattern(null, isExplicit, referable, patternArgs, Collections.emptyList());
   }
 
   public static Concrete.TuplePattern cTuplePattern(boolean isExplicit, List<Concrete.Pattern> patternArgs) {
-    return new Concrete.TuplePattern(null, isExplicit, patternArgs);
+    return new Concrete.TuplePattern(null, isExplicit, patternArgs, Collections.emptyList());
   }
 
   public static Concrete.NamePattern cNamePattern(boolean isExplicit, Referable referable) {
@@ -198,7 +198,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.TuplePattern cEmptyPattern(boolean isExplicit) {
-    return new Concrete.TuplePattern(null, isExplicit, Collections.emptyList());
+    return new Concrete.TuplePattern(null, isExplicit, Collections.emptyList(), Collections.emptyList());
   }
 
   public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression implicit, Concrete.Expression right) {

@@ -289,7 +289,48 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.Pattern visitPatternAtom(PatternAtomContext ctx) {
-    return (Concrete.Pattern) visit(ctx.atomPattern());
+    Concrete.Pattern pattern = (Concrete.Pattern) visit(ctx.atomPattern());
+    TerminalNode id = ctx.ID();
+    if (id == null) {
+      return pattern;
+    }
+
+    ExprContext type = ctx.expr();
+    Position position = tokenPosition(id.getSymbol());
+    Concrete.TypedReferable typedRef = new Concrete.TypedReferable(position, new ParsedLocalReferable(position, id.getText()), type == null ? null : visitExpr(type));
+
+    if (pattern instanceof Concrete.NamePattern) {
+      Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
+      Referable referable = namePattern.getReferable();
+      if (namePattern.type != null || !(referable instanceof ParsedLocalReferable)) {
+        myErrorReporter.report(new ParserError(tokenPosition(ctx.AS().getSymbol()), "As-patterns are not allowed for variables"));
+        return pattern;
+      }
+      return new Concrete.ConstructorPattern(namePattern.getData(), namePattern.isExplicit(), new NamedUnresolvedReference(((ParsedLocalReferable) referable).getPosition(), referable.textRepresentation()), Collections.emptyList(), Collections.singletonList(typedRef));
+    }
+
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+      List<Concrete.TypedReferable> asRefs = new ArrayList<>(conPattern.getAsReferables());
+      asRefs.add(typedRef);
+      return new Concrete.ConstructorPattern(conPattern.getData(), conPattern.isExplicit(), conPattern.getConstructor(), conPattern.getPatterns(), asRefs);
+    }
+
+    if (pattern instanceof Concrete.TuplePattern) {
+      Concrete.TuplePattern tuplePattern = (Concrete.TuplePattern) pattern;
+      List<Concrete.TypedReferable> asRefs = new ArrayList<>(tuplePattern.getAsReferables());
+      asRefs.add(typedRef);
+      return new Concrete.TuplePattern(tuplePattern.getData(), tuplePattern.isExplicit(), tuplePattern.getPatterns(), asRefs);
+    }
+
+    if (pattern instanceof Concrete.NumberPattern) {
+      Concrete.NumberPattern numberPattern = (Concrete.NumberPattern) pattern;
+      List<Concrete.TypedReferable> asRefs = new ArrayList<>(numberPattern.getAsReferables());
+      asRefs.add(typedRef);
+      return new Concrete.NumberPattern(numberPattern.getData(), numberPattern.getNumber(), asRefs);
+    }
+
+    throw new IllegalStateException();
   }
 
   @Override
@@ -298,17 +339,22 @@ public class BuildVisitor extends ArendBaseVisitor {
     Position position = tokenPosition(ctx.start);
     List<String> longName = visitLongNamePath(ctx.longName());
     ExprContext typeCtx = ctx.expr();
-    if (atomPatternOrIDs.isEmpty() && longName.size() == 1) {
+    TerminalNode id = ctx.ID();
+
+    if (atomPatternOrIDs.isEmpty() && longName.size() == 1 && id == null) {
       return new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), typeCtx == null ? null : visitExpr(typeCtx));
     } else {
-      if (typeCtx != null) {
+      if (typeCtx != null && id == null) {
         myErrorReporter.report(new ParserError(tokenPosition(typeCtx.start), "Type annotation is allowed only for variables"));
       }
       List<Concrete.Pattern> patterns = new ArrayList<>(atomPatternOrIDs.size());
       for (AtomPatternOrIDContext atomCtx : atomPatternOrIDs) {
         patterns.add(visitAtomPattern(atomCtx));
       }
-      return new Concrete.ConstructorPattern(position, LongUnresolvedReference.make(position, longName), patterns);
+
+      Position pos = id == null ? null : tokenPosition(id.getSymbol());
+      return new Concrete.ConstructorPattern(position, LongUnresolvedReference.make(position, longName), patterns,
+        pos == null ? Collections.emptyList() : Collections.singletonList(new Concrete.TypedReferable(pos, new ParsedLocalReferable(pos, id.getText()), typeCtx == null ? null : visitExpr(typeCtx))));
     }
   }
 
@@ -320,7 +366,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   public Concrete.Pattern visitPatternExplicit(PatternExplicitContext ctx) {
     List<PatternContext> patternCtxs = ctx.pattern();
     if (patternCtxs.isEmpty()) {
-      return new Concrete.TuplePattern(tokenPosition(ctx.start), Collections.emptyList());
+      return new Concrete.TuplePattern(tokenPosition(ctx.start), Collections.emptyList(), Collections.emptyList());
     }
     if (patternCtxs.size() == 1) {
       return visitPattern(patternCtxs.get(0));
@@ -330,7 +376,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     for (PatternContext patternCtx : patternCtxs) {
       patterns.add(visitPattern(patternCtx));
     }
-    return new Concrete.TuplePattern(tokenPosition(ctx.start), patterns);
+    return new Concrete.TuplePattern(tokenPosition(ctx.start), patterns, Collections.emptyList());
   }
 
   @Override
@@ -353,7 +399,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<String> longName = visitLongNamePath(ctx.longName());
     return longName.size() == 1
       ? new Concrete.NamePattern(position, true, new ParsedLocalReferable(position, longName.get(0)), null)
-      : new Concrete.ConstructorPattern(position, true, LongUnresolvedReference.make(position, longName), Collections.emptyList());
+      : new Concrete.ConstructorPattern(position, true, LongUnresolvedReference.make(position, longName), Collections.emptyList(), Collections.emptyList());
   }
 
   @Override
@@ -366,7 +412,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       value = Integer.parseInt(ctx.NUMBER().getText(), 10);
     }
 
-    return new Concrete.NumberPattern(tokenPosition(ctx.start), value);
+    return new Concrete.NumberPattern(tokenPosition(ctx.start), value, Collections.emptyList());
   }
 
   @Override
@@ -379,7 +425,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       value = Integer.parseInt(ctx.NEGATIVE_NUMBER().getText(), 10);
     }
 
-    return new Concrete.NumberPattern(tokenPosition(ctx.start), value);
+    return new Concrete.NumberPattern(tokenPosition(ctx.start), value, Collections.emptyList());
   }
 
   @Override

@@ -201,8 +201,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       } else if (pattern instanceof Concrete.ConstructorPattern) {
         visitPatterns(((Concrete.ConstructorPattern) pattern).getPatterns());
       } else if (pattern instanceof Concrete.NumberPattern) {
-        Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList());
         int n = ((Concrete.NumberPattern) pattern).getNumber();
+        Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList(), n == 0 ? pattern.getAsReferables() : Collections.emptyList());
         boolean isNegative = n < 0;
         if (isNegative) {
           n = -n;
@@ -214,10 +214,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
           myErrorReporter.report(new TypecheckingError("Value too big", pattern));
         }
         for (int j = 0; j < n; j++) {
-          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern));
+          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), !isNegative && j == n - 1 ? pattern.getAsReferables() : Collections.emptyList());
         }
         if (isNegative) {
-          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.NEG.getReferable(), Collections.singletonList(newPattern));
+          newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.NEG.getReferable(), Collections.singletonList(newPattern), pattern.getAsReferables());
         }
         if (!pattern.isExplicit()) {
           newPattern.setExplicit(false);

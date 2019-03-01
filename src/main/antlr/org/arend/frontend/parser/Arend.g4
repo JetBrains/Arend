@@ -12,7 +12,7 @@ nsCmd : '\\open'                        # openCmd
 
 nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
-nsId : ID ('\\as' precedence ID)?;
+nsId : ID (AS precedence ID)?;
 
 classFieldOrImpl : fieldMod precedence ID tele* ':' returnExpr # classField
                  | coClause                                    # classImpl
@@ -77,8 +77,8 @@ elim : '\\with' | '\\elim' ID (',' ID)*;
 
 where : '\\where' ('{' statement* '}' | statement);
 
-pattern : atomPattern                             # patternAtom
-        | longName atomPatternOrID* (':' expr)?   # patternConstructor
+pattern : atomPattern (AS ID (':' expr)?)?                # patternAtom
+        | longName atomPatternOrID* (AS ID)? (':' expr)?  # patternConstructor
         ;
 
 atomPattern : '(' (pattern (',' pattern)*)? ')'   # patternExplicit
@@ -115,7 +115,7 @@ expr  : NEW? appExpr (implementStatements argument*)?                           
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
       ;
 
-caseArg : expr ('\\as' ID)? (':' expr)?;
+caseArg : expr (AS ID)? (':' expr)?;
 
 appExpr : atomFieldsAcc onlyLevelAtom* argument*      # appArgument
         | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse
@@ -217,6 +217,7 @@ fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
           | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
+AS : '\\as';
 USING : '\\using';
 TRUNCATED : '\\truncated';
 CLASSIFYING : '\\classifying';

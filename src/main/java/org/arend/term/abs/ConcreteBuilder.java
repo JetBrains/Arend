@@ -455,17 +455,29 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
+  private List<Concrete.TypedReferable> buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
+    List<Concrete.TypedReferable> result = new ArrayList<>();
+    for (Abstract.TypedReferable typedReferable : typedReferables) {
+      Referable referable = typedReferable.getReferable();
+      if (referable != null) {
+        Abstract.Expression type = typedReferable.getType();
+        result.add(new Concrete.TypedReferable(typedReferable.getData(), myReferableConverter.toDataReferable(referable), type == null ? null : type.accept(this, null)));
+      }
+    }
+    return result;
+  }
+
   private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
     Referable reference = pattern.getHeadReference();
     if (reference == null) {
       Integer number = pattern.getNumber();
       if (number != null) {
-        return new Concrete.NumberPattern(pattern.getData(), number);
+        return new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
       }
     }
 
     if (reference == null && !pattern.isUnnamed()) {
-      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()));
+      return new Concrete.TuplePattern(pattern.getData(), pattern.isExplicit(), buildPatterns(pattern.getArguments()), buildTypedReferables(pattern.getAsPatterns()));
     } else {
       Abstract.Expression type = pattern.getType();
       List<? extends Abstract.Pattern> args = pattern.getArguments();
@@ -473,7 +485,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         if (type != null) {
           myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
         }
-        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args));
+        return new Concrete.ConstructorPattern(pattern.getData(), pattern.isExplicit(), reference, buildPatterns(args), buildTypedReferables(pattern.getAsPatterns()));
       } else {
         return new Concrete.NamePattern(pattern.getData(), pattern.isExplicit(), myReferableConverter.toDataReferable(reference), type == null ? null : type.accept(this, null));
       }
