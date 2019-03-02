@@ -64,8 +64,9 @@ functionBody  : '=>' expr             # withoutElim
               ;
 
 instanceBody  : '=>' expr             # instanceWithoutElim
-              | '\\cowith'? coClauses # instanceCowithElim
               | elim clauses          # instanceWithElim
+              | '\\cowith' coClauses  # instanceCowithElim
+              | coClause*             # instanceCoclauses
               ;
 
 dataBody : elim constructorClauses                      # dataClauses

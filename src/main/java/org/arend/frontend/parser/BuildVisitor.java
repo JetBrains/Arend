@@ -449,11 +449,14 @@ public class BuildVisitor extends ArendBaseVisitor {
     if (bodyCtx instanceof InstanceWithElimContext) {
       InstanceWithElimContext elimCtx = (InstanceWithElimContext) bodyCtx;
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
-    } else if (bodyCtx instanceof InstanceCowithElimContext) {
-      InstanceCowithElimContext elimCtx = (InstanceCowithElimContext) bodyCtx;
-      body = new Concrete.CoelimFunctionBody(tokenPosition(elimCtx.start), visitCoClauses(elimCtx.coClauses()));
-    } else {
+    } else if (bodyCtx instanceof InstanceWithoutElimContext) {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((InstanceWithoutElimContext) bodyCtx).expr()));
+    } else if (bodyCtx instanceof InstanceCowithElimContext) {
+      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), visitCoClauses(((InstanceCowithElimContext) bodyCtx).coClauses()));
+    } else if (bodyCtx instanceof InstanceCoclausesContext) {
+      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), visitCoClauses(((InstanceCoclausesContext) bodyCtx).coClause()));
+    } else {
+      throw new IllegalStateException();
     }
 
     Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.INSTANCE, reference, parameters, returnPair.proj1, returnPair.proj2, body);
