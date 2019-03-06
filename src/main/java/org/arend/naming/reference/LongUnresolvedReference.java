@@ -251,7 +251,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
     if (ref instanceof TypedReferable) {
       ClassReferable classRef = ((TypedReferable) ref).getTypeClassReference();
       if (classRef != null) {
-        scope = new MergeScope(new ClassFieldImplScope(classRef, false), scope);
+        scope = new MergeScope(scope, new ClassFieldImplScope(classRef, false));
       }
     }
 
