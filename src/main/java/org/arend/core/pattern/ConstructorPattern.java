@@ -87,10 +87,10 @@ public class ConstructorPattern implements Pattern {
     }
 
     ClassCallExpression classCall = (ClassCallExpression) myExpression;
-    Map<ClassField, Expression> implementations = new HashMap<>();
+    Map<ClassField, Expression> implementations = new HashMap<>(classCall.getImplementedHere());
     int i = 0;
     for (ClassField field : classCall.getDefinition().getFields()) {
-      if (!classCall.getDefinition().isImplemented(field)) {
+      if (!classCall.isImplemented(field)) {
         implementations.put(field, arguments.get(i++));
       }
     }

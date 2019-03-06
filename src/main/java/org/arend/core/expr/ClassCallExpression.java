@@ -1,9 +1,12 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
@@ -12,10 +15,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckForUniversesVisitor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
@@ -104,7 +104,36 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   public DependentLink getClassFieldParameters() {
-    return getDefinition().getClassFieldParameters(getSortArgument());
+    Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
+    Expression newExpr = new NewExpression(new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
+    Collection<? extends ClassField> fields = getDefinition().getTypecheckingFieldOrder();
+    if (fields == null) {
+      fields = getDefinition().getFields();
+    }
+    if (fields.isEmpty()) {
+      return EmptyDependentLink.getInstance();
+    }
+
+    DependentLink first = null, last = null;
+    for (ClassField field : fields) {
+      if (isImplemented(field)) {
+        continue;
+      }
+
+      PiExpression piExpr = field.getType(mySortArgument);
+      Expression type = piExpr.applyExpression(newExpr);
+      DependentLink link = new TypedDependentLink(true, field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
+      if (last != null) {
+        last.setNext(link);
+      }
+      last = link;
+      if (first == null) {
+        first = link;
+      }
+      implementations.put(field, new ReferenceExpression(link));
+    }
+
+    return first;
   }
 
   @Override

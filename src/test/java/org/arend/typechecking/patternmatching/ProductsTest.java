@@ -128,8 +128,8 @@ public class ProductsTest extends TypeCheckingTestCase {
   public void dependentRecordTest() {
     typeCheckModule(
       "\\record Pair (A B : \\Type) | fst : A | snd : B\n" +
-      "\\func swap {A' B' : \\Type} (p : Pair A' B') : Pair p.B p.A\n" +
-      "  | (A, B, a, b) => \\new Pair { | A => B | B => A | fst => b | snd => a }");
+      "\\func swap {A' B' : \\Type} (p : Pair A' B') : Pair B' A'\n" +
+      "  | (a, b) => \\new Pair { | fst => b | snd => a }");
   }
 
   @Test
@@ -160,5 +160,19 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func f (s : S) : Nat\n" +
       "  | (0, m) => m\n" +
       "  | (suc n, _) => n");
+  }
+
+  @Test
+  public void swapTest() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type)\n" +
+      "  | fst : A\n" +
+      "  | snd : B\n" +
+      "\\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith\n" +
+      "  | fst => p.snd\n" +
+      "  | snd => p.fst\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func swap-involutive {A B : \\Type} (p : Pair A B) : swap (swap p) = p\n" +
+      "  | (a,b) => idp");
   }
 }
