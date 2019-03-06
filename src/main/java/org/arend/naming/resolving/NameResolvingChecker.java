@@ -264,28 +264,29 @@ public abstract class NameResolvingChecker {
       return;
     }
 
-    List<Pair<NamespaceCommand, Set<String>>> namespaces = new ArrayList<>(namespaceCommands.size());
+    List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>(namespaceCommands.size());
     for (NamespaceCommand cmd : namespaceCommands) {
       Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? scope.getImportedSubscope() : scope, cmd).getElements();
       if (!elements.isEmpty()) {
-        Set<String> names = new LinkedHashSet<>();
-        for (Referable ref : elements) {
-          names.add(ref.textRepresentation());
+        Map<String, Referable> map = new LinkedHashMap<>();
+        for (Referable element : elements) {
+          map.put(element.textRepresentation(), element);
         }
-        namespaces.add(new Pair<>(cmd, names));
+        namespaces.add(new Pair<>(cmd, map));
       }
     }
 
     for (int i = 0; i < namespaces.size(); i++) {
-      Pair<NamespaceCommand, Set<String>> pair = namespaces.get(i);
-      for (String name : pair.proj2) {
-        if (referables.containsKey(name)) {
+      Pair<NamespaceCommand, Map<String, Referable>> pair = namespaces.get(i);
+      for (Map.Entry<String, Referable> entry : pair.proj2.entrySet()) {
+        if (referables.containsKey(entry.getKey())) {
           continue;
         }
 
         for (int j = i + 1; j < namespaces.size(); j++) {
-          if (namespaces.get(j).proj2.contains(name)) {
-            onNamespacesClash(pair.proj1, namespaces.get(j).proj1, name, Error.Level.WARNING);
+          Referable ref = namespaces.get(j).proj2.get(entry.getKey());
+          if (ref != null && !ref.equals(entry.getValue())) {
+            onNamespacesClash(pair.proj1, namespaces.get(j).proj1, ref.textRepresentation(), Error.Level.WARNING);
           }
         }
       }
