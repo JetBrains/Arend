@@ -448,7 +448,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         lam = new LamExpression(codSort, params.get(i), lam);
       }
 
-      return myEquations.addEquation(correctOrder ? lam : fun, correctOrder ? fun : lam.subst(getSubstitution()), myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null);
+      Expression finalExpr1 = correctOrder ? lam : fun;
+      Expression finalExpr2 = correctOrder ? fun : lam.subst(getSubstitution());
+      if (variable.isSolved()) {
+        return compare(myEquations, myCMP, finalExpr1, finalExpr2, variable.getSourceNode());
+      } else {
+        return myEquations.addEquation(finalExpr1, finalExpr2, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null);
+      }
     }
   }
 
