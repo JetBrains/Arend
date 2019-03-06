@@ -1187,6 +1187,30 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  private boolean compareExpressions(List<? extends Expression> exprList1, List<? extends Expression> exprList2) {
+    if (exprList1.size() != exprList2.size()) {
+      return false;
+    }
+    for (int i = 0; i < exprList1.size(); i++) {
+      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, exprList1.get(i), exprList2.get(i), null)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public Integer getExpressionLevel(Expression expression) {
+    DefCallExpression defCall = expression.checkedCast(DefCallExpression.class);
+    if (defCall != null) {
+      for (Pair<? extends List<? extends Expression>, ? extends Sort> levelParameter : defCall.getDefinition().getLevelParameters()) {
+        if (levelParameter.proj1 == null || compareExpressions(defCall.getDefCallArguments(), levelParameter.proj1)) {
+          return levelParameter.proj2.getHLevel().getConstant();
+        }
+      }
+    }
+    return null;
+  }
+
   @Override
   public Result visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
@@ -1242,7 +1266,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Check if the level of the result type is specified explicitly
-    List<Clause> resultClauses = new ArrayList<>();
     if (expr.getResultTypeLevel() == null && expr.getResultType() instanceof Concrete.TypedExpression) {
       Concrete.Expression typeType = ((Concrete.TypedExpression) expr.getResultType()).type;
       if (typeType instanceof Concrete.UniverseExpression) {
@@ -1254,6 +1277,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     // Try to infer level either directly or from a path type.
+    if (level == null && expr.getResultTypeLevel() == null) {
+      level = getExpressionLevel(resultExpr);
+    }
     if (level == null && expr.getResultTypeLevel() == null) {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
       if (sort == null) {
@@ -1283,6 +1309,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
+    List<Clause> resultClauses = new ArrayList<>();
     ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;

@@ -444,6 +444,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
 
       for (int i = params.size() - 1; i >= 0; i--) {
+        if (myEquations.isDummy()) {
+          return false;
+        }
         codSort = PiExpression.generateUpperBound(params.get(i).getType().getSortOfType(), codSort, myEquations, mySourceNode);
         lam = new LamExpression(codSort, params.get(i), lam);
       }
@@ -453,7 +456,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       if (variable.isSolved()) {
         return compare(myEquations, myCMP, finalExpr1, finalExpr2, variable.getSourceNode());
       } else {
-        return myEquations.addEquation(finalExpr1, finalExpr2, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null);
+        return myEquations.addEquation(finalExpr1, finalExpr2, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
       }
     }
   }

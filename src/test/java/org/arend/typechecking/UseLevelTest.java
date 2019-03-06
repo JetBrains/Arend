@@ -3,7 +3,6 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.junit.Test;
@@ -139,5 +138,14 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "    | con1, con1 => path (\\lam _ => con1)\n" +
       "    | _, con2 e => absurd e\n" +
       "    | con2 e, _ => absurd e");
+  }
+
+  @Test
+  public void useFunctionTest() {
+    typeCheckModule(
+      "\\data Empty : \\Set\n" +
+      "\\func empty => Empty\n" +
+      "  \\where \\use \\level isProp (x y : empty) : x = y\n" +
+      "\\lemma lem (x : empty) : empty => x");
   }
 }

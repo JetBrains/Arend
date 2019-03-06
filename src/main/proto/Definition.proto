@@ -77,6 +77,11 @@ message Definition {
             Level level = 2;
         }
     }
+    message LevelParameters {
+        bool hasParameters = 1;
+        repeated Expression parameter = 2;
+        Sort sort = 3;
+    }
     message DataData {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 15;
@@ -88,6 +93,7 @@ message Definition {
         bool is_truncated = 16;
         repeated bool covariant_parameter = 8;
         CoerceData coerce_data = 14;
+        repeated LevelParameters level_parameters = 19;
 
         message Constructor {
             Referable referable = 1;
@@ -111,6 +117,7 @@ message Definition {
         Body body = 6;
         bool isLemma = 8;
         int32 visible_parameter = 12;
+        repeated LevelParameters level_parameters = 13;
     }
 
     enum Status {

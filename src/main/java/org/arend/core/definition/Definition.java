@@ -6,6 +6,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.TCReferable;
+import org.arend.util.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -89,6 +90,10 @@ public abstract class Definition implements Variable {
 
   public void setHasUniverses(boolean hasUniverses) {
     myHasUniverses = hasUniverses;
+  }
+
+  public List<? extends Pair<? extends List<? extends Expression>, ? extends Sort>> getLevelParameters() {
+    return Collections.emptyList();
   }
 
   public enum TypeCheckingStatus {

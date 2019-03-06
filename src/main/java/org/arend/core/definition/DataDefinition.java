@@ -9,6 +9,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -23,6 +24,7 @@ public class DataDefinition extends Definition {
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<Boolean> myTypeClassParameters = Collections.emptyList();
+  private List<Pair<List<Expression>,Sort>> myLevelParameters = Collections.emptyList();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -137,6 +139,18 @@ public class DataDefinition extends Definition {
   @Override
   public void setTypeClassParameters(List<Boolean> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
+  }
+
+  @Override
+  public List<? extends Pair<? extends List<? extends Expression>, ? extends Sort>> getLevelParameters() {
+    return myLevelParameters;
+  }
+
+  public void addLevelParameters(Pair<List<Expression>,Sort> levelParameters) {
+    if (myLevelParameters.isEmpty()) {
+      myLevelParameters = new ArrayList<>();
+    }
+    myLevelParameters.add(levelParameters);
   }
 
   @Override

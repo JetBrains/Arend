@@ -218,6 +218,9 @@ public class DefinitionDeserialization {
     if (!typeClassParameters.isEmpty()) {
       dataDef.setTypeClassParameters(typeClassParameters);
     }
+    for (DefinitionProtos.Definition.LevelParameters levelParametersProto : dataProto.getLevelParametersList()) {
+      dataDef.addLevelParameters(readLevelParameters(defDeserializer, levelParametersProto));
+    }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
 
@@ -357,6 +360,19 @@ public class DefinitionDeserialization {
     }
   }
 
+  private Pair<List<Expression>,Sort> readLevelParameters(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.LevelParameters proto) throws DeserializationException {
+    List<Expression> expressions;
+    if (proto.getHasParameters()) {
+      expressions = new ArrayList<>();
+      for (ExpressionProtos.Expression exprProto : proto.getParameterList()) {
+        expressions.add(defDeserializer.readExpr(exprProto));
+      }
+    } else {
+      expressions = null;
+    }
+    return new Pair<>(expressions, defDeserializer.readSort(proto.getSort()));
+  }
+
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
     functionDef.setParameters(defDeserializer.readParameters(functionProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = functionProto.getParametersTypecheckingOrderList();
@@ -370,6 +386,9 @@ public class DefinitionDeserialization {
     List<Boolean> typeClassParameters = functionProto.getTypeClassParametersList();
     if (!typeClassParameters.isEmpty()) {
       functionDef.setTypeClassParameters(typeClassParameters);
+    }
+    for (DefinitionProtos.Definition.LevelParameters levelParametersProto : functionProto.getLevelParametersList()) {
+      functionDef.addLevelParameters(readLevelParameters(defDeserializer, levelParametersProto));
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

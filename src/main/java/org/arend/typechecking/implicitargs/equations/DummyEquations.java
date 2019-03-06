@@ -50,4 +50,9 @@ public class DummyEquations implements Equations {
   public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
     return LevelSubstitution.EMPTY;
   }
+
+  @Override
+  public boolean isDummy() {
+    return true;
+  }
 }

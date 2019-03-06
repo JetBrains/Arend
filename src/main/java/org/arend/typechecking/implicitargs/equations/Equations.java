@@ -15,6 +15,7 @@ public interface Equations {
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
   void remove(Equation equation);
   LevelSubstitution solve(Concrete.SourceNode sourceNode);
+  boolean isDummy();
 
   enum CMP {
     LE, EQ, GE;

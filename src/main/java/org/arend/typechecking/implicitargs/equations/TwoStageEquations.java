@@ -586,6 +586,11 @@ public class TwoStageEquations implements Equations {
     return result;
   }
 
+  @Override
+  public boolean isDummy() {
+    return false;
+  }
+
   private void solveClassCalls() {
     boolean updated = false;
     Map<InferenceVariable,Set<Wrapper>> lowerBounds = new HashMap<>();
