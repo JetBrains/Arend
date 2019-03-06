@@ -796,7 +796,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
         Expression classifyingExpr;
         if (classifyingField != null) {
-          classifyingExpr = typecheckedResultType.getImplementationHere(classifyingField);
+          classifyingExpr = typecheckedResultType.getImplementation(classifyingField, new NewExpression(typecheckedResultType));
           Set<SingleDependentLink> params = new LinkedHashSet<>();
           while (classifyingExpr instanceof LamExpression) {
             for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {

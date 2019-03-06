@@ -357,4 +357,12 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance C_Nat : C Nat | f => suc\n" +
       "\\func g => f {_} 1");
   }
+
+  @Test
+  public void classifyingFieldImpl() {
+    typeCheckModule(
+      "\\class C (X : \\Type)\n" +
+      "\\class D \\extends C | X => Nat -> Nat\n" +
+      "\\instance ddd : D", 1);
+  }
 }

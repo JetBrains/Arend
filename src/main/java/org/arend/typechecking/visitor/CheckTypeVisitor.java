@@ -461,7 +461,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       result = expr.accept(this, expectedType1);
-      if (expectedType1 != expectedType) {
+      if (result != null && expectedType1 != expectedType) {
         result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
         result = checkResultExpr((Expression) expectedType, result, expr);
       }
