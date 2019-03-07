@@ -405,22 +405,28 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
   }
 
-  private boolean isPropLevel(Concrete.Expression expression) {
-    Concrete.Expression fun = expression instanceof Concrete.AppExpression ? ((Concrete.AppExpression) expression).getFunction() : expression;
-    if (fun instanceof Concrete.ReferenceExpression) {
-      Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
-      if (ref instanceof TCReferable) {
-        Definition typeDef = myVisitor.getTypecheckingState().getTypechecked((TCReferable) ref);
-        if (typeDef != null) {
-          for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
-            if (parametersLevel.parameters == null && parametersLevel.level == -1) {
-              return true;
+  private enum PropLevel { YES, NO, COULD_BE }
+
+  private PropLevel isPropLevel(Concrete.Expression expression) {
+    Concrete.ReferenceExpression fun = Concrete.getReferenceExpressionInType(expression);
+    if (fun != null && fun.getReferent() instanceof TCReferable) {
+      Definition typeDef = myVisitor.getTypecheckingState().getTypechecked((TCReferable) fun.getReferent());
+      if (typeDef != null) {
+        boolean couldBe = false;
+        for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
+          if (parametersLevel.level == -1) {
+            if (parametersLevel.parameters == null) {
+              return PropLevel.YES;
             }
+            couldBe = true;
           }
+        }
+        if (couldBe) {
+          return PropLevel.COULD_BE;
         }
       }
     }
-    return false;
+    return PropLevel.NO;
   }
 
   private void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean recursive, boolean newDef) {
@@ -437,7 +443,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Concrete.Expression cResultType = def.getResultType();
     boolean isLemma = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
     if (cResultType != null) {
-      ExpectedType typeExpectedType = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && def.getResultTypeLevel() == null && !isPropLevel(cResultType) ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
+      PropLevel propLevel = isPropLevel(cResultType);
+      boolean needProp = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && def.getResultTypeLevel() == null;
+      ExpectedType typeExpectedType = needProp && propLevel == PropLevel.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
       Type expectedTypeResult;
       if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
         expectedTypeResult = null;
@@ -448,6 +456,16 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
+        if (needProp && propLevel == PropLevel.COULD_BE) {
+          Sort sort = expectedTypeResult.getSortOfType();
+          if (sort == null || !sort.isProp()) {
+            DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
+            Integer level = defCall == null ? null : defCall.getUseLevel();
+            if (!checkLevel(true, false, level, def)) {
+              isLemma = false;
+            }
+          }
+        }
       }
     }
 
@@ -595,14 +613,22 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
   }
 
+  private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
+    if ((isLemma || isProperty) && (level == null || level != -1)) {
+      myErrorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", sourceNode));
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
     if (resultTypeLevel != null) {
       CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(resultTypeLevel, null, false);
       if (result != null && resultType != null) {
         Integer level = myVisitor.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
         if (level != null) {
-          if ((isLemma || isProperty) && level != -1) {
-            myErrorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", resultTypeLevel));
+          if (!checkLevel(isLemma, isProperty, level, resultTypeLevel)) {
             if (newDef && funDef != null) {
               funDef.setIsLemma(false);
             }
@@ -1870,7 +1896,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       def.getParameters().clear();
     }
 
-    boolean isProperty;
+    boolean isProperty = false;
     boolean ok;
     PiExpression piType;
     ClassField typedDef = null;
@@ -1893,11 +1919,28 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         setClassLocalInstancePool(localInstances, thisParam);
-        isProperty = isPropLevel(codomain);
-        Type typeResult = myVisitor.finalCheckType(codomain, def.getKind() == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null && !isProperty ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
+        PropLevel propLevel = isPropLevel(codomain);
+        boolean needProp = def.getKind() == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null;
+        Type typeResult = myVisitor.finalCheckType(codomain, needProp && propLevel == PropLevel.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA);
         myInstancePool.setInstancePool(null);
         ok = typeResult != null;
-        piType = new PiExpression(typeResult != null ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeResult != null ? typeResult.getExpr() : new ErrorExpression(null, null));
+        Expression typeExpr = ok ? typeResult.getExpr() : new ErrorExpression(null, null);
+        piType = new PiExpression(ok ? Sort.STD.max(typeResult.getSortOfType()) : Sort.STD, thisParam, typeExpr);
+        if (ok) {
+          if (needProp && propLevel == PropLevel.YES) {
+            isProperty = true;
+          } else if (def.getKind() == ClassFieldKind.ANY || needProp && propLevel == PropLevel.COULD_BE) {
+            isProperty = true;
+            Sort sort = typeResult.getSortOfType();
+            if (sort == null || !sort.isProp()) {
+              DefCallExpression defCall = propLevel == PropLevel.NO ? null : typeExpr.checkedCast(DefCallExpression.class);
+              Integer level = defCall == null ? null : defCall.getUseLevel();
+              if (def.getKind() == ClassFieldKind.PROPERTY && !checkLevel(false, true, level , def) || def.getKind() == ClassFieldKind.ANY && (level == null || level != -1)) {
+                isProperty = false;
+              }
+            }
+          }
+        }
 
         if (def.getResultTypeLevel() != null && def.getKind() == ClassFieldKind.FIELD) {
           myErrorReporter.report(new TypecheckingError("\\level is allowed only for properties", def.getResultTypeLevel()));
@@ -1907,30 +1950,36 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           typedDef = addField(def.getData(), parentClass, piType, null);
         }
 
-        if (def.getResultTypeLevel() != null && def.getResultType() instanceof Concrete.PiExpression) {
-          List<Concrete.TypeParameter> parameters = ((Concrete.PiExpression) def.getResultType()).getParameters();
+        if (def.getResultTypeLevel() != null) {
           Expression resultType = piType;
           SingleDependentLink link = EmptyDependentLink.getInstance();
-          loop:
-          for (Concrete.TypeParameter parameter : parameters) {
-            for (Referable referable : parameter.getReferableList()) {
-              if (!link.hasNext()) {
-                if (!(resultType instanceof PiExpression)) {
-                  resultType = null;
-                  break loop;
+          if (def.getResultType() instanceof Concrete.PiExpression) {
+            List<Concrete.TypeParameter> parameters = ((Concrete.PiExpression) def.getResultType()).getParameters();
+            loop:
+            for (Concrete.TypeParameter parameter : parameters) {
+              for (Referable referable : parameter.getReferableList()) {
+                if (!link.hasNext()) {
+                  if (!(resultType instanceof PiExpression)) {
+                    resultType = null;
+                    break loop;
+                  }
+                  link = ((PiExpression) resultType).getParameters();
+                  resultType = ((PiExpression) resultType).getCodomain();
                 }
-                link = ((PiExpression) resultType).getParameters();
-                resultType = ((PiExpression) resultType).getCodomain();
+                if (referable != null) {
+                  myVisitor.getContext().put(referable, link);
+                }
+                myVisitor.getFreeBindings().add(link);
+                link = link.getNext();
               }
-              if (referable != null) {
-                myVisitor.getContext().put(referable, link);
-              }
-              myVisitor.getFreeBindings().add(link);
-              link = link.getNext();
             }
           }
           if (!link.hasNext() && resultType != null) {
-            typecheckResultTypeLevel(def.getResultTypeLevel(), false, true, resultType, null, typedDef, newDef);
+            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, def.getKind() == ClassFieldKind.PROPERTY, resultType, null, typedDef, newDef);
+            isProperty = level != null && level == -1;
+          } else {
+            // Just reports an error
+            myVisitor.getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
           }
         }
       }
@@ -1949,17 +1998,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     if (!newDef) {
       return null;
-    }
-
-    if (def.getKind() == ClassFieldKind.FIELD) {
-      isProperty = false;
-    } else if (!isProperty) {
-      if (typedDef.getTypeLevel() == null && def.getKind() == ClassFieldKind.ANY) {
-        Expression universe = piType.getCodomain().getType();
-        isProperty = universe instanceof UniverseExpression && ((UniverseExpression) universe).getSort().isProp();
-      } else {
-        isProperty = true;
-      }
     }
 
     if (isProperty) {
