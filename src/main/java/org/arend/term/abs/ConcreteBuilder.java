@@ -156,8 +156,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           : def.isInstance()
             ? Concrete.FunctionDefinition.Kind.INSTANCE
             : Concrete.FunctionDefinition.Kind.FUNC;
+
     Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
+    result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return result;
   }
 

@@ -1386,6 +1386,7 @@ public final class Concrete {
     private Expression myResultTypeLevel;
     private final FunctionBody myBody;
     private final Kind myKind;
+    private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
     public enum Kind {
       COERCE, LEVEL,
@@ -1468,6 +1469,15 @@ public final class Concrete {
     @Nonnull
     public FunctionBody getBody() {
       return myBody;
+    }
+
+    @Override
+    public List<TCReferable> getUsedDefinitions() {
+      return myUsedDefinitions;
+    }
+
+    public void setUsedDefinitions(List<TCReferable> usedDefinitions) {
+      myUsedDefinitions = usedDefinitions;
     }
 
     @Override

@@ -570,6 +570,12 @@ public class BuildVisitor extends ArendBaseVisitor {
     referable.setDefinition(funDef);
     StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
+
+    List<TCReferable> usedDefinitions = collectUsedDefinitions(subgroups, null);
+    if (usedDefinitions != null) {
+      funDef.setUsedDefinitions(usedDefinitions);
+    }
+
     return resultGroup;
   }
 

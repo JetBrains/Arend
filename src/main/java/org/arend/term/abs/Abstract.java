@@ -214,6 +214,7 @@ public final class Abstract {
     @Nullable Expression getTerm();
     @Override @Nonnull Collection<? extends Reference> getEliminatedExpressions();
     @Nonnull Collection<? extends FunctionClause> getClauses();
+    @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
     boolean isCoerce();
