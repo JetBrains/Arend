@@ -501,17 +501,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         } else {
           ClassCallExpression classCall = null;
-          for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext()) {
-            link1 = link1.getNextTyped(null);
-            classCall = link1.getTypeExpr().checkedCast(ClassCallExpression.class);
-            if (classCall != null && classCall.getDefinition() == useParent && classCall.getSortArgument().equals(Sort.STD)) {
+          DependentLink classCallLink = link;
+          for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
+            classCallLink = classCallLink.getNextTyped(null);
+            classCall = classCallLink.getTypeExpr().checkedCast(ClassCallExpression.class);
+            if (classCall != null && classCall.getDefinition() == useParent && (!classCall.getDefinition().hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
               break;
             }
           }
-          if (classCall == null) {
+          if (classCall == null || !classCallLink.hasNext()) {
             ok = false;
           } else {
-            Expression thisExpr = new NewExpression(classCall);
+            Expression thisExpr = new ReferenceExpression(classCallLink);
             for (ClassField classField : classCall.getDefinition().getFields()) {
               Expression impl = classCall.getImplementationHere(classField);
               if (impl == null) {
