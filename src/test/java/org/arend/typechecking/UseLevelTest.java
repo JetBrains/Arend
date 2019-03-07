@@ -150,6 +150,13 @@ public class UseLevelTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void useRecordTest() {
+    typeCheckModule(
+      "\\record R\n" +
+      "  \\where \\use \\level isProp : \\Pi (x y : R) -> x = y => \\lam x y => path (\\lam _ => x)");
+  }
+
+  @Test
   public void restrictedDataInCaseTest() {
     typeCheckModule(
       "\\record A\n" +

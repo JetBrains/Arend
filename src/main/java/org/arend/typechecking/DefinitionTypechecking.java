@@ -529,6 +529,16 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
               break;
             }
           }
+          if (!classCallLink.hasNext() && expectedType != null) {
+            PiExpression piType = expectedType.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(PiExpression.class);
+            if (piType != null) {
+              classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+              if (classCall != null && classCall.getDefinition() == useParent && (!classCall.getDefinition().hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
+                classCallLink = piType.getParameters();
+              }
+            }
+          }
+
           if (classCall == null || !classCallLink.hasNext()) {
             ok = false;
           } else {
@@ -548,7 +558,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
                 if (!classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr())) {
                   if (parameters == null) {
                     int numberOfClassParameters = 0;
-                    for (DependentLink link1 = link; link1 != classCallLink; link1 = link1.getNext()) {
+                    for (DependentLink link1 = link; link1 != classCallLink && link1.hasNext(); link1 = link1.getNext()) {
                       numberOfClassParameters++;
                     }
                     parameters = DependentLink.Helper.take(typedDef.getParameters(), numberOfClassParameters);
@@ -613,6 +623,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return typecheckResultTypeLevel(def.getResultTypeLevel(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA, false, typedDef.getResultType(), typedDef, null, newDef);
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
       myErrorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", sourceNode));
