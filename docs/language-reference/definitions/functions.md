@@ -70,14 +70,6 @@ Then you can define a function which maps `D` to natural numbers in such a way t
 The result type of a function defined by pattern matching must be specified explicitly.
 The general form of function definition by pattern matching is
 
-<!--
-```arend
-\func f (x_1 : T_1) ... (x_n : T_n) : R
-  | p^1_1, ... p^1_n => e_1
-  ...
-  | p^k_1, ... p^k_n => e_k
-``` -->
-
 ```arend
 \func f (x_1 : T_1) ... (x_n : T_n) : R
   | clause_1
