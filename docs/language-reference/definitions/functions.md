@@ -1,16 +1,37 @@
-<h1 id="functions">Functions Definitions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h1>
+<h1 id="functions">Functions<a class="headerlink" href="#functions" title="Permanent link">&para;</a></h1>
 
 Functions in Arend are functions in the mathematical sense.
 They can have arbitrary arity.
 In particular, constants in Arend are just functions of arity 0.
-A definition of a function consists of its name, a signature which consists of a list of parameters and (possibly) a result type, and a body which is an expression that describes the behaviour of the function.
+<!--
+ A definition of a function consists of its name, a signature which consists of a list of parameters and (possibly) a result type, and a body which is an expression that describes the behaviour of the function.
+-->
+A definition of a function `f` consists of the signature of `f` followed by the body of `f`.
+The full syntax of function signatures is as follows:   
 
-## Non-recursive functions
-
-To define a non-recursive function, write `\func f p_1 ... p_n => e`, where `f` is the name of the function, `p_1`, ... `p_n` are named [parameters](/language-reference/definitions/parameters), and `e` is an expression which denotes the result of the function.
+```arend
+\func f p_1 ... p_n : T
+``` 
+where `f` is the name of the function, `p_1`, ... `p_n` are named [parameters](/language-reference/definitions/parameters) and
+`T` is the result type. In some cases specification `: T` of the result type can be omitted depending on the 
+definition of function body.
+<!--The syntax of function body depends on whether the function is defined by pattern matching.
+, where `f` is the name of the function, `p_1`, ... `p_n` are named [parameters](/language-reference/definitions/parameters), and `e` is an expression which denotes the result of the function.
 You can also specify the result type of the function by writing `\func f p_1 ... p_n : T => e`, where `T` is an expression which denotes the result type.
 In this case, `e` must have type `T`.
 Often the typechecker can infer the result type, so usually you don't have to specify it explicitly.
+-->
+There are several ways to define the body of a function. These ways are described below.   
+
+## Non-recursive definitions
+
+A non-recursive function can be defined simply by specifying an expression for the result of the function: 
+```arend
+\func f p_1 ... p_n : T => e
+```
+where `e` is an expression, which must be
+of type `T` if it is specified. In such definitions the result type `: T` can often be omitted as the typechecker 
+can usually infer it from `e`.
 
 For example, to define the identity function on type `A`, write the following code:
 
@@ -36,7 +57,7 @@ Parameters of a function may appear in its body and in its result type.
 
 ## Pattern matching
 
-Functions can be defined by recursion.
+Functions can be defined by pattern matching.
 If `D` is a [data type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
 Then you can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
 
@@ -46,28 +67,44 @@ Then you can define a function which maps `D` to natural numbers in such a way t
   | con2 n => suc n
 ```
 
-The result type of a recursive function must be specified explicitly.
-The general form of a recursive function is
+The result type of a function defined by pattern matching must be specified explicitly.
+The general form of function definition by pattern matching is
 
+<!--
 ```arend
 \func f (x_1 : T_1) ... (x_n : T_n) : R
   | p^1_1, ... p^1_n => e_1
   ...
   | p^k_1, ... p^k_n => e_k
+``` -->
+
+```arend
+\func f (x_1 : T_1) ... (x_n : T_n) : R
+  | clause_1
+  ...
+  | clause_k
+```
+
+where each `clause_i` is of the form
+
+```arend
+p^i_1, ... p^i_n => e_i
 ```
 
 where `p^i_j` is a pattern of type `T_i` and `e_i` is an expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the discussion of the substitution operation and types of expressions).
 Note that variables `x_1`, ... `x_n` are not visible in expressions `e_i`.
 If a pattern `p^i_j` contains a variable `x` as a subpattern of type `T`, then this variable may appear in expression `e_i` and it will have the type `T`.
-If some of the parameters of `f` are implicit, corresponding patterns must be omitted.
-They can be specified explicitly by surrounding them in `{ }`.
+If some of the parameters of `f` are implicit, corresponding patterns must be either omitted or
+specified explicitly by surrounding them in `{ }`.
 
-You can also write `\func f p_1 ... p_n : R \with { | c_1 ... | c_n } `.
-The keyword `\with` and curly braces are optional and do not affect the defined function.
+Equivalently, the definition above can be written using the keyword `\with`:
+ ```arend 
+ \func f p_1 ... p_n : R \with { | clause_1 ... | clause_k } 
+ ``` 
 
 A pattern of type `T` can have one of the following forms:
 
-* A variable. If this variable is not used anywhere, its name can be replaces with `_`.
+* A variable. If this variable is not used anywhere, its name can be replaced with `_`.
 * `con s_1 ... s_m`, where `con (y_1 : A_1) ... (y_m : A_m)` is a constructor of a data type `D` and `s_1` ... `s_m` are patterns.
   In this case, `T` must be equal to `D` and pattern `s_i` must have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
   If some of the parameters of `con` are implicit, corresponding patterns must be omitted.
