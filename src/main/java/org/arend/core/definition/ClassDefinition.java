@@ -1,11 +1,7 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.expr.*;
-import org.arend.core.expr.type.Type;
-import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -22,10 +18,10 @@ public class ClassDefinition extends Definition {
   private Sort mySort;
   private boolean myRecord = false;
   private final CoerceData myCoerce = new CoerceData(this);
-  private Map<Set<ClassField>, Level> myLevels = new HashMap<>();
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private List<ClassField> myTypecheckingFieldOrder;
+  private List<ParametersLevel> myParametersLevels = Collections.emptyList();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -57,16 +53,47 @@ public class ClassDefinition extends Definition {
     myCoercingField = coercingField;
   }
 
-  public Map<? extends Set<ClassField>, ? extends Level> getLevels() {
-    return myLevels;
+  public static class ParametersLevel extends Definition.ParametersLevel {
+    public final List<ClassField> fields;
+
+    public ParametersLevel(DependentLink parameters, int level, List<ClassField> fields) {
+      super(parameters, level);
+      this.fields = fields;
+    }
   }
 
-  public void setLevels(Map<Set<ClassField>,Level> levels) {
-    myLevels = levels;
+  @Override
+  public List<? extends ParametersLevel> getParametersLevels() {
+    return myParametersLevels;
   }
 
-  public void addLevel(Set<ClassField> fields, Level level) {
-    myLevels.put(fields, level);
+  public void addParametersLevel(ParametersLevel parametersLevel) {
+    if (myParametersLevels.isEmpty()) {
+      myParametersLevels = new ArrayList<>();
+    }
+    myParametersLevels.add(parametersLevel);
+  }
+
+  public Integer getUseLevel(Map<ClassField,Expression> implemented) {
+    loop:
+    for (ParametersLevel parametersLevel : myParametersLevels) {
+      if (parametersLevel.fields.size() != implemented.size()) {
+        continue;
+      }
+      List<Expression> expressions = new ArrayList<>();
+      for (ClassField field : parametersLevel.fields) {
+        Expression expr = implemented.get(field);
+        if (expr == null) {
+          continue loop;
+        }
+        expressions.add(expr);
+      }
+
+      if (parametersLevel.checkExpressionsTypes(expressions)) {
+        return parametersLevel.level;
+      }
+    }
+    return null;
   }
 
   public Sort computeSort(Map<ClassField,Expression> implemented) {
@@ -93,8 +120,8 @@ public class ClassDefinition extends Definition {
       }
     }
 
-    Level hLevel = myLevels.get(implemented.keySet());
-    return hLevel == null ? sort : hLevel.isProp() ? Sort.PROP : new Sort(sort.getPLevel(), hLevel);
+    Integer hLevel = getUseLevel(implemented);
+    return hLevel == null ? sort : hLevel == -1 ? Sort.PROP : new Sort(sort.getPLevel(), new Level(hLevel));
   }
 
   public void updateSort() {

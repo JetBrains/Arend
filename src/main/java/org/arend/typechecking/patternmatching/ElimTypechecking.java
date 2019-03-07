@@ -215,7 +215,7 @@ public class ElimTypechecking {
         for (DependentLink link = parameters; link != emptyLink; link = link.getNext()) {
           index++;
         }
-        elimTree = new BranchElimTree(parameters.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), index, false), Collections.emptyMap());
+        elimTree = new BranchElimTree(DependentLink.Helper.take(parameters, index), Collections.emptyMap());
       }
 
       return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);

@@ -2,6 +2,9 @@ package org.arend.classes;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.DataCallExpression;
+import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.Matchers;
@@ -349,5 +352,15 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\func swap-inv5 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe _\n" +
       "\\func swap-inv6 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe p\n" +
       "\\func swap-inv7 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idpe (\\new Pair A B p.fst p.snd)");
+  }
+
+  @Test
+  public void newSubClass() {
+    typeCheckModule(
+      "\\record A (n : Nat)\n" +
+      "\\record B \\extends A | n => 0\n" +
+      "\\data D (a : A) | ddd\n" +
+      "\\func b : D (\\new B) => ddd");
+    assertEquals(getDefinition("B"), ((NewExpression) ((DataCallExpression) ((FunctionDefinition) getDefinition("b")).getResultType()).getDefCallArguments().get(0)).getExpression().getDefinition());
   }
 }

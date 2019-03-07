@@ -13,9 +13,6 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
@@ -305,7 +302,7 @@ public class ElimTest extends TypeCheckingTestCase {
       " | zero => n\n" +
       " | _ => n"
     );
-    DependentLink nParam = def.getParameters().subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 1, false);
+    DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
     Map<Constructor, ElimTree> children = new HashMap<>();
     children.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(Prelude.SUC, new LeafElimTree(param("m", Nat()), Ref(nParam)));
@@ -322,7 +319,7 @@ public class ElimTest extends TypeCheckingTestCase {
     );
     FunctionDefinition def = (FunctionDefinition) getDefinition("f");
     DataDefinition dataDef = (DataDefinition) getDefinition("D");
-    DependentLink nParam = def.getParameters().subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 1, false);
+    DependentLink nParam = DependentLink.Helper.take(def.getParameters(), 1);
     Map<Constructor, ElimTree> children = new HashMap<>();
     children.put(dataDef.getConstructor("A"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));
     children.put(dataDef.getConstructor("B"), new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nParam)));

@@ -53,10 +53,10 @@ message Definition {
         Sort sort = 7;
         bool is_record = 13;
         CoerceData coerce_data = 14;
-        repeated ImplLevel impl_level = 15;
         repeated int32 good_field = 16;
         repeated int32 type_class_field = 17;
         FieldOrder typechecking_field_order = 18;
+        repeated ClassParametersLevel parameters_level = 19;
 
         message FieldOrder {
             repeated int32 field = 1;
@@ -71,16 +71,15 @@ message Definition {
             bool isProperty = 7;
             bool isHideable = 9;
         }
-
-        message ImplLevel {
-            repeated int32 field = 1;
-            Level level = 2;
-        }
     }
-    message LevelParameters {
+    message ParametersLevel {
         bool hasParameters = 1;
-        repeated Expression parameter = 2;
-        Sort sort = 3;
+        repeated Telescope parameter = 2;
+        int32 level = 3;
+    }
+    message ClassParametersLevel {
+        ParametersLevel parameters_level = 1;
+        repeated int32 field = 2;
     }
     message DataData {
         repeated Telescope param = 2;
@@ -93,7 +92,7 @@ message Definition {
         bool is_truncated = 16;
         repeated bool covariant_parameter = 8;
         CoerceData coerce_data = 14;
-        repeated LevelParameters level_parameters = 19;
+        repeated ParametersLevel parameters_levels = 19;
 
         message Constructor {
             Referable referable = 1;
@@ -117,7 +116,7 @@ message Definition {
         Body body = 6;
         bool isLemma = 8;
         int32 visible_parameter = 12;
-        repeated LevelParameters level_parameters = 13;
+        repeated ParametersLevel parameters_levels = 13;
     }
 
     enum Status {

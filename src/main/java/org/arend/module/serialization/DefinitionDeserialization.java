@@ -9,7 +9,6 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
-import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.ClassReferableImpl;
 import org.arend.naming.reference.DataLocatedReferableImpl;
@@ -164,17 +163,13 @@ public class DefinitionDeserialization {
 
     readCoerceData(classProto.getCoerceData(), classDef.getCoerceData(), classDef);
 
-    List<DefinitionProtos.Definition.ClassData.ImplLevel> implLevels = classProto.getImplLevelList();
-    if (!implLevels.isEmpty()) {
-      Map<Set<ClassField>, Level> levels = new HashMap<>();
-      for (DefinitionProtos.Definition.ClassData.ImplLevel implLevel : implLevels) {
-        Set<ClassField> fields = new HashSet<>();
-        for (Integer fieldRef : implLevel.getFieldList()) {
-          fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
-        }
-        levels.put(fields, defDeserializer.readLevel(implLevel.getLevel()));
+    for (DefinitionProtos.Definition.ClassParametersLevel classParametersLevelProto : classProto.getParametersLevelList()) {
+      List<ClassField> fields = new ArrayList<>();
+      for (Integer fieldRef : classParametersLevelProto.getFieldList()) {
+        fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
       }
-      classDef.setLevels(levels);
+      DefinitionProtos.Definition.ParametersLevel parametersLevelProto = classParametersLevelProto.getParametersLevel();
+      classDef.addParametersLevel(new ClassDefinition.ParametersLevel(parametersLevelProto.getHasParameters() ? defDeserializer.readParameters(parametersLevelProto.getParameterList()) : null, parametersLevelProto.getLevel(), fields));
     }
 
     List<Integer> goodFieldIndices = classProto.getGoodFieldList();
@@ -218,8 +213,8 @@ public class DefinitionDeserialization {
     if (!typeClassParameters.isEmpty()) {
       dataDef.setTypeClassParameters(typeClassParameters);
     }
-    for (DefinitionProtos.Definition.LevelParameters levelParametersProto : dataProto.getLevelParametersList()) {
-      dataDef.addLevelParameters(readLevelParameters(defDeserializer, levelParametersProto));
+    for (DefinitionProtos.Definition.ParametersLevel levelParametersProto : dataProto.getParametersLevelsList()) {
+      dataDef.addLevelParameters(readParametersLevel(defDeserializer, levelParametersProto));
     }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
@@ -360,17 +355,8 @@ public class DefinitionDeserialization {
     }
   }
 
-  private Pair<List<Expression>,Sort> readLevelParameters(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.LevelParameters proto) throws DeserializationException {
-    List<Expression> expressions;
-    if (proto.getHasParameters()) {
-      expressions = new ArrayList<>();
-      for (ExpressionProtos.Expression exprProto : proto.getParameterList()) {
-        expressions.add(defDeserializer.readExpr(exprProto));
-      }
-    } else {
-      expressions = null;
-    }
-    return new Pair<>(expressions, defDeserializer.readSort(proto.getSort()));
+  private Definition.ParametersLevel readParametersLevel(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.ParametersLevel proto) throws DeserializationException {
+    return new Definition.ParametersLevel(proto.getHasParameters() ? defDeserializer.readParameters(proto.getParameterList()) : null, proto.getLevel());
   }
 
   private void fillInFunctionDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.FunctionData functionProto, FunctionDefinition functionDef) throws DeserializationException {
@@ -387,8 +373,8 @@ public class DefinitionDeserialization {
     if (!typeClassParameters.isEmpty()) {
       functionDef.setTypeClassParameters(typeClassParameters);
     }
-    for (DefinitionProtos.Definition.LevelParameters levelParametersProto : functionProto.getLevelParametersList()) {
-      functionDef.addLevelParameters(readLevelParameters(defDeserializer, levelParametersProto));
+    for (DefinitionProtos.Definition.ParametersLevel parametersLevelProto : functionProto.getParametersLevelsList()) {
+      functionDef.addLevelParameters(readParametersLevel(defDeserializer, parametersLevelProto));
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

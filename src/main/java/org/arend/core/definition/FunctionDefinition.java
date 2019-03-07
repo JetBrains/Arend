@@ -9,7 +9,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.TCReferable;
-import org.arend.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +24,7 @@ public class FunctionDefinition extends Definition implements Function {
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<Boolean> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
-  private List<Pair<List<Expression>,Sort>> myLevelParameters = Collections.emptyList();
+  private List<ParametersLevel> myParametersLevels = Collections.emptyList();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -118,15 +117,15 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public List<? extends Pair<? extends List<? extends Expression>, ? extends Sort>> getLevelParameters() {
-    return myLevelParameters;
+  public List<? extends ParametersLevel> getParametersLevels() {
+    return myParametersLevels;
   }
 
-  public void addLevelParameters(Pair<List<Expression>,Sort> levelParameters) {
-    if (myLevelParameters.isEmpty()) {
-      myLevelParameters = new ArrayList<>();
+  public void addLevelParameters(ParametersLevel parametersLevel) {
+    if (myParametersLevels.isEmpty()) {
+      myParametersLevels = new ArrayList<>();
     }
-    myLevelParameters.add(levelParameters);
+    myParametersLevels.add(parametersLevel);
   }
 
   @Override

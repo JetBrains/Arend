@@ -23,11 +23,11 @@ To put `Dec` in the corresponding universe, we need to write this proof in the `
       | no e1, no e2 => path (\lam i => no (\lam x => (\case e1 x \return e1 x = e2 x \with {}) @ i))
 ```
 
-Functions `\use \level` can be specified for `\data` and `\class` definitions.
+Functions `\use \level` can be specified for `\data`, `\class`, and `\func` definitions.
 They must have a particular type.
-First parameters of such a function must be parameters of the data type or (some) fields of the class.
-The rest of parameters together with the result type must prove that the data type (or the class) has some homotopy level.
-That is, it must prove `ofHLevel (D p_1 ... p_k) n` for some constant `n`, where `D` is the data type (or the class), `p_1`, ... `p_k` are its parameters (or fields), and `ofHLevel` is defined as follows:
+First parameters of such a function must be parameters of the data type (or the function) or (some) fields of the class.
+The rest of parameters together with the result type must prove that the data type (or the function, or the class) has some homotopy level.
+That is, it must prove `ofHLevel (D p_1 ... p_k) n` for some constant `n`, where `D` is the data type (or the function, or the class), `p_1`, ... `p_k` are its parameters (or fields), and `ofHLevel` is defined as follows:
 ```arend
 \func \infix 2 ofHLevel_-1+ (A : \Type) (n : Nat) : \Type \elim n
   | 0 => \Pi (a a' : A) -> a = a'

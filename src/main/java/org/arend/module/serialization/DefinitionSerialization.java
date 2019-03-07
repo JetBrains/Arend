@@ -12,7 +12,6 @@ import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.EmptyPattern;
 import org.arend.core.pattern.Pattern;
-import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.Precedence;
@@ -22,7 +21,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class DefinitionSerialization {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
@@ -118,13 +116,13 @@ public class DefinitionSerialization {
       builder.setCoerceData(writeCoerceData(definition.getCoerceData()));
     }
 
-    for (Map.Entry<? extends Set<ClassField>, ? extends Level> entry : definition.getLevels().entrySet()) {
-      DefinitionProtos.Definition.ClassData.ImplLevel.Builder implLevelBuild = DefinitionProtos.Definition.ClassData.ImplLevel.newBuilder();
-      for (ClassField field : entry.getKey()) {
-        implLevelBuild.addField(myCallTargetIndexProvider.getDefIndex(field));
+    for (ClassDefinition.ParametersLevel parametersLevel : definition.getParametersLevels()) {
+      DefinitionProtos.Definition.ClassParametersLevel.Builder parametersLevelBuilder = DefinitionProtos.Definition.ClassParametersLevel.newBuilder();
+      parametersLevelBuilder.setParametersLevel(writeParametersLevel(defSerializer, parametersLevel));
+      for (ClassField field : parametersLevel.fields) {
+        parametersLevelBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
       }
-      implLevelBuild.setLevel(defSerializer.writeLevel(entry.getValue()));
-      builder.addImplLevel(implLevelBuild.build());
+      builder.addParametersLevel(parametersLevelBuilder.build());
     }
 
     for (ClassField goodThisField : definition.getGoodThisFields()) {
@@ -156,7 +154,7 @@ public class DefinitionSerialization {
     }
     builder.addAllGoodThisParameters(definition.getGoodThisParameters());
     builder.addAllTypeClassParameters(definition.getTypeClassParameters());
-    builder.addAllLevelParameters(writeLevelParameters(defSerializer, definition.getLevelParameters()));
+    builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
     if (definition.status().headerIsOK()) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
     }
@@ -250,18 +248,20 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
-  private List<DefinitionProtos.Definition.LevelParameters> writeLevelParameters(ExpressionSerialization defSerializer, List<? extends Pair<? extends List<? extends Expression>, ? extends Sort>> levelParametersList) {
-    List<DefinitionProtos.Definition.LevelParameters> result = new ArrayList<>();
-    for (Pair<? extends List<? extends Expression>, ? extends Sort> levelParameters : levelParametersList) {
-      DefinitionProtos.Definition.LevelParameters.Builder builder = DefinitionProtos.Definition.LevelParameters.newBuilder();
-      builder.setHasParameters(levelParameters.proj1 != null);
-      if (levelParameters.proj1 != null) {
-        for (Expression expr : levelParameters.proj1) {
-          builder.addParameter(defSerializer.writeExpr(expr));
-        }
-      }
-      builder.setSort(defSerializer.writeSort(levelParameters.proj2));
-      result.add(builder.build());
+  private DefinitionProtos.Definition.ParametersLevel writeParametersLevel(ExpressionSerialization defSerializer, Definition.ParametersLevel parametersLevel) {
+    DefinitionProtos.Definition.ParametersLevel.Builder builder = DefinitionProtos.Definition.ParametersLevel.newBuilder();
+    builder.setHasParameters(parametersLevel.parameters != null);
+    if (parametersLevel.parameters != null) {
+      builder.addAllParameter(defSerializer.writeParameters(parametersLevel.parameters));
+    }
+    builder.setLevel(parametersLevel.level);
+    return builder.build();
+  }
+
+  private List<DefinitionProtos.Definition.ParametersLevel> writeParametersLevels(ExpressionSerialization defSerializer, List<? extends Definition.ParametersLevel> parametersLevels) {
+    List<DefinitionProtos.Definition.ParametersLevel> result = new ArrayList<>();
+    for (Definition.ParametersLevel parametersLevel : parametersLevels) {
+      result.add(writeParametersLevel(defSerializer, parametersLevel));
     }
     return result;
   }
@@ -277,7 +277,7 @@ public class DefinitionSerialization {
       builder.addAllGoodThisParameters(definition.getGoodThisParameters());
       builder.addAllTypeClassParameters(definition.getTypeClassParameters());
     }
-    builder.addAllLevelParameters(writeLevelParameters(defSerializer, definition.getLevelParameters()));
+    builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
     if (definition.getResultType() != null) {
       builder.setType(defSerializer.writeExpr(definition.getResultType()));
     }

@@ -26,6 +26,15 @@ public abstract class DefCallExpression extends Expression {
     return myDefinition;
   }
 
+  public Integer getUseLevel() {
+    for (Definition.ParametersLevel parametersLevel : myDefinition.getParametersLevels()) {
+      if (parametersLevel.checkExpressionsTypes(getDefCallArguments())) {
+        return parametersLevel.level;
+      }
+    }
+    return null;
+  }
+
   @Override
   public boolean isWHNF() {
     return true;

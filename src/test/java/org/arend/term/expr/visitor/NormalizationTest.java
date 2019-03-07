@@ -17,9 +17,6 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -93,7 +90,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelim.setParameters(params(zNElim, sNElim, xNElim));
     nelim.setResultType(Nat());
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    DependentLink nelimParams = zNElim.subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 2, false);
+    DependentLink nelimParams = DependentLink.Helper.take(zNElim, 2);
     Map<Constructor, ElimTree> nelimChildren = new HashMap<>();
     nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
     nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));

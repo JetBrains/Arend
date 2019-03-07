@@ -36,7 +36,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "      | yes a1, yes a2 => path (\\lam i => yes (Path.inProp a1 a2 @ i))\n" +
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
-      "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))", 1);
+      "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
     assertEquals(Sort.STD, ((DataDefinition) getDefinition("Dec")).getSort());
   }
 
@@ -147,5 +147,51 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\func empty => Empty\n" +
       "  \\where \\use \\level isProp (x y : empty) : x = y\n" +
       "\\lemma lem (x : empty) : empty => x");
+  }
+
+  @Test
+  public void restrictedDataInCaseTest() {
+    typeCheckModule(
+      "\\record A\n" +
+      "\\record B \\extends A\n" +
+      "\\data D (a : A) : \\Set | ddd\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
+      "\\func f (x : TrP Nat) : D (\\new B) => \\case x \\with { | inP _ => ddd }");
+  }
+
+  @Test
+  public void restrictedDataInCaseTestError() {
+    typeCheckModule(
+      "\\record A\n" +
+      "\\record B \\extends A\n" +
+      "\\data D (a : A) : \\Set | ddd\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
+      "\\func f (x : TrP Nat) : D (\\new A) => \\case x \\with { | inP _ => ddd }", 1);
+  }
+
+  @Test
+  public void restrictedClassInCaseTest() {
+    typeCheckModule(
+      "\\record A\n" +
+      "\\record B \\extends A\n" +
+      "\\data D : \\Set\n" +
+      "\\record C (a : A) (df : D)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
+      "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
+      "\\func f (d : D) (x : TrP Nat) : C (\\new B) => \\case x \\with { | inP _ => \\new C { | df => d } }");
+  }
+
+  @Test
+  public void restrictedClassInCaseTestError() {
+    typeCheckModule(
+      "\\record A\n" +
+      "\\record B \\extends A\n" +
+      "\\data D : \\Set\n" +
+      "\\record C (a : A) (df : D)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
+      "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
+      "\\func f (d : D) (x : TrP Nat) : C (\\new A) => \\case x \\with { | inP _ => \\new C { | df => d } }", 1);
   }
 }

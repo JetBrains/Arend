@@ -412,8 +412,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (ref instanceof TCReferable) {
         Definition typeDef = myVisitor.getTypecheckingState().getTypechecked((TCReferable) ref);
         if (typeDef != null) {
-          for (Pair<? extends List<? extends Expression>, ? extends Sort> levelParameter : typeDef.getLevelParameters()) {
-            if (levelParameter.proj1 == null && levelParameter.proj2 == Sort.PROP) {
+          for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
+            if (parametersLevel.parameters == null && parametersLevel.level == -1) {
               return true;
             }
           }
@@ -470,24 +470,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       Definition useParent = myVisitor.getTypecheckingState().getTypechecked(def.getUseParent());
       if (useParent instanceof DataDefinition || useParent instanceof ClassDefinition || useParent instanceof FunctionDefinition) {
         boolean ok = true;
-        Set<ClassField> levelFields = null;
+        List<ClassField> levelFields = null;
         Expression type = null;
+        DependentLink parameters = null;
         DependentLink link = typedDef.getParameters();
         if (useParent instanceof DataDefinition || useParent instanceof FunctionDefinition) {
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> defCallArgs = new ArrayList<>();
-          for (DependentLink dataLink = useParent.getParameters(); dataLink.hasNext(); dataLink = dataLink.getNext(), link = link.getNext()) {
+          for (DependentLink defLink = useParent.getParameters(); defLink.hasNext(); defLink = defLink.getNext(), link = link.getNext()) {
             if (!link.hasNext()) {
               ok = false;
               break;
             }
-            if (!Expression.compare(link.getTypeExpr(), dataLink.getTypeExpr().subst(substitution), Equations.CMP.EQ)) {
-              ok = false;
-              break;
+            if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), Equations.CMP.EQ)) {
+              if (parameters == null) {
+                parameters = DependentLink.Helper.take(typedDef.getParameters(), DependentLink.Helper.size(defLink));
+              }
             }
             ReferenceExpression refExpr = new ReferenceExpression(link);
             defCallArgs.add(refExpr);
-            substitution.add(dataLink, refExpr);
+            substitution.add(defLink, refExpr);
           }
 
           if (ok) {
@@ -512,20 +514,30 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           if (classCall == null || !classCallLink.hasNext()) {
             ok = false;
           } else {
-            Expression thisExpr = new ReferenceExpression(classCallLink);
-            for (ClassField classField : classCall.getDefinition().getFields()) {
-              Expression impl = classCall.getImplementationHere(classField);
-              if (impl == null) {
-                continue;
-              }
-              if (!(link.hasNext() && impl instanceof ReferenceExpression && ((ReferenceExpression) impl).getBinding() == link && classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr()))) {
-                ok = false;
-                break;
-              }
-              link = link.getNext();
-            }
             if (!classCall.getImplementedHere().isEmpty()) {
-              levelFields = new HashSet<>(classCall.getImplementedHere().keySet());
+              levelFields = new ArrayList<>();
+              Expression thisExpr = new ReferenceExpression(classCallLink);
+              for (ClassField classField : classCall.getDefinition().getFields()) {
+                Expression impl = classCall.getImplementationHere(classField);
+                if (impl == null) {
+                  continue;
+                }
+                if (!(link.hasNext() && impl instanceof ReferenceExpression && ((ReferenceExpression) impl).getBinding() == link)) {
+                  ok = false;
+                  break;
+                }
+                levelFields.add(classField);
+                if (!classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr())) {
+                  if (parameters == null) {
+                    int numberOfClassParameters = 0;
+                    for (DependentLink link1 = link; link1 != classCallLink; link1 = link1.getNext()) {
+                      numberOfClassParameters++;
+                    }
+                    parameters = DependentLink.Helper.take(typedDef.getParameters(), numberOfClassParameters);
+                  }
+                }
+                link = link.getNext();
+              }
             }
             type = classCall;
           }
@@ -534,20 +546,18 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         Integer level = myVisitor.getExpressionLevel(link, expectedType, ok ? type : null, DummyEquations.getInstance(), def);
         if (level != null && newDef) {
           if (useParent instanceof DataDefinition) {
-            ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
-          } else if (useParent instanceof FunctionDefinition) {
-            FunctionDefinition function = (FunctionDefinition) useParent;
-            Sort sort = function.getResultType().toSort();
-            if (sort == null) {
-              myErrorReporter.report(new TypecheckingError("\\use \\level is allowed only for functions returning a type", def));
+            if (parameters == null) {
+              ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
             } else {
-              function.addLevelParameters(new Pair<>(null, level == -1 ? Sort.PROP : new Sort(sort.getPLevel(), new Level(level))));
+              ((DataDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
             }
+          } else if (useParent instanceof FunctionDefinition) {
+            ((FunctionDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
           } else {
             if (levelFields == null) {
               ((ClassDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
             } else {
-              ((ClassDefinition) useParent).addLevel(levelFields, new Level(level));
+              ((ClassDefinition) useParent).addParametersLevel(new ClassDefinition.ParametersLevel(parameters, level, levelFields));
             }
           }
         }
@@ -649,7 +659,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Expression expectedType = typedDef.getResultType();
     Integer resultTypeLevel = expectedType == null ? null : typecheckResultTypeLevel(def, typedDef, newDef);
     if (resultTypeLevel == null && expectedType != null) {
-      resultTypeLevel = myVisitor.getExpressionLevel(expectedType);
+      DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
+      resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
     }
 
     GoodThisParametersVisitor goodThisParametersVisitor;

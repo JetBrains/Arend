@@ -1187,30 +1187,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  private boolean compareExpressions(List<? extends Expression> exprList1, List<? extends Expression> exprList2) {
-    if (exprList1.size() != exprList2.size()) {
-      return false;
-    }
-    for (int i = 0; i < exprList1.size(); i++) {
-      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, exprList1.get(i), exprList2.get(i), null)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  public Integer getExpressionLevel(Expression expression) {
-    DefCallExpression defCall = expression.checkedCast(DefCallExpression.class);
-    if (defCall != null) {
-      for (Pair<? extends List<? extends Expression>, ? extends Sort> levelParameter : defCall.getDefinition().getLevelParameters()) {
-        if (levelParameter.proj1 == null || compareExpressions(defCall.getDefCallArguments(), levelParameter.proj1)) {
-          return levelParameter.proj2.getHLevel().getConstant();
-        }
-      }
-    }
-    return null;
-  }
-
   @Override
   public Result visitCase(Concrete.CaseExpression expr, ExpectedType expectedType) {
     if (expectedType == null && expr.getResultType() == null) {
@@ -1278,7 +1254,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     // Try to infer level either directly or from a path type.
     if (level == null && expr.getResultTypeLevel() == null) {
-      level = getExpressionLevel(resultExpr);
+      DefCallExpression defCall = resultExpr.checkedCast(DefCallExpression.class);
+      level = defCall == null ? null : defCall.getUseLevel();
     }
     if (level == null && expr.getResultTypeLevel() == null) {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
@@ -1526,8 +1503,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public ClassCallExpression fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
-    Level hLevel = classCall.getDefinition().getLevels().get(classCall.getImplementedHere().keySet());
-    List<Sort> sorts = hLevel != null && hLevel.isProp() ? null : new ArrayList<>();
+    Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere());
+    List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
       PiExpression fieldType = field.getType(classCall.getSortArgument());
@@ -1539,7 +1516,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     if (hLevel != null && sorts != null) {
       for (int i = 0; i < sorts.size(); i++) {
-        sorts.set(i, new Sort(sorts.get(i).getPLevel(), hLevel));
+        sorts.set(i, new Sort(sorts.get(i).getPLevel(), new Level(hLevel)));
       }
     }
 
@@ -1598,10 +1575,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
         ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
 
-        if (!(expr.getExpression() instanceof Concrete.ClassExtExpression)) {
-          return checkAllImplemented(expectedClassCall, Collections.emptySet(), expr) ? new Result(new NewExpression(expectedClassCall), expectedClassCall) : null;
-        }
-
         boolean ok = true;
         if (actualClassDef != null) {
           for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
@@ -1616,7 +1589,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           expectedClassCall.updateHasUniverses();
         }
         pseudoImplemented = new HashSet<>();
-        exprResult = visitClassExt(((Concrete.ClassExtExpression) expr.getExpression()).getStatements(), null, expectedClassCall, pseudoImplemented, expr.getExpression());
+        exprResult = visitClassExt(expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getStatements() : Collections.emptyList(), null, expectedClassCall, pseudoImplemented, expr.getExpression());
         if (exprResult == null) {
           return null;
         }

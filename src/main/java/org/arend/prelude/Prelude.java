@@ -16,9 +16,6 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 import org.arend.error.DummyErrorReporter;
 import org.arend.frontend.PositionComparator;
 import org.arend.module.ModulePath;
@@ -127,7 +124,7 @@ public class Prelude {
         break;
       case "@": {
         AT = (FunctionDefinition) definition;
-        DependentLink atParams = AT.getParameters().subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 3, false);
+        DependentLink atParams = DependentLink.Helper.take(AT.getParameters(), 3);
         SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
         DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, AppExpression.make(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
         pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
@@ -139,13 +136,13 @@ public class Prelude {
       }
       case "coe":
         COERCE = (FunctionDefinition) definition;
-        DependentLink coeParams = COERCE.getParameters().subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 2, false);
+        DependentLink coeParams = DependentLink.Helper.take(COERCE.getParameters(), 2);
         COERCE.setBody(new BranchElimTree(coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
         COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "iso": {
         ISO = (FunctionDefinition) definition;
-        DependentLink isoParams = ISO.getParameters().subst(new SubstVisitor(new ExprSubstitution(), LevelSubstitution.EMPTY), 6, false);
+        DependentLink isoParams = DependentLink.Helper.take(ISO.getParameters(), 6);
         Map<Constructor, ElimTree> children = new HashMap<>();
         children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
         children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));

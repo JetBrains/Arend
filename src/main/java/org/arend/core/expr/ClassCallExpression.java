@@ -137,6 +137,11 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
+  public Integer getUseLevel() {
+    return getDefinition().getUseLevel(myImplementations);
+  }
+
+  @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();
   }
