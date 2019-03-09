@@ -104,7 +104,7 @@ public class FileLibraryResolver implements LibraryResolver {
   @Nullable
   @Override
   public Library resolve(String name) {
-    if (FileUtils.isLibraryName(name)) {
+    if (!FileUtils.isLibraryName(name)) {
       return null;
     }
 
@@ -123,9 +123,7 @@ public class FileLibraryResolver implements LibraryResolver {
       }
     }
 
-    if (library == null) {
-      myErrorReporter.report(LibraryError.notFound(name));
-    } else {
+    if (library != null) {
       myLibraries.put(name, library);
     }
 
