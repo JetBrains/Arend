@@ -276,51 +276,36 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     reportError(def.getErrorData());
 
     List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
+    List<Concrete.ClassField> classFields = new ArrayList<>();
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
+    buildClassParameters(def.getParameters(), classDef, classFields);
+    setEnclosingClass(classDef, def);
 
-    Abstract.Reference underlyingClass = def.getUnderlyingClass();
-    if (underlyingClass != null && !implementations.isEmpty()) {
-      myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have implementations", implementations.get(0)));
-    }
-
-    List<? extends Abstract.FieldParameter> classParameters = def.getParameters();
-    if (underlyingClass != null && !classParameters.isEmpty()) {
-      myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Class synonyms cannot have parameters", def));
-    }
-
-    if (underlyingClass == null) {
-      List<Concrete.ClassField> classFields = new ArrayList<>();
-      Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
-      buildClassParameters(classParameters, classDef, classFields);
-      setEnclosingClass(classDef, def);
-
-      for (Abstract.ClassField field : def.getClassFields()) {
-        Abstract.Expression resultType = field.getResultType();
-        LocatedReferable fieldRefOrig = field.getReferable();
-        TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
-        if (resultType == null || !(fieldRef instanceof TCFieldReferable)) {
-          if (!reportError(field.getErrorData())) {
-            myErrorReporter.report(fieldRef != null && !(fieldRef instanceof TCFieldReferable)
-              ? new AbstractExpressionError(Error.Level.ERROR, "Incorrect field", fieldRef)
-              : AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
-          }
-        } else {
-          try {
-            List<? extends Abstract.Parameter> parameters = field.getParameters();
-            Concrete.Expression type = resultType.accept(this, null);
-            Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
-            Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
-            classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters), type, typeLevel));
-          } catch (AbstractExpressionError.Exception e) {
-            myErrorReporter.report(e.error);
-          }
+    for (Abstract.ClassField field : def.getClassFields()) {
+      Abstract.Expression resultType = field.getResultType();
+      LocatedReferable fieldRefOrig = field.getReferable();
+      TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
+      if (resultType == null || !(fieldRef instanceof TCFieldReferable)) {
+        if (!reportError(field.getErrorData())) {
+          myErrorReporter.report(fieldRef != null && !(fieldRef instanceof TCFieldReferable)
+            ? new AbstractExpressionError(Error.Level.ERROR, "Incorrect field", fieldRef)
+            : AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
+        }
+      } else {
+        try {
+          List<? extends Abstract.Parameter> parameters = field.getParameters();
+          Concrete.Expression type = resultType.accept(this, null);
+          Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
+          Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
+          classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters), type, typeLevel));
+        } catch (AbstractExpressionError.Exception e) {
+          myErrorReporter.report(e.error);
         }
       }
-
-      classDef.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
-      return classDef;
-    } else {
-      return null;
     }
+
+    classDef.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
+    return classDef;
   }
 
   private List<TCReferable> visitUsedDefinitions(Collection<? extends LocatedReferable> usedDefinitions) {

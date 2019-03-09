@@ -83,8 +83,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
           return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ThisExpression(expr.getData(), myThisParameter), false);
         }
       } else {
-        ref = ((TCReferable) ref).getUnderlyingTypecheckable();
-        Concrete.ReferableDefinition def = ref == null ? null : myConcreteProvider.getConcrete((GlobalReferable) ref);
+        Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((TCReferable) ref);
         if (def != null && !(def instanceof Concrete.ClassField)) {
           TCClassReferable defEnclosingClass = def.getRelatedDefinition().enclosingClass;
           if (myFutureFields != null && myClassReferable.equals(defEnclosingClass)) {

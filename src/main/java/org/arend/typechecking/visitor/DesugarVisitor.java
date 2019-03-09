@@ -144,7 +144,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
-      if (ref instanceof ClassReferable && ((ClassReferable) ref).getUnderlyingTypecheckable() != null) {
+      if (ref instanceof ClassReferable) {
         List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
         Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
         Iterator<FieldReferable> it = notImplementedFields.iterator();

@@ -3,7 +3,6 @@ package org.arend.naming.resolving;
 import org.arend.error.Error;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
-import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
 import org.arend.naming.scope.*;
 import org.arend.term.NameRenaming;
 import org.arend.term.NamespaceCommand;
@@ -42,54 +41,11 @@ public abstract class NameResolvingChecker {
 
   }
 
-  public void checkSuperClassOfSynonym(ClassReferable superClass, ClassReferable underlyingClass, Object cause) {
-    superClass = superClass.getUnderlyingReference();
-    if (superClass == null) {
-      onError(new NamingError("Expected a class synonym", cause));
-    } else if (underlyingClass != null) {
-      if (!underlyingClass.isSubClassOf(superClass)) {
-        onError(new NamingError("Expected a synonym of a superclass of '" + underlyingClass.textRepresentation() + "'", cause));
-      }
-    }
-  }
-
   private void checkDefinition(LocatedReferable definition, Scope scope) {
     // Check classes
     if (definition instanceof ClassReferable) {
-      ClassReferable classRef = (ClassReferable) definition;
-      Reference underlyingClassRef = classRef.getUnresolvedUnderlyingReference();
-      boolean isSynonym = underlyingClassRef != null;
-      ClassReferable underlyingClass = null;
-      if (isSynonym) {
-        // Check the underlying class of a synonym
-        underlyingClass = checkClass(underlyingClassRef, scope, true, true);
-        if (underlyingClass != null && underlyingClass.isSynonym()) {
-          onError(new NamingError("Expected a class, got a class synonym", underlyingClassRef.getData()));
-          underlyingClass = null;
-        }
-
-        // Check field synonyms
-        Collection<? extends LocatedReferable> fieldRefs = classRef.getFieldReferables();
-        if (underlyingClass != null && !fieldRefs.isEmpty()) {
-          Scope fieldsScope = new ClassFieldImplScope(underlyingClass, false);
-          for (LocatedReferable fieldRef : fieldRefs) {
-            Reference underlyingFieldRef = fieldRef.getUnresolvedUnderlyingReference();
-            if (underlyingFieldRef != null) {
-              Referable ref = ExpressionResolveNameVisitor.resolve(underlyingFieldRef.getReferent(), fieldsScope, true);
-              if (ref instanceof ErrorReference) {
-                onError(((ErrorReference) ref).getError());
-              }
-            }
-          }
-        }
-      }
-
-      // Check super classes
-      for (Reference superClassRef : classRef.getUnresolvedSuperClassReferences()) {
-        ClassReferable resolvedRef = checkClass(superClassRef, scope, false, isSynonym);
-        if (isSynonym && resolvedRef != null) {
-          checkSuperClassOfSynonym(resolvedRef, underlyingClass, superClassRef.getData());
-        }
+      for (Reference superClassRef : ((ClassReferable) definition).getUnresolvedSuperClassReferences()) {
+        checkClass(superClassRef, scope, false);
       }
     }
 
@@ -100,12 +56,12 @@ public abstract class NameResolvingChecker {
     // if (classRef == null || myConcreteProvider.isRecord(classRef)) {
       Reference typeRef = myConcreteProvider.getInstanceTypeReference(definition);
       if (typeRef != null) {
-        checkClass(typeRef, scope, true, false);
+        checkClass(typeRef, scope, true);
       }
     // }
   }
 
-  private ClassReferable checkClass(Reference classRef, Scope scope, boolean checkNotRecord, boolean reportUnresolved) {
+  private void checkClass(Reference classRef, Scope scope, boolean checkNotRecord) {
     boolean ok = true;
     Referable ref = classRef.getReferent();
     while (ref instanceof RedirectingReferable) {
@@ -121,15 +77,9 @@ public abstract class NameResolvingChecker {
       }
     }
 
-    if (ref instanceof ErrorReference) {
-      if (reportUnresolved) {
-        onError(((ErrorReference) ref).getError());
-      }
-    } else if (!(ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
+    if (!(ref instanceof ErrorReference) && !(ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
       onError(new NamingError(ok && ref instanceof ClassReferable  ? "Expected a class, got a record" : "Expected a class", classRef.getData()));
     }
-
-    return ref instanceof ClassReferable ? (ClassReferable) ref : null;
   }
 
   public static Scope makeScope(Group group, Scope parentScope) {

@@ -806,70 +806,44 @@ public class BuildVisitor extends ArendBaseVisitor {
     ClassGroup resultGroup = null;
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
-    Concrete.ClassDefinition classDefinition = null;
-    List<TCReferable> usedDefinitions = null;
-    if (classBodyCtx instanceof ClassSynContext) {
-      if (isRecord) {
-        myErrorReporter.report(new ParserError(tokenPosition(ctx.start), "Records cannot be synonyms"));
-      }
-
-      List<ConcreteClassFieldSynonymReferable> fieldSynonymReferables = new ArrayList<>();
-      Concrete.ReferenceExpression refExpr = visitLongNameRef(((ClassSynContext) classBodyCtx).longName());
-      reference = parent instanceof FileGroup
-        ? new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, myModule, refExpr)
-        : new ConcreteClassSynonymReferable(pos, name, prec, fieldSynonymReferables, superClasses, parent, (TCReferable) parent.getReferable(), refExpr);
-      fieldReferables = fieldSynonymReferables;
-
-      List<FieldTeleContext> fieldTeleCtxs = ctx.fieldTele();
-      if (!fieldTeleCtxs.isEmpty()) {
-        myErrorReporter.report(new ParserError(tokenPosition(fieldTeleCtxs.get(0).start), "Class synonyms cannot have parameters"));
-      }
-
-      for (FieldSynContext fieldSyn : ((ClassSynContext) classBodyCtx).fieldSyn()) {
-        Position position = tokenPosition(fieldSyn.start);
-        fieldSynonymReferables.add(new ConcreteClassFieldSynonymReferable(tokenPosition(fieldSyn.start), fieldSyn.ID(1).getText(), visitPrecedence(fieldSyn.precedence()), true, reference, new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, fieldSyn.ID(0).getText()))));
-      }
-    } else {
-      List<Concrete.ClassField> fields = new ArrayList<>();
-      List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
-      List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
-      if (!classStatCtxs.isEmpty() || !classFieldOrImplCtxs.isEmpty()) {
-        implementations = new ArrayList<>();
-      }
-
-      List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
-      reference = parent instanceof FileGroup
-        ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
-        : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
-
-      classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, implementations);
-      reference.setDefinition(classDefinition);
-      visitFieldTeles(ctx.fieldTele(), classDefinition, fields);
-
-      if (!classStatCtxs.isEmpty()) {
-        List<Group> dynamicSubgroups = new ArrayList<>();
-        resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
-        visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
-        usedDefinitions = collectUsedDefinitions(dynamicSubgroups, null);
-      }
-      visitInstanceStatements(classFieldOrImplCtxs, fields, implementations, classDefinition);
-
-      for (Concrete.ClassField field : fields) {
-        fieldReferables1.add((ConcreteClassFieldReferable) field.getData());
-      }
-      fieldReferables = fieldReferables1;
+    List<Concrete.ClassField> fields = new ArrayList<>();
+    List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
+    List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
+    if (!classStatCtxs.isEmpty() || !classFieldOrImplCtxs.isEmpty()) {
+      implementations = new ArrayList<>();
     }
+
+    List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
+    reference = parent instanceof FileGroup
+      ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
+      : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
+
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, implementations);
+    reference.setDefinition(classDefinition);
+    visitFieldTeles(ctx.fieldTele(), classDefinition, fields);
+
+    List<TCReferable> usedDefinitions = null;
+    if (!classStatCtxs.isEmpty()) {
+      List<Group> dynamicSubgroups = new ArrayList<>();
+      resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
+      visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
+      usedDefinitions = collectUsedDefinitions(dynamicSubgroups, null);
+    }
+    visitInstanceStatements(classFieldOrImplCtxs, fields, implementations, classDefinition);
+
+    for (Concrete.ClassField field : fields) {
+      fieldReferables1.add((ConcreteClassFieldReferable) field.getData());
+    }
+    fieldReferables = fieldReferables1;
 
     if (resultGroup == null) {
       resultGroup = new ClassGroup(reference, fieldReferables, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
     }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
 
-    if (classDefinition != null) {
-      usedDefinitions = collectUsedDefinitions(staticSubgroups, usedDefinitions);
-      if (usedDefinitions != null) {
-        classDefinition.setUsedDefinitions(usedDefinitions);
-      }
+    usedDefinitions = collectUsedDefinitions(staticSubgroups, usedDefinitions);
+    if (usedDefinitions != null) {
+      classDefinition.setUsedDefinitions(usedDefinitions);
     }
 
     return resultGroup;

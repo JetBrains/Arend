@@ -179,13 +179,9 @@ public final class Concrete {
       return expr instanceof ReferenceExpression ? ((ReferenceExpression) expr).getReferent() : null;
     }
 
-    public TCClassReferable getUnderlyingClassReferable(boolean resolveClassSynonym) {
+    public TCClassReferable getUnderlyingClassReferable() {
       Referable ref = getUnderlyingReferable();
-      if (!(ref instanceof TCClassReferable)) {
-        return null;
-      }
-
-      return resolveClassSynonym ? ((TCClassReferable) ref).getUnderlyingTypecheckable() : (TCClassReferable) ref;
+      return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
     }
 
     @Override

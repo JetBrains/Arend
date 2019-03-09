@@ -14,7 +14,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,11 +96,5 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
       result.add(impl.getImplementedField());
     }
     return result;
-  }
-
-  @Nullable
-  @Override
-  public TCClassReferable getUnderlyingReference() {
-    return null;
   }
 }

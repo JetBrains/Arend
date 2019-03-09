@@ -641,24 +641,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return CheckTypeVisitor.DefCallResult.makeTResult(expr, definition, sortArgument);
   }
 
-  public Referable getUnderlyingTypecheckable(Referable ref, Concrete.SourceNode sourceNode) {
-    if (!(ref instanceof LocatedReferable)) {
-      return ref;
-    }
-    LocatedReferable underlyingRef = ((LocatedReferable) ref).getUnderlyingTypecheckable();
-    if (underlyingRef == null && sourceNode != null) {
-      myErrorReporter.report(new TypecheckingError("Reference to incorrect synonym '" + ref.textRepresentation() + "'", sourceNode));
-    }
-    return underlyingRef;
-  }
-
   public TResult visitReference(Concrete.ReferenceExpression expr) {
     Referable ref = expr.getReferent();
     if (!(ref instanceof GlobalReferable) && (expr.getPLevel() != null || expr.getHLevel() != null)) {
       myErrorReporter.report(new TypecheckingError("Level specifications are allowed only after definitions", expr.getPLevel() != null ? expr.getPLevel() : expr.getHLevel()));
     }
-    ref = getUnderlyingTypecheckable(ref, expr);
-    return ref == null ? null : ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
+    return ref instanceof TCReferable ? typeCheckDefCall((TCReferable) ref, expr) : getLocalVar(expr.getReferent(), expr);
   }
 
   @Override
@@ -1375,11 +1363,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Definition referableToDefinition(Referable referable, Concrete.SourceNode sourceNode) {
-    if (referable instanceof ErrorReference) {
-      return null;
-    }
-    referable = getUnderlyingTypecheckable(referable, sourceNode);
-    if (referable == null) {
+    if (referable == null || referable instanceof ErrorReference) {
       return null;
     }
 
@@ -1533,7 +1517,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-      return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), null, implBody, getAllBindings()), myEquations);
+      return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), implBody, getAllBindings()), myEquations);
     }
 
     CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
@@ -1555,7 +1539,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           return null;
         }
         if (baseExpr instanceof Concrete.ReferenceExpression) {
-          Referable ref = getUnderlyingTypecheckable(((Concrete.ReferenceExpression) baseExpr).getReferent(), baseExpr);
+          Referable ref = ((Concrete.ReferenceExpression) baseExpr).getReferent();
           boolean ok = ref instanceof TCReferable;
           if (ok) {
             Definition actualDef = myState.getTypechecked((TCReferable) ref);

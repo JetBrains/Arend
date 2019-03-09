@@ -18,32 +18,6 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
   }
 
   @Test
-  public void typeClassFullNameInsideSynonym() {
-    typeCheckModule(
-        "\\class M \\where {\n" +
-        "  \\class X (A : \\Type0) {\n" +
-        "    | B : A -> Nat\n" +
-        "  }\n" +
-        "  \\class Y => X\n" +
-        "  \\func g {x : X} (a : x.A) => B a" +
-        "}\n" +
-        "\\func f (x : M.Y) (a : x.A) => M.g a");
-  }
-
-  @Test
-  public void typeClassFullNameOutsideSynonym() {
-    typeCheckModule(
-        "\\class M \\where {\n" +
-        "  \\class X (A : \\Type0) {\n" +
-        "    | B : A -> Nat\n" +
-        "  }\n" +
-        "  \\func g {x : X} (a : x.A) => B a" +
-        "}\n" +
-        "\\class Y => M.X\n" +
-        "\\func f (y : Y) (a : y.A) => M.g a");
-  }
-
-  @Test
   public void typeClassFullNameInstanceInside() {
     typeCheckModule(
         "\\class M \\where {\n" +
@@ -68,34 +42,6 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "}\n" +
         "\\func f (t : M.T) => M.B 0", 1);
     assertThatErrorsAre(instanceInference(getDefinition("M.X")));
-  }
-
-  @Test
-  public void typeClassFullNameInstanceIO() {
-    typeCheckModule(
-        "\\class M \\where {\n" +
-        "  \\class X (A : \\Type0) {\n" +
-        "    | B : A -> Nat\n" +
-        "  }\n" +
-        "  \\class Y => X\n" +
-        "  \\func g {x : X} (a : x.A) => B a" +
-        "}\n" +
-        "\\instance Nat-X : M.Y | A => Nat | B => \\lam x => x\n" +
-        "\\func f => M.g 0");
-  }
-
-  @Test
-  public void typeClassFullNameInstanceOO() {
-    typeCheckModule(
-        "\\class M \\where {\n" +
-        "  \\class X (A : \\Type0) {\n" +
-        "    | B : A -> Nat\n" +
-        "  }\n" +
-        "  \\func g {x : X} (a : x.A) => B a" +
-        "}\n" +
-        "\\class Y => M.X\n" +
-        "\\instance Nat-X : Y | A => Nat | B => \\lam x => x\n" +
-        "\\func f => M.g 0");
   }
 
   @Test

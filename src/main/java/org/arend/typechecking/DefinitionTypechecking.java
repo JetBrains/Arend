@@ -265,10 +265,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
 
         if (localInstancePool != null) {
-          TCClassReferable classRef = typeParameter.getType().getUnderlyingClassReferable(false);
-          TCClassReferable underlyingClassRef = classRef == null ? null : classRef.getUnderlyingTypecheckable();
-          if (underlyingClassRef != null) {
-            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
+          TCClassReferable classRef = typeParameter.getType().getUnderlyingClassReferable();
+          if (classRef != null) {
+            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef);
             if (classDef != null && !classDef.isRecord()) {
               ClassField classifyingField = classDef.getClassifyingField();
               int i = 0;
@@ -1588,10 +1587,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         previousField = typecheckClassField(field, typedDef, localInstances, newDef);
 
         if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
-          TCClassReferable classRef = previousType.getUnderlyingClassReferable(false);
-          TCClassReferable underlyingClassRef = classRef == null ? null : classRef.getUnderlyingTypecheckable();
-          if (underlyingClassRef != null) {
-            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(underlyingClassRef);
+          TCClassReferable classRef = previousType.getUnderlyingClassReferable();
+          if (classRef != null) {
+            ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef);
             if (classDef != null && !classDef.isRecord()) {
               ClassField typecheckedField = previousField != null ? previousField : (ClassField) myVisitor.getTypecheckingState().getTypechecked(field.getData());
               localInstances.add(new LocalInstance(classDef, classRef, typecheckedField, field));

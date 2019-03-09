@@ -52,7 +52,6 @@ classKw   : '\\class'   # classKwClass
           ;
 
 classBody : '{' classStat* '}'                                      # classBodyStats
-          | '=>' longName ('{' fieldSyn? ('|' fieldSyn)* '}')?      # classSyn
           | classFieldOrImpl*                                       # classBodyFieldOrImpl
           ;
 

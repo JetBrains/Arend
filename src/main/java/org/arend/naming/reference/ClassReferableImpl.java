@@ -4,7 +4,6 @@ import org.arend.module.ModulePath;
 import org.arend.term.Precedence;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,11 +40,5 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
   @Override
   public Collection<? extends Referable> getImplementedFields() {
     return Collections.emptyList();
-  }
-
-  @Nullable
-  @Override
-  public TCClassReferable getUnderlyingReference() {
-    return null;
   }
 }

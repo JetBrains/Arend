@@ -27,20 +27,18 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
   }
 
   private void addDependency(TCReferable dependency, boolean ignoreFirstParameter) {
-    TCReferable tcDependency = dependency.getUnderlyingTypecheckable();
-    if (tcDependency == null || myExcluded != null && myExcluded.contains(tcDependency)) {
+    if (myExcluded != null && myExcluded.contains(dependency)) {
       return;
     }
     if (myInstanceProvider == null) {
-      myDependencies.add(tcDependency);
+      myDependencies.add(dependency);
       return;
     }
 
     myDeque.push(dependency);
     while (!myDeque.isEmpty()) {
       TCReferable referable = myDeque.pop();
-      TCReferable tcReferable = referable.getUnderlyingTypecheckable();
-      if (!myDependencies.add(tcReferable)) {
+      if (!myDependencies.add(referable)) {
         continue;
       }
 
@@ -57,13 +55,13 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
           }
         }
       } else {
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(myConcreteProvider.getConcrete(tcReferable));
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(myConcreteProvider.getConcrete(referable));
         if (parameters != null) {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
               ignoreFirstParameter = false;
             } else if (!parameter.getExplicit()) {
-              TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable(true);
+              TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable();
               if (classRef != null) {
                 for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
                   Referable ref = instance.getReferenceInType();

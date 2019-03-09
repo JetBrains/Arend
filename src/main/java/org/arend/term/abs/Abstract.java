@@ -236,7 +236,6 @@ public final class Abstract {
     boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassField> getClassFields();
-    @Nullable Reference getUnderlyingClass();
     @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
@@ -251,9 +250,5 @@ public final class Abstract {
     ClassFieldKind getClassFieldKind();
     /* @Nonnull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
-  }
-
-  public interface ClassFieldSynonym extends ReferableDefinition {
-    /* @Nonnull */ @Nullable Reference getUnderlyingField();
   }
 }

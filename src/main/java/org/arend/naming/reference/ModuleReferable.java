@@ -44,18 +44,6 @@ public class ModuleReferable implements LocatedReferable {
     return null;
   }
 
-  @Nullable
-  @Override
-  public TCReferable getUnderlyingReference() {
-    return null;
-  }
-
-  @Nullable
-  @Override
-  public Reference getUnresolvedUnderlyingReference() {
-    return null;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

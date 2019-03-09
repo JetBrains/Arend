@@ -1,7 +1,6 @@
 package org.arend.naming.reference;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 public interface ClassReferable extends LocatedReferable {
@@ -9,35 +8,6 @@ public interface ClassReferable extends LocatedReferable {
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @Nonnull Collection<? extends FieldReferable> getFieldReferables();
   @Nonnull Collection<? extends Referable> getImplementedFields();
-  @Override @Nullable ClassReferable getUnderlyingReference();
-
-  default @Override @Nullable ClassReferable getUnderlyingTypecheckable() {
-    ClassReferable underlyingRef = getUnderlyingReference();
-    return underlyingRef == null ? this : underlyingRef.isSynonym() ? null : underlyingRef;
-  }
-
-  default boolean isFieldSynonym() {
-    return false;
-  }
-
-  default boolean isRenamed(FieldReferable fieldRef) {
-    Set<ClassReferable> visitedClasses = new HashSet<>();
-    Deque<ClassReferable> toVisit = new ArrayDeque<>();
-    toVisit.add(this);
-    while (!toVisit.isEmpty()) {
-      ClassReferable classRef = toVisit.pop();
-      if (!visitedClasses.add(classRef)) {
-        continue;
-      }
-      for (FieldReferable classFieldRef : classRef.getFieldReferables()) {
-        if (classFieldRef.getUnderlyingReference() == fieldRef) {
-          return true;
-        }
-      }
-      toVisit.addAll(classRef.getSuperClassReferences());
-    }
-    return false;
-  }
 
   default boolean isSubClassOf(ClassReferable classRef) {
     if (this == classRef) {
@@ -67,8 +37,8 @@ public interface ClassReferable extends LocatedReferable {
       return result;
     }
 
-    public static HashMap<FieldReferable, List<LocatedReferable>> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
-      Set<FieldReferable> fieldSet = getAllFields(classDef, new HashSet<>(), superClassesFields);
+    public static HashSet<FieldReferable> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
+      HashSet<FieldReferable> fieldSet = new LinkedHashSet<>(getAllFields(classDef, new HashSet<>(), superClassesFields));
       removeImplemented(classDef, fieldSet, superClassesFields);
       if (!argumentsExplicitness.isEmpty()) {
         Iterator<FieldReferable> it = fieldSet.iterator();
@@ -96,13 +66,7 @@ public interface ClassReferable extends LocatedReferable {
         }
       }
 
-      Map<LocatedReferable, List<LocatedReferable>> renamings = getRenamings(classDef);
-      HashMap<FieldReferable, List<LocatedReferable>> result = new LinkedHashMap<>();
-      for (FieldReferable field : fieldSet) {
-        List<LocatedReferable> renamedFields = renamings.get(field);
-        result.put(field, renamedFields != null ? renamedFields : Collections.singletonList(field));
-      }
-      return result;
+      return fieldSet;
     }
 
     private static void removeImplemented(ClassReferable classDef, Set<FieldReferable> result, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
@@ -111,8 +75,8 @@ public interface ClassReferable extends LocatedReferable {
       toVisit.add(classDef);
 
       while (!toVisit.isEmpty()) {
-        ClassReferable classRef = toVisit.pop().getUnderlyingTypecheckable();
-        if (classRef == null || !visitedClasses.add(classRef)) {
+        ClassReferable classRef = toVisit.pop();
+        if (!visitedClasses.add(classRef)) {
           continue;
         }
 
@@ -125,14 +89,12 @@ public interface ClassReferable extends LocatedReferable {
                 fields.removeAll(superClassFields);
               }
             }
-          } else if (fieldImpl instanceof LocatedReferable) {
-            LocatedReferable field = ((LocatedReferable) fieldImpl).getUnderlyingTypecheckable();
-            if (field instanceof FieldReferable) {
-              result.remove(field);
-              if (superClassesFields != null) {
-                for (Set<FieldReferable> fields : superClassesFields.values()) {
-                  fields.remove(field);
-                }
+          } else if (fieldImpl instanceof FieldReferable) {
+            LocatedReferable field = (FieldReferable) fieldImpl;
+            result.remove(field);
+            if (superClassesFields != null) {
+              for (Set<FieldReferable> fields : superClassesFields.values()) {
+                fields.remove(field);
               }
             }
           }
@@ -149,10 +111,6 @@ public interface ClassReferable extends LocatedReferable {
       }
 
       Set<FieldReferable> result = new LinkedHashSet<>();
-      ClassReferable underlyingClass = classDef.getUnderlyingReference();
-      if (underlyingClass != null && !underlyingClass.isSynonym()) {
-        result.addAll(getAllFields(underlyingClass, visited, superClassesFields));
-      }
 
       for (ClassReferable superClass : classDef.getSuperClassReferences()) {
         Set<FieldReferable> superClassSet = getAllFields(superClass, visited, superClassesFields);
@@ -164,41 +122,11 @@ public interface ClassReferable extends LocatedReferable {
             return oldFields;
           }
         });
-        if (underlyingClass == null) {
-          result.addAll(superClassSet);
-        }
+        result.addAll(superClassSet);
       }
 
-      if (underlyingClass == null) {
-        result.addAll(classDef.getFieldReferables());
-      }
-
+      result.addAll(classDef.getFieldReferables());
       return result;
-    }
-
-    public static Map<LocatedReferable, List<LocatedReferable>> getRenamings(ClassReferable classDef) {
-      Deque<ClassReferable> toVisit = new ArrayDeque<>();
-      Set<ClassReferable> visitedClasses = new HashSet<>();
-      Map<LocatedReferable, List<LocatedReferable>> renamings = new HashMap<>();
-      toVisit.add(classDef);
-
-      while (!toVisit.isEmpty()) {
-        ClassReferable classRef = toVisit.pop();
-        if (!visitedClasses.add(classRef)) {
-          continue;
-        }
-
-        for (FieldReferable field : classRef.getFieldReferables()) {
-          LocatedReferable underlyingField = field.getUnderlyingReference();
-          if (underlyingField != null) {
-            renamings.computeIfAbsent(underlyingField, k -> new ArrayList<>(1)).add(field);
-          }
-        }
-
-        toVisit.addAll(classRef.getSuperClassReferences());
-      }
-
-      return renamings;
     }
   }
 }

@@ -10,21 +10,6 @@ import java.util.List;
 public interface LocatedReferable extends GlobalReferable {
   @Nullable ModulePath getLocation();
   @Nullable LocatedReferable getLocatedReferableParent();
-  @Nullable LocatedReferable getUnderlyingReference();
-  @Nullable Reference getUnresolvedUnderlyingReference();
-
-  default @Nullable LocatedReferable getUnderlyingTypecheckable() {
-    LocatedReferable underlyingRef = getUnderlyingReference();
-    return underlyingRef == null ? this : underlyingRef.isSynonym() ? null : underlyingRef;
-  }
-
-  default boolean isFieldSynonym() {
-    return isSynonym();
-  }
-
-  default boolean isSynonym() {
-    return getUnresolvedUnderlyingReference() != null || getUnderlyingReference() != null;
-  }
 
   class Helper {
     public static ModulePath getLocation(LocatedReferable referable, List<String> fullName) {
