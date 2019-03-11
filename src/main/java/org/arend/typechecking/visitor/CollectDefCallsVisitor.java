@@ -55,7 +55,17 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
           }
         }
       } else {
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(myConcreteProvider.getConcrete(referable));
+        Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
+        TCClassReferable enclosingClass = definition == null ? null : definition.getRelatedDefinition().enclosingClass;
+        if (enclosingClass != null) {
+          if (ignoreFirstParameter) {
+            ignoreFirstParameter = false;
+          } else {
+            addClassInstances(enclosingClass);
+          }
+        }
+
         if (parameters != null) {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
@@ -63,16 +73,20 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
             } else if (!parameter.getExplicit()) {
               TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable();
               if (classRef != null) {
-                for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
-                  Referable ref = instance.getReferenceInType();
-                  if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-                    myDeque.push(instance.getData());
-                  }
-                }
+                addClassInstances(classRef);
               }
             }
           }
         }
+      }
+    }
+  }
+
+  private void addClassInstances(TCClassReferable classRef) {
+    for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
+      Referable ref = instance.getReferenceInType();
+      if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
+        myDeque.push(instance.getData());
       }
     }
   }
