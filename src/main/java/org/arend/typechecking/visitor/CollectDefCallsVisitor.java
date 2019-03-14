@@ -56,16 +56,18 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
         }
       } else {
         Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(referable);
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
-        TCClassReferable enclosingClass = definition == null ? null : definition.getRelatedDefinition().enclosingClass;
-        if (enclosingClass != null) {
-          if (ignoreFirstParameter) {
-            ignoreFirstParameter = false;
-          } else {
-            addClassInstances(enclosingClass);
+        if (definition != null && !definition.isDesugarized()) {
+          TCClassReferable enclosingClass = definition.getRelatedDefinition().enclosingClass;
+          if (enclosingClass != null) {
+            if (ignoreFirstParameter) {
+              ignoreFirstParameter = false;
+            } else {
+              addClassInstances(enclosingClass);
+            }
           }
         }
 
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
         if (parameters != null) {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {

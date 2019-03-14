@@ -1086,6 +1086,10 @@ public final class Concrete {
     @Nonnull
     public abstract Definition getRelatedDefinition();
 
+    public boolean isDesugarized() {
+      return getRelatedDefinition().isDesugarized();
+    }
+
     @Override
     public void prettyPrint(StringBuilder builder, PrettyPrinterConfig ppConfig) {
       builder.append(myReferable); // TODO[pretty]: implement this properly
@@ -1105,6 +1109,7 @@ public final class Concrete {
     Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCClassReferable enclosingClass;
     private boolean myHasErrors = false;
+    private boolean myDesugarized = false;
 
     public Definition(TCReferable referable) {
       super(referable);
@@ -1116,6 +1121,15 @@ public final class Concrete {
 
     public void setHasErrors() {
       myHasErrors = true;
+    }
+
+    @Override
+    public boolean isDesugarized() {
+      return myDesugarized;
+    }
+
+    public void setDesugarized() {
+      myDesugarized = true;
     }
 
     public Resolved getResolved() {

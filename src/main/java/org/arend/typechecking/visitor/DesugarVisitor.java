@@ -26,6 +26,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, LocalErrorReporter errorReporter) {
     definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
+    definition.setDesugarized();
   }
 
   private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
