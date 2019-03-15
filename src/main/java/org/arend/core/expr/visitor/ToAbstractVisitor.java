@@ -425,7 +425,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    return etaReduce(cLam(parameters, expr.accept(this, null)));
+    Concrete.LamExpression result = cLam(parameters, expr.accept(this, null));
+    return lamExpr.getBody().isInstance(ClassCallExpression.class) ? result : etaReduce(result);
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
