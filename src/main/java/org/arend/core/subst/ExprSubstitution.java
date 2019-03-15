@@ -24,6 +24,10 @@ public class ExprSubstitution {
     add(from, to);
   }
 
+  public Set<Variable> getKeys() {
+    return mySubstExprs.keySet();
+  }
+
   public Set<Map.Entry<Variable, Expression>> getEntries() {
     return mySubstExprs.entrySet();
   }
