@@ -1517,7 +1517,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-      return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), implBody, getAllBindings()), myEquations);
+      ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
+      if (classDef.getClassifyingField() == null) {
+        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody);
+        if (instance == null) {
+          ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, new Expression[0]);
+          myErrorReporter.report(error);
+          return new ErrorExpression(null, error);
+        } else {
+          return instance;
+        }
+      } else {
+        return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), implBody, getAllBindings()), myEquations);
+      }
     }
 
     CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
