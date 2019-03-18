@@ -1,8 +1,7 @@
 <h1 id="modules-sec">Modules<a class="headerlink" href="#modules-sec" title="Permanent link">&para;</a></h1>
 
-Every definition defined in a file is visible anywhere in this file.
-That is, the order of definitions does not matter.
-The module system allows you to define definitions in other namespaces.
+Every top-level definition is visible throughout the file it is contained, the order of definitions does not matter.
+The module system allows you to provide definitions in other namespaces.
 
 ## Modules
 
@@ -168,7 +167,7 @@ For example, suppose that we have files `A.ard`, `B.ard`, a directory `Dir`, and
 The `\import` command also opens the content of the imported file.
 You can use the same syntax as for `\open` commands to control which definitions will be opened.
 If you want only to import a file and not to open any definitions, you can write `\import X ()`.
-Then you can refer to definitions defined in file `X` by their full names:
+Then you can refer to definitions from the file `X` by their full names:
 
 ```arend
 -- X.ard
