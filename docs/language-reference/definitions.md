@@ -1,9 +1,9 @@
 <h1 id="definitions">Definitions<a class="headerlink" href="#definitions" title="Permanent link">&para;</a></h1>
 
-Arend has the following definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/classes), and [coercions](/language-reference/definitions/coercion).
+Arend supports the following kinds definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/classes), and [coercions](/language-reference/definitions/coercion) definitions.
 Every definition has a name which must be a valid identifier as described [here](/language-reference/lexical-structure/#identifiers).
 Definitions can be referred by their names.
-If we defined a definition named `def`, then we can write the following expression: `def e_1 ... e_n`, where `e_1`, ..., `e_n` are expressions.
+Once we provided a definition named `def`, we can write the following expression: `def e_1 ... e_n`, where `e_1`, ..., `e_n` are expressions.
 Such an expression is called _defcall_.
 Expressions `e_1`, ..., `e_n` are called arguments of this defcall.
 
@@ -14,7 +14,7 @@ This expression is equivalent to `def e_1`.
 
 ## Precedence
 
-To parse expressions which have more than one infix or postfix notations in them, we need to know the precedence of involved definitions.
+To parse expressions which involve more than one infix or postfix notation applications, we need to know the precedence of involved definitions.
 It can be specified by keywords `\fixl` for left associative names, `\fixr` for right associative names, and `\fix` for non-associative names.
 Such a keyword together with a number between 1 and 9 is specified before the name of the definition in its declaration.
 
@@ -26,7 +26,7 @@ The default precedence is `\fixr 10`.
 
 ## Infix operators
 
-A definition can be defined as an _infix operator_.
+A definition can be labeled as an _infix operator_.
 This means that its defcalls are parsed as infix notations even without `` ` ` ``.
 Infix operators are defined by specifying one of keywords `\infixl`, `\infixr`, `\infix` before the name of the definition.
 These keyords have the same syntax and semantics as keywords `\fixl`, `\fixr`, and `\fix` that we described before.
