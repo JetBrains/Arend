@@ -3,7 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
@@ -559,7 +559,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter.report(new ReferenceTypeError(ref));
       return null;
     } else {
-      return new Result(def instanceof EvaluatingBinding ? ((EvaluatingBinding) def).getExpression() : new ReferenceExpression(def), type);
+      return new Result(def instanceof TypedEvaluatingBinding ? ((TypedEvaluatingBinding) def).getExpression() : new ReferenceExpression(def), type);
     }
   }
 
@@ -1717,7 +1717,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       String name = pattern.getReferable().textRepresentation();
-      myContext.put(pattern.getReferable(), new EvaluatingBinding(name, expression, type));
+      myContext.put(pattern.getReferable(), new TypedEvaluatingBinding(name, expression, type));
       return new NameLetClausePattern(name);
     }
 

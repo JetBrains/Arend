@@ -533,11 +533,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (mode == Mode.RNF) {
       return expr;
     }
-    if (expr.getBinding() instanceof LetClause) {
-      return ((LetClause) expr.getBinding()).getExpression().accept(this, mode);
-    }
     if (expr.getBinding() instanceof EvaluatingBinding) {
-      return ((EvaluatingBinding) expr.getBinding()).getExpression();
+      return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, mode);
     }
     return expr;
   }
@@ -636,18 +633,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
-  public Expression visitLet(LetExpression letExpression, Mode mode) {
+  public Expression visitLet(LetExpression let, Mode mode) {
     if (mode == Mode.RNF) {
       ExprSubstitution substitution = new ExprSubstitution();
-      List<LetClause> newClauses = new ArrayList<>(letExpression.getClauses().size());
-      for (LetClause clause : letExpression.getClauses()) {
+      List<LetClause> newClauses = new ArrayList<>(let.getClauses().size());
+      for (LetClause clause : let.getClauses()) {
         LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
         substitution.add(clause, new ReferenceExpression(newClause));
         newClauses.add(newClause);
       }
-      return new LetExpression(newClauses, letExpression.getExpression().accept(this, mode).subst(substitution));
+      return new LetExpression(newClauses, let.getExpression().accept(this, mode).subst(substitution));
     } else {
-      return letExpression.getExpression().subst(letExpression.getClausesSubstitution()).accept(this, mode);
+      return let.getExpression().subst(let.getClausesSubstitution()).accept(this, mode);
     }
   }
 

@@ -5,7 +5,6 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
-import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 
 public class ReferenceExpression extends Expression {
@@ -30,11 +29,11 @@ public class ReferenceExpression extends Expression {
 
   @Override
   public boolean isWHNF() {
-    return !(myBinding instanceof LetClause || myBinding instanceof EvaluatingBinding);
+    return !(myBinding instanceof EvaluatingBinding);
   }
 
   @Override
   public Expression getStuckExpression() {
-    return myBinding instanceof LetClause || myBinding instanceof EvaluatingBinding ? null : this;
+    return myBinding instanceof EvaluatingBinding ? null : this;
   }
 }

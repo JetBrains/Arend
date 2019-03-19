@@ -137,7 +137,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitLet(LetExpression expr, Void params) {
-    return expr.getExpression().accept(this, null).subst(expr.getClausesSubstitution());
+    return expr.getExpression().accept(this, null);
   }
 
   @Override
