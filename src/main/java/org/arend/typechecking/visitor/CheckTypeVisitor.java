@@ -692,9 +692,20 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return link;
   }
 
-  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param, List<Sort> sorts) {
+  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param, List<Sort> sorts, Type expectedType) {
     Type argResult = checkType(param.getType(), ExpectedType.OMEGA);
     if (argResult == null) return null;
+    if (expectedType != null) {
+      Expression expected = expectedType.getExpr().normalize(NormalizeVisitor.Mode.WHNF);
+      if (expected.isInstance(ClassCallExpression.class) ||
+          expected.isInstance(PiExpression.class) ||
+          expected.isInstance(SigmaExpression.class) ||
+          expected.isInstance(UniverseExpression.class)) {
+        if (expected.isLessOrEquals(argResult.getExpr(), myEquations, param)) {
+          argResult = expectedType;
+        }
+      }
+    }
     if (sorts != null) {
       sorts.add(argResult.getSortOfType());
     }
@@ -781,7 +792,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1), expr);
       }
     } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
+      PiExpression piExpectedType = expectedType == null ? null : expectedType.checkedCast(PiExpression.class);
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piExpectedType == null || piExpectedType.getParameters().isExplicit() != param.getExplicit() ? null : piExpectedType.getParameters().getType());
       if (link == null) {
         return null;
       }
@@ -810,7 +822,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             argExpr = argType;
           }
 
-          PiExpression piExpectedType = expectedType.cast(PiExpression.class);
+          piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
           if (piExpectedType.getParameters().isExplicit() && !param.getExplicit()) {
             myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
@@ -888,7 +900,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : expr.getParameters()) {
-          SingleDependentLink link = visitTypeParameter(arg, sorts);
+          SingleDependentLink link = visitTypeParameter(arg, sorts, null);
           if (link == null) {
             return null;
           }
@@ -1658,7 +1670,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (param instanceof Concrete.NameParameter) {
       return bodyToLam(visitNameParameter((Concrete.NameParameter) param, argIndex, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, null);
       return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + param.getNumberOfParameters()), letClause);
     } else {
       throw new IllegalStateException();

@@ -15,6 +15,7 @@ import static org.arend.ExpressionFactory.Pi;
 import static org.arend.ExpressionFactory.Universe;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 import static org.arend.core.expr.ExpressionFactory.singleParams;
+import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -125,5 +126,16 @@ public class Lambda extends TypeCheckingTestCase {
   public void lambdaUniverse() {
     CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : \\oo-Type1 -> \\oo-Type2) (y : \\oo-Type0) => x y", null);
     assertEquals(result.type, Pi(singleParam(null, Pi(Universe(1), Universe(2))), Pi(singleParam(null, Universe(0)), Universe(2))));
+  }
+
+  @Test
+  public void typedLambda() {
+    typeCheckExpr("\\lam (X : \\Type1) => X", Pi(singleParams(true, vars("x"), Universe(0)), Universe(1)));
+  }
+
+  @Test
+  public void typedLambdaError() {
+    typeCheckExpr("\\lam (X : \\Type0) => X", Pi(singleParams(true, vars("x"), Universe(1)), Universe(1)), 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }
