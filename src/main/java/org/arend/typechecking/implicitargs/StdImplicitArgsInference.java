@@ -248,6 +248,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           if (!parameter.isExplicit() && expr.getArguments().get(current).isExplicit()) {
             List<? extends DependentLink> implicitParameters = result.getImplicitParameters();
             result = fixImplicitArgs(result, implicitParameters, fun, false);
+            parameter = result.getParameter();
             numberOfImplicitArguments += implicitParameters.size();
           }
           if (current + numberOfImplicitArguments >= i) {
