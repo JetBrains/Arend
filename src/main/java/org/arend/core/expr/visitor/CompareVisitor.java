@@ -187,7 +187,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     while (expr1.isInstance(InferenceReferenceExpression.class)) {
       InferenceReferenceExpression infRefExpr = expr1.cast(InferenceReferenceExpression.class);
       if (infRefExpr.getVariable() != null) {
-        return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), myCMP, infRefExpr.getVariable().getSourceNode(), infRefExpr.getVariable(), expr2.getStuckInferenceVariable());
+        return myEquations.addEquation(infRefExpr, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), myCMP, infRefExpr.getVariable().getSourceNode(), infRefExpr.getVariable(), expr2.getStuckInferenceVariable());
       }
       expr1 = infRefExpr.getSubstExpression();
     }
@@ -195,7 +195,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     while (expr2.isInstance(InferenceReferenceExpression.class)) {
       InferenceReferenceExpression infRefExpr = expr2.cast(InferenceReferenceExpression.class);
       if (infRefExpr.getVariable() != null) {
-        return myEquations.addEquation(expr1, expr2, myCMP, infRefExpr.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr.getVariable());
+        return myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr, myCMP, infRefExpr.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr.getVariable());
       }
       expr2 = infRefExpr.getSubstExpression();
     }
