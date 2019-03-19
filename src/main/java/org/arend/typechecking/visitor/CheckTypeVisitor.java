@@ -1695,22 +1695,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  /*
-  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.getReferable() != null) {
-      return new NameLetClausePattern(pattern.getReferable().textRepresentation());
-    }
-
-    List<Pair<ClassField,LetClausePattern>> patterns = new ArrayList<>(pattern.getPatterns().size());
-    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-      patterns.add(new Pair<>(typecheckLetClausePattern(subPattern)));
-    }
-    return new LetClausePattern(patterns);
-  }
-  */
-
   private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
     if (pattern.getReferable() != null) {
+      if (pattern.type != null) {
+        Type typeResult = checkType(pattern.type, ExpectedType.OMEGA);
+        if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, pattern.type)) {
+          myErrorReporter.report(new TypeMismatchError(typeResult.getExpr(), type, pattern.type));
+        }
+      }
+
       String name = pattern.getReferable().textRepresentation();
       myContext.put(pattern.getReferable(), new EvaluatingBinding(name, expression, type));
       return new NameLetClausePattern(name);
