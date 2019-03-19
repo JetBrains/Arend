@@ -230,4 +230,88 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   public void recordExplicitClassifyingField() {
     typeCheckModule("\\record C (n : Nat) (\\classifying A : \\Type) | a : A -> 0 = n", 1);
   }
+
+  @Test
+  public void tailImplicitParameters() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\instance cc : C | nn => 3\n" +
+      "\\record R {x : C}\n" +
+      "\\func f (r : R) : r.x.nn = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void tailImplicitParametersArgs() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\instance cc : C | nn => 3\n" +
+      "\\record R (n : Nat) {x : C}\n" +
+      "\\func f (r : R 0) : r.x.nn = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void tailImplicitParametersClassified() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | xx : X\n" +
+      "\\instance cc : C Nat | xx => 3\n" +
+      "\\record R {x : C Nat}\n" +
+      "\\func f (r : R) : r.x.xx = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void tailImplicitParametersClassifiedArgs() {
+    typeCheckModule(
+      "\\class C (X : \\Type) | xx : X\n" +
+      "\\instance cc : C Nat | xx => 3\n" +
+      "\\record R (n : Nat) {x : C Nat}\n" +
+      "\\func f (r : R 0) : r.x.xx = 3 => path (\\lam _ => 3)");
+  }
+
+  @Test
+  public void tailImplicitParametersExt() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\record R {x : C}\n" +
+      "\\func f => R {}");
+  }
+
+  @Test
+  public void tailImplicitParametersArgsExt() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\record R (n : Nat) {x : C}\n" +
+      "\\func f => R 0 {}");
+  }
+
+  @Test
+  public void tailImplicitParametersExtError() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\record R {x : C}\n" +
+      "\\func f => R", 1);
+  }
+
+  @Test
+  public void tailImplicitParametersArgsExtError() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\record R (n : Nat) {x : C}\n" +
+      "\\func f => R 0", 1);
+  }
+
+  @Test
+  public void tailRecordImplicitParameters() {
+    typeCheckModule(
+      "\\record R (x : Nat)\n" +
+      "\\class C (x : Nat) {y : R}\n" +
+      "\\func f => C 0");
+  }
+
+  @Test
+  public void notTailImplicitParametersExtError() {
+    typeCheckModule(
+      "\\class C | nn : Nat\n" +
+      "\\record R {x : C} (y : Nat)\n" +
+      "\\func f => R {\\new C 0} { | y => 0}");
+  }
 }
