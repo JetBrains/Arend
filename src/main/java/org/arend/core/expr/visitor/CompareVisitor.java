@@ -184,7 +184,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   public Boolean compare(Expression expr1, Expression expr2) {
-    return nonNormalizingCompare(expr1, expr2) || normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF));
+    while (expr1.isInstance(InferenceReferenceExpression.class)) {
+      InferenceReferenceExpression infRefExpr = expr1.cast(InferenceReferenceExpression.class);
+      if (infRefExpr.getVariable() != null) {
+        return myEquations.addEquation(expr1, expr2.subst(getSubstitution()), myCMP, infRefExpr.getVariable().getSourceNode(), infRefExpr.getVariable(), expr2.getStuckInferenceVariable());
+      }
+      expr1 = infRefExpr.getSubstExpression();
+    }
+
+    while (expr2.isInstance(InferenceReferenceExpression.class)) {
+      InferenceReferenceExpression infRefExpr = expr2.cast(InferenceReferenceExpression.class);
+      if (infRefExpr.getVariable() != null) {
+        return myEquations.addEquation(expr1, expr2, myCMP, infRefExpr.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr.getVariable());
+      }
+      expr2 = infRefExpr.getSubstExpression();
+    }
+
+    InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();
+    InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
+    if (stuckVar1 != stuckVar2 && myEquations == DummyEquations.getInstance()) {
+      return false;
+    }
+    if (stuckVar1 == stuckVar2 && nonNormalizingCompare(expr1, expr2)) {
+      return true;
+    }
+
+    return normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF));
   }
 
   private Boolean compareUnit(ClassCallExpression type1, Expression expr2, boolean correctOrder) {
@@ -560,7 +585,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
-    return expr1.getSubstExpression() != null && expr1.getSubstExpression().accept(this, expr2);
+    if (expr1.getSubstExpression() == null) {
+      return expr2.isInstance(InferenceReferenceExpression.class) && expr2.cast(InferenceReferenceExpression.class).getVariable() == expr1.getVariable();
+    } else {
+      return expr1.getSubstExpression().accept(this, expr2);
+    }
   }
 
   private Boolean visitLam(LamExpression expr1, Expression expr2, boolean correctOrder) {
