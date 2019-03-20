@@ -1,23 +1,6 @@
 <h1 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
 
-Data definitions allow us to define (higher) inductive types.
-Each data definition has several constructors.
-Constructors belong to the [module](/language-reference/definitions/modules) associated to the data definition, but they are also visible in the module in which the data type is defined:
-
-```arend
-\data D | con1 | con2
-
-\func f => con1
-\func g => con2
-\func f' => D.con1
-\func g' => D.con2
-```
-
-In the example above, we defined a data type `D` with two constructors `con1` and `con2`.
-Functions `f` and `f'` (as well as `g` and `g'`) are equivalent.
-
-## Syntax
-
+Data definitions represent (higher) inductive types.
 The basic syntax of a data definition looks like this:
 
 ```arend
@@ -54,7 +37,8 @@ Constructor `cons'` has only two implicit parameters of types `A` and `B`.
 
 The type of a [defcall](/language-reference/expressions/#defcalls) `con_i {a_1} ... {a_n} b_1 ... b_{k_i}` is `D a_1 ... a_n`.
 The type of a defcall `D a_1 ... a_n` is of the form [\h-Type p](/language-reference/expressions/universes).
-Levels `h` and `p` are calculated automatically, but you can also specify explicitly the level of a data type:
+Levels `h` and `p` are inferred automatically and may depend on levels of `a_1,...a_n`.
+Alternatively, these levels can be fixed and specified explicitly in the definition of a data type:
 
 ```arend
 \data D p_1 ... p_n : \h-Type p
@@ -63,7 +47,21 @@ Levels `h` and `p` are calculated automatically, but you can also specify explic
   | con_m p^m_1 ... p^m_{k_m}
 ```
 
-If the actual type of `D` does not fit into the specified levels, the typechecker will generate an error message.
+If the actual type of `D` does not always fit into the specified levels, the typechecker will generate an error message.
+
+Constructors belong to the [module](/language-reference/definitions/modules) associated to the data definition, but they are also visible in the module in which the data type is defined:
+
+```arend
+\data D | con1 | con2
+
+\func f => con1
+\func g => con2
+\func f' => D.con1
+\func g' => D.con2
+```
+
+In the example above, we defined a data type `D` with two constructors `con1` and `con2`.
+Functions `f` and `f'` (as well as `g` and `g'`) are equivalent.
 
 ## Inductive definitions
 
@@ -79,8 +77,8 @@ The set of such positions is defined inductively:
 
 ## Truncation
 
-You can truncate data types to a specified homotopy level which is less than its actual level.
-To do this, specify explicitly the type of a data definition and write keyword `\truncated` before the definition:
+Data types can be truncated to a specified homotopy level, which is less than its actual level.
+This is done by specifying explicitly the type of a data definition and writing the keyword `\truncated` before the definition:
 
 ```arend
 \truncated \data D p_1 ... p_n : \h-Type p
@@ -111,12 +109,14 @@ Consider the following example:
   | witness n p => path (\lam _ => 0)
 ```
 
-The data type `Exists` defines a proposition 'There is an `a : A` such that `B a`'.
-The function `extract` which extracts a natural number from the proof that there exists a natural number which equals to 3 is incorrect,
-but functions `existsSuc` and `existsEq` which construct another proofs are accepted.
+The data type `Exists` defines a proposition 'There is an `a : A` such that `B a`'. Note that a function like
+`extract`, which extracts `n : Nat` such that `n=3` out of a proof of `Exists (n:Nat) (n=3)`, is not valid
+as its result type `Nat` is of homotopy level of a set (h=0), which is greater than the homotopy level of a 
+proposition (h=-1). Two other functions `existsSuc` and `existsEq` in the example above are correct as 
+their result types, `Exists (n : Nat) (suc n = 4)` and `0=0` respectively, are propositions.
 
-A truncated data type is (provably) equivalent to the truncation of the untrancated version of this data type.
-So, this is simply a syntax sugar that allows you to define functions over a truncated data type more easily.
+A truncated data type is (provably) equivalent to the truncation of the untruncated version of this data type.
+So, this is simply a syntactic sugar that allows you to define functions over a truncated data type more easily.
 
 ## Induction-induction and induction-recursion
 
