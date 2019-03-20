@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -11,12 +12,10 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.LocalError;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
+  private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
   private final LocalErrorReporter myErrorReporter;
 
   public StripVisitor(LocalErrorReporter errorReporter) {
@@ -80,6 +79,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
+    if (expr.getBinding() instanceof EvaluatingBinding && !myBoundEvaluatingBindings.contains(expr.getBinding())) {
+      return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
+    }
     return expr;
   }
 
@@ -154,9 +156,12 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public LetExpression visitLet(LetExpression expr, Void params) {
     for (LetClause clause : expr.getClauses()) {
       clause.setExpression(clause.getExpression().accept(this, null));
+      myBoundEvaluatingBindings.add(clause);
     }
 
-    return new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
+    LetExpression result = new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
+    myBoundEvaluatingBindings.removeAll(expr.getClauses());
+    return result;
   }
 
   @Override

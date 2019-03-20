@@ -2,7 +2,7 @@ package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -208,7 +208,7 @@ public class PatternTypechecking {
     for (Concrete.TypedReferable typedReferable : asPatterns) {
       Type type = typecheckType(typedReferable.type, expectedType);
       if (typedReferable.referable != null) {
-        myContext.put(typedReferable.referable, new EvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
+        myContext.put(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
       }
     }
   }

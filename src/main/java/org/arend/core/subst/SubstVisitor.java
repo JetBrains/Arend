@@ -105,7 +105,12 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       return expr.getSubstExpression().accept(this, null);
     }
     Expression result = myExprSubstitution.get(expr.getVariable());
-    return result != null ? result : expr;
+    if (result != null) {
+      return result;
+    }
+    //noinspection SuspiciousMethodCalls
+    expr.getVariable().getBounds().removeAll(myExprSubstitution.getKeys());
+    return expr;
   }
 
   @Override

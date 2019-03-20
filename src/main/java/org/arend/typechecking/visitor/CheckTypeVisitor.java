@@ -3,7 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
@@ -559,7 +559,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       myErrorReporter.report(new ReferenceTypeError(ref));
       return null;
     } else {
-      return new Result(def instanceof EvaluatingBinding ? ((EvaluatingBinding) def).getExpression() : new ReferenceExpression(def), type);
+      return new Result(def instanceof TypedEvaluatingBinding ? ((TypedEvaluatingBinding) def).getExpression() : new ReferenceExpression(def), type);
     }
   }
 
@@ -692,9 +692,20 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return link;
   }
 
-  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param, List<Sort> sorts) {
+  private SingleDependentLink visitTypeParameter(Concrete.TypeParameter param, List<Sort> sorts, Type expectedType) {
     Type argResult = checkType(param.getType(), ExpectedType.OMEGA);
     if (argResult == null) return null;
+    if (expectedType != null) {
+      Expression expected = expectedType.getExpr().normalize(NormalizeVisitor.Mode.WHNF);
+      if (expected.isInstance(ClassCallExpression.class) ||
+          expected.isInstance(PiExpression.class) ||
+          expected.isInstance(SigmaExpression.class) ||
+          expected.isInstance(UniverseExpression.class)) {
+        if (expected.isLessOrEquals(argResult.getExpr(), myEquations, param)) {
+          argResult = expectedType;
+        }
+      }
+    }
     if (sorts != null) {
       sorts.add(argResult.getSortOfType());
     }
@@ -781,7 +792,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return bodyToLam(link, visitLam(parameters.subList(1, parameters.size()), expr, piParams.getNext().hasNext() ? new PiExpression(piExpectedType.getResultSort(), piParams.getNext(), codomain) : codomain, argIndex + 1), expr);
       }
     } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
+      PiExpression piExpectedType = expectedType == null ? null : expectedType.checkedCast(PiExpression.class);
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piExpectedType == null || piExpectedType.getParameters().isExplicit() != param.getExplicit() ? null : piExpectedType.getParameters().getType());
       if (link == null) {
         return null;
       }
@@ -810,7 +822,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             argExpr = argType;
           }
 
-          PiExpression piExpectedType = expectedType.cast(PiExpression.class);
+          piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
           if (piExpectedType.getParameters().isExplicit() && !param.getExplicit()) {
             myErrorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
@@ -888,7 +900,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.TypeParameter arg : expr.getParameters()) {
-          SingleDependentLink link = visitTypeParameter(arg, sorts);
+          SingleDependentLink link = visitTypeParameter(arg, sorts, null);
           if (link == null) {
             return null;
           }
@@ -1517,7 +1529,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-      return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, ((ClassCallExpression) type).getDefinition().getReferable(), implBody, getAllBindings()), myEquations);
+      ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
+      if (classDef.getClassifyingField() == null) {
+        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody);
+        if (instance == null) {
+          ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, new Expression[0]);
+          myErrorReporter.report(error);
+          return new ErrorExpression(null, error);
+        } else {
+          return instance;
+        }
+      } else {
+        return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), implBody, getAllBindings()), myEquations);
+      }
     }
 
     CheckTypeVisitor.Result result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
@@ -1646,7 +1670,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (param instanceof Concrete.NameParameter) {
       return bodyToLam(visitNameParameter((Concrete.NameParameter) param, argIndex, letClause), typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + 1), letClause);
     } else if (param instanceof Concrete.TypeParameter) {
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null);
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, null);
       return link == null ? null : bodyToLam(link, typecheckLetClause(parameters.subList(1, parameters.size()), letClause, argIndex + param.getNumberOfParameters()), letClause);
     } else {
       throw new IllegalStateException();
@@ -1683,24 +1707,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  /*
-  private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.getReferable() != null) {
-      return new NameLetClausePattern(pattern.getReferable().textRepresentation());
-    }
-
-    List<Pair<ClassField,LetClausePattern>> patterns = new ArrayList<>(pattern.getPatterns().size());
-    for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
-      patterns.add(new Pair<>(typecheckLetClausePattern(subPattern)));
-    }
-    return new LetClausePattern(patterns);
-  }
-  */
-
   private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
     if (pattern.getReferable() != null) {
+      if (pattern.type != null) {
+        Type typeResult = checkType(pattern.type, ExpectedType.OMEGA);
+        if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, pattern.type)) {
+          myErrorReporter.report(new TypeMismatchError(typeResult.getExpr(), type, pattern.type));
+        }
+      }
+
       String name = pattern.getReferable().textRepresentation();
-      myContext.put(pattern.getReferable(), new EvaluatingBinding(name, expression, type));
+      myContext.put(pattern.getReferable(), new TypedEvaluatingBinding(name, expression, type));
       return new NameLetClausePattern(name);
     }
 

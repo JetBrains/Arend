@@ -26,6 +26,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
 
   public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, LocalErrorReporter errorReporter) {
     definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
+    definition.setDesugarized();
   }
 
   private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
@@ -56,6 +57,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       def.enclosingClass = null;
     }
 
+    // Process expressions
+    super.visitFunction(def, null);
+
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
@@ -67,13 +71,14 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       }
     }
 
-    // Process expressions
-    super.visitFunction(def, null);
     return null;
   }
 
   @Override
   public Void visitData(Concrete.DataDefinition def, Void params) {
+    // Process expressions
+    super.visitData(def, null);
+
     // Add this parameter
     Referable thisParameter = checkDefinition(def);
     if (thisParameter != null) {
@@ -85,8 +90,6 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
       }
     }
 
-    // Process expressions
-    super.visitData(def, null);
     return null;
   }
 
@@ -137,47 +140,100 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
     return null;
   }
 
-  @Override
-  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+  private Concrete.Expression visitApp(Concrete.ReferenceExpression fun, List<Concrete.Argument> arguments, Concrete.Expression expr, boolean inferTailImplicits) {
+    Referable ref = fun.getReferent();
+    if (!(ref instanceof ClassReferable)) {
+      return expr;
+    }
+
     // Convert class call with arguments to class extension.
-    expr = (Concrete.AppExpression) super.visitApp(expr, null);
-    Concrete.Expression fun = expr.getFunction();
-    if (fun instanceof Concrete.ReferenceExpression) {
-      Referable ref = ((Concrete.ReferenceExpression) fun).getReferent();
-      if (ref instanceof ClassReferable) {
-        List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
-        Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
-        Iterator<FieldReferable> it = notImplementedFields.iterator();
-        for (int i = 0; i < expr.getArguments().size(); i++) {
-          if (!it.hasNext()) {
-            myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), expr.getArguments().get(i).expression));
-            break;
-          }
+    List<Concrete.ClassFieldImpl> classFieldImpls = new ArrayList<>();
+    Set<FieldReferable> notImplementedFields = ClassReferable.Helper.getNotImplementedFields((ClassReferable) ref);
+    Iterator<FieldReferable> it = notImplementedFields.iterator();
+    for (int i = 0; i < arguments.size(); i++) {
+      if (!it.hasNext()) {
+        myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
+        break;
+      }
 
-          FieldReferable fieldRef = it.next();
-          boolean fieldExplicit = fieldRef.isExplicitField();
-          if (fieldExplicit && !expr.getArguments().get(i).isExplicit()) {
-            myErrorReporter.report(new TypecheckingError("Expected an explicit argument", expr.getArguments().get(i).expression));
-            while (i < expr.getArguments().size() && !expr.getArguments().get(i).isExplicit()) {
-              i++;
-            }
-            if (i == expr.getArguments().size()) {
-              break;
-            }
-          }
-
-          Concrete.Expression argument = expr.getArguments().get(i).expression;
-          if (fieldExplicit == expr.getArguments().get(i).isExplicit()) {
-            classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, argument, Collections.emptyList()));
-          } else {
-            classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
-            i--;
-          }
+      FieldReferable fieldRef = it.next();
+      boolean fieldExplicit = fieldRef.isExplicitField();
+      if (fieldExplicit && !arguments.get(i).isExplicit()) {
+        myErrorReporter.report(new TypecheckingError("Expected an explicit argument", arguments.get(i).expression));
+        while (i < arguments.size() && !arguments.get(i).isExplicit()) {
+          i++;
         }
-        return Concrete.ClassExtExpression.make(expr.getData(), fun, classFieldImpls);
+        if (i == arguments.size()) {
+          break;
+        }
+      }
+
+      Concrete.Expression argument = arguments.get(i).expression;
+      if (fieldExplicit == arguments.get(i).isExplicit()) {
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, argument, Collections.emptyList()));
+      } else {
+        classFieldImpls.add(new Concrete.ClassFieldImpl(argument.getData(), fieldRef, new Concrete.HoleExpression(argument.getData()), Collections.emptyList()));
+        i--;
       }
     }
-    return expr;
+
+    if (inferTailImplicits) {
+      while (it.hasNext()) {
+        FieldReferable fieldRef = it.next();
+        if (fieldRef.isExplicitField() || !fieldRef.isParameterField()) {
+          break;
+        }
+        ClassReferable classRef = fieldRef.getTypeClassReference();
+        if (classRef == null || myConcreteProvider.isRecord(classRef)) {
+          break;
+        }
+
+        Object data = arguments.isEmpty() ? fun.getData() : arguments.get(arguments.size() - 1).getExpression().getData();
+        classFieldImpls.add(new Concrete.ClassFieldImpl(data, fieldRef, new Concrete.HoleExpression(data), Collections.emptyList()));
+      }
+    }
+
+    return classFieldImpls.isEmpty() ? fun : Concrete.ClassExtExpression.make(expr.getData(), fun, classFieldImpls);
+  }
+
+  @Override
+  public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    return visitApp(expr, Collections.emptyList(), expr, true);
+  }
+
+  @Override
+  public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
+    if (!(expr.getFunction() instanceof Concrete.ReferenceExpression)) {
+      return super.visitApp(expr, null);
+    }
+
+    for (Concrete.Argument argument : expr.getArguments()) {
+      argument.expression = argument.expression.accept(this, null);
+    }
+    return visitApp((Concrete.ReferenceExpression) expr.getFunction(), expr.getArguments(), expr, true);
+  }
+
+  @Override
+  public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
+    Concrete.Expression classExpr = expr.getBaseClassExpression();
+    if (classExpr instanceof Concrete.ReferenceExpression) {
+      visitClassFieldImpls(expr.getStatements(), null);
+      return expr;
+    }
+    if (classExpr instanceof Concrete.AppExpression) {
+      Concrete.AppExpression appExpr = (Concrete.AppExpression) classExpr;
+      if (appExpr.getFunction() instanceof Concrete.ReferenceExpression) {
+        for (Concrete.Argument argument : appExpr.getArguments()) {
+          argument.expression = argument.expression.accept(this, null);
+        }
+        expr.setBaseClassExpression(visitApp((Concrete.ReferenceExpression) appExpr.getFunction(), appExpr.getArguments(), appExpr, false));
+      } else {
+        expr.setBaseClassExpression(super.visitApp(appExpr, null));
+      }
+      visitClassFieldImpls(expr.getStatements(), null);
+      return expr;
+    }
+    return super.visitClassExt(expr, params);
   }
 
   private void visitPatterns(List<Concrete.Pattern> patterns) {
