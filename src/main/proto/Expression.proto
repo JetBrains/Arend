@@ -76,6 +76,7 @@ message Expression {
         Expression body = 2;
     }
     message Let {
+        bool is_strict = 4;
         repeated Clause clause = 1;
         Pattern pattern = 3;
         Expression expression = 2;

@@ -57,6 +57,10 @@ public class ExpressionFactory {
     return new LetClause(name, new NameLetClausePattern(name), expression);
   }
 
+  public static LetExpression let(List<LetClause> clauses, Expression expression) {
+    return new LetExpression(false, clauses, expression);
+  }
+
   public static List<String> vars(String... vars) {
     return Arrays.asList(vars);
   }

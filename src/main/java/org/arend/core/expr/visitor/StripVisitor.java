@@ -159,7 +159,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
       myBoundEvaluatingBindings.add(clause);
     }
 
-    LetExpression result = new LetExpression(expr.getClauses(), expr.getExpression().accept(this, null));
+    LetExpression result = new LetExpression(expr.isStrict(), expr.getClauses(), expr.getExpression().accept(this, null));
     myBoundEvaluatingBindings.removeAll(expr.getClauses());
     return result;
   }

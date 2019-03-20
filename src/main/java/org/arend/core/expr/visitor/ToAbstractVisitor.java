@@ -559,7 +559,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
 
     Concrete.Expression expr = letExpression.getExpression().accept(this, null);
-    return clauses.isEmpty() ? expr : cLet(clauses, expr);
+    return clauses.isEmpty() ? expr : new Concrete.LetExpression(null, letExpression.isStrict(), clauses, expr);
   }
 
   @Override

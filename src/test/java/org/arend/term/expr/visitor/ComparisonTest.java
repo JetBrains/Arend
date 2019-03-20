@@ -8,7 +8,6 @@ import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.LetExpression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.sort.Sort;
@@ -133,10 +132,10 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void letsNotEqual() {
     SingleDependentLink y = singleParam("y", Nat());
     LetClause let1 = let("x", Lam(y, Ref(y)));
-    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
+    Expression expr1 = let(lets(let1), Apps(Ref(let1), Zero()));
     SingleDependentLink y_ = singleParam("y", Universe(0));
     LetClause let2 = let("x", Lam(y_, Ref(y_)));
-    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Nat()));
+    Expression expr2 = let(lets(let2), Apps(Ref(let2), Nat()));
     assertNotEquals(expr1, expr2);
   }
 
@@ -147,9 +146,9 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink y = singleParam("y", Ref(A));
     SingleDependentLink z = singleParam("z", Ref(A));
     LetClause let1 = let("x", Lam(yz, Ref(A)));
-    Expression expr1 = new LetExpression(lets(let1), Apps(Ref(let1), Zero()));
+    Expression expr1 = let(lets(let1), Apps(Ref(let1), Zero()));
     LetClause let2 = let("x", Lam(y, Lam(z, Ref(A))));
-    Expression expr2 = new LetExpression(lets(let2), Apps(Ref(let2), Zero()));
+    Expression expr2 = let(lets(let2), Apps(Ref(let2), Zero()));
     assertEquals(expr1, expr2);
     assertEquals(expr2, expr1);
   }
@@ -157,16 +156,16 @@ public class ComparisonTest extends TypeCheckingTestCase {
   @Test
   public void letsNotEquiv() {
     LetClause let1 = let("x", Universe(0));
-    Expression expr1 = new LetExpression(lets(let1), Ref(let1));
+    Expression expr1 = let(lets(let1), Ref(let1));
     LetClause let2 = let("x", Universe(1));
-    Expression expr2 = new LetExpression(lets(let2), Ref(let2));
+    Expression expr2 = let(lets(let2), Ref(let2));
     assertNotEquals(expr1, expr2);
   }
 
   @Test
   public void letsLess() {
-    Expression expr1 = new LetExpression(lets(let("x", Nat())), Universe(0));
-    Expression expr2 = new LetExpression(lets(let("x", Nat())), Universe(1));
+    Expression expr1 = let(lets(let("x", Nat())), Universe(0));
+    Expression expr2 = let(lets(let("x", Nat())), Universe(1));
     assertTrue(compare(expr1, expr2, Equations.CMP.LE));
   }
 

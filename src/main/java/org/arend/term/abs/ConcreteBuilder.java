@@ -694,7 +694,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitLet(@Nullable Object data, @Nonnull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, Void params) {
+  public Concrete.Expression visitLet(@Nullable Object data, boolean isStrict, @Nonnull Collection<? extends Abstract.LetClause> absClauses, @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, Void params) {
     if (expression == null) {
       throwError(errorData);
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
@@ -729,7 +729,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
 
     reportError(errorData);
-    return new Concrete.LetExpression(data, clauses, expression.accept(this, null));
+    return new Concrete.LetExpression(data, isStrict, clauses, expression.accept(this, null));
   }
 
   @Override

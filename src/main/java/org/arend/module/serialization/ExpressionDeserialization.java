@@ -326,7 +326,7 @@ class ExpressionDeserialization {
       registerBinding(clause);
       clauses.add(clause);
     }
-    return new LetExpression(clauses, readExpr(proto.getExpression()));
+    return new LetExpression(proto.getIsStrict(), clauses, readExpr(proto.getExpression()));
   }
 
   private LetClausePattern readLetClausePattern(ExpressionProtos.Expression.Let.Pattern proto) throws DeserializationException {

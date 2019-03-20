@@ -116,7 +116,7 @@ expr  : NEW? appExpr (implementStatements argument*)?                           
       | '\\Pi' tele+ '->' expr                                                                          # pi
       | '\\Sigma' tele*                                                                                 # sigma
       | '\\lam' tele+ '=>' expr                                                                         # lam
-      | '\\let' '|'? letClause ('|' letClause)* '\\in' expr                                             # let
+      | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr                                        # let
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
       ;
 
@@ -222,6 +222,8 @@ fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
           | '{' CLASSIFYING? ID+ ':' expr '}'        # implicitFieldTele
           ;
 
+LET : '\\let';
+LETS : '\\let!';
 AS : '\\as';
 USING : '\\using';
 TRUNCATED : '\\truncated';

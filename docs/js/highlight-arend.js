@@ -13,7 +13,7 @@ hljs.registerLanguage("arend", function (hljs) {
         "=> -> : | " +
         "\\lp \\lh \\level \\suc \\max " +
         "\\Prop \\Set \\Set0 \\h-Type \\1-Type \\2-Type \\3-Type \\oo-Type \\Type \\use \\coerce " +
-        "\\let \\in " +
+        "\\let \\let! \\in " +
         "\\case \\return \\elim \\with " +
         "\\where \\truncated \\cowith \\extends " +
         "\\field \\property \\this " +

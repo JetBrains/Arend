@@ -1781,7 +1781,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (LetClause clause : clauses) {
         substitution.add(clause, clause.getExpression().subst(substitution));
       }
-      return new Result(new LetExpression(clauses, result.expression), result.type.subst(substitution));
+      return new Result(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
     }
   }
 

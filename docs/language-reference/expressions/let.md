@@ -24,3 +24,7 @@ Such a clause is equivalent to `| x_i => \lam p^i_1 ... p^i_{n_i} => e_i`.
 The expression `\let | x_1 => e_1 ... | x_n => e_n \in e` has type `\let | x_1 => e_1 ... | x_n => e_n \in E`.
 It reduces to `e[e_1/x_1, ... e_n/x_n]`.
 If `x_i` is not a variable, then corresponding variables are replaced with projections of `e_i`.
+
+Let expressions also can be _strict_.
+This means that expressions `e_1`, ... `e_n` will be evaluated immediately when the let expression is evaluated.
+To define a strict let expression, use the keyword `\let!` instead of `\let`.

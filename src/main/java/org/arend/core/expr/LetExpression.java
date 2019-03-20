@@ -14,12 +14,18 @@ import java.util.List;
 import java.util.Map;
 
 public class LetExpression extends Expression {
+  private final boolean myStrict;
   private final List<LetClause> myClauses;
   private final Expression myExpression;
 
-  public LetExpression(List<LetClause> clauses, Expression expression) {
+  public LetExpression(boolean isStrict, List<LetClause> clauses, Expression expression) {
+    myStrict = isStrict;
     myClauses = clauses;
     myExpression = expression;
+  }
+
+  public boolean isStrict() {
+    return myStrict;
   }
 
   public List<LetClause> getClauses() {

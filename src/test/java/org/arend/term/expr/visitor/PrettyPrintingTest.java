@@ -81,7 +81,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     SingleDependentLink A = singleParam("A", Universe(0));
     SingleDependentLink y = singleParam("y", Ref(A));
     LetClause clause = let("x", Lam(A, Lam(y, Ref(y))));
-    LetExpression expr = new LetExpression(lets(clause), Apps(Ref(clause), Zero()));
+    LetExpression expr = let(lets(clause), Apps(Ref(clause), Zero()));
     expr.prettyPrint(new StringBuilder(), PrettyPrinterConfig.DEFAULT);
   }
 

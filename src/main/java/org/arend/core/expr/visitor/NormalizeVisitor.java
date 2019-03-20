@@ -642,9 +642,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         substitution.add(clause, new ReferenceExpression(newClause));
         newClauses.add(newClause);
       }
-      return new LetExpression(newClauses, let.getExpression().accept(this, mode).subst(substitution));
+      return new LetExpression(let.isStrict(), newClauses, let.getExpression().accept(this, mode).subst(substitution));
     } else {
-      return let.getExpression().subst(let.getClausesSubstitution()).accept(this, mode);
+      return let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()).accept(this, mode) : let.getExpression().accept(this, mode);
     }
   }
 
