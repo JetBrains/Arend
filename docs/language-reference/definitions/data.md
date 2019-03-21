@@ -1,6 +1,7 @@
-<h1 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
+<h1 id="data">Inductive types<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
 
-Data definitions represent (higher) inductive types.
+Inductive and [higher inductive](/language-reference/definitions/#hits) types are represented
+by data definitions.
 The basic syntax of a data definition looks like this:
 
 ```arend
@@ -109,7 +110,7 @@ Consider the following example:
   | witness n p => path (\lam _ => 0)
 ```
 
-The data type `Exists` defines a proposition 'There is an `a : A` such that `B a`'. Note that a function like
+The data type `Exists` defines a proposition of the form 'There is an `a : A` such that `B a`'. Note that a function like
 `extract`, which extracts `n : Nat` such that `n=3` out of a proof of `Exists (n:Nat) (n=3)`, is not valid
 as its result type `Nat` is of homotopy level of a set (h=0), which is greater than the homotopy level of a 
 proposition (h=-1). Two other functions `existsSuc` and `existsEq` in the example above are correct as 
@@ -181,3 +182,4 @@ It is also possible to define several constructors in a single clause as follows
 ```
 
 This definition is equivalent to the previous one.
+

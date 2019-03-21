@@ -1,11 +1,16 @@
 <h1 id="hits">Higher Inductive Types<a class="headerlink" href="#hits" title="Permanent link">&para;</a></h1>
 
-Higher inductive types generalize ordinary [inductive types](/language-reference/definitions/data).
-They allow us to define various (higher) colimits of types and other constructions such as truncations.
+Higher inductive types generalize ordinary 
+[inductive types]((/language-reference/definitions/#data)).
+Various homotopy colimits of types and other constructions such as
+truncations are higher inductive types. A specific homotopy structure of a higher inductive
+type can be defined by means of _conditions_ in data definitions.
 
-# Data types with conditions
+# Conditions
 
-If `con` is a constructor of an ordinary data type, then an expression of the form `con a_1 ... a_n` is always a normal form.
+If `con` is a constructor of an ordinary inductive type, then an expression of the form
+`con a_1 ... a_n` is always
+ a weak normal form.
 A _condition_ on a constructor is a rule that says how such an expression might evaluate.
 For example, we can define integers as a data type with two constructors for positive and negative integers.
 We can add a condition on the second constructor that says that positive and negative zero are computationally equal:
