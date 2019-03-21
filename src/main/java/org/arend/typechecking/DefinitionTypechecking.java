@@ -2076,7 +2076,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       type = (ClassCallExpression) typeResult.expression;
       pseudoImplemented = new HashSet<>();
-      result = myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType);
+      result = myVisitor.finalize(myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType), null, def);
       if (result == null || !(result.expression instanceof ClassCallExpression)) {
         return null;
       }

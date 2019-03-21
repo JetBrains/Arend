@@ -3,8 +3,8 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -413,19 +413,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  public Result finalCheckExpr(Concrete.Expression expr, ExpectedType expectedType, boolean returnExpectedType) {
-    if (!(expectedType instanceof Expression)) {
-      returnExpectedType = false;
-    }
-
-    Result result = checkExpr(expr, expectedType);
-    if (result == null && !returnExpectedType) return null;
-    LevelSubstitution substitution = myEquations.solve(expr);
-    if (returnExpectedType) {
+  public Result finalize(Result result, Expression expectedType, Concrete.SourceNode sourceNode) {
+    if (result == null && expectedType == null) return null;
+    LevelSubstitution substitution = myEquations.solve(sourceNode);
+    if (expectedType != null) {
       if (result == null) {
-        result = new Result(null, (Expression) expectedType);
+        result = new Result(null, expectedType);
       } else if (!result.type.isInstance(ClassCallExpression.class)) { // Use the inferred type if it is a class call
-        result.type = (Expression) expectedType;
+        result.type = expectedType;
       }
     }
     if (!substitution.isEmpty()) {
@@ -441,6 +436,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
     result.type = result.type.strip(counter.getErrorsNumber() == 0 ? myErrorReporter : DummyErrorReporter.INSTANCE);
     return result;
+  }
+
+  public Result finalCheckExpr(Concrete.Expression expr, ExpectedType expectedType, boolean returnExpectedType) {
+    return finalize(checkExpr(expr, expectedType), returnExpectedType && expectedType instanceof Expression ? (Expression) expectedType : null, expr);
   }
 
   public Type checkType(Concrete.Expression expr, ExpectedType expectedType) {
