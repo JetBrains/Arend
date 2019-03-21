@@ -170,10 +170,10 @@ public final class Concrete {
 
     public Referable getUnderlyingReferable() {
       Expression expr = this;
-      while (expr instanceof Concrete.ClassExtExpression) {
+      if (expr instanceof ClassExtExpression) {
         expr = ((ClassExtExpression) expr).getBaseClassExpression();
       }
-      if (expr instanceof Concrete.AppExpression) {
+      if (expr instanceof AppExpression) {
         expr = ((AppExpression) expr).getFunction();
       }
       return expr instanceof ReferenceExpression ? ((ReferenceExpression) expr).getReferent() : null;
