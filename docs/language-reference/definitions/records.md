@@ -11,7 +11,8 @@ The basic syntax looks like this:
 }
 ```
 
-You can also write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these notations, which will be discussed [here](#properties).
+It is also possible to write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these
+notations, which is discussed [here](#properties).
 
 The type `A_i` can depend on variables `p_1`, ... `p_{i-1}`.
 The type `B_i` can depend on variables `p_1`, ... `p_n`, `f_1`, ... `f_{i-1}`.

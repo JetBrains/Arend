@@ -59,7 +59,7 @@ Parameters of a function may appear in its body and in its result type.
 ## Pattern matching
 
 Functions can be defined by pattern matching.
-If `D` is a [data type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
+If `D` is an [inductive type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
 Then you can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
 
 ```arend
@@ -84,12 +84,21 @@ where each `clause_i` is of the form
 p^i_1, ... p^i_n => e_i
 ```
 
-where `p^i_j` is a pattern of type `T_i` and `e_i` is an expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the discussion of the substitution operation and types of expressions).
+where `p^i_j` is a pattern of type `T_i` (see below for the definition of a pattern) and `e_i` is an
+expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the
+discussion of the substitution operation and types of expressions).
 Variables `x_1`, ... `x_n` are not visible in expressions `e_i`. Note that this construction requires all the
 variables to be matched on, that is the number of patterns in each clause must be `n` (but see 
-Elim section below for partial pattern matching).
-   
-If a pattern `p^i_j` contains a variable `x` as a subpattern of type `T`, then this variable may appear in expression `e_i` and it will have the type `T`.
+Elim section below for partial pattern matching). 
+
+The clauses `clause_1,...clause_k` must cover all the cases. For example, if `con_1, con_2` are constructors
+of an inductive type `D`, then any function `\func f (d : D) : T` that matches on constructors of `d : D` must be
+of the from `\func f (d : D) : T | con_1 => e_1 | con_2 => e_2`. For instance, the definition
+`\func f (d : D) : T | con_1 => e_1` is incomplete.
+
+Pattern matching on constructors `left` and `right` of the [interval type](/language-reference/prelude) `I` is
+not allowed. For example, the definition `\func f (i : I) : Nat | left => 0 | right => 1` is not valid.  
+
 If some of the parameters of `f` are implicit, corresponding patterns must be either omitted or
 specified explicitly by surrounding them in `{ }`.
 
@@ -98,9 +107,11 @@ Equivalently, the definition above can be written using the keyword `\with`:
  \func f p_1 ... p_n : R \with { | clause_1 ... | clause_k } 
  ``` 
 
-A pattern of type `T` can have one of the following forms:
+A _pattern_ of type `T` can have one of the following forms:
 
-* A variable. If this variable is not used anywhere, its name can be replaced with `_`.
+* A variable. If a variable `x` appears as a subpattern of `p_i` in a clause `| p_1 ... p_i ... => e`, 
+it can be used in `e` and it will have type `T`. If this variable is not used anywhere, its name can be replaced 
+with `_`.
 * `con s_1 ... s_m`, where `con (y_1 : A_1) ... (y_m : A_m)` is a constructor of a data type `D` and `s_1` ... `s_m` are patterns.
   In this case, `T` must be equal to `D` and pattern `s_i` must have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
   If some of the parameters of `con` are implicit, corresponding patterns must either be omitted or
