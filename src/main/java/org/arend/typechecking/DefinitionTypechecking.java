@@ -437,6 +437,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
+    calculateTypeClassParameters(def, typedDef);
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
@@ -866,7 +867,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-      calculateTypeClassParameters(def, typedDef);
 
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
         typedDef.setHasUniverses(true);
