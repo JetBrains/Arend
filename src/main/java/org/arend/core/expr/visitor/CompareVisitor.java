@@ -185,20 +185,22 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   public Boolean compare(Expression expr1, Expression expr2) {
-    while (expr1.isInstance(InferenceReferenceExpression.class)) {
-      InferenceReferenceExpression infRefExpr = expr1.cast(InferenceReferenceExpression.class);
-      if (infRefExpr.getVariable() != null) {
-        return myNormalCompare && myEquations.addEquation(infRefExpr, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), myCMP, infRefExpr.getVariable().getSourceNode(), infRefExpr.getVariable(), expr2.getStuckInferenceVariable());
-      }
-      expr1 = infRefExpr.getSubstExpression();
+    expr1 = expr1.getCanonicalExpression();
+    expr2 = expr2.getCanonicalExpression();
+    if (expr1 == expr2) {
+      return true;
     }
 
-    while (expr2.isInstance(InferenceReferenceExpression.class)) {
-      InferenceReferenceExpression infRefExpr = expr2.cast(InferenceReferenceExpression.class);
-      if (infRefExpr.getVariable() != null) {
-        return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr, myCMP, infRefExpr.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr.getVariable());
-      }
-      expr2 = infRefExpr.getSubstExpression();
+    InferenceReferenceExpression infRefExpr1 = expr1.checkedCast(InferenceReferenceExpression.class);
+    InferenceReferenceExpression infRefExpr2 = expr2.checkedCast(InferenceReferenceExpression.class);
+    if (infRefExpr1 != null && infRefExpr2 != null && infRefExpr1.getVariable() == infRefExpr2.getVariable()) {
+      return true;
+    }
+    if (infRefExpr1 != null) {
+      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
+    }
+    if (infRefExpr2 != null) {
+      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr2, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
     }
 
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();

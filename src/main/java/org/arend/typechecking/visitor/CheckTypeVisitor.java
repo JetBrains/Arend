@@ -344,7 +344,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private Result checkResult(ExpectedType expectedType, Result result, Concrete.Expression expr) {
-    if (result == null || expectedType == null || expectedType == ExpectedType.OMEGA && result.type instanceof UniverseExpression) {
+    if (result == null || expectedType == null || expectedType == ExpectedType.OMEGA && result.type instanceof UniverseExpression || result.type == expectedType) {
       return result;
     }
 

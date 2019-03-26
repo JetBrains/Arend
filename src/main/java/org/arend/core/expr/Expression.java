@@ -203,19 +203,20 @@ public abstract class Expression implements ExpectedType {
   // If the expression is a constructor, then the function returns null.
   public abstract Expression getStuckExpression();
 
+  public Expression getCanonicalExpression() {
+    Expression expr = this;
+    while (true) {
+      InferenceReferenceExpression refExpr = expr.checkedCast(InferenceReferenceExpression.class);
+      if (refExpr == null || refExpr.getSubstExpression() == null) {
+        return expr;
+      }
+      expr = refExpr.getSubstExpression();
+    }
+  }
+
   public Expression getCanonicalStuckExpression() {
     Expression stuck = getStuckExpression();
-    if (stuck == null) {
-      return null;
-    }
-
-    while (true) {
-      InferenceReferenceExpression refExpr = stuck.checkedCast(InferenceReferenceExpression.class);
-      if (refExpr == null || refExpr.getSubstExpression() == null) {
-        return stuck;
-      }
-      stuck = refExpr.getSubstExpression();
-    }
+    return stuck == null ? null : stuck.getCanonicalExpression();
   }
 
   public InferenceVariable getStuckInferenceVariable() {
