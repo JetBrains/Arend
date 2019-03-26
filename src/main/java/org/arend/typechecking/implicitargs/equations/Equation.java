@@ -19,11 +19,11 @@ public class Equation implements InferenceVariableListener {
   }
 
   public Expression getLowerBound() {
-    return cmp == Equations.CMP.GE ? expr : type;
+    return cmp != Equations.CMP.GE ? type : expr;
   }
 
   public Expression getUpperBound() {
-    return cmp == Equations.CMP.LE ? expr : type;
+    return cmp != Equations.CMP.GE ? expr : type;
   }
 
   @Override

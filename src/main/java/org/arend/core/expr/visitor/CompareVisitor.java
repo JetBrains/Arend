@@ -135,6 +135,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2);
     }
 
+    Equations.CMP origCMP = myCMP;
     Boolean dataAndApp = checkDefCallAndApp(expr1, expr2, true);
     if (dataAndApp != null) {
       return dataAndApp;
@@ -144,7 +145,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return dataAndApp;
     }
 
-    Equations.CMP origCMP = myCMP;
     if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class) && !expr1.isInstance(LamExpression.class)) {
       myCMP = Equations.CMP.EQ;
     }
@@ -222,7 +222,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     ClassCallExpression classCall2 = type2.cast(ClassCallExpression.class);
     Sort sortArgument = classCall2.getSortArgument();
 
+    Equations.CMP origCMP = myCMP;
     for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
+      myCMP = origCMP;
       if (!entry.getKey().isProperty() && !(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
         return false;
       }
@@ -233,6 +235,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     for (Map.Entry<ClassField, LamExpression> entry : type1.getDefinition().getImplemented()) {
+      myCMP = origCMP;
       if (!entry.getKey().isProperty() && !(classCall2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue().substArgument(expr2))))) {
         return false;
       }
@@ -384,7 +387,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
           if (!field.getReferable().isParameterField()) {
             break;
           }
-          Expression implementation = classCall1.getImplementedHere().get(field);
+          Expression implementation = classCall1.getImplementationHere(field);
           if (implementation != null) {
             oldDataArgs.add(implementation);
           } else {
@@ -533,15 +536,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         impl1 = lamImpl1 == null ? null : lamImpl1.getBody();
       }
       if (impl1 == null) {
-        myCMP = origCMP;
         return false;
       }
       if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1)) {
-        myCMP = origCMP;
         return false;
       }
+      myCMP = origCMP;
     }
-    myCMP = origCMP;
     return true;
   }
 
@@ -616,7 +617,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Boolean result = compare(correctOrder ? body1 : body2, correctOrder ? body2 : body1);
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
-      mySubstitution.remove(correctOrder ? params2.get(i) : params1.get(i), correctOrder ? params1.get(i) : params2.get(i));
+      mySubstitution.remove(correctOrder ? params2.get(i) : params1.get(i));
     }
     return result;
   }
@@ -703,7 +704,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     } else {
       Expression type2 = expr2.getType();
-      return type2 != null && compare(expr1.getSigmaType(), type2) && compareTupleEta(expr1, expr2, correctOrder);
+      return type2 != null && compare(correctOrder ? expr1.getSigmaType() : type2, correctOrder ? type2 : expr1.getSigmaType()) && compareTupleEta(expr1, expr2, correctOrder);
     }
 
     return true;

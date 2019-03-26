@@ -2148,7 +2148,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       int cmp = 0;
       if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {
         for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) expr1).getImplementedHere().entrySet()) {
-          Expression impl2 = ((ClassCallExpression) expr2).getImplementedHere().get(entry.getKey());
+          Expression impl2 = ((ClassCallExpression) expr2).getImplementationHere(entry.getKey());
           if (impl2 == null) {
             cmp = 1;
             break;

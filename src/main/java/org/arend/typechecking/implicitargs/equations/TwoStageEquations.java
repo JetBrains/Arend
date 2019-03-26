@@ -734,7 +734,7 @@ public class TwoStageEquations implements Equations {
     }
 
     Sort sortArgument = lowerBounds.get(0).getSortArgument();
-    Map<ClassField, Expression> implementations = lowerBounds.get(0).getImplementedHere();
+    Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
     for (ClassCallExpression lowerBound : lowerBounds) {
       sortArgument = sortArgument.max(lowerBound.getSortArgument());
       for (Iterator<Map.Entry<ClassField, Expression>> iterator = implementations.entrySet().iterator(); iterator.hasNext(); ) {

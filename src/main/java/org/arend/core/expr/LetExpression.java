@@ -57,7 +57,7 @@ public class LetExpression extends Expression {
       Map<ClassField, Expression> implementations = new HashMap<>();
       for (int i = 0; i < pattern.getPatterns().size(); i++) {
         ClassField classField = pattern.getFields().get(i);
-        implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), classCall.getImplementedHere().get(classField)));
+        implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), classCall.getImplementationHere(classField)));
       }
       for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
         implementations.putIfAbsent(entry.getKey(), entry.getValue());

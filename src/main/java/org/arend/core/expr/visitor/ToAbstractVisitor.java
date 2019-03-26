@@ -287,9 +287,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
-    Collection<Map.Entry<ClassField, Expression>> implHere = expr.getImplementedHere().entrySet();
     List<Concrete.Argument> arguments = new ArrayList<>();
-    List<Concrete.ClassFieldImpl> statements = new ArrayList<>(implHere.size());
+    List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
     boolean canBeArgument = true;
     for (ClassField field : expr.getDefinition().getFields()) {
       Expression implementation = expr.getImplementationHere(field);

@@ -63,55 +63,57 @@ public class PatternTypechecking {
 
   Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
     try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
-      // Typecheck patterns
-      Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause);
-      if (result == null) {
-        return null;
-      }
-
-      // If we have the absurd pattern, then RHS is ignored
-      if (result.proj2 == null) {
-        if (clause.getExpression() != null) {
-          myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
-        }
-        return new Pair<>(result.proj1, null);
-      } else {
-        if (clause.getExpression() == null) {
-          myErrorReporter.report(new TypecheckingError("Required a RHS", clause));
+      try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
+        // Typecheck patterns
+        Pair<List<Pattern>, List<Expression>> result = typecheckPatterns(clause.getPatterns(), abstractParameters, parameters, elimParams, clause);
+        if (result == null) {
           return null;
         }
-      }
 
-      ExprSubstitution substitution = new ExprSubstitution();
-      for (Expression expr : result.proj2) {
-        substitution.add(parameters, expr);
-        parameters = parameters.getNext();
-      }
-      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
-        Expression expr = substitution.get(entry.getValue());
-        if (expr != null) {
-          entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
+        // If we have the absurd pattern, then RHS is ignored
+        if (result.proj2 == null) {
+          if (clause.getExpression() != null) {
+            myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+          }
+          return new Pair<>(result.proj1, null);
+        } else {
+          if (clause.getExpression() == null) {
+            myErrorReporter.report(new TypecheckingError("Required a RHS", clause));
+            return null;
+          }
         }
-      }
-      expectedType = expectedType.subst(substitution);
 
-      GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
-      InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
-      if (instancePool != null) {
-        globalInstancePool.setInstancePool(instancePool.subst(substitution));
-      }
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (Expression expr : result.proj2) {
+          substitution.add(parameters, expr);
+          parameters = parameters.getNext();
+        }
+        for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
+          Expression expr = substitution.get(entry.getValue());
+          if (expr != null) {
+            entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
+          }
+        }
+        expectedType = expectedType.subst(substitution);
 
-      // Typecheck the RHS
-      CheckTypeVisitor.Result tcResult;
-      if (abstractParameters != null) {
-        tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, false);
-      } else {
-        tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
+        GlobalInstancePool globalInstancePool = myVisitor.getInstancePool();
+        InstancePool instancePool = globalInstancePool == null ? null : globalInstancePool.getInstancePool();
+        if (instancePool != null) {
+          globalInstancePool.setInstancePool(instancePool.subst(substitution));
+        }
+
+        // Typecheck the RHS
+        CheckTypeVisitor.Result tcResult;
+        if (abstractParameters != null) {
+          tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, false);
+        } else {
+          tcResult = myVisitor.checkExpr(clause.getExpression(), expectedType);
+        }
+        if (instancePool != null) {
+          globalInstancePool.setInstancePool(instancePool);
+        }
+        return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
       }
-      if (instancePool != null) {
-        globalInstancePool.setInstancePool(instancePool);
-      }
-      return tcResult == null ? null : new Pair<>(result.proj1, tcResult);
     }
   }
 
@@ -143,7 +145,7 @@ public class PatternTypechecking {
       if (!elimParams.isEmpty()) {
         for (Concrete.Parameter parameter : abstractParameters) {
           for (Referable referable : parameter.getReferableList()) {
-            if (!elimParams.contains(link)) {
+            if (referable != null && !elimParams.contains(link)) {
               myContext.put(referable, ((BindingPattern) result.proj1.get(i)).getBinding());
             }
             link = link.getNext();
@@ -262,7 +264,11 @@ public class PatternTypechecking {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null) {
-            myContext.put(referable, parameters);
+            if (referable != null) {
+              myContext.put(referable, parameters);
+            } else {
+              myVisitor.getFreeBindings().add(parameters);
+            }
           }
         }
         parameters = parameters.getNext();
