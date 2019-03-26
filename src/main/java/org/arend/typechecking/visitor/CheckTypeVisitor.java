@@ -1585,6 +1585,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Result exprResult = null;
     Set<ClassField> pseudoImplemented = Collections.emptySet();
     if (expr.getExpression() instanceof Concrete.ClassExtExpression || expr.getExpression() instanceof Concrete.ReferenceExpression) {
+      if (expectedType != null) {
+        expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+      }
       Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression();
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof ClassReferable && expectedType instanceof ClassCallExpression) {
         ClassDefinition actualClassDef = null;
