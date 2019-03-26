@@ -151,7 +151,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     DependentLink param = result.getParameter();
-    if (arg instanceof Concrete.HoleExpression) {
+    if (arg instanceof Concrete.HoleExpression && param.hasNext()) {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false);
     }
 
