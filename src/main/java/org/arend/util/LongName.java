@@ -1,5 +1,6 @@
 package org.arend.util;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class LongName implements Comparable<LongName> {
@@ -37,7 +38,7 @@ public class LongName implements Comparable<LongName> {
   }
 
   @Override
-  public int compareTo(LongName longName) {
+  public int compareTo(@Nonnull LongName longName) {
     List<String> theirPath = longName.myPath;
     Integer mySize = myPath.size();
     Integer theirSize = theirPath.size();
@@ -46,8 +47,9 @@ public class LongName implements Comparable<LongName> {
     for (int i = 0; i < mySize; i++) {
       String myName = myPath.get(i);
       String theirName = theirPath.get(i);
-      if (!myName.equals(theirName)) {
-        return myName.compareTo(theirName);
+      int cmp = myName.compareTo(theirName);
+      if (cmp != 0) {
+        return cmp;
       }
     }
 
