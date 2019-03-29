@@ -198,7 +198,14 @@ public class ConditionsChecking {
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
-    if (clause.expression == null || clause.expression.isInstance(ErrorExpression.class)) {
+    if (clause.expression == null) {
+      return true;
+    }
+    Expression expr = clause.expression;
+    while (expr.isInstance(LetExpression.class) || expr.isInstance(LamExpression.class)) {
+      expr = expr.isInstance(LetExpression.class) ? expr.cast(LetExpression.class).getExpression() : expr.cast(LamExpression.class).getBody();
+    }
+    if (expr.isInstance(ErrorExpression.class)) {
       return true;
     }
 
