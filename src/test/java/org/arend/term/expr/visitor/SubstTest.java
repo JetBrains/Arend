@@ -5,7 +5,6 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.LetExpression;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -115,8 +114,8 @@ public class SubstTest extends TypeCheckingTestCase {
     SingleDependentLink z = singleParam("z", Nat());
     SingleDependentLink w = singleParam("w", Nat());
 
-    Expression expr1 = new LetExpression(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Ref(a)))), Ref(a));
-    Expression expr2 = new LetExpression(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Zero()))), Zero());
+    Expression expr1 = let(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Ref(a)))), Ref(a));
+    Expression expr2 = let(lets(let("x", Lam(z, Ref(z))), let("y", Lam(w, Zero()))), Zero());
     assertEquals(expr2, expr1.subst(a, Zero()));
   }
 }

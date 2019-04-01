@@ -26,7 +26,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
     mySortArgument = sortArgument;
-    myImplementations = new HashMap<>();
+    myImplementations = Collections.emptyMap();
     mySort = definition.getSort().subst(sortArgument.toLevelSubstitution());
     myHasUniverses = definition.hasUniverses();
   }

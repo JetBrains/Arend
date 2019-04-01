@@ -17,3 +17,6 @@ For example, in the following code we do not have to implement field `x` in the 
 \func f (r : R 0) => r.y
 \func g => f (\new R { | y => 1 })
 ```
+
+If `c` is an instance of a record `C` with fields `f_1`, ... `f_n`, then the expression `\new c` is equivalent to `\new C { | f_1 => c.f_1 ... | f_n => c.f_n }`.
+More generally, the expression `\new c { | f_{i_1} => e_1 ... | f_{i_k} => e_k }` is equivalent to `\new c` in which `c.f_{i_j}` is replaced with `e_j`.

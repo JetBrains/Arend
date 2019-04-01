@@ -1,23 +1,7 @@
-<h1 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
+<h1 id="data">Inductive types<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
 
-Data definitions allow us to define (higher) inductive types.
-Each data definition has several constructors.
-Constructors belong to the [module](/language-reference/definitions/modules) associated to the data definition, but they are also visible in the module in which the data type is defined:
-
-```arend
-\data D | con1 | con2
-
-\func f => con1
-\func g => con2
-\func f' => D.con1
-\func g' => D.con2
-```
-
-In the example above, we defined a data type `D` with two constructors `con1` and `con2`.
-Functions `f` and `f'` (as well as `g` and `g'`) are equivalent.
-
-## Syntax
-
+Inductive and [higher inductive](/language-reference/definitions/#hits) types are represented
+by data definitions.
 The basic syntax of a data definition looks like this:
 
 ```arend
@@ -54,7 +38,8 @@ Constructor `cons'` has only two implicit parameters of types `A` and `B`.
 
 The type of a [defcall](/language-reference/expressions/#defcalls) `con_i {a_1} ... {a_n} b_1 ... b_{k_i}` is `D a_1 ... a_n`.
 The type of a defcall `D a_1 ... a_n` is of the form [\h-Type p](/language-reference/expressions/universes).
-Levels `h` and `p` are calculated automatically, but you can also specify explicitly the level of a data type:
+Levels `h` and `p` are inferred automatically and may depend on levels of `a_1,...a_n`.
+Alternatively, these levels can be fixed and specified explicitly in the definition of a data type:
 
 ```arend
 \data D p_1 ... p_n : \h-Type p
@@ -63,7 +48,21 @@ Levels `h` and `p` are calculated automatically, but you can also specify explic
   | con_m p^m_1 ... p^m_{k_m}
 ```
 
-If the actual type of `D` does not fit into the specified levels, the typechecker will generate an error message.
+If the actual type of `D` does not always fit into the specified levels, the typechecker will generate an error message.
+
+Constructors belong to the [module](/language-reference/definitions/modules) associated to the data definition, but they are also visible in the module in which the data type is defined:
+
+```arend
+\data D | con1 | con2
+
+\func f => con1
+\func g => con2
+\func f' => D.con1
+\func g' => D.con2
+```
+
+In the example above, we defined a data type `D` with two constructors `con1` and `con2`.
+Functions `f` and `f'` (as well as `g` and `g'`) are equivalent.
 
 ## Inductive definitions
 
@@ -79,8 +78,8 @@ The set of such positions is defined inductively:
 
 ## Truncation
 
-You can truncate data types to a specified homotopy level which is less than its actual level.
-To do this, specify explicitly the type of a data definition and write keyword `\truncated` before the definition:
+Data types can be truncated to a specified homotopy level, which is less than its actual level.
+This is done by specifying explicitly the type of a data definition and writing the keyword `\truncated` before the definition:
 
 ```arend
 \truncated \data D p_1 ... p_n : \h-Type p
@@ -111,12 +110,14 @@ Consider the following example:
   | witness n p => path (\lam _ => 0)
 ```
 
-The data type `Exists` defines a proposition 'There is an `a : A` such that `B a`'.
-The function `extract` which extracts a natural number from the proof that there exists a natural number which equals to 3 is incorrect,
-but functions `existsSuc` and `existsEq` which construct another proofs are accepted.
+The data type `Exists` defines a proposition of the form 'There is an `a : A` such that `B a`'. Note that a function like
+`extract`, which extracts `n : Nat` such that `n=3` out of a proof of `Exists (n:Nat) (n=3)`, is not valid
+as its result type `Nat` is of homotopy level of a set (h=0), which is greater than the homotopy level of a 
+proposition (h=-1). Two other functions `existsSuc` and `existsEq` in the example above are correct as 
+their result types, `Exists (n : Nat) (suc n = 4)` and `0=0` respectively, are propositions.
 
-A truncated data type is (provably) equivalent to the truncation of the untrancated version of this data type.
-So, this is simply a syntax sugar that allows you to define functions over a truncated data type more easily.
+A truncated data type is (provably) equivalent to the truncation of the untruncated version of this data type.
+So, this is simply a syntactic sugar that allows you to define functions over a truncated data type more easily.
 
 ## Induction-induction and induction-recursion
 
@@ -125,17 +126,17 @@ This is called _induction-induction_.
 Inductive-inductive definitions also must be strictly positive.
 That is, recursive calls to the definition itself and to other recursive definitions may occur only in strictly positive positions.
 
-Data types may also be mutually recusrive with functions.
+Data types may also be mutually recursive with functions.
 This is called _induction-recursion_.
 Strict positivity and termination checkers work as usual for such definitions.
 
 ## Varying number of constructors
 
-Sometimes we need to define a data type which has different constructors depending on its parameters.
+Sometimes there might be a need to define a data type, which has different constructors depending on its parameters.
 The classical example is the data type of lists of fixed length.
 The data type `Vec A 0` has only one constructor `nil`, the empty list.
 The data type `Vec A (suc n)` also has one constructor `cons`, a non-empty list.
-We can define such a data type by 'pattern-matching':
+Such a data type can be defined by 'pattern-matching':
 
 ```arend
 \data Vec (A : \Type) (n : Nat) \elim n
@@ -143,20 +144,22 @@ We can define such a data type by 'pattern-matching':
   | suc n => cons A (Vec A n)
 ```
 
-The general syntax is similar to the syntax of functions defined by pattern-matching.
-After the list of parameters we can write either `\elim vars` or `\with` followed by a list of clause.
+The general syntax is similar to the syntax of functions defined by 
+[pattern-matching](/language-reference/definitions/functions).
+Either `\elim vars` or `\with` constructs can be used with the only difference that 
+`\elim vars` allows to match on a proper subset of parameters of data type.
 
 ```arend
 \data D p_1 ... p_n \with
-  | t_1, ... t_n => con_1 p^1_1 ... p^1_{k_1}
+  | t^1_1, ... t^1_n => con_1 p^1_1 ... p^1_{k_1}
   ...
-  | t_1', ... t_n' => con_m p^m_1 ... p^m_{k_m}
+  | t^m_1, ... t^m_n => con_m p^m_1 ... p^m_{k_m}
 ```
 
-Each clause has a list of patterns, followed by `=>`, followed by a constructor definition.
+Each clause starts a list of patterns, followed by `=>`, followed by a constructor definition.
 The order of clauses does not matter.
 If a clause matches the arguments of a defcall `D a_1 ... a_n`, then the corresponding constructor is added to this data type.
-For example, we can define the following data type:
+For example, one can define the following data type:
 
 ```arend
 \data Bool | true | false
@@ -168,7 +171,7 @@ For example, we can define the following data type:
 
 Data type `T true` has two constructors: `con1` and `con2`.
 Data type `T false` is empty.
-We can also define several constructors in a single clause as follows:
+It is also possible to define several constructors in a single clause as follows:
 
 ```arend
 \data T (b : Bool) \with
@@ -179,3 +182,4 @@ We can also define several constructors in a single clause as follows:
 ```
 
 This definition is equivalent to the previous one.
+

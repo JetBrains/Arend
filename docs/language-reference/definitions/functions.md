@@ -21,6 +21,7 @@ You can also specify the result type of the function by writing `\func f p_1 ...
 In this case, `e` must have type `T`.
 Often the typechecker can infer the result type, so usually you don't have to specify it explicitly.
 -->
+
 There are several ways to define the body of a function. These ways are described below.   
 
 ## Non-recursive definitions
@@ -58,7 +59,7 @@ Parameters of a function may appear in its body and in its result type.
 ## Pattern matching
 
 Functions can be defined by pattern matching.
-If `D` is a [data type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
+If `D` is an [inductive type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
 Then you can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
 
 ```arend
@@ -83,9 +84,21 @@ where each `clause_i` is of the form
 p^i_1, ... p^i_n => e_i
 ```
 
-where `p^i_j` is a pattern of type `T_i` and `e_i` is an expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the discussion of the substitution operation and types of expressions).
-Note that variables `x_1`, ... `x_n` are not visible in expressions `e_i`.
-If a pattern `p^i_j` contains a variable `x` as a subpattern of type `T`, then this variable may appear in expression `e_i` and it will have the type `T`.
+where `p^i_j` is a pattern of type `T_i` (see below for the definition of a pattern) and `e_i` is an
+expression of type `R[p^i_1/x_1, ... p^i_n/x_n]` (see [this section](/language-reference/expressions) for the
+discussion of the substitution operation and types of expressions).
+Variables `x_1`, ... `x_n` are not visible in expressions `e_i`. Note that this construction requires all the
+variables to be matched on, that is the number of patterns in each clause must be `n` (but see 
+Elim section below for partial pattern matching). 
+
+The clauses `clause_1,...clause_k` must cover all the cases. For example, if `con_1, con_2` are constructors
+of an inductive type `D`, then any function `\func f (d : D) : T` that matches on constructors of `d : D` must be
+of the from `\func f (d : D) : T | con_1 => e_1 | con_2 => e_2`. For instance, the definition
+`\func f (d : D) : T | con_1 => e_1` is incomplete.
+
+Pattern matching on constructors `left` and `right` of the [interval type](/language-reference/prelude) `I` is
+not allowed. For example, the definition `\func f (i : I) : Nat | left => 0 | right => 1` is not valid.  
+
 If some of the parameters of `f` are implicit, corresponding patterns must be either omitted or
 specified explicitly by surrounding them in `{ }`.
 
@@ -94,17 +107,19 @@ Equivalently, the definition above can be written using the keyword `\with`:
  \func f p_1 ... p_n : R \with { | clause_1 ... | clause_k } 
  ``` 
 
-A pattern of type `T` can have one of the following forms:
+A _pattern_ of type `T` can have one of the following forms:
 
-* A variable. If this variable is not used anywhere, its name can be replaced with `_`.
+* A variable. If a variable `x` appears as a subpattern of `p_i` in a clause `| p_1 ... p_i ... => e`, 
+it can be used in `e` and it will have type `T`. If this variable is not used anywhere, its name can be replaced 
+with `_`.
 * `con s_1 ... s_m`, where `con (y_1 : A_1) ... (y_m : A_m)` is a constructor of a data type `D` and `s_1` ... `s_m` are patterns.
   In this case, `T` must be equal to `D` and pattern `s_i` must have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
-  If some of the parameters of `con` are implicit, corresponding patterns must be omitted.
-  They can be specified explicitly by surrounding them in `{ }`.
+  If some of the parameters of `con` are implicit, corresponding patterns must either be omitted or
+  enclosed in `{ }`.
 * `(s_1, ... s_m)`, where `s_1` ... `s_m` are patterns.
   In this case, `T` must be either a [Sigma type](/language-reference/expressions/sigma) with parameters `(y_1 : A_1) ... (y_m : A_m)` or a [class](/language-reference/definitions/classes) (or a [record](/language-reference/definitions/records)) with fields `y_1 : A_1`, ... `y_m : A_m`.
-  The pattern `s_i` will have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
-  If `m` equals to 0, then `T` also may be a data type without constructors.
+  The pattern `s_i` must have type `A_i[s_1/y_1, ... s_{i-1}/y_{i-1}]`.
+  If `m` equals to 0, then `T` may also be a data type without constructors.
   In this case, the right hand side `=> e_i` of the clause in which such a pattern appears must be omitted.
 
 Also, a constructor or a tuple pattern may be an _as-pattern_.
@@ -132,7 +147,7 @@ Consider the following function:
 ```
 
 Let `x` be a variable and let `e` be an arbitrary expression.
-If the first argument of `g a_1 a_2` is `T`, then the expression reduces to `0`, if it is `x`, then expression does not reduce since the first pattern fails to match with `x`.
+If the first argument of `g a_1 a_2` is `T`, then the expression reduces to `0`, if it is `x`, then the expression does not reduce since the first pattern fails to match with `x`.
 If the first argument is `F`, then the evaluator tries to match the second argument:
 
 ```arend
@@ -177,7 +192,7 @@ For example, you can define function `absurd` as follows:
 
 ## Elim
 
-It is often true that we only need to pattern match on a single parameter of a function (or a few parameters), but the function has much more parameters.
+It is often true that one only needs to pattern match on a single parameter of a function (or a few parameters), but the function has much more parameters.
 Then we need to repeat parameters on which we do not pattern match in each clause, which is inconvenient.
 In this case, we can use the `\elim` construction:
 
@@ -191,7 +206,7 @@ In this case, we can use the `\elim` construction:
 where i\_1, ... i\_m are integers such that 1 ≤ i\_1 < ... < i\_m ≤ n.
 In this case, parameters `x_{i_1}`, ... `x_{i_m}` are _eliminated_ and are not visible in expressions `e_1`, ... `e_k`.
 Other parameters of `f` are still visible in these expressions.
-Note that it does not matter whether a parameter `x_i` is explicit or implicit when it is eliminated; the corresponding pattern is always explicit.
+Note that it does not matter whether a parameter `x_i` is explicit or implicit when it is eliminated, the corresponding pattern is always explicit.
 
 As an example, consider the following function which chooses one of its arguments depending on the value of its other argument:
 
@@ -208,33 +223,34 @@ That is, if `f` is a function as described above, then a reference to `f` may oc
 Every function in Arend is a total function.
 Thus, not every recursive definition is allowed.
 In order for such a definition to be valid, the recursion must be _structural_.
-This roughly means that the arguments to recursive calls of `f` must be subexpressions of the arguments to the function itself.
+This means that in a definition of `f` by pattern matching the arguments to recursive calls of `f` must be
+subpatterns of the patterns for the arguments of `f`.
 
-Function may also be mutually recursive.
+Functions can also be mutually recursive.
 That is, we can have several functions which refer to each other.
 In this case, there must be a linear order on the set of these functions `f_1`, ... `f_n` such that the signature of `f_i` refers only to previous functions.
 The bodies of the functions may refer to each other as long as the whole recursive system is structural.
 
 ## Copattern matching
 
-If the result type of a function is a [record](/language-reference/definitions/records) or a [class](/language-reference/definitions/classes), then a function can also be define by _copattern matching_ which has the following syntax:
+If the result type of a function is a [record](/language-reference/definitions/records) or a [class](/language-reference/definitions/classes),
+then a function can also be defined by _copattern matching_, which has the following syntax:
 
 ```arend
 \func f (x_1 : A_1) ... (x_n : A_n) : C \cowith
-  | c_1
+  | coclause_1
   ...
-  | c_k
+  | coclause_k
 ```
 
-where `c_1`, ... `c_k` are _coclauses_.
-A coclause is a pair consisting of a field `g` of `C` and an expression `e` written `g => e`.
+where a _coclause_ is a pair consisting of a field `g` of `C` and an expression `e` written `g => e`.
 Such a function has the same semantics as a definition of an instance, that is it is equivalent to the following definition:
 
 ```arend
 \func f (x_1 : A_1) ... (x_n : A_n) => \new C {
-  | c_1
+  | coclause_1
   ...
-  | c_k
+  | coclause_k
 }
 ```
 
@@ -242,7 +258,8 @@ See [this section](/language-reference/expressions/class-ext) for the descriptio
 
 ## Lemmas
 
-A lemma is a function that returns a proposition and does not evaluate.
+A _lemma_ is a function, the result type of which is a proposition and the body is considered to be a proof 
+without computational content, and, thus, it does not evaluate.
 To define a lemma use the keyword `\lemma` instead of `\func`.
 If the result type of a lemma does not belong to `\Prop`, but is provably a proposition, you can use the keywords [\level](/language-reference/definitions/level/#level-of-a-type) to define a lemma with this result type.
 The fact that lemmas do not evaluate may greatly improve performance of typechecking if their proofs are too lengthy.

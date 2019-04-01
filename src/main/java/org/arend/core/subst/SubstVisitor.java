@@ -173,7 +173,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       clauses.add(newClause);
       myExprSubstitution.add(clause, new ReferenceExpression(newClause));
     }
-    LetExpression result = new LetExpression(clauses, letExpression.getExpression().accept(this, null));
+    LetExpression result = new LetExpression(letExpression.isStrict(), clauses, letExpression.getExpression().accept(this, null));
     letExpression.getClauses().forEach(myExprSubstitution::remove);
     return result;
   }

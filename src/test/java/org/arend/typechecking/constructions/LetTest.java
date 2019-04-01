@@ -43,4 +43,32 @@ public class LetTest extends TypeCheckingTestCase {
       "\\func f (p : \\Sigma R Nat) => \\let ((x,(f,y)),z) => p \\in (f x Nat.+ y) Nat.* z\n" +
       "\\func g : f (\\new R 3 (\\lam n => n Nat.* 2, 10), 5) = 80 => path (\\lam _ => 80)");
   }
+
+  @Test
+  public void typedPattern() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f (r : R) => \\let (a : Nat, b) => r \\in a");
+  }
+
+  @Test
+  public void typedPatternError() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f (r : R) => \\let (a : R, b) => r \\in a", 1);
+  }
+
+  @Test
+  public void typedLetClause() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f (r : R 0) => \\let r' : R => r \\in r'.x");
+  }
+
+  @Test
+  public void typedLetClauseError() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f (r : R 0) => \\let r' : Nat => r \\in r'", 1);
+  }
 }

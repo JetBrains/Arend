@@ -275,7 +275,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void letNormalizationContext() {
     LetClause let = let("x", Zero());
-    new LetExpression(lets(let), Ref(let)).normalize(NormalizeVisitor.Mode.NF);
+    let(lets(let), Ref(let)).normalize(NormalizeVisitor.Mode.NF);
   }
 
   @Test

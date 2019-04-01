@@ -14,6 +14,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
@@ -281,13 +282,40 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
+    Referable ref = null;
+    Concrete.Expression baseExpr = expr.getBaseClassExpression();
+    if (baseExpr instanceof Concrete.AppExpression) {
+      baseExpr = ((Concrete.AppExpression) expr.getBaseClassExpression()).getFunction();
+    }
+    if (baseExpr instanceof Concrete.ReferenceExpression) {
+      Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) baseExpr;
+      if (refExpr.getReferent() instanceof NamedUnresolvedReference) {
+        ref = ((NamedUnresolvedReference) refExpr.getReferent()).resolve(myScope);
+        refExpr.setReferent(ref);
+      }
+    }
+
     expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, null));
-    ClassReferable classRef = expr.getBaseClassExpression().getUnderlyingClassReferable();
+    if (expr.getStatements().isEmpty()) {
+      return expr;
+    }
+
+    if (!(ref instanceof TypedReferable)) {
+      ref = expr.getBaseClassExpression().getUnderlyingReferable();
+    }
+    ClassReferable classRef = null;
+    if (ref instanceof ClassReferable) {
+      classRef = (ClassReferable) ref;
+    } else if (ref instanceof TypedReferable) {
+      classRef = ((TypedReferable) ref).getTypeClassReference();
+    }
+
     if (classRef != null) {
       visitClassFieldImpls(expr.getStatements(), classRef);
     } else {
-      myErrorReporter.report(new NamingError("Expected a class", expr.getBaseClassExpression().getData()));
-      expr.getStatements().clear();
+      LocalError error = new NamingError("Expected a class or a class instance", expr.getBaseClassExpression().getData());
+      myErrorReporter.report(error);
+      return new Concrete.ErrorHoleExpression(expr.getData(), error);
     }
     return expr;
   }

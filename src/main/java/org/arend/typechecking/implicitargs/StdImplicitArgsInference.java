@@ -151,7 +151,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     DependentLink param = result.getParameter();
-    if (arg instanceof Concrete.HoleExpression) {
+    if (arg instanceof Concrete.HoleExpression && param.hasNext()) {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false);
     }
 
@@ -241,9 +241,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       for (Integer i : order) {
         // Defer arguments up to i
         while (current < expr.getArguments().size()) {
-          if (!result.getParameter().isExplicit() && expr.getArguments().get(current).isExplicit()) {
+          DependentLink parameter = result.getParameter();
+          if (!parameter.hasNext()) {
+            break;
+          }
+          if (!parameter.isExplicit() && expr.getArguments().get(current).isExplicit()) {
             List<? extends DependentLink> implicitParameters = result.getImplicitParameters();
             result = fixImplicitArgs(result, implicitParameters, fun, false);
+            parameter = result.getParameter();
             numberOfImplicitArguments += implicitParameters.size();
           }
           if (current + numberOfImplicitArguments >= i) {
@@ -251,11 +256,11 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           }
 
           Concrete.Argument argument = expr.getArguments().get(current);
-          if (result.getParameter().isExplicit() != argument.isExplicit()) {
-            reportExplicitnessError(result.getParameter().isExplicit(), argument.getExpression());
+          if (parameter.isExplicit() != argument.isExplicit()) {
+            reportExplicitnessError(parameter.isExplicit(), argument.getExpression());
             return null;
           }
-          InferenceVariable var = new ExpressionInferenceVariable(result.getParameter().getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings());
+          InferenceVariable var = new ExpressionInferenceVariable(parameter.getTypeExpr(), argument.getExpression(), myVisitor.getAllBindings());
           deferredArguments.put(current + numberOfImplicitArguments, new Pair<>(var, argument.getExpression()));
           result = result.applyExpression(new InferenceReferenceExpression(var, myVisitor.getEquations()), myVisitor.getErrorReporter(), fun);
           current++;

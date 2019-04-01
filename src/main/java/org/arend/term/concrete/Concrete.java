@@ -170,10 +170,10 @@ public final class Concrete {
 
     public Referable getUnderlyingReferable() {
       Expression expr = this;
-      while (expr instanceof Concrete.ClassExtExpression) {
+      if (expr instanceof ClassExtExpression) {
         expr = ((ClassExtExpression) expr).getBaseClassExpression();
       }
-      if (expr instanceof Concrete.AppExpression) {
+      if (expr instanceof AppExpression) {
         expr = ((AppExpression) expr).getFunction();
       }
       return expr instanceof ReferenceExpression ? ((ReferenceExpression) expr).getReferent() : null;
@@ -674,13 +674,19 @@ public final class Concrete {
 
   public static class LetExpression extends Expression {
     public static final byte PREC = -9;
+    private final boolean myStrict;
     private final List<LetClause> myClauses;
     public Expression expression;
 
-    public LetExpression(Object data, List<LetClause> clauses, Expression expression) {
+    public LetExpression(Object data, boolean isStrict, List<LetClause> clauses, Expression expression) {
       super(data);
+      myStrict = isStrict;
       myClauses = clauses;
       this.expression = expression;
+    }
+
+    public boolean isStrict() {
+      return myStrict;
     }
 
     @Nonnull

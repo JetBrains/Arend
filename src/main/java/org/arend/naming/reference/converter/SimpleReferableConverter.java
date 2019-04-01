@@ -43,6 +43,10 @@ public class SimpleReferableConverter implements ReferableConverter {
     return myMap.remove(new FullName(referable));
   }
 
+  public TCReferable remove(FullName fullName) {
+    return myMap.remove(fullName);
+  }
+
   public void clear() {
     myMap.clear();
   }

@@ -106,7 +106,7 @@ public class ScopeFactory {
       } else
 
       // Class extensions
-      if (parentSourceNode instanceof Abstract.ClassFieldImpl && !(sourceNode instanceof Abstract.Expression) && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
+      if (parentSourceNode instanceof Abstract.ClassFieldImpl && sourceNode instanceof Abstract.Reference && parentSourceNode.getParentSourceNode() instanceof Abstract.ClassReferenceHolder) {
         return false;
       }
 
@@ -263,7 +263,7 @@ public class ScopeFactory {
       }
     }
 
-    // Replace the scope with class fields in class extensions and class field synonyms
+    // Replace the scope with class fields in class extensions
     if (parentSourceNode instanceof Abstract.ClassFieldImpl && sourceNode instanceof Abstract.Reference) {
       Abstract.SourceNode parentParent = parentSourceNode.getParentSourceNode();
       if (parentParent instanceof Abstract.ClassReferenceHolder) {

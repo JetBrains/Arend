@@ -21,6 +21,6 @@ public class SolveEquationError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
       hang(text("1st expression:"), termDoc(expr1, ppConfig)),
-      hang(text("2st expression:"), termDoc(expr2, ppConfig)));
+      hang(text("2nd expression:"), termDoc(expr2, ppConfig)));
   }
 }

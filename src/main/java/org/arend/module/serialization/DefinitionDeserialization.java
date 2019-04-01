@@ -161,7 +161,7 @@ public class DefinitionDeserialization {
       classDef.setRecord();
     }
 
-    readCoerceData(classProto.getCoerceData(), classDef.getCoerceData(), classDef);
+    readCoerceData(classProto.getCoerceData(), classDef.getCoerceData());
 
     for (DefinitionProtos.Definition.ClassParametersLevel classParametersLevelProto : classProto.getParametersLevelList()) {
       List<ClassField> fields = new ArrayList<>();
@@ -267,16 +267,14 @@ public class DefinitionDeserialization {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
-    readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData(), dataDef);
+    readCoerceData(dataProto.getCoerceData(), dataDef.getCoerceData());
   }
 
-  private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData, Definition definition) throws DeserializationException {
+  private void readCoerceData(DefinitionProtos.Definition.CoerceData coerceDataProto, CoerceData coerceData) throws DeserializationException {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceFromList()) {
       List<FunctionDefinition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        FunctionDefinition coercingDef = myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class);
-        myDependencyListener.dependsOn(definition.getReferable(), true, coercingDef.getReferable());
-        coercingDefs.add(coercingDef);
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex, FunctionDefinition.class));
       }
       int classifyingDefIndex = elementProto.getClassifyingDef();
       coerceData.putCoerceFrom(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);
@@ -285,9 +283,7 @@ public class DefinitionDeserialization {
     for (DefinitionProtos.Definition.CoerceData.Element elementProto : coerceDataProto.getCoerceToList()) {
       List<Definition> coercingDefs = new ArrayList<>();
       for (Integer defIndex : elementProto.getCoercingDefList()) {
-        Definition coercingDef = myCallTargetProvider.getCallTarget(defIndex);
-        myDependencyListener.dependsOn(definition.getReferable(), true, coercingDef.getReferable());
-        coercingDefs.add(coercingDef);
+        coercingDefs.add(myCallTargetProvider.getCallTarget(defIndex));
       }
       int classifyingDefIndex = elementProto.getClassifyingDef();
       coerceData.putCoerceTo(classifyingDefIndex == 0 ? null : myCallTargetProvider.getCallTarget(classifyingDefIndex - 1), coercingDefs);

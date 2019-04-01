@@ -214,6 +214,12 @@ public class Ordering {
         myVertices.get(unit).onStack = false;
         units.add(unit);
       } while (!unit.equals(originalUnit));
+
+      // This can happen only when the definition is \\use \\coerce
+      if (units.size() == 2 && units.get(0).getDefinition().getData() == units.get(1).getDefinition().getData() && units.get(0).isHeader() != units.get(1).isHeader()) {
+        units.remove(units.get(0).isHeader() ? 1 : 0);
+      }
+
       Collections.reverse(units);
       new TypecheckingUnitComparator(myComparator).sort(units);
       scc = new SCC(units);
@@ -233,7 +239,7 @@ public class Ordering {
 
       if (units.size() == 1) {
         myOrderingListener.unitFound(unit, recursion);
-        doOrderCoercingFunctions(currentState, unit.getDefinition());
+        doOrderUsedDefinitions(currentState, unit.getDefinition());
         return OrderResult.REPORTED;
       }
     }
@@ -243,23 +249,25 @@ public class Ordering {
     }
     if (scc != null) {
       myOrderingListener.sccFound(scc);
+      for (TypecheckingUnit sccUnit : scc.getUnits()) {
+        doOrderUsedDefinitions(currentState, sccUnit.getDefinition());
+      }
     }
 
     return OrderResult.REPORTED;
   }
 
-  private void doOrderCoercingFunctions(DefState currentState, Concrete.Definition definition) {
-    for (TCReferable coercingFunction : definition.getUsedDefinitions()) {
-      myDependencyListener.dependsOn(definition.getData(), true, coercingFunction);
-      Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(coercingFunction);
-      if (def instanceof Concrete.FunctionDefinition) {
-        Concrete.FunctionDefinition.Kind kind = ((Concrete.FunctionDefinition) def).getKind();
+  private void doOrderUsedDefinitions(DefState currentState, Concrete.Definition definition) {
+    for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
+      Concrete.FunctionDefinition def = myConcreteProvider.getConcreteFunction(usedDefinition);
+      if (def != null) {
+        Concrete.FunctionDefinition.Kind kind = def.getKind();
         if (kind.isUse()) {
           Definition typechecked = myState.getTypechecked(def.getData());
           if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
-            updateState(currentState, new TypecheckingUnit((Concrete.Definition) def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
+            updateState(currentState, new TypecheckingUnit(def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
             if (kind == Concrete.FunctionDefinition.Kind.LEVEL) {
-              myDeferredDefinitions.add((Concrete.Definition) def);
+              myDeferredDefinitions.add(def);
             }
           }
         }

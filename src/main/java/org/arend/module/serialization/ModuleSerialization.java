@@ -6,11 +6,13 @@ import org.arend.core.definition.Definition;
 import org.arend.error.ErrorReporter;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.LocatedReferable;
+import org.arend.naming.reference.ModuleReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.LongName;
 
 import java.util.*;
 
@@ -77,7 +79,7 @@ public class ModuleSerialization {
     // Write referable
     LocatedReferable referable = group.getReferable();
     DefinitionProtos.Referable.Builder refBuilder = DefinitionProtos.Referable.newBuilder();
-    refBuilder.setName(referable.textRepresentation());
+    refBuilder.setName(referable instanceof ModuleReferable ? ((ModuleReferable) referable).path.getLastName() : referable.textRepresentation());
     refBuilder.setPrecedence(DefinitionSerialization.writePrecedence(referable.getPrecedence()));
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);

@@ -58,7 +58,7 @@ public class ConcreteExpressionFactory {
   }
 
   public static Concrete.LetExpression cLet(List<Concrete.LetClause> clauses, Concrete.Expression expr) {
-    return new Concrete.LetExpression(null, clauses, expr);
+    return new Concrete.LetExpression(null, false, clauses, expr);
   }
 
   public static List<Concrete.LetClause> clets(Concrete.LetClause... letClauses) {

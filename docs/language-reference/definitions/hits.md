@@ -1,14 +1,17 @@
 <h1 id="hits">Higher Inductive Types<a class="headerlink" href="#hits" title="Permanent link">&para;</a></h1>
 
-Higher inductive types generalize ordinary [inductive types](/language-reference/definitions/data).
-They allow us to define various (higher) colimits of types and other constructions such as truncations.
+Higher inductive types are a generalization of ordinary 
+[inductive types](/language-reference/definitions/data).
+Various homotopy colimits of types and other constructions such as
+truncations are higher inductive types. A specific homotopy structure of a higher inductive
+type can be defined by means of _conditions_ in data definitions.
 
-# Data types with conditions
+# Conditions
 
-If `con` is a constructor of an ordinary data type, then an expression of the form `con a_1 ... a_n` is always a normal form.
-A _condition_ on a constructor is a rule that says how such an expression might evaluate.
-For example, we can define integers as a data type with two constructors for positive and negative integers.
-We can add a condition on the second constructor that says that positive and negative zero are computationally equal:
+If `con` is a constructor of an inductive type `D`, then an expression of the form
+`con a_1 ... a_n` does not reduce any further unless the definition of `D` contains _conditions_ on `con`.
+A condition on a constructor is a rule that says how such an expression might be reduced.
+For example, one can define integers as a data type with two constructors: one for positive, and one for negative integers, and a condition on the second constructor telling positive and negative zero have to be computationally equal:
 
 ```arend
 \data Int
@@ -18,16 +21,19 @@ We can add a condition on the second constructor that says that positive and neg
   }
 ```
 
-To put conditions on a constructor, we need to define it as a function by [pattern matching](/language-reference/definitions/functions/#pattern-matching).
-The only difference is that it is not required that all cases are covered.
+Conditions are imposed on a constructor by defining it as a function by
+[pattern matching](/language-reference/definitions/functions/#pattern-matching).
+The only differences are that it is not required that all cases are covered and that pattern matching on constructors
+`left` and `right` of the [interval type](/language-reference/prelude) `I` is allowed.
 The general syntax is the same as for ordinary pattern matching.
-We need to add either `\with { ... }` or `\elim x_1, ... x_n { ... }` after parameters of the constructor, where `...` is a list of clauses.
+Either `\with { | c_1 | ... | c_m }` or `\elim x_1, ... x_n { | c_1 | ... | c_m }` can be added after parameters
+of the constructor, where `| c_1 | ... | c_m` is a list of clauses.
 
-A constructor with conditions will evaluate if its arguments match the specification in the same way as a function defined by pattern matching.
-This means that a function over a data type with conditions must respect the equality between different constructors.
-The typechecker checks that functions over data types with conditions are correctly defined.
+A constructor with conditions evaluates if its arguments match the specification in the same way as a function defined by pattern matching.
+This means that a function over a data type with conditions must respect the conditions, this is checked
+by the typechecker.
 For example, a function of type `Int -> X` must map positive and negative zero to the same value.
-Thus, we cannot define the following function:
+Thus, one cannot define the following function:
 
 ```arend
 \func f (x : Int) : Nat
@@ -84,5 +90,5 @@ Let us give a few examples:
 If `X` is a proposition, then, to define a function of type `Trunc A -> X`, it is enough to specify its value for `inT a`.
 The same works for any higher inductive type and any level.
 For example, to define a function `Quotient A -> X`, it is enough to specify its value for `inQ a` and `equivQ x y r i` if `X` is a set and only for `inQ a` if it is a proposition.
-This also workds for several arguments.
+This also works for several arguments.
 For example, if `X` is a set, then, to define a function `Quotient A -> Quotient A -> X`, it is enough to specify its value for `inQ a, inQ a'`, `inQ a, equivQ x y r i`, and `equivQ x y r i, inQ a`.

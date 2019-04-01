@@ -437,6 +437,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
+    calculateTypeClassParameters(def, typedDef);
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
@@ -866,7 +867,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
       typedDef.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-      calculateTypeClassParameters(def, typedDef);
 
       if (checkForUniverses(typedDef.getParameters()) || checkForContravariantUniverses(typedDef.getResultType()) || CheckForUniversesVisitor.findUniverse(typedDef.getBody())) {
         typedDef.setHasUniverses(true);
@@ -2076,7 +2076,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       type = (ClassCallExpression) typeResult.expression;
       pseudoImplemented = new HashSet<>();
-      result = myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, type, pseudoImplemented, resultType);
+      result = myVisitor.finalize(myVisitor.visitClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType), null, def);
+      if (result == null || !(result.expression instanceof ClassCallExpression)) {
+        return null;
+      }
     } else {
       pseudoImplemented = Collections.emptySet();
       result = myVisitor.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), ExpectedType.OMEGA, false);
@@ -2145,7 +2148,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       int cmp = 0;
       if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {
         for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) expr1).getImplementedHere().entrySet()) {
-          Expression impl2 = ((ClassCallExpression) expr2).getImplementedHere().get(entry.getKey());
+          Expression impl2 = ((ClassCallExpression) expr2).getImplementationHere(entry.getKey());
           if (impl2 == null) {
             cmp = 1;
             break;

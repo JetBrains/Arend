@@ -347,6 +347,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitLet(LetExpression letExpression, Void params) {
     ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
+    builder.setIsStrict(letExpression.isStrict());
     for (LetClause letClause : letExpression.getClauses()) {
       builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
         .setName(letClause.getName())

@@ -1512,7 +1512,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       clauses.add(visitLetClause(clauseCtx));
     }
 
-    return new Concrete.LetExpression(tokenPosition(ctx.start), clauses, visitExpr(ctx.expr()));
+    return new Concrete.LetExpression(tokenPosition(ctx.start), ctx.LETS() != null, clauses, visitExpr(ctx.expr()));
   }
 
   private Position tokenPosition(Token token) {
