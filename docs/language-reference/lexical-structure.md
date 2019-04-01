@@ -3,7 +3,7 @@
 ## Keywords
 
 All Arend's _keywords_ begin with `\`.
-The complete list of keywords:
+Here's the complete list of keywords:
 
 [\open](/language-reference/definitions/modules/#open-commands) [\import](/language-reference/definitions/modules/#import-commands) [\hiding](/language-reference/definitions/modules/#open-commands) [\as](/language-reference/definitions/modules/#open-commands) [\using](/language-reference/definitions/modules/#open-commands)
 [\truncated](/language-reference/definitions/data) [\data](/language-reference/definitions/data) [\func](/language-reference/definitions/functions) [\lemma](/language-reference/definitions/functions/#lemmas) [\class](/language-reference/definitions/classes) [\record](/language-reference/definitions/records) [\field](/language-reference/definitions/records) [\property](/language-reference/definitions/records/#properties) [\extends](/language-reference/definitions/records) [\module](/language-reference/definitions/modules/#modules) [\instance](/language-reference/definitions/classes) [\use](/language-reference/definitions/coercion) [\coerce](/language-reference/definitions/coercion) [\level](/language-reference/definitions/level) 
@@ -14,13 +14,13 @@ The complete list of keywords:
 
 ## Numerals
 
-A _positive numeral_ is a non-empty sequence of numbers.
-A _negative numeral_ consists of `-` followed by a non-empty sequence of numbers.
+A _positive numeral_ is a non-empty sequence of digits.
+A _negative numeral_ consists of `-` followed by a non-empty sequence of digits.
 
 ## Identifiers
 
-An _identifier_ consists of a non-empty sequence of lower and upper case letters, numbers, and symbols from the list `~!@#$%^&*-+=<>?/|[];:_`.
-Exceptions are sequences that begin with a number, sequences that begin with `--`, numerals, and reserved names: `->`, `=>`, `_`, `:`, and `|`.
+An _identifier_ consists of a non-empty sequence of lower and upper case letters, digits, and characters from the list `~!@#$%^&*-+=<>?/|[];:_`.
+Exceptions are sequences that begin with a digit, sequences that begin with `--`, numerals, and reserved names: `->`, `=>`, `_`, `:`, and `|`.
 
 Examples:
 
@@ -37,5 +37,5 @@ Both of these notations are described in [this section](/language-reference/defi
 
 _Multi-line comments_ are enclosed in `{-` and `-}` and can be nested.
 _Single-line comments_ consist of `--` followed by an arbitrary text until the end of the line.
-The exception is identifiers which include `--` in their names, but do not begin with `--`.
-This means that `--`, `--------`, `--|`, `--foo`, and `-------foobar` are comments and `|--`, `%--foo`, and `x------foobar` are not.
+The exception are identifiers which contain `--` in their names, but do not begin with `--`.
+To give an example, `--`, `--------`, `--|`, `--foo`, and `-------foobar` are comments but `|--`, `%--foo`, and `x------foobar` are not.
