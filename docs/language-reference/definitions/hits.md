@@ -1,6 +1,6 @@
 <h1 id="hits">Higher Inductive Types<a class="headerlink" href="#hits" title="Permanent link">&para;</a></h1>
 
-Higher inductive types generalize ordinary 
+Higher inductive types are a generalization of ordinary 
 [inductive types](/language-reference/definitions/data).
 Various homotopy colimits of types and other constructions such as
 truncations are higher inductive types. A specific homotopy structure of a higher inductive
@@ -9,10 +9,9 @@ type can be defined by means of _conditions_ in data definitions.
 # Conditions
 
 If `con` is a constructor of an inductive type `D`, then an expression of the form
-`con a_1 ... a_n` does not evaluate unless the definition of `D` contains _conditions_ on `con`.
-A condition on a constructor is a rule that says how such an expression might evaluate.
-For example, one can define integers as a data type with two constructors for positive and negative integers.
-One can add a condition on the second constructor that says that positive and negative zero are computationally equal:
+`con a_1 ... a_n` does not reduce any further unless the definition of `D` contains _conditions_ on `con`.
+A condition on a constructor is a rule that says how such an expression might be reduced.
+For example, one can define integers as a data type with two constructors: one for positive, and one for negative integers, and a condition on the second constructor telling positive and negative zero have to be computationally equal:
 
 ```arend
 \data Int
