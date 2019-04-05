@@ -202,6 +202,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     Sort sort = Sort.PROP;
     int index = 0;
 
+    if (oldParameters != null) {
+      list.append(oldParameters);
+    }
+
     for (Concrete.Parameter parameter : parameters) {
       if (parameter instanceof Concrete.TypeParameter) {
         Concrete.TypeParameter typeParameter = (Concrete.TypeParameter) parameter;
@@ -295,9 +299,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
     }
 
-    if (oldParameters != null) {
-      list.append(oldParameters);
-    }
     return sort;
   }
 
@@ -676,7 +677,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
   private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
     List<Boolean> typeClassParameters = new ArrayList<>();
-    for (Concrete.TypeParameter parameter : (refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
+    for (Concrete.TypeParameter parameter : Objects.requireNonNull(refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
       Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(parameter.getType());
       boolean isTypeClass = refExpr != null && refExpr.getReferent() instanceof ClassReferable;
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {

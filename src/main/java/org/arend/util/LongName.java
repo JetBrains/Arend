@@ -18,6 +18,10 @@ public class LongName implements Comparable<LongName> {
     return myPath.toArray(new String[0]);
   }
 
+  public int size() {
+    return myPath.size();
+  }
+
   public String getLastName() {
     return myPath.isEmpty() ? null : myPath.get(myPath.size() - 1);
   }
