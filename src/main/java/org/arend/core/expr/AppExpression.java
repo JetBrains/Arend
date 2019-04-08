@@ -23,6 +23,7 @@ public class AppExpression extends Expression {
     }
   }
 
+  @Override
   public Expression getFunction() {
     return myFunction;
   }

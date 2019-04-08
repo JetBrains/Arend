@@ -892,30 +892,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             classifyingExpr = classifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
           }
 
-          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
-          if (classifyingExpr instanceof DataCallExpression) {
-            DataCallExpression dataCall = (DataCallExpression) classifyingExpr;
-            if (dataCall.getDefCallArguments().size() < params.size()) {
-              ok = false;
-            } else {
-              int i = dataCall.getDefCallArguments().size() - params.size();
-              for (SingleDependentLink param : params) {
-                if (!(dataCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) dataCall.getDefCallArguments().get(i)).getBinding() == param)) {
-                  ok = false;
-                  break;
-                }
-                i++;
-              }
-              if (ok) {
-                for (i = 0; i < dataCall.getDefCallArguments().size() - params.size(); i++) {
-                  if (dataCall.getDefCallArguments().get(i).findBinding(params) != null) {
-                    ok = false;
-                    break;
-                  }
-                }
-              }
-            }
-          } else if (classifyingExpr instanceof ClassCallExpression) {
+          boolean ok = classifyingExpr == null || classifyingExpr instanceof ErrorExpression || classifyingExpr instanceof DataCallExpression || classifyingExpr instanceof ConCallExpression || classifyingExpr instanceof ClassCallExpression || classifyingExpr instanceof UniverseExpression && params.isEmpty() || classifyingExpr instanceof SigmaExpression && params.isEmpty() || classifyingExpr instanceof IntegerExpression && params.isEmpty();
+          if (classifyingExpr instanceof ClassCallExpression) {
             Map<ClassField, Expression> implemented = ((ClassCallExpression) classifyingExpr).getImplementedHere();
             if (implemented.size() < params.size()) {
               ok = false;
@@ -949,9 +927,31 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
                 }
               }
             }
+          } else if (classifyingExpr instanceof DefCallExpression) {
+            DefCallExpression defCall = (DefCallExpression) classifyingExpr;
+            if (defCall.getDefCallArguments().size() < params.size()) {
+              ok = false;
+            } else {
+              int i = defCall.getDefCallArguments().size() - params.size();
+              for (SingleDependentLink param : params) {
+                if (!(defCall.getDefCallArguments().get(i) instanceof ReferenceExpression && ((ReferenceExpression) defCall.getDefCallArguments().get(i)).getBinding() == param)) {
+                  ok = false;
+                  break;
+                }
+                i++;
+              }
+              if (ok && !params.isEmpty()) {
+                for (i = 0; i < defCall.getDefCallArguments().size() - params.size(); i++) {
+                  if (defCall.getDefCallArguments().get(i).findBinding(params) != null) {
+                    ok = false;
+                    break;
+                  }
+                }
+              }
+            }
           }
           if (!ok) {
-            myErrorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, or a class, or a partially applied data", def.getResultType() == null ? def : def.getResultType()));
+            myErrorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
           }
         } else {
           classifyingExpr = null;

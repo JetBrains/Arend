@@ -80,7 +80,7 @@ public class TwoStageEquations implements Equations {
       Expression result = null;
 
       // expr1 == field call
-      FieldCallExpression fieldCall1 = expr1.checkedCast(FieldCallExpression.class);
+      FieldCallExpression fieldCall1 = expr1.getFunction().checkedCast(FieldCallExpression.class);
       InferenceVariable variable = fieldCall1 == null ? null : fieldCall1.getArgument().getInferenceVariable();
       if (variable != null) {
         // expr1 == view field call
@@ -89,7 +89,7 @@ public class TwoStageEquations implements Equations {
 
       // expr2 == field call
       if (variable == null) {
-        FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+        FieldCallExpression fieldCall2 = expr2.getFunction().checkedCast(FieldCallExpression.class);
         variable = fieldCall2 == null ? null : fieldCall2.getArgument().getInferenceVariable();
         if (variable != null) {
           // expr2 == view field call

@@ -197,6 +197,11 @@ public abstract class Expression implements ExpectedType {
     return isInstance(clazz) ? cast(clazz) : null;
   }
 
+  public Expression getFunction() {
+    AppExpression app = checkedCast(AppExpression.class);
+    return app != null ? app.getFunction() : this;
+  }
+
   public abstract boolean isWHNF();
 
   // This function assumes that the expression is in a WHNF.

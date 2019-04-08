@@ -59,7 +59,7 @@ public class GlobalInstancePool implements InstancePool {
       while (classifyingExpression.isInstance(LamExpression.class)) {
         classifyingExpression = classifyingExpression.cast(LamExpression.class).getBody();
       }
-      if (!classifyingExpression.isInstance(DefCallExpression.class) && !classifyingExpression.isInstance(UniverseExpression.class) && !classifyingExpression.isInstance(IntegerExpression.class)) {
+      if (!(classifyingExpression.isInstance(DefCallExpression.class) || classifyingExpression.isInstance(SigmaExpression.class) || classifyingExpression.isInstance(UniverseExpression.class) || classifyingExpression.isInstance(IntegerExpression.class))) {
         return null;
       }
 
@@ -92,9 +92,10 @@ public class GlobalInstancePool implements InstancePool {
             instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
           }
           if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
-            instanceClassifyingExpr instanceof IntegerExpression && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
-              classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
-            instanceClassifyingExpr instanceof DefCallExpression && classifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
+                instanceClassifyingExpr instanceof SigmaExpression && classifyingExpression.isInstance(SigmaExpression.class) ||
+                instanceClassifyingExpr instanceof IntegerExpression  && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
+                  classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
+                instanceClassifyingExpr instanceof DefCallExpression && classifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
             continue;
           }
         }
