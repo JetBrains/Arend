@@ -21,11 +21,11 @@ public class ReferenceDoc extends LineDoc {
 
   @Override
   public int getWidth() {
-    return myReference.toString().length();
+    return myReference.textRepresentation().length();
   }
 
   @Override
   public boolean isEmpty() {
-    return myReference.toString().isEmpty();
+    return myReference.textRepresentation().isEmpty();
   }
 }
