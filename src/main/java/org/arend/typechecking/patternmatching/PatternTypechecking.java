@@ -200,13 +200,14 @@ public class PatternTypechecking {
   }
 
   private void typecheckAsPatterns(List<Concrete.TypedReferable> asPatterns, Expression expression, Expression expectedType) {
-    if (expression == null) {
+    if (expression == null || asPatterns.isEmpty()) {
       if (!asPatterns.isEmpty()) {
         myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "As-pattern is ignored", asPatterns.get(0)));
       }
       return;
     }
 
+    expectedType = expectedType.copy();
     for (Concrete.TypedReferable typedReferable : asPatterns) {
       Type type = typecheckType(typedReferable.type, expectedType);
       if (typedReferable.referable != null) {

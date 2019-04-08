@@ -59,4 +59,12 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "  | (a,b) \\as p : R => a Nat.+ p.x Nat.+ b Nat.+ p.y\n" +
       "\\func g : f (\\new R 3 4) = 14 => path (\\lam _ => 14)");
   }
+
+  @Test
+  public void sigmaPattern() {
+    typeCheckModule(
+      "\\data D | con (\\Sigma Nat Nat) Nat\n" +
+      "\\func foo (d : D) : \\Sigma Nat Nat\n" +
+      "  | con ((x,y) \\as p) m => p");
+  }
 }
