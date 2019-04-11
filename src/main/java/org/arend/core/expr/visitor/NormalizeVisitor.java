@@ -482,12 +482,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Mode mode) {
+    if (mode != Mode.NF && expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isLemma()) {
+      return expr;
+    }
     if (!expr.getDefinition().status().bodyIsOK()) {
       return applyDefCall(expr, mode);
     }
 
     if (expr instanceof FieldCallExpression) {
       boolean isProperty = ((ClassField) expr.getDefinition()).isProperty();
+      if (isProperty && mode == Mode.WHNF) {
+        return expr;
+      }
       Expression thisExpr = ((FieldCallExpression) expr).getArgument();
       if (!isProperty) {
         thisExpr = thisExpr.accept(this, Mode.WHNF);
@@ -502,7 +508,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), mode == Mode.WHNF ? thisExpr : thisExpr.accept(this, mode));
+      return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), thisExpr.accept(this, mode));
     }
 
     if (expr.getDefinition() instanceof Function) {
