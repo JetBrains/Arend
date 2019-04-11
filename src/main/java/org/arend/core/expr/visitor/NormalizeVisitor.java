@@ -14,6 +14,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.ComputationInterruptedException;
+import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -219,7 +220,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   private Expression visitDefCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
     Definition definition = expr.getDefinition();
-    if (definition == Prelude.COERCE) {
+    if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
       LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, Mode.WHNF).checkedCast(LamExpression.class);
       if (lamExpr != null) {
         Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
@@ -227,7 +228,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         FunCallExpression funCall = body.checkedCast(FunCallExpression.class);
         boolean checkSigma = true;
 
-        if (funCall != null && funCall.getDefinition() == Prelude.ISO) {
+        if (funCall != null && funCall.getDefinition() == Prelude.ISO && definition == Prelude.COERCE) {
           List<? extends Expression> isoArgs = funCall.getDefCallArguments();
           ReferenceExpression refExpr = isoArgs.get(isoArgs.size() - 1).accept(this, Mode.WHNF).checkedCast(ReferenceExpression.class);
           if (refExpr != null && refExpr.getBinding() == lamExpr.getParameters()) {
@@ -249,7 +250,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         }
 
         if (checkSigma && !NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters())) {
-          return expr.getDefCallArguments().get(1).accept(this, mode);
+          return expr.getDefCallArguments().get(definition == Prelude.COERCE ? 1 : 2).accept(this, mode);
         }
       }
     }
@@ -336,6 +337,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       IntervalElim elim = (IntervalElim) body;
       int i0 = defCallArgs.size() - elim.getCases().size();
       for (int i = i0; i < defCallArgs.size(); i++) {
+        Pair<Expression, Expression> thisCase = elim.getCases().get(i - i0);
+        if (thisCase.proj1 == null && thisCase.proj2 == null) {
+          continue;
+        }
+
         Expression arg = defCallArgs.get(i).accept(this, Mode.WHNF);
         ConCallExpression conCall = arg.checkedCast(ConCallExpression.class);
         if (conCall != null) {
@@ -350,13 +356,23 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
           Expression result;
           if (conCall.getDefinition() == Prelude.LEFT) {
-            result = elim.getCases().get(i - i0).proj1;
+            result = thisCase.proj1;
           } else if (conCall.getDefinition() == Prelude.RIGHT) {
-            result = elim.getCases().get(i - i0).proj2;
+            result = thisCase.proj2;
+            if (definition == Prelude.COERCE2 && i == 1) { // Just a shortcut
+              Expression arg3 = defCallArgs.get(3).accept(this, Mode.WHNF);
+              if (arg3.isInstance(ConCallExpression.class) && arg3.cast(ConCallExpression.class).getDefinition() == Prelude.RIGHT) {
+                return defCallArgs.get(2).accept(this, mode);
+              } else {
+                return applyDefCall(expr, mode);
+              }
+            }
           } else {
             throw new IllegalStateException();
           }
-          return result == null ? applyDefCall(expr, mode) : result.subst(substitution).accept(this, mode);
+          if (result != null) {
+            return result.subst(substitution).accept(this, mode);
+          }
         }
       }
       elimTree = elim.getOtherwise();

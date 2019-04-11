@@ -44,6 +44,7 @@ public class Prelude {
 
   public static DataDefinition INTERVAL;
   public static Constructor LEFT, RIGHT;
+  public static FunctionDefinition SQUEEZE, SQUEEZE_R;
 
   public static DataDefinition NAT;
   public static Constructor ZERO, SUC;
@@ -53,7 +54,7 @@ public class Prelude {
   public static Constructor POS, NEG;
   private static FunctionDefinition FROM_NAT;
 
-  public static FunctionDefinition COERCE;
+  public static FunctionDefinition COERCE, COERCE2;
 
   public static DataDefinition PATH;
   public static FunctionDefinition PATH_INFIX;
@@ -113,6 +114,14 @@ public class Prelude {
         LEFT = INTERVAL.getConstructor("left");
         RIGHT = INTERVAL.getConstructor("right");
         break;
+      case "squeeze":
+        SQUEEZE = (FunctionDefinition) definition;
+        SQUEEZE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "squeezeR":
+        SQUEEZE_R = (FunctionDefinition) definition;
+        SQUEEZE_R.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
       case "Path":
         PATH = (DataDefinition) definition;
         PATH.setSort(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1)));
@@ -136,9 +145,11 @@ public class Prelude {
       }
       case "coe":
         COERCE = (FunctionDefinition) definition;
-        DependentLink coeParams = DependentLink.Helper.take(COERCE.getParameters(), 2);
-        COERCE.setBody(new BranchElimTree(coeParams, Collections.singletonMap(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(coeParams.getNext())))));
         COERCE.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "coe2":
+        COERCE2 = (FunctionDefinition) definition;
+        COERCE2.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "iso": {
         ISO = (FunctionDefinition) definition;
@@ -202,12 +213,15 @@ public class Prelude {
     consumer.accept(INTERVAL);
     consumer.accept(LEFT);
     consumer.accept(RIGHT);
+    consumer.accept(SQUEEZE);
+    consumer.accept(SQUEEZE_R);
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
     consumer.accept(IN_PROP);
     consumer.accept(PATH_INFIX);
     consumer.accept(AT);
     consumer.accept(COERCE);
+    consumer.accept(COERCE2);
     consumer.accept(ISO);
     consumer.accept(LESS_OR_EQ);
     consumer.accept(ZERO_LESS_OR_EQ);
@@ -230,7 +244,7 @@ public class Prelude {
       }
     }
 
-    for (String name : new String[] {"Nat", "Int", "Path"}) {
+    for (String name : new String[] {"Nat", "Int", "Path", "I"}) {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {

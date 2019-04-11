@@ -1,6 +1,19 @@
 \data I
   | left
   | right
+  \where {
+    \func squeeze (i j : I) : I
+      | left, j => left
+      | right, j => j
+      | i, left => left
+      | i, right => i
+
+    \func squeezeR (i j : I) : I
+      | left, j => j
+      | right, j => right
+      | i, left => i
+      | i, right => right
+  }
 
 \data Path (A : I -> \Type) (a : A left) (a' : A right)
   | path (\Pi (i : I) -> A i)
@@ -58,6 +71,10 @@
 
 \func coe (A : I -> \Type) (a : A left) (i : I) : A i \elim i
   | left => a
+
+\func coe2 (A : I -> \Type) (i : I) (a : A i) (j : I) : A j \elim i, j
+  | left, j => coe A a j
+  | i, right => coe (\lam k => A (I.squeezeR i k)) a right
 
 \func iso {A B : \Type} (f : A -> B) (g : B -> A) (p : \Pi (x : A) -> g (f x) = x) (q : \Pi (y : B) -> f (g y) = y) (i : I) : \Type \elim i
   | left => A

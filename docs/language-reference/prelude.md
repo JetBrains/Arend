@@ -12,11 +12,27 @@ You can find file `Prelude.ard` which contains these definitions, but note that 
 The definitions of `Nat`, `Int`, `Nat.+`, `Nat.*`, `Nat.-`, and `Int.fromNat` are actually correct, you can define the same definitions in an ordinary file.
 The difference is that the definitions from Prelude are implemented more efficiently.
 
-# Interval
+# Interval and squeeze functions
 
 The definition of the interval type `\data I | left | right` looks like the definition of the set with two elements, but this is not true actually.
 One way to think about this data type is that it has more constructors to which you cannot refer explicitly.
 This means that you cannot define a function on `I` by pattern matching.
+
+Functions `squeeze` and `squeezeR` satisfy the following equations:
+```arend
+squeeze left j => left
+squeeze right j => j
+squeeze i left => left
+squeeze i right => i
+
+squeezeR left j => j
+squeezeR right j => right
+squeezeR i left => i
+squeezeR i right => right
+```
+
+Such functions can be defined in terms of the function `coe` described below,
+but since we need only the properties listed above it is easier to define them directly.
 
 # Path
 
@@ -44,11 +60,15 @@ This rule does not hold for functions `@` defined in other files.
 Finally, function `Path.inProp` is not correct since it does not have a body.
 It implies that every two element of a type in `\Prop` are equal.
 
-# coe
+# coe and coe2
 
-Function `coe` imples that `I` is contractible and that `=` satisfies the rules for ordinary identity types.
+Function `coe` is an eliminator for the interval type.
+It allows us, for every type over the interval, to transport elements from the fiber over `left` to the fiber over an arbitrary point.
+It also implies that `I` is contractible and that `=` satisfies the rules for ordinary identity types.
 The definition of `coe` is not correct since it pattern matches on the interval.
 This function satisfies one additional reduction rule: `coe (\lam x => A) a i => a` if `x` is not free in `A`.
+
+Function `coe2` is a generalization of `coe`, which allows us to transport elements between any two fibers of a type over the interval.
 
 # iso
 

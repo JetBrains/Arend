@@ -49,6 +49,14 @@ public class FunCallExpression extends DefCallExpression {
       Expression stuck = myArguments.get(2).getStuckExpression();
       return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
     }
+    if (getDefinition() == Prelude.COERCE2) {
+      Expression stuck = myArguments.get(1).getStuckExpression();
+      if (stuck != null) {
+        return stuck;
+      }
+      stuck = myArguments.get(3).getStuckExpression();
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
+    }
     return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
   }
 }
