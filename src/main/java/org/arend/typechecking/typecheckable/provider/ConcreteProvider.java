@@ -21,12 +21,6 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   }
 
   @Override
-  default boolean isRecord(ClassReferable classRef) {
-    Concrete.ClassDefinition classDef = getConcreteClass(classRef);
-    return classDef != null && classDef.isRecord();
-  }
-
-  @Override
   default boolean isInstance(GlobalReferable ref) {
     return getConcreteInstance(ref) != null;
   }

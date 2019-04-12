@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 public interface ClassReferable extends LocatedReferable {
+  boolean isRecord();
   @Nonnull List<? extends ClassReferable> getSuperClassReferences();
   @Nonnull Collection<? extends Reference> getUnresolvedSuperClassReferences();
   @Nonnull Collection<? extends FieldReferable> getFieldReferables();
@@ -40,30 +41,46 @@ public interface ClassReferable extends LocatedReferable {
     public static HashSet<FieldReferable> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
       HashSet<FieldReferable> fieldSet = new LinkedHashSet<>(getAllFields(classDef, new HashSet<>(), superClassesFields));
       removeImplemented(classDef, fieldSet, superClassesFields);
-      if (!argumentsExplicitness.isEmpty()) {
-        Iterator<FieldReferable> it = fieldSet.iterator();
-        int i = 0;
-        while (it.hasNext() && i < argumentsExplicitness.size()) {
-          FieldReferable field = it.next();
-          boolean isExplicit = field.isExplicitField();
-          if (isExplicit) {
-            while (i < argumentsExplicitness.size() && !argumentsExplicitness.get(i)) {
-              i++;
-            }
-            if (i == argumentsExplicitness.size()) {
-              break;
-            }
-          }
 
-          for (Set<FieldReferable> fields : superClassesFields.values()) {
-            fields.remove(field);
-          }
-          it.remove();
-
-          if (isExplicit == argumentsExplicitness.get(i)) {
+      Iterator<FieldReferable> it = fieldSet.iterator();
+      int i = 0;
+      while (it.hasNext() && i < argumentsExplicitness.size()) {
+        FieldReferable field = it.next();
+        boolean isExplicit = field.isExplicitField();
+        if (isExplicit) {
+          while (i < argumentsExplicitness.size() && !argumentsExplicitness.get(i)) {
             i++;
           }
+          if (i == argumentsExplicitness.size()) {
+            break;
+          }
         }
+
+        for (Set<FieldReferable> fields : superClassesFields.values()) {
+          fields.remove(field);
+        }
+        it.remove();
+
+        if (isExplicit == argumentsExplicitness.get(i)) {
+          i++;
+        }
+      }
+
+      // Remove tail implicit parameters (only classes)
+      while (it.hasNext()) {
+        FieldReferable field = it.next();
+        if (field.isExplicitField() || !field.isParameterField()) {
+          break;
+        }
+        ClassReferable typeClass = field.getTypeClassReference();
+        if (typeClass == null || typeClass.isRecord()) {
+          break;
+        }
+
+        for (Set<FieldReferable> fields : superClassesFields.values()) {
+          fields.remove(field);
+        }
+        it.remove();
       }
 
       return fieldSet;

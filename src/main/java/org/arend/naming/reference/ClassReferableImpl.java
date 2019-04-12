@@ -9,11 +9,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class ClassReferableImpl extends LocatedReferableImpl implements TCClassReferable {
+  private final boolean myRecord;
   private final List<TCClassReferable> mySuperClassReferences;
   private final List<? extends TCFieldReferable> myFieldReferables;
 
-  public ClassReferableImpl(Precedence precedence, String name, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModulePath parent) {
+  public ClassReferableImpl(Precedence precedence, String name, boolean isRecord, List<TCClassReferable> superClassReferences, List<? extends TCFieldReferable> fieldReferables, ModulePath parent) {
     super(precedence, name, parent);
+    myRecord = isRecord;
     mySuperClassReferences = superClassReferences;
     myFieldReferables = fieldReferables;
   }
@@ -40,5 +42,10 @@ public class ClassReferableImpl extends LocatedReferableImpl implements TCClassR
   @Override
   public Collection<? extends Referable> getImplementedFields() {
     return Collections.emptyList();
+  }
+
+  @Override
+  public boolean isRecord() {
+    return myRecord;
   }
 }

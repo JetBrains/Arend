@@ -77,7 +77,7 @@ public abstract class NameResolvingChecker {
       }
     }
 
-    if (!(ref instanceof ErrorReference) && !(ok && ref instanceof ClassReferable && (!checkNotRecord || !myConcreteProvider.isRecord((ClassReferable) ref)))) {
+    if (!(ref instanceof ErrorReference) && !(ok && ref instanceof ClassReferable && (!checkNotRecord || !((ClassReferable) ref).isRecord()))) {
       onError(new NamingError(ok && ref instanceof ClassReferable  ? "Expected a class, got a record" : "Expected a class", classRef.getData()));
     }
   }

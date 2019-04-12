@@ -39,6 +39,11 @@ public interface TCClassReferable extends TCReferable, ClassReferable {
       return Collections.emptyList();
     }
 
+    @Override
+    public boolean isRecord() {
+      return true;
+    }
+
     @Nonnull
     @Override
     public Collection<? extends Reference> getUnresolvedSuperClassReferences() {

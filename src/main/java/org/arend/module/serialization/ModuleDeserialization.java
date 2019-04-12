@@ -191,7 +191,7 @@ public class ModuleDeserialization {
     LocatedReferable referable;
     if (groupProto.hasDefinition() && groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CLASS) {
       fieldReferables = new ArrayList<>();
-      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), new ArrayList<>(), fieldReferables, modulePath);
+      referable = new ClassReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), groupProto.getDefinition().getClass_().getIsRecord(), new ArrayList<>(), fieldReferables, modulePath);
     } else {
       fieldReferables = new ArrayList<>(0);
       if (parent == null) {

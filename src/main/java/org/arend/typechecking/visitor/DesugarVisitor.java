@@ -184,7 +184,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implemen
           break;
         }
         ClassReferable classRef = fieldRef.getTypeClassReference();
-        if (classRef == null || myConcreteProvider.isRecord(classRef)) {
+        if (classRef == null || classRef.isRecord()) {
           break;
         }
 

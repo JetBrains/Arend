@@ -97,4 +97,9 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
     }
     return result;
   }
+
+  @Override
+  public boolean isRecord() {
+    return getDefinition().isRecord();
+  }
 }
