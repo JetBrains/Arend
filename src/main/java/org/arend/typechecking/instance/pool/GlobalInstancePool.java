@@ -9,8 +9,6 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.naming.reference.ClassReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
@@ -18,7 +16,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
-import java.util.List;
+import java.util.function.Predicate;
 
 public class GlobalInstancePool implements InstancePool {
   private final TypecheckerState myTypecheckerState;
@@ -53,7 +51,7 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
-    ClassField classifyingField = null;
+    ClassField classifyingField;
     if (classifyingExpression != null) {
       classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
       while (classifyingExpression.isInstance(LamExpression.class)) {
@@ -71,49 +69,58 @@ public class GlobalInstancePool implements InstancePool {
       if (classifyingField == null) {
         return null;
       }
+    } else {
+      classifyingField = null;
     }
 
-    List<? extends Concrete.FunctionDefinition> instances = myInstanceProvider.getInstances();
-    for (Concrete.FunctionDefinition instance : instances) {
-      Referable instanceRef = instance.getReferenceInType();
-      if (!(instanceRef instanceof ClassReferable && ((ClassReferable) instanceRef).isSubClassOf(classRef))) {
-        continue;
-      }
+    Expression normClassifyingExpression = classifyingExpression;
+    class MyPredicate implements Predicate<Concrete.FunctionDefinition> {
+      private FunctionDefinition instanceDef = null;
 
-      FunctionDefinition instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
-      if (instanceDef != null && instanceDef.status().headerIsOK() && instanceDef.getResultType() instanceof ClassCallExpression) {
-        ClassCallExpression instanceResultType = (ClassCallExpression) instanceDef.getResultType();
-        if (classifyingExpression != null) {
-          Expression instanceClassifyingExpr = instanceResultType.getImplementationHere(classifyingField);
-          if (instanceClassifyingExpr != null) {
-            instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
-          }
-          while (instanceClassifyingExpr instanceof LamExpression) {
-            instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
-          }
-          if (!(instanceClassifyingExpr instanceof UniverseExpression && classifyingExpression.isInstance(UniverseExpression.class) ||
-                instanceClassifyingExpr instanceof SigmaExpression && classifyingExpression.isInstance(SigmaExpression.class) ||
-                instanceClassifyingExpr instanceof IntegerExpression  && (classifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(classifyingExpression.cast(IntegerExpression.class)) ||
-                  classifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(classifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
-                instanceClassifyingExpr instanceof DefCallExpression && classifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == classifyingExpression.cast(DefCallExpression.class).getDefinition())) {
-            continue;
-          }
+      @Override
+      public boolean test(Concrete.FunctionDefinition instance) {
+        instanceDef = (FunctionDefinition) myTypecheckerState.getTypechecked(instance.getData());
+        if (instanceDef == null || !instanceDef.status().headerIsOK() || !(instanceDef.getResultType() instanceof ClassCallExpression)) {
+          return false;
         }
 
-        Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance.getData());
-        for (DependentLink link = instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
-          if (link.isExplicit()) {
-            instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new Concrete.HoleExpression(sourceNode.getData()), true);
-          }
+        if (normClassifyingExpression == null) {
+          return true;
         }
 
-        Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(instanceResultType.getDefinition(), Sort.generateInferVars(myCheckTypeVisitor.getEquations(), instanceResultType.getDefinition().hasUniverses(), sourceNode)), sourceNode);
-        CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
-        return result == null ? new ErrorExpression(null, null) : result.expression;
+        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getImplementationHere(classifyingField);
+        if (instanceClassifyingExpr != null) {
+          instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
+        }
+        while (instanceClassifyingExpr instanceof LamExpression) {
+          instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
+        }
+        return
+          instanceClassifyingExpr instanceof UniverseExpression && normClassifyingExpression.isInstance(UniverseExpression.class) ||
+          instanceClassifyingExpr instanceof SigmaExpression && normClassifyingExpression.isInstance(SigmaExpression.class) ||
+          instanceClassifyingExpr instanceof IntegerExpression && (normClassifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(normClassifyingExpression.cast(IntegerExpression.class)) ||
+            normClassifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(normClassifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
+          instanceClassifyingExpr instanceof DefCallExpression && normClassifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == normClassifyingExpression.cast(DefCallExpression.class).getDefinition();
       }
     }
 
-    return null;
+    MyPredicate predicate = new MyPredicate();
+    Concrete.FunctionDefinition instance = myInstanceProvider.findInstance(classRef, predicate);
+    if (instance == null || predicate.instanceDef == null) {
+      return null;
+    }
+
+    Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance.getData());
+    for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
+      if (link.isExplicit()) {
+        instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new Concrete.HoleExpression(sourceNode.getData()), true);
+      }
+    }
+
+    ClassDefinition classDef = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
+    Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode)), sourceNode);
+    CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
+    return result == null ? new ErrorExpression(null, null) : result.expression;
   }
 
   @Override

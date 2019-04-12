@@ -46,12 +46,7 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
         if (!ignoreFirstParameter) {
           LocatedReferable fieldParent = referable.getLocatedReferableParent();
           if (fieldParent instanceof ClassReferable) {
-            for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
-              Referable ref = instance.getReferenceInType();
-              if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf((ClassReferable) fieldParent)) {
-                myDeque.push(instance.getData());
-              }
-            }
+            addClassInstances((ClassReferable) fieldParent);
           }
         }
       } else {
@@ -84,13 +79,11 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
     }
   }
 
-  private void addClassInstances(TCClassReferable classRef) {
-    for (Concrete.FunctionDefinition instance : myInstanceProvider.getInstances()) {
-      Referable ref = instance.getReferenceInType();
-      if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef)) {
-        myDeque.push(instance.getData());
-      }
-    }
+  private void addClassInstances(ClassReferable classRef) {
+    myInstanceProvider.findInstance(classRef, instance -> {
+      myDeque.push(instance.getData());
+      return false;
+    });
   }
 
   @Override

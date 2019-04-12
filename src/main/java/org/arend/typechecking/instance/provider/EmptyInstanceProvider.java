@@ -1,9 +1,9 @@
 package org.arend.typechecking.instance.provider;
 
+import org.arend.naming.reference.ClassReferable;
 import org.arend.term.concrete.Concrete;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.function.Predicate;
 
 public class EmptyInstanceProvider implements InstanceProvider {
   private static final EmptyInstanceProvider INSTANCE = new EmptyInstanceProvider();
@@ -15,7 +15,7 @@ public class EmptyInstanceProvider implements InstanceProvider {
   }
 
   @Override
-  public List<? extends Concrete.FunctionDefinition> getInstances() {
-    return Collections.emptyList();
+  public Concrete.FunctionDefinition findInstance(ClassReferable classRef, Predicate<Concrete.FunctionDefinition> pred) {
+    return null;
   }
 }
