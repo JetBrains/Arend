@@ -13,10 +13,12 @@ import java.util.Set;
 
 public class TypeClassInferenceVariable extends InferenceVariable {
   private final TCClassReferable myClassRef;
+  private final boolean myOnlyLocal;
 
-  public TypeClassInferenceVariable(String name, Expression type, TCClassReferable classRef, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
+  public TypeClassInferenceVariable(String name, Expression type, TCClassReferable classRef, boolean onlyLocal, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     super(name, type, sourceNode, bounds);
     myClassRef = classRef;
+    myOnlyLocal = onlyLocal;
   }
 
   public TCClassReferable getClassReferable() {
@@ -34,6 +36,6 @@ public class TypeClassInferenceVariable extends InferenceVariable {
   }
 
   public Expression getInstance(InstancePool pool, Expression classifyingExpression, Equations equations, Concrete.SourceNode sourceNode) {
-    return pool.getInstance(classifyingExpression, myClassRef, equations, sourceNode);
+    return (myOnlyLocal ? pool.getLocalInstancePool() : pool).getInstance(classifyingExpression, myClassRef, equations, sourceNode);
   }
 }

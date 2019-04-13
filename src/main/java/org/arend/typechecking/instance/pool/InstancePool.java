@@ -9,4 +9,5 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 public interface InstancePool {
   Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode);
   InstancePool subst(ExprSubstitution substitution);
+  InstancePool getLocalInstancePool();
 }

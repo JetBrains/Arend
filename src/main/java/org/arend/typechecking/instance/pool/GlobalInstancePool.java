@@ -39,6 +39,11 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
+  public InstancePool getLocalInstancePool() {
+    return myInstancePool.getLocalInstancePool();
+  }
+
+  @Override
   public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
     if (myInstancePool != null) {
       Expression result = myInstancePool.getInstance(classifyingExpression, classRef, equations, sourceNode);

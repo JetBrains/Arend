@@ -53,6 +53,11 @@ public class LocalInstancePool implements InstancePool {
     return result;
   }
 
+  @Override
+  public InstancePool getLocalInstancePool() {
+    return this;
+  }
+
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);

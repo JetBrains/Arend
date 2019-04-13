@@ -22,7 +22,7 @@ public class DataDefinition extends Definition {
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
-  private List<Boolean> myTypeClassParameters = Collections.emptyList();
+  private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private List<ParametersLevel> myParametersLevels = Collections.emptyList();
 
   public DataDefinition(TCReferable referable) {
@@ -131,12 +131,12 @@ public class DataDefinition extends Definition {
   }
 
   @Override
-  public List<Boolean> getTypeClassParameters() {
+  public List<TypeClassParameterKind> getTypeClassParameters() {
     return myTypeClassParameters;
   }
 
   @Override
-  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+  public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
   }
 

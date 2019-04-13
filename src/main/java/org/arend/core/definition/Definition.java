@@ -74,16 +74,18 @@ public abstract class Definition implements Variable {
 
   }
 
-  public List<Boolean> getTypeClassParameters() {
+  public enum TypeClassParameterKind { NO, YES, ONLY_LOCAL }
+
+  public List<TypeClassParameterKind> getTypeClassParameters() {
     return Collections.emptyList();
   }
 
-  public boolean isTypeClassParameter(int index) {
-    List<Boolean> typeClassParameters = getTypeClassParameters();
-    return index < typeClassParameters.size() && typeClassParameters.get(index);
+  public TypeClassParameterKind getTypeClassParameterKind(int index) {
+    List<TypeClassParameterKind> typeClassParameters = getTypeClassParameters();
+    return index < typeClassParameters.size() ? typeClassParameters.get(index) : TypeClassParameterKind.NO;
   }
 
-  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+  public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
 
   }
 

@@ -145,6 +145,18 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
+  private DefinitionProtos.Definition.TypeClassParameterKind writeTypeClassParameterKind(Definition.TypeClassParameterKind kind) {
+    switch (kind) {
+      case YES:
+        return DefinitionProtos.Definition.TypeClassParameterKind.YES;
+      case NO:
+        return DefinitionProtos.Definition.TypeClassParameterKind.NO;
+      case ONLY_LOCAL:
+        return DefinitionProtos.Definition.TypeClassParameterKind.ONLY_LOCAL;
+    }
+    throw new IllegalStateException();
+  }
+
   private DefinitionProtos.Definition.DataData writeDataDefinition(ExpressionSerialization defSerializer, DataDefinition definition) {
     DefinitionProtos.Definition.DataData.Builder builder = DefinitionProtos.Definition.DataData.newBuilder();
 
@@ -153,7 +165,9 @@ public class DefinitionSerialization {
       builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
     }
     builder.addAllGoodThisParameters(definition.getGoodThisParameters());
-    builder.addAllTypeClassParameters(definition.getTypeClassParameters());
+    for (Definition.TypeClassParameterKind kind : definition.getTypeClassParameters()) {
+      builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
+    }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
     if (definition.status().headerIsOK()) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
@@ -175,7 +189,9 @@ public class DefinitionSerialization {
         cBuilder.addAllParametersTypecheckingOrder(constructor.getParametersTypecheckingOrder());
       }
       cBuilder.addAllGoodThisParameters(constructor.getGoodThisParameters());
-      cBuilder.addAllTypeClassParameters(constructor.getTypeClassParameters());
+      for (Definition.TypeClassParameterKind kind : constructor.getTypeClassParameters()) {
+        cBuilder.addTypeClassParameters(writeTypeClassParameterKind(kind));
+      }
       if (constructor.getBody() != null) {
         cBuilder.setConditions(writeBody(defSerializer, constructor.getBody()));
       }
@@ -275,7 +291,9 @@ public class DefinitionSerialization {
         builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
       }
       builder.addAllGoodThisParameters(definition.getGoodThisParameters());
-      builder.addAllTypeClassParameters(definition.getTypeClassParameters());
+      for (Definition.TypeClassParameterKind kind : definition.getTypeClassParameters()) {
+        builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
+      }
     }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
     if (definition.getResultType() != null) {

@@ -20,4 +20,9 @@ public class EmptyInstancePool implements InstancePool {
   public EmptyInstancePool subst(ExprSubstitution substitution) {
     return this;
   }
+
+  @Override
+  public InstancePool getLocalInstancePool() {
+    return this;
+  }
 }

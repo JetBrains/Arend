@@ -15,8 +15,8 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class B\n" +
       "\\instance B-inst : B\n" +
       "\\instance A-inst {b : B} : A | a => 0\n" +
-      "\\func f => a", 2);
-    assertThatErrorsAre(error(), instanceInference(getDefinition("A")));
+      "\\func f => a", 1);
+    assertThatErrorsAre(instanceInference(getDefinition("B")));
   }
 
   @Ignore
@@ -116,8 +116,8 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class A (X Y : \\Set) { | x : X }\n" +
       "\\data Data (X : \\Set) | con X\n" +
       "\\instance Nat-inst : A Nat | x => 0 | Y => Nat\n" +
-      "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 2);
-    assertThatErrorsAre(instanceInference(getDefinition("A")), error());
+      "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 1);
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 
   @Test
@@ -125,7 +125,16 @@ public class RecursiveInstances extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (X : \\Type) | foo : X -> X\n" +
       "\\instance inst (c : C Nat) : C Nat | foo => c.foo\n" +
-      "\\func f => foo 3", 2);
-    assertThatErrorsAre(error(), instanceInference(getDefinition("C")));
+      "\\func f => foo 3", 1);
+    assertThatErrorsAre(instanceInference(getDefinition("C")));
+  }
+
+  @Test
+  public void onlyLocalInstance() {
+    typeCheckModule(
+      "\\class C | foo : Nat\n" +
+      "\\class D | bar : Nat\n" +
+      "\\instance inst {c : C} : D | bar => c.foo\n" +
+      "\\func f {c : C} => bar");
   }
 }

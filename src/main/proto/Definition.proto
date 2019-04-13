@@ -85,7 +85,7 @@ message Definition {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 15;
         repeated bool good_this_parameters = 17;
-        repeated bool type_class_parameters = 18;
+        repeated TypeClassParameterKind type_class_parameters = 20;
         Sort sort = 7;
         repeated Constructor constructor = 3;
         bool matches_on_interval = 5;
@@ -100,7 +100,7 @@ message Definition {
             repeated Telescope param = 3;
             repeated int32 parameters_typechecking_order = 7;
             repeated bool good_this_parameters = 8;
-            repeated bool type_class_parameters = 9;
+            repeated TypeClassParameterKind type_class_parameters = 10;
             repeated Clause clause = 4;
             Body conditions = 5;
             int32 number_of_interval_parameters = 6;
@@ -110,13 +110,19 @@ message Definition {
         repeated Telescope param = 2;
         repeated int32 parameters_typechecking_order = 7;
         repeated bool good_this_parameters = 10;
-        repeated bool type_class_parameters = 11;
+        repeated TypeClassParameterKind type_class_parameters = 14;
         Expression type = 5;
         Expression type_level = 9;
         Body body = 6;
         bool isLemma = 8;
         int32 visible_parameter = 12;
         repeated ParametersLevel parameters_levels = 13;
+    }
+
+    enum TypeClassParameterKind {
+        YES = 0;
+        NO = 1;
+        ONLY_LOCAL = 3;
     }
 
     enum Status {

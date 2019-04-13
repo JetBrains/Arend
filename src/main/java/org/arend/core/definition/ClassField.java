@@ -93,13 +93,13 @@ public class ClassField extends Definition {
   }
 
   @Override
-  public List<Boolean> getTypeClassParameters() {
-    return myParentClass.isRecord() ? Collections.emptyList() : Collections.singletonList(true);
+  public List<TypeClassParameterKind> getTypeClassParameters() {
+    return myParentClass.isRecord() ? Collections.emptyList() : Collections.singletonList(TypeClassParameterKind.YES);
   }
 
   @Override
-  public boolean isTypeClassParameter(int index) {
-    return index == 0 && !myParentClass.isRecord();
+  public TypeClassParameterKind getTypeClassParameterKind(int index) {
+    return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
   }
 
   @Override

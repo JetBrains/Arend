@@ -21,6 +21,7 @@ import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
@@ -80,10 +81,12 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
           TCClassReferable classRef = classDef.getReferable();
-          if (defCallResult.getDefinition().isTypeClassParameter(i)) {
+          Definition.TypeClassParameterKind kind = defCallResult.getDefinition().getTypeClassParameterKind(i);
+          if (kind != Definition.TypeClassParameterKind.NO) {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
-              Expression instance = myVisitor.getInstancePool().getInstance(null, classRef, myVisitor.getEquations(), expr);
+              InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
+              Expression instance = instancePool.getInstance(null, classRef, myVisitor.getEquations(), expr);
               if (instance == null) {
                 ArgInferenceError error = new InstanceInferenceError(classRef, expr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
@@ -96,7 +99,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
             }
 
             // Otherwise, generate type class inference variable
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, defCallResult.getDefCall(), myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), myVisitor.getAllBindings());
           }
         }
       }

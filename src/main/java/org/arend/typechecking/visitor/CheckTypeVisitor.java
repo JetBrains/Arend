@@ -1570,7 +1570,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           return instance;
         }
       } else {
-        return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), implBody, getAllBindings()), myEquations);
+        return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, getAllBindings()), myEquations);
       }
     }
 

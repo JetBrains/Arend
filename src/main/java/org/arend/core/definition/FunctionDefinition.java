@@ -22,7 +22,7 @@ public class FunctionDefinition extends Definition implements Function {
   private List<Integer> myParametersTypecheckingOrder;
   private boolean myLemma;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
-  private List<Boolean> myTypeClassParameters = Collections.emptyList();
+  private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
   private List<ParametersLevel> myParametersLevels = Collections.emptyList();
 
@@ -107,13 +107,19 @@ public class FunctionDefinition extends Definition implements Function {
   }
 
   @Override
-  public List<Boolean> getTypeClassParameters() {
+  public List<TypeClassParameterKind> getTypeClassParameters() {
     return myTypeClassParameters;
   }
 
   @Override
-  public void setTypeClassParameters(List<Boolean> typeClassParameters) {
+  public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
+  }
+
+  public void setTypeClassParameter(int index, TypeClassParameterKind kind) {
+    if (index < myTypeClassParameters.size()) {
+      myTypeClassParameters.set(index, kind);
+    }
   }
 
   @Override

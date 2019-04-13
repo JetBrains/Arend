@@ -199,6 +199,24 @@ public class DefinitionDeserialization {
     }
   }
 
+  private List<Definition.TypeClassParameterKind> readTypeClassParametersKind(List<DefinitionProtos.Definition.TypeClassParameterKind> kinds) {
+    List<Definition.TypeClassParameterKind> result = new ArrayList<>(kinds.size());
+    for (DefinitionProtos.Definition.TypeClassParameterKind kind : kinds) {
+      switch (kind) {
+        case YES:
+          result.add(Definition.TypeClassParameterKind.YES);
+          break;
+        case ONLY_LOCAL:
+          result.add(Definition.TypeClassParameterKind.ONLY_LOCAL);
+          break;
+        default:
+          result.add(Definition.TypeClassParameterKind.NO);
+          break;
+      }
+    }
+    return result;
+  }
+
   private void fillInDataDefinition(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DataData dataProto, DataDefinition dataDef) throws DeserializationException {
     dataDef.setParameters(defDeserializer.readParameters(dataProto.getParamList()));
     List<Integer> parametersTypecheckingOrder = dataProto.getParametersTypecheckingOrderList();
@@ -209,10 +227,7 @@ public class DefinitionDeserialization {
     if (!goodThisParameters.isEmpty()) {
       dataDef.setGoodThisParameters(goodThisParameters);
     }
-    List<Boolean> typeClassParameters = dataProto.getTypeClassParametersList();
-    if (!typeClassParameters.isEmpty()) {
-      dataDef.setTypeClassParameters(typeClassParameters);
-    }
+    dataDef.setTypeClassParameters(readTypeClassParametersKind(dataProto.getTypeClassParametersList()));
     for (DefinitionProtos.Definition.ParametersLevel levelParametersProto : dataProto.getParametersLevelsList()) {
       dataDef.addLevelParameters(readParametersLevel(defDeserializer, levelParametersProto));
     }
@@ -240,10 +255,7 @@ public class DefinitionDeserialization {
       if (!cGoodThisParameters.isEmpty()) {
         constructor.setGoodThisParameters(cGoodThisParameters);
       }
-      List<Boolean> cTypeClassParameters = constructorProto.getTypeClassParametersList();
-      if (!cTypeClassParameters.isEmpty()) {
-        constructor.setTypeClassParameters(cTypeClassParameters);
-      }
+      constructor.setTypeClassParameters(readTypeClassParametersKind(constructorProto.getTypeClassParametersList()));
       if (constructorProto.hasConditions()) {
         constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
       }
@@ -365,10 +377,7 @@ public class DefinitionDeserialization {
     if (!goodThisParameters.isEmpty()) {
       functionDef.setGoodThisParameters(goodThisParameters);
     }
-    List<Boolean> typeClassParameters = functionProto.getTypeClassParametersList();
-    if (!typeClassParameters.isEmpty()) {
-      functionDef.setTypeClassParameters(typeClassParameters);
-    }
+    functionDef.setTypeClassParameters(readTypeClassParametersKind(functionProto.getTypeClassParametersList()));
     for (DefinitionProtos.Definition.ParametersLevel parametersLevelProto : functionProto.getParametersLevelsList()) {
       functionDef.addLevelParameters(readParametersLevel(defDeserializer, parametersLevelProto));
     }

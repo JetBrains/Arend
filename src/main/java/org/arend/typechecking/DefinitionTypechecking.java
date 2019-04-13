@@ -676,17 +676,17 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
-    List<Boolean> typeClassParameters = new ArrayList<>();
+    List<Definition.TypeClassParameterKind> typeClassParameters = new ArrayList<>();
     for (Concrete.TypeParameter parameter : Objects.requireNonNull(refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
       Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(parameter.getType());
       boolean isTypeClass = refExpr != null && refExpr.getReferent() instanceof ClassReferable;
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
-        typeClassParameters.add(isTypeClass);
+        typeClassParameters.add(isTypeClass ? Definition.TypeClassParameterKind.YES : Definition.TypeClassParameterKind.NO);
       }
     }
 
-    for (Boolean isTypeClass : typeClassParameters) {
-      if (isTypeClass) {
+    for (Definition.TypeClassParameterKind kind : typeClassParameters) {
+      if (kind != Definition.TypeClassParameterKind.NO) {
         def.setTypeClassParameters(typeClassParameters);
         return;
       }
@@ -957,26 +957,26 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           classifyingExpr = null;
         }
 
-        boolean recOK = true;
+        int index = 0;
         for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
-          link = link.getNextTyped(null);
-          Expression type = link.getTypeExpr();
-          if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-            ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
-            Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
-            if (classifyingImpl == null && paramClassifyingField != null) {
-              classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
-            }
-            if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
-              myErrorReporter.report(new TypecheckingError("Class parameters of an instance must be classified by a subexpression of the classifying expression", def));
-              recOK = false;
-              break;
+          if (link instanceof TypedDependentLink) {
+            Expression type = link.getTypeExpr();
+            if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
+              ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
+              Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
+              if (classifyingImpl == null && paramClassifyingField != null) {
+                classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
+              }
+              if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
+                typedDef.setTypeClassParameter(index, Definition.TypeClassParameterKind.ONLY_LOCAL);
+              }
             }
           }
+          index++;
         }
 
         if (newDef) {
-          typedDef.setStatus(recOK ? myVisitor.getStatus() : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+          typedDef.setStatus(myVisitor.getStatus());
         }
       } else if (!(typedDef.getResultType() instanceof ErrorExpression)) {
         myErrorReporter.report(new TypecheckingError("An instance must return a class", def.getResultType() == null ? def : def.getResultType()));
