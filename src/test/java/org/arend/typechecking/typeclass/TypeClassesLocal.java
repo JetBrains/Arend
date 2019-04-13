@@ -218,4 +218,12 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class C (X : \\Type) | x0 : X | \\infixr 4 * : X -> X -> X\n" +
       "\\func f {c : C} (x : c) => x0 * x");
   }
+
+  @Test
+  public void recursiveData() {
+    typeCheckModule(
+      "\\class C | foo : Nat\n" +
+      "\\data D {c : C}\n" +
+      "  | con D");
+  }
 }

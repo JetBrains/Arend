@@ -325,7 +325,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     if (expectedParamsNumber != actualParams.size()) {
-      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, expectedType == null);
+      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, !(expectedType instanceof Expression));
     }
 
     return result;

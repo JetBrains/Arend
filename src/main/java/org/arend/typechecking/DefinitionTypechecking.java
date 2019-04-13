@@ -438,7 +438,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     }
 
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
-    calculateTypeClassParameters(def, typedDef);
+    if (newDef) {
+      calculateTypeClassParameters(def, typedDef);
+    }
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
@@ -996,6 +998,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     Sort userSort = null;
     boolean paramsOk = typeCheckParameters(def.getParameters(), list, localInstancePool, null, newDef ? null : dataDefinition.getParameters()) != null;
+    if (newDef) {
+      calculateTypeClassParameters(def, dataDefinition);
+    }
 
     if (def.getUniverse() != null) {
       Type userTypeResult = myVisitor.finalCheckType(def.getUniverse(), ExpectedType.OMEGA);
@@ -1278,7 +1283,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         goodThisParametersVisitor.visitBody(constructor.getBody(), null);
       }
       dataDefinition.setGoodThisParameters(goodThisParametersVisitor.getGoodParameters());
-      calculateTypeClassParameters(def, dataDefinition);
     }
 
     return countingErrorReporter.getErrorsNumber() == 0;
