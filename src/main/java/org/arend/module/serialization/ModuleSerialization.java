@@ -24,6 +24,8 @@ public class ModuleSerialization {
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
   private boolean myComplete;
 
+  static final int VERSION = 0;
+
   public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
     myState = state;
     myErrorReporter = errorReporter;
@@ -34,6 +36,7 @@ public class ModuleSerialization {
 
     // Serialize the group structure first in order to populate the call target tree
     myComplete = true;
+    out.setVersion(VERSION);
     out.setGroup(writeGroup(group, referableConverter));
     out.setComplete(myComplete);
 

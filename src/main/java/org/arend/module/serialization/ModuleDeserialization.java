@@ -33,6 +33,10 @@ public class ModuleDeserialization {
   }
 
   public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
+    if (myModuleProto.getVersion() != ModuleSerialization.VERSION) {
+      throw new DeserializationException("Version mismatch");
+    }
+
     for (ModuleProtos.ModuleCallTargets moduleCallTargets : myModuleProto.getModuleCallTargetsList()) {
       ModulePath module = new ModulePath(moduleCallTargets.getNameList());
       Scope scope = moduleScopeProvider.forModule(module);
