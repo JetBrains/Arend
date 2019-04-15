@@ -98,14 +98,14 @@ public class BinOpParser {
       StackElem nextElem = myStack.size() == 1 ? null : myStack.get(myStack.size() - 2);
       if (nextElem == null || nextElem.precedence.priority < precedence.priority || nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.RIGHT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.RIGHT_ASSOC)) {
         if (isPostfix) {
-          myStack.set(myStack.size() - 1, new StackElem(Concrete.AppExpression.make(topElem.expression.getData(), reference, topElem.expression, true), null));
+          myStack.set(myStack.size() - 1, new StackElem(Concrete.AppExpression.make(reference.getData(), reference, topElem.expression, true), null));
         } else {
           myStack.add(new StackElem(reference, precedence));
         }
         return;
       }
 
-      if (!(nextElem.precedence.priority > precedence.priority || (nextElem.precedence.priority == precedence.priority && nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC)))) {
+      if (!(nextElem.precedence.priority > precedence.priority || nextElem.precedence.associativity == Precedence.Associativity.LEFT_ASSOC && (isPostfix || precedence.associativity == Precedence.Associativity.LEFT_ASSOC))) {
         String msg = "Precedence parsing error: cannot mix " + getOperator(nextElem.expression).textRepresentation() + " [" + nextElem.precedence + "] and " + reference.getReferent().textRepresentation() + " [" + precedence + "] in the same infix expression";
         myErrorReporter.report(new NamingError(msg, reference));
       }
