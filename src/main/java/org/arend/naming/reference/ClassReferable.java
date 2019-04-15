@@ -38,7 +38,7 @@ public interface ClassReferable extends LocatedReferable {
       return result;
     }
 
-    public static HashSet<FieldReferable> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
+    public static HashSet<FieldReferable> getNotImplementedFields(ClassReferable classDef, List<Boolean> argumentsExplicitness, boolean withTailImplicits, HashMap<ClassReferable, Set<FieldReferable>> superClassesFields) {
       HashSet<FieldReferable> fieldSet = new LinkedHashSet<>(getAllFields(classDef, new HashSet<>(), superClassesFields));
       removeImplemented(classDef, fieldSet, superClassesFields);
 
@@ -67,20 +67,22 @@ public interface ClassReferable extends LocatedReferable {
       }
 
       // Remove tail implicit parameters (only classes)
-      while (it.hasNext()) {
-        FieldReferable field = it.next();
-        if (field.isExplicitField() || !field.isParameterField()) {
-          break;
-        }
-        ClassReferable typeClass = field.getTypeClassReference();
-        if (typeClass == null || typeClass.isRecord()) {
-          break;
-        }
+      if (withTailImplicits) {
+        while (it.hasNext()) {
+          FieldReferable field = it.next();
+          if (field.isExplicitField() || !field.isParameterField()) {
+            break;
+          }
+          ClassReferable typeClass = field.getTypeClassReference();
+          if (typeClass == null || typeClass.isRecord()) {
+            break;
+          }
 
-        for (Set<FieldReferable> fields : superClassesFields.values()) {
-          fields.remove(field);
+          for (Set<FieldReferable> fields : superClassesFields.values()) {
+            fields.remove(field);
+          }
+          it.remove();
         }
-        it.remove();
       }
 
       return fieldSet;
