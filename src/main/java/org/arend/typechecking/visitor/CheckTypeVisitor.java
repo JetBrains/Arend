@@ -182,6 +182,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
         params.add(param);
       }
+      myResultType.getPiParameters(params, true);
       return params;
     }
 

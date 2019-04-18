@@ -101,4 +101,14 @@ public class InferenceTest extends TypeCheckingTestCase {
       "\\class C (x y : Nat)\n" +
       "\\func f (c1 : C 1) (c2 : C 2) (p : c1 = c2) => p");
   }
+
+  @Test
+  public void tailInField() {
+    typeCheckModule(
+      "\\class C (E : \\Type)\n" +
+      "  | \\infix 4 ~ : E -> E -> \\Type\n" +
+      "  | refl {e : E} : e ~ e\n" +
+      "  | \\infixr 8 * {x y z : E} : x ~ y -> y ~ z -> x ~ z\n" +
+      "\\func f {X : C} {x y : X} (p : x ~ y) => p * refl");
+  }
 }
