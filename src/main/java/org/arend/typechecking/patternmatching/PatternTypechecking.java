@@ -133,9 +133,9 @@ public class PatternTypechecking {
         int index = elimParams.indexOf(link);
         patterns1.add(index < 0 ? null : patterns.get(index));
       }
-      result = doTypechecking(patterns1, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, true);
+      result = doTypechecking(patterns1, DependentLink.Helper.copy(parameters), sourceNode, true);
     } else {
-      result = doTypechecking(patterns, DependentLink.Helper.subst(parameters, new ExprSubstitution()), sourceNode, false);
+      result = doTypechecking(patterns, DependentLink.Helper.copy(parameters), sourceNode, false);
     }
 
     // Compute the context and the set of free bindings for CheckTypeVisitor
@@ -281,7 +281,7 @@ public class PatternTypechecking {
         List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
         // Either sigma or class patterns
         if (expr.isInstance(SigmaExpression.class) || expr.isInstance(ClassCallExpression.class)) {
-          DependentLink newParameters = expr.isInstance(SigmaExpression.class) ? expr.cast(SigmaExpression.class).getParameters() : expr.cast(ClassCallExpression.class).getClassFieldParameters();
+          DependentLink newParameters = expr.isInstance(SigmaExpression.class) ? DependentLink.Helper.copy(expr.cast(SigmaExpression.class).getParameters()) : expr.cast(ClassCallExpression.class).getClassFieldParameters();
           Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(patternArgs, newParameters, pattern, false);
           if (conResult == null) {
             return null;

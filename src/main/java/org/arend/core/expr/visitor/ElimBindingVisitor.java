@@ -188,7 +188,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
-    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), new ExprSubstitution());
+    DependentLink parameters = DependentLink.Helper.copy(expr.getParameters());
     return visitDependentLink(parameters) ? new SigmaExpression(expr.getSort(), parameters) : null;
   }
 

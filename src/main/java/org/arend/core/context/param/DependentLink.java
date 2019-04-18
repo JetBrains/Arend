@@ -100,6 +100,10 @@ public interface DependentLink extends Binding {
       return subst(link, substitution, LevelSubstitution.EMPTY);
     }
 
+    public static DependentLink copy(DependentLink link) {
+      return subst(link, new ExprSubstitution(), LevelSubstitution.EMPTY);
+    }
+
     public static SingleDependentLink subst(SingleDependentLink link, ExprSubstitution substitution) {
       return subst(link, new SubstVisitor(substitution, LevelSubstitution.EMPTY));
     }
