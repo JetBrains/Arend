@@ -232,6 +232,7 @@ public class PatternTypechecking {
             result.add(new BindingPattern(parameters));
             if (exprs != null) {
               exprs.add(new ReferenceExpression(parameters));
+              myVisitor.getFreeBindings().add(parameters);
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {

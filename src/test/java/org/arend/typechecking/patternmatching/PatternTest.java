@@ -448,4 +448,14 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func foo (n : Nat) (d : D) : Nat | n, con (a : A) => n", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void implicitParametersAndCase() {
+    typeCheckModule(
+      "\\data D | con {n : Nat} (p : n = n)\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func foo (d : D) => \\case d \\as d \\return d = d \\with {\n" +
+      "  | con p => idp\n" +
+      "}");
+  }
 }
