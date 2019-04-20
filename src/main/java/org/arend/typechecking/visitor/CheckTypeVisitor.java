@@ -1797,7 +1797,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     for (int i = 0; i < numberOfPatterns; i++) {
       assert link != null || notImplementedFields != null;
       Concrete.LetClausePattern subPattern = pattern.getPatterns().get(i);
-      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), link != null ? link.getTypeExpr() : notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression));
+      Expression newType;
+      if (link != null) {
+        ExprSubstitution substitution = new ExprSubstitution();
+        int j = 0;
+        for (DependentLink link1 = sigma.getParameters(); link1 != link; link1 = link1.getNext(), j++) {
+          substitution.add(link1, ProjExpression.make(expression, j));
+        }
+        newType = link.getTypeExpr().subst(substitution);
+      } else {
+        newType = notImplementedFields.get(i).getType(classCall.getSortArgument()).applyExpression(expression);
+      }
+      LetClausePattern letClausePattern = typecheckLetClausePattern(subPattern, link != null ? ProjExpression.make(expression, i) : FieldCallExpression.make(notImplementedFields.get(i), classCall.getSortArgument(), expression), newType);
       if (letClausePattern == null) {
         return null;
       }

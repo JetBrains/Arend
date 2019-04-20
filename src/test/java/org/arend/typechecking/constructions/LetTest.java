@@ -71,4 +71,9 @@ public class LetTest extends TypeCheckingTestCase {
       "\\record R (x y : Nat)\n" +
       "\\func f (r : R 0) => \\let r' : Nat => r \\in r'", 1);
   }
+
+  @Test
+  public void dependentSigma() {
+    typeCheckExpr("\\lam (p : \\Sigma (A : \\Type) (A -> Nat)) => \\let (A,f) => p \\in \\lam (a : A) => f a", null);
+  }
 }
