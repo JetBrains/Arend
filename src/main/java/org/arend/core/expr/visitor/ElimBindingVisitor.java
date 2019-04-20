@@ -1,6 +1,7 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -110,8 +111,11 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
-  public ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
+  public Expression visitReference(ReferenceExpression expr, Void params) {
     if (!myVisitor.getBindings().contains(expr.getBinding())) {
+      if (expr.getBinding() instanceof EvaluatingBinding) {
+        return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
+      }
       myFoundVariable = expr.getBinding();
       return null;
     } else {
@@ -131,11 +135,12 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (!visitDependentLink(parameters)) {
       return null;
     }
-    Expression body = findBindings(expr.getBody(), true);
+    Expression body = findBindings(expr.getBody().subst(substitution), true);
+    myVisitor.freeParameters(parameters);
     if (body == null) {
       return null;
     }
-    return new LamExpression(expr.getResultSort(), parameters, body.subst(substitution));
+    return new LamExpression(expr.getResultSort(), parameters, body);
   }
 
   @Override
@@ -145,11 +150,12 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (!visitDependentLink(parameters)) {
       return null;
     }
-    Expression codomain = findBindings(expr.getCodomain(), true);
+    Expression codomain = findBindings(expr.getCodomain().subst(substitution), true);
+    myVisitor.freeParameters(parameters);
     if (codomain == null) {
       return null;
     }
-    return new PiExpression(expr.getResultSort(), parameters, codomain.subst(substitution));
+    return new PiExpression(expr.getResultSort(), parameters, codomain);
   }
 
   @Override
@@ -189,7 +195,12 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.copy(expr.getParameters());
-    return visitDependentLink(parameters) ? new SigmaExpression(expr.getSort(), parameters) : null;
+    if (visitDependentLink(parameters)) {
+      myVisitor.freeParameters(parameters);
+      return new SigmaExpression(expr.getSort(), parameters);
+    } else {
+      return null;
+    }
   }
 
   @Override
@@ -198,14 +209,22 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return newExpr == null ? null : ProjExpression.make(newExpr, expr.getField());
   }
 
-  private boolean visitDependentLink(DependentLink link) {
-    for (; link.hasNext(); link = link.getNext()) {
-      link = link.getNextTyped(null);
-      Expression type = findBindings(link.getTypeExpr(), true);
+  private boolean visitDependentLink(DependentLink parameters) {
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+      DependentLink link1 = link.getNextTyped(null);
+      Expression type = findBindings(link1.getTypeExpr(), true);
       if (type == null) {
+        for (; parameters != link; parameters = parameters.getNext()) {
+          myVisitor.getBindings().remove(parameters);
+        }
         return false;
       }
-      link.setType(type instanceof Type ? (Type) type : new TypeExpression(type, link.getType().getSortOfType()));
+      link1.setType(type instanceof Type ? (Type) type : new TypeExpression(type, link1.getType().getSortOfType()));
+
+      for (; link != link1; link = link.getNext()) {
+        myVisitor.getBindings().add(link);
+      }
+      myVisitor.getBindings().add(link);
     }
     return true;
   }
@@ -244,14 +263,20 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
     }
 
-    Expression newType = findBindings(expr.getResultType(), true);
+    ExprSubstitution substitution = new ExprSubstitution();
+    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), substitution);
+    if (!visitDependentLink(parameters)) {
+      return null;
+    }
+
+    Expression newType = findBindings(expr.getResultType().subst(substitution), true);
     if (newType == null) {
       return null;
     }
 
     Expression newTypeLevel;
     if (expr.getResultTypeLevel() != null) {
-      newTypeLevel = findBindings(expr.getResultTypeLevel(), true);
+      newTypeLevel = findBindings(expr.getResultTypeLevel().subst(substitution), true);
       if (newTypeLevel == null) {
         return null;
       }
@@ -259,14 +284,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       newTypeLevel = null;
     }
 
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), substitution);
-    if (!visitDependentLink(parameters)) {
-      return null;
-    }
-
     ElimTree newElimTree = findBindingInElimTree(expr.getElimTree());
-    return newElimTree == null ? null : new CaseExpression(parameters, newType.subst(substitution), newTypeLevel == null ? null : newTypeLevel.subst(substitution), newElimTree, newArgs);
+    myVisitor.freeParameters(parameters);
+    return newElimTree == null ? null : new CaseExpression(parameters, newType, newTypeLevel, newElimTree, newArgs);
   }
 
   private ElimTree findBindingInElimTree(ElimTree elimTree) {
@@ -277,19 +297,22 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
 
     if (elimTree instanceof LeafElimTree) {
-      Expression newExpr = findBindings(((LeafElimTree) elimTree).getExpression(), true);
-      return newExpr == null ? null : new LeafElimTree(parameters, newExpr.subst(substitution));
+      Expression newExpr = findBindings(((LeafElimTree) elimTree).getExpression().subst(substitution), true);
+      myVisitor.freeParameters(parameters);
+      return newExpr == null ? null : new LeafElimTree(parameters, newExpr);
     } else {
       Map<Constructor, ElimTree> newChildren = new HashMap<>();
       SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        ElimTree newElimTree = findBindingInElimTree(entry.getValue());
+        ElimTree newElimTree = findBindingInElimTree(visitor.substElimTree(entry.getValue()));
         if (newElimTree == null) {
+          myVisitor.freeParameters(parameters);
           return null;
         }
-        newChildren.put(entry.getKey(), visitor.substElimTree(newElimTree));
+        newChildren.put(entry.getKey(), newElimTree);
       }
 
+      myVisitor.freeParameters(parameters);
       return new BranchElimTree(parameters, newChildren);
     }
   }

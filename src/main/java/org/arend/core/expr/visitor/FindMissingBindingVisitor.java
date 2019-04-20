@@ -11,17 +11,18 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   private final Set<Binding> myBindings;
 
-  public FindMissingBindingVisitor(Set<Binding> binding) {
-    myBindings = binding;
+  FindMissingBindingVisitor(Set<Binding> binding) {
+    myBindings = new HashSet<>(binding);
   }
 
-  Set<? extends Variable> getBindings() {
+  Set<Binding> getBindings() {
     return myBindings;
   }
 
@@ -155,7 +156,7 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
     return null;
   }
 
-  private void freeParameters(DependentLink link) {
+  void freeParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       myBindings.remove(link);
     }
