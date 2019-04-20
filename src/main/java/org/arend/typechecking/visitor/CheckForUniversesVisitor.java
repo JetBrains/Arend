@@ -11,8 +11,14 @@ import org.arend.util.Pair;
 import java.util.Map;
 
 public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
+  private boolean myCheckTopLevel;
+
+  public CheckForUniversesVisitor(boolean checkTopLevel) {
+    myCheckTopLevel = checkTopLevel;
+  }
+
   public static boolean findUniverse(Expression expr) {
-    return expr != null && expr.accept(new CheckForUniversesVisitor(), null);
+    return expr != null && expr.accept(new CheckForUniversesVisitor(true), null);
   }
 
   public static boolean findUniverse(Body body) {
@@ -40,12 +46,20 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
   }
 
   @Override
-  public Boolean visitDefCall(DefCallExpression expression, Void param) {
+  public boolean processDefCall(DefCallExpression expression, Void param) {
+    if (!myCheckTopLevel) {
+      myCheckTopLevel = true;
+      return false;
+    }
     return expression.getDefinition().hasUniverses() && visitSort(expression.getSortArgument());
   }
 
   @Override
   public Boolean visitUniverse(UniverseExpression expression, Void param) {
+    if (!myCheckTopLevel) {
+      myCheckTopLevel = true;
+      return false;
+    }
     return visitSort(expression.getSort());
   }
 }

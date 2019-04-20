@@ -31,7 +31,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     List<DependentLink> defParams = new ArrayList<>();
     Expression type = expr.getDefinition().getTypeWithParams(defParams, expr.getSortArgument());
     assert expr.getDefCallArguments().size() == defParams.size();
-    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()), expr.getSortArgument().toLevelSubstitution());
+    return type.subst(DependentLink.Helper.toSubstitution(defParams, expr.getDefCallArguments()));
   }
 
   @Override

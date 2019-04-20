@@ -606,10 +606,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       }
       expr = ((PiExpression) expr).getCodomain();
     }
-    if (expr instanceof UniverseExpression) {
-      return false;
-    }
-    return CheckForUniversesVisitor.findUniverse(expr);
+    return expr != null && expr.accept(new CheckForUniversesVisitor(false), null);
   }
 
   private boolean checkForUniverses(DependentLink link) {
