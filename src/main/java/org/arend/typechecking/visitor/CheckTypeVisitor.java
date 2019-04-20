@@ -1824,36 +1824,39 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public Result visitLet(Concrete.LetExpression expr, ExpectedType expectedType) {
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(myContext)) {
-      List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
-      List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
-      for (Concrete.LetClause clause : abstractClauses) {
-        Pair<LetClause, Expression> pair = typecheckLetClause(clause);
-        if (pair == null) {
-          return null;
-        }
-        if (clause.getPattern().getReferable() != null) {
-          pair.proj1.setPattern(new NameLetClausePattern(clause.getPattern().getReferable().textRepresentation()));
-          myContext.put(clause.getPattern().getReferable(), pair.proj1);
-        } else {
-          LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
-          if (pattern == null) {
+      try (Utils.SetContextSaver ignore1 = new Utils.SetContextSaver<>(myFreeBindings)) {
+        List<? extends Concrete.LetClause> abstractClauses = expr.getClauses();
+        List<LetClause> clauses = new ArrayList<>(abstractClauses.size());
+        for (Concrete.LetClause clause : abstractClauses) {
+          Pair<LetClause, Expression> pair = typecheckLetClause(clause);
+          if (pair == null) {
             return null;
           }
-          pair.proj1.setPattern(pattern);
+          if (clause.getPattern().getReferable() != null) {
+            pair.proj1.setPattern(new NameLetClausePattern(clause.getPattern().getReferable().textRepresentation()));
+            myContext.put(clause.getPattern().getReferable(), pair.proj1);
+          } else {
+            myFreeBindings.add(pair.proj1);
+            LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);
+            if (pattern == null) {
+              return null;
+            }
+            pair.proj1.setPattern(pattern);
+          }
+          clauses.add(pair.proj1);
         }
-        clauses.add(pair.proj1);
-      }
 
-      Result result = checkExpr(expr.getExpression(), expectedType);
-      if (result == null) {
-        return null;
-      }
+        Result result = checkExpr(expr.getExpression(), expectedType);
+        if (result == null) {
+          return null;
+        }
 
-      ExprSubstitution substitution = new ExprSubstitution();
-      for (LetClause clause : clauses) {
-        substitution.add(clause, clause.getExpression().subst(substitution));
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (LetClause clause : clauses) {
+          substitution.add(clause, clause.getExpression().subst(substitution));
+        }
+        return new Result(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
       }
-      return new Result(new LetExpression(expr.isStrict(), clauses, result.expression), result.type.subst(substitution));
     }
   }
 
