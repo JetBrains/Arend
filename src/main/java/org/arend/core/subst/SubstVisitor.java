@@ -1,5 +1,6 @@
 package org.arend.core.subst;
 
+import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
@@ -95,6 +96,9 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     Expression result = myExprSubstitution.get(expr.getBinding());
     if (result != null) {
       return result;
+    }
+    if (expr.getBinding() instanceof EvaluatingBinding) {
+      ((EvaluatingBinding) expr.getBinding()).subst(this);
     }
     return expr;
   }
