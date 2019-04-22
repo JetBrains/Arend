@@ -470,7 +470,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitSigma(Concrete.SigmaExpression expr, Precedence prec) {
     if (prec.priority > Concrete.SigmaExpression.PREC) myBuilder.append('(');
-    myBuilder.append("\\Sigma ");
+    myBuilder.append("\\Sigma");
+    if (!expr.getParameters().isEmpty()) {
+      myBuilder.append(' ');
+    }
 
     prettyPrintParameters(expr.getParameters(), (byte) (Concrete.AppExpression.PREC + 1));
 

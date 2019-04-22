@@ -159,7 +159,7 @@ public class TwoStageEquations implements Equations {
       if (cType.isInstance(PiExpression.class)) {
         PiExpression pi = cType.cast(PiExpression.class);
         Sort domSort = pi.getParameters().getType().getSortOfType();
-        Sort codSort = Sort.generateInferVars(this, false, sourceNode);
+        Sort codSort = Sort.generateInferVars(this, false, sourceNode, 0, -1);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
@@ -242,7 +242,7 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
-    if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable)) {
+    if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable) && !(constant == -1 && maxConstant == -1 && var2 == null)) {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
       return;
     }
@@ -557,7 +557,7 @@ public class TwoStageEquations implements Equations {
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
       int constant = entry.getValue().getConstant();
       Level level = result.get(entry.getKey());
-      if (!Level.compare(level, new Level(entry.getValue().getVar(), constant, entry.getValue().getMaxConstant()), CMP.LE, DummyEquations.getInstance(), null)) {
+      if (!Level.compare(level, entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
         int maxConstant = entry.getValue().getMaxAddedConstant();
         List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);
         equations.add(level.isInfinity() ? new LevelEquation<>(entry.getKey()) : level.getMaxAddedConstant() <= constant || level.getMaxAddedConstant() <= maxConstant ? new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()) : new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));

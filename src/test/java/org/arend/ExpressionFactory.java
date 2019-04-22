@@ -96,13 +96,21 @@ public class ExpressionFactory {
     return org.arend.core.expr.ExpressionFactory.singleParams(explicit, names, type instanceof Type ? (Type) type : new TypeExpression(type, Sort.SET0));
   }
 
+  private static Sort getMaxSort(Expression type1, Expression type2) {
+    Expression uni1 = type1.getType();
+    Expression uni2 = type2.getType();
+    Sort sort1 = uni1 == null ? null : uni1.toSort();
+    Sort sort2 = uni2 == null ? null : uni2.toSort();
+    return sort1 == null || sort2 == null ? Sort.SET0 : sort1.max(sort2);
+  }
+
   public static PiExpression Pi(SingleDependentLink domain, Expression codomain) {
     assert domain.hasNext();
-    return new PiExpression(Sort.SET0, domain, codomain);
+    return new PiExpression(getMaxSort(domain.getTypeExpr(), codomain.getType()), domain, codomain);
   }
 
   public static PiExpression Pi(Expression domain, Expression codomain) {
-    return new PiExpression(Sort.SET0, singleParam(null, domain), codomain);
+    return new PiExpression(getMaxSort(domain.getType(), codomain.getType()), singleParam(null, domain), codomain);
   }
 
   public static UniverseExpression Universe(int pLevel) {
