@@ -1204,6 +1204,11 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (newDef) {
       int index = 0;
       for (DependentLink link = dataDefinition.getParameters(); link.hasNext(); link = link.getNext(), index++) {
+        Expression type = link.getTypeExpr().getPiParameters(null, false);
+        if (!(type instanceof UniverseExpression)) {
+          continue;
+        }
+
         boolean isCovariant = true;
         for (Constructor constructor : dataDefinition.getConstructors()) {
           if (!constructor.status().headerIsOK()) {
