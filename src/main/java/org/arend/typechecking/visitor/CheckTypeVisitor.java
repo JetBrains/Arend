@@ -591,10 +591,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (expr.getPLevel() == null && expr.getHLevel() == null) {
       sortArgument = isMin ? Sort.PROP : Sort.generateInferVars(myEquations, definition.hasUniverses(), expr);
       Level hLevel = null;
-      if (!isMin && definition == Prelude.ISO) {
-        hLevel = new Level(sortArgument.getHLevel().getVar(), -1);
-        sortArgument = new Sort(sortArgument.getPLevel(), hLevel);
-      }
       if (definition instanceof DataDefinition && !sortArgument.isProp()) {
         hLevel = ((DataDefinition) definition).getSort().getHLevel();
       } else if (definition instanceof FunctionDefinition && !sortArgument.isProp()) {
@@ -603,7 +599,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           hLevel = universe.getSort().getHLevel();
         }
       }
-      if (hLevel != null && hLevel.getConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR && hLevel.getMaxConstant() == 0) {
+      if (hLevel != null && hLevel.getMaxAddedConstant() == -1 && hLevel.getVar() == LevelVariable.HVAR) {
         myEquations.bindVariables((InferenceLevelVariable) sortArgument.getPLevel().getVar(), (InferenceLevelVariable) sortArgument.getHLevel().getVar());
       }
     } else {

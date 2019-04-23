@@ -148,7 +148,7 @@ public class InferLevelTest extends TypeCheckingTestCase {
   public void propImpredicative2() {
     typeCheckModule(
       "\\func f (X : \\Set10) (P : X -> \\Type) => \\Pi (a : X) -> P a\n" +
-      "\\func g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P", 1);
+      "\\func g (X : \\Set10) (P : X -> \\Prop) : \\Prop => f X P");
   }
 
   @Test

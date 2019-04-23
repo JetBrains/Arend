@@ -124,12 +124,12 @@ public class Prelude {
         break;
       case "Path":
         PATH = (DataDefinition) definition;
-        PATH.setSort(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1)));
+        PATH.getParameters().setType(new PiExpression(new Sort(new Level(LevelVariable.PVAR, 1), new Level(LevelVariable.HVAR, 2)), new TypedSingleDependentLink(true, null, new DataCallExpression(INTERVAL, new Sort(new Level(0), new Level(-1)), Collections.emptyList())), new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1)))));
         PATH_CON = PATH.getConstructor("path");
         break;
       case "=":
         PATH_INFIX = (FunctionDefinition) definition;
-        PATH_INFIX.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, -1))));
+        PATH_INFIX.getParameters().setType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
         break;
       case "@": {
         AT = (FunctionDefinition) definition;

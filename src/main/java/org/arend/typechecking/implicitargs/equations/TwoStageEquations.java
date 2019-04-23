@@ -159,7 +159,7 @@ public class TwoStageEquations implements Equations {
       if (cType.isInstance(PiExpression.class)) {
         PiExpression pi = cType.cast(PiExpression.class);
         Sort domSort = pi.getParameters().getType().getSortOfType();
-        Sort codSort = Sort.generateInferVars(this, false, sourceNode, 0, -1);
+        Sort codSort = Sort.generateInferVars(this, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
 
         try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
@@ -242,7 +242,7 @@ public class TwoStageEquations implements Equations {
 
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
-    if (constant < 0 && maxConstant < 0 && !(var2 instanceof InferenceLevelVariable) && !(constant == -1 && maxConstant == -1 && var2 == null)) {
+    if (!(var2 instanceof InferenceLevelVariable || constant >= 0 || maxConstant >= 0 || var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
       myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
       return;
     }
@@ -250,8 +250,8 @@ public class TwoStageEquations implements Equations {
     // 0 <= max(_ +-c, +-d) // 10
     if (var1 == null) {
       // 0 <= max(?y - c, -d) // 1
-      if (constant < 0 && maxConstant < 0) {
-        addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, constant), false);
+      if (maxConstant < 0 && (constant < 0 || constant == 0 && var2 instanceof InferenceLevelVariable && var2.getType() == LevelVariable.LvlType.HLVL)) {
+        addEquation(new LevelEquation<>(null, (InferenceLevelVariable) var2, var2.getType() == LevelVariable.LvlType.PLVL ? constant : constant - 1), false);
       }
       return;
     }
@@ -271,17 +271,17 @@ public class TwoStageEquations implements Equations {
         // ?x <= max(+-c, +-d), ?x <= max(l +- c, +-d) // 6
         Level oldLevel = myConstantUpperBounds.get(var1);
         if (oldLevel == null) {
-          myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, constant, maxConstant >= constant ? maxConstant - constant : 0));
+          myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, constant, maxConstant >= constant ? maxConstant - constant : maxConstant - constant == -1 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
         } else {
           if (var2 == null && oldLevel.getVar() != null || var2 != null && oldLevel.getVar() == null) {
             int otherConstant = var2 == null ? Math.max(constant, maxConstant) : Math.max(oldLevel.getConstant(), oldLevel.getMaxConstant());
             int thisConst = var2 == null ? oldLevel.getConstant() : constant;
             int thisMaxConst = var2 == null ? oldLevel.getMaxAddedConstant() : maxConstant;
-            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(null, Math.max(Math.min(thisMaxConst, otherConstant), Math.min(thisConst, otherConstant))));
+            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(Math.max(Math.min(thisMaxConst, otherConstant), Math.min(thisConst, otherConstant))));
           } else {
             int newConst = Math.min(constant, oldLevel.getConstant());
             int newMaxConst = Math.min(maxConstant, oldLevel.getMaxConstant());
-            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, newConst, newMaxConst >= newConst ? newMaxConst - newConst : 0));
+            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, newConst, newMaxConst >= newConst ? newMaxConst - newConst : newMaxConst - newConst == -1 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
           }
         }
       }
@@ -483,6 +483,11 @@ public class TwoStageEquations implements Equations {
 
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
     cycle = myHLevelEquations.solve(solution);
+    for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
+      if (entry.getValue() != null) {
+        entry.setValue(entry.getValue() + 1);
+      }
+    }
     if (ok && cycle != null) {
       reportCycle(cycle, unBased);
     }
@@ -491,7 +496,7 @@ public class TwoStageEquations implements Equations {
       for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
         if (unBased.contains(vars.proj2)) {
           Integer sol = solution.get(vars.proj2);
-          if (sol != null && sol == 0) {
+          if (sol != null && sol == 1) {
             myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myBasedPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myConstantUpperBounds.remove(vars.proj1);
@@ -523,7 +528,7 @@ public class TwoStageEquations implements Equations {
       if (!unBased.contains(entry.getKey())) {
         Integer sol = solution.get(entry.getKey());
         assert sol != null || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
-        result.add(entry.getKey(), sol == null || entry.getValue() == null ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol <= -entry.getValue() ? 0 : -sol - (-entry.getValue())));
+        result.add(entry.getKey(), sol == null || entry.getValue() == null ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol >= -entry.getValue() ? -sol - (-entry.getValue()) : entry.getKey().getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
       }
     }
 

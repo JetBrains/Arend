@@ -475,7 +475,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.LevelExpression visitLevelNull(Level level) {
-    return (level.getConstant() == 0 || level.getConstant() == -1) && level.getMaxConstant() == 0 && (level.getVar() == LevelVariable.PVAR || level.getVar() == LevelVariable.HVAR) ? null : visitLevel(level);
+    return level.isVarOnly() ? null : visitLevel(level);
   }
 
   private Concrete.Expression visitSort(Sort sorts) {
@@ -504,8 +504,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       throw new IllegalStateException();
     }
 
-    if (level.getMaxConstant() != 0) {
-      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(null, level.getMaxConstant())));
+    if (level.getMaxConstant() > 0 || level.getMaxConstant() == 0 && level.getVar() == LevelVariable.HVAR) {
+      result = new Concrete.MaxLevelExpression(null, result, visitLevel(new Level(level.getMaxConstant())));
     }
 
     for (int i = 0; i < level.getConstant(); i++) {

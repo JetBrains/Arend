@@ -90,7 +90,16 @@ public class Sort {
   }
 
   private static boolean compareProp(Sort sort, Equations equations, Concrete.SourceNode sourceNode) {
-    return sort.getHLevel().getConstant() == -1 && sort.getHLevel().getVar() instanceof InferenceLevelVariable && (equations == null || equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(0), Equations.CMP.LE, sourceNode));
+    if (sort.isProp()) {
+      return true;
+    }
+    if (!(sort.getHLevel().getVar() instanceof InferenceLevelVariable) || sort.getHLevel().getMaxAddedConstant() > -1) {
+      return false;
+    }
+    if (equations == null) {
+      return true;
+    }
+    return equations.addEquation(new Level(sort.getHLevel().getVar()), new Level(-1), Equations.CMP.LE, sourceNode);
   }
 
   public static boolean compare(Sort sort1, Sort sort2, Equations.CMP cmp, Equations equations, Concrete.SourceNode sourceNode) {
@@ -117,16 +126,12 @@ public class Sort {
     return subst.isEmpty() || myPLevel.isClosed() && myHLevel.isClosed() ? this : new Sort(myPLevel.subst(subst), myHLevel.subst(subst));
   }
 
-  public static Sort generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode, int pConst, int hConst) {
+  public static Sort generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {
     InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, isUniverseLike, sourceNode);
     InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, isUniverseLike, sourceNode);
     equations.addVariable(pl);
     equations.addVariable(hl);
-    return new Sort(new Level(pl, pConst), new Level(hl, hConst));
-  }
-
-  public static Sort generateInferVars(Equations equations, boolean isUniverseLike, Concrete.SourceNode sourceNode) {
-    return generateInferVars(equations, isUniverseLike, sourceNode, 0, 0);
+    return new Sort(new Level(pl), new Level(hl));
   }
 
   @Override

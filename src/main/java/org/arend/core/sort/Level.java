@@ -24,24 +24,23 @@ public class Level {
 
   // max(var, maxConstant) + constant
   public Level(LevelVariable var, int constant, int maxConstant) {
-    assert constant >= -1;
-    assert maxConstant >= 0;
+    assert maxConstant + constant >= -1 && (var == null || constant >= 0 && (var.getType() != LevelVariable.LvlType.PLVL || maxConstant + constant >= 0));
     myVar = var;
     myConstant = var == null ? constant + maxConstant : constant;
     myMaxConstant = var == null ? 0 : maxConstant;
   }
 
   public Level(LevelVariable var, int constant) {
-    assert constant >= -1;
+    assert constant >= 0;
     myConstant = constant;
     myVar = var;
-    myMaxConstant = 0;
+    myMaxConstant = var != null && var.getType() == LevelVariable.LvlType.HLVL ? -1 : 0;
   }
 
   public Level(LevelVariable var) {
     myConstant = 0;
     myVar = var;
-    myMaxConstant = 0;
+    myMaxConstant = var != null && var.getType() == LevelVariable.LvlType.HLVL ? -1 : 0;
   }
 
   public Level(int constant) {
@@ -76,7 +75,11 @@ public class Level {
   }
 
   public boolean isProp() {
-    return isClosed() && getConstant() == -1;
+    return isClosed() && myConstant == -1;
+  }
+
+  public boolean isVarOnly() {
+    return myVar != null && myConstant == 0 && myMaxConstant <= 0 && (myVar.getType() != LevelVariable.LvlType.PLVL || myMaxConstant == 0);
   }
 
   public Level add(int constant) {
@@ -98,7 +101,7 @@ public class Level {
     }
 
     if (myVar == null && level.myVar == null) {
-      return new Level(null, Math.max(myConstant, level.myConstant));
+      return new Level(Math.max(myConstant, level.myConstant));
     }
 
     int constant = myVar == null ? myConstant : level.myConstant;
@@ -114,16 +117,12 @@ public class Level {
     if (level == null) {
       return this;
     }
-    if (level == INFINITY || myConstant == 0 && myMaxConstant == 0) {
+    if (level == INFINITY || isVarOnly()) {
       return level;
     }
 
     if (level.myVar != null) {
-      int constant = level.myConstant + myConstant;
-      if (constant < -1) {
-        constant = -1;
-      }
-      return new Level(level.myVar, constant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant));
+      return new Level(level.myVar, level.myConstant + myConstant, Math.max(level.myMaxConstant, myMaxConstant - level.myConstant));
     } else {
       return new Level(Math.max(level.myConstant, myMaxConstant) + myConstant);
     }
