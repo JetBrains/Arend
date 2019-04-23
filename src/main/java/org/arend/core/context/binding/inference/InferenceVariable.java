@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -21,6 +22,8 @@ public abstract class InferenceVariable implements Variable {
   private InferenceReferenceExpression myReference;
   private List<InferenceVariableListener> myListeners;
   private final Set<Binding> myBounds;
+  private boolean mySolved;
+  private ExprSubstitution mySubstitution;
 
   public InferenceVariable(String name, Expression type, Concrete.SourceNode sourceNode, Set<Binding> bounds) {
     myName = name == null || name.isEmpty() ? "x" : name;
@@ -48,17 +51,23 @@ public abstract class InferenceVariable implements Variable {
   }
 
   public void solve(Equations equations, Expression solution) {
-    if (myReference != null) {
-      myReference.setSubstExpression(solution);
-      for (InferenceVariableListener listener : myListeners) {
-        listener.solved(equations, myReference);
-      }
-      myReference = null;
+    if (mySolved) {
+      return;
+    }
+    mySolved = true;
+    myReference.setSubstExpression(mySubstitution == null ? solution : solution.subst(mySubstitution));
+    mySubstitution = null;
+    for (InferenceVariableListener listener : myListeners) {
+      listener.solved(equations, myReference);
     }
   }
 
   public boolean isSolved() {
-    return myReference == null;
+    return mySolved;
+  }
+
+  public Expression getSolution() {
+    return myReference == null ? null : myReference.getSubstExpression();
   }
 
   @Override

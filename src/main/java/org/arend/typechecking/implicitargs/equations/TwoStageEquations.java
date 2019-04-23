@@ -715,6 +715,13 @@ public class TwoStageEquations implements Equations {
       return;
     }
 
+    if (variable.isSolved()) {
+      for (ClassCallExpression lowerBound : lowerBounds) {
+        CompareVisitor.compare(DummyEquations.getInstance(), CMP.LE, lowerBound, variable.getSolution(), variable.getSourceNode());
+      }
+      return;
+    }
+
     if (lowerBounds.size() == 1) {
       solve(variable, lowerBounds.get(0));
       return;
