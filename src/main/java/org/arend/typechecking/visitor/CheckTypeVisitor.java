@@ -923,11 +923,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Level pLevel = expr.getPLevel() != null ? expr.getPLevel().accept(this, LevelVariable.PVAR) : null;
     Level hLevel = expr.getHLevel() != null ? expr.getHLevel().accept(this, LevelVariable.HVAR) : null;
 
-    if (pLevel != null && pLevel.isInfinity()) {
-      myErrorReporter.report(new TypecheckingError("\\inf is not a correct p-level", expr));
-      pLevel = null;
-    }
-
     if (pLevel == null) {
       InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, true, expr);
       myEquations.addVariable(pl);
@@ -946,6 +941,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public Level visitInf(Concrete.InfLevelExpression expr, LevelVariable param) {
+    if (param == LevelVariable.PVAR) {
+      myErrorReporter.report(new TypecheckingError("\\inf is not a correct p-level", expr));
+      return null;
+    }
     return Level.INFINITY;
   }
 

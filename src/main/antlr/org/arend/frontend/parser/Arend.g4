@@ -158,6 +158,7 @@ typeAnnotation : ':' expr;
 
 levelAtom : '\\lp'              # pLevel
           | '\\lh'              # hLevel
+          | '\\oo'              # infLevel
           | NUMBER              # numLevel
           | '(' levelExpr ')'   # parenLevel
           ;
@@ -169,6 +170,7 @@ levelExpr : levelAtom                     # atomLevel
 
 onlyLevelAtom : '\\lp'                                                # pOnlyLevel
               | '\\lh'                                                # hOnlyLevel
+              | '\\oo'                                                # infOnlyLevel
               | '\\level' (maybeLevelAtom maybeLevelAtom | '\\Prop')  # levelsOnlyLevel
               | '(' onlyLevelExpr ')'                                 # parenOnlyLevel
               ;
