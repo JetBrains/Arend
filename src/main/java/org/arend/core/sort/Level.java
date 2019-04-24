@@ -31,7 +31,7 @@ public class Level {
   }
 
   public Level(LevelVariable var, int constant) {
-    assert constant >= 0;
+    assert constant >= 0 || var == null && constant == -1;
     myConstant = constant;
     myVar = var;
     myMaxConstant = var != null && var.getType() == LevelVariable.LvlType.HLVL ? -1 : 0;

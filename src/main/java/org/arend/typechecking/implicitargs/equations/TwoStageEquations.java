@@ -565,7 +565,7 @@ public class TwoStageEquations implements Equations {
       if (!Level.compare(level, entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
         int maxConstant = entry.getValue().getMaxAddedConstant();
         List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);
-        if (!Level.compare(new Level(level.getVar(), level.getConstant()), entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
+        if (!Level.compare(level.withMaxConstant() ? new Level(level.getVar(), level.getConstant()) : level, entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
           equations.add(level.isInfinity() ? new LevelEquation<>(entry.getKey()) : new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()));
         }
         if (level.withMaxConstant() && !Level.compare(new Level(level.getMaxAddedConstant()), entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
