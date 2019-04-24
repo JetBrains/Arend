@@ -78,8 +78,12 @@ public class Level {
     return isClosed() && myConstant == -1;
   }
 
+  public boolean withMaxConstant() {
+    return myVar != null && (myMaxConstant > 0 || myVar.getType() == LevelVariable.LvlType.HLVL && myMaxConstant == 0);
+  }
+
   public boolean isVarOnly() {
-    return myVar != null && myConstant == 0 && myMaxConstant <= 0 && (myVar.getType() != LevelVariable.LvlType.PLVL || myMaxConstant == 0);
+    return myVar != null && myConstant == 0 && !withMaxConstant();
   }
 
   public Level add(int constant) {

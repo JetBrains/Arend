@@ -565,7 +565,12 @@ public class TwoStageEquations implements Equations {
       if (!Level.compare(level, entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
         int maxConstant = entry.getValue().getMaxAddedConstant();
         List<LevelEquation<LevelVariable>> equations = new ArrayList<>(2);
-        equations.add(level.isInfinity() ? new LevelEquation<>(entry.getKey()) : level.getMaxAddedConstant() <= constant || level.getMaxAddedConstant() <= maxConstant ? new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()) : new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));
+        if (!Level.compare(new Level(level.getVar(), level.getConstant()), entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
+          equations.add(level.isInfinity() ? new LevelEquation<>(entry.getKey()) : new LevelEquation<>(level.getVar(), entry.getKey(), -level.getConstant()));
+        }
+        if (level.withMaxConstant() && !Level.compare(new Level(level.getMaxAddedConstant()), entry.getValue(), CMP.LE, DummyEquations.getInstance(), null)) {
+          equations.add(new LevelEquation<>(null, entry.getKey(), -level.getMaxAddedConstant()));
+        }
         equations.add(new LevelEquation<>(entry.getKey(), entry.getValue().getVar(), constant, maxConstant));
         myVisitor.getErrorReporter().report(new SolveLevelEquationsError(equations, entry.getKey().getSourceNode()));
       }
