@@ -110,7 +110,7 @@ public class Level {
 
     int constant = myVar == null ? myConstant : level.myConstant;
     Level lvl = myVar == null ? level : this;
-    return constant <= lvl.myConstant ? lvl : new Level(lvl.myVar, lvl.myConstant, Math.max(lvl.myMaxConstant, constant - lvl.myConstant));
+    return constant <= lvl.getMaxAddedConstant() ? lvl : new Level(lvl.myVar, lvl.myConstant, Math.max(lvl.myMaxConstant, constant - lvl.myConstant));
   }
 
   public Level subst(LevelSubstitution subst) {

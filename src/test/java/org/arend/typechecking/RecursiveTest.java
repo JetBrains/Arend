@@ -164,15 +164,15 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void dataFunctionError() {
     typeCheckModule(
-      "\\data D (n : Nat) : \\Type | con1 (f 1) | con2\n" +
-      "\\func f (n : Nat) : \\Type => D n", 1);
+      "\\data D (n : Nat) : \\Set | con1 (f 1) | con2\n" +
+      "\\func f (n : Nat) : \\Set => D n", 1);
   }
 
   @Test
   public void dataFunctionError2() {
     typeCheckModule(
-      "\\data D (n : Nat) : \\Type | con1 (f 1) | con2\n" +
-      "\\func f (n : Nat) : \\Type | 0 => Nat | suc n => D n", 1);
+      "\\data D (n : Nat) : \\Set | con1 (f 1) | con2\n" +
+      "\\func f (n : Nat) : \\Set | 0 => Nat | suc n => D n", 1);
   }
 
   @Test
@@ -186,8 +186,8 @@ public class RecursiveTest extends TypeCheckingTestCase {
   public void mutualRecursionOrder() {
     typeCheckModule(
       "\\func g => D'\n" +
-      "\\data D : \\Type | con1 | con2 (d : D) (D' d)\n" +
-      "\\data D' (d : D) : \\Type \\with\n" +
+      "\\data D : \\Set | con1 | con2 (d : D) (D' d)\n" +
+      "\\data D' (d : D) : \\Set \\with\n" +
       "  | con1 => con1'\n" +
       "  | con2 _ _ => con2'");
   }
