@@ -1777,6 +1777,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
 
+      for (ClassField field : typedDef.getPersonalFields()) {
+        field.getType(Sort.STD).getParameters().setType(new ClassCallExpression(typedDef, Sort.STD));
+      }
+
       Set<ClassField> goodFields = new HashSet<>(typedDef.getPersonalFields());
       GoodThisParametersVisitor visitor = new GoodThisParametersVisitor(goodFields);
       for (ClassDefinition superClass : typedDef.getSuperClasses()) {

@@ -1,7 +1,17 @@
 package org.arend.classes;
 
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.expr.NewExpression;
+import org.arend.core.expr.TupleExpression;
+import org.arend.core.sort.Level;
+import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   @Test
@@ -60,5 +70,13 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R (x y : Nat)\n" +
       "\\func f (r : R) => \\let t : R r.x r.y => \\new r \\in t");
+  }
+
+  @Test
+  public void levelTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (a : A)\n" +
+      "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\level 1 1 Nat 0, 0)");
+    assertEquals(new Sort(new Level(1), new Level(1)), ((LeafElimTree) ((FunctionDefinition) getDefinition("f")).getBody()).getExpression().cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getExpression().getSortArgument());
   }
 }

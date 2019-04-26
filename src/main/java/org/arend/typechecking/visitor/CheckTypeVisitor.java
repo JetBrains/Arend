@@ -1586,20 +1586,33 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
       Concrete.Expression baseExpr = expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getBaseClassExpression() : expr.getExpression();
       if (baseExpr instanceof Concrete.HoleExpression || baseExpr instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) baseExpr).getReferent() instanceof ClassReferable && expectedType instanceof ClassCallExpression) {
-        ClassDefinition actualClassDef = null;
+        ClassCallExpression actualClassCall = null;
         if (baseExpr instanceof Concrete.HoleExpression && !(expectedType instanceof ClassCallExpression)) {
           myErrorReporter.report(new TypecheckingError("Cannot infer an expression", baseExpr));
           return null;
         }
+
+        ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
         if (baseExpr instanceof Concrete.ReferenceExpression) {
-          Referable ref = ((Concrete.ReferenceExpression) baseExpr).getReferent();
+          Concrete.ReferenceExpression baseRefExpr = (Concrete.ReferenceExpression) baseExpr;
+          Referable ref = baseRefExpr.getReferent();
           boolean ok = ref instanceof TCReferable;
           if (ok) {
             Definition actualDef = myState.getTypechecked((TCReferable) ref);
             if (actualDef instanceof ClassDefinition) {
-              ok = ((ClassDefinition) actualDef).isSubClassOf(((ClassCallExpression) expectedType).getDefinition());
-              if (actualDef != ((ClassCallExpression) expectedType).getDefinition()) {
-                actualClassDef = (ClassDefinition) actualDef;
+              ok = ((ClassDefinition) actualDef).isSubClassOf(expectedClassCall.getDefinition());
+              if (ok && (actualDef != expectedClassCall.getDefinition() || baseRefExpr.getPLevel() != null || baseRefExpr.getHLevel() != null)) {
+                boolean fieldsOK = true;
+                for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
+                  if (((ClassDefinition) actualDef).isImplemented(implField)) {
+                    fieldsOK = false;
+                    break;
+                  }
+                }
+                Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
+                Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
+                Sort expectedSort = expectedClassCall.getSortArgument();
+                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), fieldsOK ? expectedClassCall.getImplementedHere() : Collections.emptyMap(), expectedClassCall.getSort(), actualDef.hasUniverses());
               }
             } else {
               ok = false;
@@ -1610,19 +1623,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             return null;
           }
         }
-        ClassCallExpression expectedClassCall = (ClassCallExpression) expectedType;
 
-        boolean ok = true;
-        if (actualClassDef != null) {
-          for (ClassField implField : expectedClassCall.getImplementedHere().keySet()) {
-            if (actualClassDef.isImplemented(implField)) {
-              ok = false;
-              break;
-            }
-          }
-        }
-        if (actualClassDef != null) {
-          expectedClassCall = new ClassCallExpression(actualClassDef, expectedClassCall.getSortArgument(), ok ? expectedClassCall.getImplementedHere() : Collections.emptyMap(), expectedClassCall.getSort(), actualClassDef.hasUniverses());
+        if (actualClassCall != null) {
+          expectedClassCall = actualClassCall;
           expectedClassCall.updateHasUniverses();
         }
         pseudoImplemented = new HashSet<>();
