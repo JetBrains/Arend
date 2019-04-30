@@ -1,6 +1,7 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
@@ -548,11 +549,55 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return true;
   }
 
+  private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
+    ReferenceExpression thisExpr = new ReferenceExpression(new TypedBinding("this", new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), classCall1.getImplementedHere(), classCall1.getSort(), classCall1.hasUniverses())));
+    boolean ok = true;
+    for (Map.Entry<ClassField, LamExpression> entry : classCall1.getDefinition().getImplemented()) {
+      if (!classCall2.isImplemented(entry.getKey())) {
+        Expression type = entry.getValue().substArgument(thisExpr).getType();
+        if (type == null) {
+          ok = false;
+          break;
+        }
+        if (!compare(myNormalCompare ? myEquations : null, Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+          return false;
+        }
+      }
+    }
+    if (ok) {
+      for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
+        if (!classCall2.isImplemented(entry.getKey())) {
+          Expression type = entry.getValue().getType();
+          if (type == null) {
+            ok = false;
+            break;
+          }
+          if (!compare(myNormalCompare ? myEquations : null, Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return ok || Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode);
+  }
+
   @Override
   public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
     ClassCallExpression classCall2 = expr2.checkedCast(ClassCallExpression.class);
-    if (classCall2 == null || (expr1.hasUniverses() || classCall2.hasUniverses()) && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode)) {
+    if (classCall2 == null) {
       return false;
+    }
+
+    if (expr1.hasUniverses() || classCall2.hasUniverses()) {
+      if (myCMP == Equations.CMP.EQ && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), Equations.CMP.EQ, myNormalCompare ? myEquations : null, mySourceNode)) {
+        return false;
+      }
+      if (myCMP != Equations.CMP.EQ && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? DummyEquations.getInstance() : null, mySourceNode) && !(expr1.getDefinition() == classCall2.getDefinition() && expr1.getImplementedHere().size() == classCall2.getImplementedHere().size())) {
+        if (myCMP == Equations.CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
+          return false;
+        }
+      }
     }
 
     if (myCMP == Equations.CMP.LE) {

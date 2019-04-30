@@ -1601,11 +1601,16 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     for (Concrete.ClassField field : def.getFields()) {
       if (previousType == field.getResultType()) {
         if (newDef && previousField != null) {
-          addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel()).setStatus(previousField.status());
+          ClassField newField = addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel());
+          newField.setStatus(previousField.status());
+          newField.setHasUniverses(previousField.hasUniverses());
         }
       } else {
         previousType = field.getResultType();
         previousField = typecheckClassField(field, typedDef, localInstances, newDef, hasClassifyingField);
+        if (previousField != null && CheckForUniversesVisitor.findUniverse(previousField.getType(Sort.STD).getCodomain())) {
+          previousField.setHasUniverses(true);
+        }
 
         if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
           TCClassReferable classRef = previousType.getUnderlyingClassReferable();
@@ -1771,7 +1776,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
       typedDef.setHasUniverses(false);
       for (ClassField field : typedDef.getFields()) {
-        if (!typedDef.isImplemented(field) && CheckForUniversesVisitor.findUniverse(field.getType(Sort.STD).getCodomain())) {
+        if (field.hasUniverses() && !typedDef.isImplemented(field)) {
           typedDef.setHasUniverses(true);
           break;
         }

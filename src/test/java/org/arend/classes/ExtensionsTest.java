@@ -362,4 +362,18 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\func f (a : A 1) : A 1 => \\new B { | A => a }", 2);
     assertThatErrorsAre(fieldsImplementation(true, Collections.singletonList(get("A.x"))), typeMismatchError());
   }
+
+  @Test
+  public void universesTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (a : A)\n" +
+      "\\func f (c : C \\level 1 1 Nat) : C \\level 0 1 => c");
+  }
+
+  @Test
+  public void universesTestError() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (a : A)\n" +
+      "\\func f (c : C \\level 1 1 \\Set0) : C \\level 0 1 => c", 1);
+  }
 }
