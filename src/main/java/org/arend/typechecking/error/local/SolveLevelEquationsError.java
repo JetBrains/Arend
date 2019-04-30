@@ -81,9 +81,9 @@ public class SolveLevelEquationsError extends TypecheckingError {
       boolean withMax = maxConstant != null && !(maxConstant == -1 || maxConstant == 0 && var.getType() == LevelVariable.LvlType.PLVL);
       if (withMax) {
         builder.append("max ");
-      }
-      if (constant != null && constant > 0) {
-        builder.append('(');
+        if (constant != null && constant > 0) {
+          builder.append('(');
+        }
       }
       if (var instanceof InferenceLevelVariable) {
         ppv.prettyPrintInferLevelVar((InferenceLevelVariable) var);

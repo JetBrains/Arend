@@ -333,7 +333,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitInf(Concrete.InfLevelExpression expr, Precedence param) {
-    myBuilder.append("\\inf");
+    myBuilder.append("\\oo");
     return null;
   }
 
