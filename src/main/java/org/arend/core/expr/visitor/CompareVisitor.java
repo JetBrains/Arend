@@ -556,7 +556,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     ReferenceExpression thisExpr = new ReferenceExpression(new TypedBinding("this", new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), classCall1.getImplementedHere(), classCall1.getSort(), classCall1.hasUniverses())));
     boolean ok = true;
     for (Map.Entry<ClassField, LamExpression> entry : classCall1.getDefinition().getImplemented()) {
-      if (!classCall2.isImplemented(entry.getKey())) {
+      if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
         Expression type = entry.getValue().substArgument(thisExpr).getType();
         if (type == null) {
           ok = false;
@@ -569,7 +569,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
-        if (!classCall2.isImplemented(entry.getKey())) {
+        if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
           Expression type = entry.getValue().getType();
           if (type == null) {
             ok = false;
