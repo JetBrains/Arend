@@ -18,6 +18,7 @@ public class ClassField extends Definition {
   private PiExpression myType;
   private Expression myTypeLevel;
   private boolean myHideable;
+  private boolean myCovariant;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -80,6 +81,14 @@ public class ClassField extends Definition {
 
   public void setHideable(boolean isHideable) {
     myHideable = isHideable;
+  }
+
+  public boolean isCovariant() {
+    return myCovariant;
+  }
+
+  public void setCovariant(boolean isCovariant) {
+    myCovariant = isCovariant;
   }
 
   @Override

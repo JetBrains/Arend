@@ -541,6 +541,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       if (impl1 == null) {
         return false;
       }
+      if (!entry.getKey().isCovariant()) {
+        myCMP = Equations.CMP.EQ;
+      }
       if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1)) {
         return false;
       }

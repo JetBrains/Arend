@@ -1604,12 +1604,16 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           ClassField newField = addField(field.getData(), typedDef, previousField.getType(Sort.STD), previousField.getTypeLevel());
           newField.setStatus(previousField.status());
           newField.setHasUniverses(previousField.hasUniverses());
+          newField.setCovariant(previousField.isCovariant());
         }
       } else {
         previousType = field.getResultType();
         previousField = typecheckClassField(field, typedDef, localInstances, newDef, hasClassifyingField);
         if (previousField != null && CheckForUniversesVisitor.findUniverse(previousField.getType(Sort.STD).getCodomain())) {
           previousField.setHasUniverses(true);
+          if (!previousField.getType(Sort.STD).getCodomain().accept(new CheckForUniversesVisitor(false), null)) {
+            previousField.setCovariant(true);
+          }
         }
 
         if (field.getData().isParameterField() && !field.getData().isExplicitField()) {

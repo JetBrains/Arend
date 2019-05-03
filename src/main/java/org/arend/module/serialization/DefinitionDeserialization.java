@@ -129,6 +129,7 @@ public class DefinitionDeserialization {
       }
       // setTypeClassReference(field.getReferable(), EmptyDependentLink.getInstance(), fieldType.getCodomain());
       field.setHideable(fieldProto.getIsHideable());
+      field.setCovariant(fieldProto.getIsCovariant());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 

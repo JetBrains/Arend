@@ -376,4 +376,27 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\record C (A : \\Type) (a : A)\n" +
       "\\func f (c : C \\level 1 1 \\Set0) : C \\level 0 1 => c", 1);
   }
+
+  @Test
+  public void comparisonTest() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (a : A)\n" +
+      "\\func f (c : C \\Type4 \\Type3) : C \\Type5 \\Type3 => c");
+  }
+
+  @Test
+  public void comparisonTest2() {
+    typeCheckModule(
+      "\\record C (A : \\Type) (a : A)\n" +
+      "\\func f (c : C \\Type5 \\Type3) : C \\Type5 \\Type4 => c", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void comparisonTest3() {
+    typeCheckModule(
+      "\\record C (A : \\Type -> \\Type)\n" +
+      "\\func f (c : C (\\lam _ => \\Type4)) : C (\\lam _ => \\Type5) => c", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
 }

@@ -90,6 +90,7 @@ public class DefinitionSerialization {
       fBuilder.setIsParameter(field.getReferable().isParameterField());
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
+      fBuilder.setIsCovariant(field.isCovariant());
       builder.addPersonalField(fBuilder.build());
     }
 

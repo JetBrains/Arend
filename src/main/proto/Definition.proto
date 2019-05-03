@@ -70,6 +70,7 @@ message Definition {
             bool isParameter = 6;
             bool isProperty = 7;
             bool isHideable = 9;
+            bool isCovariant = 10;
         }
     }
     message ParametersLevel {
