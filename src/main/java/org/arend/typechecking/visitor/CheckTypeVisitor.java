@@ -772,9 +772,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         DefCallExpression defCallParamType = paramType.getExpr().checkedCast(DefCallExpression.class);
         if (defCallParamType != null && !defCallParamType.getDefinition().hasUniverses()) { // fixes test pLevelTest
           if (defCallParamType.getDefinition() instanceof DataDefinition) {
-            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, defCallParamType.getDefinition().hasUniverses(), param), new ArrayList<>(defCallParamType.getDefCallArguments()));
+            paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, false, param), new ArrayList<>(defCallParamType.getDefCallArguments()));
           } else if (defCallParamType.getDefinition() instanceof FunctionDefinition) {
-            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, defCallParamType.getDefinition().hasUniverses(), param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
+            paramType = new TypeExpression(new FunCallExpression((FunctionDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, false, param), new ArrayList<>(defCallParamType.getDefCallArguments())), paramType.getSortOfType());
           }
         }
 

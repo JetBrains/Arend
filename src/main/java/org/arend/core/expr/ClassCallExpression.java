@@ -51,7 +51,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
     myHasUniverses = false;
     for (ClassField field : getDefinition().getFields()) {
-      if (!isImplemented(field) && CheckForUniversesVisitor.findUniverse(field.getType(Sort.STD).getCodomain())) {
+      if (field.hasUniverses() && !isImplemented(field)) {
         myHasUniverses = true;
         return;
       }

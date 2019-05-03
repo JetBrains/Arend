@@ -1,5 +1,6 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
@@ -49,6 +50,9 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
   public boolean processDefCall(DefCallExpression expression, Void param) {
     if (!myCheckTopLevel) {
       myCheckTopLevel = true;
+      return false;
+    }
+    if (expression.getDefinition() instanceof ClassField) {
       return false;
     }
     return expression.getDefinition().hasUniverses() && visitSort(expression.getSortArgument());

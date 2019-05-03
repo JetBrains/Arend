@@ -98,7 +98,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       check = expr2.isInstance(AppExpression.class);
     } else if (expr1.isInstance(FieldCallExpression.class)) {
       FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-      check = fieldCall2 != null && expr1.cast(FieldCallExpression.class).getDefinition() == fieldCall2.getDefinition() && !fieldCall2.getDefinition().isProperty() && (!fieldCall2.getDefinition().hasUniverses() || expr1.cast(FieldCallExpression.class).getSortArgument().equals(fieldCall2.getSortArgument()));
+      check = fieldCall2 != null && expr1.cast(FieldCallExpression.class).getDefinition() == fieldCall2.getDefinition() && !fieldCall2.getDefinition().isProperty();
     } else if (expr1.isInstance(ProjExpression.class)) {
       ProjExpression proj2 = expr2.checkedCast(ProjExpression.class);
       check = proj2 != null && expr1.cast(ProjExpression.class).getField() == proj2.getField();
@@ -513,7 +513,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   @Override
   public Boolean visitFieldCall(FieldCallExpression fieldCall1, Expression expr2) {
     FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
-    if (!compareDef(fieldCall1, fieldCall2, true)) {
+    if (fieldCall2 == null || fieldCall1.getDefinition() != fieldCall2.getDefinition()) {
       return false;
     }
 
@@ -590,12 +590,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     if (expr1.hasUniverses() || classCall2.hasUniverses()) {
-      if (myCMP == Equations.CMP.EQ && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), Equations.CMP.EQ, myNormalCompare ? myEquations : null, mySourceNode)) {
-        return false;
-      }
-      if (myCMP != Equations.CMP.EQ && !Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? DummyEquations.getInstance() : null, mySourceNode) && !(expr1.getDefinition() == classCall2.getDefinition() && expr1.getImplementedHere().size() == classCall2.getImplementedHere().size())) {
-        if (myCMP == Equations.CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
+      if (myCMP == Equations.CMP.EQ || expr1.hasUniverses() && classCall2.hasUniverses()) {
+        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode)) {
           return false;
+        }
+      } else {
+        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? DummyEquations.getInstance() : null, mySourceNode)) {
+          if (myCMP == Equations.CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
+            return false;
+          }
         }
       }
     }
