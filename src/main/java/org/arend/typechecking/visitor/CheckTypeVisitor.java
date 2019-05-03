@@ -611,7 +611,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (isMin) {
           pLevel = new Level(0);
         } else {
-          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr.getPLevel());
+          InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr);
           myEquations.addVariable(pl);
           pLevel = new Level(pl);
         }
@@ -625,7 +625,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (isMin) {
           hLevel = new Level(-1);
         } else {
-          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.hasUniverses(), expr.getHLevel());
+          InferenceLevelVariable hl = new InferenceLevelVariable(LevelVariable.LvlType.HLVL, definition.hasUniverses(), expr);
           myEquations.addVariable(hl);
           hLevel = new Level(hl);
         }
