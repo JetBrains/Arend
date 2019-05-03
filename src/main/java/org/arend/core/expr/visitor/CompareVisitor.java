@@ -93,7 +93,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     boolean check;
     if (expr1.isInstance(FunCallExpression.class)) {
       FunCallExpression funCall2 = expr2.checkedCast(FunCallExpression.class);
-      check = funCall2 != null && expr1.cast(FunCallExpression.class).getDefinition() == funCall2.getDefinition() && !funCall2.getDefinition().isLemma() && (!funCall2.getDefinition().hasUniverses() || expr1.cast(FunCallExpression.class).getSortArgument().equals(funCall2.getSortArgument()));
+      check = funCall2 != null && expr1.cast(FunCallExpression.class).getDefinition() == funCall2.getDefinition() && !funCall2.getDefinition().isLemma();
     } else if (expr1.isInstance(AppExpression.class)) {
       check = expr2.isInstance(AppExpression.class);
     } else if (expr1.isInstance(FieldCallExpression.class)) {
@@ -319,8 +319,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return true;
     }
     return correctOrder
-      ? Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode)
-      : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode);
+      ? Sort.compare(expr1.getSortArgument(), expr2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)
+      : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
   private Boolean visitDefCall(DefCallExpression expr1, Expression expr2, boolean correctOrder) {
@@ -486,7 +486,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       Expression finalExpr1 = correctOrder ? lam : fun;
       Expression finalExpr2 = correctOrder ? fun : lam.subst(getSubstitution());
       if (variable.isSolved()) {
-        return compare(myNormalCompare ? myEquations : null, myCMP, finalExpr1, finalExpr2, variable.getSourceNode());
+        return compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), myCMP, finalExpr1, finalExpr2, variable.getSourceNode());
       } else {
         return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
       }
@@ -562,7 +562,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
           ok = false;
           break;
         }
-        if (!compare(myNormalCompare ? myEquations : null, Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+        if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
           return false;
         }
       }
@@ -575,14 +575,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
             ok = false;
             break;
           }
-          if (!compare(myNormalCompare ? myEquations : null, Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+          if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
             return false;
           }
         }
       }
     }
 
-    return ok || Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode);
+    return ok || Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
   @Override
@@ -594,11 +594,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     if (expr1.hasUniverses() || classCall2.hasUniverses()) {
       if (myCMP == Equations.CMP.EQ || expr1.hasUniverses() && classCall2.hasUniverses()) {
-        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : null, mySourceNode)) {
+        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode)) {
           return false;
         }
       } else {
-        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? DummyEquations.getInstance() : null, mySourceNode)) {
+        if (!Sort.compare(expr1.getSortArgument(), classCall2.getSortArgument(), myCMP, DummyEquations.getInstance(), mySourceNode)) {
           if (myCMP == Equations.CMP.LE ? !checkClassCallSortArguments(expr1, classCall2) : !checkClassCallSortArguments(classCall2, expr1)) {
             return false;
           }
@@ -730,7 +730,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   @Override
   public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    return expr2.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), expr2.cast(UniverseExpression.class).getSort(), myCMP, myNormalCompare && myEquations != DummyEquations.getInstance() ? myEquations : null, mySourceNode);
+    return expr2.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), expr2.cast(UniverseExpression.class).getSort(), myCMP, myNormalCompare ? (myEquations == DummyEquations.getInstance() ? null : myEquations) : DummyEquations.getInstance(), mySourceNode);
   }
 
   @Override
