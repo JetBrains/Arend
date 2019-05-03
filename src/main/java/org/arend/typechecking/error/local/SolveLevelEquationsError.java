@@ -78,7 +78,7 @@ public class SolveLevelEquationsError extends TypecheckingError {
 
   private void printEqExpr(StringBuilder builder, PrettyPrintVisitor ppv, LevelVariable var, Integer constant, Integer maxConstant) {
     if (var != null) {
-      boolean withMax = maxConstant != null && !(maxConstant == -1 || maxConstant == 0 && var.getType() == LevelVariable.LvlType.PLVL);
+      boolean withMax = maxConstant != null && !(maxConstant < 0 || maxConstant == 0 && var.getType() == LevelVariable.LvlType.PLVL);
       if (withMax) {
         builder.append("max ");
         if (constant != null && constant > 0) {

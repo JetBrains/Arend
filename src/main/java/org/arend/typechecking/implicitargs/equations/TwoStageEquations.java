@@ -243,7 +243,7 @@ public class TwoStageEquations implements Equations {
   private void addLevelEquation(final LevelVariable var1, LevelVariable var2, int constant, int maxConstant, Concrete.SourceNode sourceNode) {
     // _ <= max(-c, -d), _ <= max(l - c, -d) // 6
     if (!(var2 instanceof InferenceLevelVariable || constant >= 0 || maxConstant >= 0 || var2 == null && var1 instanceof InferenceLevelVariable && var1.getType() == LevelVariable.LvlType.HLVL && constant >= -1 && maxConstant >= -1)) {
-      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant, maxConstant)), sourceNode));
+      myVisitor.getErrorReporter().report(new SolveLevelEquationsError(Collections.singletonList(new LevelEquation<>(var1, var2, constant)), sourceNode));
       return;
     }
 
@@ -279,9 +279,20 @@ public class TwoStageEquations implements Equations {
             int thisMaxConst = var2 == null ? oldLevel.getMaxAddedConstant() : maxConstant;
             myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(Math.max(Math.min(thisMaxConst, otherConstant), Math.min(thisConst, otherConstant))));
           } else {
-            int newConst = Math.min(constant, oldLevel.getConstant());
-            int newMaxConst = Math.min(maxConstant, oldLevel.getMaxConstant());
-            myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, newConst, newMaxConst >= newConst ? newMaxConst - newConst : newMaxConst - newConst == -1 && var2 != null && var2.getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
+            if (var2 == null) {
+              int newConst = Math.max(constant, maxConstant);
+              if (newConst < oldLevel.getConstant()) {
+                myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(newConst));
+              }
+            } else {
+              if (constant < 0) {
+                myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(Math.min(maxConstant, oldLevel.getMaxAddedConstant())));
+              } else {
+                int newConst = Math.min(constant, oldLevel.getConstant());
+                int newMaxConst = Math.min(maxConstant, oldLevel.getMaxAddedConstant());
+                myConstantUpperBounds.put((InferenceLevelVariable) var1, new Level(var2, newConst, newMaxConst >= newConst ? newMaxConst - newConst : newMaxConst - newConst == -1 && var2.getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
+              }
+            }
           }
         }
       }

@@ -59,7 +59,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.LevelExpression convert(Level level) {
-    return new ToAbstractVisitor(EnumSet.noneOf(Flag.class), null, Collections.emptyMap()).visitLevel(level);
+    return new ToAbstractVisitor(EnumSet.of(Flag.SHOW_INFERENCE_LEVEL_VARS), null, Collections.emptyMap()).visitLevel(level);
   }
 
   private String getFreshName(Binding binding, Set<Variable> variables) {
