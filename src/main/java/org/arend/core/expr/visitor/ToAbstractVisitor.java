@@ -123,7 +123,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     while (Character.isDigit(name.charAt(i))) {
       i--;
     }
-    return i + 1 == name.length() ? 0 : Integer.valueOf(name.substring(i + 1));
+    return i + 1 == name.length() ? -1 : Integer.valueOf(name.substring(i + 1));
   }
 
   private Concrete.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
