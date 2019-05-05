@@ -108,11 +108,17 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   public Concrete.Expression visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression && !expr.getArguments().get(0).isExplicit()) {
       if (expr.getArguments().get(0).expression instanceof Concrete.HoleExpression) {
-        if (expr.getArguments().size() == 1) {
-          return expr.getFunction().accept(this, null);
-        } else {
-          expr.getArguments().remove(0);
-          return super.visitApp(expr, null);
+        Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
+        if (ref instanceof GlobalReferable) {
+          Concrete.ReferableDefinition def = myConcreteProvider.getConcrete((GlobalReferable) ref);
+          if (def != null && def.getRelatedDefinition().enclosingClass == myClassReferable) {
+            if (expr.getArguments().size() == 1) {
+              return expr.getFunction().accept(this, null);
+            } else {
+              expr.getArguments().remove(0);
+              return super.visitApp(expr, null);
+            }
+          }
         }
       }
       for (Concrete.Argument argument : expr.getArguments()) {

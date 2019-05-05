@@ -283,6 +283,13 @@ public class DefCall extends TypeCheckingTestCase {
     assertEquals(getDefinition("c"), getDefinition("D.c"));
   }
 
+  @Test
+  public void data3Dynamic() {
+    typeCheckClass(
+      "\\func test => D.c {_} {path (\\lam _ => 0)}",
+      "\\data D {x : Nat} (p : x = 0) | c");
+  }
+
   /*
   @Test
   public void data2DynamicFromInside() {
