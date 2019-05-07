@@ -9,6 +9,8 @@ An expression of the form `C { I }` is a subtype of `C' { I' }` if and only if `
 The expression `\new C { I }` is an instance of type `C { I }`, which is a subtype `C`.
 Thus, you can use this expression to create an element of type `C`.
 
+# New expression
+
 The expression `\new C { I }` is correct only if all fields of `C` are implemented in `C { I }`, but the typechecker can infer some implementations from the expected type of the expression.
 For example, in the following code we do not have to implement field `x` in the `\new` expression explicitly since `f` expects an element of `R 0`, so the typechecker knows that `x` must be equal to `0`.
 

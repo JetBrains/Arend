@@ -11,13 +11,7 @@ The basic syntax looks like this:
 }
 ```
 
-It is also possible to write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these
-notations, which is discussed [here](#properties). 
-
-The type `A_i` can depend on variables `p_1`, ... `p_{i-1}`.
-The type `B_i` can depend on variables `p_1`, ... `p_n`, `f_1`, ... `f_{i-1}`.
-
-`f_1`, ... `f_k`, `p_1`, ... `p_n` are _fields_ of `R`. Note that records do not have parameters
+where `f_1`, ... `f_k`, `p_1`, ... `p_n` are _fields_ of `R`. Note that records do not have parameters
 and `p_1`, ... `p_n` are also fields of `R`.
 The only difference between `p_i` and `f_j` is that `f_j` are visible in the scope of `R` and `p_i` are not:
 
@@ -29,6 +23,12 @@ The only difference between `p_i` and `f_j` is that `f_j` are visible in the sco
 -- p_1 is not in scope in the following function:
 -- \func test4 => p_1
 ```
+
+It is also possible to write `\field f_i : B_i` instead of `| f_i : B_i`, but there is a difference between these
+notations, which is discussed [here](#properties). 
+
+The type `A_i` can depend on variables `p_1`, ... `p_{i-1}`.
+The type `B_i` can depend on variables `p_1`, ... `p_n`, `f_1`, ... `f_{i-1}`.
 
 The record `R` is equivalent to the sigma type `\Sigma (p_1 : A_1) ... (p_n : A_n) (f_1 : B_1) ... (f_k : B_k)`.
 To create an instance of this type you can use one of the options listed
