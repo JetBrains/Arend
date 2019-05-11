@@ -1735,7 +1735,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       } else {
         result = null;
       }
-      if (result == null || result.expression.isInstance(ErrorExpression.class)) {
+      if (result == null) {
         classOk = false;
       }
 
