@@ -518,7 +518,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           ClassCallExpression classCall = type == null ? null : type.accept(this, Mode.WHNF).checkedCast(ClassCallExpression.class);
           if (classCall != null) {
             Expression impl = classCall.getImplementation((ClassField) expr.getDefinition(), thisExpr);
-            if (impl != null && !impl.isInstance(NewExpression.class)) {
+            if (impl != null) {
               return impl.accept(this, mode);
             }
           }

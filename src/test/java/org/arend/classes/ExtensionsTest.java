@@ -172,8 +172,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallANorm instanceof FieldCallExpression);
-    assertEquals(fieldCallA, fieldCallANorm);
+    assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
@@ -201,8 +200,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallB = FieldCallExpression.make((ClassField) getDefinition("C.b"), Sort.STD, funCall);
     Expression fieldCallBNorm = fieldCallB.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallBNorm instanceof FieldCallExpression);
-    assertEquals(fieldCallB, fieldCallBNorm);
+    assertTrue(fieldCallBNorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, fieldCallB);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
@@ -210,8 +208,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, fieldCallB);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallANorm instanceof FieldCallExpression);
-    assertEquals(fieldCallA, fieldCallANorm);
+    assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallK = FieldCallExpression.make((ClassField) getDefinition("A.k"), Sort.STD, fieldCallA);
     fieldCallK = fieldCallK.normalize(NormalizeVisitor.Mode.WHNF);
@@ -248,8 +245,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallANorm instanceof FieldCallExpression);
-    assertEquals(fieldCallA, fieldCallANorm);
+    assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
@@ -271,8 +267,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, funCall);
     Expression fieldCallANorm = fieldCallA.normalize(NormalizeVisitor.Mode.WHNF);
-    assertTrue(fieldCallANorm instanceof FieldCallExpression);
-    assertEquals(fieldCallA, fieldCallANorm);
+    assertTrue(fieldCallANorm instanceof NewExpression);
 
     Expression fieldCallM = FieldCallExpression.make((ClassField) getDefinition("B.m"), Sort.STD, funCall);
     fieldCallM = fieldCallM.normalize(NormalizeVisitor.Mode.WHNF);
