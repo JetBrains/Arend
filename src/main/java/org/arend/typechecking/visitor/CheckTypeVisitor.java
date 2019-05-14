@@ -178,7 +178,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       List<DependentLink> params = new ArrayList<>(myParameters.size());
       for (DependentLink param : myParameters) {
         if (param.isExplicit()) {
-          break;
+          return params;
         }
         params.add(param);
       }
