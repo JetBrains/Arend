@@ -21,7 +21,7 @@ public abstract class ParserTestCase extends ArendTestCase {
   protected static final ModulePath MODULE_PATH = new ModulePath("$TestCase$");
 
   private ArendParser _parse(String text) {
-    ANTLRInputStream input = new ANTLRInputStream(text);
+    CharStream input = CharStreams.fromString(text);
     ArendLexer lexer = new ArendLexer(input);
     lexer.removeErrorListeners();
     lexer.addErrorListener(new BaseErrorListener() {

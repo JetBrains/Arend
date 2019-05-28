@@ -4,7 +4,7 @@ plugins {
     java
     idea
     antlr
-    id("com.google.protobuf") version "0.8.6"
+    id("com.google.protobuf") version "0.8.8"
 }
 
 repositories {
@@ -13,19 +13,18 @@ repositories {
 }
 
 dependencies {
-    compile("net.harawata:appdirs:1.0.1")
     compile("commons-cli:commons-cli:1.4")
-    compile("com.google.guava:guava:26.0-jre")
-    compile("com.google.protobuf:protobuf-java:3.6.1")
+    compile("com.google.guava:guava:27.1-jre")
+    compile("com.google.protobuf:protobuf-java:3.7.1")
     compile("com.google.code.findbugs:jsr305:3.0.2")
-    compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.6")
-    compile("com.fasterxml.jackson.core:jackson-databind:2.9.6")
+    compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.9.9")
 
     testCompile("junit:junit:4.12")
     testCompile("org.hamcrest:hamcrest-library:1.3")
 
-    antlr("org.antlr:antlr4:4.5")
-    implementation("org.antlr:antlr4-runtime:4.5")
+    antlr("org.antlr:antlr4:4.7.2")
+    implementation("org.antlr:antlr4-runtime:4.7.2")
 }
 
 configure<JavaPluginConvention> {
@@ -75,7 +74,7 @@ tasks.withType<AntlrTask> {
 protobuf.protobuf.run {
     generatedFilesBaseDir = genSrcDir.toString()
     protoc(closureOf<ExecutableLocator> {
-        artifact = "com.google.protobuf:protoc:3.1.0"
+        artifact = "com.google.protobuf:protoc:3.7.1"
     })
 }
 

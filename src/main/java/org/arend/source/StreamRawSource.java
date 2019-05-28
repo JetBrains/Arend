@@ -61,7 +61,7 @@ public abstract class StreamRawSource implements Source {
         }
       };
 
-      ArendLexer lexer = new ArendLexer(new ANTLRInputStream(getInputStream()));
+      ArendLexer lexer = new ArendLexer(CharStreams.fromStream(getInputStream()));
       lexer.removeErrorListeners();
       lexer.addErrorListener(errorListener);
 

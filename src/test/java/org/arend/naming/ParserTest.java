@@ -199,32 +199,32 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void incorrectDefinitionName() {
-    parseDef("\\func | => \\Prop", -1);
+    parseModule("\\func | => \\Prop", -1);
   }
 
   @Test
   public void lineComment() {
-    parseDef("\\func f => -- ^_^ @_@ >.<\n  \\Prop");
+    parseModule("\\func f => -- ^_^ @_@ >.<\n  \\Prop");
   }
 
   @Test
   public void blockComment() {
-    parseDef("\\func f => {- ^_^ @_@ >.< wow!!!-}\n  \\Prop");
+    parseModule("\\func f => {- ^_^ @_@ >.< wow!!!-}\n  \\Prop");
   }
 
   @Test
   public void lineCommentLastLine() {
-    parseDef("\\func f => \\Prop  -- ^_^ @_@ >.< wow!!!");
+    parseModule("\\func f => \\Prop  -- ^_^ @_@ >.< wow!!!");
   }
 
   @Test
   public void elimUnderLetError() {
-    parseDef("\\func test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", 1);
+    parseModule("\\func test (n : Nat) : Nat => \\let x => 0 \\in \\elim n | _ => 0", -1);
   }
 
   @Test
   public void testSide() {
-    parseDef("\\func test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
+    parseModule("\\func test (n : Nat) => suc (\\elim n | suc n => n | zero => 0)", 1);
   }
 
   @Test
