@@ -1,6 +1,8 @@
 <h1 id="class-ext">Class extensions<a class="headerlink" href="#class-ext" title="Permanent link">&para;</a></h1>
 
-A class extension is an expression of the form `C { | f_1 => e_1 ... | f_n => e_n }`, where `C` is a record, `f_1`, ... `f_n` are its fields of types `A_1`, ... `A_n` respectively, and `e_1`, ... `e_n` are expressions such that `e_i : A_i[e_1/f_1, ... e_n/f_n]`.
+A class extension is an expression of the form `C { | f_1 => e_1 ... | f_n => e_n }`, where `C` is a record,
+`f_1`, ... `f_n` are its fields of types `A_1`, ... `A_n` respectively, and `e_1`, ... `e_n` are expressions 
+such that `e_i : A_i[e_1/f_1, ... e_n/f_n]`.
 Note that `A_i` cannot depend on any field except for `f_1`, ... `f_n`.
 An expression of the form `C e_1 ... e_n` is equivalent to `C { | f_1 => e_1 ... | f_n => e_n }`, where `f_1`, ... `f_n` is the list of not implemented fields of `C` in the order of their definition.
 

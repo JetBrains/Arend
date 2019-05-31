@@ -15,7 +15,7 @@ Let us consider an example:
 \func square {S : Semigroup} (x : S) => x * x
 ```
 
-We can write `x : S` instead of `x : S.E` since `S` is implicitly coerced to an element of type `\Set`, that is `S.E`.
+It is allowed to write `x : S` instead of `x : S.E` since `S` is implicitly coerced to an element of type `\Set`, that is `S.E`.
 
 Every parameter of a definition of type `C { ... }` is marked as a _local instance_ of class `C`.
 When we use a field of `C` or a definition that has an implicit parameter of type `C`, if the classifying field of a local instance coincides with the expected classifying field, then this instance will be inferred as the argument of the field or the definition.
