@@ -253,7 +253,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               } else if (coercingField == null && parameter.getExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.FIELD, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
+              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.ANY, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
