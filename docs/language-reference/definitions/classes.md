@@ -17,7 +17,7 @@ Let us consider an example:
 
 It is allowed to write `x : S` instead of `x : S.E` since `S` is implicitly coerced to an element of type `\Set`, that is `S.E`.
 
-Every parameter of a definition of type `C { ... }` is marked as a _local instance_ of class `C`.
+All the parameters of a definition, whose type is of the form of an [extension](/language-reference/expressions/class-ext) `C { ... }` of `C`, are marked as _local instances_ of class `C`.
 When we use a field of `C` or a definition that has an implicit parameter of type `C`, if the classifying field of a local instance coincides with the expected classifying field, then this instance will be inferred as the argument of the field or the definition.
 For example, function `square` in the example above has one local instance `S` of class `Semigroup`.
 We use its field `*` in the body of the function and the expected type of this call is `S.E -> S.E -> {?}` since the type of `x` is `S.E`.
