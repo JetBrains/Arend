@@ -36,7 +36,8 @@ public class Equation implements InferenceVariableListener {
     if (var2 != null) {
       var2.removeListener(this);
     }
-    equations.remove(this);
-    equations.solve(type, expr, cmp, sourceNode);
+    if (equations.remove(this)) {
+      equations.solve(type, expr, cmp, sourceNode);
+    }
   }
 }

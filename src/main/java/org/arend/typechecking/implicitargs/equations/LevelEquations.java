@@ -8,6 +8,7 @@ import java.util.Map;
 public class LevelEquations<Var> {
   private final List<Var> myVariables = new ArrayList<>();
   private final List<LevelEquation<Var>> myEquations = new ArrayList<>();
+  static final int INFINITY = -100;
 
   public List<LevelEquation<Var>> getEquations() {
     return myEquations;
@@ -53,23 +54,23 @@ public class LevelEquations<Var> {
       boolean updated = false;
       for (LevelEquation<Var> equation : myEquations) {
         if (equation.isInfinity()) {
-          solution.put(equation.getVariable(), null);
+          solution.put(equation.getVariable(), INFINITY);
         } else {
-          Integer a = solution.get(equation.getVariable1());
-          Integer b = solution.get(equation.getVariable2());
+          int a = solution.get(equation.getVariable1());
+          int b = solution.get(equation.getVariable2());
           Integer m = equation.getMaxConstant();
-          if (b != null && (a == null || (m == null || a + m < 0) && b > a + equation.getConstant())) {
-            if (a != null) {
+          if (b != INFINITY && (a == INFINITY || (m == null || a + m < 0) && b > a + equation.getConstant())) {
+            if (a != INFINITY) {
               List<LevelEquation<Var>> newPath = new ArrayList<>(paths.get(equation.getVariable1()));
               newPath.add(equation);
               paths.put(equation.getVariable2(), newPath);
             }
-            if (i == 0 || equation.getVariable2() == null && a != null) {
+            if (i == 0 || equation.getVariable2() == null && a != INFINITY) {
               solution.remove(null);
               return paths.get(equation.getVariable2());
             }
 
-            solution.put(equation.getVariable2(), a == null ? null : a + equation.getConstant());
+            solution.put(equation.getVariable2(), a == INFINITY ? INFINITY : a + equation.getConstant());
             updated = true;
           }
         }

@@ -13,7 +13,7 @@ public interface Equations {
   boolean addEquation(Level level1, Level level2, CMP cmp, Concrete.SourceNode sourceNode);
   boolean addVariable(InferenceLevelVariable var);
   void bindVariables(InferenceLevelVariable pVar, InferenceLevelVariable hVar);
-  void remove(Equation equation);
+  boolean remove(Equation equation);
   LevelSubstitution solve(Concrete.SourceNode sourceNode);
   boolean isDummy();
 

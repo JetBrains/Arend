@@ -36,6 +36,7 @@ public class TwoStageEquations implements Equations {
   private final List<Pair<InferenceLevelVariable, InferenceLevelVariable>> myBoundVariables;
   private final Map<InferenceLevelVariable, Set<LevelVariable>> myLowerBounds;
   private final Map<InferenceLevelVariable, Level> myConstantUpperBounds;
+  private boolean myFirstRun = true;
 
   public TwoStageEquations(CheckTypeVisitor visitor) {
     myEquations = new ArrayList<>();
@@ -383,8 +384,8 @@ public class TwoStageEquations implements Equations {
   }
 
   @Override
-  public void remove(Equation equation) {
-    myEquations.remove(equation);
+  public boolean remove(Equation equation) {
+    return myFirstRun && myEquations.remove(equation);
   }
 
   private void reportCycle(List<LevelEquation<InferenceLevelVariable>> cycle, Set<InferenceLevelVariable> unBased) {
@@ -405,8 +406,15 @@ public class TwoStageEquations implements Equations {
     Map<InferenceLevelVariable,Boolean> unBasedMap = new HashMap<>();
     for (InferenceLevelVariable var : basedEquations.getVariables()) {
       Level ub = myConstantUpperBounds.get(var);
-      if (ub != null && (ub.getVar() == null || ub.getConstant() < basedSolution.get(var))) {
-        unBasedMap.put(var, true);
+      if (ub != null) {
+        if (ub.getVar() == null) {
+          unBasedMap.put(var, true);
+        } else {
+          int sol = basedSolution.get(var);
+          if (sol == LevelEquations.INFINITY || ub.getConstant() < sol) {
+            unBasedMap.put(var, true);
+          }
+        }
       }
     }
 
@@ -495,7 +503,7 @@ public class TwoStageEquations implements Equations {
     Map<InferenceLevelVariable, Integer> solution = new HashMap<>();
     cycle = myHLevelEquations.solve(solution);
     for (Map.Entry<InferenceLevelVariable, Integer> entry : solution.entrySet()) {
-      if (entry.getValue() != null) {
+      if (entry.getValue() != LevelEquations.INFINITY) {
         entry.setValue(entry.getValue() + 1);
       }
     }
@@ -506,8 +514,7 @@ public class TwoStageEquations implements Equations {
     if (!unBased.isEmpty()) {
       for (Pair<InferenceLevelVariable, InferenceLevelVariable> vars : myBoundVariables) {
         if (unBased.contains(vars.proj2)) {
-          Integer sol = solution.get(vars.proj2);
-          if (sol != null && sol == 1) {
+          if (solution.get(vars.proj2) == 1) {
             myPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myBasedPLevelEquations.getEquations().removeIf(equation -> !equation.isInfinity() && (equation.getVariable1() == vars.proj1 || equation.getVariable2() == vars.proj1));
             myConstantUpperBounds.remove(vars.proj1);
@@ -530,16 +537,16 @@ public class TwoStageEquations implements Equations {
     unBased.addAll(pUnBased);
 
     for (InferenceLevelVariable var : unBased) {
-      Integer sol = solution.get(var);
-      assert sol != null || var.getType() == LevelVariable.LvlType.HLVL;
-      result.add(var, sol == null ? Level.INFINITY : new Level(-sol));
+      int sol = solution.get(var);
+      assert sol != LevelEquations.INFINITY || var.getType() == LevelVariable.LvlType.HLVL;
+      result.add(var, sol == LevelEquations.INFINITY ? Level.INFINITY : new Level(-sol));
     }
     for (Map.Entry<InferenceLevelVariable, Integer> entry : basedSolution.entrySet()) {
-      assert entry.getValue() != null || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
+      assert entry.getValue() != LevelEquations.INFINITY || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
       if (!unBased.contains(entry.getKey())) {
-        Integer sol = solution.get(entry.getKey());
-        assert sol != null || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
-        result.add(entry.getKey(), sol == null || entry.getValue() == null ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol >= -entry.getValue() ? -sol - (-entry.getValue()) : entry.getKey().getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
+        int sol = solution.get(entry.getKey());
+        assert sol != LevelEquations.INFINITY || entry.getKey().getType() == LevelVariable.LvlType.HLVL;
+        result.add(entry.getKey(), sol == LevelEquations.INFINITY || entry.getValue() == LevelEquations.INFINITY ? Level.INFINITY : new Level(entry.getKey().getStd(), -entry.getValue(), -sol >= -entry.getValue() ? -sol - (-entry.getValue()) : entry.getKey().getType() == LevelVariable.LvlType.HLVL ? -1 : 0));
       }
     }
 
@@ -567,7 +574,9 @@ public class TwoStageEquations implements Equations {
 
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     solveLevelEquations(result);
+    myFirstRun = false;
     solveClassCalls();
+    myFirstRun = true;
     solveLevelEquations(result); // We need the second pass since @solveClassCalls can generate new level variables
 
     for (Map.Entry<InferenceLevelVariable, Level> entry : myConstantUpperBounds.entrySet()) {
@@ -812,7 +821,7 @@ public class TwoStageEquations implements Equations {
 
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
-    if (actualType == null || actualType.isLessOrEquals(expectedType, this, var.getSourceNode())) {
+    if (actualType == null || actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
       Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds());
       if (result != null) {
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));

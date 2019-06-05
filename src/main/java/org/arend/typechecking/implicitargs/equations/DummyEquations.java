@@ -42,8 +42,8 @@ public class DummyEquations implements Equations {
   }
 
   @Override
-  public void remove(Equation equation) {
-
+  public boolean remove(Equation equation) {
+    return false;
   }
 
   @Override
