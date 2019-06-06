@@ -464,6 +464,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       protected void onError(LocalError error) {
         myLocalErrorReporter.report(error);
       }
-    }.checkGroup(group, convertedScope);
+    }.checkGroup(group, referableConverter == null ? convertedScope : CachingScope.make(scope));
   }
 }
