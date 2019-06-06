@@ -52,9 +52,7 @@ public class DefinitionDeserialization {
     }
 
     def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
-    if (defProto.getHasUniverses()) {
-      def.setHasUniverses(true);
-    }
+    def.setHasUniverses(defProto.getHasUniverses());
   }
 
   private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {
@@ -131,6 +129,7 @@ public class DefinitionDeserialization {
       field.setHideable(fieldProto.getIsHideable());
       field.setCovariant(fieldProto.getIsCovariant());
       field.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+      field.setHasUniverses(fieldProto.getHasUniverses());
     }
 
     for (int classFieldRef : classProto.getFieldRefList()) {

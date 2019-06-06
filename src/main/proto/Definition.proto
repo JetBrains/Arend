@@ -71,6 +71,7 @@ message Definition {
             bool isProperty = 7;
             bool isHideable = 9;
             bool isCovariant = 10;
+            bool hasUniverses = 11;
         }
     }
     message ParametersLevel {

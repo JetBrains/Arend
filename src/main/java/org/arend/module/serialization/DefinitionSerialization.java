@@ -91,6 +91,7 @@ public class DefinitionSerialization {
       fBuilder.setIsProperty(field.isProperty());
       fBuilder.setIsHideable(field.isHideable());
       fBuilder.setIsCovariant(field.isCovariant());
+      fBuilder.setHasUniverses(field.hasUniverses());
       builder.addPersonalField(fBuilder.build());
     }
 
