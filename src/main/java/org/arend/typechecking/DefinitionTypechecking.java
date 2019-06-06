@@ -1483,10 +1483,12 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
       }
-    } else if (type.isInstance(AppExpression.class)) {
-      for (; type.isInstance(AppExpression.class); type = type.cast(AppExpression.class).getFunction()) {
-        if (!checkNonPositiveError(type.cast(AppExpression.class).getArgument(), index, parameters, constructor, errorReporter, variables)) {
-          return false;
+    } else {
+      if (type.isInstance(AppExpression.class)) {
+        for (; type.isInstance(AppExpression.class); type = type.cast(AppExpression.class).getFunction()) {
+          if (!checkNonPositiveError(type.cast(AppExpression.class).getArgument(), index, parameters, constructor, errorReporter, variables)) {
+            return false;
+          }
         }
       }
       if (!type.isInstance(ReferenceExpression.class)) {
@@ -1494,11 +1496,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
           return false;
         }
-      }
-    } else {
-      //noinspection RedundantIfStatement
-      if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
-        return false;
       }
     }
 

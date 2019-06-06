@@ -26,8 +26,7 @@ import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.frontend.ConcreteExpressionFactory.*;
 import static org.arend.typechecking.Matchers.typeMismatchError;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class DataTest extends TypeCheckingTestCase {
   @Test
@@ -223,5 +222,16 @@ public class DataTest extends TypeCheckingTestCase {
       "\\data D (A B : \\Prop) : \\Prop\n" +
       "  | inl A\n" +
       "  | inr B", 1);
+  }
+
+  @Test
+  public void covariantTest() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1 A\n" +
+      "  | con2 B");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertTrue(d.isCovariant(0));
+    assertTrue(d.isCovariant(1));
   }
 }
