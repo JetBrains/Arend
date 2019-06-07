@@ -1,13 +1,15 @@
 <h1 id="coercion">Coercion<a class="headerlink" href="#coercion" title="Permanent link">&para;</a></h1>
 
-It is often true that there is a canonical function between two given types.
-For example, there are obvious functions from natural to integer numbers, from integer to rational numbers, and so on.
-It is possible to mark such a function as a coercing function.
-Every time an expression of type `B` is expected but an expression of type `A` is given and there is a coercing function from `A` to `B` it will be automatically inserted.
+Sometimes it is convenient to interpret elements of type `A` as elements of type `B` and use
+elements of `A` in places, where elements of `B` are expected. For example, 
+natural numbers are also integer numbers, integer numbers are also rational numbers, and so on. There is a mechanism,
+which allows this by marking a function `f` from `A` to `B`  as a _coercing function_. Once `f : A -> B` is declared
+as a coercing function, whenever an expression `a : A` is used in a place, where type `B` is expected, `a` will be
+automatically replaced with `f a : B`. 
 
-A coercing function can be define either for a `\data` or a `\class` definition.
-To do this, you need to write it inside the `\where` block for this definition and start it with `\use \coerce` insted of `\func`.
-For example, to coerce `Bool` to `Nat`, you can write
+A coercing function can be defined either for a `\data` or a `\class` definition.
+It should be written inside the `\where` block for this definition and it should begin with `\use \coerce` instead 
+of `\func`. For example, `Bool` can be coerced to `Nat` as follows:
 ```arend
 \data Bool | true | false
   \where
@@ -16,10 +18,10 @@ For example, to coerce `Bool` to `Nat`, you can write
       | false => 0
 ```
 
-You can coerce either from or to a definition.
-To coerce from a definition, the last parameter of the coercing function must have this definition as its type.
-To coerce to a definition, the result type of the coercing function must be this definition.
-For example, to coerce from `Nat` to `Bool`, you can write
+It is possible to coerce a given definition either from or to other definition.
+A function, which coerces from a given definition, must have this definition as the type of its last parameter.
+A function, which coerces to a given definition, must have this definition as its result type.
+For example, `Nat` can be coerced to `Bool` as follows:
 ```arend
 \data Bool | true | false
   \where
@@ -29,4 +31,4 @@ For example, to coerce from `Nat` to `Bool`, you can write
       | suc (suc n) => fromNat n
 ```
 
-You can have several coercing functions for a single type.
+It is possible to define several coercing functions for a single type.

@@ -17,14 +17,20 @@ Let us consider an example:
 
 It is allowed to write `x : S` instead of `x : S.E` since `S` is implicitly coerced to an element of type `\Set`, that is `S.E`.
 
-All the parameters of a definition, whose type is of the form of an [extension](/language-reference/expressions/class-ext) `C { ... }` of `C`, are marked as _local instances_ of class `C`.
-When we use a field of `C` or a definition that has an implicit parameter of type `C`, if the classifying field of a local instance coincides with the expected classifying field, then this instance will be inferred as the argument of the field or the definition.
-For example, function `square` in the example above has one local instance `S` of class `Semigroup`.
-We use its field `*` in the body of the function and the expected type of this call is `S.E -> S.E -> {?}` since the type of `x` is `S.E`.
-This implies that the expected classifying field is `S.E` which is the classifying field of the local instance `S`, so this instance is inferred as the implicit argument of `*`.
+In case an implicit parameter of a definition or a constructor has type, which is an [extension](/language-reference/expressions/class-ext) `C { ... }` of `C`,
+it is marked as a _local instance_ of class `C`. Implicit parameter `\this` of a field of class `C` is also a local instance. 
 
-We can also define global instances.
-To do this, we need to use the keyword `\instance':
+
+If the parameter `p : C { ... }` of `f` is a local instance, then the value of `p` in a usage of `f` is inferred to 
+a local instance `v : C { ... }`, visible in the context of the usage of `f`, if the expected value of the classifying
+field of `p` coincides with the classifying field of `v`. 
+For instance, the function `square` in the example above has one local instance `S` of the class `Semigroup`. The field
+`*` of the class `Semigroup` is used in the body of `square` and the expected type of its call in `x * x` is 
+`S.E -> S.E -> {?}`. This implies that the expected classifying field is `S.E`, which is the classifying field of the
+local instance `S`, so this instance is inferred as the implicit argument of `*`.
+
+It is also possible to define _global instances_.
+To do this, one needs to use the keyword `\instance':
 
 ```arend
 \instance NatSemigroup : Semigroup Nat
@@ -32,10 +38,17 @@ To do this, we need to use the keyword `\instance':
   | *-assoc => {?} -- the proof is omitted
 ```
 
-A global instance is just a function and can be used as an ordinary function.
-The only difference is that it is always defined by [copattern matching](/language-reference/definitions/functions/#copattern-matching) and must define an instance of a class.
-Also, the classifying field must be a data or a record applied to some arguments and if some parameters of an instance have a class as a type, its classifying field must be an argument of the classifying field of the result type.
+A global instance is just a function, defined by [copattern matching](/language-reference/definitions/functions/#copattern-matching).
+It can be used as an ordinary function.
+The only difference with an ordinary function is that it can only be defined by copattern matching and must define an
+instance of a class.
+Also, the classifying field of an instance must be a data or a record applied to some arguments and if some parameters
+of the instance have a class as a type, its classifying field must be an argument of the classifying field of the 
+resulting instance.
 
-If there is no local instance with the expected classifying field, then this instance will be searched among global instances.
+If there is no local instance with the expected classifying field, then such an instance instance will be searched among
+global instances.
 There is no backtracking, so the first appropriate instance will be chosen.
-A global instance is appropriate if the expected classifying field is a data or a record applied to some arguments and the classifying field of the instance is the same data or record applied to possibly different arguments.
+A global instance is appropriate in a usage if the expected classifying field is the same data or record
+as the data or the record in the classifying field of the instance. If this holds, the global instance
+is appropriate even if the data or the record are applied to different arguments.
