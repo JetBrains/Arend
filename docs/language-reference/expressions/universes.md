@@ -1,27 +1,34 @@
 <h1 id="universes">Universes<a class="headerlink" href="#universes" title="Permanent link">&para;</a></h1>
 
-A universe is a type of types.
-Since we cannot assume that there exists a type of all types, we assume a hierarchy of universes.
-That is, we have a universe `\Type0` which contains all types that do not mention universes, a universe `\Type1` which contains all types that might mention only `\Type0`, and so on.
-Thus, for every natural number n, we have an expression `\Type n` (the whitespace is optional).
-This number is called the _predicative level_ of the universe.
-The expression `\Type n` has type `\Type (n+1)`.
-Universes are cumulative, that is every expression of type `\Type n` also has type `\Type (n+1)`.
+A universe is a type of types. Since the type of all types cannot be consistently introduced to a type theory
+with dependent pi types, as the type of types cannot contain itself, Arend contains a hierarchy of universes 
+`\Type n` (the whitespace is optional), parameterized by a natural number `n`. This number is called the 
+_predicative level_ of the universe. The universe `\Type0` contains all types that do not contain universes
+in their definition, the universe `\Type1` contains all types in `\Type0` together with those types that
+contain `\Type0` and no other universes in their definitions, and so on. Note that the hierarchy of 
+universes is cumulative, that is every expression of type `\Type n` also has type `\Type (n+1)`. 
 
 ## Homotopy levels
 
-Universes are actually parameterized by two levels.
-The other one is called the _homotopy level_.
-The universe of predicative level p and homotopy level h is denote by `\h-Type p`.
-The homotopy level h is a number such that -1 ≤ h ≤ ∞.
-If h equals to ∞, then we write `\oo-Type p`.
-If h equals to -1, then the universe does not have a predicative level and it is denoted by `\Prop`.
-The expression `\h-Type p` has type `\(h+1)-Type (p+1)` if 0 ≤ h < ∞.
-The expression `\Prop` has type `\0-Type 0`.
-The expression `\oo-Type p` has type `\oo-Type (p+1)`.
-Universes of the form `\0-Type p` can also be denoted by `\Set p`.
+Apart from predicative level, universes are also parameterised by _homotopy level_.
+The homotopy level h is an integer number (or infinity ∞) in the range: -1 ≤ h ≤ ∞.
+The universe `\h-Type p` of predicative level p and homotopy level h contains a fragment
+of the universe `\Type p`, consisting of types of homotopy level at most `h`. Note that
+universes are cumulative also with respect to homotopy levels.
+
+Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`.
+
+The universes of homotopy levels h=-1 and h=0 bear a special significance. The h=-1 universe `\Prop`
+is the universe of propositions. It is _impredicative_, that is it does not have a predicative level. 
+The h=0 hierarchy of universes `\Set p`, which can be also referred to as `\0-Type p`, is the hierarchy of
+universes of sets.   
+
+Expression `\h-Type p` has type `\(h+1)-Type (p+1)` if 0 ≤ h < ∞.
+Expression `\Prop` has type `\0-Type 0`.
+Expression `\oo-Type p` has type `\oo-Type (p+1)`.
+
 The homotopy level can be also specified after the predicative level.
-That is, we can write `\Type p h` instead of `\h-Type p`
+That is, it is allowed to write `\Type p h` instead of `\h-Type p`.
 
 ## Level polymorphism
 

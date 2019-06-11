@@ -88,7 +88,7 @@ This is done by specifying explicitly the type of a data definition and writing 
   | con_m p^m_1 ... p^m_{k_m}
 ```
 
-If the actual predicative level of `D` is greater than `p`, the typechecker will generate an error message, but `h` can be any number.
+If the actual predicative level of `D` is greater than `p`, the typechecker will generate an error message, whereas `h` can be any number.
 Such a data type can be eliminated only into types of the same homotopy level.
 Consider the following example:
 
