@@ -180,6 +180,7 @@ message ElimTree {
     message Branch {
         message TupleClause {
             int32 length = 1;
+            bool is_class_instance = 3;
             ElimTree elim_tree = 2;
         }
         map<int32, ElimTree> clauses = 1;

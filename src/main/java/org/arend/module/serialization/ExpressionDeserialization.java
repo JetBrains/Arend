@@ -178,7 +178,7 @@ class ExpressionDeserialization {
         }
         if (branchProto.hasTupleClause()) {
           ExpressionProtos.ElimTree.Branch.TupleClause tupleClause = branchProto.getTupleClause();
-          children.put(new BranchElimTree.TupleConstructor(tupleClause.getLength()), readElimTree(tupleClause.getElimTree()));
+          children.put(new BranchElimTree.TupleConstructor(tupleClause.getLength(), tupleClause.getIsClassInstance()), readElimTree(tupleClause.getElimTree()));
         }
         return new BranchElimTree(parameters, children);
       }

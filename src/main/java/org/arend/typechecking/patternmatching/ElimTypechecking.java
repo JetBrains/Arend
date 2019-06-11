@@ -437,7 +437,7 @@ public class ElimTypechecking {
           constructors = new ArrayList<>(dataType.getConstructors());
         }
       } else {
-        constructors = Collections.singletonList(new BranchElimTree.TupleConstructor(someConPattern.getLength()));
+        constructors = Collections.singletonList(new BranchElimTree.TupleConstructor(someConPattern.getLength(), someConPattern.getDefinition() instanceof ClassDefinition));
         dataType = null;
       }
 

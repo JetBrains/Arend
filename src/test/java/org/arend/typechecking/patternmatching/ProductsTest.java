@@ -175,4 +175,13 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func swap-involutive {A B : \\Type} (p : Pair A B) : swap (swap p) = p\n" +
       "  | (a,b) => idp");
   }
+
+  @Test
+  public void etaTest() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\func f (r : R) : Nat\n" +
+      "  | (t,_) => t\n" +
+      "\\func g (r : R) : f r = r.x => path (\\lam _ => r.x)");
+  }
 }

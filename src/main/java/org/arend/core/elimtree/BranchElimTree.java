@@ -1,8 +1,11 @@
 package org.arend.core.elimtree;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.prelude.Prelude;
 
 import java.util.ArrayList;
@@ -15,14 +18,54 @@ public class BranchElimTree extends ElimTree {
 
   public final static class TupleConstructor extends Constructor {
     private final int myLength;
+    private final boolean myClassInstance;
 
-    public TupleConstructor(int length) {
+    public TupleConstructor(int length, boolean isClassInstance) {
       super(null, null);
       myLength = length;
+      myClassInstance = isClassInstance;
     }
 
     public int getLength() {
       return myLength;
+    }
+
+    public boolean isClassInstance() {
+      return myClassInstance;
+    }
+
+    public List<Expression> getMatchedArguments(Expression argument) {
+      List<Expression> args;
+      if (myClassInstance) {
+        if (argument.isInstance(NewExpression.class)) {
+          args = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
+        } else {
+          Expression type = argument.getType();
+          if (type != null) {
+            type = type.normalize(NormalizeVisitor.Mode.WHNF);
+          }
+          ClassDefinition classDef = type != null && type.isInstance(ClassCallExpression.class) ? type.cast(ClassCallExpression.class).getDefinition() : null;
+          if (classDef == null) {
+            return null;
+          }
+          args = new ArrayList<>(myLength);
+          for (ClassField field : classDef.getFields()) {
+            if (!classDef.isImplemented(field)) {
+              args.add(FieldCallExpression.make(field, type.cast(ClassCallExpression.class).getSortArgument(), argument));
+            }
+          }
+        }
+      } else {
+        if (argument.isInstance(TupleExpression.class)) {
+          args = argument.cast(TupleExpression.class).getFields();
+        } else {
+          args = new ArrayList<>(myLength);
+          for (int i = 0; i < myLength; i++) {
+            args.add(ProjExpression.make(argument, i));
+          }
+        }
+      }
+      return args;
     }
   }
 
@@ -44,7 +87,16 @@ public class BranchElimTree extends ElimTree {
     }
   }
 
-  public boolean isTupleTree() {
+  public TupleConstructor getTupleConstructor() {
+    if (myChildren.size() == 1) {
+      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      return entry.getKey() instanceof TupleConstructor ? (TupleConstructor) entry.getKey() : null;
+    } else {
+      return null;
+    }
+  }
+
+  private boolean isTupleTree() {
     return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof TupleConstructor;
   }
 
@@ -54,13 +106,14 @@ public class BranchElimTree extends ElimTree {
 
   private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
     List<Expression> newArguments = null;
-    if (isTupleTree()) {
-      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        if (argument.isInstance(TupleExpression.class)) {
-          newArguments = new ArrayList<>(argument.cast(TupleExpression.class).getFields());
-        } else {
-          newArguments = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
-        }
+    TupleConstructor tupleConstructor = getTupleConstructor();
+    if (tupleConstructor != null) {
+      newArguments = tupleConstructor.getMatchedArguments(argument);
+      if (newArguments == null) {
+        return null;
+      }
+      if (index + 1 < arguments.size()) {
+        newArguments = new ArrayList<>(newArguments);
         newArguments.addAll(arguments.subList(index + 1, arguments.size()));
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
@@ -104,11 +157,9 @@ public class BranchElimTree extends ElimTree {
     }
 
     if (isTupleTree()) {
-      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        ElimTree elimTree = getTupleChild();
-        if (elimTree != null) {
-          return elimTree.isWHNF(newArguments);
-        }
+      ElimTree elimTree = getTupleChild();
+      if (elimTree != null) {
+        return elimTree.isWHNF(newArguments);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
@@ -144,11 +195,9 @@ public class BranchElimTree extends ElimTree {
     }
 
     if (isTupleTree()) {
-      if (argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class)) {
-        ElimTree elimTree = getTupleChild();
-        if (elimTree != null) {
-          return elimTree.getStuckExpression(newArguments, expression);
-        }
+      ElimTree elimTree = getTupleChild();
+      if (elimTree != null) {
+        return elimTree.getStuckExpression(newArguments, expression);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);

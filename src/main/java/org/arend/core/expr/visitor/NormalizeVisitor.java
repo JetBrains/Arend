@@ -412,7 +412,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return ((LeafElimTree) elimTree).getExpression().subst(substitution, levelSubstitution);
       }
 
-      elimTree = updateStack(stack, elimTree);
+      elimTree = updateStack(stack, (BranchElimTree) elimTree);
       if (elimTree == null) {
         return null;
       }
@@ -433,7 +433,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return true;
       }
 
-      elimTree = updateStack(stack, elimTree);
+      elimTree = updateStack(stack, (BranchElimTree) elimTree);
       if (elimTree == null) {
         if (!might) {
           return false;
@@ -444,7 +444,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  private ElimTree updateStack(Stack<Expression> stack, ElimTree elimTree) {
+  private ElimTree updateStack(Stack<Expression> stack, BranchElimTree branchElimTree) {
     Expression argument = stack.peek().accept(this, Mode.WHNF);
     ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
@@ -454,13 +454,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         constructor = intExpr.isZero() ? Prelude.ZERO : Prelude.SUC;
       }
     }
-    boolean isPatternMatching = constructor != null || argument.isInstance(TupleExpression.class) || argument.isInstance(NewExpression.class);
-    elimTree = constructor == null && isPatternMatching ? ((BranchElimTree) elimTree).getTupleChild() : ((BranchElimTree) elimTree).getChild(constructor);
-    if (elimTree == null) {
-      return null;
-    }
 
-    if (isPatternMatching) {
+    ElimTree elimTree = constructor == null ? branchElimTree.getTupleChild() : branchElimTree.getChild(constructor);
+    if (elimTree != null) {
       stack.pop();
 
       List<? extends Expression> args;
@@ -470,10 +466,16 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           : constructor == Prelude.ZERO
             ? Collections.emptyList()
             : Collections.singletonList(argument.cast(IntegerExpression.class).pred());
-      } else if (argument.isInstance(TupleExpression.class)) {
-        args = argument.cast(TupleExpression.class).getFields();
       } else {
-        args = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
+        BranchElimTree.TupleConstructor tupleConstructor = branchElimTree.getTupleConstructor();
+        if (tupleConstructor == null) {
+          return null;
+        }
+
+        args = tupleConstructor.getMatchedArguments(argument);
+        if (args == null) {
+          return null;
+        }
       }
 
       for (int i = args.size() - 1; i >= 0; i--) {
