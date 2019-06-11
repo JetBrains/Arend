@@ -11,6 +11,7 @@ import org.arend.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.Ref;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class EtaEquivalence extends TypeCheckingTestCase {
@@ -22,6 +23,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
   }
 
   @Test
@@ -32,6 +34,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
   }
 
   @Test
@@ -42,6 +45,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
   }
 
   @Test
@@ -67,7 +71,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void onlyDefCallsExpanded() {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\func f (x : Nat -> Nat) => x");
-    assertTrue(!((LeafElimTree) fun.getBody()).getExpression().isInstance(LamExpression.class));
+    assertFalse(((LeafElimTree) fun.getBody()).getExpression().isInstance(LamExpression.class));
   }
 
   @Test
