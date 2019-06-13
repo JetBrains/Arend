@@ -55,7 +55,7 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
     if (expression.getDefinition() instanceof ClassField) {
       return false;
     }
-    return expression.getDefinition().hasUniverses() && visitSort(expression.getSortArgument());
+    return expression.hasUniverses() && visitSort(expression.getSortArgument());
   }
 
   @Override

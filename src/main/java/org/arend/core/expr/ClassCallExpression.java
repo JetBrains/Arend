@@ -181,6 +181,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return mySort;
   }
 
+  @Override
   public boolean hasUniverses() {
     return myHasUniverses;
   }

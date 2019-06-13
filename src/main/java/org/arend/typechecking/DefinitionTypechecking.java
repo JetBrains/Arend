@@ -528,7 +528,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
             classCallLink = classCallLink.getNextTyped(null);
             classCall = classCallLink.getTypeExpr().checkedCast(ClassCallExpression.class);
-            if (classCall != null && classCall.getDefinition() == useParent && (!classCall.getDefinition().hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
+            if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
               break;
             }
           }
@@ -536,7 +536,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
             PiExpression piType = expectedType.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(PiExpression.class);
             if (piType != null) {
               classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
-              if (classCall != null && classCall.getDefinition() == useParent && (!classCall.getDefinition().hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
+              if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
                 classCallLink = piType.getParameters();
               }
             }

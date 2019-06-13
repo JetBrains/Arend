@@ -323,7 +323,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (expr2 == null || expr1.getDefinition() != expr2.getDefinition()) {
       return false;
     }
-    if (!expr1.getDefinition().hasUniverses()) {
+    if (!expr1.hasUniverses()) {
       return true;
     }
     return correctOrder

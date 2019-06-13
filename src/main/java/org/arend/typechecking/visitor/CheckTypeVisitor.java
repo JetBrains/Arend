@@ -770,7 +770,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
         Type paramType = piParams.getType();
         DefCallExpression defCallParamType = paramType.getExpr().checkedCast(DefCallExpression.class);
-        if (defCallParamType != null && !defCallParamType.getDefinition().hasUniverses()) { // fixes test pLevelTest
+        if (defCallParamType != null && !defCallParamType.hasUniverses()) { // fixes test pLevelTest
           if (defCallParamType.getDefinition() instanceof DataDefinition) {
             paramType = new DataCallExpression((DataDefinition) defCallParamType.getDefinition(), Sort.generateInferVars(myEquations, false, param), new ArrayList<>(defCallParamType.getDefCallArguments()));
           } else if (defCallParamType.getDefinition() instanceof FunctionDefinition) {
@@ -1249,32 +1249,34 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     // Try to infer level either directly or from a path type.
     if (level == null && expr.getResultTypeLevel() == null) {
-      DefCallExpression defCall = resultExpr.checkedCast(DefCallExpression.class);
+      resultExpr = resultExpr.normalize(NormalizeVisitor.Mode.WHNF);
+      Expression resultExprWithoutPi = resultExpr.getPiParameters(null, false);
+      DefCallExpression defCall = resultExprWithoutPi.checkedCast(DefCallExpression.class);
       level = defCall == null ? null : defCall.getUseLevel();
-    }
-    if (level == null && expr.getResultTypeLevel() == null) {
-      Sort sort = resultType == null ? null : resultType.getSortOfType();
-      if (sort == null) {
-        Expression type = resultExpr.getType();
-        if (type != null) {
-          sort = type.toSort();
+
+      if (level == null) {
+        Sort sort = resultType == null ? null : resultType.getSortOfType();
+        if (sort == null) {
+          Expression type = resultExprWithoutPi.getType();
+          if (type != null) {
+            sort = type.toSort();
+          }
         }
-      }
-      if (sort != null && sort.getHLevel().isClosed()) {
-        if (sort.getHLevel() != Level.INFINITY) {
-          level = sort.getHLevel().getConstant();
-        }
-      } else if (sort == null || sort.getHLevel().getVar() instanceof InferenceLevelVariable) {
-        resultExpr = resultExpr.normalize(NormalizeVisitor.Mode.WHNF);
-        DataCallExpression dataCall = resultExpr.checkedCast(DataCallExpression.class);
-        if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
-          LamExpression lamExpr = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(LamExpression.class);
-          Expression bodyType = lamExpr == null ? null : lamExpr.getBody().getType();
-          UniverseExpression universeBodyType = bodyType == null ? null : bodyType.checkedCast(UniverseExpression.class);
-          if (universeBodyType != null && universeBodyType.getSort().getHLevel().isClosed() && universeBodyType.getSort().getHLevel() != Level.INFINITY) {
-            level = universeBodyType.getSort().getHLevel().getConstant() - 1;
-            if (level < -1) {
-              level = -1;
+        if (sort != null && sort.getHLevel().isClosed()) {
+          if (sort.getHLevel() != Level.INFINITY) {
+            level = sort.getHLevel().getConstant();
+          }
+        } else if (sort == null || sort.getHLevel().getVar() instanceof InferenceLevelVariable) {
+          DataCallExpression dataCall = resultExprWithoutPi.checkedCast(DataCallExpression.class);
+          if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
+            LamExpression lamExpr = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(LamExpression.class);
+            Expression bodyType = lamExpr == null ? null : lamExpr.getBody().getType();
+            UniverseExpression universeBodyType = bodyType == null ? null : bodyType.checkedCast(UniverseExpression.class);
+            if (universeBodyType != null && universeBodyType.getSort().getHLevel().isClosed() && universeBodyType.getSort().getHLevel() != Level.INFINITY) {
+              level = universeBodyType.getSort().getHLevel().getConstant() - 1;
+              if (level < -1) {
+                level = -1;
+              }
             }
           }
         }

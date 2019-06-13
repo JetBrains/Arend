@@ -35,6 +35,10 @@ public abstract class DefCallExpression extends Expression {
     return null;
   }
 
+  public boolean hasUniverses() {
+    return myDefinition.hasUniverses();
+  }
+
   @Override
   public boolean isWHNF() {
     return true;
