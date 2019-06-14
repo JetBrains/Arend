@@ -32,7 +32,12 @@ public abstract class Expression implements ExpectedType {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    Concrete.Expression expr = ToAbstractVisitor.convert(this, PrettyPrinterConfig.DEFAULT.getExpressionFlags());
+    Concrete.Expression expr = ToAbstractVisitor.convert(this, new PrettyPrinterConfig() {
+      @Override
+      public NormalizeVisitor.Mode getNormalizationMode() {
+        return null;
+      }
+    });
     expr.accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     return builder.toString();
   }
@@ -47,11 +52,8 @@ public abstract class Expression implements ExpectedType {
   }
 
   @Override
-  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig infoProvider) {
-    NormalizeVisitor.Mode mode = infoProvider.getNormalizationMode();
-    ToAbstractVisitor
-      .convert(mode == null ? this : normalize(mode), infoProvider.getExpressionFlags())
-      .accept(new PrettyPrintVisitor(builder, 0, !infoProvider.isSingleLine()), new Precedence(Concrete.Expression.PREC));
+  public void prettyPrint(StringBuilder builder, PrettyPrinterConfig config) {
+    ToAbstractVisitor.convert(this, config).accept(new PrettyPrintVisitor(builder, 0, !config.isSingleLine()), new Precedence(Concrete.Expression.PREC));
   }
 
   @Override

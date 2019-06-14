@@ -21,6 +21,7 @@ import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.patternmatching.Util;
 import org.arend.typechecking.visitor.VoidConcreteExpressionVisitor;
@@ -32,34 +33,48 @@ import static org.arend.frontend.ConcreteExpressionFactory.*;
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
   public enum Flag { HIDE_HIDEABLE_DEFINITIONS, SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
 
-  private final EnumSet<Flag> myFlags;
+  private final PrettyPrinterConfig myConfig;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
   private final Map<Binding, Referable> myNames;
 
   private static final String unnamed = "unnamed";
 
-  private ToAbstractVisitor(EnumSet<Flag> flags, CollectFreeVariablesVisitor collector, Map<Binding, Referable> names) {
-    myFlags = flags;
+  private ToAbstractVisitor(PrettyPrinterConfig config, CollectFreeVariablesVisitor collector, Map<Binding, Referable> names) {
+    myConfig = config;
     myFreeVariablesCollector = collector;
     myNames = names;
   }
 
-  public static Concrete.Expression convert(Expression expression, EnumSet<Flag> flags) {
+  public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor();
     Set<Variable> variables = new HashSet<>();
     expression.accept(collector, variables);
     Map<Binding, Referable> names = new HashMap<>();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(flags, collector, names);
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, collector, names);
     for (Variable variable : variables) {
       if (variable instanceof Binding) {
         names.put((Binding) variable, ref(visitor.getFreshName((Binding) variable, variables)));
       }
     }
-    return expression.accept(visitor, null);
+    return visitor.normalize(expression).accept(visitor, null);
   }
 
   public static Concrete.LevelExpression convert(Level level) {
-    return new ToAbstractVisitor(EnumSet.of(Flag.SHOW_INFERENCE_LEVEL_VARS), null, Collections.emptyMap()).visitLevel(level);
+    return new ToAbstractVisitor(new PrettyPrinterConfig() {
+        @Override
+        public EnumSet<Flag> getExpressionFlags() {
+          return EnumSet.of(Flag.SHOW_INFERENCE_LEVEL_VARS);
+        }
+      }, null, Collections.emptyMap()).visitLevel(level);
+  }
+
+  private boolean hasFlag(Flag flag) {
+    return myConfig.getExpressionFlags().contains(flag);
+  }
+
+  private Expression normalize(Expression expr) {
+    NormalizeVisitor.Mode mode = myConfig.getNormalizationMode();
+    return mode == null ? expr : expr.normalize(mode);
   }
 
   private String getFreshName(Binding binding, Set<Variable> variables) {
@@ -154,14 +169,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.Expression checkPath(DataCallExpression expr) {
-    if (expr.getDefinition() != Prelude.PATH || myFlags.contains(Flag.SHOW_PREFIX_PATH)) {
+    if (expr.getDefinition() != Prelude.PATH || hasFlag(Flag.SHOW_PREFIX_PATH)) {
       return null;
     }
 
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, expr.getDefCallArguments().get(2).accept(this, null));
+        return cBinOp(normalize(expr.getDefCallArguments().get(1)).accept(this, null), Prelude.PATH_INFIX.getReferable(), hasFlag(Flag.SHOW_IMPLICIT_ARGS) ? normalize(expr1.getBody()).accept(this, null) : null, normalize(expr.getDefCallArguments().get(2)).accept(this, null));
       }
     }
     return null;
@@ -198,7 +213,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private Concrete.Expression visitApp(Concrete.Expression function, Expression argument, boolean isExplicit) {
-    Concrete.Expression arg = isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS) ? argument.accept(this, null) : null;
+    Concrete.Expression arg = isExplicit || hasFlag(Flag.SHOW_IMPLICIT_ARGS) ? normalize(argument).accept(this, null) : null;
     return arg != null ? Concrete.AppExpression.make(null, function, arg, isExplicit) : function;
   }
 
@@ -208,15 +223,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
       }
-    } else if (isExplicit || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
-      arguments.add(new Concrete.Argument(arg.accept(this, null), isExplicit));
+    } else if (isExplicit || hasFlag(Flag.SHOW_IMPLICIT_ARGS)) {
+      arguments.add(new Concrete.Argument(normalize(arg).accept(this, null), isExplicit));
     }
   }
 
   private Concrete.Expression visitParameters(Concrete.Expression expr, DependentLink parameters, List<? extends Expression> arguments) {
     List<Concrete.Argument> concreteArguments = new ArrayList<>(arguments.size());
     for (Expression arg : arguments) {
-      if (parameters.isExplicit() || myFlags.contains(Flag.SHOW_IMPLICIT_ARGS)) {
+      if (parameters.isExplicit() || hasFlag(Flag.SHOW_IMPLICIT_ARGS)) {
         visitArgument(arg, parameters.isExplicit(), concreteArguments);
       }
       parameters = parameters.getNext();
@@ -230,11 +245,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
-    if (expr.getDefinition().isHideable() && myFlags.contains(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+    if (expr.getDefinition().isHideable() && hasFlag(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
       int index = 0;
       for (DependentLink link = expr.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
         if (index == expr.getDefinition().getVisibleParameter()) {
-          return expr.getDefCallArguments().get(index).accept(this, null);
+          return normalize(expr.getDefCallArguments().get(index)).accept(this, null);
         }
         index++;
       }
@@ -245,18 +260,18 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getDefinition().isHideable() && myFlags.contains(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
-      return expr.getArgument().accept(this, null);
+    if (expr.getDefinition().isHideable() && hasFlag(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+      return normalize(expr.getArgument()).accept(this, null);
     }
 
     Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
-    if (myFlags.contains(Flag.SHOW_FIELD_INSTANCE)) {
+    if (hasFlag(Flag.SHOW_FIELD_INSTANCE)) {
       ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
       if (refExpr != null && refExpr.getBinding().isHidden()) {
         return result;
       }
 
-      Concrete.Expression arg = expr.getArgument().accept(this, null);
+      Concrete.Expression arg = normalize(expr.getArgument()).accept(this, null);
       if (arg instanceof Concrete.ReferenceExpression) {
         return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));
       } else {
@@ -269,7 +284,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitConCall(ConCallExpression expr, Void params) {
     Concrete.Expression result = makeReference(expr.getDefinition().getReferable());
-    if (expr.getDefinition().status().headerIsOK() && myFlags.contains(Flag.SHOW_CON_PARAMS)) {
+    if (expr.getDefinition().status().headerIsOK() && hasFlag(Flag.SHOW_CON_PARAMS)) {
       List<Concrete.Argument> arguments = new ArrayList<>(expr.getDataTypeArguments().size());
       for (Expression arg : expr.getDataTypeArguments()) {
         visitArgument(arg, false, arguments);
@@ -296,7 +311,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         if (canBeArgument && field.getReferable().isParameterField()) {
           visitArgument(implementation, field.getReferable().isExplicitField(), arguments);
         } else {
-          statements.add(cImplStatement(field.getReferable(), implementation.accept(this, null)));
+          statements.add(cImplStatement(field.getReferable(), normalize(implementation).accept(this, null)));
           canBeArgument = false;
         }
       } else if (canBeArgument && !expr.getDefinition().isImplemented(field)) {
@@ -319,7 +334,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
+    return expr.getSubstExpression() != null ? normalize(expr.getSubstExpression()).accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
   }
 
   private ParsedLocalReferable makeLocalReference(Binding var, Set<Variable> freeVars, boolean genName) {
@@ -413,7 +428,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.Parameter> parameters = new ArrayList<>();
     Expression expr = lamExpr;
     for (; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
-      if (myFlags.contains(Flag.SHOW_TYPES_IN_LAM)) {
+      if (hasFlag(Flag.SHOW_TYPES_IN_LAM)) {
         visitDependentLink(expr.cast(LamExpression.class).getParameters(), parameters, true);
       } else {
         SingleDependentLink params = expr.cast(LamExpression.class).getParameters();
@@ -424,7 +439,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    Concrete.LamExpression result = cLam(parameters, expr.accept(this, null));
+    Concrete.LamExpression result = cLam(parameters, normalize(expr).accept(this, null));
     return lamExpr.getBody().isInstance(ClassCallExpression.class) ? result : etaReduce(result);
   }
 
@@ -439,10 +454,10 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
       Referable referable = makeLocalReference(link, freeVars, !link.isExplicit());
       if (referable == null && !isNamed && referableList.isEmpty()) {
-        args.add(cTypeArg(link.isExplicit(), link.getTypeExpr().accept(this, null)));
+        args.add(cTypeArg(link.isExplicit(), normalize(link.getTypeExpr()).accept(this, null)));
       } else {
         referableList.add(referable);
-        args.add(cTele(link.isExplicit(), new ArrayList<>(referableList), link.getTypeExpr().accept(this, null)));
+        args.add(cTele(link.isExplicit(), new ArrayList<>(referableList), normalize(link.getTypeExpr()).accept(this, null)));
         referableList.clear();
       }
     }
@@ -462,7 +477,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    Concrete.Expression result = expr.accept(this, null);
+    Concrete.Expression result = normalize(expr).accept(this, null);
     for (int i = parameters.size() - 1; i >= 0; i--) {
       result = cPi(parameters.get(i), result);
     }
@@ -496,7 +511,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     } else if (level.getVar() == LevelVariable.HVAR) {
       result = new Concrete.HLevelExpression(null);
     } else if (level.getVar() instanceof InferenceLevelVariable) {
-      if (!myFlags.contains(Flag.SHOW_INFERENCE_LEVEL_VARS)) {
+      if (!hasFlag(Flag.SHOW_INFERENCE_LEVEL_VARS)) {
         return null;
       }
       result = new Concrete.InferVarLevelExpression(null, (InferenceLevelVariable) level.getVar());
@@ -517,14 +532,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitError(ErrorExpression expr, Void params) {
-    return cGoal(expr.getError() instanceof GoalError ? ((GoalError) expr.getError()).name : "error", expr.getExpression() == null ? null : expr.getExpression().accept(this, null));
+    return cGoal(expr.getError() instanceof GoalError ? ((GoalError) expr.getError()).name : "error", expr.getExpression() == null ? null : normalize(expr.getExpression()).accept(this, null));
   }
 
   @Override
   public Concrete.Expression visitTuple(TupleExpression expr, Void params) {
     List<Concrete.Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
-      fields.add(field.accept(this, null));
+      fields.add(normalize(field).accept(this, null));
     }
     return cTuple(fields);
   }
@@ -538,26 +553,26 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitProj(ProjExpression expr, Void params) {
-    return cProj(expr.getExpression().accept(this, null), expr.getField());
+    return cProj(normalize(expr.getExpression()).accept(this, null), expr.getField());
   }
 
   @Override
   public Concrete.Expression visitNew(NewExpression expr, Void params) {
-    return cNew(expr.getExpression().accept(this, null));
+    return cNew(normalize(expr.getExpression()).accept(this, null));
   }
 
   @Override
   public Concrete.Expression visitLet(LetExpression letExpression, Void params) {
     List<Concrete.LetClause> clauses = new ArrayList<>(letExpression.getClauses().size());
     for (LetClause clause : letExpression.getClauses()) {
-      Concrete.Expression term = clause.getExpression().accept(this, null);
+      Concrete.Expression term = normalize(clause.getExpression()).accept(this, null);
       Referable referable = makeLocalReference(clause, myFreeVariablesCollector.getFreeVariables(clause), false);
       if (referable != null) {
         clauses.add(clet(referable, Collections.emptyList(), null, term));
       }
     }
 
-    Concrete.Expression expr = letExpression.getExpression().accept(this, null);
+    Concrete.Expression expr = normalize(letExpression.getExpression()).accept(this, null);
     return clauses.isEmpty() ? expr : new Concrete.LetExpression(null, letExpression.isStrict(), clauses, expr);
   }
 
@@ -565,15 +580,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitCase(CaseExpression expr, Void params) {
     List<Concrete.CaseArgument> arguments = new ArrayList<>(expr.getArguments().size());
     for (Expression argument : expr.getArguments()) {
-      arguments.add(new Concrete.CaseArgument(argument.accept(this, null), null, null));
+      arguments.add(new Concrete.CaseArgument(normalize(argument).accept(this, null), null, null));
     }
 
     Concrete.Expression resultType = null;
     Concrete.Expression resultTypeLevel = null;
-    if (myFlags.contains(Flag.SHOW_CASE_RESULT_TYPE)) {
-      resultType = expr.getResultType().accept(this, null);
+    if (hasFlag(Flag.SHOW_CASE_RESULT_TYPE)) {
+      resultType = normalize(expr.getResultType()).accept(this, null);
       if (expr.getResultType() != null) {
-        resultTypeLevel = expr.getResultTypeLevel().accept(this, null);
+        resultTypeLevel = normalize(expr.getResultTypeLevel()).accept(this, null);
       }
     }
 
@@ -582,13 +597,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree); // TODO: It seems that bindings in patterns and in the expression differ
+    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), normalize(expr).accept(this, null)))).walk(elimTree);
     return clauses;
   }
 
   @Override
   public Concrete.Expression visitOfType(OfTypeExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
+    return normalize(expr.getExpression()).accept(this, null);
   }
 
   @Override

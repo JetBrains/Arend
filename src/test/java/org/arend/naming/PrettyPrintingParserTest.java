@@ -11,6 +11,7 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.CaseExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
@@ -19,6 +20,7 @@ import org.arend.prelude.Prelude;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
+import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -33,7 +35,17 @@ import static org.junit.Assert.assertTrue;
 public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   private void testExpr(String expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
+    ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
+      @Override
+      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+        return flags;
+      }
+
+      @Override
+      public NormalizeVisitor.Mode getNormalizationMode() {
+        return null;
+      }
+    }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     assertEquals(expected, builder.toString());
   }
 
@@ -43,7 +55,17 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
 
   private void testExpr(Concrete.Expression expected, Expression expr, EnumSet<ToAbstractVisitor.Flag> flags) {
     StringBuilder builder = new StringBuilder();
-    ToAbstractVisitor.convert(expr, flags).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
+    ToAbstractVisitor.convert(expr, new PrettyPrinterConfig() {
+      @Override
+      public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+        return flags;
+      }
+
+      @Override
+      public NormalizeVisitor.Mode getNormalizationMode() {
+        return null;
+      }
+    }).accept(new PrettyPrintVisitor(builder, 0), new Precedence(Concrete.Expression.PREC));
     Concrete.Expression result = resolveNamesExpr(builder.toString());
     assertTrue(compareAbstract(expected, result));
   }
