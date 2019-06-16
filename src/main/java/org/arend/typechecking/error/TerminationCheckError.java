@@ -54,4 +54,9 @@ public class TerminationCheckError extends GeneralError {
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
     return definitions.stream().map(Definition::getReferable).collect(Collectors.toList());
   }
+
+  @Override
+  public boolean isTypecheckingError() {
+    return true;
+  }
 }

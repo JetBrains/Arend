@@ -71,4 +71,9 @@ public class CycleError extends GeneralError {
   public Collection<? extends GlobalReferable> getAffectedDefinitions() {
     return cause != null && cause.getData() instanceof GlobalReferable ? Collections.singletonList((GlobalReferable) cause.getData()) : cycle;
   }
+
+  @Override
+  public boolean isTypecheckingError() {
+    return true;
+  }
 }

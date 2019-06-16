@@ -65,4 +65,8 @@ public abstract class Error {
   public String getShortMessage() {
     return DocStringBuilder.build(getShortDoc());
   }
+
+  public boolean isTypecheckingError() {
+    return false;
+  }
 }

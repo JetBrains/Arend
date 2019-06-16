@@ -18,4 +18,9 @@ public class ReferenceTypeError extends ReferenceError {
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
     return hList(text(message), refDoc(referable));
   }
+
+  @Override
+  public boolean isTypecheckingError() {
+    return true;
+  }
 }

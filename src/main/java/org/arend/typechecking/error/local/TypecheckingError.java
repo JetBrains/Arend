@@ -29,4 +29,9 @@ public class TypecheckingError extends LocalError {
   public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.ppDoc(cause, src);
   }
+
+  @Override
+  public boolean isTypecheckingError() {
+    return true;
+  }
 }
