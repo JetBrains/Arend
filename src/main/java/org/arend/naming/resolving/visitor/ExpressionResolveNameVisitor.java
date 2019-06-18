@@ -7,6 +7,7 @@ import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
+import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.naming.scope.ListScope;
 import org.arend.naming.scope.MergeScope;
@@ -25,13 +26,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private final Scope myScope;
   private final List<Referable> myContext;
   private final LocalErrorReporter myErrorReporter;
+  private final ResolverListener myResolverListener;
 
-  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter) {
+  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter, ResolverListener resolverListener) {
     myTypeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(concreteProvider);
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
     myContext = context;
     myErrorReporter = errorReporter;
+    myResolverListener = resolverListener;
   }
 
   Scope getScope() {
@@ -79,9 +82,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    Referable origRef = expr.getReferent();
     Concrete.Expression argument = resolve(expr, myScope);
     if (expr.getReferent() instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+    } else if (myResolverListener != null && (expr.getReferent() != origRef || argument != null)) {
+      myResolverListener.referenceResolved(argument, origRef, expr);
     }
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
   }
@@ -268,11 +274,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       return;
     }
 
-    Referable referable = resolve(((Concrete.ConstructorPattern) pattern).getConstructor(), myParentScope);
+    Referable origReferable = ((Concrete.ConstructorPattern) pattern).getConstructor();
+    Referable referable = resolve(origReferable, myParentScope);
     if (referable instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) referable).getError());
     } else {
       ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
+      if (myResolverListener != null && referable != origReferable) {
+        myResolverListener.patternResolved(origReferable, (Concrete.ConstructorPattern) pattern);
+      }
     }
 
     for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {

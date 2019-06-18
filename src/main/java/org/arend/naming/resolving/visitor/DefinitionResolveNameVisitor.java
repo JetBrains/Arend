@@ -13,6 +13,7 @@ import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.NameResolvingChecker;
+import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ConvertingScope;
 import org.arend.naming.scope.NamespaceCommandNamespace;
@@ -40,17 +41,27 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private final ConcreteProvider myConcreteProvider;
   private final ErrorReporter myErrorReporter;
   private LocalErrorReporter myLocalErrorReporter;
+  private final ResolverListener myResolverListener;
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = false;
     myConcreteProvider = concreteProvider;
     myErrorReporter = errorReporter;
+    myResolverListener = null;
+  }
+
+  public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter, ResolverListener resolverListener) {
+    myResolveTypeClassReferences = false;
+    myConcreteProvider = concreteProvider;
+    myErrorReporter = errorReporter;
+    myResolverListener = resolverListener;
   }
 
   public DefinitionResolveNameVisitor(ConcreteProvider concreteProvider, boolean resolveTypeClassReferences, ErrorReporter errorReporter) {
     myResolveTypeClassReferences = resolveTypeClassReferences;
     myConcreteProvider = concreteProvider;
     myErrorReporter = errorReporter;
+    myResolverListener = null;
   }
 
   private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
@@ -72,7 +83,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, new ArrayList<>(), DummyErrorReporter.INSTANCE);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, new ArrayList<>(), DummyErrorReporter.INSTANCE, myResolverListener);
     exprVisitor.updateScope(parameters);
     if (isType) {
       while (expr instanceof Concrete.PiExpression) {
@@ -167,7 +178,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
-      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED){
+      if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
         if (def.getBody() instanceof Concrete.TermFunctionBody) {
           resolveTypeClassReference(def.getParameters(), ((Concrete.TermFunctionBody) def.getBody()).getTerm(), scope, false);
         }
@@ -181,7 +192,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
 
     if (def.getResultType() != null) {
@@ -253,7 +264,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getEliminatedReferences() != null) {
       visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
@@ -283,7 +294,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter, myResolverListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters(), null);
       if (def.getResultType() != null) {
@@ -323,7 +334,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     List<Referable> context = new ArrayList<>();
-    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter);
+    ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
       if (exprVisitor.visitReference(superClass, null) != superClass) {
