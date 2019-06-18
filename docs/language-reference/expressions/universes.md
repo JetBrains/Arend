@@ -3,32 +3,43 @@
 A universe is a type of types. Since the type of all types cannot be consistently introduced to a type theory
 with dependent pi types, as the type of types cannot contain itself, Arend contains a hierarchy of universes 
 `\Type n` (the whitespace is optional), parameterized by a natural number `n`. This number is called the 
-_predicative level_ of the universe. The universe `\Type0` contains all types that do not contain universes
+_predicative level_ of the universe. Informally, the universe `\Type0` contains all types that do not refer to universes
 in their definition, the universe `\Type1` contains all types in `\Type0` together with those types that
-contain `\Type0` and no other universes in their definitions, and so on. Note that the hierarchy of 
-universes is cumulative, that is every expression of type `\Type n` also has type `\Type (n+1)`. 
+refer to `\Type0` and no other universes in their definitions, and so on. The universe `\Type n` contains
+also some data types, classes and records that refer to `\Type m`, where n ≤ m, in types of parameters.
+See the section on universe placement rules below for details.  
+ 
+Note that the hierarchy of 
+universes in Arend is cumulative, that is every expression of type `\Type n` has also type `\Type (n+1)`. 
 
-## Homotopy levels
+Types in `\Type n` in Arend are also arranged in universes `\h-Type n` according to their _homotopy level_ h,
+which is an integer number (or infinity ∞) in the range: -1 ≤ h ≤ ∞. 
+Some of these universes have alternative names: the universe of propositions (-1-types) `\Prop` 
+(coincides with `\-1-Type n` for any `n`) and universes of sets (0-types) `\Set n` (coincides with `\0-Type n`). 
+Note that the universe `\Prop` is _impredicative_: it does not have predicative level. Practically, this means that
+if `B : \Prop`, then the type `\Pi (x : \Prop) -> B` is in `\Prop`. 
 
-Apart from predicative level, universes are also parameterised by _homotopy level_.
-The homotopy level h is an integer number (or infinity ∞) in the range: -1 ≤ h ≤ ∞.
-The universe `\h-Type p` of predicative level p and homotopy level h contains a fragment
-of the universe `\Type p`, consisting of types of homotopy level at most `h`. Note that
-universes are cumulative also with respect to homotopy levels.
+Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`. The homotopy level can be also 
+specified after the predicative level: it is allowed to write `\Type p h` instead of `\h-Type p`.   
 
-Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`.
+## Universe placement rules
 
-The universes of homotopy levels h=-1 and h=0 bear a special significance. The h=-1 universe `\Prop`
-is the universe of propositions. It is _impredicative_, that is it does not have a predicative level. 
-The h=0 hierarchy of universes `\Set p`, which can be also referred to as `\0-Type p`, is the hierarchy of
-universes of sets.   
-
-Expression `\h-Type p` has type `\(h+1)-Type (p+1)` if 0 ≤ h < ∞.
-Expression `\Prop` has type `\0-Type 0`.
-Expression `\oo-Type p` has type `\oo-Type (p+1)`.
-
-The homotopy level can be also specified after the predicative level.
-That is, it is allowed to write `\Type p h` instead of `\h-Type p`.
+* If `A : \h_1-Type p_1` and `B : \h_2-Type p_2`, then `\Sigma A B : \max(h_1,h_2)-Type max(p_1,p_2)`.
+* If `A : \h_1-Type p_1` and `B : \h_2-Type p_2`, then `\Pi (x:A) -> B : \h_2-Type max(p_1,p_2)`. Note that
+if `A=\Prop` and `B : \Prop`, then `\Pi (x : \Prop) -> B : \Prop`.
+* If 0 ≤ h < ∞, then `\h-Type p : \(h+1)-Type (p+1)`.
+* `\Prop : \Set 0`, which is the same as `\Prop : \0-Type 0`.
+* `\oo-Type p : \oo-Type (p+1)`.
+* If `A : \h-Type p`, then `Path A a a' : \max(-1,h-1)-Type p`.
+* If `D` is a data type and `A_1 : \h_1-Type p_1, ..., A_k : \h_k-Type p_k` are types of parameters
+of constructors of `D`, then predicative level of `D` is maximum over `0, p_1, ..., p_k`. If `D`
+has conditions, equalising a constructor on two ends of the interval type, then homotopy level of 
+`D` is ∞. Otherwise, if `D` has more than one constructor, then its homotopy level is
+maximum over `0, h_1, ..., h_k`, and if `D` has at most one constructor, then its homotopy level
+is maximum over `-1, h_1, ..., h_k`.
+* If `C` is a class or record and `A_1 : \h_1-Type p_1, ..., A_k : \h_k-Type p_k` are types of parameters
+of unimplemented fields of `C` (including fields of superclasses), then its predicative level is maximum 
+over `0, p_1, ..., p_k` and its homotopy level is maximum over `-1, h_1, ..., h_k`.       
 
 ## Level polymorphism
 
