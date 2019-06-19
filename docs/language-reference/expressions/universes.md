@@ -5,9 +5,10 @@ with dependent pi types, as the type of types cannot contain itself, Arend conta
 `\Type n` (the whitespace is optional), parameterized by a natural number `n`. This number is called the 
 _predicative level_ of the universe. Informally, the universe `\Type0` contains all types that do not refer to universes
 in their definition, the universe `\Type1` contains all types in `\Type0` together with those types that
-refer to `\Type0` and no other universes in their definitions, and so on. The universe `\Type n` contains
+refer to `\Type0` and no other universes in their definitions, and so on. This is not precise, since, for instance, 
+the universe `\Type n` contains
 also some data types, classes and records that refer to `\Type m`, where n ≤ m, in types of parameters.
-See the section on universe placement rules below for details.  
+See section on universe placement rules below for more precise statements and details.  
  
 Note that the hierarchy of 
 universes in Arend is cumulative, that is every expression of type `\Type n` has also type `\Type (n+1)`. 
@@ -20,9 +21,11 @@ Note that the universe `\Prop` is _impredicative_: it does not have predicative 
 if `B : \Prop`, then the type `\Pi (x : \Prop) -> B` is in `\Prop`. 
 
 Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`. The homotopy level can be also 
-specified after the predicative level: it is allowed to write `\Type p h` instead of `\h-Type p`.   
+specified after the predicative level: the syntax `\Type p h` can be used instead of `\h-Type p`.   
 
 ## Universe placement rules
+
+Types in Arend are distributed over the universes according to the following rules:
 
 * If `A : \h_1-Type p_1` and `B : \h_2-Type p_2`, then `\Sigma A B : \max(h_1,h_2)-Type max(p_1,p_2)`.
 * If `A : \h_1-Type p_1` and `B : \h_2-Type p_2`, then `\Pi (x:A) -> B : \h_2-Type max(p_1,p_2)`. Note that
@@ -30,30 +33,32 @@ if `A=\Prop` and `B : \Prop`, then `\Pi (x : \Prop) -> B : \Prop`.
 * If 0 ≤ h < ∞, then `\h-Type p : \(h+1)-Type (p+1)`.
 * `\Prop : \Set 0`, which is the same as `\Prop : \0-Type 0`.
 * `\oo-Type p : \oo-Type (p+1)`.
-* If `A : \h-Type p`, then `Path A a a' : \max(-1,h-1)-Type p`.
+* If `A : I -> \h-Type p`, then `Path A a a' : \max(-1,h-1)-Type p`.
 * If `D` is a data type and `A_1 : \h_1-Type p_1, ..., A_k : \h_k-Type p_k` are types of parameters
-of constructors of `D`, then predicative level of `D` is maximum over `0, p_1, ..., p_k`. If `D`
+of constructors of `D`, then predicative level of `D` is the maximum over `0, p_1, ..., p_k`. If `D`
 has conditions, equalising a constructor on two ends of the interval type, then homotopy level of 
 `D` is ∞. Otherwise, if `D` has more than one constructor, then its homotopy level is
-maximum over `0, h_1, ..., h_k`, and if `D` has at most one constructor, then its homotopy level
-is maximum over `-1, h_1, ..., h_k`.
+the maximum over `0, h_1, ..., h_k`, and if `D` has at most one constructor, then its homotopy level
+is the maximum over `-1, h_1, ..., h_k`.
 * If `C` is a class or record and `A_1 : \h_1-Type p_1, ..., A_k : \h_k-Type p_k` are types of parameters
-of unimplemented fields of `C` (including fields of superclasses), then its predicative level is maximum 
-over `0, p_1, ..., p_k` and its homotopy level is maximum over `-1, h_1, ..., h_k`.       
+of unimplemented fields of `C` (including fields of superclasses), then its predicative level is the maximum 
+over `0, p_1, ..., p_k` and its homotopy level is the maximum over `-1, h_1, ..., h_k`.       
 
 ## Level polymorphism
 
-Every definition is considered polymorphic in both levels.
+Every definition is considered to be polymorphic in both levels.
 That is, every definition has two additional parameters: one for a predicative level and one for a homotopy level.
 These parameters are denoted by `\lp` and `\lh` respectively.
-You can explicitly specify level arguments in a defcall by writing `\level p h`, where `p` and `h` are level expressions of the corresponding kind.
-Keyword `\level` can be often omitted (if the resulting expression is unambiguous).
-To specify the `\Prop` level, write `\level \Prop`.
+Level arguments can be specified explicitly in a defcall by writing `\level p h`, where `p` and `h` are
+level expressions of the corresponding kind. For example, `Path (\lam _ => Nat) 0 0` is equivalent to
+`Path \level 0 0 (\lam _ => Nat) 0 0`.  
+Keyword `\level` can often be omitted (if the resulting expression is unambiguous).
+The `\Prop` level can be specified by the expression `\level \Prop`.
 Level expressions are defined inductively:
 
 * `\lp` is a level expression of the predicative kind and `\lh` is a level expression of the homotopy kind.
 * A constant (that is, a natural number) is a level expression of both kinds. There is also constant `\inf` for homotopy levels.
-* `_` is a level expression of both kinds. Such an expression tells the typechecker to infer the expression.
+* `_` is a level expression of both kinds. Such an expression suggests the typechecker to infer the expression.
 * If l is a level expression, then `\suc l` is also a level expression of the same kind as l.
 * If l1 and l2 are level expressions of the same kind, then `\max l1 l2` is also a level expression of the same kind as l1 and l2.
 
@@ -61,8 +66,9 @@ Since the only level variables are `\lp` and `\lh`, the expression `\max l1 l2` 
 
 ## Level inference
 
-The level arguments to a function are often can be inferred automatically.
-Moreover, both levels of a universe can also be omitted, in which case they are also will be inferred by the typechecker.
+The level arguments of a function in a defcall can often be inferred automatically.
+Moreover, both levels of a universe in the signature of a function can also be omitted, in which case they
+will also be inferred by the typechecker.
 The typechecker always tries to infer the minimal level which mentions either `\lp` or `\lh` if possible.
 Consider, for example, the following code which defines the identity function:
 
@@ -77,8 +83,8 @@ but it is also possible to use levels `\lp` and `\lh`, so this function is equiv
 \func id' {A : \Type \lp \lh} (a : A) => a
 ```
 
-Let us give a few more examples.
-We write a definition and an equivalent definition with explicitly specified levels below it.
+Consider a few more examples.
+Every definition below is followed by an equivalent definition with explicitly specified levels.
 
 ```arend
 \data Either (A B : \Type) | inl A | inr B
