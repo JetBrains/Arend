@@ -51,7 +51,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
     resolved = scope.resolveName(myName);
     if (resolved == null) {
-      resolved = new ErrorReference(myData, null, myName);
+      resolved = new ErrorReference(myData, myName);
     }
     return resolved;
   }

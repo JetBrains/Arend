@@ -9,9 +9,14 @@ public class ErrorReference implements Referable {
   private final String myText;
   private final LocalError myError;
 
-  public ErrorReference(Object data, Referable referable, String name) {
+  public ErrorReference(Object data, Referable referable, int index, String name) {
     myText = name;
-    myError = new NotInScopeError(data, referable, name);
+    myError = new NotInScopeError(data, referable, index, name);
+  }
+
+  public ErrorReference(Object data, String name) {
+    myText = name;
+    myError = new NotInScopeError(data, null, 0, name);
   }
 
   public ErrorReference(LocalError error, String name) {
