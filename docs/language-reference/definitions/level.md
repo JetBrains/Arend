@@ -1,8 +1,11 @@
 <h1 id="levels">Level<a class="headerlink" href="#level" title="Permanent link">&para;</a></h1>
 
+This module is devoted to a number of tools useful for working with homotopy levels of 
+[universes](/language-reference/expressions/universes).
+
 ## Use level
 
-The homotopy level of definitions is inferred automatically, but sometimes it is possible to prove that it has a smaller level.
+The homotopy level of a definition is inferred automatically, but sometimes it is possible to prove that it has a smaller level.
 For example, we can define the following data types:
 ```arend
 \data Empty
