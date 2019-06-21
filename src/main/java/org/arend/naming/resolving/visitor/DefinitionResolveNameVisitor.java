@@ -382,6 +382,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Scope convertedScope = CachingScope.make(referableConverter == null ? scope : new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
+      if (myResolverListener != null) {
+        myResolverListener.definitionResolved((Concrete.Definition) def);
+      }
     } else {
       myLocalErrorReporter = new ProxyErrorReporter(groupRef, myErrorReporter);
     }
