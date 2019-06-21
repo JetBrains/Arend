@@ -102,7 +102,7 @@ Every definition below is followed by an equivalent definition with explicitly s
 ```
 
 The levels in parameters and in the result type of a recursive function are inferred before levels in the body.
-This means that the following function will not typecheck.
+In particular, this means that the following function will not typecheck:
 
 ```arend
 \func eitherToType {A : \Type} (e : Either A A) : \Type
@@ -110,7 +110,8 @@ This means that the following function will not typecheck.
   | inr _ => \Type
 ```
 
-We can explicitly specify the levels of the universe that appears in the result type to fix this problem:
+This problem can be fixed by specifying explicitly the levels of the universe that appears 
+in the result type:
 
 ```arend
 \func eitherToTypeFixed {A : \Type} (e : Either A A) : \Type (\suc \lp) (\suc \lh)
@@ -121,7 +122,8 @@ We can explicitly specify the levels of the universe that appears in the result 
   | inr _ => \Type \lp \lh
 ```
 
-If we specify constant levels instead as shown below, then the function also will typecheck, but the levels of universes in the body will also be constant:
+If levels are set to constants instead as shown below, then the function also will typecheck,
+but the levels of universes in the body will also be constants:
 
 ```arend
 \func eitherToTypeConstant {A : \Type} (e : Either A A) : \3-Type 7
@@ -133,7 +135,8 @@ If we specify constant levels instead as shown below, then the function also wil
 ```
 
 Note that homotopy levels inferred by the typechecker are always greater than or equal to 0.
-Thus, the function `eitherToProp` does not typecheck even though `eitherToPropFixed` does:
+Thus, the function `eitherToProp` below does not typecheck, `eitherToPropFixed` should be
+used instead:
 
 ```arend
 \func eitherToProp {A : \Type} (e : Either A A) : \Set0
@@ -145,8 +148,9 @@ Thus, the function `eitherToProp` does not typecheck even though `eitherToPropFi
   | inr _ => \Prop
 ```
 
-Levels in the result type of a non-recursive function are inferred together with levels in the body.
-Thus, the following function typechecks:
+Levels in the result type of a non-recursive function are inferred simultaneously with the
+levels in the body.
+For example, the following function typechecks:
 
 ```arend
 \func f : \Type => \Type
@@ -154,7 +158,7 @@ Thus, the following function typechecks:
 ```
 
 A definition is marked as _universe-like_ if it contains universes or universe-like definitions applied to either `\lp` or `\lh`.
-It is often true that the level of a definition can be equal to either `c` or `\lp + c` for some constant `c`.
-If a definition is universe-like, then the inferrence algorithm uses the latter option, and it uses the former option in the other case.
+It is often true that the level of a definition can be inferred to either `c` or `\lp + c` for some constant `c`.
+If a definition is universe-like, then the inference algorithm uses the latter option, otherwise it uses the former option.
 Also, if `D` is a universe-like definition, then `D \level p h` is equivalent to `D \level p' h'` only if `p = p'` and `h = h'`.
 If `D` is not universe-like, then these expressions are always equivalent.
