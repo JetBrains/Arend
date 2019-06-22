@@ -86,7 +86,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Concrete.Expression argument = resolve(expr, myScope);
     if (expr.getReferent() instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
-    } else if (myResolverListener != null && (expr.getReferent() != origRef || argument != null)) {
+    }
+    if (myResolverListener != null && (expr.getReferent() != origRef || argument != null)) {
       myResolverListener.referenceResolved(argument, origRef, expr);
     }
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
@@ -278,11 +279,11 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable referable = resolve(origReferable, myParentScope);
     if (referable instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) referable).getError());
-    } else {
-      ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
-      if (myResolverListener != null && referable != origReferable) {
-        myResolverListener.patternResolved(origReferable, (Concrete.ConstructorPattern) pattern);
-      }
+    }
+
+    ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
+    if (myResolverListener != null && referable != origReferable) {
+      myResolverListener.patternResolved(origReferable, (Concrete.ConstructorPattern) pattern);
     }
 
     for (Concrete.Pattern patternArg : ((Concrete.ConstructorPattern) pattern).getPatterns()) {

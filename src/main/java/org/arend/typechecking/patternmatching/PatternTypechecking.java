@@ -20,6 +20,7 @@ import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.Error;
 import org.arend.error.doc.DocFactory;
+import org.arend.naming.reference.ErrorReference;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
@@ -369,7 +370,7 @@ public class PatternTypechecking {
       Constructor constructor = conPattern.getConstructor() instanceof GlobalReferable ? dataCall.getDefinition().getConstructor((GlobalReferable) conPattern.getConstructor()) : null;
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
-        if (!(conPattern.getConstructor() instanceof UnresolvedReference)) {
+        if (!(conPattern.getConstructor() instanceof UnresolvedReference || conPattern.getConstructor() instanceof ErrorReference)) {
           myErrorReporter.report(new ExpectedConstructor(conPattern.getConstructor(), dataCall, conPattern));
         }
         return null;
