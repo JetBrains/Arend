@@ -401,7 +401,12 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
-      LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, namespaceCommand.getPath());
+      List<String> path = namespaceCommand.getPath();
+      if (path.isEmpty()) {
+        continue;
+      }
+
+      LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
       Scope importedScope = namespaceCommand.getKind() == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope;
       reference.resolve(importedScope);
       Scope curScope = reference.resolveNamespace(importedScope);
