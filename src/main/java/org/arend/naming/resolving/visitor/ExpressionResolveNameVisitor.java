@@ -87,7 +87,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr.getReferent() instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
     }
-    if (myResolverListener != null && (expr.getReferent() != origRef || argument != null)) {
+    if (myResolverListener != null) {
       myResolverListener.referenceResolved(argument, origRef, expr);
     }
     return argument == null ? expr : Concrete.AppExpression.make(expr.getData(), expr, argument, false);
@@ -282,7 +282,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     ((Concrete.ConstructorPattern) pattern).setConstructor(referable);
-    if (myResolverListener != null && referable != origReferable) {
+    if (myResolverListener != null) {
       myResolverListener.patternResolved(origReferable, (Concrete.ConstructorPattern) pattern);
     }
 
