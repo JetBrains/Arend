@@ -12,9 +12,11 @@ The basic syntax of a data definition looks like this:
 ```
 
 where `p_1`, ... `p_n`, `p^1_1`, ... `p^m_{k_m}` are either named or unnamed [parameters](/language-reference/definitions/parameters).
-There are several extensions of this syntax which we will discuss later.
+There are several extensions of this syntax which are discussed further in this module and in the module on 
+[HITs](/language-reference/definitions/#hits).
 Each row `con_i p^i_1 ... p^i_{k_i}` defines a constructor `con_i` with the specified parameters.
-Parameters `p_1`, ... `p_n` are parameters of the data type `D`, but they also become implicit parameters of constructors.
+Parameters `p_1`, ... `p_n` are parameters of the data type `D`, but they also become implicit parameters of
+the constructors.
 
 Let `A`, ... `F` be some types and let `a`, ... `f` be terms of the corresponding types.
 Consider the following example:
@@ -68,8 +70,8 @@ Functions `f` and `f'` (as well as `g` and `g'`) are equivalent.
 
 A data definition can be recursive, that is `D` may appear in parameters `p^1_1`, ... `p^m_{k_m}` (but not in `p_1`, ... `p_n`).
 Such recursive definitions are called _inductive data types_.
-They have one restriction: recursive calls to `D` may occur only in strictly positive positions.
-The set of such positions is defined inductively:
+There is one restriction for such definitions: recursive calls to `D` may occur only in _strictly positive_ positions.
+The set of strictly positive positions is defined inductively:
 
 * `D` occurs only in strictly positive positions in `D a_1 ... a_n` if it does not occur in `a_1`, ... `a_n`.
 * `D` occurs only in strictly positive positions in `\Pi (x : A) -> B` if it occurs only in strictly positive positions in `B` and does not occur in `A`.
@@ -117,14 +119,15 @@ proposition (h=-1). Two other functions `existsSuc` and `existsEq` in the exampl
 their result types, `Exists (n : Nat) (suc n = 4)` and `0=0` respectively, are propositions.
 
 A truncated data type is (provably) equivalent to the truncation of the untruncated version of this data type.
-So, this is simply a syntactic sugar that allows you to define functions over a truncated data type more easily.
+Thus, this is simply a syntactic sugar that allows to define functions over a truncated data type more easily.
 
 ## Induction-induction and induction-recursion
 
 Two or more data types can be mutually recursive.
 This is called _induction-induction_.
-Inductive-inductive definitions also must be strictly positive.
-That is, recursive calls to the definition itself and to other recursive definitions may occur only in strictly positive positions.
+Just as simply inductive definitions, inductive-inductive definitions also must satisfy a strict positivity condition.
+Namely, recursive calls to the definition itself and to other recursive definitions may occur only in strictly positive
+positions.
 
 Data types may also be mutually recursive with functions.
 This is called _induction-recursion_.
