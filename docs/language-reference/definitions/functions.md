@@ -59,8 +59,8 @@ Parameters of a function may appear in its body and in its result type.
 ## Pattern matching
 
 Functions can be defined by pattern matching.
-If `D` is an [inductive type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
-Then you can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
+Let `D` be an [inductive type](/language-reference/definitions/data) with constructors `con1` and `con2 Nat`.
+You can define a function which maps `D` to natural numbers in such a way that `con1` is mapped to `0` and `con2 n` is mapped to `suc n`:
 
 ```arend
 \func f (d : D) : Nat
