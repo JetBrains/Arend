@@ -1657,9 +1657,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
     } else {
-      if (def.isForcedCoercingField()) {
-        myErrorReporter.report(new TypecheckingError("Records cannot have classifying fields", def));
-      }
       if (newDef) {
         typedDef.setRecord();
       }
@@ -1980,10 +1977,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
 
-        if (def.getResultTypeLevel() != null && def.getKind() == ClassFieldKind.FIELD) {
-          myErrorReporter.report(new TypecheckingError("\\level is allowed only for properties", def.getResultTypeLevel()));
-          def.setResultTypeLevel(null);
-        }
         if (newDef) {
           typedDef = addField(def.getData(), parentClass, piType, null);
         }

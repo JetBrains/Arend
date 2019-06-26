@@ -12,7 +12,7 @@ public class CoerceTest extends TypeCheckingTestCase {
 
   @Test
   public void coerceDynamic() {
-    typeCheckModule("\\class C (n : Nat) { \\use \\coerce f (c : C) => c.n }", 1);
+    resolveNamesDef("\\class C (n : Nat) { \\use \\coerce f (c : C) => c.n }", 1);
   }
 
   @Test

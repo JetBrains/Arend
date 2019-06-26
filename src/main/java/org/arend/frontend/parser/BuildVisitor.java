@@ -229,14 +229,8 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     int priority = Integer.parseInt(ctx.NUMBER().getText());
-    if (priority < 1 || priority > 9) {
-      myErrorReporter.report(new ParserError(tokenPosition(ctx.NUMBER().getSymbol()), "Precedence out of range: " + priority));
-
-      if (priority < 1) {
-        priority = 1;
-      } else {
-        priority = 9;
-      }
+    if (priority < 0 || priority > 10) {
+      priority = 11;
     }
 
     PrecedenceWithoutPriority prec = (PrecedenceWithoutPriority) visit(ctx.associativity());

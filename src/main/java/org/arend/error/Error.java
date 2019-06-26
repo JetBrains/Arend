@@ -3,6 +3,7 @@ package org.arend.error;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocStringBuilder;
 import org.arend.error.doc.LineDoc;
+import org.arend.naming.reference.DataContainer;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
@@ -26,7 +27,8 @@ public abstract class Error {
 
   public LineDoc getPositionDoc(PrettyPrinterConfig ppConfig) {
     Object cause = getCause();
-    return cause instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) cause)) : empty();
+    Object data = cause instanceof SourceInfo ? cause : cause instanceof DataContainer ? ((DataContainer) cause).getData() : null;
+    return data instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) data)) : empty();
   }
 
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {

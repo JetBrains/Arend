@@ -81,7 +81,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
 
   @Test
   public void fieldLevel() {
-    typeCheckModule(
+    resolveNamesDef(
       "\\class A {\n" +
       "  \\field f (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\level A p\n" +
       "}", 1);

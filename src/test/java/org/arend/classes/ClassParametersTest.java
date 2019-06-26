@@ -228,7 +228,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
 
   @Test
   public void recordExplicitClassifyingField() {
-    typeCheckModule("\\record C (n : Nat) (\\classifying A : \\Type) | a : A -> 0 = n", 1);
+    resolveNamesDef("\\record C (n : Nat) (\\classifying A : \\Type) | a : A -> 0 = n", 1);
   }
 
   @Test

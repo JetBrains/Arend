@@ -18,9 +18,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ConvertingScope;
 import org.arend.naming.scope.NamespaceCommandNamespace;
 import org.arend.naming.scope.Scope;
-import org.arend.term.Fixity;
-import org.arend.term.NameRenaming;
-import org.arend.term.NamespaceCommand;
+import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.group.ChildGroup;
@@ -170,6 +168,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
+  private void checkPrecedence(Concrete.ReferableDefinition definition) {
+    Precedence prec = definition.getData().getPrecedence();
+    if (prec.priority < 0 || prec.priority > 10) {
+      myLocalErrorReporter.report(new NamingError(NamingError.Kind.INVALID_PRIORITY, definition.getData()));
+    }
+  }
+
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
@@ -189,6 +194,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       def.setTypeClassReferencesResolved();
       return null;
     }
+
+    checkPrecedence(def);
 
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
@@ -219,6 +226,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       context.clear();
       addNotEliminatedParameters(def.getParameters(), body.getEliminatedReferences(), context);
       exprVisitor.visitClauses(body.getClauses(), null);
+    }
+
+    if (def.enclosingClass != null && def.getKind().isUse()) {
+      myLocalErrorReporter.report(new NamingError(NamingError.Kind.USE_IN_CLASS, def.getData()));
+      def.enclosingClass = null;
     }
 
     def.setResolved();
@@ -263,6 +275,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
+    checkPrecedence(def);
+
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
@@ -294,6 +308,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitConstructor(Concrete.Constructor def, Scope parentScope, List<Referable> context) {
+    checkPrecedence(def);
+
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, parentScope, context, myLocalErrorReporter, myResolverListener);
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {
       exprVisitor.visitParameters(def.getParameters(), null);
@@ -333,6 +349,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
+    checkPrecedence(def);
+
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
@@ -348,11 +366,18 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.Expression previousType = null;
     for (int i = 0; i < def.getFields().size(); i++) {
       Concrete.ClassField field = def.getFields().get(i);
+      checkPrecedence(field);
+
       Concrete.Expression fieldType = field.getResultType();
       if (fieldType == previousType && field.getParameters().isEmpty()) {
         field.setResultType(def.getFields().get(i - 1).getResultType());
         field.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
       } else {
+        if (field.getResultTypeLevel() != null && field.getKind() == ClassFieldKind.FIELD) {
+          myLocalErrorReporter.report(new NamingError(NamingError.Kind.LEVEL_IN_FIELD, field.getResultTypeLevel()));
+          field.setResultTypeLevel(null);
+        }
+
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           previousType = field.getParameters().isEmpty() ? fieldType : null;
           exprVisitor.visitParameters(field.getParameters(), null);
@@ -364,6 +389,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
     exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getData());
+
+    if (def.isRecord() && def.isForcedCoercingField()) {
+      myLocalErrorReporter.report(new NamingError(NamingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def.getCoercingField()));
+    }
 
     def.setResolved();
     return null;
