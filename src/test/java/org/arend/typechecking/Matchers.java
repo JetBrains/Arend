@@ -5,7 +5,7 @@ import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
-import org.arend.naming.error.WrongReferable;
+import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;

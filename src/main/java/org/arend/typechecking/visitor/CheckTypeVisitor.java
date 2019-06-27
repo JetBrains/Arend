@@ -28,7 +28,7 @@ import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.DocFactory;
-import org.arend.naming.error.WrongReferable;
+import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
