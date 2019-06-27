@@ -20,8 +20,8 @@ Some of these universes have alternative names: the universe of propositions (-1
 Note that the universe `\Prop` is _impredicative_: it does not have predicative level. Practically, this means that
 if `B : \Prop`, then the type `\Pi (x : \Prop) -> B` is in `\Prop`. 
 
-Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`. The homotopy level can also be  
-specified after the predicative level: the syntax `\Type p h` can be used instead of `\h-Type p`.   
+Universes with h equal to ∞ are represented in the syntax as `\oo-Type p`. The homotopy level can also be 
+specified after the predicative level: `\Type p h` is equivalent to `\h-Type p`.   
 
 ## Universe placement rules
 

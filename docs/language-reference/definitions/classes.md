@@ -46,7 +46,7 @@ Also, the classifying field of an instance must be a data or a record applied to
 of the instance have a class as a type, its classifying field must be an argument of the classifying field of the 
 resulting instance.
 
-If there is no local instance with the expected classifying field, then such an instance instance will be searched among
+If there is no local instance with the expected classifying field, then such an instance will be searched among
 global instances.
 There is no backtracking, so the first appropriate instance will be chosen.
 A global instance is appropriate in a usage if the expected classifying field is the same data or record

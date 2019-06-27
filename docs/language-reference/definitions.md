@@ -1,16 +1,17 @@
 <h1 id="definitions">Definitions<a class="headerlink" href="#definitions" title="Permanent link">&para;</a></h1>
 
-Arend supports the following kinds definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/classes), and [coercions](/language-reference/definitions/coercion) definitions.
+Arend supports the following kinds of definitions: [functions](/language-reference/definitions/functions), [data](/language-reference/definitions/data), [records](/language-reference/definitions/records), [classes](/language-reference/definitions/classes), [instances](/language-reference/definitions/classes), and [coercions](/language-reference/definitions/coercion).
 Every definition has a name which must be a valid identifier as described [here](/language-reference/lexical-structure/#identifiers).
-Definitions can be referred by their names.
-Once we provided a definition named `def`, we can write the following expression: `def e_1 ... e_n`, where `e_1`, ..., `e_n` are expressions.
-Such an expression is called _defcall_.
-Expressions `e_1`, ..., `e_n` are called arguments of this defcall.
 
-If we have only two parameters, we can write a defcall in the infix notation: ``e_1 `def` e_2``.
-This expression is equivalent to `def e_1 e_2`.
-If we have only one parameter, we can use the postfix notation: ``e_1 `def``.
-This expression is equivalent to `def e_1`.
+Definitions can be referred by _defcall_ expressions.
+If `def` is a name of a definition, defcall is an expression of the form:
+`def e_1 ... e_n`, where `e_1`, ..., `e_n` are expressions.
+Expressions `e_1`, ..., `e_n` are called arguments of the defcall.
+
+There are alternative notations in case a defcall has precisely one or two arguments.
+In case of two arguments, it is possible to use the infix notation: `def e_1 e_2` is equivalent
+to ``e_1 `def` e_2``.
+In case of one argument, it is possible to use the postfix notation: `def e_1` is equivalent to ``e_1 `def``.
 
 ## Precedence
 
