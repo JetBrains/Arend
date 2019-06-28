@@ -12,6 +12,7 @@ import org.arend.naming.scope.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.error.local.ExpectedConstructor;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
@@ -287,6 +288,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     Referable referable = resolve(origReferable, myParentScope);
     if (referable instanceof ErrorReference) {
       myErrorReporter.report(((ErrorReference) referable).getError());
+    } else if (referable instanceof GlobalReferable && ((GlobalReferable) referable).getKind() != GlobalReferable.Kind.CONSTRUCTOR) {
+      myErrorReporter.report(new ExpectedConstructor(referable, null, pattern));
     }
 
     ((Concrete.ConstructorPattern) pattern).setConstructor(referable);

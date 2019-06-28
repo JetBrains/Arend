@@ -22,9 +22,8 @@ public class ConstructorFilteredScope implements Scope {
 
   @Nullable
   @Override
-  public GlobalReferable resolveName(String name) {
-    Referable ref = myScope.resolveName(name);
-    return ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR ? (GlobalReferable) ref : null;
+  public Referable resolveName(String name) {
+    return myScope.resolveName(name);
   }
 
   @Nullable

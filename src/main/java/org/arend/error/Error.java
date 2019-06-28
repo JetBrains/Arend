@@ -47,12 +47,8 @@ public abstract class Error {
     return nullDoc();
   }
 
-  protected Doc getDoc(PrettyPrinterConfig ppConfig, LineDoc header, Doc cause) {
-    return vHang(header, vList(getBodyDoc(ppConfig), cause == null ? nullDoc() : hang(text("In:"), cause)));
-  }
-
   public Doc getDoc(PrettyPrinterConfig ppConfig) {
-    return getDoc(ppConfig, getHeaderDoc(ppConfig), getCauseDoc(ppConfig));
+    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), hang(text("In:"), getCauseDoc(ppConfig))));
   }
 
   @Override
@@ -60,12 +56,8 @@ public abstract class Error {
     return DocStringBuilder.build(getDoc(PrettyPrinterConfig.DEFAULT));
   }
 
-  public Doc getShortDoc() {
-    return getDoc(PrettyPrinterConfig.DEFAULT, text(message), null);
-  }
-
   public String getShortMessage() {
-    return DocStringBuilder.build(getShortDoc());
+    return DocStringBuilder.build(getShortHeaderDoc(PrettyPrinterConfig.DEFAULT));
   }
 
   public boolean isTypecheckingError() {

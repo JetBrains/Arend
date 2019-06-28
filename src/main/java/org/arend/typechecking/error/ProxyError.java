@@ -52,11 +52,6 @@ public class ProxyError extends GeneralError {
   }
 
   @Override
-  public Doc getShortDoc() {
-    return localError.getShortDoc();
-  }
-
-  @Override
   public String getShortMessage() {
     return localError.getShortMessage();
   }
