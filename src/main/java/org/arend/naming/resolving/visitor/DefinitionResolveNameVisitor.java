@@ -238,12 +238,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   private void visitEliminatedReferences(ExpressionResolveNameVisitor exprVisitor, List<? extends Concrete.ReferenceExpression> eliminatedReferences, GlobalReferable definition) {
-    for (int i = 0; i < eliminatedReferences.size(); i++) {
-      Concrete.Expression newExpr = exprVisitor.visitReference(eliminatedReferences.get(i), null);
-      if (newExpr != eliminatedReferences.get(i)) {
-        myLocalErrorReporter.report(new ReferenceError("\\elim can be applied only to a local variable", definition));
-        eliminatedReferences.remove(i--);
-      }
+    for (Concrete.ReferenceExpression eliminatedReference : eliminatedReferences) {
+      exprVisitor.resolveLocal(eliminatedReference);
     }
   }
 
@@ -276,6 +272,17 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
 
     checkPrecedence(def);
+
+    Map<String, TCReferable> constructorNames = new HashMap<>();
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
+        TCReferable ref = constructor.getData();
+        TCReferable oldRef = constructorNames.putIfAbsent(ref.textRepresentation(), ref);
+        if (oldRef != null) {
+          myLocalErrorReporter.report(new DuplicateNameError(Error.Level.ERROR, ref, oldRef));
+        }
+      }
+    }
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
@@ -350,6 +357,15 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     checkPrecedence(def);
+
+    Map<String, TCReferable> fieldNames = new HashMap<>();
+    for (Concrete.ClassField field : def.getFields()) {
+      TCReferable ref = field.getData();
+      TCReferable oldRef = fieldNames.putIfAbsent(ref.textRepresentation(), ref);
+      if (oldRef != null) {
+        myLocalErrorReporter.report(new DuplicateNameError(Error.Level.ERROR, ref, oldRef));
+      }
+    }
 
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);

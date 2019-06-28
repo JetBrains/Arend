@@ -1076,7 +1076,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
         }
       }
 
-      Map<String, Referable> constructorNames = new HashMap<>();
       InstancePool instancePool = myVisitor.getInstancePool().getInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         myVisitor.setContext(new HashMap<>(context));
@@ -1151,7 +1150,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
           // Typecheck constructors
           Patterns patterns = result == null ? null : new Patterns(result.proj1);
-          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, def.isTruncated() ? null : userSort, constructorNames, newDef);
+          Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, def.isTruncated() ? null : userSort, newDef);
           if (conSort == null) {
             dataOk = false;
             conSort = Sort.PROP;
@@ -1334,7 +1333,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return expression;
   }
 
-  private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort, Map<String, Referable> definedConstructors, boolean newDef) {
+  private Sort typecheckConstructor(Concrete.Constructor def, Patterns patterns, DataDefinition dataDefinition, Set<DataDefinition> dataDefinitions, Sort userSort, boolean newDef) {
     Constructor constructor = newDef ? new Constructor(def.getData(), dataDefinition) : null;
     if (constructor != null) {
       constructor.setPatterns(patterns);
@@ -1352,7 +1351,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           myVisitor.getTypecheckingState().rewrite(def.getData(), constructor);
           dataDefinition.addConstructor(constructor);
         }
-        addName(definedConstructors, def.getData());
 
         sort = typeCheckParameters(def.getParameters(), list, null, userSort, newDef ? null : oldConstructor.getParameters());
 
@@ -1593,7 +1591,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     // Process fields
     Concrete.Expression previousType = null;
     ClassField previousField = null;
-    Map<String, Referable> fieldNames = new HashMap<>();
     List<LocalInstance> localInstances = new ArrayList<>();
     for (Concrete.ClassField field : def.getFields()) {
       if (previousType == field.getResultType()) {
@@ -1624,8 +1621,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
           }
         }
       }
-
-      addName(fieldNames, field.getData());
     }
 
     // Process coercing field
@@ -1822,13 +1817,6 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       if (!typeClassFields.isEmpty()) {
         typedDef.setTypeClassFields(typeClassFields);
       }
-    }
-  }
-
-  private void addName(Map<String, Referable> names, TCReferable data) {
-    Referable prev = names.putIfAbsent(data.textRepresentation(), data);
-    if (prev != null) {
-      myErrorReporter.report(new DuplicateNameError(Error.Level.ERROR, data, prev));
     }
   }
 

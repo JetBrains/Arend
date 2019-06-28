@@ -167,16 +167,16 @@ public abstract class NameResolvingChecker {
     }
 
     for (Group subgroup : subgroups) {
-      checkReference(subgroup.getReferable(), referables, null);
+      checkReference(subgroup.getReferable(), referables, Error.Level.ERROR);
     }
 
     for (Group subgroup : dynamicSubgroups) {
-      checkReference(subgroup.getReferable(), referables, null);
+      checkReference(subgroup.getReferable(), referables, Error.Level.ERROR);
     }
 
-    checkSubgroup(dynamicSubgroups, referables, groupRef);
+    checkSubgroups(dynamicSubgroups, referables);
 
-    checkSubgroup(subgroups, referables, groupRef);
+    checkSubgroups(subgroups, referables);
 
     boolean isTopLevel = myTopLevel;
     if (myRecursively) {
@@ -265,17 +265,17 @@ public abstract class NameResolvingChecker {
     }
   }
 
-  private void checkSubgroup(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables, LocatedReferable parentReferable) {
+  private void checkSubgroups(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables) {
     for (Group subgroup : subgroups) {
       for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
         if (internalReferable.isVisible()) {
-          checkReference(internalReferable.getReferable(), referables, parentReferable);
+          checkReference(internalReferable.getReferable(), referables, Error.Level.WARNING);
         }
       }
     }
   }
 
-  private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, LocatedReferable parentReferable) {
+  private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, Error.Level level) {
     String name = newRef.textRepresentation();
     if (name.isEmpty() || "_".equals(name)) {
       return;
@@ -283,23 +283,7 @@ public abstract class NameResolvingChecker {
 
     LocatedReferable oldRef = referables.putIfAbsent(name, newRef);
     if (oldRef != null) {
-      checkReference(oldRef, newRef, parentReferable);
+      onDefinitionNamesClash(oldRef, newRef, level);
     }
-  }
-
-  public boolean checkReference(LocatedReferable oldRef, LocatedReferable newRef, LocatedReferable parentReferable) {
-    Error.Level level;
-    if (parentReferable == null) {
-      level = Error.Level.ERROR;
-    } else {
-      LocatedReferable oldParent = oldRef.getLocatedReferableParent();
-      if (parentReferable.equals(oldParent) || oldParent != null && oldParent.equals(newRef.getLocatedReferableParent())) {
-        return true;
-      }
-      level = Error.Level.WARNING;
-    }
-
-    onDefinitionNamesClash(oldRef, newRef, level);
-    return false;
   }
 }

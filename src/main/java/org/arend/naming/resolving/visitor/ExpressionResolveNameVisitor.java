@@ -8,10 +8,7 @@ import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.ResolverListener;
-import org.arend.naming.scope.ClassFieldImplScope;
-import org.arend.naming.scope.ListScope;
-import org.arend.naming.scope.MergeScope;
-import org.arend.naming.scope.Scope;
+import org.arend.naming.scope.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
@@ -80,6 +77,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return arg;
   }
 
+  void resolveLocal(Concrete.ReferenceExpression expr) {
+    Referable origRef = expr.getReferent();
+    resolve(expr, myContext == null ? EmptyScope.INSTANCE : new ListScope(myContext));
+    if (expr.getReferent() instanceof ErrorReference) {
+      myErrorReporter.report(((ErrorReference) expr.getReferent()).getError());
+    }
+    if (myResolverListener != null) {
+      myResolverListener.referenceResolved(null, origRef, expr);
+    }
+  }
+
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
     Referable origRef = expr.getReferent();
@@ -116,7 +124,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         for (int j = 0; j < i; j++) {
           Referable referable1 = referableList.get(j);
           if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
-            myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable1, referable));
+            myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable, referable1));
           }
         }
         myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
