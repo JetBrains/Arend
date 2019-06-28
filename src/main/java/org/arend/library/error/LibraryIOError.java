@@ -3,11 +3,7 @@ package org.arend.library.error;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.LineDoc;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-
-import java.util.Collection;
-import java.util.Collections;
 
 import static org.arend.error.doc.DocFactory.nullDoc;
 import static org.arend.error.doc.DocFactory.text;
@@ -34,10 +30,5 @@ public class LibraryIOError extends GeneralError {
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return longMessage != null ? text(longMessage) : nullDoc();
-  }
-
-  @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.emptyList();
   }
 }

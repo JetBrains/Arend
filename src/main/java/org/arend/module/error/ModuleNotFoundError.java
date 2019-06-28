@@ -3,12 +3,8 @@ package org.arend.module.error;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.module.ModulePath;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-
-import java.util.Collection;
-import java.util.Collections;
 
 import static org.arend.error.doc.DocFactory.*;
 
@@ -27,8 +23,8 @@ public class ModuleNotFoundError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return currentModule == null ? Collections.emptyList() : Collections.singletonList(new ModuleReferable(currentModule));
+  public ModuleReferable getCause() {
+    return currentModule == null ? null : new ModuleReferable(currentModule);
   }
 
   @Override

@@ -5,11 +5,8 @@ import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.module.ModulePath;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,10 +54,5 @@ public class LibraryError extends GeneralError {
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
     List<LineDoc> libraryDocs = libraryNames.map(DocFactory::text).collect(Collectors.toList());
     return libraryDocs.isEmpty() ? text(message) : hList(text(message), text(": "), hSep(text(", "), libraryDocs));
-  }
-
-  @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.emptyList();
   }
 }

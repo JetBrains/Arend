@@ -8,6 +8,9 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
+import java.util.Iterator;
+
 import static org.arend.error.doc.DocFactory.*;
 
 public abstract class Error {
@@ -27,6 +30,14 @@ public abstract class Error {
 
   public LineDoc getPositionDoc(PrettyPrinterConfig ppConfig) {
     Object cause = getCause();
+    if (cause instanceof Collection) {
+      Iterator it = ((Collection) cause).iterator();
+      if (it.hasNext()) {
+        cause = it.next();
+      } else {
+        return empty();
+      }
+    }
     Object data = cause instanceof SourceInfo ? cause : cause instanceof DataContainer ? ((DataContainer) cause).getData() : null;
     return data instanceof SourceInfo ? refDoc(new SourceInfoReference((SourceInfo) data)) : empty();
   }
@@ -48,7 +59,8 @@ public abstract class Error {
   }
 
   public Doc getDoc(PrettyPrinterConfig ppConfig) {
-    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), hang(text("In:"), getCauseDoc(ppConfig))));
+    Doc causeDoc = getCauseDoc(ppConfig);
+    return vHang(getHeaderDoc(ppConfig), vList(getBodyDoc(ppConfig), causeDoc == null ? nullDoc() : hang(text("In:"), causeDoc)));
   }
 
   @Override

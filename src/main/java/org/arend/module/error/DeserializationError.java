@@ -4,12 +4,8 @@ import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
 import org.arend.module.ModulePath;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class DeserializationError extends GeneralError {
   public final Exception exception;
@@ -22,8 +18,8 @@ public class DeserializationError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(new ModuleReferable(modulePath));
+  public ModuleReferable getCause() {
+    return new ModuleReferable(modulePath);
   }
 
   @Override

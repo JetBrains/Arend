@@ -14,21 +14,28 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static org.arend.error.doc.DocFactory.*;
 
 public class CycleError extends GeneralError {
   public final List<? extends GlobalReferable> cycle;
   public final Concrete.SourceNode cause;
+  private final GlobalReferable myCauseReferable;
 
-  public CycleError(List<? extends GlobalReferable> cycle, Concrete.SourceNode cause) {
+  private CycleError(List<? extends GlobalReferable> cycle, GlobalReferable causeReferable, Concrete.SourceNode cause) {
     super(Level.ERROR, "Dependency cycle");
     this.cycle = cycle;
     this.cause = cause;
+    myCauseReferable = causeReferable;
+  }
+
+  public CycleError(List<? extends GlobalReferable> cycle, Concrete.SourceNode cause) {
+    this(cycle, null, cause);
   }
 
   public CycleError(List<? extends GlobalReferable> cycle) {
-    this(cycle, null);
+    this(cycle, null, null);
   }
 
   public static CycleError fromConcrete(List<? extends Concrete.Definition> cycle) {
@@ -49,7 +56,13 @@ public class CycleError extends GeneralError {
 
   @Override
   public Object getCause() {
-    return cause != null ? cause.getData() : cycle.get(0);
+    if (cause != null) {
+      Object data = cause.getData();
+      if (data != null) {
+        return data;
+      }
+    }
+    return myCauseReferable != null ? myCauseReferable : cycle;
   }
 
   @Override
@@ -68,8 +81,15 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return cause != null && cause.getData() instanceof GlobalReferable ? Collections.singletonList((GlobalReferable) cause.getData()) : cycle;
+  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+    Object causeData = cause != null ? cause.getData() : null;
+    if (causeData instanceof GlobalReferable) {
+      consumer.accept((GlobalReferable) causeData, this);
+    } else {
+      for (GlobalReferable ref : cycle) {
+        consumer.accept(ref, new CycleError(cycle, ref, cause));
+      }
+    }
   }
 
   @Override

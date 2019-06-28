@@ -8,8 +8,7 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.function.BiConsumer;
 
 import static org.arend.error.doc.DocFactory.*;
 
@@ -62,12 +61,17 @@ public class ProxyError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(definition);
+  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+    consumer.accept(definition, this);
   }
 
   @Override
   public boolean isTypecheckingError() {
     return localError.isTypecheckingError();
+  }
+
+  @Override
+  public boolean isSevere() {
+    return false;
   }
 }

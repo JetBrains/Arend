@@ -297,11 +297,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
         cycle.add(unit1.getDefinition());
       }
 
-      myErrorReporter.report(CycleError.fromConcrete(cycle));
       for (Concrete.Definition definition : cycle) {
         typecheckingHeaderStarted(definition.getData());
         typecheckingHeaderFinished(definition.getData(), newDefinition(definition));
       }
+      myErrorReporter.report(CycleError.fromConcrete(cycle));
       return false;
     }
 
@@ -354,7 +354,6 @@ public class TypecheckingOrderingListener implements OrderingListener {
         }
       }
 
-      typecheckingBodyFinished(definition.getData(), def);
       myCurrentDefinition = null;
     }
 
@@ -378,6 +377,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
       if (!functionDefinitions.isEmpty()) {
         checkRecursiveFunctions(functionDefinitions, clausesMap);
       }
+    }
+
+    for (Concrete.Definition definition : orderedDefinitions) {
+      typecheckingBodyFinished(definition.getData(), myState.getTypechecked(definition.getData()));
     }
   }
 
@@ -449,7 +452,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         definition.setBody(null);
       }
       for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {
-        myErrorReporter.report(new TerminationCheckError(entry.getKey(), Collections.singleton(entry.getKey()), entry.getValue()));
+        myErrorReporter.report(new TerminationCheckError(entry.getKey(), entry.getValue()));
       }
     }
   }

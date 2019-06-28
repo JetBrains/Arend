@@ -10,8 +10,7 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.function.BiConsumer;
 
 public class ExceptionError extends GeneralError {
   public final Exception exception;
@@ -28,8 +27,8 @@ public class ExceptionError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(affectedReferable);
+  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+    consumer.accept(affectedReferable, this);
   }
 
   @Override

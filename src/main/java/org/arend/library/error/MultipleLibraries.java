@@ -3,11 +3,8 @@ package org.arend.library.error;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,10 +21,5 @@ public class MultipleLibraries extends GeneralError {
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig src) {
     return vList(libraries.stream().map(DocFactory::text).collect(Collectors.toList()));
-  }
-
-  @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.emptyList();
   }
 }

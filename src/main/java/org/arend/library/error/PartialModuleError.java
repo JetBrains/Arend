@@ -2,11 +2,7 @@ package org.arend.library.error;
 
 import org.arend.error.GeneralError;
 import org.arend.module.ModulePath;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class PartialModuleError extends GeneralError {
   public ModulePath modulePath;
@@ -17,7 +13,7 @@ public class PartialModuleError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(new ModuleReferable(modulePath));
+  public ModuleReferable getCause() {
+    return new ModuleReferable(modulePath);
   }
 }

@@ -9,9 +9,6 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import static org.arend.error.doc.DocFactory.*;
 
 public class LocationError extends GeneralError {
@@ -40,10 +37,5 @@ public class LocationError extends GeneralError {
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig src) {
     return hList(text("While persisting: "), refDoc(new ModuleReferable(modulePath)));
-  }
-
-  @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.emptyList();
   }
 }

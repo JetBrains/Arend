@@ -8,8 +8,6 @@ import org.arend.error.ListErrorReporter;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
-import org.arend.module.error.ExceptionError;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.PreludeResourceLibrary;
@@ -252,13 +250,13 @@ public abstract class BaseCliFrontend {
 
   private void flushErrors() {
     for (GeneralError error : myErrorReporter.getErrorList()) {
-      for (GlobalReferable referable : error.getAffectedDefinitions()) {
+      error.forAffectedDefinitions((referable, err) -> {
         if (referable instanceof LocatedReferable) {
-          updateSourceResult(((LocatedReferable) referable).getLocation(), error.level);
+          updateSourceResult(((LocatedReferable) referable).getLocation(), err.level);
         }
-      }
+      });
 
-      if (error instanceof ExceptionError || error.getAffectedDefinitions().isEmpty()) {
+      if (error.isSevere()) {
         System.err.println(error);
         System.err.flush();
       } else {
@@ -276,10 +274,7 @@ public abstract class BaseCliFrontend {
   }
 
   private void reportTypeCheckResult(ModulePath modulePath, Error.Level result) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("[").append(resultChar(result)).append("]");
-    builder.append(" ").append(modulePath);
-    System.out.println(builder);
+    System.out.println("[" + resultChar(result) + "]" + " " + modulePath);
   }
 
   private static char resultChar(Error.Level result) {

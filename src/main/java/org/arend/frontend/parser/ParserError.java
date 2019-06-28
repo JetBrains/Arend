@@ -4,8 +4,7 @@ import org.arend.error.GeneralError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.ModuleReferable;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.function.BiConsumer;
 
 public class ParserError extends GeneralError {
   public final Position position;
@@ -21,7 +20,7 @@ public class ParserError extends GeneralError {
   }
 
   @Override
-  public Collection<? extends GlobalReferable> getAffectedDefinitions() {
-    return Collections.singletonList(new ModuleReferable(position.module));
+  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+    consumer.accept(new ModuleReferable(position.module), this);
   }
 }
