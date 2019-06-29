@@ -22,7 +22,6 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.error.Error;
 import org.arend.error.IncorrectExpressionException;
-import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
@@ -51,7 +50,7 @@ import java.util.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.typechecking.error.local.ArgInferenceError.typeOfFunctionArg;
 
-public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean, List<Clause>> {
+public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, List<Clause>> {
   private CheckTypeVisitor myVisitor;
   private LocalErrorReporter myErrorReporter;
   private GlobalInstancePool myInstancePool;
@@ -68,7 +67,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     myInstancePool = visitor.getInstancePool();
   }
 
-  public Definition typecheckHeader(Definition typechecked, GlobalInstancePool instancePool, Concrete.Definition definition, boolean recursive) {
+  public Definition typecheckHeader(Definition typechecked, GlobalInstancePool instancePool, Concrete.Definition definition) {
     LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     instancePool.setInstancePool(localInstancePool);
     myVisitor.setInstancePool(instancePool);
@@ -76,7 +75,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (definition instanceof Concrete.FunctionDefinition) {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition.getData());
       try {
-        typecheckFunctionHeader(functionDef, (Concrete.FunctionDefinition) definition, localInstancePool, recursive, typechecked == null);
+        typecheckFunctionHeader(functionDef, (Concrete.FunctionDefinition) definition, localInstancePool, typechecked == null);
       } catch (IncorrectExpressionException e) {
         myErrorReporter.report(new TypecheckingError(e.getMessage(), definition));
       }
@@ -131,7 +130,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   @Override
-  public List<Clause> visitFunction(Concrete.FunctionDefinition def, Boolean recursive) {
+  public List<Clause> visitFunction(Concrete.FunctionDefinition def, Void params) {
     Definition typechecked = prepare(def);
     LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     myInstancePool.setInstancePool(localInstancePool);
@@ -139,8 +138,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
 
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(def.getData());
     try {
-      typecheckFunctionHeader(definition, def, localInstancePool, recursive, typechecked == null);
-      return recursive && definition.getResultType() == null ? null : typecheckFunctionBody(definition, def, typechecked == null);
+      typecheckFunctionHeader(definition, def, localInstancePool, typechecked == null);
+      return def.isRecursive() && definition.getResultType() == null ? null : typecheckFunctionBody(definition, def, typechecked == null);
     } catch (IncorrectExpressionException e) {
       myErrorReporter.report(new TypecheckingError(e.getMessage(), def));
       return null;
@@ -148,7 +147,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   @Override
-  public List<Clause> visitData(Concrete.DataDefinition def, Boolean recursive) {
+  public List<Clause> visitData(Concrete.DataDefinition def, Void params) {
     Definition typechecked = prepare(def);
     LocalInstancePool localInstancePool = new LocalInstancePool(myVisitor);
     myInstancePool.setInstancePool(localInstancePool);
@@ -168,10 +167,10 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
   }
 
   @Override
-  public List<Clause> visitClass(Concrete.ClassDefinition def, Boolean recursive) {
+  public List<Clause> visitClass(Concrete.ClassDefinition def, Void params) {
     Definition typechecked = prepare(def);
 
-    if (recursive) {
+    if (def.isRecursive()) {
       myErrorReporter.report(new TypecheckingError("A class cannot be recursive", def));
       if (typechecked != null) {
         return null;
@@ -182,7 +181,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     if (typechecked == null) {
       myVisitor.getTypecheckingState().record(def.getData(), definition);
     }
-    if (recursive) {
+    if (def.isRecursive()) {
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
 
       for (Concrete.ClassField field : def.getFields()) {
@@ -429,7 +428,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
     return PropLevel.NO;
   }
 
-  private void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean recursive, boolean newDef) {
+  private void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     LinkList list = new LinkList();
 
     if (def.getResultTypeLevel() != null && !(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getBody() instanceof Concrete.ElimFunctionBody)) {
@@ -452,7 +451,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       Type expectedTypeResult;
       if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
         expectedTypeResult = null;
-      } else if (def.getBody() instanceof Concrete.TermFunctionBody && !recursive && !isLemma) {
+      } else if (def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && !isLemma) {
         expectedTypeResult = myVisitor.checkType(cResultType, typeExpectedType);
       } else {
         expectedTypeResult = myVisitor.finalCheckType(cResultType, typeExpectedType);
@@ -481,7 +480,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Boolean
       calculateParametersTypecheckingOrder(typedDef);
     }
 
-    if (recursive && expectedType == null) {
+    if (def.isRecursive() && expectedType == null) {
       myErrorReporter.report(new TypecheckingError(def.getBody() instanceof Concrete.CoelimFunctionBody
         ? "Function defined by copattern matching cannot be recursive"
         : "Cannot infer the result type of a recursive function", def));

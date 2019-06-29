@@ -1116,6 +1116,7 @@ public final class Concrete {
     public TCClassReferable enclosingClass;
     private boolean myHasErrors = false;
     private boolean myDesugarized = false;
+    private boolean myRecursive = false;
 
     public Definition(TCReferable referable) {
       super(referable);
@@ -1127,6 +1128,14 @@ public final class Concrete {
 
     public void setHasErrors() {
       myHasErrors = true;
+    }
+
+    public boolean isRecursive() {
+      return myRecursive;
+    }
+
+    public void setRecursive(boolean isRecursive) {
+      myRecursive = isRecursive;
     }
 
     @Override

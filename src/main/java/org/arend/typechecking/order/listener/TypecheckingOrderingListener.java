@@ -252,7 +252,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
       myErrorReporter.report(new CycleError(Collections.singletonList(unit.getDefinition().getData())));
       typecheckingUnitFinished(unit.getDefinition().getData(), newDefinition(unit.getDefinition()));
     } else {
-      typecheck(unit, recursion == Recursion.IN_BODY);
+      unit.getDefinition().setRecursive(recursion == Recursion.IN_BODY);
+      typecheck(unit);
     }
   }
 
@@ -271,22 +272,24 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     if (numberOfHeaders == 1) {
-      myCurrentDefinition = unit.getDefinition().getData();
+      Concrete.Definition definition = unit.getDefinition();
+      myCurrentDefinition = definition.getData();
       typecheckingHeaderStarted(myCurrentDefinition);
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
-      if (unit.getDefinition().hasErrors()) {
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
+      if (definition.hasErrors()) {
         visitor.setHasErrors();
       }
-      DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, visitor.getErrorReporter());
-      Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(unit.getDefinition().getData());
-      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), visitor), unit.getDefinition(), true);
+      DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
+      Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
+      definition.setRecursive(true);
+      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), visitor), definition);
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
-        mySuspensions.put(unit.getDefinition().getData(), new Pair<>(visitor, oldTypechecked == null));
+        mySuspensions.put(definition.getData(), new Pair<>(visitor, oldTypechecked == null));
       }
 
-      typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
+      typecheckingHeaderFinished(definition.getData(), typechecked);
       myCurrentDefinition = null;
       return typechecked.status().headerIsOK();
     }
@@ -384,48 +387,49 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
   }
 
-  private void typecheck(TypecheckingUnit unit, boolean recursive) {
+  private void typecheck(TypecheckingUnit unit) {
     List<Clause> clauses;
     Definition typechecked;
-    boolean isLevel = unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
+    Concrete.Definition definition = unit.getDefinition();
+    boolean isLevel = definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
     if (isLevel && !unit.isHeader()) {
-      Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(unit.getDefinition().getData());
+      Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (pair == null) {
         return;
       }
-      myCurrentDefinition = unit.getDefinition().getData();
+      myCurrentDefinition = definition.getData();
       typecheckingBodyStarted(myCurrentDefinition);
       typechecked = myState.getTypechecked(myCurrentDefinition);
-      clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, unit.getDefinition(), Collections.emptySet(), pair.proj2);
+      clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, definition, Collections.emptySet(), pair.proj2);
     } else {
-      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(unit.getDefinition().getData(), myErrorReporter), null);
-      checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(unit.getDefinition().getData()), checkTypeVisitor));
-      DesugarVisitor.desugar(unit.getDefinition(), myConcreteProvider, checkTypeVisitor.getErrorReporter());
+      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(definition.getData(), myErrorReporter), null);
+      checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
+      DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
       if (isLevel) {
-        myCurrentDefinition = unit.getDefinition().getData();
+        myCurrentDefinition = definition.getData();
         typecheckingHeaderStarted(myCurrentDefinition);
-        Definition oldTypechecked = myState.getTypechecked(unit.getDefinition().getData());
-        mySuspensions.put(unit.getDefinition().getData(), new Pair<>(checkTypeVisitor, oldTypechecked == null));
-        typechecked = new DefinitionTypechecking(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), unit.getDefinition(), false);
-        typecheckingHeaderFinished(unit.getDefinition().getData(), typechecked);
+        Definition oldTypechecked = myState.getTypechecked(definition.getData());
+        mySuspensions.put(definition.getData(), new Pair<>(checkTypeVisitor, oldTypechecked == null));
+        typechecked = new DefinitionTypechecking(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), definition);
+        typecheckingHeaderFinished(definition.getData(), typechecked);
         myCurrentDefinition = null;
         return;
       } else {
-        myCurrentDefinition = unit.getDefinition().getData();
+        myCurrentDefinition = definition.getData();
         typecheckingUnitStarted(myCurrentDefinition);
-        clauses = unit.getDefinition().accept(new DefinitionTypechecking(checkTypeVisitor), recursive);
+        clauses = definition.accept(new DefinitionTypechecking(checkTypeVisitor), null);
         typechecked = myState.getTypechecked(myCurrentDefinition);
       }
     }
 
-    if (recursive && typechecked instanceof FunctionDefinition && clauses != null) {
-      checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, unit.getDefinition()), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
+    if (definition.isRecursive() && typechecked instanceof FunctionDefinition && clauses != null) {
+      checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }
 
     if (isLevel && !unit.isHeader()) {
-      typecheckingBodyFinished(unit.getDefinition().getData(), typechecked);
+      typecheckingBodyFinished(definition.getData(), typechecked);
     } else {
-      typecheckingUnitFinished(unit.getDefinition().getData(), typechecked);
+      typecheckingUnitFinished(definition.getData(), typechecked);
     }
     myCurrentDefinition = null;
   }
