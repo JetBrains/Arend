@@ -558,7 +558,8 @@ public class NameResolverTest extends NameResolverTestCase {
   public void duplicateInternalExternalName() {
     resolveNamesModule(
       "\\data D | x Nat\n" +
-      "\\func x => 0");
+      "\\func x => 0", 1);
+    assertThatErrorsAre(warning());
   }
 
   @Test

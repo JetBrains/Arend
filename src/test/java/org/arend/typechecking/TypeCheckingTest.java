@@ -200,7 +200,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void duplicateFieldName() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\class A {\n" +
       "  | x : Nat\n" +
       "  | x : Nat\n" +

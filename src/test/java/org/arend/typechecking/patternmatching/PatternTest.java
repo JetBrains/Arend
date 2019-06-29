@@ -17,7 +17,9 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.ProxyErrorReporter;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 import org.junit.Test;
 
@@ -155,7 +157,8 @@ public class PatternTest extends TypeCheckingTestCase {
     data.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
     List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(funDef.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    LocalErrorReporter localErrorReporter = new ProxyErrorReporter(funDef.getData(), errorReporter);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(localErrorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), new CheckTypeVisitor(typecheckerState, Collections.emptyMap(), localErrorReporter, null)).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
@@ -398,7 +401,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
   @Test
   public void patternWrongDefinition() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\data Nat | zero | suc Nat\n" +
       "\\data D (n m : Nat) | d\n" +
       "\\data C | c (n m : Nat) (D n m)\n" +

@@ -167,11 +167,11 @@ public abstract class NameResolvingChecker {
     }
 
     for (Group subgroup : subgroups) {
-      checkReference(subgroup.getReferable(), referables, Error.Level.ERROR);
+      checkReference(subgroup.getReferable(), referables, false);
     }
 
     for (Group subgroup : dynamicSubgroups) {
-      checkReference(subgroup.getReferable(), referables, Error.Level.ERROR);
+      checkReference(subgroup.getReferable(), referables, false);
     }
 
     checkSubgroups(dynamicSubgroups, referables);
@@ -269,21 +269,30 @@ public abstract class NameResolvingChecker {
     for (Group subgroup : subgroups) {
       for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
         if (internalReferable.isVisible()) {
-          checkReference(internalReferable.getReferable(), referables, Error.Level.WARNING);
+          checkReference(internalReferable.getReferable(), referables, true);
+        }
+      }
+      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
+        if (internalReferable.isVisible()) {
+          LocatedReferable newRef = internalReferable.getReferable();
+          String name = newRef.textRepresentation();
+          if (!name.isEmpty() && !"_".equals(name)) {
+            referables.putIfAbsent(name, newRef);
+          }
         }
       }
     }
   }
 
-  private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, Error.Level level) {
+  private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, boolean isInternal) {
     String name = newRef.textRepresentation();
     if (name.isEmpty() || "_".equals(name)) {
       return;
     }
 
-    LocatedReferable oldRef = referables.putIfAbsent(name, newRef);
+    LocatedReferable oldRef = isInternal ? referables.get(name) : referables.putIfAbsent(name, newRef);
     if (oldRef != null) {
-      onDefinitionNamesClash(oldRef, newRef, level);
+      onDefinitionNamesClash(oldRef, newRef, isInternal ? Error.Level.WARNING : Error.Level.ERROR);
     }
   }
 }
