@@ -213,8 +213,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(exprVisitor, null));
     }
     if (body instanceof Concrete.CoelimFunctionBody) {
-      Concrete.ReferenceExpression typeRefExpr = Concrete.getReferenceExpressionInType(def.getResultType());
-      Referable typeRef = typeRefExpr == null ? null : typeRefExpr.getReferent();
+      Referable typeRef = def.getResultType() == null ? null : def.getResultType().getUnderlyingReferable();
       if (typeRef instanceof ClassReferable) {
         exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
       } else {
@@ -222,7 +221,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
-      visitEliminatedReferences(exprVisitor, body.getEliminatedReferences(), def.getData());
+      visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
       addNotEliminatedParameters(def.getParameters(), body.getEliminatedReferences(), context);
       exprVisitor.visitClauses(body.getClauses(), null);
@@ -237,7 +236,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return null;
   }
 
-  private void visitEliminatedReferences(ExpressionResolveNameVisitor exprVisitor, List<? extends Concrete.ReferenceExpression> eliminatedReferences, GlobalReferable definition) {
+  private void visitEliminatedReferences(ExpressionResolveNameVisitor exprVisitor, List<? extends Concrete.ReferenceExpression> eliminatedReferences) {
     for (Concrete.ReferenceExpression eliminatedReference : eliminatedReferences) {
       exprVisitor.resolveLocal(eliminatedReference);
     }
@@ -288,7 +287,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getEliminatedReferences() != null) {
-      visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
+      visitEliminatedReferences(exprVisitor, def.getEliminatedReferences());
     } else {
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
@@ -323,7 +322,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (def.getResultType() != null) {
         def.setResultType(def.getResultType().accept(exprVisitor, null));
       }
-      visitEliminatedReferences(exprVisitor, def.getEliminatedReferences(), def.getData());
+      visitEliminatedReferences(exprVisitor, def.getEliminatedReferences());
     }
 
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(context)) {

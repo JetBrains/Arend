@@ -1,11 +1,27 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.term.concrete.Concrete;
+import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 
 import java.util.List;
 
-public class VoidConcreteExpressionVisitor<P> implements ConcreteExpressionVisitor<P,Void> {
+public class VoidConcreteVisitor<P, Q> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<Q,Void> {
+  @Override
+  public Void visitFunction(Concrete.FunctionDefinition def, Q params) {
+    return null;
+  }
+
+  @Override
+  public Void visitData(Concrete.DataDefinition def, Q params) {
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Concrete.ClassDefinition def, Q params) {
+    return null;
+  }
+
   @Override
   public Void visitApp(Concrete.AppExpression expr, P params) {
     expr.getFunction().accept(this, params);

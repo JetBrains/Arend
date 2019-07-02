@@ -20,7 +20,7 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
-import org.arend.typechecking.DefinitionTypechecking;
+import org.arend.typechecking.visitor.DefinitionTypechecking;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.CycleError;

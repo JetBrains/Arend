@@ -6,7 +6,6 @@ import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.ArgInferenceError;
 import org.arend.typechecking.error.local.DesugaringError;
@@ -15,7 +14,7 @@ import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
-public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> implements ConcreteDefinitionVisitor<Void, Void> {
+public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
   private final LocalErrorReporter myErrorReporter;
 

@@ -168,7 +168,7 @@ public final class Concrete {
 
     public abstract <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params);
 
-    public Referable getUnderlyingReferable() {
+    public ReferenceExpression getUnderlyingReferenceExpression() {
       Expression expr = this;
       if (expr instanceof ClassExtExpression) {
         expr = ((ClassExtExpression) expr).getBaseClassExpression();
@@ -176,12 +176,17 @@ public final class Concrete {
       if (expr instanceof AppExpression) {
         expr = ((AppExpression) expr).getFunction();
       }
-      return expr instanceof ReferenceExpression ? ((ReferenceExpression) expr).getReferent() : null;
+      return expr instanceof ReferenceExpression ? (ReferenceExpression) expr : null;
     }
 
-    public TCClassReferable getUnderlyingClassReferable() {
+    public Referable getUnderlyingReferable() {
+      ReferenceExpression expr = getUnderlyingReferenceExpression();
+      return expr == null ? null : expr.getReferent();
+    }
+
+    public TCClassReferable getUnderlyingTypeClass() {
       Referable ref = getUnderlyingReferable();
-      return ref instanceof TCClassReferable ? (TCClassReferable) ref : null;
+      return ref instanceof TCClassReferable && !((TCClassReferable) ref).isRecord() ? (TCClassReferable) ref : null;
     }
 
     @Override
@@ -1045,7 +1050,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static Collection<? extends TypeParameter> getParameters(ReferableDefinition definition) {
+  public static Collection<? extends TypeParameter> getParameters(ReferableDefinition definition, boolean onlyThisDef) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
@@ -1053,20 +1058,25 @@ public final class Concrete {
       return ((DataDefinition) definition).getParameters();
     }
     if (definition instanceof Constructor) {
-      List<TypeParameter> dataTypeParameters = ((Concrete.Constructor) definition).getRelatedDefinition().getParameters();
-      List<TypeParameter> parameters = ((Constructor) definition).getParameters();
-      List<TypeParameter> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
-      totalParameters.addAll(dataTypeParameters);
-      totalParameters.addAll(parameters);
-      return totalParameters;
+      if (onlyThisDef) {
+        return ((Constructor) definition).getParameters();
+      } else {
+        List<TypeParameter> dataTypeParameters = ((Concrete.Constructor) definition).getRelatedDefinition().getParameters();
+        List<TypeParameter> parameters = ((Constructor) definition).getParameters();
+        List<TypeParameter> totalParameters = new ArrayList<>(dataTypeParameters.size() + parameters.size());
+        totalParameters.addAll(dataTypeParameters);
+        totalParameters.addAll(parameters);
+        return totalParameters;
+      }
     }
     if (definition instanceof ClassDefinition) {
       List<Concrete.TypeParameter> parameters = new ArrayList<>();
       for (ClassField field : ((ClassDefinition) definition).getFields()) {
         if (field.getData().isParameterField()) {
           Expression type = field.getResultType();
-          if (!field.getParameters().isEmpty()) {
-            type = new PiExpression(field.getParameters().get(0).getData(), field.getParameters(), type);
+          List<TypeParameter> fieldParams = field.getParameters();
+          if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !definition.isDesugarized()) {
+            type = new PiExpression(field.getParameters().get(0).getData(), definition.isDesugarized() ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
           }
           parameters.add(new Concrete.TypeParameter(field.getData(), field.getData().isExplicitField(), type));
         }
@@ -1480,17 +1490,6 @@ public final class Concrete {
       myResultTypeLevel = resultTypeLevel;
     }
 
-    @Nullable
-    public ReferenceExpression getReferenceExpressionInType() {
-      return Concrete.getReferenceExpressionInType(myResultType);
-    }
-
-    @Nullable
-    public Referable getReferenceInType() {
-      ReferenceExpression type = getReferenceExpressionInType();
-      return type == null ? null : type.myReferent;
-    }
-
     @Nonnull
     public FunctionBody getBody() {
       return myBody;
@@ -1659,18 +1658,6 @@ public final class Concrete {
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitConstructor(this, params);
     }
-  }
-
-  // Class synonyms
-
-  public static ReferenceExpression getReferenceExpressionInType(Expression type) {
-    if (type instanceof Concrete.ClassExtExpression) {
-      type = ((ClassExtExpression) type).myBaseClassExpression;
-    }
-    if (type instanceof Concrete.AppExpression) {
-      type = ((AppExpression) type).getFunction();
-    }
-    return type instanceof ReferenceExpression ? (ReferenceExpression) type : null;
   }
 
   // Patterns

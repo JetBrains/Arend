@@ -24,7 +24,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.patternmatching.Util;
-import org.arend.typechecking.visitor.VoidConcreteExpressionVisitor;
+import org.arend.typechecking.visitor.VoidConcreteVisitor;
 
 import java.util.*;
 
@@ -374,7 +374,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     List<? extends Referable> lastRefs = parameters.get(parameters.size() - 1).getReferableList();
     Referable lastRef = lastRefs.get(lastRefs.size() - 1);
-    VoidConcreteExpressionVisitor<Void> visitor = new VoidConcreteExpressionVisitor<Void>() {
+    VoidConcreteVisitor<Void,Void> visitor = new VoidConcreteVisitor<Void,Void>() {
       @Override
       public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
         refs.remove(expr.getReferent());

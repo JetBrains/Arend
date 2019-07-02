@@ -3,13 +3,12 @@ package org.arend.typechecking.visitor;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
-public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> implements ConcreteDefinitionVisitor<Boolean, Void> {
+public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean> {
   private final ConcreteProvider myConcreteProvider;
   private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;
@@ -62,13 +61,13 @@ public class CollectDefCallsVisitor extends VoidConcreteExpressionVisitor<Void> 
           }
         }
 
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition);
+        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition, false);
         if (parameters != null) {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
               ignoreFirstParameter = false;
             } else if (!parameter.getExplicit()) {
-              TCClassReferable classRef = parameter.getType().getUnderlyingClassReferable();
+              TCClassReferable classRef = parameter.getType().getUnderlyingTypeClass();
               if (classRef != null) {
                 addClassInstances(classRef);
               }

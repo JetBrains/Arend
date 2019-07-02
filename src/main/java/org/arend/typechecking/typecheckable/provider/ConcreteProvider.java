@@ -17,7 +17,8 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   @Nullable
   default Concrete.ReferenceExpression getInstanceTypeReference(GlobalReferable instance) {
     Concrete.FunctionDefinition concreteInstance = getConcreteInstance(instance);
-    return concreteInstance == null ? null : concreteInstance.getReferenceExpressionInType();
+    Concrete.Expression type = concreteInstance == null ? null : concreteInstance.getResultType();
+    return type == null ? null : type.getUnderlyingReferenceExpression();
   }
 
   @Override

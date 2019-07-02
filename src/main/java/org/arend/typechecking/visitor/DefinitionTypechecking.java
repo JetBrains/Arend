@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend.typechecking.visitor;
 
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
@@ -40,9 +40,6 @@ import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
-import org.arend.typechecking.visitor.CheckForUniversesVisitor;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
-import org.arend.typechecking.visitor.FreeVariablesClassifier;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -268,7 +265,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
         }
 
         if (localInstancePool != null) {
-          TCClassReferable classRef = typeParameter.getType().getUnderlyingClassReferable();
+          TCClassReferable classRef = typeParameter.getType().getUnderlyingTypeClass();
           if (classRef != null) {
             ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef);
             if (classDef != null && !classDef.isRecord()) {
@@ -407,9 +404,9 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
   private enum PropLevel { YES, NO, COULD_BE }
 
   private PropLevel isPropLevel(Concrete.Expression expression) {
-    Concrete.ReferenceExpression fun = Concrete.getReferenceExpressionInType(expression);
-    if (fun != null && fun.getReferent() instanceof TCReferable) {
-      Definition typeDef = myVisitor.getTypecheckingState().getTypechecked((TCReferable) fun.getReferent());
+    Referable fun = expression == null ? null : expression.getUnderlyingReferable();
+    if (fun instanceof TCReferable) {
+      Definition typeDef = myVisitor.getTypecheckingState().getTypechecked((TCReferable) fun);
       if (typeDef != null) {
         boolean couldBe = false;
         for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
@@ -675,9 +672,8 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
 
   private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
     List<Definition.TypeClassParameterKind> typeClassParameters = new ArrayList<>();
-    for (Concrete.TypeParameter parameter : Objects.requireNonNull(refDef instanceof Concrete.Constructor ? ((Concrete.Constructor) refDef).getParameters() : Concrete.getParameters(refDef))) {
-      Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(parameter.getType());
-      boolean isTypeClass = refExpr != null && refExpr.getReferent() instanceof ClassReferable;
+    for (Concrete.TypeParameter parameter : Objects.requireNonNull(Concrete.getParameters(refDef, true))) {
+      boolean isTypeClass = parameter.getType().getUnderlyingTypeClass() != null;
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
         typeClassParameters.add(isTypeClass ? Definition.TypeClassParameterKind.YES : Definition.TypeClassParameterKind.NO);
       }
@@ -747,8 +743,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
       if (def.getResultType() == null) {
         myErrorReporter.report(new TypecheckingError("Cannot infer type of a function defined by copattern matching", def));
       } else {
-        Concrete.ReferenceExpression typeRefExpr = Concrete.getReferenceExpressionInType(def.getResultType());
-        Referable typeRef = typeRefExpr == null ? null : typeRefExpr.getReferent();
+        Referable typeRef = def.getResultType().getUnderlyingReferable();
         if (!(typeRef instanceof ClassReferable)) {
           myErrorReporter.report(new TypecheckingError("Expected a class", def.getResultType()));
           CheckTypeVisitor.Result result = myVisitor.finalCheckExpr(def.getResultType(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
@@ -957,7 +952,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
 
         int index = 0;
         for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
-          if (link instanceof TypedDependentLink) {
+          if (link instanceof TypedDependentLink && typedDef.getTypeClassParameterKind(index) == Definition.TypeClassParameterKind.YES) {
             Expression type = link.getTypeExpr();
             if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
               ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
@@ -1610,7 +1605,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
         }
 
         if (field.getData().isParameterField() && !field.getData().isExplicitField()) {
-          TCClassReferable classRef = previousType.getUnderlyingClassReferable();
+          TCClassReferable classRef = previousType.getUnderlyingTypeClass();
           if (classRef != null) {
             ClassDefinition classDef = (ClassDefinition) myVisitor.getTypecheckingState().getTypechecked(classRef);
             if (classDef != null && !classDef.isRecord()) {
@@ -1804,8 +1799,7 @@ public class DefinitionTypechecking implements ConcreteDefinitionVisitor<Void, L
           if (resultType instanceof Concrete.PiExpression) {
             resultType = ((Concrete.PiExpression) resultType).getCodomain();
           }
-          Concrete.ReferenceExpression refExpr = Concrete.getReferenceExpressionInType(resultType);
-          if (refExpr != null && refExpr.getReferent() instanceof ClassReferable) {
+          if (resultType.getUnderlyingTypeClass() != null) {
             ClassField field = myVisitor.referableToClassField(cField.getData(), null);
             if (field != null) {
               typeClassFields.add(field);

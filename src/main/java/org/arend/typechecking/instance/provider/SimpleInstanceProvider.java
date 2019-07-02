@@ -26,7 +26,8 @@ public class SimpleInstanceProvider implements InstanceProvider {
   @Override
   public Concrete.FunctionDefinition findInstance(ClassReferable classRef, Predicate<Concrete.FunctionDefinition> pred) {
     for (Concrete.FunctionDefinition instance : myInstances) {
-      Referable ref = instance.getReferenceInType();
+      Concrete.Expression type = instance.getResultType();
+      Referable ref = type == null ? null : type.getUnderlyingReferable();
       if (ref instanceof ClassReferable && ((ClassReferable) ref).isSubClassOf(classRef) && pred.test(instance)) {
         return instance;
       }
