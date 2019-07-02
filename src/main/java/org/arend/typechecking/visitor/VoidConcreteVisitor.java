@@ -6,19 +6,19 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 
 import java.util.List;
 
-public class VoidConcreteVisitor<P, Q> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<Q,Void> {
+public class VoidConcreteVisitor<P, Q, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<Q,R> {
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Q params) {
+  public R visitFunction(Concrete.FunctionDefinition def, Q params) {
     return null;
   }
 
   @Override
-  public Void visitData(Concrete.DataDefinition def, Q params) {
+  public R visitData(Concrete.DataDefinition def, Q params) {
     return null;
   }
 
   @Override
-  public Void visitClass(Concrete.ClassDefinition def, Q params) {
+  public R visitClass(Concrete.ClassDefinition def, Q params) {
     return null;
   }
 

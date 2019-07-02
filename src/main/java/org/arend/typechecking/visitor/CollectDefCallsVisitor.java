@@ -8,7 +8,7 @@ import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
-public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean> {
+public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, Void> {
   private final ConcreteProvider myConcreteProvider;
   private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;

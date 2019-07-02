@@ -20,7 +20,7 @@ import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
-import org.arend.typechecking.visitor.DefinitionTypechecking;
+import org.arend.typechecking.visitor.DefinitionTypechecker;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.CycleError;
@@ -284,7 +284,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
       Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
       definition.setRecursive(true);
-      Definition typechecked = new DefinitionTypechecking(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), visitor), definition);
+      Definition typechecked = new DefinitionTypechecker(visitor).typecheckHeader(oldTypechecked, new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), visitor), definition);
       if (typechecked.status() == Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
         mySuspensions.put(definition.getData(), new Pair<>(visitor, oldTypechecked == null));
       }
@@ -341,7 +341,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
     orderedDefinitions.addAll(otherDefs);
 
-    DefinitionTypechecking typechecking = new DefinitionTypechecking(null);
+    DefinitionTypechecker typechecking = new DefinitionTypechecker(null);
     for (Concrete.Definition definition : orderedDefinitions) {
       myCurrentDefinition = definition.getData();
       typecheckingBodyStarted(myCurrentDefinition);
@@ -400,7 +400,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       myCurrentDefinition = definition.getData();
       typecheckingBodyStarted(myCurrentDefinition);
       typechecked = myState.getTypechecked(myCurrentDefinition);
-      clauses = new DefinitionTypechecking(pair.proj1).typecheckBody(typechecked, definition, Collections.emptySet(), pair.proj2);
+      clauses = new DefinitionTypechecker(pair.proj1).typecheckBody(typechecked, definition, Collections.emptySet(), pair.proj2);
     } else {
       CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(definition.getData(), myErrorReporter), null);
       checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
@@ -410,14 +410,14 @@ public class TypecheckingOrderingListener implements OrderingListener {
         typecheckingHeaderStarted(myCurrentDefinition);
         Definition oldTypechecked = myState.getTypechecked(definition.getData());
         mySuspensions.put(definition.getData(), new Pair<>(checkTypeVisitor, oldTypechecked == null));
-        typechecked = new DefinitionTypechecking(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), definition);
+        typechecked = new DefinitionTypechecker(checkTypeVisitor).typecheckHeader(oldTypechecked, checkTypeVisitor.getInstancePool(), definition);
         typecheckingHeaderFinished(definition.getData(), typechecked);
         myCurrentDefinition = null;
         return;
       } else {
         myCurrentDefinition = definition.getData();
         typecheckingUnitStarted(myCurrentDefinition);
-        clauses = definition.accept(new DefinitionTypechecking(checkTypeVisitor), null);
+        clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
         typechecked = myState.getTypechecked(myCurrentDefinition);
       }
     }

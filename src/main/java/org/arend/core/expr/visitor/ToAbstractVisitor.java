@@ -374,7 +374,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     List<? extends Referable> lastRefs = parameters.get(parameters.size() - 1).getReferableList();
     Referable lastRef = lastRefs.get(lastRefs.size() - 1);
-    VoidConcreteVisitor<Void,Void> visitor = new VoidConcreteVisitor<Void,Void>() {
+    VoidConcreteVisitor<Void,Void,Void> visitor = new VoidConcreteVisitor<Void,Void,Void>() {
       @Override
       public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
         refs.remove(expr.getReferent());
