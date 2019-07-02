@@ -14,6 +14,7 @@ import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.GoodThisParametersVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Level;
@@ -387,9 +388,38 @@ public class DefinitionTypechecker extends BaseTypechecker implements ConcreteDe
     definition.setGoodThisParameters(visitor.getGoodParameters());
   }
 
-  // TODO: This does not work for constructors with patterns
   private void calculateTypeClassParameters(Concrete.ReferableDefinition refDef, Definition def) {
     List<Definition.TypeClassParameterKind> typeClassParameters = new ArrayList<>();
+
+    if (def instanceof Constructor) {
+      Constructor constructor = (Constructor) def;
+      List<Definition.TypeClassParameterKind> dataTypeParameters = constructor.getDataType().getTypeClassParameters();
+      if (dataTypeParameters.isEmpty()) {
+        for (DependentLink link = constructor.getDataTypeParameters(); link.hasNext(); link = link.getNext()) {
+          typeClassParameters.add(Definition.TypeClassParameterKind.NO);
+        }
+      } else {
+        Patterns patterns = constructor.getPatterns();
+        if (patterns == null) {
+          typeClassParameters.addAll(dataTypeParameters);
+        } else {
+          assert patterns.getPatternList().size() == dataTypeParameters.size();
+          int i = 0;
+          for (Pattern pattern : patterns.getPatternList()) {
+            if (pattern instanceof BindingPattern) {
+              typeClassParameters.add(dataTypeParameters.get(i));
+            } else {
+              DependentLink next = i + 1 < patterns.getPatternList().size() ? patterns.getPatternList().get(i + 1).getFirstBinding() : EmptyDependentLink.getInstance();
+              for (DependentLink link = pattern.getFirstBinding(); link.hasNext() && link != next; link = link.getNext()) {
+                typeClassParameters.add(Definition.TypeClassParameterKind.NO);
+              }
+            }
+            i++;
+          }
+        }
+      }
+    }
+
     for (Concrete.TypeParameter parameter : Objects.requireNonNull(Concrete.getParameters(refDef, true))) {
       boolean isTypeClass = parameter.getType().getUnderlyingTypeClass() != null;
       for (int i = 0; i < parameter.getNumberOfParameters(); i++) {
@@ -1162,9 +1192,9 @@ public class DefinitionTypechecker extends BaseTypechecker implements ConcreteDe
 
     if (constructor != null) {
       constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-      calculateTypeClassParameters(def, dataDefinition);
+      calculateTypeClassParameters(def, constructor);
       calculateGoodThisParameters(constructor);
-      calculateParametersTypecheckingOrder(dataDefinition);
+      calculateParametersTypecheckingOrder(constructor);
     }
     return sort;
   }

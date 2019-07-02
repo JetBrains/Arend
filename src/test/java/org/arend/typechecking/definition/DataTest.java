@@ -234,4 +234,28 @@ public class DataTest extends TypeCheckingTestCase {
     assertTrue(d.isCovariant(0));
     assertTrue(d.isCovariant(1));
   }
+
+  @Test
+  public void constructorAndTypeClass() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\data D (c : C) | con Nat\n" +
+      "\\func f (c : C) => con 0");
+  }
+
+  @Test
+  public void constructorWithPatternsAndTypeClass() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\data D (c : C) (n : Nat) \\elim n | zero => con Nat\n" +
+      "\\func f (c : C) => con 0");
+  }
+
+  @Test
+  public void constructorWithPatternsAndTypeClass2() {
+    typeCheckModule(
+      "\\class C | x : Nat\n" +
+      "\\data D (n : Nat) (c : C) \\elim n | zero => con Nat\n" +
+      "\\func f (c : C) => con 0");
+  }
 }

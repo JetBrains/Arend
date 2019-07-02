@@ -177,12 +177,6 @@ public class Constructor extends Definition implements Function {
   }
 
   @Override
-  public TypeClassParameterKind getTypeClassParameterKind(int index) {
-    int dataTypeParams = DependentLink.Helper.size(myDataType.getParameters());
-    return index < dataTypeParams ? (myPatterns == null ? myDataType.getTypeClassParameterKind(index) : TypeClassParameterKind.NO) : super.getTypeClassParameterKind(index - dataTypeParams);
-  }
-
-  @Override
   public void setTypeClassParameters(List<TypeClassParameterKind> typeClassParameters) {
     myTypeClassParameters = typeClassParameters;
   }
