@@ -17,7 +17,7 @@ Let us consider an example:
 
 It is allowed to write `x : S` instead of `x : S.E` since `S` is implicitly coerced to an element of type `\Set`, that is `S.E`.
 
-In case an implicit parameter of a definition or a constructor has type, which is an [extension](/language-reference/expressions/class-ext) `C { ... }` of `C`,
+In case an parameter of a definition or a constructor has type, which is an [extension](/language-reference/expressions/class-ext) `C { ... }` of `C`,
 it is marked as a _local instance_ of class `C`. Implicit parameter `\this` of a field of class `C` is also a local instance. 
 
 
