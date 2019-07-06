@@ -61,7 +61,7 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void notInScopeLongNameError5() {
     resolveNamesModule(
-      "\\class X \\where { \\func y }\n" +
+      "\\class X \\where { \\func y => 0 }\n" +
       "\\func f => X.y.z", 1);
     assertThatErrorsAre(notInScope("z"));
   }
@@ -69,7 +69,7 @@ public class NameResolverTest extends NameResolverTestCase {
   @Test
   public void notInScopeLongNameError6() {
     resolveNamesModule(
-      "\\class X \\where { \\func y }\n" +
+      "\\class X \\where { \\func y => 0 }\n" +
       "\\func f => X.y.z.w", 1);
     assertThatErrorsAre(notInScope("z"));
   }

@@ -110,7 +110,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void threeVars() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat)\n" +
+      "\\func f (n m k : Nat) : Nat\n" +
       "  | suc n, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -122,7 +122,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void nestedPatterns() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat)\n" +
+      "\\func f (n m k : Nat) : Nat\n" +
       "  | suc (suc (suc n)), zero, suc (suc (suc (suc zero))) => n").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -134,7 +134,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void incorrectType() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat)\n" +
+      "\\func f (n : Nat) (m : Nat -> Nat) (k : Nat) : Nat\n" +
       "  | suc n, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Pi(Nat(), Nat())), param(null, Nat())), fun.getBody(), false);
@@ -146,7 +146,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void incorrectDataType() {
     Group module = resolveNamesModule(
       "\\data D | con\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, zero, suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     TCReferable dataDef = (TCReferable) it.next().getReferable();
@@ -166,7 +166,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void tooManyPatterns() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n m k : Nat)\n" +
+      "\\func f (n m k : Nat) : Nat\n" +
       "  | suc n m, zero, suc k => k").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Nat()), param(null, Nat())), fun.getBody(), false);
@@ -177,7 +177,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void interval() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (i : I)\n" +
+      "\\func f (n : Nat) (i : I) : Nat\n" +
       "  | zero, i => zero").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
@@ -189,7 +189,7 @@ public class PatternTest extends TypeCheckingTestCase {
   @Test
   public void intervalFail() {
     Concrete.FunctionDefinition fun = (Concrete.FunctionDefinition) resolveNamesDef(
-      "\\func f (n : Nat) (i : I)\n" +
+      "\\func f (n : Nat) (i : I) : Nat\n" +
       "  | zero, left => zero").getDefinition();
     List<Concrete.Pattern> patternsArgs = fun.getBody().getClauses().get(0).getPatterns();
     Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(new ProxyErrorReporter(fun.getData(), errorReporter), EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), null).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, Interval())), fun.getBody(), false);
@@ -201,7 +201,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void emptyDataType() {
     Group module = resolveNamesModule(
       "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     TCReferable dataDef = (TCReferable) it.next().getReferable();
@@ -222,7 +222,7 @@ public class PatternTest extends TypeCheckingTestCase {
   public void emptyDataTypeWarning() {
     Group module = resolveNamesModule(
       "\\data D\n" +
-      "\\func f (n : Nat) (d : D) (k : Nat)\n" +
+      "\\func f (n : Nat) (d : D) (k : Nat) : Nat\n" +
       "  | suc n, (), suc k => k");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
     TCReferable dataDef = (TCReferable) it.next().getReferable();

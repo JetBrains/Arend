@@ -278,7 +278,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public void setHasErrors() {
-    myStatus = Definition.TypeCheckingStatus.HAS_ERRORS;
+    myStatus = myStatus.max(Definition.TypeCheckingStatus.HAS_ERRORS);
   }
 
   public TypecheckerState getTypecheckingState() {

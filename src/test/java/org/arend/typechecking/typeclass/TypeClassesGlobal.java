@@ -106,7 +106,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func f : \\Set0 => g\n" +
       "\\class X (A : \\Type0) {\n" +
       "  | B : A -> \\Type0\n" +
-      "}", 1);
+      "}", 2);
   }
 
   // We do not check for duplicate global instances currently

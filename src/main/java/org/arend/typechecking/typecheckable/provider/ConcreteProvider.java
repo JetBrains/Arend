@@ -36,4 +36,9 @@ public interface ConcreteProvider extends PartialConcreteProvider {
   default boolean isData(GlobalReferable ref) {
     return getConcreteData(ref) != null;
   }
+
+  @Override
+  default boolean isFunction(GlobalReferable ref) {
+    return getConcreteFunction(ref) != null;
+  }
 }

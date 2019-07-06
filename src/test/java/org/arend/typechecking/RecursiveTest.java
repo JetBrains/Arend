@@ -37,7 +37,7 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void functionError() {
-    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status(), Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status(), Definition.TypeCheckingStatus.HAS_ERRORS);
   }
 
   @Test
@@ -70,7 +70,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (x : Nat) : \\Type => g 0\n" +
       "\\func g (x : Nat) : \\Type => f 0", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 
   @Test
@@ -78,7 +77,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (x : Nat) : Nat => g 0\n" +
       "\\func g (x : Nat) : Nat => f 0", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 
   @Test
@@ -86,7 +84,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\lemma f (x : Nat) : x = x => g x\n" +
       "\\lemma g (x : Nat) : x = x => f x", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 
   @Test
@@ -103,7 +100,6 @@ public class RecursiveTest extends TypeCheckingTestCase {
       "\\class C (n : Nat)\n" +
       "\\func f (x : Nat) : C => \\new C (C.n {g x})\n" +
       "\\func g (x : Nat) : C => \\new C (C.n {f x})", 2);
-    assertThatErrorsAre(instanceOf(TerminationCheckError.class), instanceOf(TerminationCheckError.class));
   }
 
   @Test

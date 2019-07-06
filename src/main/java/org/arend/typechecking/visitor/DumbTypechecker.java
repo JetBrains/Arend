@@ -1,9 +1,10 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.param.DependentLink;
+import org.arend.core.definition.ClassDefinition;
+import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
-import org.arend.core.expr.Expression;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.naming.reference.Referable;
@@ -13,7 +14,6 @@ import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.implicitargs.equations.Equations;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -22,7 +22,8 @@ import java.util.Map;
 public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressionVisitor<ExpectedType, CheckTypeVisitor.Result>, ConcreteDefinitionVisitor<Void, Void> {
   private final TypecheckerState myState;
   private final Map<Referable, Binding> myContext;
-  private Concrete.Definition myDefinition;
+  private Concrete.Definition myConcreteDefinition;
+  private Definition myDefinition;
   private boolean myRecursive;
 
   public DumbTypechecker(TypecheckerState state, LocalErrorReporter errorReporter) {
@@ -31,7 +32,8 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
     this.errorReporter = errorReporter;
   }
 
-  public void setCurrentDefinition(Concrete.Definition definition) {
+  public void setCurrentDefinition(Concrete.Definition concreteDefinition, Definition definition) {
+    myConcreteDefinition = concreteDefinition;
     myDefinition = definition;
     myRecursive = false;
   }
@@ -59,28 +61,30 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
   }
 
   @Override
-  protected Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
-    // TODO
-    return null;
+  protected boolean isDumb() {
+    return true;
   }
 
   @Override
   public Void visitFunction(Concrete.FunctionDefinition def, Void params) {
-    setCurrentDefinition(def);
+    FunctionDefinition funcDef = new FunctionDefinition(def.getData());
+    setCurrentDefinition(def, funcDef);
+    typecheckFunctionHeader(funcDef, def, null, true);
     // TODO
+    checkElimBody(def);
     return null;
   }
 
   @Override
   public Void visitData(Concrete.DataDefinition def, Void params) {
-    setCurrentDefinition(def);
+    setCurrentDefinition(def, new DataDefinition(def.getData()));
     // TODO
     return null;
   }
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
-    setCurrentDefinition(def);
+    setCurrentDefinition(def, new ClassDefinition(def.getData()));
     // TODO
     return null;
   }

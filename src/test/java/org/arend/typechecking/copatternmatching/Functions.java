@@ -20,9 +20,16 @@ public class Functions extends TypeCheckingTestCase {
 
   @Test
   public void withoutType() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\record R (x y : Nat)\n" +
       "\\func f \\cowith | x => 0 | y => 0", 1);
+  }
+
+  @Test
+  public void withIncorrectType() {
+    resolveNamesDef(
+      "\\data D\n" +
+      "\\func f : D \\cowith");
   }
 
   @Test
@@ -34,7 +41,7 @@ public class Functions extends TypeCheckingTestCase {
 
   @Test
   public void recursiveWithoutType() {
-    typeCheckModule(
+    resolveNamesModule(
       "\\record R (x y : Nat)\n" +
       "\\func f \\cowith | x => 0 | y => f.x", 1);
   }

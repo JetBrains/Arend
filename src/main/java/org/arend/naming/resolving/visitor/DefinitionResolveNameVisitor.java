@@ -12,12 +12,8 @@ import org.arend.naming.error.NamingError;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.naming.resolving.NameResolvingChecker;
 import org.arend.naming.resolving.ResolverListener;
-import org.arend.naming.scope.CachingScope;
-import org.arend.naming.scope.ConvertingScope;
-import org.arend.naming.scope.NamespaceCommandNamespace;
-import org.arend.naming.scope.Scope;
+import org.arend.naming.scope.*;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
@@ -29,6 +25,7 @@ import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.error.local.ProxyErrorReporter;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.util.LongName;
+import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -215,21 +212,44 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (body instanceof Concrete.CoelimFunctionBody) {
       Referable typeRef = def.getResultType() == null ? null : def.getResultType().getUnderlyingReferable();
       if (typeRef instanceof ClassReferable) {
-        exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
+        if (def.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
+          myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def.getData()));
+          body.getClassFieldImpls().clear();
+        } else {
+          exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
+        }
       } else {
+        if (!(typeRef instanceof ErrorReference)) {
+          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType().getData()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
+        }
         body.getClassFieldImpls().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
+      if (def.getResultType() == null) {
+        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
+      }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
       addNotEliminatedParameters(def.getParameters(), body.getEliminatedReferences(), context);
       exprVisitor.visitClauses(body.getClauses(), null);
     }
 
-    if (def.enclosingClass != null && def.getKind().isUse()) {
-      myLocalErrorReporter.report(new NamingError(NamingError.Kind.USE_IN_CLASS, def.getData()));
-      def.enclosingClass = null;
+    if (def.getKind().isUse()) {
+      TCReferable useParent = def.getUseParent();
+      boolean isFunc = myConcreteProvider.isFunction(useParent);
+      if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {
+        if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
+          if (isFunc) {
+            myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_COERCE, def));
+          }
+          if (def.getParameters().isEmpty() && def.enclosingClass == null) {
+            myLocalErrorReporter.report(new NamingError(NamingError.Kind.COERCE_WITHOUT_PARAMETERS, def));
+          }
+        }
+      } else {
+        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_USE, def));
+      }
     }
 
     def.setResolved();
@@ -370,10 +390,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
     for (int i = 0; i < def.getSuperClasses().size(); i++) {
       Concrete.ReferenceExpression superClass = def.getSuperClasses().get(i);
-      if (exprVisitor.visitReference(superClass, null) != superClass) {
-        myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
-      }
-      if (!(superClass.getReferent() instanceof ClassReferable)) {
+      if (exprVisitor.visitReference(superClass, null) != superClass || !(superClass.getReferent() instanceof ClassReferable)) {
+        if (!(superClass.getReferent() instanceof ErrorReference)) {
+          myLocalErrorReporter.report(new NamingError("Expected a class", superClass));
+        }
         def.getSuperClasses().remove(i--);
       }
     }
@@ -420,8 +440,23 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     resolveGroup(group, referableConverter, scope);
   }
 
+  private static Scope makeScope(Group group, Scope parentScope) {
+    if (parentScope == null) {
+      return null;
+    }
+
+    if (group.getNamespaceCommands().isEmpty()) {
+      return new MergeScope(LexicalScope.insideOf(group, EmptyScope.INSTANCE), parentScope);
+    } else {
+      return LexicalScope.insideOf(group, parentScope);
+    }
+  }
+
   public void resolveGroup(Group group, ReferableConverter referableConverter, Scope scope) {
     LocatedReferable groupRef = group.getReferable();
+    Collection<? extends Group> subgroups = group.getSubgroups();
+    Collection<? extends Group> dynamicSubgroups = group.getDynamicSubgroups();
+
     Concrete.ReferableDefinition def = myConcreteProvider.getConcrete(groupRef);
     Scope convertedScope = CachingScope.make(referableConverter == null ? scope : new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
@@ -433,25 +468,28 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       myLocalErrorReporter = new ProxyErrorReporter(groupRef, myErrorReporter);
     }
 
-    for (Group subgroup : group.getSubgroups()) {
-      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope));
+    for (Group subgroup : subgroups) {
+      resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope));
     }
-    for (Group subgroup : group.getDynamicSubgroups()) {
-      resolveGroup(subgroup, referableConverter, NameResolvingChecker.makeScope(subgroup, scope));
+    for (Group subgroup : dynamicSubgroups) {
+      resolveGroup(subgroup, referableConverter, makeScope(subgroup, scope));
     }
 
     if (myResolveTypeClassReferences) {
       return;
     }
 
-    for (NamespaceCommand namespaceCommand : group.getNamespaceCommands()) {
+    boolean isTopLevel = !(group instanceof ChildGroup) || ((ChildGroup) group).getParentGroup() == null;
+    Collection<? extends NamespaceCommand> namespaceCommands = group.getNamespaceCommands();
+    for (NamespaceCommand namespaceCommand : namespaceCommands) {
       List<String> path = namespaceCommand.getPath();
-      if (path.isEmpty()) {
+      NamespaceCommand.Kind kind = namespaceCommand.getKind();
+      if (path.isEmpty() || kind == NamespaceCommand.Kind.IMPORT && !isTopLevel) {
         continue;
       }
 
       LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
-      Scope importedScope = namespaceCommand.getKind() == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope;
+      Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope;
       reference.resolve(importedScope);
       Scope curScope = reference.resolveNamespace(importedScope);
       if (curScope == null) {
@@ -506,27 +544,169 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    new NameResolvingChecker(false, group instanceof ChildGroup && ((ChildGroup) group).getParentGroup() == null, myConcreteProvider) {
-      @Override
-      public void onDefinitionNamesClash(LocatedReferable ref1, LocatedReferable ref2, Error.Level level) {
-        myLocalErrorReporter.report(new DuplicateNameError(level, ref2, ref1));
+    // Some checks
+
+    Collection<? extends Group.InternalReferable> fields = group.getFields();
+    if (!fields.isEmpty()) {
+      Map<String, Pair<LocatedReferable, ClassReferable>> superFields = collectClassFields(groupRef);
+      for (Group.InternalReferable internalRef : fields) {
+        checkField(internalRef.getReferable(), superFields, groupRef);
+      }
+    }
+
+    Map<String, LocatedReferable> referables = new HashMap<>();
+    for (Group.InternalReferable internalRef : group.getInternalReferables()) {
+      LocatedReferable ref = internalRef.getReferable();
+      String name = ref.textRepresentation();
+      if (!name.isEmpty() && !"_".equals(name)) {
+        referables.putIfAbsent(name, ref);
+      }
+    }
+
+    for (Group subgroup : subgroups) {
+      checkReference(subgroup.getReferable(), referables, false);
+    }
+
+    for (Group subgroup : dynamicSubgroups) {
+      checkReference(subgroup.getReferable(), referables, false);
+    }
+
+    checkSubgroups(dynamicSubgroups, referables);
+
+    checkSubgroups(subgroups, referables);
+
+    if (namespaceCommands.isEmpty()) {
+      return;
+    }
+
+    for (NamespaceCommand cmd : namespaceCommands) {
+      if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
+        myLocalErrorReporter.report(new NamingError("\\import is allowed only on the top level", cmd));
+      } else {
+        checkNamespaceCommand(cmd, referables.keySet());
+      }
+    }
+
+    if (convertedScope == null) {
+      return;
+    }
+
+    List<Pair<NamespaceCommand, Map<String, Referable>>> namespaces = new ArrayList<>(namespaceCommands.size());
+    for (NamespaceCommand cmd : namespaceCommands) {
+      Collection<? extends Referable> elements = NamespaceCommandNamespace.resolveNamespace(cmd.getKind() == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope, cmd).getElements();
+      if (!elements.isEmpty()) {
+        Map<String, Referable> map = new LinkedHashMap<>();
+        for (Referable element : elements) {
+          map.put(element.textRepresentation(), element);
+        }
+        namespaces.add(new Pair<>(cmd, map));
+      }
+    }
+
+    for (int i = 0; i < namespaces.size(); i++) {
+      Pair<NamespaceCommand, Map<String, Referable>> pair = namespaces.get(i);
+      for (Map.Entry<String, Referable> entry : pair.proj2.entrySet()) {
+        if (referables.containsKey(entry.getKey())) {
+          continue;
+        }
+
+        for (int j = i + 1; j < namespaces.size(); j++) {
+          Referable ref = namespaces.get(j).proj2.get(entry.getKey());
+          if (ref != null && !ref.equals(entry.getValue())) {
+            myLocalErrorReporter.report(new NamingError(Error.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is imported from modules " + new LongName(pair.proj1.getPath()) + " and " + new LongName(namespaces.get(j).proj1.getPath()), namespaces.get(j).proj1));
+          }
+        }
+      }
+    }
+  }
+
+  private static Map<String, Pair<LocatedReferable, ClassReferable>> collectClassFields(LocatedReferable referable) {
+    Collection<? extends ClassReferable> superClasses = referable instanceof ClassReferable ? ((ClassReferable) referable).getSuperClassReferences() : Collections.emptyList();
+    if (superClasses.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    Map<String, Pair<LocatedReferable, ClassReferable>> fields = new HashMap<>();
+    Set<ClassReferable> visited = new HashSet<>();
+    visited.add((ClassReferable) referable);
+    Deque<ClassReferable> toVisit = new ArrayDeque<>(superClasses);
+    while (!toVisit.isEmpty()) {
+      ClassReferable superClass = toVisit.pop();
+      if (!visited.add(superClass)) {
+        continue;
       }
 
-      @Override
-      public void onFieldNamesClash(LocatedReferable ref1, ClassReferable superClass1, LocatedReferable ref2, ClassReferable superClass2, ClassReferable currentClass, Error.Level level) {
-        myLocalErrorReporter.report(new ReferenceError(level, "Field '" + ref2.textRepresentation() +
-          (superClass2 == currentClass ? "' is already defined in super class " + superClass1.textRepresentation() : "' is defined in super classes " + superClass1.textRepresentation() + " and " + superClass2.textRepresentation()), superClass2 == currentClass ? ref2 : currentClass));
+      for (LocatedReferable fieldRef : superClass.getFieldReferables()) {
+        String name = fieldRef.textRepresentation();
+        if (!name.isEmpty() && !"_".equals(name)) {
+          fields.putIfAbsent(name, new Pair<>(fieldRef, superClass));
+        }
       }
 
-      @Override
-      public void onNamespacesClash(NamespaceCommand cmd1, NamespaceCommand cmd2, String name, Error.Level level) {
-        myLocalErrorReporter.report(new NamingError(level, "Definition '" + name + "' is imported from modules " + new LongName(cmd1.getPath()) + " and " + new LongName(cmd2.getPath()), cmd2));
-      }
+      toVisit.addAll(superClass.getSuperClassReferences());
+    }
 
-      @Override
-      protected void onError(LocalError error) {
-        myLocalErrorReporter.report(error);
+    return fields;
+  }
+
+  private void checkField(LocatedReferable field, Map<String, Pair<LocatedReferable, ClassReferable>> fields, LocatedReferable classRef) {
+    if (field == null || fields.isEmpty()) {
+      return;
+    }
+
+    String name = field.textRepresentation();
+    if (!name.isEmpty() && !"_".equals(name)) {
+      Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
+      if (oldField != null) {
+        myLocalErrorReporter.report(new ReferenceError(Error.Level.WARNING, "Field '" + field.textRepresentation() + ("' is already defined in super class " + oldField.proj2.textRepresentation()), field));
       }
-    }.checkGroup(group, referableConverter == null ? convertedScope : CachingScope.make(scope));
+    }
+  }
+
+  private void checkNamespaceCommand(NamespaceCommand cmd, Set<String> defined) {
+    if (defined == null) {
+      return;
+    }
+
+    for (NameRenaming renaming : cmd.getOpenedReferences()) {
+      String name = renaming.getName();
+      if (name == null) {
+        name = renaming.getOldReference().textRepresentation();
+      }
+      if (defined.contains(name)) {
+        myLocalErrorReporter.report(new NamingError(Error.Level.WARNING, "Definition '" + name + "' is not imported since it is defined in this module", renaming));
+      }
+    }
+  }
+
+  private void checkSubgroups(Collection<? extends Group> subgroups, Map<String, LocatedReferable> referables) {
+    for (Group subgroup : subgroups) {
+      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
+        if (internalReferable.isVisible()) {
+          checkReference(internalReferable.getReferable(), referables, true);
+        }
+      }
+      for (Group.InternalReferable internalReferable : subgroup.getInternalReferables()) {
+        if (internalReferable.isVisible()) {
+          LocatedReferable newRef = internalReferable.getReferable();
+          String name = newRef.textRepresentation();
+          if (!name.isEmpty() && !"_".equals(name)) {
+            referables.putIfAbsent(name, newRef);
+          }
+        }
+      }
+    }
+  }
+
+  private void checkReference(LocatedReferable newRef, Map<String, LocatedReferable> referables, boolean isInternal) {
+    String name = newRef.textRepresentation();
+    if (name.isEmpty() || "_".equals(name)) {
+      return;
+    }
+
+    LocatedReferable oldRef = isInternal ? referables.get(name) : referables.putIfAbsent(name, newRef);
+    if (oldRef != null) {
+      myLocalErrorReporter.report(new DuplicateNameError(isInternal ? Error.Level.WARNING : Error.Level.ERROR, newRef, oldRef));
+    }
   }
 }

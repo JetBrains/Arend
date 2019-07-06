@@ -10,10 +10,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.HiddenLocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCClassReferable;
@@ -21,12 +18,9 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
-import org.arend.typechecking.implicitargs.equations.DummyEquations;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,7 +35,7 @@ public abstract class BaseTypechecker {
 
   protected abstract Definition getTypechecked(TCReferable referable);
 
-  protected abstract Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode);
+  protected abstract boolean isDumb();
 
   protected Sort typecheckParameters(Concrete.ReferableDefinition def, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters) {
     Sort sort = Sort.PROP;
@@ -116,11 +110,7 @@ public abstract class BaseTypechecker {
             int i = 0;
             for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
               ReferenceExpression reference = new ReferenceExpression(link);
-              // Expression oldInstance =
               localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
-              // if (oldInstance != null) {
-              //   errorReporter.report(new DuplicateInstanceError(oldInstance, reference, parameter));
-              // }
             }
           }
         }
@@ -165,7 +155,7 @@ public abstract class BaseTypechecker {
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   protected boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
-    if ((isLemma || isProperty) && (level == null || level != -1)) {
+    if ((isLemma || isProperty) && (level == null && !isDumb() || level != null && level != -1)) {
       errorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", sourceNode));
       return false;
     } else {
@@ -173,15 +163,15 @@ public abstract class BaseTypechecker {
     }
   }
 
-  protected void typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+  protected boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     LinkList list = new LinkList();
 
     if (def.getResultTypeLevel() != null && !(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getBody() instanceof Concrete.ElimFunctionBody)) {
-      errorReporter.report(new TypecheckingError("\\level is allowed only for lemmas and functions defined by pattern matching", def.getResultTypeLevel()));
+      errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IN_FUNCTION, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }
 
-    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef || typedDef == null ? null : typedDef.getParameters()) != null;
+    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
 
     Expression expectedType = null;
     Concrete.Expression cResultType = def.getResultType();
@@ -190,14 +180,8 @@ public abstract class BaseTypechecker {
       PropLevel propLevel = isPropLevel(cResultType);
       boolean needProp = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && def.getResultTypeLevel() == null;
       ExpectedType typeExpectedType = needProp && propLevel == PropLevel.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
-      Type expectedTypeResult;
-      if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
-        expectedTypeResult = null;
-      } else if (def.getBody() instanceof Concrete.TermFunctionBody && !def.isRecursive() && !isLemma) {
-        expectedTypeResult = checkType(cResultType, typeExpectedType, false);
-      } else {
-        expectedTypeResult = checkType(cResultType, typeExpectedType, true);
-      }
+      Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive() ? null // The result type will be typechecked together with all field implementations during body typechecking.
+        : checkType(cResultType, typeExpectedType, !(def.getBody() instanceof Concrete.TermFunctionBody) || def.isRecursive() || isLemma);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
         if (needProp && propLevel == PropLevel.COULD_BE) {
@@ -214,124 +198,22 @@ public abstract class BaseTypechecker {
     }
 
     if (newDef) {
+      if (expectedType == null && def.isRecursive()) {
+        expectedType = new ErrorExpression(null, null);
+      }
+
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       typedDef.setIsLemma(isLemma);
     }
 
-    if (def.isRecursive() && expectedType == null) {
-      errorReporter.report(new TypecheckingError(def.getBody() instanceof Concrete.CoelimFunctionBody
-          ? "Function defined by copattern matching cannot be recursive"
-          : "Cannot infer the result type of a recursive function", def));
-    }
+    return paramsOk;
+  }
 
-    if (paramsOk && def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL) {
-      Definition useParent = getTypechecked(def.getUseParent());
-      if (useParent instanceof DataDefinition || useParent instanceof ClassDefinition || useParent instanceof FunctionDefinition) {
-        boolean ok = true;
-        List<ClassField> levelFields = null;
-        Expression type = null;
-        DependentLink parameters = null;
-        DependentLink link = list.getFirst();
-        if (useParent instanceof DataDefinition || useParent instanceof FunctionDefinition) {
-          ExprSubstitution substitution = new ExprSubstitution();
-          List<Expression> defCallArgs = new ArrayList<>();
-          for (DependentLink defLink = useParent.getParameters(); defLink.hasNext(); defLink = defLink.getNext(), link = link.getNext()) {
-            if (!link.hasNext()) {
-              ok = false;
-              break;
-            }
-            if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), Equations.CMP.EQ)) { // TODO
-              if (parameters == null) {
-                parameters = DependentLink.Helper.take(list.getFirst(), DependentLink.Helper.size(defLink));
-              }
-            }
-            ReferenceExpression refExpr = new ReferenceExpression(link);
-            defCallArgs.add(refExpr);
-            substitution.add(defLink, refExpr);
-          }
-
-          if (ok) {
-            if (link.hasNext()) {
-              type = useParent instanceof DataDefinition
-                  ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
-                  : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
-            } else {
-              ok = false;
-            }
-          }
-        } else {
-          ClassCallExpression classCall = null;
-          DependentLink classCallLink = link;
-          for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
-            classCallLink = classCallLink.getNextTyped(null);
-            classCall = classCallLink.getTypeExpr().checkedCast(ClassCallExpression.class);
-            if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
-              break;
-            }
-          }
-          if (!classCallLink.hasNext() && expectedType != null) {
-            PiExpression piType = expectedType.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(PiExpression.class); // TODO
-            if (piType != null) {
-              classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class); // TODO
-              if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
-                classCallLink = piType.getParameters();
-              }
-            }
-          }
-
-          if (classCall == null || !classCallLink.hasNext()) {
-            ok = false;
-          } else {
-            if (!classCall.getImplementedHere().isEmpty()) {
-              levelFields = new ArrayList<>();
-              Expression thisExpr = new ReferenceExpression(classCallLink);
-              for (ClassField classField : classCall.getDefinition().getFields()) {
-                Expression impl = classCall.getImplementationHere(classField);
-                if (impl == null) {
-                  continue;
-                }
-                if (!(link.hasNext() && impl instanceof ReferenceExpression && ((ReferenceExpression) impl).getBinding() == link)) {
-                  ok = false;
-                  break;
-                }
-                levelFields.add(classField);
-                if (!classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr())) { // TODO
-                  if (parameters == null) {
-                    int numberOfClassParameters = 0;
-                    for (DependentLink link1 = link; link1 != classCallLink && link1.hasNext(); link1 = link1.getNext()) {
-                      numberOfClassParameters++;
-                    }
-                    parameters = DependentLink.Helper.take(list.getFirst(), numberOfClassParameters);
-                  }
-                }
-                link = link.getNext();
-              }
-            }
-            type = classCall;
-          }
-        }
-
-        Integer level = getExpressionLevel(link, expectedType, ok ? type : null, DummyEquations.getInstance(), def);
-        if (level != null && newDef) {
-          if (useParent instanceof DataDefinition) {
-            if (parameters == null) {
-              ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
-            } else {
-              ((DataDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
-            }
-          } else if (useParent instanceof FunctionDefinition) {
-            ((FunctionDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
-          } else {
-            if (levelFields == null) {
-              ((ClassDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
-            } else {
-              ((ClassDefinition) useParent).addParametersLevel(new ClassDefinition.ParametersLevel(parameters, level, levelFields));
-            }
-          }
-        }
-      }
+  protected void checkElimBody(Concrete.FunctionDefinition def) {
+    if (def.isRecursive() && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
+      errorReporter.report(new TypecheckingError("Recursive functions must be defined by pattern matching", def));
     }
   }
 }

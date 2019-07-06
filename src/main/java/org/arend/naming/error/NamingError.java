@@ -9,7 +9,9 @@ import org.arend.typechecking.error.local.LocalError;
 
 public class NamingError extends LocalError {
   public enum Kind {
-    USE_IN_CLASS("\\use is not allowed inside a class definition"),
+    MISPLACED_USE("\\use is allowed only in \\where block of \\data, \\class, or \\func"),
+    MISPLACED_COERCE("\\coerce is allowed only in \\where block of \\data or \\class"),
+    COERCE_WITHOUT_PARAMETERS("\\coerce must have at least one parameter"),
     LEVEL_IN_FIELD("\\level is allowed only for properties"),
     CLASSIFYING_FIELD_IN_RECORD("Records cannot have classifying fields"),
     INVALID_PRIORITY("The priority must be between 0 and 10");

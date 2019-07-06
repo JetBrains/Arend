@@ -12,12 +12,18 @@ public class CoerceTest extends TypeCheckingTestCase {
 
   @Test
   public void coerceDynamic() {
-    resolveNamesDef("\\class C (n : Nat) { \\use \\coerce f (c : C) => c.n }", 1);
+    typeCheckModule(
+      "\\record C (n : Nat) (m : Nat -> Nat) {\n" +
+      "  \\use \\coerce f => n\n" +
+      "  \\use \\coerce g => m\n" +
+      "}\n" +
+      "\\func f' (c : C) : Nat => c\n" +
+      "\\func g' (c : C) : Nat -> Nat => c");
   }
 
   @Test
   public void coerceFunction() {
-    typeCheckModule(
+    resolveNamesDef(
       "\\func g => 0\n" +
       "  \\where \\use \\coerce f (n : Nat) : Nat => n", 1);
   }
@@ -92,7 +98,7 @@ public class CoerceTest extends TypeCheckingTestCase {
 
   @Test
   public void incorrectCoerceFrom() {
-    typeCheckModule(
+    resolveNamesDef(
       "\\data D | con\n" +
       "  \\where \\use \\coerce f : D => con", 1);
   }
