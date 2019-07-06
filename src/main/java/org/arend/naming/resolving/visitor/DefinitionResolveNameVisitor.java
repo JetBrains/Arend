@@ -220,14 +220,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       } else {
         if (!(typeRef instanceof ErrorReference)) {
-          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType().getData()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
+          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType().getData()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def.getData()));
         }
         body.getClassFieldImpls().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
       if (def.getResultType() == null) {
-        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
+        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def.getData()));
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
@@ -241,14 +241,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {
         if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
           if (isFunc) {
-            myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_COERCE, def));
+            myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_COERCE, def.getData()));
           }
           if (def.getParameters().isEmpty() && def.enclosingClass == null) {
-            myLocalErrorReporter.report(new NamingError(NamingError.Kind.COERCE_WITHOUT_PARAMETERS, def));
+            myLocalErrorReporter.report(new NamingError(NamingError.Kind.COERCE_WITHOUT_PARAMETERS, def.getData()));
           }
         }
       } else {
-        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_USE, def));
+        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_USE, def.getData()));
       }
     }
 
