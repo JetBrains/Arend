@@ -12,15 +12,19 @@ import java.util.List;
 import static org.arend.core.expr.ExpressionFactory.Nat;
 
 public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
-  public final static GetTypeVisitor INSTANCE = new GetTypeVisitor();
+  public final static GetTypeVisitor INSTANCE = new GetTypeVisitor(true);
+  public final static GetTypeVisitor NN_INSTANCE = new GetTypeVisitor(false);
 
-  private GetTypeVisitor() {
+  private final boolean myNormalizing;
+
+  private GetTypeVisitor(boolean normalizing) {
+    myNormalizing = normalizing;
   }
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    Expression result = expr.getFunction().accept(this, null).applyExpression(expr.getArgument());
-    if (result == null) {
+    Expression result = expr.getFunction().accept(this, null).applyExpression(expr.getArgument(), myNormalizing);
+    if (result == null && myNormalizing) {
       throw new IncorrectExpressionException("Expression " + expr.getFunction() + " does not have a pi type, but is applied to " + expr.getArgument());
     }
     return result;
@@ -54,7 +58,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression norm = normalizeFieldCall(expr);
-    return norm != null ? norm.accept(this, null) : expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument());
+    return norm != null ? norm.accept(this, null) : expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument(), myNormalizing);
   }
 
   @Override
@@ -99,7 +103,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitError(ErrorExpression expr, Void params) {
-    return expr.getExpression() == null ? expr : expr.getExpression();
+    return expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, null), expr.getError());
   }
 
   @Override
@@ -109,13 +113,20 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitProj(ProjExpression expr, Void ignored) {
-    Expression type = expr.getExpression().accept(this, null).normalize(NormalizeVisitor.Mode.WHNF);
+    Expression type = expr.getExpression().accept(this, null);
+    if (myNormalizing) {
+      type = type.normalize(NormalizeVisitor.Mode.WHNF);
+    }
     if (type.isInstance(ErrorExpression.class)) {
       return type;
     }
 
     if (!type.isInstance(SigmaExpression.class)) {
-      throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
+      if (myNormalizing) {
+        throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
+      } else {
+        return null;
+      }
     }
     DependentLink params = type.cast(SigmaExpression.class).getParameters();
     if (expr.getField() == 0) {
@@ -131,7 +142,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitNew(NewExpression expr, Void params) {
+  public ClassCallExpression visitNew(NewExpression expr, Void params) {
     return expr.getExpression();
   }
 

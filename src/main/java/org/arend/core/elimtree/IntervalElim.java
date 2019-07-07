@@ -7,6 +7,7 @@ import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.prelude.Prelude;
+import org.arend.util.Decision;
 import org.arend.util.Pair;
 
 import java.util.List;
@@ -45,20 +46,27 @@ public class IntervalElim implements Body {
   }
 
   @Override
-  public boolean isWHNF(List<? extends Expression> arguments) {
+  public Decision isWHNF(List<? extends Expression> arguments, boolean normalizing) {
     int offset = DependentLink.Helper.size(myParameters) - myCases.size();
+    Decision result = Decision.YES;
     for (int i = 0; i < myCases.size(); i++) {
-      if (arguments.get(offset + i).isInstance(ConCallExpression.class)) {
-        Constructor constructor = arguments.get(offset + i).cast(ConCallExpression.class).getDefinition();
+      Expression arg = arguments.get(offset + i);
+      if (arg.isInstance(ConCallExpression.class)) {
+        Constructor constructor = arg.cast(ConCallExpression.class).getDefinition();
         if (constructor == Prelude.LEFT && myCases.get(i).proj1 != null || constructor == Prelude.RIGHT && myCases.get(i).proj2 != null) {
-          return false;
+          return Decision.NO;
         }
       }
-      if (!arguments.get(offset + i).isWHNF()) {
-        return false;
+
+      Decision decision = arg.isWHNF(normalizing);
+      if (decision == Decision.NO) {
+        return Decision.NO;
+      }
+      if (decision == Decision.MAYBE) {
+        result = Decision.MAYBE;
       }
     }
-    return myOtherwise == null || myOtherwise.isWHNF(arguments);
+    return myOtherwise == null ? result : result.min(myOtherwise.isWHNF(arguments, normalizing));
   }
 
   @Override

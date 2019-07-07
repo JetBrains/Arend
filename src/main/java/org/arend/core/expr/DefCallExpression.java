@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.definition.Definition;
 import org.arend.core.sort.Sort;
+import org.arend.util.Decision;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,8 +41,8 @@ public abstract class DefCallExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

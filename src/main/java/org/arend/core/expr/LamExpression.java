@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.util.Decision;
 
 public class LamExpression extends Expression {
   private final Sort myResultSort;
@@ -33,8 +34,8 @@ public class LamExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

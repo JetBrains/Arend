@@ -4,6 +4,7 @@ import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
+import org.arend.util.Decision;
 
 import java.util.List;
 
@@ -38,9 +39,8 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public boolean isWHNF() {
-    //noinspection SimplifiableConditionalExpression
-    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments) : true;
+  public Decision isWHNF(boolean normalizing) {
+    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments, normalizing) : Decision.YES;
   }
 
   @Override

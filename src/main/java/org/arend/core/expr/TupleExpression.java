@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.util.Decision;
 
 import java.util.List;
 
@@ -27,8 +28,8 @@ public class TupleExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

@@ -23,6 +23,5 @@ public abstract class ElimTree implements Body {
     return obj instanceof ElimTree && CompareVisitor.compare(DummyEquations.getInstance(), this, (ElimTree) obj, null);
   }
 
-  public abstract boolean isWHNF(List<? extends Expression> arguments);
   public abstract Expression getStuckExpression(List<? extends Expression> arguments, Expression expression);
 }

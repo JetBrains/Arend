@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.typechecking.error.local.LocalError;
+import org.arend.util.Decision;
 
 public class ErrorExpression extends Expression {
   private final Expression myExpression;
@@ -26,8 +27,8 @@ public class ErrorExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

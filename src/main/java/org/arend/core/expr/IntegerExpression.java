@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.prelude.Prelude;
+import org.arend.util.Decision;
 
 import java.math.BigInteger;
 
@@ -47,8 +48,8 @@ public abstract class IntegerExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

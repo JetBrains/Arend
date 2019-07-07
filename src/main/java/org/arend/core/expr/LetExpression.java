@@ -7,6 +7,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.util.Decision;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,8 +87,8 @@ public class LetExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return false;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.NO;
   }
 
   @Override

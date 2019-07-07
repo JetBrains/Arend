@@ -472,7 +472,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           return null;
         }
 
-        args = tupleConstructor.getMatchedArguments(argument);
+        args = tupleConstructor.getMatchedArguments(argument, true);
         if (args == null) {
           return null;
         }

@@ -2,6 +2,7 @@ package org.arend.core.elimtree;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.util.Decision;
 
 import java.util.List;
 
@@ -18,8 +19,8 @@ public class LeafElimTree extends ElimTree {
   }
 
   @Override
-  public boolean isWHNF(List<? extends Expression> arguments) {
-    return false;
+  public Decision isWHNF(List<? extends Expression> arguments, boolean normalizing) {
+    return Decision.NO;
   }
 
   @Override

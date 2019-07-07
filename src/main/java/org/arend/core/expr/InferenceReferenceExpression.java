@@ -5,6 +5,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.util.Decision;
 
 public class InferenceReferenceExpression extends Expression {
   private final InferenceVariable myVar;
@@ -65,8 +66,8 @@ public class InferenceReferenceExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return mySubstExpression == null;
+  public Decision isWHNF(boolean normalizing) {
+    return mySubstExpression == null ? Decision.YES : Decision.NO;
   }
 
   @Override

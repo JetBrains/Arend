@@ -3,6 +3,7 @@ package org.arend.core.expr;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.util.Decision;
 
 import java.util.List;
 
@@ -47,8 +48,8 @@ public class CaseExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return myElimTree.isWHNF(myArguments);
+  public Decision isWHNF(boolean normalizing) {
+    return myElimTree.isWHNF(myArguments, normalizing);
   }
 
   @Override

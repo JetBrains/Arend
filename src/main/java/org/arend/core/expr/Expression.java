@@ -21,6 +21,7 @@ import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.util.Decision;
 
 import java.util.Collections;
 import java.util.List;
@@ -70,12 +71,20 @@ public abstract class Expression implements ExpectedType {
     return universe == null ? null : universe.getSort();
   }
 
-  public Expression getType() {
-    try {
-      return accept(GetTypeVisitor.INSTANCE, null);
-    } catch (IncorrectExpressionException e) {
-      return null;
+  public Expression getType(boolean normalizing) {
+    if (normalizing) {
+      try {
+        return accept(GetTypeVisitor.INSTANCE, null);
+      } catch (IncorrectExpressionException e) {
+        return null;
+      }
+    } else {
+      return accept(GetTypeVisitor.NN_INSTANCE, null);
     }
+  }
+
+  public Expression getType() {
+    return getType(true);
   }
 
   public boolean findBinding(Variable binding) {
@@ -168,7 +177,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression applyExpression(Expression expression) {
-    Expression normExpr = normalize(NormalizeVisitor.Mode.WHNF);
+    return applyExpression(expression, true);
+  }
+
+  public Expression applyExpression(Expression expression, boolean normalizing) {
+    Expression normExpr = normalizing ? normalize(NormalizeVisitor.Mode.WHNF) : this;
     if (normExpr.isInstance(ErrorExpression.class)) {
       return normExpr;
     }
@@ -204,7 +217,15 @@ public abstract class Expression implements ExpectedType {
     return app != null ? app.getFunction() : this;
   }
 
-  public abstract boolean isWHNF();
+  public abstract Decision isWHNF(boolean normalizing);
+
+  public final boolean isWHNF() {
+    return isWHNF(true) == Decision.YES;
+  }
+
+  public final Decision couldBeWHNF() {
+    return isWHNF(false);
+  }
 
   // This function assumes that the expression is in a WHNF.
   // If the expression is a constructor, then the function returns null.

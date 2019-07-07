@@ -165,7 +165,7 @@ public class TwoStageEquations implements Equations {
 
         try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
           for (SingleDependentLink link = pi.getParameters(); link.hasNext(); link = link.getNext()) {
-            myVisitor.getFreeBindings().add(link);
+            myVisitor.addBinding(null, link);
           }
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);

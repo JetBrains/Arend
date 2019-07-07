@@ -6,6 +6,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.util.Decision;
 
 public class UniverseExpression extends Expression implements Type {
   private final Sort mySort;
@@ -50,8 +51,8 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

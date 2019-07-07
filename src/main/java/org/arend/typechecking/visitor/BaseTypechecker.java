@@ -11,27 +11,29 @@ import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
-import org.arend.naming.reference.HiddenLocalReferable;
-import org.arend.naming.reference.Referable;
-import org.arend.naming.reference.TCClassReferable;
-import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.error.local.FieldsImplementationError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
+import org.arend.util.Decision;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.parameter;
 
 public abstract class BaseTypechecker {
   protected LocalErrorReporter errorReporter;
 
+  protected abstract CheckTypeVisitor.Result finalCheckExpr(Concrete.Expression expr, ExpectedType expectedType, boolean returnExpectedType);
+
+  protected abstract CheckTypeVisitor.Result finalize(CheckTypeVisitor.Result result, Expression expectedType, Concrete.SourceNode sourceNode);
+
   protected abstract Type checkType(Concrete.Expression expr, ExpectedType expectedType, boolean isFinal);
 
-  protected abstract void addBinding(@Nullable Referable referable, Binding binding);
+  public abstract void addBinding(@Nullable Referable referable, Binding binding);
 
   protected abstract Definition getTypechecked(TCReferable referable);
 
@@ -127,9 +129,7 @@ public abstract class BaseTypechecker {
     return sort;
   }
 
-  protected enum PropLevel { YES, NO, COULD_BE }
-
-  protected PropLevel isPropLevel(Concrete.Expression expression) {
+  protected Decision isPropLevel(Concrete.Expression expression) {
     Referable fun = expression == null ? null : expression.getUnderlyingReferable();
     if (fun instanceof TCReferable) {
       Definition typeDef = getTypechecked((TCReferable) fun);
@@ -138,19 +138,19 @@ public abstract class BaseTypechecker {
         for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
           if (parametersLevel.level == -1) {
             if (parametersLevel.parameters == null) {
-              return PropLevel.YES;
+              return Decision.YES;
             }
             couldBe = true;
           }
         }
         if (couldBe) {
-          return PropLevel.COULD_BE;
+          return Decision.MAYBE;
         }
       } else {
-        return PropLevel.COULD_BE;
+        return Decision.MAYBE;
       }
     }
-    return PropLevel.NO;
+    return Decision.NO;
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -177,14 +177,14 @@ public abstract class BaseTypechecker {
     Concrete.Expression cResultType = def.getResultType();
     boolean isLemma = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
     if (cResultType != null) {
-      PropLevel propLevel = isPropLevel(cResultType);
+      Decision isProp = isPropLevel(cResultType);
       boolean needProp = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && def.getResultTypeLevel() == null;
-      ExpectedType typeExpectedType = needProp && propLevel == PropLevel.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
+      ExpectedType typeExpectedType = needProp && isProp == Decision.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
       Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive() ? null // The result type will be typechecked together with all field implementations during body typechecking.
         : checkType(cResultType, typeExpectedType, !(def.getBody() instanceof Concrete.TermFunctionBody) || def.isRecursive() || isLemma);
       if (expectedTypeResult != null) {
         expectedType = expectedTypeResult.getExpr();
-        if (needProp && propLevel == PropLevel.COULD_BE) {
+        if (needProp && isProp == Decision.MAYBE) {
           Sort sort = expectedTypeResult.getSortOfType();
           if (sort == null || !sort.isProp()) {
             DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
@@ -215,5 +215,53 @@ public abstract class BaseTypechecker {
     if (def.isRecursive() && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
       errorReporter.report(new TypecheckingError("Recursive functions must be defined by pattern matching", def));
     }
+  }
+
+  protected boolean checkAllImplemented(ClassCallExpression classCall, Set<ClassField> pseudoImplemented, Concrete.SourceNode sourceNode) {
+    int notImplemented = classCall.getDefinition().getNumberOfNotImplementedFields() - classCall.getImplementedHere().size();
+    if (notImplemented == 0) {
+      return true;
+    } else {
+      List<GlobalReferable> fields = new ArrayList<>(notImplemented);
+      for (ClassField field : classCall.getDefinition().getFields()) {
+        if (!classCall.isImplemented(field) && !pseudoImplemented.contains(field)) {
+          fields.add(field.getReferable());
+        }
+      }
+      if (!fields.isEmpty()) {
+        errorReporter.report(new FieldsImplementationError(false, fields, sourceNode));
+      }
+      return false;
+    }
+  }
+
+  protected abstract CheckTypeVisitor.Result typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression implExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr);
+
+  protected ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.Definition def, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.ClassFieldImpl> classFieldImpls) {
+    ClassCallExpression type;
+    CheckTypeVisitor.Result result;
+    Set<ClassField> pseudoImplemented;
+    if (typedDef.isLemma()) {
+      CheckTypeVisitor.Result typeResult = finalCheckExpr(resultType, resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
+      if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+      type = (ClassCallExpression) typeResult.expression;
+      pseudoImplemented = new HashSet<>();
+      result = finalize(typecheckClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType), null, def);
+      if (result == null || !(result.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+    } else {
+      pseudoImplemented = Collections.emptySet();
+      result = finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), ExpectedType.OMEGA, false);
+      if (result == null || !(result.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+      type = (ClassCallExpression) result.expression;
+    }
+
+    checkAllImplemented((ClassCallExpression) result.expression, pseudoImplemented, def);
+    return type;
   }
 }

@@ -6,6 +6,7 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.util.Decision;
 
 public class ReferenceExpression extends Expression {
   private final Binding myBinding;
@@ -28,8 +29,8 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return !(myBinding instanceof EvaluatingBinding);
+  public Decision isWHNF(boolean normalizing) {
+    return myBinding instanceof EvaluatingBinding ? Decision.NO : Decision.YES;
   }
 
   @Override

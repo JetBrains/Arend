@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.util.Decision;
 
 public class NewExpression extends Expression {
   private final ClassCallExpression myExpression;
@@ -19,8 +20,8 @@ public class NewExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

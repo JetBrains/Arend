@@ -13,6 +13,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.util.Decision;
 
 public class PiExpression extends Expression implements Type {
   private final Sort myResultSort;
@@ -82,8 +83,8 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public boolean isWHNF() {
-    return true;
+  public Decision isWHNF(boolean normalizing) {
+    return Decision.YES;
   }
 
   @Override

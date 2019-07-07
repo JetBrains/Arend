@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.util.Decision;
 
 public class AppExpression extends Expression {
   private final Expression myFunction;
@@ -38,8 +39,8 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public boolean isWHNF() {
-    return myFunction.isWHNF() && !myFunction.isInstance(LamExpression.class);
+  public Decision isWHNF(boolean normalizing) {
+    return myFunction.isInstance(LamExpression.class) ? Decision.NO : myFunction.isWHNF(normalizing);
   }
 
   @Override

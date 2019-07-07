@@ -52,7 +52,7 @@ public class PatternTypechecking {
   private void collectBindings(List<Pattern> patterns) {
     for (Pattern pattern : patterns) {
       if (pattern instanceof BindingPattern) {
-        myVisitor.getFreeBindings().add(((BindingPattern) pattern).getBinding());
+        myVisitor.addBinding(null, ((BindingPattern) pattern).getBinding());
       } else if (pattern instanceof ConstructorPattern) {
         collectBindings(((ConstructorPattern) pattern).getArguments());
       }
@@ -230,7 +230,7 @@ public class PatternTypechecking {
             result.add(new BindingPattern(parameters));
             if (exprs != null) {
               exprs.add(new ReferenceExpression(parameters));
-              myVisitor.getFreeBindings().add(parameters);
+              myVisitor.addBinding(null, parameters);
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
@@ -267,7 +267,7 @@ public class PatternTypechecking {
             if (referable != null) {
               myContext.put(referable, parameters);
             } else {
-              myVisitor.getFreeBindings().add(parameters);
+              myVisitor.addBinding(null, parameters);
             }
           }
         }
