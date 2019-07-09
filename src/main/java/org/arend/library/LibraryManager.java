@@ -229,19 +229,14 @@ public class LibraryManager {
     myFailedLibraries.remove(library);
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
-      myReverseDependencies.remove(library);
       return;
     }
 
-    Set<Library> dependencies = myReverseDependencies.remove(library);
-    library.unload();
-
-    if (dependencies == null) {
-      return;
-    }
-
-    for (Library dependency : dependencies) {
-      unloadLibrary(dependency);
+    Set<Library> dependencies = library.unload() ? myReverseDependencies.remove(library) : myReverseDependencies.get(library);
+    if (dependencies != null) {
+      for (Library dependency : dependencies) {
+        dependency.reset();
+      }
     }
   }
 
@@ -254,35 +249,6 @@ public class LibraryManager {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
     }
 
-    for (Library library : myReverseDependencies.keySet()) {
-      library.unload();
-    }
-    myReverseDependencies.clear();
-  }
-
-  /**
-   * Unloads all libraries except for the prelude.
-   */
-  public void unloadExceptPrelude() {
-    for (Library library : myFailedLibraries) {
-      if (library.getName().equals(Prelude.LIBRARY_NAME)) {
-        unload();
-        return;
-      }
-    }
-
-    myFailedLibraries.clear();
-    if (!myLoadingLibraries.isEmpty()) {
-      myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
-    }
-
-    Iterator<Library> it = myReverseDependencies.keySet().iterator();
-    while (it.hasNext()) {
-      Library library = it.next();
-      if (!library.getName().equals(Prelude.LIBRARY_NAME)) {
-        library.unload();
-        it.remove();
-      }
-    }
+    myReverseDependencies.keySet().removeIf(Library::unload);
   }
 }

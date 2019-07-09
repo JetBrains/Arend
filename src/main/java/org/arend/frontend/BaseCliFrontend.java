@@ -155,7 +155,7 @@ public abstract class BaseCliFrontend {
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
         requestedModules = new LinkedHashSet<>();
-        FileUtils.getModules(sourceDir, FileUtils.EXTENSION, requestedModules);
+        FileUtils.getModules(sourceDir, FileUtils.EXTENSION, requestedModules, myLibraryManager.getLibraryErrorReporter());
       } else {
         requestedModules = Collections.emptySet();
       }
@@ -177,7 +177,7 @@ public abstract class BaseCliFrontend {
             modulePath = FileUtils.modulePath(fileName);
           }
           if (modulePath == null) {
-            FileUtils.printIllegalModuleName(fileName);
+            myLibraryManager.getLibraryErrorReporter().report(FileUtils.illegalModuleName(fileName));
           } else {
             requestedModules.add(modulePath);
           }
@@ -276,10 +276,7 @@ public abstract class BaseCliFrontend {
   }
 
   private void reportTypeCheckResult(ModulePath modulePath, Error.Level result) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("[").append(resultChar(result)).append("]");
-    builder.append(" ").append(modulePath);
-    System.out.println(builder);
+    System.out.println("[" + resultChar(result) + "]" + " " + modulePath);
   }
 
   private static char resultChar(Error.Level result) {

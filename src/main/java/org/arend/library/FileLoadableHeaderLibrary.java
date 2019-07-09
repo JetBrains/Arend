@@ -49,7 +49,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       }
     } else {
       if (mySourceBasePath != null) {
-        FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myModules);
+        FileUtils.getModules(mySourceBasePath, FileUtils.EXTENSION, myModules, errorReporter);
       }
     }
 

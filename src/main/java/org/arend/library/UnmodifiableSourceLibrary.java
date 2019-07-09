@@ -73,10 +73,18 @@ public abstract class UnmodifiableSourceLibrary extends SourceLibrary {
   }
 
   @Override
-  public void unload() {
+  public boolean unload() {
     super.unload();
     myGroups.clear();
     myModuleScopeProvider.clear();
+    myUpdatedModules.clear();
+    return true;
+  }
+
+  @Override
+  public void reset() {
+    super.reset();
+    myUpdatedModules.addAll(getLoadedModules());
   }
 
   @Override

@@ -90,7 +90,7 @@ public abstract class StreamRawSource implements Source {
 
       return true;
     } catch (IOException e) {
-      errorReporter.report(new ExceptionError(e, modulePath, true));
+      errorReporter.report(new ExceptionError(e, "loading", modulePath));
       library.onGroupLoaded(modulePath, null, true);
       return false;
     }
