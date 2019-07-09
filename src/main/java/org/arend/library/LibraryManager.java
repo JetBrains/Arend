@@ -12,6 +12,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * Contains all necessary information for the library loading.
@@ -114,6 +115,21 @@ public class LibraryManager {
   public Library getRegisteredLibrary(String libraryName) {
     for (Library library : getRegisteredLibraries()) {
       if (library.getName().equals(libraryName)) {
+        return library;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the library satisfying given predicate.
+   *
+   * @param pred  a predicate to test libraries.
+   * @return the library with the given name.
+   */
+  public Library getRegisteredLibrary(Predicate<Library> pred) {
+    for (Library library : getRegisteredLibraries()) {
+      if (pred.test(library)) {
         return library;
       }
     }
