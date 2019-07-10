@@ -15,25 +15,37 @@ In case of one argument, it is possible to use the postfix notation: `def e_1` i
 
 ## Precedence
 
-To parse expressions which involve more than one infix or postfix notation applications, we need to know the precedence of involved definitions.
-It can be specified by keywords `\fixl` for left associative names, `\fixr` for right associative names, and `\fix` for non-associative names.
-Such a keyword together with a number between 1 and 9 is specified before the name of the definition in its declaration.
+The parsing of complex defcall expressions, containing several infix and postfix notations, is regulated by precedence
+of involved definitions: their priority and the type of associativity. Precedence of a definition can be specified
+in the beginning of definition just after the keyword, reserved for the kind of definition (`\data`, `\func`, etc):
+`DEF_KW FIX_KW N`, where `DEF_KW` is the corresponding keyword (`\data`, `\func`, etc), `FIX_KW` is one of keywords
+`\fixl`, `\fixr` or `\fix`,
+which mark the definition as left, right associative or non-associative respectively, and `N` is the priority, 
+which is an integer between 1 and 9. For example, `\func \fixl 3 op (a b : Nat) => 0` defines a binary function
+named `op` which is left associative with priority 3. The default precedence is `\fixr 10`. 
 
-For example, `\fixl 3 def1` defines a definition named `def1` which is left associative with priority 3.
-If we have another definition `\fixr 4 def2`, then expression ``e1 `def1` e2 `def2` e3`` is parsed as ``e1 `def1` (e2 `def2` e3)`` since the priority of `def2` is higher than the priority of `def1`.
-If they have the same priority and they are both left associative, then this expression is parsed as ``(e1 `def1` e2) `def2` e3``.
-If they have the same priority and their associativities differ or one of them is non-associative, then this expression cannot be parsed and produces an error message.
-The default precedence is `\fixr 10`.
+If `op1` and `op2` are two definitions and `e1,e2,e3` are expressions, the expression
+``e1 `op1` e2 `op2` e3 `` is parsed according to the following rules:
+
+* If priorities of `op1` and `op2` are different and, say, the priority of `op1` is higher, then the expression
+is parsed as ``(e1 `op1` e2) `op2` e3 ``.
+* Assume priorities of `op1` and `op2` are the same. If they are both left or both right associative, the expression is
+parsed as ``(e1 `op1` e2) `op2` e3 `` or ``e1 `op1` (e2 `op2` e3)`` respectively. If `op1` and `op2` have
+different types of associativity or are non-associative, then the parsing error is generated.
 
 ## Infix operators
 
 A definition can be labeled as an _infix operator_.
 This means that its defcalls are parsed as infix notations even without `` ` ` ``.
-Infix operators are defined by specifying one of keywords `\infixl`, `\infixr`, `\infix` before the name of the definition.
-These keyords have the same syntax and semantics as keywords `\fixl`, `\fixr`, and `\fix` that we described before.
+An infix operator is defined by specifying one of keywords `\infixl`, `\infixr`, `\infix` before the name of operator.
+These keywords have the same syntax and semantics as keywords `\fixl`, `\fixr`, and `\fix`, which are described above.
 
-An infix operator can be used in the prefix form as ordinary definition.
-For example, if we have a function defined as `\infixl 6 +`, then we can write either `+ 1 2` or `1 + 2`; these expressions are equivalent.
-Finally, if `f` is an infix operator or an infix notation, then we can write `e f` which is equivalent to `f e`.
-For example, we can write the function that adds 1 to its argument either as `1 +` or as `+ 1`.
-If we apply the first function to 2, then we get `1 + 2` and if we apply the second one to 2, then we get `+ 1 2` and as noted before these expressions are equivalent.
+An infix operator can be used in the prefix form as an ordinary definition.
+For example, if the function `+` is defined as `\infixl 6 +`, then it is allowed to write either `+ 1 2` or `1 + 2`; 
+these expressions are equivalent.
+
+Finally, if `f` is an infix operator or an operator surrounded with `` ` ` ``, then it is allowed to write `e f` and
+this is equivalent to `f e`.
+For example, the function that adds 1 to its argument can be written either as `1 +` or as `+ 1`.
+The result of application of the first function to 2 is `1 + 2`, the result of application of the second one to 2
+is `+ 1 2`, and as noted before these expressions are equivalent.
