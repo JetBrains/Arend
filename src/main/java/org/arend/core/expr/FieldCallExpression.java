@@ -84,7 +84,7 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return myArgument.getStuckExpression();
+  public Expression getStuckExpression(boolean normalizing) {
+    return myArgument.getStuckExpression(normalizing);
   }
 }

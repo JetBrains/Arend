@@ -481,7 +481,7 @@ public class CheckTypeVisitor extends BaseTypechecker implements ConcreteExpress
       ExpectedType expectedType1 = expectedType;
       if (expectedType instanceof Expression) {
         expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-        if (((Expression) expectedType).getStuckInferenceVariable() != null) {
+        if (((Expression) expectedType).getStuckInferenceVariable(true) != null) {
           expectedType1 = ExpectedType.OMEGA;
         }
       }
@@ -507,8 +507,8 @@ public class CheckTypeVisitor extends BaseTypechecker implements ConcreteExpress
     if (universe == null) {
       Expression stuck = type.getCanonicalStuckExpression();
       if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class) && !stuck.isError()) {
-        if (!result.type.isError()) {
-          errorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), result.type, expr));
+        if (stuck == null || !stuck.isError()) {
+          errorReporter.report(new TypeMismatchError(DocFactory.text("a universe"), type, expr));
         }
         return null;
       }

@@ -21,6 +21,7 @@ public class Sort {
       return LevelSubstitution.EMPTY;
     }
   };
+  public static final Sort UNKNOWN = new Sort(new Level(InferenceLevelVariable.UNKNOWN_PVAR), new Level(InferenceLevelVariable.UNKNOWN_HVAR));
 
   public static Sort SetOfLevel(int pLevel) {
     return new Sort(pLevel, 0);

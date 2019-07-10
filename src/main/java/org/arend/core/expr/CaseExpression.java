@@ -53,7 +53,7 @@ public class CaseExpression extends Expression {
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return myElimTree.getStuckExpression(myArguments, this);
+  public Expression getStuckExpression(boolean normalizing) {
+    return myElimTree.getStuckExpression(myArguments, this, normalizing);
   }
 }

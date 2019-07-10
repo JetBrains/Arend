@@ -23,7 +23,7 @@ public class InferenceReferenceExpression extends Expression {
           if (!field.isProperty()) {
             Expression impl = classCall.getImplementation(field, this);
             if (impl != null) {
-              equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
+              equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable(true));
             }
           }
         }
@@ -67,11 +67,11 @@ public class InferenceReferenceExpression extends Expression {
 
   @Override
   public Decision isWHNF(boolean normalizing) {
-    return mySubstExpression == null ? Decision.YES : Decision.NO;
+    return mySubstExpression == null ? Decision.MAYBE : mySubstExpression.isWHNF(normalizing);
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return mySubstExpression != null ? mySubstExpression.getStuckExpression() : this;
+  public Expression getStuckExpression(boolean normalizing) {
+    return mySubstExpression != null ? mySubstExpression.getStuckExpression(normalizing) : this;
   }
 }

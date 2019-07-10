@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface Body {
   Decision isWHNF(List<? extends Expression> arguments, boolean normalizing);
-  Expression getStuckExpression(List<? extends Expression> arguments, Expression expression);
+  Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing);
 }

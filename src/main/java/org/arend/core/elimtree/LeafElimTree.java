@@ -24,7 +24,7 @@ public class LeafElimTree extends ElimTree {
   }
 
   @Override
-  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing) {
     return null;
   }
 }

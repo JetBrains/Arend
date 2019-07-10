@@ -33,7 +33,7 @@ public class TupleExpression extends Expression {
   }
 
   @Override
-  public Expression getStuckExpression() {
+  public Expression getStuckExpression(boolean normalizing) {
     return null;
   }
 }

@@ -10,6 +10,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.error.Error;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
@@ -18,7 +19,6 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -49,7 +49,11 @@ public abstract class Expression implements ExpectedType {
   }
 
   public boolean isError() {
-    return isInstance(ErrorExpression.class) && !(cast(ErrorExpression.class).getError() instanceof GoalError);
+    if (!isInstance(ErrorExpression.class)) {
+      return false;
+    }
+    Error error = cast(ErrorExpression.class).getError();
+    return error == null || error.level == Error.Level.ERROR;
   }
 
   @Override
@@ -220,16 +224,12 @@ public abstract class Expression implements ExpectedType {
   public abstract Decision isWHNF(boolean normalizing);
 
   public final boolean isWHNF() {
-    return isWHNF(true) == Decision.YES;
-  }
-
-  public final Decision couldBeWHNF() {
-    return isWHNF(false);
+    return isWHNF(true) != Decision.NO;
   }
 
   // This function assumes that the expression is in a WHNF.
   // If the expression is a constructor, then the function returns null.
-  public abstract Expression getStuckExpression();
+  public abstract Expression getStuckExpression(boolean normalizing);
 
   public Expression getCanonicalExpression() {
     Expression expr = this;
@@ -243,12 +243,12 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression getCanonicalStuckExpression() {
-    Expression stuck = getStuckExpression();
+    Expression stuck = getStuckExpression(true);
     return stuck == null ? null : stuck.getCanonicalExpression();
   }
 
-  public InferenceVariable getStuckInferenceVariable() {
-    Expression stuck = getCanonicalStuckExpression();
+  public InferenceVariable getStuckInferenceVariable(boolean normalizing) {
+    Expression stuck = normalizing ? getCanonicalStuckExpression() : getStuckExpression(false);
     InferenceReferenceExpression infRefExpr = stuck == null ? null : stuck.checkedCast(InferenceReferenceExpression.class);
     return infRefExpr == null ? null : infRefExpr.getVariable();
   }

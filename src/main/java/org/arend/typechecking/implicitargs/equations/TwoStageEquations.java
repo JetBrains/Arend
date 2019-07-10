@@ -170,7 +170,7 @@ public class TwoStageEquations implements Equations {
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
-          return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
+          return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(true), infVar);
         }
       }
 

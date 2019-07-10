@@ -65,7 +65,7 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
+  public Expression getStuckExpression(boolean normalizing) {
+    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this, normalizing) : null;
   }
 }

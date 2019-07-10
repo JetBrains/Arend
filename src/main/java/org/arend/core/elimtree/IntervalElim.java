@@ -70,7 +70,7 @@ public class IntervalElim implements Body {
   }
 
   @Override
-  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing) {
     int offset = DependentLink.Helper.size(myParameters) - myCases.size();
     for (int i = 0; i < myCases.size(); i++) {
       if (arguments.get(offset + i).isInstance(ConCallExpression.class)) {
@@ -81,7 +81,7 @@ public class IntervalElim implements Body {
       }
     }
 
-    Expression stuck = myOtherwise == null ? null : myOtherwise.getStuckExpression(arguments, expression);
+    Expression stuck = myOtherwise == null ? null : myOtherwise.getStuckExpression(arguments, expression, normalizing);
     if (stuck != null && stuck.isInstance(ErrorExpression.class)) {
       return stuck;
     }
@@ -91,7 +91,7 @@ public class IntervalElim implements Body {
       refStuck = refStuck.getSubstExpression().checkedCast(InferenceReferenceExpression.class);
     }
     for (int i = 0; i < myCases.size(); i++) {
-      stuck = arguments.get(offset + i).getStuckExpression();
+      stuck = arguments.get(offset + i).getStuckExpression(normalizing);
       if (stuck != null) {
         if (stuck.isInstance(ErrorExpression.class)) {
           return stuck;

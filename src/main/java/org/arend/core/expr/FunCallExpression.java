@@ -44,19 +44,19 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Expression getStuckExpression() {
+  public Expression getStuckExpression(boolean normalizing) {
     if (getDefinition() == Prelude.COERCE) {
-      Expression stuck = myArguments.get(2).getStuckExpression();
-      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
+      Expression stuck = myArguments.get(2).getStuckExpression(normalizing);
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression(normalizing);
     }
     if (getDefinition() == Prelude.COERCE2) {
-      Expression stuck = myArguments.get(1).getStuckExpression();
+      Expression stuck = myArguments.get(1).getStuckExpression(normalizing);
       if (stuck != null) {
         return stuck;
       }
-      stuck = myArguments.get(3).getStuckExpression();
-      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
+      stuck = myArguments.get(3).getStuckExpression(normalizing);
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression(normalizing);
     }
-    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
+    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this, normalizing) : null;
   }
 }

@@ -44,7 +44,7 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return myFunction.getStuckExpression();
+  public Expression getStuckExpression(boolean normalizing) {
+    return myFunction.getStuckExpression(normalizing);
   }
 }

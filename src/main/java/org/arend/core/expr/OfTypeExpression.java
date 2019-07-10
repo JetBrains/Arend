@@ -53,7 +53,7 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public Expression getStuckExpression() {
-    return myExpression.getStuckExpression();
+  public Expression getStuckExpression(boolean normalizing) {
+    return myExpression.getStuckExpression(normalizing);
   }
 }

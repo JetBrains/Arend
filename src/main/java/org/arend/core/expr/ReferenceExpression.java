@@ -34,7 +34,7 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public Expression getStuckExpression() {
+  public Expression getStuckExpression(boolean normalizing) {
     return myBinding instanceof EvaluatingBinding ? null : this;
   }
 }

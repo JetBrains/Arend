@@ -88,7 +88,7 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public Expression getStuckExpression() {
+  public Expression getStuckExpression(boolean normalizing) {
     return null;
   }
 }

@@ -1,14 +1,16 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.*;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.NewExpression;
-import org.arend.core.expr.UniverseExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -18,6 +20,8 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypeMismatchError;
+import org.arend.typechecking.implicitargs.equations.DummyEquations;
+import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
 import javax.annotation.Nullable;
@@ -51,8 +55,15 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
 
   @Override
   protected CheckTypeVisitor.Result finalCheckExpr(Concrete.Expression expr, ExpectedType expectedType, boolean returnExpectedType) {
-    // TODO
-    return null;
+    CheckTypeVisitor.Result result = checkExpr(expr, expectedType);
+    if (returnExpectedType && result != null && expectedType instanceof Expression) {
+      result.type = (Expression) expectedType;
+    }
+    return result;
+  }
+
+  private CheckTypeVisitor.Result checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
+    return expr == null ? null : expr.accept(this, expectedType);
   }
 
   @Override
@@ -60,10 +71,39 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
     return result;
   }
 
+  private CheckTypeVisitor.Result checkResultExpr(Expression expectedType, CheckTypeVisitor.Result result, Concrete.Expression expr) {
+    if (new CompareVisitor(DummyEquations.getInstance(), Equations.CMP.LE, expr).normalizedCompare(result.type, expectedType)) { // TODO
+      return result;
+    }
+
+    if (!result.type.isError()) {
+      errorReporter.report(new TypeMismatchError(expectedType, result.type, expr));
+    }
+    return null;
+  }
+
   @Override
   protected Type checkType(Concrete.Expression expr, ExpectedType expectedType, boolean isFinal) {
-    // TODO
-    return null;
+    if (expr == null) {
+      return null;
+    }
+
+    if (expectedType instanceof Expression) {
+      if (((Expression) expectedType).getStuckInferenceVariable(false) != null) {
+        expectedType = ExpectedType.OMEGA;
+      }
+    }
+
+    CheckTypeVisitor.Result result = expr.accept(this, expectedType);
+    if (result == null) {
+      return null;
+    }
+    if (result.expression instanceof Type) {
+      return (Type) result.expression;
+    }
+
+    UniverseExpression universe = result.type.checkedCast(UniverseExpression.class);
+    return new TypeExpression(result.expression, universe == null ? Sort.UNKNOWN : universe.getSort());
   }
 
   @Override
