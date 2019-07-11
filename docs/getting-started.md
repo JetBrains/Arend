@@ -14,6 +14,7 @@ To install the IntelliJ IDEA plugin, follow the instructions below.
  constructive algebra and homotopy theory. It can be downloaded from [here](https://github.com/JetBrains/arend-lib).
 
 Let's create our first Arend project.
+
 * Run Intellij IDEA and choose either **Create New Project** if you are on a _Welcome screen_ or **File | New | Project** from the main menu if a project is open.
 * Choose **Arend** in the list on the left. If you want to use external libraries, for example, the standard library, 
 you can set up the path to a directory with
