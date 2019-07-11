@@ -9,15 +9,30 @@ To install the IntelliJ IDEA plugin, follow the instructions below.
 
 * Download (either community or ultimate version of) [IntelliJ IDEA](https://www.jetbrains.com/idea).
 * Run Intellij IDEA, choose either **Configure | Plugins** if you are on a _Welcome screen_ or **File | Settings** from the main menu if a project is open, go to **Plugins** tab, search for _Arend_ plugin and install it, restart Intellij IDEA.
-* You can also get the latest version of the plugin by following instructions on [this page](https://github.com/JetBrains/intellij-arend/blob/dev/README.md).
+* Another way to get the latest version of the plugin is by following instructions on [this page](https://github.com/JetBrains/intellij-arend/blob/dev/README.md).
+* There is a standard library, containing a number of essential definitions and proofs, in particular, in
+ constructive algebra and homotopy theory. It can be downloaded from [here](https://github.com/JetBrains/arend-lib).
 
 Let's create our first Arend project.
-Run Intellij IDEA and choose either **Create New Project** if you are on a _Welcome screen_ or **File | New | Project** from the main menu if a project is open.
-Choose **Arend** in the list on the left, click **Next**, click **Finish**.
-You should get a new project which contains (among other files) a file `arend.yaml` and an empty directory `src`.
+* Run Intellij IDEA and choose either **Create New Project** if you are on a _Welcome screen_ or **File | New | Project** from the main menu if a project is open.
+* Choose **Arend** in the list on the left. If you want to use external libraries, for example, the standard library, 
+you can set up the path to a directory with
+these libraries in the panel on the right. In order to do this, click **+** button in the top left corner of the panel, select
+**Arend libraries** and choose a path in the dialog.
+* Click **Next**. In the successive steps set up the name of the project, directories for sources and binaries and click **Finish**. 
+ 
+You should get a new project which contains (among other files) a file `arend.yaml` and an empty source directory 
+(`src` by default).
 The `yaml` file contains a description of the project.
 You can read more about this configuration file [here](libraries).
-Create a new file `example.ard` in `src` directory.
+
+If you want to use the standard library, you should add it to the list of dependencies in **File | Project Structure**.
+In case you did not specify the path to Arend external libraries on creation of the project, you should do it in Project SDK
+section of **File | Project Structure | Project**.  Once this is done, click **+** button on the right of the panel
+**File | Project Structure | Modules**, select **Library | Arend library** and choose the libraries to be added as 
+dependencies.
+
+Create a new file `example.ard` in the source directory.
 Add the following line to this file:
 ```arend
 \func f => 0
@@ -39,7 +54,7 @@ You should see the following error message:
 ```
 
 You can read more about IntelliJ IDEA [here](https://www.jetbrains.com/help/idea/discover-intellij-idea.html).
-To learn more about Arend, see the [tutorial](tutorial) and the [language reference](language-reference).
+To learn more about Arend, see the [language reference](language-reference).
 
 # Console Application
 

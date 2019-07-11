@@ -17,8 +17,7 @@ In case of one argument, it is possible to use the postfix notation: `def e_1` i
 
 The parsing of complex defcall expressions, containing several infix and postfix notations, is regulated by precedence
 of involved definitions: their priority and the type of associativity. Precedence of a definition can be specified
-in the beginning of definition just after the keyword, reserved for the kind of definition (`\data`, `\func`, etc):
-`DEF_KW FIX_KW N`, where `DEF_KW` is the corresponding keyword (`\data`, `\func`, etc), `FIX_KW` is one of keywords
+by writing `FIX_KW N` just before the name of the definition, where `FIX_KW` is one of keywords
 `\fixl`, `\fixr` or `\fix`,
 which mark the definition as left, right associative or non-associative respectively, and `N` is the priority, 
 which is an integer between 1 and 9. For example, `\func \fixl 3 op (a b : Nat) => 0` defines a binary function

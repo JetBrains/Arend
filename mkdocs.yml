@@ -8,10 +8,6 @@ edit_uri: edit/master/docs/
 pages:
     - Overview: index.md
     - Getting Started: getting-started.md
-    - Tutorial:
-        - Table of Contents: tutorial/index.md
-        - Functions: tutorial/functions.md
-        - Pattern Matching: tutorial/pattern-matching.md
     - Language Reference:
         - Table of Contents: language-reference/index.md
         - Lexical Structure: language-reference/lexical-structure.md
