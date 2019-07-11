@@ -39,12 +39,12 @@ public class AppExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
-    return myFunction.isInstance(LamExpression.class) ? Decision.NO : myFunction.isWHNF(normalizing);
+  public Decision isWHNF() {
+    return myFunction.isInstance(LamExpression.class) ? Decision.NO : myFunction.isWHNF();
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    return myFunction.getStuckExpression(normalizing);
+  public Expression getStuckExpression() {
+    return myFunction.getStuckExpression();
   }
 }

@@ -48,12 +48,12 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
-    return myExpression.isWHNF(normalizing);
+  public Decision isWHNF() {
+    return myExpression.isWHNF();
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    return myExpression.getStuckExpression(normalizing);
+  public Expression getStuckExpression() {
+    return myExpression.getStuckExpression();
   }
 }

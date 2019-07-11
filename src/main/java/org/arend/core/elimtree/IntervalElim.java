@@ -46,7 +46,7 @@ public class IntervalElim implements Body {
   }
 
   @Override
-  public Decision isWHNF(List<? extends Expression> arguments, boolean normalizing) {
+  public Decision isWHNF(List<? extends Expression> arguments) {
     int offset = DependentLink.Helper.size(myParameters) - myCases.size();
     Decision result = Decision.YES;
     for (int i = 0; i < myCases.size(); i++) {
@@ -58,7 +58,7 @@ public class IntervalElim implements Body {
         }
       }
 
-      Decision decision = arg.isWHNF(normalizing);
+      Decision decision = arg.isWHNF();
       if (decision == Decision.NO) {
         return Decision.NO;
       }
@@ -66,11 +66,11 @@ public class IntervalElim implements Body {
         result = Decision.MAYBE;
       }
     }
-    return myOtherwise == null ? result : result.min(myOtherwise.isWHNF(arguments, normalizing));
+    return myOtherwise == null ? result : result.min(myOtherwise.isWHNF(arguments));
   }
 
   @Override
-  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing) {
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
     int offset = DependentLink.Helper.size(myParameters) - myCases.size();
     for (int i = 0; i < myCases.size(); i++) {
       if (arguments.get(offset + i).isInstance(ConCallExpression.class)) {
@@ -81,7 +81,7 @@ public class IntervalElim implements Body {
       }
     }
 
-    Expression stuck = myOtherwise == null ? null : myOtherwise.getStuckExpression(arguments, expression, normalizing);
+    Expression stuck = myOtherwise == null ? null : myOtherwise.getStuckExpression(arguments, expression);
     if (stuck != null && stuck.isInstance(ErrorExpression.class)) {
       return stuck;
     }
@@ -91,7 +91,7 @@ public class IntervalElim implements Body {
       refStuck = refStuck.getSubstExpression().checkedCast(InferenceReferenceExpression.class);
     }
     for (int i = 0; i < myCases.size(); i++) {
-      stuck = arguments.get(offset + i).getStuckExpression(normalizing);
+      stuck = arguments.get(offset + i).getStuckExpression();
       if (stuck != null) {
         if (stuck.isInstance(ErrorExpression.class)) {
           return stuck;

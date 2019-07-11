@@ -57,11 +57,8 @@ public class TwoStageEquations implements Equations {
       if (classDef == null) {
         return null;
       }
-      if (classDef.getClassifyingField() == fieldCall.getDefinition()) {
-        Expression stuck2 = expr.getCanonicalStuckExpression();
-        if (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) {
-          return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, this, variable.getSourceNode());
-        }
+      if (classDef.getClassifyingField() == fieldCall.getDefinition() && expr.getStuckInferenceVariable() == null) {
+        return ((TypeClassInferenceVariable) variable).getInstance(myVisitor.getInstancePool(), expr, this, variable.getSourceNode());
       }
     }
     return null;
@@ -84,7 +81,7 @@ public class TwoStageEquations implements Equations {
       FieldCallExpression fieldCall1 = expr1.getFunction().checkedCast(FieldCallExpression.class);
       InferenceVariable variable = fieldCall1 == null ? null : fieldCall1.getArgument().getInferenceVariable();
       if (variable != null) {
-        // expr1 == view field call
+        // expr1 == class field call
         result = getInstance(variable, fieldCall1, expr2);
       }
 
@@ -93,7 +90,7 @@ public class TwoStageEquations implements Equations {
         FieldCallExpression fieldCall2 = expr2.getFunction().checkedCast(FieldCallExpression.class);
         variable = fieldCall2 == null ? null : fieldCall2.getArgument().getInferenceVariable();
         if (variable != null) {
-          // expr2 == view field call
+          // expr2 == class field call
           result = getInstance(variable, fieldCall2, expr1);
         }
       }
@@ -112,11 +109,8 @@ public class TwoStageEquations implements Equations {
       Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizeVisitor.Mode.WHNF);
 
       // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (!cType.isInstance(PiExpression.class) && !cType.isInstance(UniverseExpression.class) && !cType.isInstance(ClassCallExpression.class)) {
-        Expression stuck = cType.getCanonicalStuckExpression();
-        if (stuck == null || !stuck.isInstance(InferenceReferenceExpression.class)) {
-          cmp = CMP.EQ;
-        }
+      if (!cType.isInstance(PiExpression.class) && !cType.isInstance(UniverseExpression.class) && !cType.isInstance(ClassCallExpression.class) && cType.getStuckInferenceVariable() == null) {
+        cmp = CMP.EQ;
       }
 
       if (inf1 != null) {
@@ -138,11 +132,8 @@ public class TwoStageEquations implements Equations {
         while (cod.isInstance(PiExpression.class)) {
           cod = cod.cast(PiExpression.class).getCodomain();
         }
-        if (!cod.isInstance(ClassCallExpression.class) && !cod.isInstance(UniverseExpression.class)) {
-          Expression stuck = cod.getCanonicalStuckExpression();
-          if (!(stuck != null && stuck.isInstance(InferenceReferenceExpression.class))) {
-            cmp = CMP.EQ;
-          }
+        if (!cod.isInstance(ClassCallExpression.class) && !cod.isInstance(UniverseExpression.class) && cod.getStuckInferenceVariable() == null) {
+          cmp = CMP.EQ;
         }
       }
 
@@ -170,7 +161,7 @@ public class TwoStageEquations implements Equations {
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
           solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
-          return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(true), infVar);
+          return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
         }
       }
 

@@ -60,12 +60,12 @@ public class ConCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
-    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments, normalizing) : Decision.YES;
+  public Decision isWHNF() {
+    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments) : Decision.YES;
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this, normalizing) : null;
+  public Expression getStuckExpression() {
+    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this) : null;
   }
 }

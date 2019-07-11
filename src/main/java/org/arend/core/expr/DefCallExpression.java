@@ -41,12 +41,12 @@ public abstract class DefCallExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
+  public Decision isWHNF() {
     return Decision.YES;
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
+  public Expression getStuckExpression() {
     return null;
   }
 }

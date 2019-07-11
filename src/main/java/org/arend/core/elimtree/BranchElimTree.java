@@ -5,7 +5,6 @@ import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
@@ -35,16 +34,13 @@ public class BranchElimTree extends ElimTree {
       return myClassInstance;
     }
 
-    public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
+    public List<Expression> getMatchedArguments(Expression argument) {
       List<Expression> args;
       if (myClassInstance) {
         if (argument.isInstance(NewExpression.class)) {
           args = argument.cast(NewExpression.class).getExpression().getImplementedHereList();
         } else {
-          Expression type = argument.getType(normalizing);
-          if (type != null && normalizing) {
-            type = type.normalize(NormalizeVisitor.Mode.WHNF);
-          }
+          Expression type = argument.getType(false);
           ClassDefinition classDef = type != null && type.isInstance(ClassCallExpression.class) ? type.cast(ClassCallExpression.class).getDefinition() : null;
           if (classDef == null) {
             return null;
@@ -105,11 +101,11 @@ public class BranchElimTree extends ElimTree {
     return myChildren.entrySet();
   }
 
-  private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index, boolean normalizing) {
+  private List<Expression> getNewArguments(List<? extends Expression> arguments, Expression argument, int index) {
     List<Expression> newArguments = null;
     TupleConstructor tupleConstructor = getTupleConstructor();
     if (tupleConstructor != null) {
-      newArguments = tupleConstructor.getMatchedArguments(argument, normalizing);
+      newArguments = tupleConstructor.getMatchedArguments(argument);
       if (newArguments == null) {
         return null;
       }
@@ -145,41 +141,41 @@ public class BranchElimTree extends ElimTree {
   }
 
   @Override
-  public Decision isWHNF(List<? extends Expression> arguments, boolean normalizing) {
+  public Decision isWHNF(List<? extends Expression> arguments) {
     int index = DependentLink.Helper.size(getParameters());
     Expression argument = arguments.get(index);
-    Decision decision = argument.isWHNF(normalizing);
+    Decision decision = argument.isWHNF();
     if (decision == Decision.NO) {
       return Decision.NO;
     }
 
-    List<Expression> newArguments = getNewArguments(arguments, argument, index, normalizing);
+    List<Expression> newArguments = getNewArguments(arguments, argument, index);
     if (newArguments == null) {
-      return normalizing ? Decision.YES : Decision.MAYBE;
+      return Decision.MAYBE;
     }
 
     if (isTupleTree()) {
       ElimTree elimTree = getTupleChild();
       if (elimTree != null) {
-        return elimTree.isWHNF(newArguments, normalizing).min(decision);
+        return elimTree.isWHNF(newArguments).min(decision);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
       if (elimTree != null) {
-        return elimTree.isWHNF(newArguments, normalizing).min(decision);
+        return elimTree.isWHNF(newArguments).min(decision);
       } else {
         elimTree = myChildren.get(null);
-        return elimTree == null ? decision : elimTree.isWHNF(newArguments, normalizing).min(decision);
+        return elimTree == null ? decision : elimTree.isWHNF(newArguments).min(decision);
       }
     } else if (argument.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr = argument.cast(IntegerExpression.class);
       ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
       if (elimTree != null) {
-        return elimTree.isWHNF(newArguments, normalizing).min(decision);
+        return elimTree.isWHNF(newArguments).min(decision);
       } else {
         elimTree = myChildren.get(null);
-        return elimTree == null ? decision : elimTree.isWHNF(newArguments, normalizing).min(decision);
+        return elimTree == null ? decision : elimTree.isWHNF(newArguments).min(decision);
       }
     }
 
@@ -187,40 +183,40 @@ public class BranchElimTree extends ElimTree {
   }
 
   @Override
-  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing) {
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
     int index = DependentLink.Helper.size(getParameters());
     Expression argument = arguments.get(index);
 
-    List<Expression> newArguments = getNewArguments(arguments, argument, index, normalizing);
+    List<Expression> newArguments = getNewArguments(arguments, argument, index);
     if (newArguments == null) {
-      return argument.getStuckExpression(normalizing);
+      return argument.getStuckExpression();
     }
 
     if (isTupleTree()) {
       ElimTree elimTree = getTupleChild();
       if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression, normalizing);
+        return elimTree.getStuckExpression(newArguments, expression);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
       ElimTree elimTree = myChildren.get(conCall.getDefinition());
       if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression, normalizing);
+        return elimTree.getStuckExpression(newArguments, expression);
       } else {
         elimTree = myChildren.get(null);
-        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression, normalizing) : expression;
+        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
       }
     } else if (argument.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr = argument.cast(IntegerExpression.class);
       ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
       if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression, normalizing);
+        return elimTree.getStuckExpression(newArguments, expression);
       } else {
         elimTree = myChildren.get(null);
-        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression, normalizing) : expression;
+        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
       }
     }
 
-    return argument.getStuckExpression(normalizing);
+    return argument.getStuckExpression();
   }
 }

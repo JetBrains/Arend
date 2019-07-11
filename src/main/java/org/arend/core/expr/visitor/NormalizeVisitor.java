@@ -7,7 +7,6 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.let.LetClause;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
@@ -472,7 +471,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           return null;
         }
 
-        args = tupleConstructor.getMatchedArguments(argument, true);
+        args = tupleConstructor.getMatchedArguments(argument);
         if (args == null) {
           return null;
         }

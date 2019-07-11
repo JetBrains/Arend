@@ -19,12 +19,12 @@ public class LeafElimTree extends ElimTree {
   }
 
   @Override
-  public Decision isWHNF(List<? extends Expression> arguments, boolean normalizing) {
+  public Decision isWHNF(List<? extends Expression> arguments) {
     return Decision.NO;
   }
 
   @Override
-  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression, boolean normalizing) {
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
     return null;
   }
 }

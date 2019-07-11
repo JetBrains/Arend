@@ -39,24 +39,30 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
-    return getDefinition().getBody() != null ? getDefinition().getBody().isWHNF(myArguments, normalizing) : Decision.YES;
+  public Decision isWHNF() {
+    FunctionDefinition definition = getDefinition();
+    if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
+      return definition.getBody().isWHNF(myArguments).min(Decision.MAYBE);
+    } else {
+      return definition.getBody() != null ? definition.getBody().isWHNF(myArguments) : Decision.YES;
+    }
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    if (getDefinition() == Prelude.COERCE) {
-      Expression stuck = myArguments.get(2).getStuckExpression(normalizing);
-      return stuck != null ? stuck : myArguments.get(0).getStuckExpression(normalizing);
+  public Expression getStuckExpression() {
+    FunctionDefinition definition = getDefinition();
+    if (definition == Prelude.COERCE) {
+      Expression stuck = myArguments.get(2).getStuckExpression();
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
     }
-    if (getDefinition() == Prelude.COERCE2) {
-      Expression stuck = myArguments.get(1).getStuckExpression(normalizing);
+    if (definition == Prelude.COERCE2) {
+      Expression stuck = myArguments.get(1).getStuckExpression();
       if (stuck != null) {
         return stuck;
       }
-      stuck = myArguments.get(3).getStuckExpression(normalizing);
-      return stuck != null ? stuck : myArguments.get(0).getStuckExpression(normalizing);
+      stuck = myArguments.get(3).getStuckExpression();
+      return stuck != null ? stuck : myArguments.get(0).getStuckExpression();
     }
-    return getDefinition().getBody() != null ? getDefinition().getBody().getStuckExpression(myArguments, this, normalizing) : null;
+    return definition.getBody() != null ? definition.getBody().getStuckExpression(myArguments, this) : null;
   }
 }

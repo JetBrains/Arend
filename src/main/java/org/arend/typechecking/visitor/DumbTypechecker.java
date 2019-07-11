@@ -1,16 +1,13 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
-import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -89,7 +86,7 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
     }
 
     if (expectedType instanceof Expression) {
-      if (((Expression) expectedType).getStuckInferenceVariable(false) != null) {
+      if (((Expression) expectedType).getStuckInferenceVariable() != null) {
         expectedType = ExpectedType.OMEGA;
       }
     }
@@ -151,7 +148,7 @@ public class DumbTypechecker extends BaseTypechecker implements ConcreteExpressi
       CheckTypeVisitor.Result result = finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), funcDef.getResultType(), false);
       if (result != null && def.getResultType() == null && def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && !(result.expression instanceof NewExpression)) {
         Expression type = result.type.getType(false);
-        if (type != null && (type instanceof UniverseExpression && !((UniverseExpression) type).getSort().isProp() || !(type instanceof UniverseExpression) && type.isWHNF(false) == Decision.YES)) {
+        if (type != null && (type instanceof UniverseExpression && !((UniverseExpression) type).getSort().isProp() || !(type instanceof UniverseExpression) && type.isWHNF() == Decision.YES)) {
           errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.PROP), type, def));
         }
       }

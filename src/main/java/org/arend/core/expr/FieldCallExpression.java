@@ -2,7 +2,6 @@ package org.arend.core.expr;
 
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
-import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.util.Decision;
 
@@ -63,28 +62,22 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
+  public Decision isWHNF() {
     if (getDefinition().isProperty()) {
       return Decision.YES;
     }
     if (myArgument.isInstance(NewExpression.class)) {
       return Decision.NO;
     }
-    Expression type = myArgument.getType(normalizing);
-    if (type == null) {
-      return normalizing ? Decision.YES : Decision.MAYBE;
-    }
-    if (normalizing) {
-      type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    }
-    if (!type.isInstance(ClassCallExpression.class)) {
-      return normalizing ? Decision.YES : Decision.MAYBE;
+    Expression type = myArgument.getType(false);
+    if (type == null || !type.isInstance(ClassCallExpression.class)) {
+      return Decision.MAYBE;
     }
     return type.cast(ClassCallExpression.class).isImplemented(getDefinition()) ? Decision.NO : Decision.YES;
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    return myArgument.getStuckExpression(normalizing);
+  public Expression getStuckExpression() {
+    return myArgument.getStuckExpression();
   }
 }

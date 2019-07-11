@@ -30,12 +30,12 @@ public class ProjExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
-    return myExpression.isInstance(TupleExpression.class) ? Decision.NO : myExpression.isWHNF(normalizing);
+  public Decision isWHNF() {
+    return myExpression.isInstance(TupleExpression.class) ? Decision.NO : myExpression.isWHNF();
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
-    return myExpression.getStuckExpression(normalizing);
+  public Expression getStuckExpression() {
+    return myExpression.getStuckExpression();
   }
 }

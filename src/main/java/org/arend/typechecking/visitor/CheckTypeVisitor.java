@@ -481,7 +481,7 @@ public class CheckTypeVisitor extends BaseTypechecker implements ConcreteExpress
       ExpectedType expectedType1 = expectedType;
       if (expectedType instanceof Expression) {
         expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-        if (((Expression) expectedType).getStuckInferenceVariable(true) != null) {
+        if (((Expression) expectedType).getStuckInferenceVariable() != null) {
           expectedType1 = ExpectedType.OMEGA;
         }
       }

@@ -58,7 +58,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     Expression norm = normalizeFieldCall(expr);
-    return norm != null ? norm.accept(this, null) : expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument(), myNormalizing);
+    return norm != null ? norm.accept(this, null) : expr.getDefinition().getType(expr.getSortArgument()).applyExpression(expr.getArgument(), false);
   }
 
   @Override

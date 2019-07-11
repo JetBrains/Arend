@@ -29,12 +29,12 @@ public class ReferenceExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
+  public Decision isWHNF() {
     return myBinding instanceof EvaluatingBinding ? Decision.NO : Decision.YES;
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
+  public Expression getStuckExpression() {
     return myBinding instanceof EvaluatingBinding ? null : this;
   }
 }

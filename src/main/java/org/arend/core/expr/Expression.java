@@ -221,15 +221,11 @@ public abstract class Expression implements ExpectedType {
     return app != null ? app.getFunction() : this;
   }
 
-  public abstract Decision isWHNF(boolean normalizing);
-
-  public final boolean isWHNF() {
-    return isWHNF(true) != Decision.NO;
-  }
+  public abstract Decision isWHNF();
 
   // This function assumes that the expression is in a WHNF.
   // If the expression is a constructor, then the function returns null.
-  public abstract Expression getStuckExpression(boolean normalizing);
+  public abstract Expression getStuckExpression();
 
   public Expression getCanonicalExpression() {
     Expression expr = this;
@@ -243,12 +239,12 @@ public abstract class Expression implements ExpectedType {
   }
 
   public Expression getCanonicalStuckExpression() {
-    Expression stuck = getStuckExpression(true);
+    Expression stuck = getStuckExpression();
     return stuck == null ? null : stuck.getCanonicalExpression();
   }
 
-  public InferenceVariable getStuckInferenceVariable(boolean normalizing) {
-    Expression stuck = normalizing ? getCanonicalStuckExpression() : getStuckExpression(false);
+  public InferenceVariable getStuckInferenceVariable() {
+    Expression stuck = getCanonicalStuckExpression();
     InferenceReferenceExpression infRefExpr = stuck == null ? null : stuck.checkedCast(InferenceReferenceExpression.class);
     return infRefExpr == null ? null : infRefExpr.getVariable();
   }

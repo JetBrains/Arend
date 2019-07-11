@@ -87,12 +87,12 @@ public class LetExpression extends Expression {
   }
 
   @Override
-  public Decision isWHNF(boolean normalizing) {
+  public Decision isWHNF() {
     return Decision.NO;
   }
 
   @Override
-  public Expression getStuckExpression(boolean normalizing) {
+  public Expression getStuckExpression() {
     return null;
   }
 }
