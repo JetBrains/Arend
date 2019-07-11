@@ -5,6 +5,7 @@ import org.arend.error.doc.DocStringBuilder;
 import org.arend.error.doc.LineDoc;
 import org.arend.naming.reference.DataContainer;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 
@@ -22,6 +23,10 @@ public abstract class Error {
   public Error(@Nonnull Level level, String message) {
     this.level = level;
     this.message = message;
+  }
+
+  public LocalError getLocalError() {
+    return null;
   }
 
   public Object getCause() {

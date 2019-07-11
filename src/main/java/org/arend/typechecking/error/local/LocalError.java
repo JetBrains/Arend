@@ -8,4 +8,9 @@ public class LocalError extends Error {
   public LocalError(@Nonnull Level level, String message) {
     super(level, message);
   }
+
+  @Override
+  public LocalError getLocalError() {
+    return this;
+  }
 }

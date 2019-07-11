@@ -13,7 +13,7 @@ public class AbstractExpressionError extends LocalError {
   }
 
   public static AbstractExpressionError incomplete(Object cause) {
-    return new AbstractExpressionError(Level.ERROR, "Incomplete expression", cause);
+    return new IncompleteExpressionError(cause);
   }
 
   @Override

@@ -9,7 +9,6 @@ import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.local.ArgInferenceError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -63,7 +62,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(params, Pi(Ref(params), Ref(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
-    assertTrue(errorList.get(0) instanceof ProxyError && ((ProxyError) errorList.get(0)).localError instanceof ArgInferenceError);
+    assertTrue(errorList.get(0).getLocalError() instanceof ArgInferenceError);
   }
 
   @Test

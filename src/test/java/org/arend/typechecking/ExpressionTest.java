@@ -8,7 +8,6 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.junit.Test;
@@ -58,7 +57,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \X x. X : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Ref(param), Ref(param))), 1);
-    assertTrue(errorList.get(0) instanceof ProxyError && ((ProxyError) errorList.get(0)).localError instanceof TypeMismatchError);
+    assertTrue(errorList.get(0).getLocalError() instanceof TypeMismatchError);
   }
 
   @Test

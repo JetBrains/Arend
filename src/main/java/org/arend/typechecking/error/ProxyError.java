@@ -26,6 +26,11 @@ public class ProxyError extends GeneralError {
   }
 
   @Override
+  public LocalError getLocalError() {
+    return localError;
+  }
+
+  @Override
   public Object getCause() {
     return localError.getCause();
   }
