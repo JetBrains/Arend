@@ -523,7 +523,7 @@ public class CheckTypeVisitor extends BaseTypechecker implements ConcreteExpress
     return new TypeExpression(result.expression, universe.getSort());
   }
 
-  public Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
+  private Type finalCheckType(Concrete.Expression expr, ExpectedType expectedType) {
     Type result = checkType(expr, expectedType);
     if (result == null) return null;
     return result.subst(new SubstVisitor(new ExprSubstitution(), myEquations.solve(expr))).strip(errorReporter);
@@ -1395,37 +1395,6 @@ public class CheckTypeVisitor extends BaseTypechecker implements ConcreteExpress
     exprResult.expression = ProjExpression.make(exprResult.expression, expr.getField());
     exprResult.type = fieldLink.getTypeExpr().subst(substitution);
     return checkResult(expectedType, exprResult, expr);
-  }
-
-  private Definition referableToDefinition(Referable referable, Concrete.SourceNode sourceNode) {
-    if (referable == null || referable instanceof ErrorReference) {
-      return null;
-    }
-
-    Definition definition = referable instanceof TCReferable ? myState.getTypechecked((TCReferable) referable) : null;
-    if (definition == null && sourceNode != null) {
-      errorReporter.report(new TypecheckingError("Internal error: definition '" + referable.textRepresentation() + "' was not typechecked", sourceNode));
-    }
-    return definition;
-  }
-
-  public <T extends Definition> T referableToDefinition(Referable referable, Class<T> clazz, String errorMsg, Concrete.SourceNode sourceNode) {
-    Definition definition = referableToDefinition(referable, sourceNode);
-    if (definition == null) {
-      return null;
-    }
-    if (clazz.isInstance(definition)) {
-      return clazz.cast(definition);
-    }
-
-    if (sourceNode != null) {
-      errorReporter.report(new WrongReferable(errorMsg, referable, sourceNode));
-    }
-    return null;
-  }
-
-  public ClassField referableToClassField(Referable referable, Concrete.SourceNode sourceNode) {
-    return referableToDefinition(referable, ClassField.class, "Expected a class field", sourceNode);
   }
 
   @Override

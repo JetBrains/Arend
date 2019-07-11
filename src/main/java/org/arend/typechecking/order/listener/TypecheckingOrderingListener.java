@@ -349,7 +349,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       Definition def = myState.getTypechecked(definition.getData());
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (headersAreOK && pair != null) {
-        typechecking.setVisitor(pair.proj1);
+        typechecking.setTypechecker(pair.proj1);
         List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
         if (clauses != null) {
           functionDefinitions.put((FunctionDefinition) def, definition);
