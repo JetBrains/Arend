@@ -22,6 +22,9 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.InstancePool;
+import org.arend.typechecking.result.DefCallResult;
+import org.arend.typechecking.result.TResult;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
@@ -30,9 +33,11 @@ import java.util.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 import static org.arend.error.doc.DocFactory.refDoc;
 
-public class StdImplicitArgsInference extends BaseImplicitArgsInference {
+public class StdImplicitArgsInference implements ImplicitArgsInference {
+  private final CheckTypeVisitor myVisitor;
+
   public StdImplicitArgsInference(CheckTypeVisitor visitor) {
-    super(visitor);
+    myVisitor = visitor;
   }
 
   private static ClassDefinition getClassRefFromDefCall(Definition definition, int paramIndex) {
@@ -68,16 +73,16 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return type != null ? type.getDefinition() : null;
   }
 
-  private CheckTypeVisitor.TResult fixImplicitArgs(CheckTypeVisitor.TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
+  private TResult fixImplicitArgs(TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
     ExprSubstitution substitution = new ExprSubstitution();
-    int i = result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getArguments().size() : 0;
+    int i = result instanceof DefCallResult ? ((DefCallResult) result).getArguments().size() : 0;
     for (DependentLink parameter : implicitParameters) {
       Expression type = parameter.getTypeExpr().subst(substitution, LevelSubstitution.EMPTY);
       InferenceVariable infVar = null;
 
       // If result is defCall, then try to infer class instances.
-      if (result instanceof CheckTypeVisitor.DefCallResult) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+      if (result instanceof DefCallResult) {
+        DefCallResult defCallResult = (DefCallResult) result;
         ClassDefinition classDef = getClassRefFromDefCall(defCallResult.getDefinition(), i);
         if (classDef != null && !classDef.isRecord()) {
           TCClassReferable classRef = classDef.getReferable();
@@ -109,7 +114,7 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
         if (classVarsOnly) {
           return result;
         }
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof CheckTypeVisitor.DefCallResult ? ((CheckTypeVisitor.DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
+        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof DefCallResult ? ((DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
       }
 
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
@@ -120,15 +125,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     return result;
   }
 
-  private CheckTypeVisitor.TResult inferArg(CheckTypeVisitor.TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
-    if (result == null || arg == null || result instanceof CheckTypeVisitor.Result && ((CheckTypeVisitor.Result) result).expression.isError()) {
+  private TResult inferArg(TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
+    if (result == null || arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.isError()) {
       myVisitor.checkArgument(arg, null, result);
       return result;
     }
 
     if (isExplicit) {
-      if (result instanceof CheckTypeVisitor.DefCallResult) {
-        CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+      if (result instanceof DefCallResult) {
+        DefCallResult defCallResult = (DefCallResult) result;
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
@@ -136,14 +141,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), myVisitor.getErrorReporter(), fun);
 
-          CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result);
+          TypecheckingResult argResult = myVisitor.checkArgument(arg, new PiExpression(sort, lamParam, binding), result);
           if (argResult == null) {
             return null;
           }
 
           Expression expr1 = AppExpression.make(argResult.expression, Left());
           Expression expr2 = AppExpression.make(argResult.expression, Right());
-          return ((CheckTypeVisitor.DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
+          return ((DefCallResult) result).applyExpressions(Arrays.asList(expr1, expr2, argResult.expression));
         }
       }
 
@@ -155,13 +160,13 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return fixImplicitArgs(result, Collections.singletonList(param), fun, false);
     }
 
-    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result);
+    TypecheckingResult argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result);
     if (argResult == null) {
       return null;
     }
 
     if (!param.hasNext()) {
-      CheckTypeVisitor.Result result1 = result.toResult(myVisitor);
+      TypecheckingResult result1 = result.toResult(myVisitor);
       if (!result1.type.isError()) {
         myVisitor.getErrorReporter().report(new NotPiType(argResult.expression, result1.type, fun));
       }
@@ -180,15 +185,15 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     myVisitor.getErrorReporter().report(new TypecheckingError("Expected an " + (isExplicit ? "explicit" : "implicit") + " argument", sourceNode));
   }
 
-  private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, CheckTypeVisitor.TResult result) {
-    CheckTypeVisitor.Result argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
+  private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {
+    TypecheckingResult argResult = myVisitor.checkArgument(pair.proj2, pair.proj1.getType(), result);
     Expression argResultExpr = argResult == null ? new ErrorExpression(null, null) : argResult.expression;
     pair.proj1.solve(myVisitor.getEquations(), argResultExpr);
   }
 
   @Override
-  public CheckTypeVisitor.TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
-    CheckTypeVisitor.TResult result;
+  public TResult infer(Concrete.AppExpression expr, ExpectedType expectedType) {
+    TResult result;
     Concrete.Expression fun = expr.getFunction();
     if (fun instanceof Concrete.ReferenceExpression) {
       result = myVisitor.visitReference((Concrete.ReferenceExpression) fun);
@@ -203,8 +208,8 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
       return null;
     }
 
-    if (result instanceof CheckTypeVisitor.DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
-      CheckTypeVisitor.DefCallResult defCallResult = (CheckTypeVisitor.DefCallResult) result;
+    if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
+      DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
         DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
         if (dataCall != null) {
@@ -219,18 +224,18 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            result = CheckTypeVisitor.DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument());
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument());
             if (!args1.isEmpty()) {
-              result = ((CheckTypeVisitor.DefCallResult) result).applyExpressions(args1);
+              result = ((DefCallResult) result).applyExpressions(args1);
             }
           }
         }
       }
     }
 
-    if (result instanceof CheckTypeVisitor.DefCallResult && ((CheckTypeVisitor.DefCallResult) result).getDefinition().getParametersTypecheckingOrder() != null) {
-      List<Integer> order = ((CheckTypeVisitor.DefCallResult) result).getDefinition().getParametersTypecheckingOrder();
-      List<? extends Expression> resultArgs = ((CheckTypeVisitor.DefCallResult) result).getArguments();
+    if (result instanceof DefCallResult && ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder() != null) {
+      List<Integer> order = ((DefCallResult) result).getDefinition().getParametersTypecheckingOrder();
+      List<? extends Expression> resultArgs = ((DefCallResult) result).getArguments();
       if (!resultArgs.isEmpty()) {
         order = order.subList(resultArgs.size(), order.size());
       }
@@ -305,14 +310,14 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
   }
 
   @Override
-  public CheckTypeVisitor.TResult inferTail(CheckTypeVisitor.TResult result, ExpectedType expectedType, Concrete.Expression expr) {
+  public TResult inferTail(TResult result, ExpectedType expectedType, Concrete.Expression expr) {
     List<? extends DependentLink> actualParams = result.getImplicitParameters();
     int expectedParamsNumber = 0;
     if (expectedType != null) {
       List<SingleDependentLink> expectedParams = new ArrayList<>(actualParams.size());
       expectedType.getPiParameters(expectedParams, true);
       if (expectedParams.size() > actualParams.size()) {
-        CheckTypeVisitor.Result result1 = result.toResult(myVisitor);
+        TypecheckingResult result1 = result.toResult(myVisitor);
         if (!result1.type.isError()) {
           myVisitor.getErrorReporter().report(new TypeMismatchError(expectedType, result1.type, expr));
         }
@@ -326,5 +331,10 @@ public class StdImplicitArgsInference extends BaseImplicitArgsInference {
     }
 
     return result;
+  }
+
+  @Override
+  public InferenceVariable newInferenceVariable(Expression expectedType, Concrete.SourceNode sourceNode) {
+    return new ExpressionInferenceVariable(expectedType, sourceNode, myVisitor.getAllBindings());
   }
 }

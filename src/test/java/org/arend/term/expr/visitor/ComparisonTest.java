@@ -14,7 +14,7 @@ import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -180,8 +180,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void etaLam() {
     PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, Sort.SET0,
             Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
+    TypecheckingResult result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
+    TypecheckingResult result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 
@@ -189,8 +189,8 @@ public class ComparisonTest extends TypeCheckingTestCase {
   public void etaLamBody() {
     PiExpression type = Pi(singleParam(null, Nat()), DataCall(Prelude.PATH, Sort.SET0,
       Lam(singleParam("i", Interval()), Nat()), Zero(), Zero()));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(singleParam(null, type), type));
+    TypecheckingResult result1 = typeCheckExpr("\\lam a x => path (\\lam i => a x @ i)", Pi(singleParam(null, type), type));
+    TypecheckingResult result2 = typeCheckExpr("\\lam a => \\lam x => a x", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 
@@ -199,23 +199,23 @@ public class ComparisonTest extends TypeCheckingTestCase {
     SingleDependentLink x = singleParam("x", Nat());
     DataCallExpression type = DataCall(Prelude.PATH, Sort.SET0,
             Lam(singleParam("i", Interval()), Pi(singleParam(null, Nat()), Nat())), Lam(x, Ref(x)), Lam(x, Ref(x)));
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
+    TypecheckingResult result1 = typeCheckExpr("\\lam a => path (\\lam i x => (a @ i) x)", Pi(singleParam(null, type), type));
+    TypecheckingResult result2 = typeCheckExpr("\\lam a => a", Pi(singleParam(null, type), type));
     assertEquals(result2.expression, result1.expression);
   }
 
   @Test
   public void etaTuple() {
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => (p.1,p.2)", null);
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => p", null);
+    TypecheckingResult result1 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => (p.1,p.2)", null);
+    TypecheckingResult result2 = typeCheckExpr("\\lam (p : \\Sigma Nat Nat) => p", null);
     assertEquals(result2.expression, result1.expression);
     assertEquals(result1.expression, result2.expression);
   }
 
   @Test
   public void etaEmptyTuple() {
-    CheckTypeVisitor.Result result1 = typeCheckExpr("\\lam (p : \\Sigma) => p", null);
-    CheckTypeVisitor.Result result2 = typeCheckExpr("\\lam (p : \\Sigma) => ()", null);
+    TypecheckingResult result1 = typeCheckExpr("\\lam (p : \\Sigma) => p", null);
+    TypecheckingResult result2 = typeCheckExpr("\\lam (p : \\Sigma) => ()", null);
     assertEquals(result2.expression, result1.expression);
     assertEquals(result1.expression, result2.expression);
   }

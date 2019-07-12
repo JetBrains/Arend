@@ -2,7 +2,7 @@ package org.arend.typechecking.constructions;
 
 import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.Universe;
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 public class Universe extends TypeCheckingTestCase {
   @Test
   public void universe() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\oo-Type5", null);
+    TypecheckingResult result = typeCheckExpr("\\oo-Type5", null);
     assertNotNull(result);
     assertEquals(Universe(5), result.expression);
     assertEquals(Universe(6), result.type);
@@ -21,7 +21,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void universeExpected() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\oo-Type5", Universe(8));
+    TypecheckingResult result = typeCheckExpr("\\oo-Type5", Universe(8));
     assertNotNull(result);
     assertEquals(Universe(5), result.expression);
     assertEquals(Universe(6), result.expression.getType());
@@ -39,7 +39,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void truncated() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\3-Type5", null);
+    TypecheckingResult result = typeCheckExpr("\\3-Type5", null);
     assertNotNull(result);
     assertEquals(Universe(5, 3), result.expression);
     assertEquals(Universe(6, 4), result.type);
@@ -48,7 +48,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void truncatedExpected() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\3-Type5", Universe(8, 9));
+    TypecheckingResult result = typeCheckExpr("\\3-Type5", Universe(8, 9));
     assertNotNull(result);
     assertEquals(Universe(5, 3), result.expression);
     assertEquals(Universe(6, 4), result.expression.getType());
@@ -66,7 +66,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void prop() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", null);
+    TypecheckingResult result = typeCheckExpr("\\Prop", null);
     assertNotNull(result);
     assertEquals(Universe(3, -1), result.expression);
     assertEquals(Universe(Sort.SET0), result.type);
@@ -75,7 +75,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void propExpected() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\Prop", Universe(8, 9));
+    TypecheckingResult result = typeCheckExpr("\\Prop", Universe(8, 9));
     assertNotNull(result);
     assertEquals(Universe(3, -1), result.expression);
     assertEquals(Universe(Sort.SET0), result.expression.getType());
@@ -88,7 +88,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void set() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", null);
+    TypecheckingResult result = typeCheckExpr("\\Set7", null);
     assertNotNull(result);
     assertEquals(Universe(Sort.SetOfLevel(7)), result.expression);
     assertEquals(Universe(8, 1), result.type);
@@ -97,7 +97,7 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void setExpected() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\Set7", Universe(11, 4));
+    TypecheckingResult result = typeCheckExpr("\\Set7", Universe(11, 4));
     assertNotNull(result);
     assertEquals(Universe(Sort.SetOfLevel(7)), result.expression);
     assertEquals(Universe(8, 1), result.expression.getType());

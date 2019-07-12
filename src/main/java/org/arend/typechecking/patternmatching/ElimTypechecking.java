@@ -23,6 +23,7 @@ import org.arend.typechecking.error.local.MissingClausesError;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
@@ -107,7 +108,7 @@ public class ElimTypechecking {
     PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor);
     myOK = true;
     for (Concrete.FunctionClause clause : funClauses) {
-      Pair<List<Pattern>, CheckTypeVisitor.Result> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
+      Pair<List<Pattern>, TypecheckingResult> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
       if (result == null) {
         myOK = false;
       } else {

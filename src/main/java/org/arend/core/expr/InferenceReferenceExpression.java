@@ -13,8 +13,11 @@ public class InferenceReferenceExpression extends Expression {
 
   public InferenceReferenceExpression(InferenceVariable binding, Equations equations) {
     myVar = binding;
-    binding.setReference(this);
+    if (equations.isDummy()) {
+      return;
+    }
 
+    binding.setReference(this);
     Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
     if (type.isInstance(ClassCallExpression.class)) {
       ClassCallExpression classCall = type.cast(ClassCallExpression.class);

@@ -40,6 +40,7 @@ import org.arend.typechecking.instance.pool.LocalInstancePool;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 import org.arend.util.Pair;
 
@@ -322,7 +323,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private Integer typecheckResultTypeLevel(Concrete.Expression resultTypeLevel, boolean isLemma, boolean isProperty, Expression resultType, FunctionDefinition funDef, ClassField classField, boolean newDef) {
     if (resultTypeLevel != null) {
-      CheckTypeVisitor.Result result = typechecker.finalCheckExpr(resultTypeLevel, null, false);
+      TypecheckingResult result = typechecker.finalCheckExpr(resultTypeLevel, null, false);
       if (result != null && resultType != null) {
         Integer level = getTypechecker().getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
         if (level != null) {
@@ -589,7 +590,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
           typecheckResultTypeLevel(def, typedDef, newDef);
         } else {
-          CheckTypeVisitor.Result result = typechecker.finalCheckExpr(def.getResultType(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
+          TypecheckingResult result = typechecker.finalCheckExpr(def.getResultType(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
           if (newDef && result != null) {
             typedDef.setResultType(result.expression);
             typedDef.setStatus(getTypechecker().getStatus());
@@ -598,7 +599,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         bodyIsOK = true;
       }
     } else {
-      CheckTypeVisitor.Result termResult = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
+      TypecheckingResult termResult = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
       if (termResult != null) {
         if (termResult.expression != null) {
           if (newDef) {
@@ -1524,7 +1525,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (Map.Entry<ClassField, Concrete.ClassFieldImpl> entry : implementedHere.entrySet()) {
       SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
       Concrete.LamExpression lamImpl = (Concrete.LamExpression) entry.getValue().implementation;
-      CheckTypeVisitor.Result result;
+      TypecheckingResult result;
       if (lamImpl != null) {
         typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), parameter);
         PiExpression fieldType = entry.getKey().getType(Sort.STD);

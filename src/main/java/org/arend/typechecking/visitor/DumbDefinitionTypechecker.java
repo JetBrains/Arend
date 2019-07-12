@@ -13,6 +13,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.typechecking.error.local.TypeMismatchError;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 
 public class DumbDefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, Void> {
@@ -43,7 +44,7 @@ public class DumbDefinitionTypechecker extends BaseDefinitionTypechecker impleme
         }
       }
     } else {
-      CheckTypeVisitor.Result result = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), funcDef.getResultType(), false);
+      TypecheckingResult result = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), funcDef.getResultType(), false);
       if (result != null && def.getResultType() == null && def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && !(result.expression instanceof NewExpression)) {
         Expression type = result.type.getType(false);
         if (type != null && (type instanceof UniverseExpression && !((UniverseExpression) type).getSort().isProp() || !(type instanceof UniverseExpression) && type.isWHNF() == Decision.YES)) {

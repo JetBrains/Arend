@@ -14,7 +14,7 @@ import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -107,7 +107,7 @@ public class DataTest extends TypeCheckingTestCase {
     Constructor con = def.getConstructor("con");
     Concrete.Expression expr = cApps(cVar(con.getReferable()), cNat(), cZero(), cZero());
 
-    CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
+    TypecheckingResult result = typeCheckExpr(expr, null);
     assertEquals(result.type, DataCall(def, Sort.STD, Nat()));
   }
 
@@ -122,7 +122,7 @@ public class DataTest extends TypeCheckingTestCase {
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
 
-    CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
+    TypecheckingResult result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Nat());
   }
 
@@ -136,7 +136,7 @@ public class DataTest extends TypeCheckingTestCase {
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));
 
-    CheckTypeVisitor.Result result = typeCheckExpr(localContext, expr, null);
+    TypecheckingResult result = typeCheckExpr(localContext, expr, null);
     assertEquals(result.type, Pi(Nat(), Nat()));
   }
 

@@ -155,6 +155,12 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   public Concrete.Expression visitSigma(Concrete.SigmaExpression expr, Void params) {
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       visitParameters(expr.getParameters(), null);
+      for (Concrete.TypeParameter parameter : expr.getParameters()) {
+        if (!parameter.getExplicit()) {
+          myErrorReporter.report(new NamingError("Parameters in sigma types must be explicit", parameter));
+          parameter.setExplicit(true);
+        }
+      }
       return expr;
     }
   }

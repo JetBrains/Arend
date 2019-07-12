@@ -21,7 +21,7 @@ import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -221,7 +221,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     ParsedLocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cZero());
     Concrete.LetClause yClause = clet(y, cSuc());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
+    TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -232,14 +232,14 @@ public class NormalizationTest extends TypeCheckingTestCase {
     ParsedLocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cSuc());
     Concrete.LetClause yClause = clet(y, cZero());
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
+    TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
     assertEquals(Suc(Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test
   public void normalizeLetNo() {
     // normalize (\let | x (y z : N) => zero \in x zero) = \lam (z : N) => zero
-    CheckTypeVisitor.Result result = typeCheckExpr("\\let x (y z : Nat) => 0 \\in x 0", null);
+    TypecheckingResult result = typeCheckExpr("\\let x (y z : Nat) => 0 \\in x 0", null);
     SingleDependentLink x = singleParam("x", Nat());
     assertEquals(Lam(x, Zero()), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
@@ -248,7 +248,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void normalizeCaseStuck() {
     List<Binding> context = new ArrayList<>();
     context.add(new TypedBinding("n", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\case n \\with { zero => zero | suc _ => zero }", Nat());
+    TypecheckingResult result = typeCheckExpr(context, "\\case n \\with { zero => zero | suc _ => zero }", Nat());
     assertEquals(result.expression, result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 
@@ -258,7 +258,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     ParsedLocalReferable y = ref("y");
     ParsedLocalReferable x = ref("x");
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
-    CheckTypeVisitor.Result result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
+    TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));
   }
 

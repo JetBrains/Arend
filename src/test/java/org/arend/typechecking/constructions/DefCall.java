@@ -14,7 +14,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.*;
@@ -729,7 +729,7 @@ public class DefCall extends TypeCheckingTestCase {
   public void local() {
     List<Binding> context = new ArrayList<>(1);
     context.add(new TypedBinding("x", Nat()));
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "x", null);
+    TypecheckingResult result = typeCheckExpr(context, "x", null);
     assertNotNull(result);
     assertEquals(Ref(context.get(0)), result.expression);
   }

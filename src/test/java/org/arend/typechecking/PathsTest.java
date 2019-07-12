@@ -7,7 +7,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void idpUntyped() {
-    CheckTypeVisitor.Result idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
+    TypecheckingResult idp = typeCheckExpr("\\lam {A : \\Type0} (a : A) => path (\\lam _ => a)", null);
     SingleDependentLink A = singleParam(false, Collections.singletonList("A"), Universe(new Level(0), new Level(LevelVariable.HVAR)));
     SingleDependentLink a = singleParam("a", Ref(A));
     SingleDependentLink C = singleParam(null, Interval());

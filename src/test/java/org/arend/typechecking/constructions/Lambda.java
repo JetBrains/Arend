@@ -4,7 +4,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -22,55 +22,55 @@ import static org.junit.Assert.assertNotNull;
 public class Lambda extends TypeCheckingTestCase {
   @Test
   public void id() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => x", Pi(Nat(), Nat()));
+    TypecheckingResult result = typeCheckExpr("\\lam x => x", Pi(Nat(), Nat()));
     assertNotNull(result);
   }
 
   @Test
   public void idTyped() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : Nat) => x", null);
+    TypecheckingResult result = typeCheckExpr("\\lam (x : Nat) => x", null);
     assertNotNull(result);
   }
 
   @Test
   public void constant() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(Nat(), Nat())));
+    TypecheckingResult result = typeCheckExpr("\\lam x y => x", Pi(Nat(), Pi(Nat(), Nat())));
     assertNotNull(result);
   }
 
   @Test
   public void constantSep() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => \\lam y => x", Pi(singleParams(true, vars("x", "y"), Nat()), Nat()));
+    TypecheckingResult result = typeCheckExpr("\\lam x => \\lam y => x", Pi(singleParams(true, vars("x", "y"), Nat()), Nat()));
     assertNotNull(result);
   }
 
   @Test
   public void constantTyped() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x y : Nat) => x", null);
+    TypecheckingResult result = typeCheckExpr("\\lam (x y : Nat) => x", null);
     assertNotNull(result);
   }
 
   @Test
   public void idImplicit() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {x} => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Nat()));
+    TypecheckingResult result = typeCheckExpr("\\lam {x} => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Nat()));
     assertNotNull(result);
   }
 
   @Test
   public void skipImplicit() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam x => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    TypecheckingResult result = typeCheckExpr("\\lam x => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
     assertNotNull(result);
   }
 
   @Test
   public void skipImplicitTyped() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : Nat) => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    TypecheckingResult result = typeCheckExpr("\\lam (x : Nat) => x", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
     assertNotNull(result);
   }
 
   @Test
   public void implicitTyped() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam {y : Nat} (x : Nat) => y", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
+    TypecheckingResult result = typeCheckExpr("\\lam {y : Nat} (x : Nat) => y", Pi(singleParams(false, Collections.singletonList(null), Nat()), Pi(singleParams(true, Collections.singletonList(null), Nat()), Nat())));
     assertNotNull(result);
   }
 
@@ -91,14 +91,14 @@ public class Lambda extends TypeCheckingTestCase {
 
   @Test
   public void lambda1() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x y : Nat) => \\lam z => z", Pi(singleParams(true, vars("x", "y", "z"), Nat()), Nat()));
+    TypecheckingResult result = typeCheckExpr("\\lam (x y : Nat) => \\lam z => z", Pi(singleParams(true, vars("x", "y", "z"), Nat()), Nat()));
     assertNotNull(result);
   }
 
   @Test
   public void lambda2() {
     SingleDependentLink param = singleParams(true, vars("x", "y"), Nat());
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.PROP, Nat(), Ref(param), Ref(param))))));
+    TypecheckingResult result = typeCheckExpr("\\lam (x y z w : Nat) => path (\\lam _ => y)", Pi(Nat(), Pi(param, Pi(Nat(), FunCall(Prelude.PATH_INFIX, Sort.PROP, Nat(), Ref(param), Ref(param))))));
     assertNotNull(result);
   }
 
@@ -124,7 +124,7 @@ public class Lambda extends TypeCheckingTestCase {
 
   @Test
   public void lambdaUniverse() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (x : \\oo-Type1 -> \\oo-Type2) (y : \\oo-Type0) => x y", null);
+    TypecheckingResult result = typeCheckExpr("\\lam (x : \\oo-Type1 -> \\oo-Type2) (y : \\oo-Type0) => x y", null);
     assertEquals(result.type, Pi(singleParam(null, Pi(Universe(1), Universe(2))), Pi(singleParam(null, Universe(0)), Universe(2))));
   }
 

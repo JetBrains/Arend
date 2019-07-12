@@ -21,6 +21,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.LocalInstancePool;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.util.Decision;
 
 import java.util.*;
@@ -221,10 +222,10 @@ public abstract class BaseDefinitionTypechecker {
 
   protected ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.Definition def, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.ClassFieldImpl> classFieldImpls) {
     ClassCallExpression type;
-    CheckTypeVisitor.Result result;
+    TypecheckingResult result;
     Set<ClassField> pseudoImplemented;
     if (typedDef.isLemma()) {
-      CheckTypeVisitor.Result typeResult = typechecker.finalCheckExpr(resultType, resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
+      TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
       if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
         return null;
       }

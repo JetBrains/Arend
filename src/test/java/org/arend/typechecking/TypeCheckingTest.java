@@ -10,7 +10,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.prelude.Prelude;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.FunCall;
@@ -95,7 +95,7 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
 
   @Test
   public void testAt() {
-    CheckTypeVisitor.Result result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
+    TypecheckingResult result = typeCheckExpr("\\lam (p : suc = suc) => (p @ left) 0", null);
     assertNotNull(result.expression.getType());
   }
 

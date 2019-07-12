@@ -30,6 +30,7 @@ import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.util.Pair;
 
@@ -59,7 +60,7 @@ public class PatternTypechecking {
     }
   }
 
-  Pair<List<Pattern>, CheckTypeVisitor.Result> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
+  Pair<List<Pattern>, TypecheckingResult> typecheckClause(Concrete.FunctionClause clause, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, Expression expectedType) {
     try (Utils.SetContextSaver<Referable> ignored = new Utils.SetContextSaver<>(myVisitor.getContext())) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myVisitor.getFreeBindings())) {
         // Typecheck patterns
@@ -101,7 +102,7 @@ public class PatternTypechecking {
         }
 
         // Typecheck the RHS
-        CheckTypeVisitor.Result tcResult;
+        TypecheckingResult tcResult;
         if (abstractParameters != null) {
           tcResult = myVisitor.finalCheckExpr(clause.getExpression(), expectedType, false);
         } else {

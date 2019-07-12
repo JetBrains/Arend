@@ -9,7 +9,7 @@ import org.arend.frontend.reference.ParsedLocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.TypeMismatchError;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -102,12 +102,12 @@ public class ExpressionTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("X", Pi(Nat(), Universe(0))));
     SingleDependentLink link = singleParam("t", Nat());
     context.add(new TypedBinding("Y", Pi(link, Pi(singleParam("x", Apps(Ref(context.get(0)), Ref(link))), Universe(0)))));
-    CheckTypeVisitor.Result typeResult = typeCheckExpr(context,
+    TypecheckingResult typeResult = typeCheckExpr(context,
           "\\Pi (f : \\Pi (g : Nat -> Nat) -> X (g zero)) " +
           "-> (\\Pi (z : (Nat -> Nat) -> Nat) -> Y (z (\\lam _ => 0)) (f (\\lam x => z (\\lam _ => x)))) " +
           "-> Y 0 (f (\\lam x => x))", null);
     assertNotNull(typeResult);
-    CheckTypeVisitor.Result result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
+    TypecheckingResult result = typeCheckExpr(context, "\\lam f h => h (\\lam k => k 1)", typeResult.expression);
     assertNotNull(result);
   }
 
@@ -208,7 +208,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     ParsedLocalReferable x = ref("x");
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cZero());
     Concrete.Expression expr = cLet(clets(xClause), cVar(x));
-    CheckTypeVisitor.Result result = typeCheckExpr(expr, null);
+    TypecheckingResult result = typeCheckExpr(expr, null);
     assertEquals(result.type.normalize(NormalizeVisitor.Mode.WHNF), Pi(Nat(), Nat()));
   }
 

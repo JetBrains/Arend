@@ -2,7 +2,7 @@ package org.arend.typechecking.constructions;
 
 import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -13,7 +13,7 @@ import static org.junit.Assert.assertNotNull;
 public class Typed extends TypeCheckingTestCase {
   @Test
   public void typedExpr() {
-    CheckTypeVisitor.Result result = typeCheckExpr("(0 : Nat)", null);
+    TypecheckingResult result = typeCheckExpr("(0 : Nat)", null);
     assertNotNull(result);
     assertEquals(Zero(), result.expression);
     assertEquals(Nat(), result.type);

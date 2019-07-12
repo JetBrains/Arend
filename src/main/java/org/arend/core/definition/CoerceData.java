@@ -10,6 +10,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.*;
@@ -43,7 +44,7 @@ public class CoerceData {
     myMapTo.put(classifyingDefinition, coercingDefinitions);
   }
 
-  public static CheckTypeVisitor.Result coerce(CheckTypeVisitor.Result result, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
+  public static TypecheckingResult coerce(TypecheckingResult result, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
     DefCallExpression actualDefCall = result.type.checkedCast(DefCallExpression.class);
     DefCallExpression expectedDefCall = expectedType instanceof Expression ? ((Expression) expectedType).checkedCast(DefCallExpression.class) : null;
     if (actualDefCall != null && expectedDefCall != null && (actualDefCall.getDefinition() == expectedDefCall.getDefinition() || actualDefCall.getDefinition() instanceof ClassDefinition && expectedDefCall.getDefinition() instanceof ClassDefinition && ((ClassDefinition) actualDefCall.getDefinition()).isSubClassOf((ClassDefinition) expectedDefCall.getDefinition()))) {
@@ -107,13 +108,13 @@ public class CoerceData {
     return definition instanceof DataDefinition || definition instanceof ClassDefinition || definition instanceof Constructor;
   }
 
-  private static CheckTypeVisitor.Result coerceResult(CheckTypeVisitor.Result result, Collection<? extends Definition> defs, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
+  private static TypecheckingResult coerceResult(TypecheckingResult result, Collection<? extends Definition> defs, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor, boolean argStrict, boolean resultStrict) {
     for (Definition def : defs) {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
         ClassCallExpression classCall = result.type.checkedCast(ClassCallExpression.class);
         Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().hasUniverses(), sourceNode) : classCall.getSortArgument();
-        result = new CheckTypeVisitor.Result(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizeVisitor.Mode.WHNF));
+        result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizeVisitor.Mode.WHNF));
       } else {
         List<Expression> arguments = new ArrayList<>();
         DependentLink link = def.getParameters();
@@ -143,7 +144,7 @@ public class CoerceData {
         }
 
         substitution.add(link, result.expression);
-        result = new CheckTypeVisitor.Result(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF));
+        result = new TypecheckingResult(new FunCallExpression((FunctionDefinition) def, sortArg, arguments), ((FunctionDefinition) def).getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF));
       }
     }
 

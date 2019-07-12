@@ -14,6 +14,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.provider.InstanceProvider;
+import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.function.Predicate;
@@ -124,7 +125,7 @@ public class GlobalInstancePool implements InstancePool {
 
     ClassDefinition classDef = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
     Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode)), sourceNode);
-    CheckTypeVisitor.Result result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
+    TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
     return result == null ? new ErrorExpression(null, null) : result.expression;
   }
 
