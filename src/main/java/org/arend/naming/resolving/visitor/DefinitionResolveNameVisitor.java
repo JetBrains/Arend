@@ -597,7 +597,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (!elements.isEmpty()) {
         Map<String, Referable> map = new LinkedHashMap<>();
         for (Referable element : elements) {
-          map.put(element.textRepresentation(), element);
+          map.put(element.textRepresentation(), element.getUnderlyingReferable());
         }
         namespaces.add(new Pair<>(cmd, map));
       }

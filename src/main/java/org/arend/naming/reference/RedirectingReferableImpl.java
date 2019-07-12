@@ -20,6 +20,12 @@ public class RedirectingReferableImpl implements RedirectingReferable {
 
   @Nonnull
   @Override
+  public Referable getUnderlyingReferable() {
+    return myOriginalReferable.getUnderlyingReferable();
+  }
+
+  @Nonnull
+  @Override
   public Referable getOriginalReferable() {
     return myOriginalReferable;
   }

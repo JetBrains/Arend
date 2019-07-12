@@ -16,6 +16,12 @@ public class TypedRedirectingReferable implements RedirectingReferable {
 
   @Nonnull
   @Override
+  public Referable getUnderlyingReferable() {
+    return myOriginalReferable.getUnderlyingReferable();
+  }
+
+  @Nonnull
+  @Override
   public Precedence getPrecedence() {
     return myOriginalReferable instanceof GlobalReferable ? ((GlobalReferable) myOriginalReferable).getPrecedence() : Precedence.DEFAULT;
   }
