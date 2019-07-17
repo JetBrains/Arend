@@ -78,12 +78,17 @@ $ cd testProject
 ```
 Create file `arend.yaml` inside this directory.
 This file contains the description of your project.
-Currently, we just need to specify the location of source files of your project.
-You can read more about this configuration file [here](libraries).
+Minimally, we just need to specify the location of source files of your project.
 Add the following line to `arend.yaml`:
 ```bash
 sourcesDir: src
 ```
+In case you would also like to use the standard library add the following line to `arend.yaml`:
+```bash
+dependencies: [arend-lib]
+```  
+You can read more about this configuration file [here](libraries).
+
 Create directory `src` which will contain source files for this project.
 Create a file `example.ard` inside `src` with the following content:
 ```arend
@@ -101,6 +106,27 @@ You should see the following output:
 --- Done ---
 ```
 This means that module `example` was successfully typechecked.
+
+Now let's add something from the standard library. Change the contents of `example.ard` to the following:
+```arend
+\import Function
+\func f => id 0
+```
+Run `java -jar $arend $myProject -L $libdir`, where `arend.jar` and `$myProject` as before and `$libdir` 
+is the path to the parent directory of the directory `arend-lib` of the standard library. You should see the following
+output:
+```bash
+[INFO] Loading library prelude
+[INFO] Loaded library prelude
+[INFO] Loading library myProject
+[INFO] Loading library arend-lib
+[INFO] Loaded library arend-lib
+[INFO] Loaded library myProject
+--- Typechecking myProject ---
+[ ] example
+--- Done ---
+```
+  
 Modify file `example.ard` as follows:
 ```arend
 \func f : Nat -> Nat => 0
