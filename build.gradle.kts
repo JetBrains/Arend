@@ -14,11 +14,10 @@ repositories {
 
 dependencies {
     compile("commons-cli:commons-cli:1.4")
-    compile("com.google.guava:guava:27.1-jre")
     compile("com.google.protobuf:protobuf-java:3.7.1")
     compile("com.google.code.findbugs:jsr305:3.0.2")
     compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
-    compile("com.fasterxml.jackson.core:jackson-databind:2.9.9")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.9.9.1")
 
     testCompile("junit:junit:4.12")
     testCompile("org.hamcrest:hamcrest-library:1.3")
