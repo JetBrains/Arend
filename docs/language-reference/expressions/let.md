@@ -14,10 +14,10 @@ where `p_1`, ... `p_n` are patterns and `e_1`, ... `e_{n+1}` are expressions.
 
 Every pattern is either a variable or an expression of the form `(p_1', ... p_k')`,
 where `p_1'`, ... `p_k'` are patterns. This implies that if `p_i` is a tuple of k subpatterns,
-then the type of `e_i` must be either a k-fold sigma type or a record with k fields.
-Note that because of eta-equivalence for sigma types and records the structure of
+then the type of `e_i` must be either a k-fold Sigma type or a record with k fields.
+Note that because of eta-equivalence for Sigma types and records the structure of
 `e_i` does not matter: for example, expression `\let (x,y)=> z \in e` evaluates to
-`e[z.1/x,z.2/y]` if type of `z` is sigma type (and with fields instead of projections
+`e[z.1/x,z.2/y]` if type of `z` is Sigma type (and with fields instead of projections
 `z.1` and `z.2` in case of a record). In general, if pattern `p_i` contains
 variables `x_i^1, ... x_i^{n_i}` expression 
 `\let | p_1 => e_1 ... | p_n => e_n \in e` evaluates to `e[... proj_i^j(e_i)/x_i^j ,,,]`,

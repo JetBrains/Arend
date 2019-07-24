@@ -1,7 +1,7 @@
 <h1 id="universes">Universes<a class="headerlink" href="#universes" title="Permanent link">&para;</a></h1>
 
 A universe is a type of types. Since the type of all types cannot be consistently introduced to a type theory
-with dependent pi types, as the type of types cannot contain itself, Arend contains a hierarchy of universes 
+with dependent Pi types, as the type of types cannot contain itself, Arend contains a hierarchy of universes 
 `\Type n` (the whitespace is optional), parameterized by a natural number `n`. This number is called the 
 _predicative level_ of the universe. Informally, the universe `\Type0` contains all types that do not refer to universes
 in their definition, the universe `\Type1` contains all types in `\Type0` together with those types that

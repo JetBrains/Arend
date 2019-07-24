@@ -1,6 +1,6 @@
 <h1 id="data">Inductive types<a class="headerlink" href="#data" title="Permanent link">&para;</a></h1>
 
-Inductive and [higher inductive](/language-reference/definitions/#hits) types are represented
+Inductive and [higher inductive](/language-reference/definitions/hits) types are represented
 by data definitions.
 The basic syntax of a data definition looks like this:
 
@@ -13,7 +13,7 @@ The basic syntax of a data definition looks like this:
 
 where `p_1`, ... `p_n`, `p^1_1`, ... `p^m_{k_m}` are either named or unnamed [parameters](/language-reference/definitions/parameters).
 There are several extensions of this syntax which are discussed further in this module and in the module on 
-[HITs](/language-reference/definitions/#hits).
+[HITs](/language-reference/definitions/hits).
 Each row `con_i p^i_1 ... p^i_{k_i}` defines a constructor `con_i` with the specified parameters.
 Parameters `p_1`, ... `p_n` are parameters of the data type `D`, but they also become implicit parameters of
 the constructors.

@@ -1,6 +1,6 @@
 <h1 id="records">Records<a class="headerlink" href="#records" title="Permanent link">&para;</a></h1>
 
-A _record_ is a [sigma type](/language-reference/expressions/sigma) with named projections.
+A _record_ is a [Sigma type](/language-reference/expressions/sigma) with named projections.
 The basic syntax looks like this:
 
 ```arend
@@ -45,7 +45,7 @@ If `x : R` and `f` is a field of `R`, then `x.f` is equivalent to `R.f {x}`.
 The type `A_i` can depend on variables `p_1`, ... `p_{i-1}`.
 The type `B_i` can depend on variables `p_1`, ... `p_n`, `f_1`, ... `f_{i-1}`.
 
-Records are essentially sigma types. For example, the record `R` above is equivalent to the sigma type
+Records are essentially Sigma types. For example, the record `R` above is equivalent to the Sigma type
 `\Sigma (p_1 : A_1) ... (p_n : A_n) (f_1 : B_1) ... (f_k : B_k)`.
 
 Instances of type `R` can be created using _new expression_. Any of the variants of the syntax listed below can be used,
@@ -127,7 +127,7 @@ Expressions `a_i` and `b_j` may refer to any field of `S`, but implementations m
 
 The type `S` is a subtype of `R`. That is, every expression of type `S` is also of type `R`.
 
-A record is equivalent to the sigma type, consisting of all of its unimplemented fields.
+A record is equivalent to the Sigma type, consisting of all of its unimplemented fields.
 For example, consider the following records:
 
 ```arend
@@ -152,7 +152,7 @@ Then `D` is equivalent to `\Sigma (x : Nat) (x <= 0)`:
 ```
 
 where `idp` is the proof by reflexivity.
-This works since both records and sigma types satisfy eta rules.
+This works since both records and Sigma types satisfy eta rules.
 
 A record can extend several records.
 If these records extend some base record themselves, then the fields of this base record will not be repeated in the final record.
