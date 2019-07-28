@@ -48,27 +48,33 @@ public abstract class BaseLibrary implements Library {
   }
 
   @Override
-  public void unload() {
+  public boolean unload() {
+    reset();
+    myLoaded = false;
+    return true;
+  }
+
+  @Override
+  public void reset() {
     for (ModulePath modulePath : getLoadedModules()) {
       Group group = getModuleGroup(modulePath);
       if (group != null) {
-        unloadGroup(group);
+        resetGroup(group);
       }
     }
-    myLoaded = false;
   }
 
-  public void unloadGroup(Group group) {
-    unloadDefinition(group.getReferable());
+  public void resetGroup(Group group) {
+    resetDefinition(group.getReferable());
     for (Group subgroup : group.getSubgroups()) {
-      unloadGroup(subgroup);
+      resetGroup(subgroup);
     }
     for (Group subgroup : group.getDynamicSubgroups()) {
-      unloadGroup(subgroup);
+      resetGroup(subgroup);
     }
   }
 
-  public void unloadDefinition(LocatedReferable referable) {
+  public void resetDefinition(LocatedReferable referable) {
     if (referable instanceof TCReferable) {
       myTypecheckerState.reset((TCReferable) referable);
     }

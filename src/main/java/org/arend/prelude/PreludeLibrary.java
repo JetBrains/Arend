@@ -6,10 +6,12 @@ import org.arend.library.LibraryHeader;
 import org.arend.library.SourceLibrary;
 import org.arend.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
+import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.Scope;
 import org.arend.term.group.ChildGroup;
+import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;
@@ -57,6 +59,20 @@ public abstract class PreludeLibrary extends SourceLibrary {
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
     return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList());
   }
+
+  @Override
+  public boolean unload() {
+    return false;
+  }
+
+  @Override
+  public void reset() {}
+
+  @Override
+  public void resetGroup(Group group) {}
+
+  @Override
+  public void resetDefinition(LocatedReferable referable) {}
 
   @Nonnull
   @Override

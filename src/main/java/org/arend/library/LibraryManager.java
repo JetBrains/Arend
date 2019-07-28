@@ -12,6 +12,7 @@ import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * Contains all necessary information for the library loading.
@@ -114,6 +115,21 @@ public class LibraryManager {
   public Library getRegisteredLibrary(String libraryName) {
     for (Library library : getRegisteredLibraries()) {
       if (library.getName().equals(libraryName)) {
+        return library;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the library satisfying given predicate.
+   *
+   * @param pred  a predicate to test libraries.
+   * @return the library with the given name.
+   */
+  public Library getRegisteredLibrary(Predicate<Library> pred) {
+    for (Library library : getRegisteredLibraries()) {
+      if (pred.test(library)) {
         return library;
       }
     }
@@ -229,19 +245,14 @@ public class LibraryManager {
     myFailedLibraries.remove(library);
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
-      myReverseDependencies.remove(library);
       return;
     }
 
-    Set<Library> dependencies = myReverseDependencies.remove(library);
-    library.unload();
-
-    if (dependencies == null) {
-      return;
-    }
-
-    for (Library dependency : dependencies) {
-      unloadLibrary(dependency);
+    Set<Library> dependencies = library.unload() ? myReverseDependencies.remove(library) : myReverseDependencies.get(library);
+    if (dependencies != null) {
+      for (Library dependency : dependencies) {
+        dependency.reset();
+      }
     }
   }
 
@@ -254,35 +265,6 @@ public class LibraryManager {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
     }
 
-    for (Library library : myReverseDependencies.keySet()) {
-      library.unload();
-    }
-    myReverseDependencies.clear();
-  }
-
-  /**
-   * Unloads all libraries except for the prelude.
-   */
-  public void unloadExceptPrelude() {
-    for (Library library : myFailedLibraries) {
-      if (library.getName().equals(Prelude.LIBRARY_NAME)) {
-        unload();
-        return;
-      }
-    }
-
-    myFailedLibraries.clear();
-    if (!myLoadingLibraries.isEmpty()) {
-      myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
-    }
-
-    Iterator<Library> it = myReverseDependencies.keySet().iterator();
-    while (it.hasNext()) {
-      Library library = it.next();
-      if (!library.getName().equals(Prelude.LIBRARY_NAME)) {
-        library.unload();
-        it.remove();
-      }
-    }
+    myReverseDependencies.keySet().removeIf(Library::unload);
   }
 }

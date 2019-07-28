@@ -153,7 +153,7 @@ public abstract class BaseCliFrontend {
     if (argFiles.isEmpty()) {
       if (sourceDirStr != null) {
         requestedModules = new LinkedHashSet<>();
-        FileUtils.getModules(sourceDir, FileUtils.EXTENSION, requestedModules);
+        FileUtils.getModules(sourceDir, FileUtils.EXTENSION, requestedModules, myLibraryManager.getLibraryErrorReporter());
       } else {
         requestedModules = Collections.emptySet();
       }
@@ -175,7 +175,7 @@ public abstract class BaseCliFrontend {
             modulePath = FileUtils.modulePath(fileName);
           }
           if (modulePath == null) {
-            FileUtils.printIllegalModuleName(fileName);
+            myLibraryManager.getLibraryErrorReporter().report(FileUtils.illegalModuleName(fileName));
           } else {
             requestedModules.add(modulePath);
           }

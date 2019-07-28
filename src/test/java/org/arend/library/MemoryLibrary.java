@@ -60,10 +60,10 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   }
 
   @Override
-  public void unload() {
+  public void reset() {
+    super.reset();
     for (Map.Entry<ModulePath, MemoryRawSource> entry : myRawSources.entrySet()) {
       entry.setValue(new MemoryRawSource(entry.getValue()));
     }
-    super.unload();
   }
 }

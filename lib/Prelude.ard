@@ -49,8 +49,9 @@
       | 0, _ => zero<=_
       | suc n, suc m => suc<=suc (n <= m)
 
-    -- | divMod n m returns the pair (q,r) such that n = m * q + r and r < m if 0 < m.
-    --   If m == 0, then divMod n m returns (n,n).
+    {- | divMod n m returns the pair (q,r) such that n = m * q + r and r < m if 0 < m.
+     -   If m == 0, then divMod n m returns (n,n).
+     -}
     \func divMod (n m : Nat) : \Sigma Nat Nat
 
     \func div (n m : Nat) => (divMod n m).1

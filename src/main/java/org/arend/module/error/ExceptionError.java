@@ -16,19 +16,25 @@ public class ExceptionError extends GeneralError {
   public final Exception exception;
   public final GlobalReferable affectedReferable;
 
-  public ExceptionError(Exception exception, GlobalReferable affectedReferable, boolean isLoading) {
-    super(Level.ERROR, "An exception happened while " + (isLoading ? "loading" : "persisting") + " module: " + affectedReferable.textRepresentation());
+  public ExceptionError(Exception exception, String action, GlobalReferable affectedReferable) {
+    super(Level.ERROR, "An exception happened while " + action + (affectedReferable == null ? "" : " module: " + affectedReferable.textRepresentation()));
     this.exception = exception;
     this.affectedReferable = affectedReferable;
   }
 
-  public ExceptionError(Exception exception, ModulePath modulePath, boolean isLoading) {
-    this(exception, new ModuleReferable(modulePath), isLoading);
+  public ExceptionError(Exception exception, String action) {
+    this(exception, action, (GlobalReferable) null);
+  }
+
+  public ExceptionError(Exception exception, String action, ModulePath modulePath) {
+    this(exception, action, new ModuleReferable(modulePath));
   }
 
   @Override
   public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
-    consumer.accept(affectedReferable, this);
+    if (affectedReferable != null) {
+      consumer.accept(affectedReferable, this);
+    }
   }
 
   @Override

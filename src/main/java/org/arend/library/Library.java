@@ -37,8 +37,16 @@ public interface Library {
   /**
    * Unloads the library.
    * Do not invoke this method directly; use {@link LibraryManager#unloadLibrary(Library)} instead.
+   * A library can fail to unload; for example, prelude can never be unloaded.
+   *
+   * @return true if the library was successfully unloaded, false otherwise.
    */
-  void unload();
+  boolean unload();
+
+  /**
+   * Resets typechecked definitions from this library.
+   */
+  void reset();
 
   /**
    * Checks if the library is loaded.

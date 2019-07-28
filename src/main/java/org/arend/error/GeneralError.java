@@ -9,7 +9,7 @@ import java.util.function.BiConsumer;
 /**
  * Errors that can be readily reported to an ErrorReporter.
  */
-public abstract class GeneralError extends Error {
+public class GeneralError extends Error {
   public GeneralError(@Nonnull Level level, String message) {
     super(level, message);
   }

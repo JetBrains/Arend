@@ -1,6 +1,11 @@
 package org.arend.util;
 
+import org.arend.error.Error;
+import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
+import org.arend.library.error.LibraryIOError;
 import org.arend.module.ModulePath;
+import org.arend.module.error.ExceptionError;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -77,11 +82,11 @@ public class FileUtils {
     return Paths.get(System.getProperty("user.dir"));
   }
 
-  public static void printIllegalModuleName(String module) {
-    System.err.println("[ERROR] " + module + " is an illegal module path");
+  public static GeneralError illegalModuleName(String module) {
+    return new GeneralError(Error.Level.ERROR, module + " is an illegal module path");
   }
 
-  public static void getModules(Path path, String ext, Collection<ModulePath> modules) {
+  public static void getModules(Path path, String ext, Collection<ModulePath> modules, ErrorReporter errorReporter) {
     try {
       Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
         @Override
@@ -90,7 +95,7 @@ public class FileUtils {
             file = path.relativize(file);
             ModulePath modulePath = FileUtils.modulePath(file, ext);
             if (modulePath == null) {
-              printIllegalModuleName(file.toString());
+              errorReporter.report(illegalModuleName(file.toString()));
             } else {
               modules.add(modulePath);
             }
@@ -99,10 +104,9 @@ public class FileUtils {
         }
       });
     } catch (NoSuchFileException e) {
-      System.err.println("[ERROR] No such file: " + e.getFile());
+      errorReporter.report(new LibraryIOError(e.getFile(), "No such file"));
     } catch (IOException e) {
-      System.err.println("[ERROR] An exception happened while processing directory " + path);
-      e.printStackTrace();
+      errorReporter.report(new ExceptionError(e, "processing directory " + path));
     }
   }
 }

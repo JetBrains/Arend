@@ -109,7 +109,7 @@ public abstract class StreamBinarySource implements BinarySource {
         if (library.containsModule(module) && !sourceLoader.fillInBinary(module)) {
           ChildGroup group = library.getModuleGroup(modulePath);
           if (group != null) {
-            library.unloadGroup(group);
+            library.resetGroup(group);
           }
           return LoadResult.FAIL;
         }
@@ -131,7 +131,7 @@ public abstract class StreamBinarySource implements BinarySource {
       sourceLoader.getLibrary().onGroupLoaded(modulePath, null, false);
     }
     if (group != null) {
-      sourceLoader.getLibrary().unloadGroup(group);
+      sourceLoader.getLibrary().resetGroup(group);
     }
   }
 
@@ -158,7 +158,7 @@ public abstract class StreamBinarySource implements BinarySource {
       module.writeTo(outputStream);
       return true;
     } catch (Exception e) {
-      errorReporter.report(new ExceptionError(e, currentModulePath, false));
+      errorReporter.report(new ExceptionError(e, "persisting", currentModulePath));
       return false;
     }
   }
