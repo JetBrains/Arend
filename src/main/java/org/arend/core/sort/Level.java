@@ -144,10 +144,6 @@ public class Level {
       return compare(level2, level1, Equations.CMP.LE, equations, sourceNode);
     }
 
-    if (level1.getVar() == InferenceLevelVariable.UNKNOWN_PVAR || level1.getVar() == InferenceLevelVariable.UNKNOWN_HVAR || level2.getVar() == InferenceLevelVariable.UNKNOWN_PVAR || level2.getVar() == InferenceLevelVariable.UNKNOWN_HVAR) {
-      return true;
-    }
-
     if (level1.isInfinity()) {
       return level2.isInfinity() || !level2.isClosed() && (equations == null || equations.addEquation(INFINITY, level2, Equations.CMP.LE, sourceNode));
     }

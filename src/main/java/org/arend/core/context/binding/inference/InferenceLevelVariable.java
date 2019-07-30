@@ -8,9 +8,6 @@ public class InferenceLevelVariable implements LevelVariable {
   private final boolean myUniverseLike;
   private final Concrete.SourceNode mySourceNode;
 
-  public static final InferenceLevelVariable UNKNOWN_PVAR = new InferenceLevelVariable(LvlType.PLVL, false, null);
-  public static final InferenceLevelVariable UNKNOWN_HVAR = new InferenceLevelVariable(LvlType.HLVL, false, null);
-
   public InferenceLevelVariable(LvlType type, boolean isUniverseLike, Concrete.SourceNode sourceNode) {
     myType = type;
     myUniverseLike = isUniverseLike;

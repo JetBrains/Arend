@@ -138,7 +138,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     while (Character.isDigit(name.charAt(i))) {
       i--;
     }
-    return i + 1 == name.length() ? -1 : Integer.valueOf(name.substring(i + 1));
+    return i + 1 == name.length() ? -1 : Integer.parseInt(name.substring(i + 1));
   }
 
   private Concrete.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
@@ -374,7 +374,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     List<? extends Referable> lastRefs = parameters.get(parameters.size() - 1).getReferableList();
     Referable lastRef = lastRefs.get(lastRefs.size() - 1);
-    VoidConcreteVisitor<Void,Void,Void> visitor = new VoidConcreteVisitor<Void,Void,Void>() {
+    VoidConcreteVisitor<Void,Void> visitor = new VoidConcreteVisitor<Void,Void>() {
       @Override
       public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
         refs.remove(expr.getReferent());

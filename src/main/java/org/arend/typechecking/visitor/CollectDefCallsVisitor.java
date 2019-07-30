@@ -8,7 +8,7 @@ import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
-public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, Void> {
+public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
   private final ConcreteProvider myConcreteProvider;
   private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;
@@ -133,7 +133,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, V
   }
 
   @Override
-  protected void visitPattern(Concrete.Pattern pattern, Void params) {
+  protected void visitPattern(Concrete.Pattern pattern, Boolean params) {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Referable constructor = ((Concrete.ConstructorPattern) pattern).getConstructor();
       if (constructor instanceof TCReferable) {
@@ -141,16 +141,6 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, V
       }
     }
     super.visitPattern(pattern, null);
-  }
-
-  private void visitConstructor(Concrete.Constructor def) {
-    visitParameters(def.getParameters(), null);
-    if (def.getResultType() != null) {
-      def.getResultType().accept(this, null);
-    }
-    if (!def.getEliminatedReferences().isEmpty()) {
-      visitClauses(def.getClauses(), null);
-    }
   }
 
   @Override
@@ -168,11 +158,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, V
     });
 
     for (Concrete.ClassField field : def.getFields()) {
-      visitParameters(field.getParameters(), null);
-      field.getResultType().accept(this, null);
-      if (field.getResultTypeLevel() != null) {
-        field.getResultTypeLevel().accept(this, null);
-      }
+      visitClassField(field);
     }
 
     visitClassFieldImpls(def.getImplementations(), null);
@@ -181,7 +167,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, V
   }
 
   @Override
-  public Void visitApp(Concrete.AppExpression expr, Void ignore) {
+  public Void visitApp(Concrete.AppExpression expr, Boolean ignore) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
       if (ref instanceof TCReferable) {
@@ -197,7 +183,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Boolean, V
   }
 
   @Override
-  public Void visitReference(Concrete.ReferenceExpression expr, Void ignore) {
+  public Void visitReference(Concrete.ReferenceExpression expr, Boolean ignore) {
     if (expr.getReferent() instanceof TCReferable) {
       addDependency((TCReferable) expr.getReferent(), false);
     }

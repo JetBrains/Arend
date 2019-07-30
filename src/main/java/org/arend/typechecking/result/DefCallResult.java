@@ -11,7 +11,7 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.visitor.BaseTypechecker;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +46,7 @@ public class DefCallResult implements TResult {
   }
 
   @Override
-  public TypecheckingResult toResult(BaseTypechecker typechecker) {
+  public TypecheckingResult toResult(CheckTypeVisitor typechecker) {
     if (myParameters.isEmpty()) {
       return new TypecheckingResult(myDefinition.getDefCall(mySortArgument, myArguments), myResultType);
     }

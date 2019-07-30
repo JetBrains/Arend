@@ -10,6 +10,7 @@ import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
+import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.GoodThisParametersVisitor;
@@ -49,26 +50,25 @@ import java.util.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 
 public class DefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, List<Clause>> {
+  protected CheckTypeVisitor typechecker;
   private GlobalInstancePool myInstancePool;
 
   public DefinitionTypechecker(CheckTypeVisitor typechecker) {
-    super(typechecker);
+    super(typechecker == null ? null : typechecker.errorReporter);
+    this.typechecker = typechecker;
     myInstancePool = typechecker == null ? null : typechecker.getInstancePool();
   }
 
-  public CheckTypeVisitor getTypechecker() {
-    return (CheckTypeVisitor) typechecker;
-  }
-
   public void setTypechecker(CheckTypeVisitor typechecker) {
-    super.setTypechecker(typechecker);
+    this.typechecker = typechecker;
+    this.errorReporter = typechecker.errorReporter;
     myInstancePool = typechecker.getInstancePool();
   }
 
   public Definition typecheckHeader(Definition typechecked, GlobalInstancePool instancePool, Concrete.Definition definition) {
-    LocalInstancePool localInstancePool = new LocalInstancePool(getTypechecker());
+    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     instancePool.setInstancePool(localInstancePool);
-    getTypechecker().setInstancePool(instancePool);
+    typechecker.setInstancePool(instancePool);
 
     if (definition instanceof Concrete.FunctionDefinition) {
       FunctionDefinition functionDef = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(definition.getData());
@@ -123,9 +123,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @Override
   public List<Clause> visitFunction(Concrete.FunctionDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
-    LocalInstancePool localInstancePool = new LocalInstancePool(getTypechecker());
+    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
-    getTypechecker().setInstancePool(myInstancePool);
+    typechecker.setInstancePool(myInstancePool);
 
     FunctionDefinition definition = typechecked != null ? (FunctionDefinition) typechecked : new FunctionDefinition(def.getData());
     try {
@@ -140,9 +140,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @Override
   public List<Clause> visitData(Concrete.DataDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
-    LocalInstancePool localInstancePool = new LocalInstancePool(getTypechecker());
+    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
-    getTypechecker().setInstancePool(myInstancePool);
+    typechecker.setInstancePool(myInstancePool);
 
     DataDefinition definition = typechecked != null ? (DataDefinition) typechecked : new DataDefinition(def.getData());
     try {
@@ -161,7 +161,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   public List<Clause> visitClass(Concrete.ClassDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
     if (def.hasErrors()) {
-      getTypechecker().setHasErrors();
+      typechecker.setHasErrors();
     }
 
     if (def.isRecursive()) {
@@ -173,7 +173,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     ClassDefinition definition = typechecked != null ? (ClassDefinition) typechecked : new ClassDefinition(def.getData());
     if (typechecked == null) {
-      getTypechecker().getTypecheckingState().record(def.getData(), definition);
+      typechecker.getTypecheckingState().record(def.getData(), definition);
     }
     if (def.isRecursive()) {
       definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
@@ -325,7 +325,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (resultTypeLevel != null) {
       TypecheckingResult result = typechecker.finalCheckExpr(resultTypeLevel, null, false);
       if (result != null && resultType != null) {
-        Integer level = getTypechecker().getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
+        Integer level = typechecker.getExpressionLevel(EmptyDependentLink.getInstance(), result.type, resultType, DummyEquations.getInstance(), resultTypeLevel);
         if (level != null) {
           if (!checkLevel(isLemma, isProperty, level, resultTypeLevel)) {
             if (newDef && funDef != null) {
@@ -409,12 +409,173 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  @Override
-  protected boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
-    boolean paramsOk = super.typecheckFunctionHeader(typedDef, def, localInstancePool, newDef);
+  private Sort typecheckParameters(Concrete.ReferableDefinition def, LinkList list, LocalInstancePool localInstancePool, Sort expectedSort, DependentLink oldParameters) {
+    Sort sort = Sort.PROP;
+
+    if (oldParameters != null) {
+      list.append(oldParameters);
+    }
+
+    for (Concrete.TypeParameter parameter : Objects.requireNonNull(Concrete.getParameters(def, true))) {
+      Type paramResult = typechecker.checkType(parameter.getType(), expectedSort == null ? ExpectedType.OMEGA : new UniverseExpression(expectedSort), true);
+      if (paramResult == null) {
+        sort = null;
+        paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
+      } else if (sort != null) {
+        sort = sort.max(paramResult.getSortOfType());
+      }
+
+      DependentLink param;
+      int numberOfParameters;
+      boolean oldParametersOK = true;
+      if (parameter instanceof Concrete.TelescopeParameter) {
+        List<? extends Referable> referableList = parameter.getReferableList();
+        List<String> names = parameter.getNames();
+        param = oldParameters != null
+          ? oldParameters
+          : referableList.size() == 1 && referableList.get(0) instanceof HiddenLocalReferable
+          ? new TypedDependentLink(parameter.getExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
+          : parameter(parameter.getExplicit(), names, paramResult);
+        numberOfParameters = names.size();
+
+        if (oldParameters == null) {
+          int i = 0;
+          for (DependentLink link = param; link.hasNext(); link = link.getNext(), i++) {
+            typechecker.addBinding(referableList.get(i), link);
+          }
+        } else {
+          for (int i = 0; i < names.size(); i++) {
+            if (oldParameters.hasNext()) {
+              typechecker.addBinding(referableList.get(i), oldParameters);
+              oldParameters = oldParameters.getNext();
+            } else {
+              oldParametersOK = false;
+              break;
+            }
+          }
+        }
+      } else {
+        numberOfParameters = 1;
+        if (oldParameters != null) {
+          param = oldParameters;
+          if (oldParameters.hasNext()) {
+            typechecker.addBinding(null, oldParameters);
+            oldParameters = oldParameters.getNext();
+          } else {
+            oldParametersOK = false;
+          }
+        } else {
+          param = parameter(parameter.getExplicit(), (String) null, paramResult);
+        }
+      }
+      if (!oldParametersOK) {
+        errorReporter.report(new TypecheckingError("Cannot typecheck definition. Try to clear cache", parameter));
+        return null;
+      }
+
+      if (localInstancePool != null) {
+        TCClassReferable classRef = parameter.getType().getUnderlyingTypeClass();
+        if (classRef != null) {
+          ClassDefinition classDef = (ClassDefinition) typechecker.getTypechecked(classRef);
+          if (classDef != null && !classDef.isRecord()) {
+            ClassField classifyingField = classDef.getClassifyingField();
+            int i = 0;
+            for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
+              ReferenceExpression reference = new ReferenceExpression(link);
+              localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
+            }
+          }
+        }
+      }
+
+      if (oldParameters == null) {
+        list.append(param);
+        for (; param.hasNext(); param = param.getNext()) {
+          typechecker.addBinding(null, param);
+        }
+      }
+    }
+
+    return sort;
+  }
+
+  private Decision isPropLevel(Concrete.Expression expression) {
+    Referable fun = expression == null ? null : expression.getUnderlyingReferable();
+    if (fun instanceof TCReferable) {
+      Definition typeDef = typechecker.getTypechecked((TCReferable) fun);
+      if (typeDef != null) {
+        boolean couldBe = false;
+        for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
+          if (parametersLevel.level == -1) {
+            if (parametersLevel.parameters == null) {
+              return Decision.YES;
+            }
+            couldBe = true;
+          }
+        }
+        if (couldBe) {
+          return Decision.MAYBE;
+        }
+      } else {
+        return Decision.MAYBE;
+      }
+    }
+    return Decision.NO;
+  }
+
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
+    if ((isLemma || isProperty) && (level == null || level != -1)) {
+      errorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", sourceNode));
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
+    checkFunctionLevel(def);
+
+    LinkList list = new LinkList();
+    boolean paramsOk = typecheckParameters(def, list, localInstancePool, null, newDef ? null : typedDef.getParameters()) != null;
+
+    Expression expectedType = null;
+    Concrete.Expression cResultType = def.getResultType();
+    boolean isLemma = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
+    if (cResultType != null) {
+      Decision isProp = isPropLevel(cResultType);
+      boolean needProp = def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA && def.getResultTypeLevel() == null;
+      ExpectedType typeExpectedType = needProp && isProp == Decision.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA;
+      Type expectedTypeResult = def.getBody() instanceof Concrete.CoelimFunctionBody && !def.isRecursive() ? null // The result type will be typechecked together with all field implementations during body typechecking.
+        : typechecker.checkType(cResultType, typeExpectedType, !(def.getBody() instanceof Concrete.TermFunctionBody) || def.isRecursive() || isLemma);
+      if (expectedTypeResult != null) {
+        expectedType = expectedTypeResult.getExpr();
+        if (needProp && isProp == Decision.MAYBE) {
+          Sort sort = expectedTypeResult.getSortOfType();
+          if (sort == null || !sort.isProp()) {
+            DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
+            Integer level = defCall == null ? null : defCall.getUseLevel();
+            if (!checkLevel(true, false, level, def)) {
+              isLemma = false;
+            }
+          }
+        }
+      }
+    }
 
     if (newDef) {
-      getTypechecker().getTypecheckingState().record(def.getData(), typedDef);
+      if (expectedType == null && def.isRecursive()) {
+        expectedType = new ErrorExpression(null, null);
+      }
+
+      typedDef.setParameters(list.getFirst());
+      typedDef.setResultType(expectedType);
+      typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      typedDef.setIsLemma(isLemma);
+    }
+
+    if (newDef) {
+      typechecker.getTypecheckingState().record(def.getData(), typedDef);
       calculateTypeClassParameters(def, typedDef);
       calculateParametersTypecheckingOrder(typedDef);
     }
@@ -508,7 +669,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
 
-        Integer level = getTypechecker().getExpressionLevel(link, resultType, ok ? type : null, DummyEquations.getInstance(), def);
+        Integer level = typechecker.getExpressionLevel(link, resultType, ok ? type : null, DummyEquations.getInstance(), def);
         if (level != null && newDef) {
           if (useParent instanceof DataDefinition) {
             if (parameters == null) {
@@ -530,6 +691,34 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     return paramsOk;
+  }
+
+  private ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.Definition def, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.ClassFieldImpl> classFieldImpls) {
+    ClassCallExpression type;
+    TypecheckingResult result;
+    Set<ClassField> pseudoImplemented;
+    if (typedDef.isLemma()) {
+      TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
+      if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+      type = (ClassCallExpression) typeResult.expression;
+      pseudoImplemented = new HashSet<>();
+      result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType), null, def);
+      if (result == null || !(result.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+    } else {
+      pseudoImplemented = Collections.emptySet();
+      result = typechecker.finalCheckExpr(Concrete.ClassExtExpression.make(def.getData(), resultType, classFieldImpls), ExpectedType.OMEGA, false);
+      if (result == null || !(result.expression instanceof ClassCallExpression)) {
+        return null;
+      }
+      type = (ClassCallExpression) result.expression;
+    }
+
+    typechecker.checkAllImplemented((ClassCallExpression) result.expression, pseudoImplemented, def);
+    return type;
   }
 
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
@@ -560,12 +749,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (body instanceof Concrete.ElimFunctionBody) {
       if (expectedType != null) {
         Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
-        List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), getTypechecker());
+        List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
         clauses = new ArrayList<>();
         EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
         Body typedBody = elimParams == null ? null : (def.getResultTypeLevel() == null
-          ? new ElimTypechecking(getTypechecker(), expectedType, flags)
-          : new ElimTypechecking(getTypechecker(), expectedType, flags, resultTypeLevel)
+          ? new ElimTypechecking(typechecker, expectedType, flags)
+          : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel)
           ).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
         if (typedBody != null) {
           if (newDef) {
@@ -593,7 +782,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           TypecheckingResult result = typechecker.finalCheckExpr(def.getResultType(), def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
           if (newDef && result != null) {
             typedDef.setResultType(result.expression);
-            typedDef.setStatus(getTypechecker().getStatus());
+            typedDef.setStatus(typechecker.getStatus());
           }
         }
         bodyIsOK = true;
@@ -795,9 +984,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (newDef) {
       if (def.hasErrors()) {
-        getTypechecker().setHasErrors();
+        typechecker.setHasErrors();
       }
-      typedDef.setStatus(getTypechecker().getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
+      typedDef.setStatus(typechecker.getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
     }
 
     return clauses;
@@ -825,7 +1014,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     dataDefinition.setParameters(list.getFirst());
     dataDefinition.setSort(userSort);
-    getTypechecker().getTypecheckingState().record(def.getData(), dataDefinition);
+    typechecker.getTypecheckingState().record(def.getData(), dataDefinition);
     calculateTypeClassParameters(def, dataDefinition);
     calculateParametersTypecheckingOrder(dataDefinition);
 
@@ -833,7 +1022,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
-          getTypechecker().getTypecheckingState().rewrite(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
+          typechecker.getTypecheckingState().rewrite(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
         }
       }
     } else {
@@ -865,7 +1054,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     boolean dataOk = true;
     List<DependentLink> elimParams = Collections.emptyList();
     if (def.getEliminatedReferences() != null) {
-      elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getConstructorClauses(), dataDefinition.getParameters(), getTypechecker());
+      elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getConstructorClauses(), dataDefinition.getParameters(), typechecker);
       if (elimParams == null) {
         dataOk = false;
       }
@@ -876,9 +1065,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     errorReporter = countingErrorReporter;
 
     if (!def.getConstructorClauses().isEmpty()) {
-      Map<Referable, Binding> context = getTypechecker().getContext();
-      Set<? extends Binding> freeBindings = getTypechecker().getFreeBindings();
-      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), getTypechecker());
+      Map<Referable, Binding> context = typechecker.getContext();
+      Set<? extends Binding> freeBindings = typechecker.getFreeBindings();
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), typechecker);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -887,10 +1076,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
 
-      InstancePool instancePool = getTypechecker().getInstancePool().getInstancePool();
+      InstancePool instancePool = typechecker.getInstancePool().getInstancePool();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-        getTypechecker().setContext(new HashMap<>(context));
-        getTypechecker().setFreeBindings(new HashSet<>(freeBindings));
+        typechecker.setContext(new HashMap<>(context));
+        typechecker.setFreeBindings(new HashSet<>(freeBindings));
 
         // Typecheck patterns and compute free bindings
         boolean patternsOK = true;
@@ -909,15 +1098,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                 substitution.add(link, expr);
                 link = link.getNext();
               }
-              getTypechecker().getInstancePool().setInstancePool(instancePool.subst(substitution));
+              typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.proj2 == null) {
               originalErrorReporter.report(new TypecheckingError("This clause is redundant", clause));
               result = null;
             }
             if (result == null) {
-              getTypechecker().setContext(new HashMap<>(context));
-              getTypechecker().setFreeBindings(new HashSet<>(freeBindings));
+              typechecker.setContext(new HashMap<>(context));
+              typechecker.setFreeBindings(new HashSet<>(freeBindings));
               patternsOK = false;
             }
           }
@@ -970,7 +1159,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           inferredSort = inferredSort.max(conSort);
         }
       }
-      getTypechecker().getInstancePool().setInstancePool(instancePool);
+      typechecker.getInstancePool().setInstancePool(instancePool);
 
       if (inferredSort.isProp() || inferredSort.getHLevel().isVarOnly()) {
         boolean ok = true;
@@ -1062,9 +1251,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (newDef) {
       dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
       if (def.hasErrors()) {
-        getTypechecker().setHasErrors();
+        typechecker.setHasErrors();
       }
-      dataDefinition.setStatus(getTypechecker().getStatus().max(dataDefinition.status()));
+      dataDefinition.setStatus(typechecker.getStatus().max(dataDefinition.status()));
 
       boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());
       if (!hasUniverses) {
@@ -1157,10 +1346,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LinkList list = new LinkList();
     Sort sort;
 
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(getTypechecker().getFreeBindings())) {
-      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(getTypechecker().getContext())) {
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         if (constructor != null) {
-          getTypechecker().getTypecheckingState().rewrite(def.getData(), constructor);
+          typechecker.getTypecheckingState().rewrite(def.getData(), constructor);
           dataDefinition.addConstructor(constructor);
         }
 
@@ -1190,16 +1379,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
 
         if (!def.getClauses().isEmpty()) {
-          elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), list.getFirst(), getTypechecker());
+          elimParams = ElimTypechecking.getEliminatedParameters(def.getEliminatedReferences(), def.getClauses(), list.getFirst(), typechecker);
         }
       }
     }
 
     if (elimParams != null) {
-      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(getTypechecker().getFreeBindings())) {
-        try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(getTypechecker().getContext())) {
+      try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+        try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
           List<Clause> clauses = new ArrayList<>();
-          Body body = new ElimTypechecking(getTypechecker(), oldConstructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams, clauses);
+          Body body = new ElimTypechecking(typechecker, oldConstructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams, clauses);
           if (constructor != null) {
             constructor.setBody(body);
             constructor.setClauses(clauses);
@@ -1368,7 +1557,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     // Process super classes
     for (Concrete.ReferenceExpression aSuperClass : def.getSuperClasses()) {
-      ClassDefinition superClass = getTypechecker().referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
+      ClassDefinition superClass = typechecker.referableToDefinition(aSuperClass.getReferent(), ClassDefinition.class, "Expected a class", aSuperClass);
       if (superClass == null) {
         continue;
       }
@@ -1473,7 +1662,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Map<ClassField,Concrete.ClassFieldImpl> implementedHere = new LinkedHashMap<>();
     ClassField lastField = null;
     for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
-      ClassField field = getTypechecker().referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
+      ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
       if (field == null) {
         classOk = false;
         continue;
@@ -1542,8 +1731,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (newDef) {
         typedDef.implementField(entry.getKey(), new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
       }
-      getTypechecker().getContext().clear();
-      getTypechecker().getFreeBindings().clear();
+      typechecker.getContext().clear();
+      typechecker.getFreeBindings().clear();
 
       if (result != null) {
         if (newDef && entry.getKey() == lastField) {
@@ -1575,7 +1764,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : getTypechecker().getStatus());
+      typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
       typedDef.setHasUniverses(false);
@@ -1733,8 +1922,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     boolean ok;
     PiExpression piType;
     ClassField typedDef = null;
-    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(getTypechecker().getFreeBindings())) {
-      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(getTypechecker().getContext())) {
+    try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
+      try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Concrete.Expression codomain;
         TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(parentClass, Sort.STD), true);
         if (def.getResultType() instanceof Concrete.PiExpression) {
@@ -1805,7 +1994,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             isProperty = level != null && level == -1;
           } else {
             // Just reports an error
-            getTypechecker().getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
+            typechecker.getExpressionLevel(link, null, null, DummyEquations.getInstance(), def.getResultTypeLevel());
           }
         }
       }
@@ -1840,7 +2029,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return;
     }
 
-    LocalInstancePool localInstancePool = new LocalInstancePool(getTypechecker());
+    LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
       localInstancePool.addInstance(null, classDef.getReferable(), new ReferenceExpression(thisParam), thisSourceNode);
@@ -1854,7 +2043,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private ClassField addField(TCFieldReferable fieldRef, ClassDefinition parentClass, PiExpression piType, Expression typeLevel) {
     ClassField typedDef = new ClassField(fieldRef, parentClass, piType, typeLevel);
-    getTypechecker().getTypecheckingState().rewrite(fieldRef, typedDef);
+    typechecker.getTypecheckingState().rewrite(fieldRef, typedDef);
     parentClass.addField(typedDef);
     parentClass.addPersonalField(typedDef);
     return typedDef;

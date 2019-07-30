@@ -10,7 +10,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
-import org.arend.typechecking.visitor.BaseTypechecker;
+import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ public class TypecheckingResult implements TResult {
   }
 
   @Override
-  public TypecheckingResult toResult(BaseTypechecker typechecker) {
+  public TypecheckingResult toResult(CheckTypeVisitor typechecker) {
     return this;
   }
 
