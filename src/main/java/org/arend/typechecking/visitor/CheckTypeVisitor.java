@@ -417,7 +417,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
           if (oldImpl != null) {
             if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, pair.proj2.implementation)) {
-              errorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), pair.proj2));
+              errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
             }
           } else if (!resultClassCall.isImplemented(field)) {
             fieldSet.put(field, impl);
@@ -446,7 +446,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
                 Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                 if (oldImpl != null) {
                   if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, pair.proj2.implementation)) {
-                    errorReporter.report(new FieldsImplementationError(true, Collections.singletonList(field.getReferable()), pair.proj2.implementation));
+                    errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                   }
                 } else if (!resultClassCall.isImplemented(field)) {
                   fieldSet.put(field, impl);
@@ -610,14 +610,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (notImplemented == 0) {
       return true;
     } else {
-      List<GlobalReferable> fields = new ArrayList<>(notImplemented);
+      List<FieldReferable> fields = new ArrayList<>(notImplemented);
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (!classCall.isImplemented(field) && !pseudoImplemented.contains(field)) {
           fields.add(field.getReferable());
         }
       }
       if (!fields.isEmpty()) {
-        errorReporter.report(new FieldsImplementationError(false, fields, sourceNode));
+        errorReporter.report(new FieldsImplementationError(false, classCall.getDefinition().getReferable(), fields, sourceNode));
       }
       return false;
     }

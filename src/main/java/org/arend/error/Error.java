@@ -8,7 +8,6 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
-
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -18,7 +17,12 @@ public abstract class Error {
   public final String message;
   public final @Nonnull Level level;
 
-  public enum Level { INFO, WARNING, GOAL, ERROR }
+  public enum Level { INFO, WEAK_WARNING {
+    @Override
+    public String toString() {
+      return "WARNING";
+    }
+  }, WARNING, GOAL, ERROR }
 
   public Error(@Nonnull Level level, String message) {
     this.level = level;

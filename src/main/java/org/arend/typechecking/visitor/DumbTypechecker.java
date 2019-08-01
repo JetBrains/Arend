@@ -2,6 +2,9 @@ package org.arend.typechecking.visitor;
 
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.error.local.GoalError;
+
+import java.util.Collections;
 
 public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   private final BaseDefinitionTypechecker myTypechecker;
@@ -36,11 +39,17 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
 
   @Override
   public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
-    if (expr.getReferent() == myDefinition.getData()) {
+    if (expr.getReferent().equals(myDefinition.getData())) {
       myDefinition.setRecursive(true);
     }
 
     super.visitReference(expr, null);
+    return null;
+  }
+
+  @Override
+  public Void visitGoal(Concrete.GoalExpression expr, Void params) {
+    myTypechecker.errorReporter.report(new GoalError(expr.getName(), Collections.emptyMap(), null, null, Collections.emptyList(), expr));
     return null;
   }
 }

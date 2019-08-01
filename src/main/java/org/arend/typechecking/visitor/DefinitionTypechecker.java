@@ -1552,7 +1552,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     }
 
-    List<GlobalReferable> alreadyImplementFields = new ArrayList<>();
+    List<FieldReferable> alreadyImplementFields = new ArrayList<>();
     Concrete.SourceNode alreadyImplementedSourceNode = null;
 
     // Process super classes
@@ -1760,7 +1760,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (!alreadyImplementFields.isEmpty()) {
-      errorReporter.report(new FieldsImplementationError(true, alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
+      errorReporter.report(new FieldsImplementationError(true, def.getData(), alreadyImplementFields, alreadyImplementFields.size() > 1 ? def : alreadyImplementedSourceNode));
     }
 
     if (newDef) {
@@ -2049,7 +2049,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typedDef;
   }
 
-  private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<GlobalReferable> alreadyImplemented) {
+  private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
     LamExpression oldImpl = classDef.implementField(classField, implementation);
     if (oldImpl != null && !classField.isProperty() && !oldImpl.substArgument(new ReferenceExpression(implementation.getParameters())).equals(implementation.getBody())) {
       alreadyImplemented.add(classField.getReferable());

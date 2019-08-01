@@ -2,7 +2,8 @@ package org.arend.typechecking.error.local;
 
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
-import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.ClassReferable;
+import org.arend.naming.reference.FieldReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
@@ -13,11 +14,13 @@ import static org.arend.error.doc.DocFactory.*;
 
 public class FieldsImplementationError extends TypecheckingError {
   public boolean alreadyImplemented;
-  public Collection<? extends GlobalReferable> fields;
+  public ClassReferable classReferable;
+  public Collection<? extends FieldReferable> fields;
 
-  public FieldsImplementationError(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields, Concrete.SourceNode cause) {
+  public FieldsImplementationError(boolean alreadyImplemented, ClassReferable classReferable, Collection<? extends FieldReferable> fields, Concrete.SourceNode cause) {
     super("The following fields are " + (alreadyImplemented ? "already" : "not") + " implemented: ", cause);
     this.alreadyImplemented = alreadyImplemented;
+    this.classReferable = classReferable;
     this.fields = fields;
   }
 

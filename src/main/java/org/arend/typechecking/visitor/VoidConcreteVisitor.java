@@ -225,12 +225,16 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     return null;
   }
 
+  protected void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, P params) {
+    if (classFieldImpl.implementation != null) {
+      classFieldImpl.implementation.accept(this, params);
+    }
+    visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
+  }
+
   protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, P params) {
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
-      if (classFieldImpl.implementation != null) {
-        classFieldImpl.implementation.accept(this, params);
-      }
-      visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
+      visitClassFieldImpl(classFieldImpl, params);
     }
   }
 

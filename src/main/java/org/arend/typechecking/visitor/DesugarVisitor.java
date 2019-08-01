@@ -1,6 +1,6 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.typechecking.error.local.WrongReferable;
+import org.arend.error.Error;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
@@ -10,6 +10,7 @@ import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.ArgInferenceError;
 import org.arend.typechecking.error.local.DesugaringError;
 import org.arend.typechecking.error.local.LocalError;
+import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
@@ -279,6 +280,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     } else {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
+        if (classFieldImpl.subClassFieldImpls.isEmpty()) {
+          myErrorReporter.report(new DesugaringError(Error.Level.WEAK_WARNING, DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+        }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);
         }
@@ -287,7 +291,8 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         if (classRef != null) {
           visitClassFieldImpls(classFieldImpl.subClassFieldImpls, null);
           Object data = classFieldImpl.getData();
-          classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), classFieldImpl.subClassFieldImpls));
+          classFieldImpl.implementation = new Concrete.NewExpression(data, Concrete.ClassExtExpression.make(data, new Concrete.ReferenceExpression(data, classRef), new ArrayList<>(classFieldImpl.subClassFieldImpls)));
+          classFieldImpl.subClassFieldImpls.clear();
           result.add(classFieldImpl);
         } else {
           ok = false;

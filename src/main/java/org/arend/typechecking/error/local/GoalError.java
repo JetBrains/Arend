@@ -23,7 +23,7 @@ public class GoalError extends TypecheckingError {
   public final List<Error> errors;
 
   public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Concrete.Expression expression) {
-    super(Level.GOAL, "", expression);
+    super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
     this.name = name;
     this.context = new HashMap<>(context);
     this.expectedType = expectedType;
