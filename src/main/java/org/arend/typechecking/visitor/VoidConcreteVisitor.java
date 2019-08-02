@@ -7,78 +7,91 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import java.util.List;
 
 public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<P,R> {
-  @Override
-  public R visitFunction(Concrete.FunctionDefinition def, P params) {
+  protected void visitFunctionHeader(Concrete.FunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
-
     if (def.getResultType() != null) {
-      def.getResultType().accept(this, null);
+      def.getResultType().accept(this, params);
     }
     if (def.getResultTypeLevel() != null) {
-      def.getResultTypeLevel().accept(this, null);
+      def.getResultTypeLevel().accept(this, params);
     }
+  }
 
+  protected R visitFunctionBody(Concrete.FunctionDefinition def, P params) {
     Concrete.FunctionBody body = def.getBody();
     if (body instanceof Concrete.TermFunctionBody) {
-      ((Concrete.TermFunctionBody) body).getTerm().accept(this, null);
+      ((Concrete.TermFunctionBody) body).getTerm().accept(this, params);
     }
-    visitClassFieldImpls(body.getClassFieldImpls(), null);
-    visitClauses(body.getClauses(), null);
+    visitClassFieldImpls(body.getClassFieldImpls(), params);
+    visitClauses(body.getClauses(), params);
+    return null;
+  }
 
+  @Override
+  public R visitFunction(Concrete.FunctionDefinition def, P params) {
+    visitFunctionHeader(def, params);
+    return visitFunctionBody(def, params);
+  }
+
+  protected void visitDataHeader(Concrete.DataDefinition def, P params) {
+    visitParameters(def.getParameters(), params);
+    Concrete.Expression universe = def.getUniverse();
+    if (universe != null) {
+      universe.accept(this, params);
+    }
+  }
+
+  protected R visitDataBody(Concrete.DataDefinition def, P params) {
+    visitClauses(def.getConstructorClauses(), params);
+    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
+      for (Concrete.Constructor constructor : clause.getConstructors()) {
+        visitConstructor(constructor, params);
+      }
+    }
     return null;
   }
 
   @Override
   public R visitData(Concrete.DataDefinition def, P params) {
-    visitParameters(def.getParameters(), null);
-    Concrete.Expression universe = def.getUniverse();
-    if (universe != null) {
-      universe.accept(this, null);
-    }
-
-    for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-      if (clause.getPatterns() != null) {
-        for (Concrete.Pattern pattern : clause.getPatterns()) {
-          visitPattern(pattern, null);
-        }
-      }
-      for (Concrete.Constructor constructor : clause.getConstructors()) {
-        visitConstructor(constructor);
-      }
-    }
-
-    return null;
+    visitDataHeader(def, params);
+    return visitDataBody(def, params);
   }
 
-  protected void visitConstructor(Concrete.Constructor def) {
-    visitParameters(def.getParameters(), null);
+  protected void visitConstructor(Concrete.Constructor def, P params) {
+    visitParameters(def.getParameters(), params);
     if (def.getResultType() != null) {
-      def.getResultType().accept(this, null);
+      def.getResultType().accept(this, params);
     }
     if (!def.getEliminatedReferences().isEmpty()) {
-      visitClauses(def.getClauses(), null);
+      visitClauses(def.getClauses(), params);
     }
+  }
+
+  protected void visitClassHeader(Concrete.ClassDefinition def, P params) {
+    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
+      visitReference(superClass, params);
+    }
+  }
+
+  protected R visitClassBody(Concrete.ClassDefinition def, P params) {
+    for (Concrete.ClassField field : def.getFields()) {
+      visitClassField(field, params);
+    }
+    visitClassFieldImpls(def.getImplementations(), params);
+    return null;
   }
 
   @Override
   public R visitClass(Concrete.ClassDefinition def, P params) {
-    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-      visitReference(superClass, null);
-    }
-
-    for (Concrete.ClassField field : def.getFields()) {
-      visitClassField(field);
-    }
-
-    visitClassFieldImpls(def.getImplementations(), null);
-    return null;
+    visitClassHeader(def, params);
+    return visitClassBody(def, params);
   }
 
-  protected void visitClassField(Concrete.ClassField field) {
-    visitParameters(field.getParameters(), null);
-    field.getResultType().accept(this, null);
+  protected void visitClassField(Concrete.ClassField field, P params) {
+    visitParameters(field.getParameters(), params);
+    field.getResultType().accept(this, params);
     if (field.getResultTypeLevel() != null) {
-      field.getResultTypeLevel().accept(this, null);
+      field.getResultTypeLevel().accept(this, params);
     }
   }
 
@@ -86,7 +99,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   public Void visitApp(Concrete.AppExpression expr, P params) {
     expr.getFunction().accept(this, params);
     for (Concrete.Argument argument : expr.getArguments()) {
-      argument.getExpression().accept(this, null);
+      argument.getExpression().accept(this, params);
     }
     return null;
   }
@@ -188,8 +201,8 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     }
   }
 
-  protected void visitClauses(List<Concrete.FunctionClause> clauses, P params) {
-    for (Concrete.FunctionClause clause : clauses) {
+  protected void visitClauses(List<? extends Concrete.Clause> clauses, P params) {
+    for (Concrete.Clause clause : clauses) {
       if (clause.getPatterns() != null) {
         for (Concrete.Pattern pattern : clause.getPatterns()) {
           visitPattern(pattern, params);

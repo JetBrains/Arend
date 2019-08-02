@@ -250,10 +250,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
                   coercingField = (TCFieldReferable) referable;
                   isForced = true;
                 }
-              } else if (coercingField == null && parameter.getExplicit()) {
+              } else if (coercingField == null && parameter.isExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.getExplicit(), ClassFieldKind.ANY, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
+              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.isExplicit(), ClassFieldKind.ANY, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
             } else {
               myErrorReporter.report(new AbstractExpressionError(Error.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -445,7 +445,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     if (reference == null) {
       Integer number = pattern.getNumber();
       if (number != null) {
-        return new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
+        Concrete.Pattern cPattern = new Concrete.NumberPattern(pattern.getData(), number, buildTypedReferables(pattern.getAsPatterns()));
+        cPattern.setExplicit(pattern.isExplicit());
+        return cPattern;
       }
     }
 

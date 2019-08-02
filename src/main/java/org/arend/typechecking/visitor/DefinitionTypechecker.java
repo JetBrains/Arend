@@ -434,8 +434,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         param = oldParameters != null
           ? oldParameters
           : referableList.size() == 1 && referableList.get(0) instanceof HiddenLocalReferable
-          ? new TypedDependentLink(parameter.getExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
-          : parameter(parameter.getExplicit(), names, paramResult);
+          ? new TypedDependentLink(parameter.isExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
+          : parameter(parameter.isExplicit(), names, paramResult);
         numberOfParameters = names.size();
 
         if (oldParameters == null) {
@@ -465,7 +465,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             oldParametersOK = false;
           }
         } else {
-          param = parameter(parameter.getExplicit(), (String) null, paramResult);
+          param = parameter(parameter.isExplicit(), (String) null, paramResult);
         }
       }
       if (!oldParametersOK) {
@@ -1101,7 +1101,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.proj2 == null) {
-              originalErrorReporter.report(new TypecheckingError("This clause is redundant", clause));
+              originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
               result = null;
             }
             if (result == null) {

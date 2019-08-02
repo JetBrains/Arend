@@ -220,21 +220,21 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       if (name == null) {
         name = "_";
       }
-      myBuilder.append(parameter.getExplicit() ? name : '{' + name + '}');
+      myBuilder.append(parameter.isExplicit() ? name : '{' + name + '}');
     } else
     if (parameter instanceof Concrete.TelescopeParameter) {
-      myBuilder.append(parameter.getExplicit() ? '(' : '{');
+      myBuilder.append(parameter.isExplicit() ? '(' : '{');
       for (Referable referable : parameter.getReferableList()) {
         myBuilder.append(referable == null ? "_" : referable.textRepresentation()).append(' ');
       }
 
       myBuilder.append(": ");
       ((Concrete.TypeParameter) parameter).getType().accept(this, new Precedence(Concrete.Expression.PREC));
-      myBuilder.append(parameter.getExplicit() ? ')' : '}');
+      myBuilder.append(parameter.isExplicit() ? ')' : '}');
     } else
     if (parameter instanceof Concrete.TypeParameter) {
       Concrete.Expression type = ((Concrete.TypeParameter) parameter).getType();
-      if (parameter.getExplicit()) {
+      if (parameter.isExplicit()) {
         type.accept(this, new Precedence((byte) (ReferenceExpression.PREC + 1)));
       } else {
         myBuilder.append('{');

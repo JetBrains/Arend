@@ -16,15 +16,16 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.Error;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.MissingClausesError;
+import org.arend.typechecking.error.local.NotEnoughPatternsError;
 import org.arend.typechecking.error.local.TruncatedDataError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DumbTypechecker;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -66,13 +67,18 @@ public class ElimTypechecking {
     }
   }
 
-  public static  List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
+  public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
     List<DependentLink> elimParams = Collections.emptyList();
     if (!expressions.isEmpty()) {
       int expectedNumberOfPatterns = expressions.size();
+      DumbTypechecker.findImplicitPatterns(clauses, visitor.getErrorReporter());
       for (Concrete.Clause clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
-          visitor.getErrorReporter().report(new TypecheckingError("Expected " + expectedNumberOfPatterns + " patterns, but got " + clause.getPatterns().size(), clause));
+          if (clause.getPatterns().size() > expectedNumberOfPatterns) {
+            visitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, clause.getPatterns().get(expectedNumberOfPatterns)));
+          } else {
+            visitor.getErrorReporter().report(new NotEnoughPatternsError(expectedNumberOfPatterns - clause.getPatterns().size(), clause));
+          }
           return null;
         }
       }
@@ -278,7 +284,7 @@ public class ElimTypechecking {
 
     if (myOK) {
       for (Concrete.FunctionClause clause : myUnusedClauses) {
-        myVisitor.getErrorReporter().report(new TypecheckingError(Error.Level.WARNING, "This clause is redundant", clause));
+        myVisitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
       }
     }
     return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);

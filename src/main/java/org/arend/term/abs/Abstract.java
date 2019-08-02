@@ -55,10 +55,8 @@ public final class Abstract {
     }
   }
 
-  public interface Parameter extends SourceNode {
+  public interface Parameter extends SourceNode, org.arend.naming.reference.Parameter {
     @Nullable Object getData();
-    boolean isExplicit();
-    @Nonnull List<? extends Referable> getReferableList();
     @Nullable Expression getType();
   }
 

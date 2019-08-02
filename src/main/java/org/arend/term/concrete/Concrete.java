@@ -46,7 +46,7 @@ public final class Concrete {
 
   // Parameters
 
-  public static abstract class Parameter extends SourceNodeImpl {
+  public static abstract class Parameter extends SourceNodeImpl implements org.arend.naming.reference.Parameter {
     private boolean myExplicit;
 
     public Parameter(Object data, boolean explicit) {
@@ -54,7 +54,8 @@ public final class Concrete {
       myExplicit = explicit;
     }
 
-    public boolean getExplicit() {
+    @Override
+    public boolean isExplicit() {
       return myExplicit;
     }
 
@@ -62,6 +63,7 @@ public final class Concrete {
       myExplicit = explicit;
     }
 
+    @Override
     @Nonnull
     public abstract List<? extends Referable> getReferableList();
 
@@ -899,6 +901,7 @@ public final class Concrete {
       this.expression = expression;
     }
 
+    @Override
     @Nullable
     public Expression getExpression() {
       return expression;
@@ -1583,7 +1586,7 @@ public final class Concrete {
     }
   }
 
-  public static abstract class Clause extends SourceNodeImpl {
+  public static abstract class Clause extends SourceNodeImpl implements PatternHolder {
     private final List<Pattern> myPatterns;
 
     public Clause(Object data, List<Pattern> patterns) {
@@ -1591,8 +1594,19 @@ public final class Concrete {
       myPatterns = patterns;
     }
 
+    @Override
     public List<Pattern> getPatterns() {
       return myPatterns;
+    }
+
+    @Override
+    public Clause getSourceNode() {
+      return this;
+    }
+
+    @Nullable
+    public Expression getExpression() {
+      return null;
     }
   }
 
@@ -1661,6 +1675,11 @@ public final class Concrete {
   }
 
   // Patterns
+
+  public interface PatternHolder {
+    List<Pattern> getPatterns();
+    SourceNode getSourceNode();
+  }
 
   public static abstract class Pattern extends SourceNodeImpl {
     public static final byte PREC = 11;
@@ -1734,7 +1753,7 @@ public final class Concrete {
     }
   }
 
-  public static class ConstructorPattern extends Pattern {
+  public static class ConstructorPattern extends Pattern implements PatternHolder {
     private Referable myConstructor;
     private final List<Pattern> myArguments;
 
@@ -1760,9 +1779,15 @@ public final class Concrete {
       myConstructor = constructor;
     }
 
+    @Override
     @Nonnull
     public List<Pattern> getPatterns() {
       return myArguments;
+    }
+
+    @Override
+    public ConstructorPattern getSourceNode() {
+      return this;
     }
   }
 

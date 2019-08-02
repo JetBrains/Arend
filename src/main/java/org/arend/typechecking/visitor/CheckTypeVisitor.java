@@ -941,7 +941,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     InferenceVariable inferenceVariable = new LambdaInferenceVariable(name == null ? "_" : "type-of-" + name, new UniverseExpression(sort), argIndex, sourceNode, false, getAllBindings());
     Expression argType = new InferenceReferenceExpression(inferenceVariable, myEquations);
 
-    TypedSingleDependentLink link = new TypedSingleDependentLink(param.getExplicit(), name, new TypeExpression(argType, sort));
+    TypedSingleDependentLink link = new TypedSingleDependentLink(param.isExplicit(), name, new TypeExpression(argType, sort));
     if (referable != null) {
       context.put(referable, link);
     } else {
@@ -970,7 +970,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     if (param instanceof Concrete.TelescopeParameter) {
       List<? extends Referable> referableList = param.getReferableList();
-      SingleDependentLink link = ExpressionFactory.singleParams(param.getExplicit(), param.getNames(), argResult);
+      SingleDependentLink link = ExpressionFactory.singleParams(param.isExplicit(), param.getNames(), argResult);
       int i = 0;
       for (SingleDependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
         if (referableList.get(i) != null) {
@@ -981,7 +981,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
       return link;
     } else {
-      return new TypedSingleDependentLink(param.getExplicit(), null, argResult);
+      return new TypedSingleDependentLink(param.isExplicit(), null, argResult);
     }
   }
 
@@ -996,14 +996,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
           if (arg instanceof Concrete.TelescopeParameter) {
             List<? extends Referable> referableList = arg.getReferableList();
-            DependentLink link = ExpressionFactory.parameter(arg.getExplicit(), arg.getNames(), result);
+            DependentLink link = ExpressionFactory.parameter(arg.isExplicit(), arg.getNames(), result);
             list.append(link);
             int i = 0;
             for (DependentLink link1 = link; link1.hasNext(); link1 = link1.getNext(), i++) {
               addBinding(referableList.get(i), link1);
             }
           } else {
-            list.append(ExpressionFactory.parameter(arg.getExplicit(), (String) null, result));
+            list.append(ExpressionFactory.parameter(arg.isExplicit(), (String) null, result));
           }
 
           Sort resultSort = null;
@@ -1040,7 +1040,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Concrete.Parameter param = parameters.get(0);
     if (expectedType != null) {
       expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
-      if (param.getExplicit() && expectedType.isInstance(PiExpression.class) && !expectedType.cast(PiExpression.class).getParameters().isExplicit()) {
+      if (param.isExplicit() && expectedType.isInstance(PiExpression.class) && !expectedType.cast(PiExpression.class).getParameters().isExplicit()) {
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         SingleDependentLink piParams = piExpectedType.getParameters();
         for (SingleDependentLink link = piParams; link.hasNext(); link = link.getNext()) {
@@ -1065,7 +1065,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         PiExpression piExpectedType = expectedType.cast(PiExpression.class);
         Referable referable = ((Concrete.NameParameter) param).getReferable();
         SingleDependentLink piParams = piExpectedType.getParameters();
-        if (piParams.isExplicit() && !param.getExplicit()) {
+        if (piParams.isExplicit() && !param.isExplicit()) {
           errorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
         }
 
@@ -1090,7 +1090,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     } else if (param instanceof Concrete.TypeParameter) {
       PiExpression piExpectedType = expectedType == null ? null : expectedType.checkedCast(PiExpression.class);
-      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piExpectedType == null || piExpectedType.getParameters().isExplicit() != param.getExplicit() ? null : piExpectedType.getParameters().getType());
+      SingleDependentLink link = visitTypeParameter((Concrete.TypeParameter) param, null, piExpectedType == null || piExpectedType.getParameters().isExplicit() != param.isExplicit() ? null : piExpectedType.getParameters().getType());
       if (link == null) {
         return null;
       }
@@ -1121,7 +1121,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
           piExpectedType = expectedType.cast(PiExpression.class);
           Expression argExpectedType = piExpectedType.getParameters().getTypeExpr().subst(substitution);
-          if (piExpectedType.getParameters().isExplicit() && !param.getExplicit()) {
+          if (piExpectedType.getParameters().isExplicit() && !param.isExplicit()) {
             errorReporter.report(new TypecheckingError(ordinal(argIndex) + " argument of the lambda is implicit, but the first parameter of the expected type is not", expr));
           }
           if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {

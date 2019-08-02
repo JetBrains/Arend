@@ -62,7 +62,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private void resolveTypeClassReference(List<? extends Concrete.Parameter> parameters, Concrete.Expression expr, Scope scope, boolean isType) {
     if (isType) {
       for (Concrete.Parameter parameter : parameters) {
-        if (parameter.getExplicit()) {
+        if (parameter.isExplicit()) {
           return;
         }
       }
@@ -70,7 +70,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Concrete.Expression expr1 = expr;
       while (expr1 instanceof Concrete.PiExpression) {
         for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr1).getParameters()) {
-          if (parameter.getExplicit()) {
+          if (parameter.isExplicit()) {
             return;
           }
         }

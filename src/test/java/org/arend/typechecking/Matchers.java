@@ -5,7 +5,6 @@ import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
-import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
@@ -275,7 +274,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error.level == Error.Level.WARNING) {
+        if (error.level == Error.Level.WARNING || error.level == Error.Level.WEAK_WARNING) {
           description.appendText("warning");
           return true;
         } else {

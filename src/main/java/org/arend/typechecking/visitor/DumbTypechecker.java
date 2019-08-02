@@ -1,10 +1,19 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.naming.reference.Parameter;
+import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.Reference;
+import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.GoalError;
+import org.arend.typechecking.error.local.NotEnoughPatternsError;
+import org.arend.typechecking.error.local.TypecheckingError;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   private final BaseDefinitionTypechecker myTypechecker;
@@ -15,19 +24,37 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Void params) {
+  public void visitFunctionHeader(Concrete.FunctionDefinition def, Void params) {
     myDefinition = def;
+    super.visitFunctionHeader(def, null);
     myTypechecker.checkFunctionLevel(def);
-    super.visitFunction(def, null);
+  }
+
+  @Override
+  public Void visitFunctionBody(Concrete.FunctionDefinition def, Void params) {
+    checkClauses(def.getBody().getClauses(), def.getBody().getEliminatedReferences(), def.getParameters());
+    super.visitFunctionBody(def, null);
     myTypechecker.checkElimBody(def);
     return null;
   }
 
   @Override
-  public Void visitData(Concrete.DataDefinition def, Void params) {
+  public void visitDataHeader(Concrete.DataDefinition def, Void params) {
     myDefinition = def;
-    super.visitData(def, null);
+    super.visitDataHeader(def, null);
+  }
+
+  @Override
+  public Void visitDataBody(Concrete.DataDefinition def, Void params) {
+    checkClauses(def.getConstructorClauses(), def.getEliminatedReferences(), def.getParameters());
+    super.visitDataBody(def, null);
     return null;
+  }
+
+  @Override
+  protected void visitConstructor(Concrete.Constructor def, Void params) {
+    super.visitConstructor(def, params);
+    checkClauses(def.getClauses(), def.getEliminatedReferences(), def.getParameters());
   }
 
   @Override
@@ -51,5 +78,106 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   public Void visitGoal(Concrete.GoalExpression expr, Void params) {
     myTypechecker.errorReporter.report(new GoalError(expr.getName(), Collections.emptyMap(), null, null, Collections.emptyList(), expr));
     return null;
+  }
+
+  @Override
+  public Void visitCase(Concrete.CaseExpression expr, Void params) {
+    checkClauses(expr.getClauses(), null, expr.getArguments().size());
+    super.visitCase(expr, params);
+    return null;
+  }
+
+  @Override
+  protected void visitPattern(Concrete.Pattern pattern, Void params) {
+    if (pattern instanceof Concrete.ConstructorPattern) {
+      Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+      Referable ref = conPattern.getConstructor().getUnderlyingReferable();
+      if (ref instanceof Abstract.EliminatedExpressionsHolder) {
+        Abstract.EliminatedExpressionsHolder holder = (Abstract.EliminatedExpressionsHolder) ref;
+        checkClauses(Collections.singletonList(conPattern), holder.getEliminatedExpressions(), holder.getParameters());
+      }
+    }
+
+    super.visitPattern(pattern, params);
+  }
+
+  public static void findImplicitPatterns(List<? extends Concrete.PatternHolder> clauses, LocalErrorReporter errorReporter) {
+    for (Concrete.PatternHolder clause : clauses) {
+      if (clause.getPatterns() == null) {
+        continue;
+      }
+      for (Concrete.Pattern pattern : clause.getPatterns()) {
+        if (!pattern.isExplicit()) {
+          errorReporter.report(new TypecheckingError(TypecheckingError.Kind.IMPLICIT_PATTERN, pattern));
+          return;
+        }
+      }
+    }
+  }
+
+  private void checkClauses(List<? extends Concrete.PatternHolder> clauses, List<? extends Boolean> arguments, int numberOfArguments) {
+    if (arguments == null) {
+      findImplicitPatterns(clauses, myTypechecker.errorReporter);
+    }
+
+    loop:
+    for (Concrete.PatternHolder clause : clauses) {
+      List<Concrete.Pattern> patterns = clause.getPatterns();
+      if (patterns == null) {
+        continue;
+      }
+
+      if (arguments == null) {
+        if (patterns.size() > numberOfArguments) {
+          myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(numberOfArguments)));
+        } else if (patterns.size() < numberOfArguments) {
+          myTypechecker.errorReporter.report(new NotEnoughPatternsError(numberOfArguments - patterns.size(), clause.getSourceNode()));
+        }
+      } else {
+        int i = 0, j = 0;
+        while (i < arguments.size() && j < patterns.size()) {
+          if (arguments.get(i) == patterns.get(j).isExplicit()) {
+            i++;
+            j++;
+          } else if (arguments.get(i)) {
+            myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, patterns.get(j)));
+            continue loop;
+          } else {
+            i++;
+          }
+        }
+
+        while (i < arguments.size() && !arguments.get(i)) {
+          i++;
+        }
+
+        if (i < arguments.size()) {
+          myTypechecker.errorReporter.report(new NotEnoughPatternsError(arguments.size() - i, clause.getSourceNode()));
+        }
+        if (j < patterns.size()) {
+          myTypechecker.errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, patterns.get(j)));
+        }
+      }
+    }
+  }
+
+  private void checkClauses(List<? extends Concrete.PatternHolder> clauses, Collection<? extends Reference> eliminatedReferences, Collection<? extends Parameter> parameters) {
+    if (clauses.isEmpty() || eliminatedReferences == null) {
+      return;
+    }
+
+    List<Boolean> arguments;
+    if (eliminatedReferences.isEmpty()) {
+      arguments = new ArrayList<>();
+      for (Parameter parameter : parameters) {
+        for (Referable ignored : parameter.getReferableList()) {
+          arguments.add(parameter.isExplicit());
+        }
+      }
+    } else {
+      arguments = null;
+    }
+
+    checkClauses(clauses, arguments, arguments == null ? eliminatedReferences.size() : arguments.size());
   }
 }

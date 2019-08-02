@@ -47,7 +47,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
   private Referable getTypeReference(Collection<? extends Concrete.Parameter> parameters, Concrete.Expression expr, boolean isType) {
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter.getExplicit()) {
+      if (parameter.isExplicit()) {
         return null;
       }
     }
@@ -56,7 +56,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
       while (true) {
         if (expr instanceof Concrete.PiExpression) {
           for (Concrete.TypeParameter parameter : ((Concrete.PiExpression) expr).getParameters()) {
-            if (parameter.getExplicit()) {
+            if (parameter.isExplicit()) {
               return null;
             }
           }
@@ -100,7 +100,7 @@ public class TypeClassReferenceExtractVisitor implements ConcreteReferableDefini
 
   private void handleParameters(Collection<? extends Concrete.Parameter> parameters) {
     for (Concrete.Parameter parameter : parameters) {
-      if (parameter.getExplicit()) {
+      if (parameter.isExplicit()) {
         myArguments -= parameter.getNumberOfParameters();
         if (myArguments < 0) {
           return;

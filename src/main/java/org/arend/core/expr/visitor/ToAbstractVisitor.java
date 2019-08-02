@@ -413,7 +413,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       if (numberOfVars < refList.size()) {
         parameters = new ArrayList<>(parameters.subList(0, j));
         Concrete.Parameter param = parameters.get(j);
-        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.getExplicit(), param.getReferableList().subList(0, refList.size() - numberOfVars), param.getType()));
+        parameters.add(new Concrete.TelescopeParameter(param.getData(), param.isExplicit(), param.getReferableList().subList(0, refList.size() - numberOfVars), param.getType()));
         break;
       }
       numberOfVars -= refList.size();

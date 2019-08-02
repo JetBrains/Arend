@@ -18,16 +18,14 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.Error;
 import org.arend.error.doc.DocFactory;
-import org.arend.naming.reference.*;
+import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.local.DataTypeNotEmptyError;
-import org.arend.typechecking.error.local.ExpectedConstructor;
-import org.arend.typechecking.error.local.TypeMismatchError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -72,7 +70,7 @@ public class PatternTypechecking {
         // If we have the absurd pattern, then RHS is ignored
         if (result.proj2 == null) {
           if (clause.getExpression() != null) {
-            myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "The RHS is ignored", clause.getExpression()));
+            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.RHS_IGNORED, clause.getExpression()));
           }
           return new Pair<>(result.proj1, null);
         } else {
@@ -201,7 +199,7 @@ public class PatternTypechecking {
   private void typecheckAsPatterns(List<Concrete.TypedReferable> asPatterns, Expression expression, Expression expectedType) {
     if (expression == null || asPatterns.isEmpty()) {
       if (!asPatterns.isEmpty()) {
-        myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "As-pattern is ignored", asPatterns.get(0)));
+        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.AS_PATTERN_IGNORED, asPatterns.get(0)));
       }
       return;
     }
@@ -221,7 +219,7 @@ public class PatternTypechecking {
 
     for (Concrete.Pattern pattern : patterns) {
       if (!parameters.hasNext()) {
-        myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
+        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
         return null;
       }
 
@@ -235,22 +233,27 @@ public class PatternTypechecking {
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
-              myErrorReporter.report(new TypecheckingError("Too many patterns", pattern));
+              myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, pattern));
               return null;
             }
           }
         } else {
           if (parameters.isExplicit()) {
-            myErrorReporter.report(new TypecheckingError("Expected an explicit pattern", pattern));
+            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT_PATTERN, pattern));
             return null;
           }
         }
       }
 
       if (exprs == null || pattern == null || pattern instanceof Concrete.NamePattern) {
-        if (!(pattern == null || pattern instanceof Concrete.NamePattern)) {
-          myErrorReporter.report(new TypecheckingError(Error.Level.WARNING, "This pattern is ignored", pattern));
+        if (pattern != null) {
+          if (!(pattern instanceof Concrete.NamePattern)) {
+            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.PATTERN_IGNORED, pattern));
+          } else if (!pattern.getAsReferables().isEmpty()) {
+            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.AS_PATTERN_IGNORED, pattern.getAsReferables().get(0)));
+          }
         }
+
         Referable referable = null;
         if (pattern instanceof Concrete.NamePattern) {
           Concrete.NamePattern namePattern = (Concrete.NamePattern) pattern;
@@ -420,7 +423,7 @@ public class PatternTypechecking {
     }
 
     if (parameters.hasNext()) {
-      myErrorReporter.report(new TypecheckingError("Not enough patterns, expected " + DependentLink.Helper.size(parameters) + " more", sourceNode));
+      myErrorReporter.report(new NotEnoughPatternsError(DependentLink.Helper.size(parameters), sourceNode));
       return null;
     }
 

@@ -66,7 +66,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
           for (Concrete.TypeParameter parameter : parameters) {
             if (ignoreFirstParameter) {
               ignoreFirstParameter = false;
-            } else if (!parameter.getExplicit()) {
+            } else if (!parameter.isExplicit()) {
               TCClassReferable classRef = parameter.getType().getUnderlyingTypeClass();
               if (classRef != null) {
                 addClassInstances(classRef);
@@ -86,49 +86,50 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
   }
 
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Boolean isHeader) {
-    visitParameters(def.getParameters(), null);
-
+  public void visitFunctionHeader(Concrete.FunctionDefinition def, Boolean isHeader) {
     if (isHeader) {
-      if (def.getResultType() != null) {
-        def.getResultType().accept(this, null);
-      }
-      if (def.getResultTypeLevel() != null) {
-        def.getResultTypeLevel().accept(this, null);
-      }
-    } else {
-      Concrete.FunctionBody body = def.getBody();
-      if (body instanceof Concrete.TermFunctionBody) {
-        ((Concrete.TermFunctionBody) body).getTerm().accept(this, null);
-      }
-      visitClassFieldImpls(body.getClassFieldImpls(), null);
-      visitClauses(body.getClauses(), null);
+      super.visitFunctionHeader(def, true);
     }
+  }
 
+  @Override
+  public Void visitFunctionBody(Concrete.FunctionDefinition def, Boolean isHeader) {
+    if (!isHeader) {
+      super.visitFunctionBody(def, false);
+    }
     return null;
   }
 
   @Override
-  public Void visitData(Concrete.DataDefinition def, Boolean isHeader) {
+  public void visitDataHeader(Concrete.DataDefinition def, Boolean isHeader) {
     if (isHeader) {
-      visitParameters(def.getParameters(), null);
-      Concrete.Expression universe = def.getUniverse();
-      if (universe != null) {
-        universe.accept(this, null);
-      }
-    } else {
-      for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
-        if (clause.getPatterns() != null) {
-          for (Concrete.Pattern pattern : clause.getPatterns()) {
-            visitPattern(pattern, null);
-          }
-        }
-        for (Concrete.Constructor constructor : clause.getConstructors()) {
-          visitConstructor(constructor);
-        }
-      }
+      super.visitDataHeader(def, true);
     }
+  }
 
+  @Override
+  public Void visitDataBody(Concrete.DataDefinition def, Boolean isHeader) {
+    if (!isHeader) {
+      super.visitDataBody(def, false);
+    }
+    return null;
+  }
+
+  @Override
+  public Void visitClass(Concrete.ClassDefinition def, Boolean isHeader) {
+    visitClassHeader(def, isHeader);
+
+    myExcluded = new HashSet<>();
+    new ClassFieldImplScope(def.getData(), false).find(ref -> {
+      if (ref instanceof TCReferable) {
+        myExcluded.add((TCReferable) ref);
+      }
+      return false;
+    });
+
+    visitClassBody(def, isHeader);
+
+    myExcluded = null;
     return null;
   }
 
@@ -141,29 +142,6 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
       }
     }
     super.visitPattern(pattern, null);
-  }
-
-  @Override
-  public Void visitClass(Concrete.ClassDefinition def, Boolean params) {
-    for (Concrete.ReferenceExpression superClass : def.getSuperClasses()) {
-      visitReference(superClass, null);
-    }
-
-    myExcluded = new HashSet<>();
-    new ClassFieldImplScope(def.getData(), false).find(ref -> {
-      if (ref instanceof TCReferable) {
-        myExcluded.add((TCReferable) ref);
-      }
-      return false;
-    });
-
-    for (Concrete.ClassField field : def.getFields()) {
-      visitClassField(field);
-    }
-
-    visitClassFieldImpls(def.getImplementations(), null);
-    myExcluded = null;
-    return null;
   }
 
   @Override
