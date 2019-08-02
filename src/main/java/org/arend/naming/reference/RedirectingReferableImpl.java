@@ -5,7 +5,6 @@ import org.arend.term.abs.Abstract;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class RedirectingReferableImpl implements RedirectingReferable {
   private final Referable myOriginalReferable;
@@ -57,12 +56,6 @@ public class RedirectingReferableImpl implements RedirectingReferable {
   @Override
   public ClassReferable getTypeClassReference() {
     return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getTypeClassReference() : null;
-  }
-
-  @Nullable
-  @Override
-  public Object getParameterType(List<Boolean> params) {
-    return myOriginalReferable instanceof TypedReferable ? ((TypedReferable) myOriginalReferable).getParameterType(params) : null;
   }
 
   @Nullable
