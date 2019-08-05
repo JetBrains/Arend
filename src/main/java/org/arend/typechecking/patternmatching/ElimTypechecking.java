@@ -232,27 +232,32 @@ public class ElimTypechecking {
     ElimTree elimTree = clausesToElimTree(nonIntervalClauses, 0);
 
     if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
-      List<List<Expression>> missingClauses = new ArrayList<>(myMissingClauses.size());
+      List<List<Pattern>> missingClauses = new ArrayList<>(myMissingClauses.size());
       loop:
       for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
-        List<Expression> expressions = Util.unflattenClauses(missingClause.proj1);
+        List<Pattern> patterns = Util.unflattenClauses(missingClause.proj1);
+        List<Expression> expressions = new ArrayList<>(patterns.size());
+        for (Pattern pattern : patterns) {
+          expressions.add(pattern.toExpression());
+        }
+
         if (!missingClause.proj2) {
           if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions, false)) {
             continue;
           }
 
-          Util.addArguments(expressions, parameters);
+          Util.addArguments(patterns, parameters);
 
-          int i = expressions.size() - 1;
+          int i = patterns.size() - 1;
           for (; i >= 0; i--) {
-            if (!(expressions.get(i) instanceof ReferenceExpression)) {
+            if (!(patterns.get(i) instanceof BindingPattern)) {
               break;
             }
           }
           DependentLink link = parameters;
           ExprSubstitution substitution = new ExprSubstitution();
           for (int j = 0; j < i + 1; j++) {
-            substitution.add(link, expressions.get(j));
+            substitution.add(link, patterns.get(j).toExpression());
             link = link.getNext();
           }
           for (; link.hasNext(); link = link.getNext()) {
@@ -269,16 +274,16 @@ public class ElimTypechecking {
           myOK = false;
         }
 
-        Util.removeArguments(expressions, parameters, elimParams);
+        Util.removeArguments(patterns, parameters, elimParams);
         if (missingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
           missingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
           break;
         }
-        missingClauses.add(expressions);
+        missingClauses.add(patterns);
       }
 
       if (!missingClauses.isEmpty()) {
-        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, sourceNode));
+        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
       }
     }
 

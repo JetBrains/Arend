@@ -7,7 +7,6 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.SigmaExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -92,7 +91,7 @@ public class Util {
       if (elimTree instanceof LeafElimTree) {
         Expression expression = ((LeafElimTree) elimTree).getExpression();
         if (expression != null) {
-          myConsumer.accept(unflattenClausesPatterns(new ArrayList<>(myStack)), expression);
+          myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
         }
       } else {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
@@ -110,7 +109,7 @@ public class Util {
     }
   }
 
-  private static List<Pattern> unflattenClausesPatterns(List<ClauseElem> clauseElems) {
+  public static List<Pattern> unflattenClauses(List<ClauseElem> clauseElems) {
     for (int i = clauseElems.size() - 1; i >= 0; i--) {
       if (clauseElems.get(i) instanceof DataClauseElem) {
         DataClauseElem dataClauseElem = (DataClauseElem) clauseElems.get(i);
@@ -137,15 +136,6 @@ public class Util {
     return result;
   }
 
-  static List<Expression> unflattenClauses(List<ClauseElem> clauseElems) {
-    List<Pattern> patterns = unflattenClausesPatterns(clauseElems);
-    List<Expression> result = new ArrayList<>(patterns.size());
-    for (Pattern pattern : patterns) {
-      result.add(pattern.toExpression());
-    }
-    return result;
-  }
-
   static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
     if (parameters != null && elimParams != null) {
       DependentLink link = parameters;
@@ -158,9 +148,9 @@ public class Util {
     }
   }
 
-  static void addArguments(List<Expression> expressions, DependentLink parameters) {
-    for (DependentLink link = DependentLink.Helper.get(parameters, expressions.size()); link.hasNext(); link = link.getNext()) {
-      expressions.add(new ReferenceExpression(link));
+  static void addArguments(List<Pattern> patterns, DependentLink parameters) {
+    for (DependentLink link = DependentLink.Helper.get(parameters, patterns.size()); link.hasNext(); link = link.getNext()) {
+      patterns.add(new BindingPattern(link));
     }
   }
 }

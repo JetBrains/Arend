@@ -213,11 +213,11 @@ public class Matchers {
     return new LocalErrorMatcher() {
       @Override
       protected boolean matchesLocalError(LocalError error, Description description) {
-        if (error instanceof MissingClausesError && ((MissingClausesError) error).getMissingClauses().size() == clauses) {
+        if (error instanceof MissingClausesError && ((MissingClausesError) error).missingClauses.size() == clauses) {
           description.appendText("Missing " + clauses + " clauses");
           return true;
         } else {
-          description.appendText(error instanceof MissingClausesError ? "'Missing " + ((MissingClausesError) error).getMissingClauses().size() + " clauses' error" : "not a 'Missing clauses' error");
+          description.appendText(error instanceof MissingClausesError ? "'Missing " + ((MissingClausesError) error).missingClauses.size() + " clauses' error" : "not a 'Missing clauses' error");
           return false;
         }
       }
