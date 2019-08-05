@@ -1,6 +1,7 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.ClassReferable;
+import org.arend.term.ChildNamespaceCommand;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -10,7 +11,7 @@ public class ClassGroup extends StaticGroup {
   private final List<Group> myDynamicGroups;
   private final List<? extends InternalReferable> myInternalGlobalReferables;
 
-  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  public ClassGroup(ClassReferable reference, List<? extends InternalReferable> internalGlobalReferables, List<Group> dynamicGroups, List<Group> staticGroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent) {
     super(reference, staticGroups, namespaceCommands, parent);
     myInternalGlobalReferables = internalGlobalReferables;
     myDynamicGroups = dynamicGroups;

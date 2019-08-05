@@ -1,8 +1,15 @@
-package org.arend.library;
+package org.arend.frontend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.frontend.source.FileRawSource;
+import org.arend.library.LibraryDependency;
+import org.arend.library.LibraryHeader;
+import org.arend.library.UnmodifiableSourceLibrary;
 import org.arend.module.ModulePath;
-import org.arend.source.*;
+import org.arend.source.BinarySource;
+import org.arend.source.FileBinarySource;
+import org.arend.source.GZIPStreamBinarySource;
+import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
 
 import javax.annotation.Nonnull;

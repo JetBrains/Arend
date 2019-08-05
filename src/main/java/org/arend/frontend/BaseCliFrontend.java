@@ -5,6 +5,7 @@ import org.arend.core.definition.Definition;
 import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.error.ListErrorReporter;
+import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;

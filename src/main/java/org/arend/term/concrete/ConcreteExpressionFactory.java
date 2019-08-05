@@ -1,10 +1,9 @@
-package org.arend.frontend;
+package org.arend.term.concrete;
 
-import org.arend.frontend.reference.ParsedLocalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.Fixity;
-import org.arend.term.concrete.Concrete;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -77,8 +76,8 @@ public class ConcreteExpressionFactory {
     return new Concrete.LetClause(referable, args, resultType, term);
   }
 
-  public static ParsedLocalReferable ref(String name) {
-    return new ParsedLocalReferable(null, name);
+  public static LocalReferable ref(String name) {
+    return new LocalReferable(name);
   }
 
   public static List<Referable> cvars(Referable... vars) {

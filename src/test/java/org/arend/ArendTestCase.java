@@ -6,6 +6,7 @@ import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocStringBuilder;
 import org.arend.frontend.ConcreteReferableProvider;
 import org.arend.frontend.PositionComparator;
+import org.arend.frontend.library.PreludeFileLibrary;
 import org.arend.library.Library;
 import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
@@ -13,7 +14,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
-import org.arend.prelude.PreludeFileLibrary;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
@@ -50,7 +50,7 @@ public abstract class ArendTestCase {
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary);
-    new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE).typecheckLibrary(preludeLibrary);
+    new Prelude.PreludeTypechecking(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, PositionComparator.INSTANCE).typecheckLibrary(preludeLibrary);
     errorList.clear();
   }
 

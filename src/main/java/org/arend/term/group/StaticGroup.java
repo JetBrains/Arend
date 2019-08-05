@@ -1,6 +1,7 @@
 package org.arend.term.group;
 
 import org.arend.naming.reference.LocatedReferable;
+import org.arend.term.ChildNamespaceCommand;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -11,10 +12,10 @@ import java.util.List;
 public class StaticGroup implements ChildGroup {
   private final LocatedReferable myReferable;
   private final List<Group> myStaticGroups;
-  private final List<SimpleNamespaceCommand> myNamespaceCommands;
+  private final List<ChildNamespaceCommand> myNamespaceCommands;
   private final ChildGroup myParent;
 
-  public StaticGroup(LocatedReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent) {
+  public StaticGroup(LocatedReferable referable, List<Group> staticGroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent) {
     myReferable = referable;
     myStaticGroups = staticGroups;
     myNamespaceCommands = namespaceCommands;
@@ -35,7 +36,7 @@ public class StaticGroup implements ChildGroup {
 
   @Nonnull
   @Override
-  public List<SimpleNamespaceCommand> getNamespaceCommands() {
+  public List<ChildNamespaceCommand> getNamespaceCommands() {
     return myNamespaceCommands;
   }
 

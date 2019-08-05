@@ -8,6 +8,7 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.DataContainer;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.resolving.visitor.TypeClassReferenceExtractVisitor;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 

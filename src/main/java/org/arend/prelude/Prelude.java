@@ -17,7 +17,6 @@ import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
-import org.arend.frontend.PositionComparator;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
@@ -25,6 +24,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.scope.Scope;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
+import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.util.Pair;
@@ -256,8 +256,8 @@ public class Prelude {
   }
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
-    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider) {
-      super(instanceProviderSet, state, concreteProvider, DummyErrorReporter.INSTANCE, PositionComparator.INSTANCE);
+    public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
+      super(instanceProviderSet, state, concreteProvider, DummyErrorReporter.INSTANCE, comparator);
     }
 
     @Override

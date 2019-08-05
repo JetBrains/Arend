@@ -2,7 +2,6 @@ package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
 import org.arend.error.Error;
-import org.arend.frontend.reference.TypeClassReferenceExtractVisitor;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;

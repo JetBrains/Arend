@@ -6,6 +6,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.EmptyScope;
 import org.arend.naming.scope.Scope;
 import org.arend.naming.scope.ScopeFactory;
+import org.arend.term.ChildNamespaceCommand;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 public class FileGroup extends StaticGroup {
   private Scope myScope = EmptyScope.INSTANCE;
 
-  public FileGroup(LocatedReferable referable, List<Group> staticGroups, List<SimpleNamespaceCommand> namespaceCommands) {
+  public FileGroup(LocatedReferable referable, List<Group> staticGroups, List<ChildNamespaceCommand> namespaceCommands) {
     super(referable, staticGroups, namespaceCommands, null);
   }
 

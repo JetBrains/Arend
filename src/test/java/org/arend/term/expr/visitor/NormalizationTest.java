@@ -17,7 +17,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
-import org.arend.frontend.reference.ParsedLocalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -32,7 +32,7 @@ import java.util.Map;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.frontend.ConcreteExpressionFactory.*;
+import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 
 public class NormalizationTest extends TypeCheckingTestCase {
@@ -217,8 +217,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet1() {
     // normalize (\let | x => zero \in \let | y = suc \in y x) = 1
-    ParsedLocalReferable x = ref("x");
-    ParsedLocalReferable y = ref("y");
+    LocalReferable x = ref("x");
+    LocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cZero());
     Concrete.LetClause yClause = clet(y, cSuc());
     TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(y), cVar(x)))), null);
@@ -228,8 +228,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLet2() {
     // normalize (\let | x => suc \in \let | y = zero \in x y) = 1
-    ParsedLocalReferable x = ref("x");
-    ParsedLocalReferable y = ref("y");
+    LocalReferable x = ref("x");
+    LocalReferable y = ref("y");
     Concrete.LetClause xClause = clet(x, cSuc());
     Concrete.LetClause yClause = clet(y, cZero());
     TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cLet(clets(yClause), cApps(cVar(x), cVar(y)))), null);
@@ -255,8 +255,8 @@ public class NormalizationTest extends TypeCheckingTestCase {
   @Test
   public void normalizeLetElimNoStuck() {
     // normalize (\let | x (y : N) : \oo-Type2 => \Type0 \in x zero) = \Type0
-    ParsedLocalReferable y = ref("y");
-    ParsedLocalReferable x = ref("x");
+    LocalReferable y = ref("y");
+    LocalReferable x = ref("x");
     Concrete.LetClause xClause = clet(x, cargs(cTele(cvars(y), cNat())), cUniverseInf(2), cUniverseStd(0));
     TypecheckingResult result = typeCheckExpr(cLet(clets(xClause), cApps(cVar(x), cZero())), null);
     assertEquals(Universe(new Level(0), new Level(LevelVariable.HVAR)), result.expression.normalize(NormalizeVisitor.Mode.NF));

@@ -3,13 +3,11 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.error.ErrorReporter;
+import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.*;
-import org.arend.term.ClassFieldKind;
-import org.arend.term.Fixity;
-import org.arend.term.NamespaceCommand;
-import org.arend.term.Precedence;
+import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
 import org.arend.util.Pair;
@@ -120,7 +118,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     return (Concrete.UniverseExpression) visit(expr);
   }
 
-  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
+  private void visitStatementList(List<StatementContext> statementCtxs, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     for (StatementContext statementCtx : statementCtxs) {
       try {
         Object statement = visitStatement(statementCtx, parent, enclosingClass);
@@ -152,7 +150,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public FileGroup visitStatements(StatementsContext ctx) {
     List<Group> subgroups = new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     FileGroup parentGroup = new FileGroup(new ModuleReferable(myModule), subgroups, namespaceCommands);
     visitStatementList(ctx.statement(), subgroups, namespaceCommands, parentGroup, null);
     return parentGroup;
@@ -180,9 +178,6 @@ public class BuildVisitor extends ArendBaseVisitor {
   private SimpleNamespaceCommand visitStatCmd(StatCmdContext ctx, ChildGroup parent) {
     NamespaceCommand.Kind kind = (NamespaceCommand.Kind) visit(ctx.nsCmd());
     List<String> path = visitLongNamePath(ctx.longName());
-    if (path == null) {
-      throw new ParseException();
-    }
 
     List<SimpleNamespaceCommand.SimpleNameRenaming> openedReferences;
     NsUsingContext nsUsing = ctx.nsUsing();
@@ -237,7 +232,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     return new Precedence(prec.associativity, (byte) priority, prec.isInfix);
   }
 
-  private class PrecedenceWithoutPriority {
+  private static class PrecedenceWithoutPriority {
     private Precedence.Associativity associativity;
     private boolean isInfix;
 
@@ -457,7 +452,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     funcDef.enclosingClass = enclosingClass;
     reference.setDefinition(funcDef);
     List<Group> subgroups = new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
@@ -494,7 +489,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     return visitCoClauses(ctx.coClause());
   }
 
-  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<SimpleNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
+  private void visitWhere(WhereContext ctx, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
     if (ctx != null) {
       visitStatementList(ctx.statement(), subgroups, namespaceCommands, parent, enclosingClass);
     }
@@ -544,7 +539,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
 
     List<Group> subgroups = new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
     boolean isUse = ctx.funcKw() instanceof FuncKwUseContext;
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
@@ -577,12 +572,10 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<Concrete.TelescopeParameter> arguments = new ArrayList<>();
     for (TeleContext tele : teleCtx) {
       List<Concrete.Parameter> args = visitLamTele(tele);
-      if (args != null) {
-        if (args.get(0) instanceof Concrete.TelescopeParameter) {
-          arguments.add((Concrete.TelescopeParameter) args.get(0));
-        } else {
-          myErrorReporter.report(new ParserError(tokenPosition(tele.getStart()), "Expected a typed variable"));
-        }
+      if (args.get(0) instanceof Concrete.TelescopeParameter) {
+        arguments.add((Concrete.TelescopeParameter) args.get(0));
+      } else {
+        myErrorReporter.report(new ParserError(tokenPosition(tele.getStart()), "Expected a typed variable"));
       }
     }
     return arguments;
@@ -613,7 +606,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     visitDataBody(dataBodyCtx, dataDefinition, constructors);
 
     List<Group> subgroups = new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     DataGroup resultGroup = new DataGroup(referable, constructors, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
 
@@ -767,7 +760,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   private StaticGroup visitDefModule(DefModuleContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     WhereContext where = ctx.where();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     Position position = tokenPosition(ctx.start);
     String name = ctx.ID().getText();
@@ -785,7 +778,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
-    List<SimpleNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
     for (LongNameContext longNameCtx : ctx.longName()) {
@@ -1041,10 +1034,6 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
     List<String> path = visitLongNamePath(ctx.longName());
-    if (path == null) {
-      return null;
-    }
-
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
     List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);

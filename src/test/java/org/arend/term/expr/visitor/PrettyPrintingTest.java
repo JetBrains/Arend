@@ -5,7 +5,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.LetExpression;
 import org.arend.core.expr.let.LetClause;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.frontend.reference.ParsedLocalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.frontend.ConcreteExpressionFactory.*;
+import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -65,8 +65,8 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
   public void prettyPrintingFunDef() {
     // f (X : Type0) (x : X) : X => x;
     List<Concrete.TelescopeParameter> arguments = new ArrayList<>(2);
-    ParsedLocalReferable X = ref("X");
-    ParsedLocalReferable x = ref("X");
+    LocalReferable X = ref("X");
+    LocalReferable x = ref("X");
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
     ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);

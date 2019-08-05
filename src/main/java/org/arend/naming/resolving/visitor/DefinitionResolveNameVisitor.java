@@ -5,7 +5,6 @@ import org.arend.error.DummyErrorReporter;
 import org.arend.error.Error;
 import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
-import org.arend.frontend.reference.TypeClassReferenceExtractVisitor;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;

@@ -1,4 +1,4 @@
-package org.arend.frontend.reference;
+package org.arend.naming.resolving.visitor;
 
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;

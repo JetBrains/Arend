@@ -1,4 +1,4 @@
-package org.arend.term.group;
+package org.arend.frontend.group;
 
 import org.arend.error.SourceInfo;
 import org.arend.frontend.parser.Position;
@@ -6,6 +6,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.ChildNamespaceCommand;
 import org.arend.term.NameRenaming;
 import org.arend.term.Precedence;
+import org.arend.term.group.ChildGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

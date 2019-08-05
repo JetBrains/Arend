@@ -2,11 +2,10 @@ package org.arend.frontend;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.arend.error.ErrorReporter;
-import org.arend.library.FileLoadableHeaderLibrary;
+import org.arend.frontend.library.FileLoadableHeaderLibrary;
 import org.arend.library.Library;
 import org.arend.library.LibraryConfig;
 import org.arend.library.UnmodifiableSourceLibrary;
-import org.arend.library.error.LibraryError;
 import org.arend.library.error.LibraryIOError;
 import org.arend.library.error.MultipleLibraries;
 import org.arend.library.resolver.LibraryResolver;

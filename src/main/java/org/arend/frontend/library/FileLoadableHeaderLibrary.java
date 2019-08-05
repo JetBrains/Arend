@@ -1,6 +1,9 @@
-package org.arend.library;
+package org.arend.frontend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.library.LibraryConfig;
+import org.arend.library.LibraryDependency;
+import org.arend.library.LibraryHeader;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.ModulePath;
 import org.arend.typechecking.TypecheckerState;

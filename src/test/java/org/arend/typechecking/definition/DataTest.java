@@ -10,7 +10,7 @@ import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.frontend.reference.ParsedLocalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.frontend.ConcreteExpressionFactory.*;
+import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.arend.typechecking.Matchers.typeMismatchError;
 import static org.junit.Assert.*;
 
@@ -116,8 +116,8 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con (B : \\1-Type1) A B");
 
     Constructor con = def.getConstructor("con");
-    ParsedLocalReferable f = ref("f");
-    ParsedLocalReferable x = ref("x");
+    LocalReferable f = ref("f");
+    LocalReferable x = ref("x");
     Concrete.Expression expr = cApps(cVar(f), cApps(cVar(con.getReferable()), cNat(), cLam(cName(x), cVar(x)), cZero()));
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(DataCall(def, Sort.SET0, Pi(Nat(), Nat())), Nat())));
@@ -131,7 +131,7 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition def = (DataDefinition) typeCheckDef("\\data D (A : \\1-Type0) | con A");
 
     Constructor con = def.getConstructor("con");
-    ParsedLocalReferable f = ref("f");
+    LocalReferable f = ref("f");
     Concrete.Expression expr = cApps(cVar(f), cVar(con.getReferable()));
     Map<Referable, Binding> localContext = new HashMap<>();
     localContext.put(f, new TypedBinding(f.textRepresentation(), Pi(Pi(Nat(), DataCall(def, Sort.SET0, Nat())), Pi(Nat(), Nat()))));

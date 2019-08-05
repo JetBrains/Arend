@@ -13,17 +13,20 @@ repositories {
 }
 
 dependencies {
-    compile("commons-cli:commons-cli:1.4")
-    compile("com.google.protobuf:protobuf-java:3.7.1")
-    compile("com.google.code.findbugs:jsr305:3.0.2")
-    compile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
-    compile("com.fasterxml.jackson.core:jackson-databind:2.9.9.1")
+    implementation("com.google.protobuf:protobuf-java:3.7.1")
+    implementation("com.google.code.findbugs:jsr305:3.0.2")
 
-    testCompile("junit:junit:4.12")
-    testCompile("org.hamcrest:hamcrest-library:1.3")
+    if (!isTrue("AREND_EXCLUDE_CONSOLE")) {
+        implementation("commons-cli:commons-cli:1.4")
+        implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
+        implementation("com.fasterxml.jackson.core:jackson-databind:2.9.9.1")
 
-    antlr("org.antlr:antlr4:4.7.2")
-    implementation("org.antlr:antlr4-runtime:4.7.2")
+        testImplementation("junit:junit:4.12")
+        testImplementation("org.hamcrest:hamcrest-library:1.3")
+
+        antlr("org.antlr:antlr4:4.7.2")
+        implementation("org.antlr:antlr4-runtime:4.7.2")
+    }
 }
 
 configure<JavaPluginConvention> {
@@ -41,16 +44,20 @@ task<Jar>("jarDep") {
     manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
     from(configurations.runtimeClasspath.map { if (it.isDirectory) it as Any else zipTree(it) })
     from(java.sourceSets["main"].output)
+    dependsOn("prelude")
 }
 
-tasks.withType<Jar> {
-    dependsOn("prelude")
+tasks.getByName<Jar>("jar") {
+    exclude("**/frontend/**")
 }
 
 val genSrcDir = file("src/gen")
 
 java.sourceSets {
     getByName("main").java.srcDirs(genSrcDir)
+    if (isTrue("AREND_EXCLUDE_CONSOLE")) {
+        getByName("main").java.exclude("**/frontend/**")
+    }
 }
 
 idea {
@@ -94,8 +101,13 @@ task<Copy>("copyPrelude") {
 task<JavaExec>("prelude") {
     description = "Builds the prelude cache"
     group = "Build"
-    main = "$arendPackage.prelude.PreludeBinaryGenerator"
+    main = "$arendPackage.frontend.PreludeBinaryGenerator"
     classpath = java.sourceSets["main"].runtimeClasspath
     args = listOf(preludeOutputDir)
     dependsOn("copyPrelude")
 }
+
+
+// Utils
+
+fun isTrue(name: String) = (extra.properties[name] as? String)?.toBoolean() == true

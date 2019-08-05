@@ -15,7 +15,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
-import org.arend.frontend.reference.ParsedLocalReferable;
+import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
@@ -28,7 +28,7 @@ import java.util.*;
 
 import static org.arend.ExpressionFactory.*;
 import static org.arend.core.expr.ExpressionFactory.*;
-import static org.arend.frontend.ConcreteExpressionFactory.*;
+import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -91,9 +91,9 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingParserLamApp() {
     // \a. a (\x y. x (x y)) (\x y. x) (a (\x. x) (\x. x))
-    ParsedLocalReferable cx = ref("x");
-    ParsedLocalReferable cy = ref("y");
-    ParsedLocalReferable ca = ref("a");
+    LocalReferable cx = ref("x");
+    LocalReferable cy = ref("y");
+    LocalReferable ca = ref("a");
     Concrete.Expression expected = cLam(cargs(cTele(cvars(ca), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cApps(cVar(ca), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cApps(cVar(cx), cApps(cVar(cx), cVar(cy)))), cLam(cargs(cTele(cvars(cx, cy), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cApps(cVar(ca), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)), cLam(cargs(cTele(cvars(cx), cPi(cUniverseInf(1), cUniverseInf(1)))), cVar(cx)))));
     SingleDependentLink x = singleParam("x", Pi(Universe(1), Universe(1)));
     SingleDependentLink xy = singleParam(true, vars("x", "y"), Pi(Universe(1), Universe(1)));
@@ -105,9 +105,9 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingParserPi() {
     // (x y z : \Type1 -> \Type1 -> \Type1) -> \Type1 -> \Type1 -> (x y -> y x) -> z x y
-    ParsedLocalReferable x = ref("x");
-    ParsedLocalReferable y = ref("y");
-    ParsedLocalReferable z = ref("z");
+    LocalReferable x = ref("x");
+    LocalReferable y = ref("y");
+    LocalReferable z = ref("z");
     Concrete.Expression expected = cPi(ctypeArgs(cTele(cvars(x, y, z), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cPi(cApps(cVar(x), cVar(y)), cApps(cVar(y), cVar(x))), cApps(cVar(z), cVar(x), cVar(y))))));
     SingleDependentLink xyz = singleParams(true, vars("x", "y", "z"), Pi(Universe(1), Pi(Universe(1), Universe(1))));
     Expression expr = Pi(xyz, Pi(Universe(1), Pi(Universe(1), Pi(Pi(Apps(Ref(xyz), Ref(xyz.getNext())), Apps(Ref(xyz.getNext()), Ref(xyz))), Apps(Ref(xyz.getNext().getNext()), Ref(xyz), Ref(xyz.getNext()))))));
@@ -117,12 +117,12 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingParserPiImplicit() {
     // (w : \Type1 -> \Type1 -> \Type1 -> \Type1 -> \Type1) (x : \Type1) {y z : \Type1} -> \Type1 -> (t z' : \Type1) {x' : \Type1 -> \Type1} -> w x' y z' t
-    ParsedLocalReferable cy = ref("y");
-    ParsedLocalReferable cz = ref("z");
-    ParsedLocalReferable ct = ref("t");
-    ParsedLocalReferable cx_ = ref("x'");
-    ParsedLocalReferable cz_ = ref("z'");
-    ParsedLocalReferable cw = ref("w");
+    LocalReferable cy = ref("y");
+    LocalReferable cz = ref("z");
+    LocalReferable ct = ref("t");
+    LocalReferable cx_ = ref("x'");
+    LocalReferable cz_ = ref("z'");
+    LocalReferable cw = ref("w");
     Concrete.Expression expected = cPi(cw, cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cPi(cUniverseInf(1), cUniverseInf(1))))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(false, cvars(cy, cz), cUniverseInf(1))), cPi(cUniverseInf(1), cPi(ctypeArgs(cTele(cvars(ct, cz_), cUniverseInf(1))), cPi(false, cx_, cPi(cUniverseInf(1), cUniverseInf(1)), cApps(cVar(cw), cVar(cx_), cVar(cy), cVar(cz_), cVar(ct))))))));
     SingleDependentLink w = singleParam("w", Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Pi(Universe(1), Universe(1))))));
     SingleDependentLink x = singleParam("x", Universe(1));
@@ -136,11 +136,11 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintingParserFunDef() {
     // f {x : \Type1} (A : \Type1 -> \Type0) : A x -> (\Type1 -> \Type1) -> \Type1 -> \Type1 => \t y z. y z;
-    ParsedLocalReferable x = ref("x");
-    ParsedLocalReferable A = ref("A");
-    ParsedLocalReferable t = ref("t");
-    ParsedLocalReferable y = ref("y");
-    ParsedLocalReferable z = ref("z");
+    LocalReferable x = ref("x");
+    LocalReferable A = ref("A");
+    LocalReferable t = ref("t");
+    LocalReferable y = ref("y");
+    LocalReferable z = ref("z");
     ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);
     Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, reference, cTeleArgs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), null, body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
@@ -159,10 +159,10 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     SingleDependentLink a = singleParam("a", Ref(A));
     Expression actual = Pi(A, Pi(a, Pi(D, Pi(x, Apps(Ref(D), Ref(x), Lam(singleParam("y", Ref(A)), Ref(a)))))));
 
-    ParsedLocalReferable cx = ref("x");
-    ParsedLocalReferable ca = ref("a");
-    ParsedLocalReferable cA = ref("A");
-    ParsedLocalReferable cD = ref("D");
+    LocalReferable cx = ref("x");
+    LocalReferable ca = ref("a");
+    LocalReferable cA = ref("A");
+    LocalReferable cD = ref("D");
     Concrete.Expression expected = cPi(cA, cUniverseInf(0), cPi(ca, cVar(cA), cPi(cD, cPi(cPi(cVar(cA), cVar(cA)), cPi(cVar(cA), cVar(cA))), cPi(cx, cPi(cVar(cA), cVar(cA)), cApps(cVar(cD), cVar(cx), cLam(cName(null), cVar(ca)))))));
     testExpr(expected, actual, EnumSet.of(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS));
   }
@@ -177,8 +177,8 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     ElimTree elimTree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
     Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(x, Nat(), null, elimTree, Collections.singletonList(Ref(x))));
 
-    ParsedLocalReferable cx = ref("x");
-    ParsedLocalReferable cy = ref("y");
+    LocalReferable cx = ref("x");
+    LocalReferable cy = ref("y");
     List<Concrete.FunctionClause> cfc = new ArrayList<>();
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.ZERO.getReferable(), Collections.emptyList())), cZero()));
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));

@@ -1,4 +1,4 @@
-package org.arend.source;
+package org.arend.frontend.source;
 
 import org.antlr.v4.runtime.*;
 import org.arend.error.CompositeErrorReporter;
@@ -12,6 +12,8 @@ import org.arend.module.error.ExceptionError;
 import org.arend.naming.resolving.visitor.DefinitionResolveNameVisitor;
 import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.ScopeFactory;
+import org.arend.source.Source;
+import org.arend.source.SourceLoader;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.group.FileGroup;
 
@@ -70,7 +72,7 @@ public abstract class StreamRawSource implements Source {
       parser.addErrorListener(errorListener);
 
       ArendParser.StatementsContext tree = parser.statements();
-      if (tree == null || countingErrorReporter.getErrorsNumber() > 0) {
+      if (countingErrorReporter.getErrorsNumber() > 0) {
         return false;
       }
 
