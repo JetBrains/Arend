@@ -92,9 +92,8 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
       Referable ref = conPattern.getConstructor().getUnderlyingReferable();
-      if (ref instanceof Abstract.EliminatedExpressionsHolder) {
-        Abstract.EliminatedExpressionsHolder holder = (Abstract.EliminatedExpressionsHolder) ref;
-        checkClauses(Collections.singletonList(conPattern), holder.getEliminatedExpressions(), holder.getParameters());
+      if (ref instanceof Abstract.ParametersHolder) {
+        checkClauses(Collections.singletonList(conPattern), Collections.emptyList(), ((Abstract.ParametersHolder) ref).getParameters());
       }
     }
 
