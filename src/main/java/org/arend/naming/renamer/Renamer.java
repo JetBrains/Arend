@@ -9,9 +9,14 @@ import java.util.Set;
 
 public class Renamer {
   private String myUnnamed = "unnamed";
+  private int myBase = 1;
 
   public void setUnnamed(String unnamed) {
     myUnnamed = unnamed;
+  }
+
+  public void setBase(int base) {
+    myBase = base;
   }
 
   public String getNewName(Variable variable) {
@@ -55,11 +60,11 @@ public class Renamer {
     if (!indices.isEmpty()) {
       int suffix = getSuffix(name);
       if (indices.contains(suffix)) {
-        suffix = 0;
+        suffix = myBase;
         while (indices.contains(suffix)) {
           suffix++;
         }
-        name = suffix == 0 ? prefix : prefix + suffix;
+        name = prefix + suffix;
       }
     }
 
