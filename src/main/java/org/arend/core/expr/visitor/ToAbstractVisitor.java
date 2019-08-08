@@ -19,6 +19,7 @@ import org.arend.core.sort.Sort;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.NamedUnresolvedReference;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.renamer.ReferableRenamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
@@ -35,27 +36,21 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   private final PrettyPrinterConfig myConfig;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
-  private final Map<Binding, Referable> myNames;
+  private final ReferableRenamer myRenamer;
 
-  private static final String unnamed = "unnamed";
-
-  private ToAbstractVisitor(PrettyPrinterConfig config, CollectFreeVariablesVisitor collector, Map<Binding, Referable> names) {
+  private ToAbstractVisitor(PrettyPrinterConfig config, CollectFreeVariablesVisitor collector, ReferableRenamer renamer) {
     myConfig = config;
     myFreeVariablesCollector = collector;
-    myNames = names;
+    myRenamer = renamer;
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
     CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor();
     Set<Variable> variables = new HashSet<>();
     expression.accept(collector, variables);
-    Map<Binding, Referable> names = new HashMap<>();
-    ToAbstractVisitor visitor = new ToAbstractVisitor(config, collector, names);
-    for (Variable variable : variables) {
-      if (variable instanceof Binding) {
-        names.put((Binding) variable, ref(visitor.getFreshName((Binding) variable, variables)));
-      }
-    }
+    ReferableRenamer renamer = new ReferableRenamer();
+    ToAbstractVisitor visitor = new ToAbstractVisitor(config, collector, renamer);
+    renamer.generateFreshNames(variables);
     return visitor.normalize(expression).accept(visitor, null);
   }
 
@@ -65,7 +60,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         public EnumSet<Flag> getExpressionFlags() {
           return EnumSet.of(Flag.SHOW_INFERENCE_LEVEL_VARS);
         }
-      }, null, Collections.emptyMap()).visitLevel(level);
+      }, null, new ReferableRenamer()).visitLevel(level);
   }
 
   private boolean hasFlag(Flag flag) {
@@ -75,70 +70,6 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private Expression normalize(Expression expr) {
     NormalizeVisitor.Mode mode = myConfig.getNormalizationMode();
     return mode == null ? expr : expr.normalize(mode);
-  }
-
-  private String getFreshName(Binding binding, Set<Variable> variables) {
-    String name = binding.getName();
-    if (name == null) {
-      name = unnamed;
-    }
-
-    String prefix = null;
-    Set<Integer> indices = Collections.emptySet();
-    for (Variable variable : variables) {
-      if (variable != binding) {
-        String otherName = null;
-        if (variable instanceof Binding) {
-          Referable referable = myNames.get(variable);
-          if (referable != null) {
-            otherName = referable.textRepresentation();
-          }
-        } else {
-          otherName = variable.getName();
-        }
-
-        if (otherName != null) {
-          if (prefix == null) {
-            prefix = getPrefix(name);
-          }
-          if (prefix.equals(getPrefix(otherName))) {
-            if (indices.isEmpty()) {
-              indices = new HashSet<>();
-            }
-            indices.add(getSuffix(otherName));
-          }
-        }
-      }
-    }
-
-    if (!indices.isEmpty()) {
-      int suffix = getSuffix(name);
-      if (indices.contains(suffix)) {
-        suffix = 0;
-        while (indices.contains(suffix)) {
-          suffix++;
-        }
-        name = suffix == 0 ? prefix : prefix + suffix;
-      }
-    }
-
-    return name;
-  }
-
-  private static String getPrefix(String name) {
-    int i = name.length() - 1;
-    while (Character.isDigit(name.charAt(i))) {
-      i--;
-    }
-    return name.substring(0, i + 1);
-  }
-
-  private static int getSuffix(String name) {
-    int i = name.length() - 1;
-    while (Character.isDigit(name.charAt(i))) {
-      i--;
-    }
-    return i + 1 == name.length() ? -1 : Integer.parseInt(name.substring(i + 1));
   }
 
   private Concrete.Pattern visitPattern(Pattern pattern, boolean isExplicit) {
@@ -329,7 +260,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitReference(ReferenceExpression expr, Void params) {
-    return makeReference(myNames.get(expr.getBinding()));
+    return makeReference(myRenamer.getNewReferable(expr.getBinding()));
   }
 
   @Override
@@ -338,12 +269,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private LocalReferable makeLocalReference(Binding var, Set<Variable> freeVars, boolean genName) {
-    if (!genName && !freeVars.contains(var)) {
-      return null;
-    }
-    LocalReferable reference = ref(getFreshName(var, freeVars));
-    myNames.put(var, reference);
-    return reference;
+    return !genName && !freeVars.contains(var) ? null : myRenamer.generateFreshReferable(var, freeVars);
   }
 
   private Concrete.Expression etaReduce(Concrete.LamExpression lamExpr) {
