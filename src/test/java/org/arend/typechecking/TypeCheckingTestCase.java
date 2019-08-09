@@ -9,6 +9,7 @@ import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.NameResolverTestCase;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionFactory;
 import org.arend.term.group.ChildGroup;
@@ -77,7 +78,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private Definition typeCheckDef(ConcreteLocatedReferable reference, int errors) {
-    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter, PositionComparator.INSTANCE).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()));
+    new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE).typecheckDefinitions(Collections.singletonList((Concrete.Definition) reference.getDefinition()), null);
     assertThat(errorList, containsErrors(errors));
     return typecheckerState.getTypechecked(reference);
   }
@@ -92,7 +93,7 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
 
 
   private void typeCheckModule(Group group, int errors) {
-    assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, localErrorReporter, PositionComparator.INSTANCE).typecheckModules(Collections.singletonList(group)));
+    assertTrue(new TypecheckingOrderingListener(libraryManager.getInstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, localErrorReporter, PositionComparator.INSTANCE).typecheckModules(Collections.singletonList(group), null));
     assertThat(errorList, containsErrors(errors));
   }
 

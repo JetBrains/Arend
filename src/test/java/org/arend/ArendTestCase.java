@@ -12,6 +12,7 @@ import org.arend.library.LibraryManager;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
@@ -42,7 +43,7 @@ public abstract class ArendTestCase {
   protected final TypecheckerState typecheckerState = new SimpleTypecheckerState();
   protected final List<GeneralError> errorList = new ArrayList<>();
   protected final ListErrorReporter errorReporter = new ListErrorReporter(errorList);
-  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, errorReporter, PositionComparator.INSTANCE);
+  protected final TypecheckingOrderingListener typechecking = new TypecheckingOrderingListener(new InstanceProviderSet(), typecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, errorReporter, PositionComparator.INSTANCE);
 
   @Before
   public void loadPrelude() {

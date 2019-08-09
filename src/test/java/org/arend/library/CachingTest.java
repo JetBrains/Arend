@@ -258,7 +258,7 @@ public class CachingTest extends LibraryTestCase {
     List<Group> groups = new ArrayList<>(2);
     groups.add(library.getModuleGroup(moduleName("A")));
     groups.add(library.getModuleGroup(moduleName("B")));
-    assertTrue(typechecking.typecheckModules(groups));
+    assertTrue(typechecking.typecheckModules(groups, null));
     assertThat(errorList, hasSize(1));
     errorList.clear();
     library.persistModule(moduleName("B"), IdReferableConverter.INSTANCE, errorReporter);

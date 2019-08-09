@@ -16,11 +16,10 @@ import org.arend.library.Library;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
-import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
-import org.arend.typechecking.visitor.DefinitionTypechecker;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.CycleError;
@@ -40,12 +39,14 @@ import org.arend.typechecking.termination.RecursiveBehavior;
 import org.arend.typechecking.typecheckable.TypecheckingUnit;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.typechecking.visitor.DefinitionTypechecker;
 import org.arend.typechecking.visitor.DesugarVisitor;
 import org.arend.typechecking.visitor.FindDefCallVisitor;
 import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
 
 import java.util.*;
+import java.util.function.BooleanSupplier;
 
 public class TypecheckingOrderingListener implements OrderingListener {
   private final TypecheckerState myState;
@@ -54,6 +55,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final ErrorReporter myErrorReporter;
   private final InstanceProviderSet myInstanceProviderSet;
   private final ConcreteProvider myConcreteProvider;
+  private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCReferable> myComparator;
   private boolean myTypecheckingHeaders = false;
   private TCReferable myCurrentDefinition;
@@ -64,17 +66,18 @@ public class TypecheckingOrderingListener implements OrderingListener {
     CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
   }
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
+    myReferableConverter = referableConverter;
     myComparator = comparator;
   }
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, state, concreteProvider, errorReporter, DummyDependencyListener.INSTANCE, comparator);
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator) {
+    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator);
   }
 
   public TypecheckingOrderingListener(Ordering ordering, ErrorReporter errorReporter) {
@@ -83,57 +86,69 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myDependencyListener = ordering.getDependencyListener();
     myInstanceProviderSet = ordering.getInstanceProviderSet();
     myConcreteProvider = ordering.getConcreteProvider();
+    myReferableConverter = ordering.getReferableConverter();
     myComparator = ordering.getComparator();
   }
 
-  public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions) {
-    try {
-      Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, false);
+  public ConcreteProvider getConcreteProvider() {
+    return myConcreteProvider;
+  }
+
+  public ReferableConverter getReferableConverter() {
+    return myReferableConverter;
+  }
+
+  public boolean runTypechecking(CancellationIndicator cancellationIndicator, BooleanSupplier runnable) {
+    synchronized (TypecheckingOrderingListener.class) {
+      if (cancellationIndicator != null) {
+        CANCELLATION_INDICATOR = cancellationIndicator;
+      }
+
+      try {
+        return runnable.getAsBoolean();
+      } catch (ComputationInterruptedException ignored) {
+        if (myCurrentDefinition != null) {
+          typecheckingInterrupted(myCurrentDefinition);
+        }
+        return false;
+      } finally {
+        if (cancellationIndicator != null) {
+          setDefaultCancellationIndicator();
+        }
+      }
+    }
+  }
+
+  public boolean typecheckDefinitions(final Collection<? extends Concrete.Definition> definitions, CancellationIndicator cancellationIndicator) {
+    return runTypechecking(cancellationIndicator, () -> {
+      Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator, false);
       for (Concrete.Definition definition : definitions) {
         ordering.orderDefinition(definition);
       }
       return true;
-    } catch (ComputationInterruptedException ignored) {
-      if (myCurrentDefinition != null) {
-        typecheckingInterrupted(myCurrentDefinition);
-      }
-      return false;
-    }
+    });
   }
 
-  public boolean typecheckModules(final Collection<? extends Group> modules) {
-    try {
-      new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, false).orderModules(modules);
+  public boolean typecheckModules(final Collection<? extends Group> modules, CancellationIndicator cancellationIndicator) {
+    return runTypechecking(cancellationIndicator, () -> {
+      new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator, false).orderModules(modules);
       return true;
-    } catch (ComputationInterruptedException ignored) {
-      if (myCurrentDefinition != null) {
-        typecheckingInterrupted(myCurrentDefinition);
-      }
-      return false;
-    }
+    });
+  }
+
+  public boolean typecheckLibrary(Library library, CancellationIndicator cancellationIndicator) {
+    return runTypechecking(cancellationIndicator, () -> library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator, false)));
   }
 
   public boolean typecheckLibrary(Library library) {
-    try {
-      return library.orderModules(new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, false));
-    } catch (ComputationInterruptedException ignored) {
-      if (myCurrentDefinition != null) {
-        typecheckingInterrupted(myCurrentDefinition);
-      }
-      return false;
-    }
+    return typecheckLibrary(library, null);
   }
 
-  public boolean typecheckCollected(CollectingOrderingListener collector) {
-    try {
+  public boolean typecheckCollected(CollectingOrderingListener collector, CancellationIndicator cancellationIndicator) {
+    return runTypechecking(cancellationIndicator, () -> {
       collector.feed(this);
       return true;
-    } catch (ComputationInterruptedException ignored) {
-      if (myCurrentDefinition != null) {
-        typecheckingInterrupted(myCurrentDefinition);
-      }
-      return false;
-    }
+    });
   }
 
   public void typecheckingHeaderStarted(TCReferable definition) {
@@ -309,7 +324,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     myTypecheckingHeaders = true;
-    Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, IdReferableConverter.INSTANCE, myState, myComparator, true);
+    Ordering ordering = new Ordering(myInstanceProviderSet, myConcreteProvider, this, myDependencyListener, myReferableConverter, myState, myComparator, true);
     boolean ok = true;
     for (TypecheckingUnit unit1 : scc.getUnits()) {
       if (unit1.isHeader()) {

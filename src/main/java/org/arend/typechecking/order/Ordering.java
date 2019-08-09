@@ -114,6 +114,8 @@ public class Ordering {
   }
 
   public void orderDefinition(Concrete.Definition definition) {
+    TypecheckingOrderingListener.CANCELLATION_INDICATOR.checkCanceled();
+
     TypecheckingUnit typecheckingUnit = new TypecheckingUnit(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckingUnit)) {
       // myDependencyListener.update(definition.getData());

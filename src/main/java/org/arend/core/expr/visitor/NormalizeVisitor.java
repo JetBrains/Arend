@@ -12,7 +12,6 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
-import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
 
 import java.util.*;
@@ -385,9 +384,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     Expression result = eval(elimTree, defCallArgs, getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
-    if (TypecheckingOrderingListener.CANCELLATION_INDICATOR.isCanceled()) {
-      throw new ComputationInterruptedException();
-    }
+    TypecheckingOrderingListener.CANCELLATION_INDICATOR.checkCanceled();
 
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
