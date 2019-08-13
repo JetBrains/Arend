@@ -384,7 +384,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
     Expression result = eval(elimTree, defCallArgs, getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
-    TypecheckingOrderingListener.CANCELLATION_INDICATOR.checkCanceled();
+    TypecheckingOrderingListener.checkCanceled();
 
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }

@@ -60,11 +60,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private boolean myTypecheckingHeaders = false;
   private TCReferable myCurrentDefinition;
 
-  public static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
-
-  public static void setDefaultCancellationIndicator() {
-    CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
-  }
+  private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
     myState = state;
@@ -90,6 +86,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myComparator = ordering.getComparator();
   }
 
+  public static void checkCanceled() throws ComputationInterruptedException {
+    CANCELLATION_INDICATOR.checkCanceled();
+  }
+
   public ConcreteProvider getConcreteProvider() {
     return myConcreteProvider;
   }
@@ -113,7 +113,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         return false;
       } finally {
         if (cancellationIndicator != null) {
-          setDefaultCancellationIndicator();
+          CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
         }
       }
     }

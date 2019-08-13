@@ -118,7 +118,7 @@ public class Ordering {
       return;
     }
 
-    TypecheckingOrderingListener.CANCELLATION_INDICATOR.checkCanceled();
+    TypecheckingOrderingListener.checkCanceled();
 
     TypecheckingUnit typecheckingUnit = new TypecheckingUnit(definition, myRefToHeaders);
     if (!myVertices.containsKey(typecheckingUnit)) {
