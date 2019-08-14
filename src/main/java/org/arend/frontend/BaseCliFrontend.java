@@ -11,6 +11,7 @@ import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
+import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
@@ -64,7 +65,7 @@ public abstract class BaseCliFrontend {
 
   private class MyTypechecking extends TypecheckingOrderingListener {
     MyTypechecking() {
-      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, myErrorReporter, PositionComparator.INSTANCE);
+      super(myLibraryManager.getInstanceProviderSet(), myTypecheckerState, ConcreteReferableProvider.INSTANCE, IdReferableConverter.INSTANCE, myErrorReporter, PositionComparator.INSTANCE);
     }
 
     @Override
