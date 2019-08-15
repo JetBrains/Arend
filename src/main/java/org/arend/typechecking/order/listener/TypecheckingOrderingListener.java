@@ -45,6 +45,7 @@ import org.arend.typechecking.visitor.FindDefCallVisitor;
 import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 
@@ -108,7 +109,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
         return runnable.getAsBoolean();
       } catch (ComputationInterruptedException ignored) {
         if (myCurrentDefinition != null) {
-          typecheckingInterrupted(myCurrentDefinition);
+          Definition interrupted = myState.getTypechecked(myCurrentDefinition);
+          if (interrupted != null) {
+            interrupted.fill();
+          }
+          typecheckingInterrupted(myCurrentDefinition, interrupted);
         }
         return false;
       } finally {
@@ -175,7 +180,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
   }
 
-  public void typecheckingInterrupted(TCReferable definition) {
+  public void typecheckingInterrupted(TCReferable definition, @Nullable Definition typechecked) {
 
   }
 

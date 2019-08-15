@@ -1,6 +1,7 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.DataCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.UniverseExpression;
@@ -13,7 +14,7 @@ import org.arend.naming.reference.TCReferable;
 import java.util.*;
 
 public class DataDefinition extends Definition {
-  private List<Constructor> myConstructors;
+  private final List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Sort mySort;
   private boolean myMatchesOnInterval;
@@ -167,5 +168,18 @@ public class DataDefinition extends Definition {
   @Override
   public DataCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
     return new DataCallExpression(this, sortArgument, arguments);
+  }
+
+  @Override
+  public void fill() {
+    if (myParameters == null) {
+      myParameters = EmptyDependentLink.getInstance();
+    }
+    if (mySort == null) {
+      mySort = Sort.PROP;
+    }
+    for (Constructor constructor : myConstructors) {
+      constructor.fill();
+    }
   }
 }

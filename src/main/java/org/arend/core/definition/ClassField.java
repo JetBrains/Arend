@@ -1,9 +1,8 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FieldCallExpression;
-import org.arend.core.expr.PiExpression;
+import org.arend.core.context.param.TypedSingleDependentLink;
+import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
@@ -126,5 +125,13 @@ public class ClassField extends Definition {
   @Override
   public Expression getDefCall(Sort sortArgument, List<Expression> args) {
     return FieldCallExpression.make(this, sortArgument, args.get(0));
+  }
+
+  @Override
+  public void fill() {
+    if (myType == null) {
+      ClassCallExpression classCall = new ClassCallExpression(myParentClass, Sort.STD);
+      myType = new PiExpression(classCall.getSort(), new TypedSingleDependentLink(false, "this", classCall), new ErrorExpression(null, null));
+    }
   }
 }

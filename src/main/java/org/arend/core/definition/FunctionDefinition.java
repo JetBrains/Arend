@@ -3,6 +3,7 @@ package org.arend.core.definition;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
+import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.FunCallExpression;
 import org.arend.core.sort.Sort;
@@ -148,5 +149,15 @@ public class FunctionDefinition extends Definition implements Function {
   @Override
   public FunCallExpression getDefCall(Sort sortArgument, List<Expression> arguments) {
     return new FunCallExpression(this, sortArgument, arguments);
+  }
+
+  @Override
+  public void fill() {
+    if (myParameters == null) {
+      myParameters = EmptyDependentLink.getInstance();
+    }
+    if (myResultType == null) {
+      myResultType = new ErrorExpression(null, null);
+    }
   }
 }

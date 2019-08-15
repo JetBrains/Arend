@@ -216,4 +216,11 @@ public class Constructor extends Definition implements Function {
     dataTypeArgs.addAll(args.subList(0, dataTypeArgsNumber));
     return ConCallExpression.make(this, sortArgument, dataTypeArgs, args.subList(dataTypeArgsNumber, args.size()));
   }
+
+  @Override
+  public void fill() {
+    if (myParameters == null) {
+      myParameters = EmptyDependentLink.getInstance();
+    }
+  }
 }

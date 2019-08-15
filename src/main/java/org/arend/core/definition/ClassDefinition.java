@@ -254,4 +254,11 @@ public class ClassDefinition extends Definition {
     myImplemented.clear();
     myCoercingField = null;
   }
+
+  @Override
+  public void fill() {
+    for (ClassField field : myPersonalFields) {
+      field.fill();
+    }
+  }
 }

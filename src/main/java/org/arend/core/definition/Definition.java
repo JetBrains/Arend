@@ -169,6 +169,8 @@ public abstract class Definition implements Variable {
     myStatus = status;
   }
 
+  public abstract void fill();
+
   @Override
   public String toString() {
     return myReferable.toString();
