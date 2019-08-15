@@ -32,30 +32,6 @@ public class DefinitionSerialization {
   DefinitionProtos.Definition writeDefinition(Definition definition) {
     final DefinitionProtos.Definition.Builder out = DefinitionProtos.Definition.newBuilder();
 
-    switch (definition.status()) {
-      case HEADER_HAS_ERRORS:
-        out.setStatus(DefinitionProtos.Definition.Status.HEADER_HAS_ERRORS);
-        break;
-      case BODY_HAS_ERRORS:
-      case MAY_BE_TYPE_CHECKED_WITH_ERRORS:
-      case BODY_NEEDS_TYPE_CHECKING:
-        out.setStatus(DefinitionProtos.Definition.Status.BODY_HAS_ERRORS);
-        break;
-      case HEADER_NEEDS_TYPE_CHECKING:
-      case HAS_ERRORS:
-        out.setStatus(DefinitionProtos.Definition.Status.HAS_ERRORS);
-        break;
-      case MAY_BE_TYPE_CHECKED_WITH_WARNINGS:
-      case HAS_WARNINGS:
-        out.setStatus(DefinitionProtos.Definition.Status.HAS_WARNINGS);
-        break;
-      case NO_ERRORS:
-        out.setStatus(DefinitionProtos.Definition.Status.NO_ERRORS);
-        break;
-      default:
-        throw new IllegalStateException("Unknown typechecking status");
-    }
-
     out.setHasTypeClassReference(definition.getReferable().getTypeClassReference() != null);
     out.setHasUniverses(definition.hasUniverses());
 

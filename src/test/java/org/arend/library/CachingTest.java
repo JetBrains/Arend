@@ -41,8 +41,8 @@ public class CachingTest extends LibraryTestCase {
     assertThat(aClass, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status(), is(equalTo(aStatus)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")).status(), is(equalTo(Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_ERRORS)));
-    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")).status(), is(equalTo(Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_WARNINGS)));
+    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b1")), is(nullValue()));
+    assertThat(typecheckerState.getTypechecked(get(aClass.getGroupScope(), "b2")), is(nullValue()));
   }
 
   @Test
@@ -108,8 +108,8 @@ public class CachingTest extends LibraryTestCase {
     assertThat(aGroup, is(notNullValue()));
 
     assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "D")), is(notNullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(notNullValue()));
-    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(notNullValue()));
+    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "a")), is(nullValue()));
+    assertThat(typecheckerState.getTypechecked(get(aGroup.getGroupScope(), "b")), is(nullValue()));
   }
 
   @Test

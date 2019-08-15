@@ -32,7 +32,7 @@ public class ModuleDeserialization {
     return myModuleProto;
   }
 
-  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
+  public void readModule(ModuleScopeProvider moduleScopeProvider, DependencyListener dependencyListener) throws DeserializationException {
     if (myModuleProto.getVersion() != ModuleSerialization.VERSION) {
       throw new DeserializationException("Version mismatch");
     }
@@ -51,7 +51,7 @@ public class ModuleDeserialization {
 
     DefinitionDeserialization defDeserialization = new DefinitionDeserialization(myCallTargetProvider, dependencyListener);
     for (Pair<DefinitionProtos.Definition, Definition> pair : myDefinitions) {
-      defDeserialization.fillInDefinition(pair.proj1, pair.proj2, typecheckDefinitionsWithErrors);
+      defDeserialization.fillInDefinition(pair.proj1, pair.proj2);
     }
     myDefinitions.clear();
   }

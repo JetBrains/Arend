@@ -96,6 +96,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  private void setStatus(Definition.TypeCheckingStatus status) {
+    myStatus = myStatus.max(status);
+  }
+
   public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, GlobalInstancePool pool) {
     myFreeBindings = new HashSet<>();
     this.errorReporter = new MyErrorReporter(errorReporter);
@@ -668,6 +672,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     } else {
       if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
         errorReporter.report(new HasErrors(Error.Level.WARNING, definition, expr));
+      } else if (typeCheckedDefinition.status().hasDepProblems()) {
+        setStatus(Definition.TypeCheckingStatus.DEP_PROBLEMS);
       }
       return typeCheckedDefinition;
     }

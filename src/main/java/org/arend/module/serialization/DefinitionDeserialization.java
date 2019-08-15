@@ -18,7 +18,6 @@ import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.util.Pair;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class DefinitionDeserialization {
@@ -30,7 +29,7 @@ public class DefinitionDeserialization {
     myDependencyListener = dependencyListener;
   }
 
-  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def, boolean typecheckDefinitionsWithErrors) throws DeserializationException {
+  public void fillInDefinition(DefinitionProtos.Definition defProto, Definition def) throws DeserializationException {
     final ExpressionDeserialization defDeserializer = new ExpressionDeserialization(myCallTargetProvider, myDependencyListener, def.getReferable());
 
     switch (defProto.getDefinitionDataCase()) {
@@ -51,38 +50,8 @@ public class DefinitionDeserialization {
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
 
-    def.setStatus(readTcStatus(defProto, typecheckDefinitionsWithErrors));
+    def.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     def.setHasUniverses(defProto.getHasUniverses());
-  }
-
-  private @Nonnull Definition.TypeCheckingStatus readTcStatus(DefinitionProtos.Definition defProto, boolean typecheckDefinitionsWithErrors) {
-    if (typecheckDefinitionsWithErrors) {
-      switch (defProto.getStatus()) {
-        case HEADER_HAS_ERRORS:
-          return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
-        case BODY_HAS_ERRORS:
-        case HAS_ERRORS:
-          return Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_ERRORS;
-        case HAS_WARNINGS:
-          return Definition.TypeCheckingStatus.MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
-        case NO_ERRORS:
-          return Definition.TypeCheckingStatus.NO_ERRORS;
-      }
-    } else {
-      switch (defProto.getStatus()) {
-        case HEADER_HAS_ERRORS:
-          return Definition.TypeCheckingStatus.HEADER_HAS_ERRORS;
-        case BODY_HAS_ERRORS:
-          return Definition.TypeCheckingStatus.BODY_HAS_ERRORS;
-        case HAS_ERRORS:
-          return Definition.TypeCheckingStatus.HAS_ERRORS;
-        case HAS_WARNINGS:
-          return Definition.TypeCheckingStatus.HAS_WARNINGS;
-        case NO_ERRORS:
-          return Definition.TypeCheckingStatus.NO_ERRORS;
-      }
-    }
-    throw new IllegalStateException("Unknown typechecking state");
   }
 
   private LamExpression checkImplementation(Expression expr, ClassDefinition classDef) throws DeserializationException {

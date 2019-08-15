@@ -9,7 +9,6 @@ import "Level.proto";
 
 
 message Definition {
-    Status status = 1;
     oneof definition_data {
         ClassData class = 5;
         DataData data = 6;
@@ -125,14 +124,6 @@ message Definition {
         YES = 0;
         NO = 1;
         ONLY_LOCAL = 3;
-    }
-
-    enum Status {
-        HEADER_HAS_ERRORS = 0;
-        BODY_HAS_ERRORS = 1;
-        HAS_ERRORS = 4;
-        NO_ERRORS = 5;
-        HAS_WARNINGS = 6;
     }
 
     message CoerceData {

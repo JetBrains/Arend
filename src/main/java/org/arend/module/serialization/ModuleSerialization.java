@@ -12,7 +12,6 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.source.error.LocationError;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
-import org.arend.util.LongName;
 
 import java.util.*;
 
@@ -24,7 +23,7 @@ public class ModuleSerialization {
   private final Set<Integer> myCurrentDefinitions = new HashSet<>();
   private boolean myComplete;
 
-  static final int VERSION = 0;
+  static final int VERSION = 1;
 
   public ModuleSerialization(TypecheckerState state, ErrorReporter errorReporter) {
     myState = state;
@@ -87,7 +86,7 @@ public class ModuleSerialization {
 
     TCReferable tcReferable = referableConverter.toDataLocatedReferable(referable);
     Definition typechecked = tcReferable == null ? null : myState.getTypechecked(tcReferable);
-    if (typechecked != null && typechecked.status().isTypeChecked() && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
+    if (typechecked != null && typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS && !(typechecked instanceof Constructor || typechecked instanceof ClassField)) {
       builder.setDefinition(myDefinitionSerialization.writeDefinition(typechecked));
       int index = myCallTargetIndexProvider.getDefIndex(typechecked);
       refBuilder.setIndex(index);
@@ -117,7 +116,7 @@ public class ModuleSerialization {
     return builder.build();
   }
 
-  private class CallTargetTree {
+  private static class CallTargetTree {
     Map<String, CallTargetTree> subtreeMap = new HashMap<>();
     int index;
 

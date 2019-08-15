@@ -130,7 +130,11 @@ public abstract class Definition implements Variable {
   }
 
   public enum TypeCheckingStatus {
-    HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_ERRORS, HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_WARNINGS, HAS_WARNINGS, NO_ERRORS;
+    HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_ERRORS, HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_WARNINGS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
+
+    public boolean isOK() {
+      return this == NO_ERRORS || this == DEP_PROBLEMS;
+    }
 
     public boolean bodyIsOK() {
       return headerIsOK() && this != BODY_HAS_ERRORS && this != BODY_NEEDS_TYPE_CHECKING;
@@ -140,8 +144,12 @@ public abstract class Definition implements Variable {
       return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
     }
 
-    public boolean isTypeChecked() {
-      return this != HEADER_NEEDS_TYPE_CHECKING && this != BODY_NEEDS_TYPE_CHECKING;
+    public boolean hasErrors() {
+      return this == HAS_ERRORS || this == BODY_HAS_ERRORS || this == HEADER_HAS_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS;
+    }
+
+    public boolean hasDepProblems() {
+      return hasErrors() || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS || this == HAS_WARNINGS || this == DEP_PROBLEMS;
     }
 
     public boolean needsTypeChecking() {

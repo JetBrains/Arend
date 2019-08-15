@@ -231,9 +231,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
           if (typechecked == null) {
             typechecked = newDefinition(definition);
           }
-          if (typechecked.status() == Definition.TypeCheckingStatus.NO_ERRORS) {
-            typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-          }
+          typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS.max(typechecked.status()));
 
           if (!unit1.isHeader()) {
             typecheckingUnitStarted(definition.getData());
