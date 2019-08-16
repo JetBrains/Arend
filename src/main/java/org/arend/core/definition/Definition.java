@@ -152,6 +152,10 @@ public abstract class Definition implements Variable {
       return this == INTERRUPTED || this == HEADER_HAS_ERRORS || this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
     }
 
+    public boolean withoutErrors() {
+      return this.ordinal() >= MAY_BE_TYPE_CHECKED_WITH_WARNINGS.ordinal();
+    }
+
     public TypeCheckingStatus max(TypeCheckingStatus status) {
       return ordinal() <= status.ordinal() ? this : status;
     }
