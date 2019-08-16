@@ -130,7 +130,7 @@ public abstract class Definition implements Variable {
   }
 
   public enum TypeCheckingStatus {
-    HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_ERRORS, HAS_ERRORS, MAY_BE_TYPE_CHECKED_WITH_WARNINGS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
+    HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, HAS_ERRORS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
 
     public boolean isOK() {
       return this.ordinal() >= DEP_PROBLEMS.ordinal();
@@ -145,19 +145,19 @@ public abstract class Definition implements Variable {
     }
 
     public boolean hasErrors() {
-      return this == HAS_ERRORS || this == BODY_HAS_ERRORS || this == HEADER_HAS_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS;
+      return this == HAS_ERRORS || this == BODY_HAS_ERRORS || this == HEADER_HAS_ERRORS;
     }
 
     public boolean hasDepProblems() {
-      return hasErrors() || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS || this == HAS_WARNINGS || this == DEP_PROBLEMS;
+      return hasErrors() || this == HAS_WARNINGS || this == DEP_PROBLEMS;
     }
 
     public boolean needsTypeChecking() {
-      return this == HEADER_HAS_ERRORS || this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING || this == MAY_BE_TYPE_CHECKED_WITH_ERRORS || this == MAY_BE_TYPE_CHECKED_WITH_WARNINGS;
+      return this == HEADER_HAS_ERRORS || this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
     }
 
     public boolean withoutErrors() {
-      return this.ordinal() >= MAY_BE_TYPE_CHECKED_WITH_WARNINGS.ordinal();
+      return this.ordinal() >= HAS_WARNINGS.ordinal();
     }
 
     public TypeCheckingStatus max(TypeCheckingStatus status) {
