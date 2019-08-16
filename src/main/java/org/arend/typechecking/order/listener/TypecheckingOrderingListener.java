@@ -112,6 +112,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
           Definition interrupted = myState.getTypechecked(myCurrentDefinition);
           if (interrupted != null) {
             interrupted.fill();
+            interrupted.setStatus(Definition.TypeCheckingStatus.INTERRUPTED);
           }
           typecheckingInterrupted(myCurrentDefinition, interrupted);
         }
