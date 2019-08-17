@@ -18,13 +18,13 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.error.ErrorReporter;
 import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -35,14 +35,14 @@ import org.arend.util.Pair;
 import java.util.*;
 
 public class PatternTypechecking {
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
   private final EnumSet<Flag> myFlags;
   private final CheckTypeVisitor myVisitor;
   private Map<Referable, Binding> myContext;
 
   public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, CHECK_COVERAGE, CONTEXT_FREE }
 
-  public PatternTypechecking(LocalErrorReporter errorReporter, EnumSet<Flag> flags, CheckTypeVisitor visitor) {
+  public PatternTypechecking(ErrorReporter errorReporter, EnumSet<Flag> flags, CheckTypeVisitor visitor) {
     myErrorReporter = errorReporter;
     myFlags = flags;
     myVisitor = visitor;

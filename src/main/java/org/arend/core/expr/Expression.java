@@ -10,7 +10,8 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.error.Error;
+import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
@@ -18,7 +19,6 @@ import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
@@ -52,8 +52,8 @@ public abstract class Expression implements ExpectedType {
     if (!isInstance(ErrorExpression.class)) {
       return false;
     }
-    Error error = cast(ErrorExpression.class).getError();
-    return error == null || error.level == Error.Level.ERROR;
+    GeneralError error = cast(ErrorExpression.class).getError();
+    return error == null || error.level == GeneralError.Level.ERROR;
   }
 
   @Override
@@ -99,7 +99,7 @@ public abstract class Expression implements ExpectedType {
     return accept(new FindBindingVisitor(bindings), null);
   }
 
-  public Expression strip(LocalErrorReporter errorReporter) {
+  public Expression strip(ErrorReporter errorReporter) {
     return accept(new StripVisitor(errorReporter), null);
   }
 

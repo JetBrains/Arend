@@ -1,30 +1,27 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.error.Error;
+import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.local.ArgInferenceError;
-import org.arend.typechecking.error.local.DesugaringError;
-import org.arend.typechecking.error.local.LocalError;
-import org.arend.typechecking.error.local.WrongReferable;
+import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
 public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
 
-  private DesugarVisitor(ConcreteProvider concreteProvider, LocalErrorReporter errorReporter) {
+  private DesugarVisitor(ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     myConcreteProvider = concreteProvider;
     myErrorReporter = errorReporter;
   }
 
-  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, LocalErrorReporter errorReporter) {
+  public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
     definition.setDesugarized();
   }
@@ -281,7 +278,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
-          myErrorReporter.report(new DesugaringError(Error.Level.WEAK_WARNING, DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+          myErrorReporter.report(new DesugaringError(GeneralError.Level.WEAK_WARNING, DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);

@@ -2,6 +2,7 @@ package org.arend.naming.error;
 
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
+import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.UnresolvedReference;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
@@ -11,13 +12,15 @@ public class ReferenceError extends LocalError {
   public final Referable referable;
 
   public ReferenceError(String message, Referable referable) {
-    super(Level.ERROR, message);
-    this.referable = referable;
+    this(Level.ERROR, message, referable);
   }
 
   public ReferenceError(Level level, String message, Referable referable) {
     super(level, message);
     this.referable = referable;
+    if (referable instanceof GlobalReferable) {
+      definition = (GlobalReferable) referable;
+    }
   }
 
   @Override

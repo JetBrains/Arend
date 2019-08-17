@@ -2,7 +2,6 @@ package org.arend.frontend;
 
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
-import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.error.ListErrorReporter;
 import org.arend.frontend.library.FileSourceLibrary;
@@ -30,7 +29,7 @@ public abstract class BaseCliFrontend {
   // Typechecking
   private final TypecheckerState myTypecheckerState = new SimpleTypecheckerState();
   private final ListErrorReporter myErrorReporter = new ListErrorReporter();
-  private final Map<ModulePath, Error.Level> myModuleResults = new LinkedHashMap<>();
+  private final Map<ModulePath, GeneralError.Level> myModuleResults = new LinkedHashMap<>();
 
   // Libraries
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
@@ -223,13 +222,13 @@ public abstract class BaseCliFrontend {
       int numWithErrors = 0;
       int numWithGoals = 0;
       for (ModulePath module : modules) {
-        Error.Level result = myModuleResults.get(module);
+        GeneralError.Level result = myModuleResults.get(module);
         if (result == null && library.getModuleGroup(module) == null) {
-          result = Error.Level.ERROR;
+          result = GeneralError.Level.ERROR;
         }
         reportTypeCheckResult(module, result);
-        if (result == Error.Level.ERROR) numWithErrors++;
-        if (result == Error.Level.GOAL) numWithGoals++;
+        if (result == GeneralError.Level.ERROR) numWithErrors++;
+        if (result == GeneralError.Level.GOAL) numWithGoals++;
       }
 
       if (numWithErrors > 0) {
@@ -268,18 +267,18 @@ public abstract class BaseCliFrontend {
     myErrorReporter.getErrorList().clear();
   }
 
-  private void updateSourceResult(ModulePath module, Error.Level result) {
-    Error.Level prevResult = myModuleResults.get(module);
+  private void updateSourceResult(ModulePath module, GeneralError.Level result) {
+    GeneralError.Level prevResult = myModuleResults.get(module);
     if (prevResult == null || result.ordinal() > prevResult.ordinal()) {
       myModuleResults.put(module, result);
     }
   }
 
-  private void reportTypeCheckResult(ModulePath modulePath, Error.Level result) {
+  private void reportTypeCheckResult(ModulePath modulePath, GeneralError.Level result) {
     System.out.println("[" + resultChar(result) + "]" + " " + modulePath);
   }
 
-  private static char resultChar(Error.Level result) {
+  private static char resultChar(GeneralError.Level result) {
     if (result == null) {
       return ' ';
     }

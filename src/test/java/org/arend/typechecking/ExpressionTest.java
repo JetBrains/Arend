@@ -57,7 +57,7 @@ public class ExpressionTest extends TypeCheckingTestCase {
     // \X x. X : (X : Type0) -> X -> X
     SingleDependentLink param = singleParam("X", Universe(0));
     typeCheckExpr("\\lam X x => X", Pi(param, Pi(Ref(param), Ref(param))), 1);
-    assertTrue(errorList.get(0).getLocalError() instanceof TypeMismatchError);
+    assertTrue(errorList.get(0) instanceof TypeMismatchError);
   }
 
   @Test

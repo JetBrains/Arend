@@ -1,8 +1,7 @@
 package org.arend.util;
 
-import org.arend.error.Error;
-import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
+import org.arend.error.ErrorReporter;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
@@ -83,7 +82,7 @@ public class FileUtils {
   }
 
   public static GeneralError illegalModuleName(String module) {
-    return new GeneralError(Error.Level.ERROR, module + " is an illegal module path");
+    return new GeneralError(GeneralError.Level.ERROR, module + " is an illegal module path");
   }
 
   public static void getModules(Path path, String ext, Collection<ModulePath> modules, ErrorReporter errorReporter) {

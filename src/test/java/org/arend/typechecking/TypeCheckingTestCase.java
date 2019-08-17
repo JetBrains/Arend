@@ -14,7 +14,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionFactory;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;

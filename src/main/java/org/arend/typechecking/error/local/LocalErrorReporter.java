@@ -3,16 +3,12 @@ package org.arend.typechecking.error.local;
 import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.ProxyError;
 
-import javax.annotation.Nonnull;
-
-public class ProxyErrorReporter implements LocalErrorReporter {
+public class LocalErrorReporter implements ErrorReporter {
   private final GlobalReferable myDefinition;
   private final ErrorReporter myErrorReporter;
 
-  public ProxyErrorReporter(@Nonnull GlobalReferable definition, ErrorReporter errorReporter) {
+  public LocalErrorReporter(GlobalReferable definition, ErrorReporter errorReporter) {
     myDefinition = definition;
     myErrorReporter = errorReporter;
   }
@@ -27,11 +23,9 @@ public class ProxyErrorReporter implements LocalErrorReporter {
 
   @Override
   public void report(GeneralError error) {
+    if (error instanceof LocalError) {
+      ((LocalError) error).definition = myDefinition;
+    }
     myErrorReporter.report(error);
-  }
-
-  @Override
-  public void report(LocalError localError) {
-    myErrorReporter.report(new ProxyError(myDefinition, localError));
   }
 }

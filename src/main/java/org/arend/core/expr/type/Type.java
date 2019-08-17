@@ -4,12 +4,12 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 
 public interface Type {
   Expression getExpr();
   Sort getSortOfType();
   Type subst(SubstVisitor substVisitor);
-  Type strip(LocalErrorReporter errorReporter);
+  Type strip(ErrorReporter errorReporter);
   Type normalize(NormalizeVisitor.Mode mode);
 }

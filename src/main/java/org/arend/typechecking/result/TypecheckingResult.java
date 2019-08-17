@@ -7,8 +7,8 @@ import org.arend.core.expr.AppExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
@@ -36,7 +36,7 @@ public class TypecheckingResult implements TResult {
   }
 
   @Override
-  public TypecheckingResult applyExpression(Expression expr, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public TypecheckingResult applyExpression(Expression expr, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     expression = AppExpression.make(expression, expr);
     Expression newType = type.applyExpression(expr);
     if (newType == null) {

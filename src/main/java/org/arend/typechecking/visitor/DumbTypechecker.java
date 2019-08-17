@@ -1,11 +1,11 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.error.ErrorReporter;
 import org.arend.naming.reference.Parameter;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.Reference;
 import org.arend.term.abs.Abstract;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.error.local.NotEnoughPatternsError;
 import org.arend.typechecking.error.local.TypecheckingError;
@@ -19,7 +19,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   private final BaseDefinitionTypechecker myTypechecker;
   private Concrete.Definition myDefinition;
 
-  public DumbTypechecker(LocalErrorReporter errorReporter) {
+  public DumbTypechecker(ErrorReporter errorReporter) {
     myTypechecker = new BaseDefinitionTypechecker(errorReporter);
   }
 
@@ -100,7 +100,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
     super.visitPattern(pattern, params);
   }
 
-  public static void findImplicitPatterns(List<? extends Concrete.PatternHolder> clauses, LocalErrorReporter errorReporter, boolean reportAll) {
+  public static void findImplicitPatterns(List<? extends Concrete.PatternHolder> clauses, ErrorReporter errorReporter, boolean reportAll) {
     for (Concrete.PatternHolder clause : clauses) {
       if (clause.getPatterns() == null) {
         continue;

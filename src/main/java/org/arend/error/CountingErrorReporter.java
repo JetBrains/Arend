@@ -2,9 +2,9 @@ package org.arend.error;
 
 public class CountingErrorReporter implements ErrorReporter {
   private int myCounter = 0;
-  private final Error.Level myLevel;
+  private final GeneralError.Level myLevel;
 
-  public CountingErrorReporter(Error.Level level) {
+  public CountingErrorReporter(GeneralError.Level level) {
     myLevel = level;
   }
 

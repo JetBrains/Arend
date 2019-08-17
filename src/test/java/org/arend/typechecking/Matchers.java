@@ -1,7 +1,6 @@
 package org.arend.typechecking;
 
 import org.arend.core.definition.Definition;
-import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
@@ -10,7 +9,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.CycleError;
-import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.local.*;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -26,9 +24,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> typecheckingError(final Class<? extends LocalError> type) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (type.isInstance(error)) {
           description.appendText(type.getName());
           return true;
@@ -46,9 +44,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> typeMismatchError() {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
           if (error instanceof TypeMismatchError) {
             description.appendText("type mismatch");
             return true;
@@ -66,9 +64,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> notInScope(String name) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof NotInScopeError && ((NotInScopeError) error).name.equals(name)) {
           description.appendText("Not in scope '" + name + "'");
           return true;
@@ -85,10 +83,10 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> duplicateName(Error.Level level, String name) {
-    return new LocalErrorMatcher() {
+  public static Matcher<? super GeneralError> duplicateName(GeneralError.Level level, String name) {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof DuplicateNameError && error.level.equals(level) && ((DuplicateNameError) error).referable.textRepresentation().equals(name)) {
           description.appendText("Duplicate name '" + name + "'");
           return true;
@@ -106,9 +104,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> duplicateInstanceError() {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof DuplicateInstanceError) {
           description.appendText("Duplicate instance");
           return true;
@@ -126,9 +124,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> wrongReferable() {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof WrongReferable) {
           description.appendText("Wrong referable '" + ((WrongReferable) error).referable.textRepresentation() + "'");
           return true;
@@ -146,9 +144,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> fieldsImplementation(boolean alreadyImplemented, Collection<? extends GlobalReferable> fields) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof FieldsImplementationError && ((FieldsImplementationError) error).alreadyImplemented == alreadyImplemented && ((FieldsImplementationError) error).fields.equals(fields)) {
           description.appendText(error.toString());
           return true;
@@ -166,9 +164,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> instanceInference(TCReferable classRef) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof InstanceInferenceError && ((InstanceInferenceError) error).classRef.equals(classRef)) {
           description.appendText("Instance inference for class '" + ((InstanceInferenceError) error).classRef.textRepresentation() + "'");
           return true;
@@ -190,9 +188,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> argInferenceError() {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof ArgInferenceError) {
           description.appendText("Argument inference");
           return true;
@@ -210,9 +208,9 @@ public class Matchers {
   }
 
   public static Matcher<? super GeneralError> missingClauses(int clauses) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof MissingClausesError && ((MissingClausesError) error).missingClauses.size() == clauses) {
           description.appendText("Missing " + clauses + " clauses");
           return true;
@@ -254,7 +252,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error.level == Error.Level.ERROR) {
+        if (error.level == GeneralError.Level.ERROR) {
           description.appendText("error");
           return true;
         } else {
@@ -274,7 +272,7 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error.level == Error.Level.WARNING || error.level == Error.Level.WEAK_WARNING) {
+        if (error.level == GeneralError.Level.WARNING || error.level == GeneralError.Level.WEAK_WARNING) {
           description.appendText("warning");
           return true;
         } else {
@@ -291,9 +289,9 @@ public class Matchers {
   }
 
   public static Matcher<GeneralError> goal(final int contextSize) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof GoalError) {
           description.appendText("goal with ");
           int size = ((GoalError) error).context.size();
@@ -322,9 +320,9 @@ public class Matchers {
   }
 
   public static Matcher<GeneralError> hasErrors(GlobalReferable cause) {
-    return new LocalErrorMatcher() {
+    return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
-      protected boolean matchesLocalError(LocalError error, Description description) {
+      protected boolean matchesSafely(GeneralError error, Description description) {
         if (error instanceof HasErrors) {
           description.appendText("has errors with ");
           Referable actualCause = ((Concrete.ReferenceExpression) ((HasErrors) error).cause).getReferent();
@@ -342,20 +340,5 @@ public class Matchers {
         description.appendText("should be a has errors with the write target");
       }
     };
-  }
-
-  public abstract static class LocalErrorMatcher extends TypeSafeDiagnosingMatcher<GeneralError> {
-    @Override
-    protected boolean matchesSafely(GeneralError generalError, Description description) {
-      if (generalError instanceof ProxyError) {
-        description.appendText("Local error ");
-        return matchesLocalError(((ProxyError) generalError).localError, description);
-      } else {
-        description.appendText("not a local error");
-        return false;
-      }
-    }
-
-    protected abstract boolean matchesLocalError(LocalError error, Description description);
   }
 }

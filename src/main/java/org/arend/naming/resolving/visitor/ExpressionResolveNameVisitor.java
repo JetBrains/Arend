@@ -1,7 +1,8 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
-import org.arend.error.Error;
+import org.arend.error.GeneralError;
+import org.arend.error.ErrorReporter;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -10,7 +11,6 @@ import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.ExpectedConstructor;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
@@ -22,10 +22,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   private final Scope myParentScope;
   private final Scope myScope;
   private final List<Referable> myContext;
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
   private final ResolverListener myResolverListener;
 
-  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, LocalErrorReporter errorReporter, ResolverListener resolverListener) {
+  public ExpressionResolveNameVisitor(ConcreteProvider concreteProvider, Scope parentScope, List<Referable> context, ErrorReporter errorReporter, ResolverListener resolverListener) {
     myTypeClassReferenceExtractVisitor = new TypeClassReferenceExtractVisitor(concreteProvider);
     myParentScope = parentScope;
     myScope = context == null ? parentScope : new MergeScope(new ListScope(context), parentScope);
@@ -124,7 +124,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         for (int j = 0; j < i; j++) {
           Referable referable1 = referableList.get(j);
           if (referable1 != null && referable.textRepresentation().equals(referable1.textRepresentation())) {
-            myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable, referable1));
+            myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, referable1));
           }
         }
         myContext.add(classRef == null ? referable : new TypedRedirectingReferable(referable, classRef));
@@ -216,7 +216,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
     Referable prev = usedNames == null ? null : usedNames.put(name, referable);
     if (prev != null) {
-      myErrorReporter.report(new DuplicateNameError(Error.Level.WARNING, referable, prev));
+      myErrorReporter.report(new DuplicateNameError(GeneralError.Level.WARNING, referable, prev));
     }
 
     ClassReferable classRef = type == null ? null : myTypeClassReferenceExtractVisitor.getTypeClassReference(Collections.emptyList(), type);

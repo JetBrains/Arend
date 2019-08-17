@@ -4,7 +4,7 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 
 public class TypeExpression implements Type {
   private final Expression myType;
@@ -35,7 +35,7 @@ public class TypeExpression implements Type {
   }
 
   @Override
-  public Type strip(LocalErrorReporter errorReporter) {
+  public Type strip(ErrorReporter errorReporter) {
     Expression expr = myType.strip(errorReporter);
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, mySort);
   }

@@ -4,7 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
-import org.arend.error.Error;
+import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
@@ -20,9 +20,9 @@ public class GoalError extends TypecheckingError {
   public final Map<Referable, Binding> context;
   public final ExpectedType expectedType;
   public final Expression actualType;
-  public final List<Error> errors;
+  public final List<GeneralError> errors;
 
-  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<Error> errors, Concrete.Expression expression) {
+  public GoalError(String name, Map<Referable, Binding> context, ExpectedType expectedType, Expression actualType, List<GeneralError> errors, Concrete.Expression expression) {
     super(Level.GOAL, "Goal" + (name == null ? "" : " " + name), expression);
     this.name = name;
     this.context = new HashMap<>(context);
@@ -66,7 +66,7 @@ public class GoalError extends TypecheckingError {
     Doc errorsDoc;
     if (!errors.isEmpty()) {
       List<Doc> errorsDocs = new ArrayList<>(errors.size());
-      for (Error error : errors) {
+      for (GeneralError error : errors) {
         errorsDocs.add(hang(error.getHeaderDoc(ppConfig), error.getBodyDoc(ppConfig)));
       }
       errorsDoc = hang(text("Errors:"), vList(errorsDocs));

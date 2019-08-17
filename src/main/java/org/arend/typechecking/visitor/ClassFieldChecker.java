@@ -1,10 +1,10 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.error.ErrorReporter;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
@@ -16,9 +16,9 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private final ConcreteProvider myConcreteProvider;
   private final Set<? extends LocatedReferable> myFields;
   private final Set<TCReferable> myFutureFields;
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
 
-  ClassFieldChecker(Referable thisParameter, TCClassReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, LocalErrorReporter errorReporter) {
+  ClassFieldChecker(Referable thisParameter, TCClassReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, ErrorReporter errorReporter) {
     myThisParameter = thisParameter;
     myClassReferable = classReferable;
     myConcreteProvider = concreteProvider;

@@ -1,13 +1,13 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
 
 public class BaseDefinitionTypechecker {
-  public LocalErrorReporter errorReporter;
+  public ErrorReporter errorReporter;
 
-  protected BaseDefinitionTypechecker(LocalErrorReporter errorReporter) {
+  protected BaseDefinitionTypechecker(ErrorReporter errorReporter) {
     this.errorReporter = errorReporter;
   }
 

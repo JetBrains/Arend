@@ -7,7 +7,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 import org.arend.util.Decision;
 
 public class SigmaExpression extends Expression implements Type {
@@ -49,7 +49,7 @@ public class SigmaExpression extends Expression implements Type {
   }
 
   @Override
-  public SigmaExpression strip(LocalErrorReporter errorReporter) {
+  public SigmaExpression strip(ErrorReporter errorReporter) {
     return new StripVisitor(errorReporter).visitSigma(this, null);
   }
 

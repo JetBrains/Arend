@@ -10,8 +10,8 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
@@ -73,7 +73,7 @@ public class PiExpression extends Expression implements Type {
   }
 
   @Override
-  public PiExpression strip(LocalErrorReporter errorReporter) {
+  public PiExpression strip(ErrorReporter errorReporter) {
     return new StripVisitor(errorReporter).visitPi(this, null);
   }
 

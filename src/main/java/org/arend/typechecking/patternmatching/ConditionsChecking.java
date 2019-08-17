@@ -17,9 +17,9 @@ import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.error.local.ConditionsError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -28,7 +28,7 @@ import org.arend.util.Pair;
 import java.util.*;
 
 public class ConditionsChecking {
-  public static boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
+  public static boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     boolean ok;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, def, errorReporter);
@@ -50,7 +50,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
@@ -68,7 +68,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode def, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {
@@ -95,7 +95,7 @@ public class ConditionsChecking {
     }
   }
 
-  private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, ErrorReporter errorReporter) {
     boolean ok = true;
     List<Pair<Expression, Expression>> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size();
@@ -106,7 +106,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, Clause clause, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, Clause clause, Definition definition, ErrorReporter errorReporter) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null) {
       return true;
@@ -186,7 +186,7 @@ public class ConditionsChecking {
     }
   }
 
-  public static boolean check(List<Clause> clauses, ElimTree elimTree, LocalErrorReporter errorReporter) {
+  public static boolean check(List<Clause> clauses, ElimTree elimTree, ErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
       if (!checkClause(clause, elimTree, null, errorReporter)) {
@@ -197,7 +197,7 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, LocalErrorReporter errorReporter) {
+  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, ErrorReporter errorReporter) {
     if (clause.expression == null) {
       return true;
     }

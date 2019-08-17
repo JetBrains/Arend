@@ -1,5 +1,6 @@
 package org.arend.naming;
 
+import org.arend.error.ErrorReporter;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -7,7 +8,6 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.Fixity;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -15,10 +15,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class BinOpParser {
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
   private final List<StackElem> myStack;
 
-  public BinOpParser(LocalErrorReporter errorReporter) {
+  public BinOpParser(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
     myStack = new ArrayList<>();
   }

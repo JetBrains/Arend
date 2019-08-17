@@ -1,6 +1,5 @@
 package org.arend.library.error;
 
-import org.arend.error.Error;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
@@ -21,7 +20,7 @@ public class LibraryError extends GeneralError {
     this.libraryNames = libraryNames;
   }
 
-  private LibraryError(Error.Level level, String message, Stream<String> libraryNames) {
+  private LibraryError(GeneralError.Level level, String message, Stream<String> libraryNames) {
     super(level, message);
     this.libraryNames = libraryNames;
   }

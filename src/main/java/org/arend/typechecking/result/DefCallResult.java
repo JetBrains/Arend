@@ -9,8 +9,8 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.LocalErrorReporter;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
@@ -92,7 +92,7 @@ public class DefCallResult implements TResult {
   }
 
   @Override
-  public TResult applyExpression(Expression expression, LocalErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+  public TResult applyExpression(Expression expression, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     int size = myParameters.size();
     myArguments.add(expression);
     ExprSubstitution subst = new ExprSubstitution();

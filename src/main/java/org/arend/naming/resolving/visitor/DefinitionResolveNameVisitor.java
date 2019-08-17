@@ -2,9 +2,8 @@ package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
 import org.arend.error.DummyErrorReporter;
-import org.arend.error.Error;
-import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
+import org.arend.error.ErrorReporter;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -18,10 +17,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.ProxyError;
-import org.arend.typechecking.error.local.LocalError;
-import org.arend.typechecking.error.local.ProxyErrorReporter;
+import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.util.LongName;
 import org.arend.util.Pair;
@@ -144,10 +140,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
   }
 
-  private class ConcreteProxyErrorReporter implements LocalErrorReporter {
+  private class ConcreteProxyErrorReporter extends LocalErrorReporter {
     private final Concrete.Definition definition;
 
     private ConcreteProxyErrorReporter(Concrete.Definition definition) {
+      super(definition.getData(), myErrorReporter);
       this.definition = definition;
     }
 
@@ -155,12 +152,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     public void report(GeneralError error) {
       definition.setHasErrors();
       myErrorReporter.report(error);
-    }
-
-    @Override
-    public void report(LocalError localError) {
-      definition.setHasErrors();
-      myErrorReporter.report(new ProxyError(definition.getData(), localError));
     }
   }
 
@@ -297,7 +288,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         TCReferable ref = constructor.getData();
         TCReferable oldRef = constructorNames.putIfAbsent(ref.textRepresentation(), ref);
         if (oldRef != null) {
-          myLocalErrorReporter.report(new DuplicateNameError(Error.Level.ERROR, ref, oldRef));
+          myLocalErrorReporter.report(new DuplicateNameError(GeneralError.Level.ERROR, ref, oldRef));
         }
       }
     }
@@ -381,7 +372,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       TCReferable ref = field.getData();
       TCReferable oldRef = fieldNames.putIfAbsent(ref.textRepresentation(), ref);
       if (oldRef != null) {
-        myLocalErrorReporter.report(new DuplicateNameError(Error.Level.ERROR, ref, oldRef));
+        myLocalErrorReporter.report(new DuplicateNameError(GeneralError.Level.ERROR, ref, oldRef));
       }
     }
 
@@ -464,7 +455,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         myResolverListener.definitionResolved((Concrete.Definition) def);
       }
     } else {
-      myLocalErrorReporter = new ProxyErrorReporter(groupRef, myErrorReporter);
+      myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
 
     for (Group subgroup : subgroups) {
@@ -612,7 +603,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         for (int j = i + 1; j < namespaces.size(); j++) {
           Referable ref = namespaces.get(j).proj2.get(entry.getKey());
           if (ref != null && !ref.equals(entry.getValue())) {
-            myLocalErrorReporter.report(new NamingError(Error.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is imported from modules " + new LongName(pair.proj1.getPath()) + " and " + new LongName(namespaces.get(j).proj1.getPath()), namespaces.get(j).proj1));
+            myLocalErrorReporter.report(new NamingError(GeneralError.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is imported from modules " + new LongName(pair.proj1.getPath()) + " and " + new LongName(namespaces.get(j).proj1.getPath()), namespaces.get(j).proj1));
           }
         }
       }
@@ -657,7 +648,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (!name.isEmpty() && !"_".equals(name)) {
       Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
       if (oldField != null) {
-        myLocalErrorReporter.report(new ReferenceError(Error.Level.WARNING, "Field '" + field.textRepresentation() + ("' is already defined in super class " + oldField.proj2.textRepresentation()), field));
+        myLocalErrorReporter.report(new ReferenceError(GeneralError.Level.WARNING, "Field '" + field.textRepresentation() + ("' is already defined in super class " + oldField.proj2.textRepresentation()), field));
       }
     }
   }
@@ -673,7 +664,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         name = renaming.getOldReference().textRepresentation();
       }
       if (defined.contains(name)) {
-        myLocalErrorReporter.report(new NamingError(Error.Level.WARNING, "Definition '" + name + "' is not imported since it is defined in this module", renaming));
+        myLocalErrorReporter.report(new NamingError(GeneralError.Level.WARNING, "Definition '" + name + "' is not imported since it is defined in this module", renaming));
       }
     }
   }
@@ -705,7 +696,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     LocatedReferable oldRef = isInternal ? referables.get(name) : referables.putIfAbsent(name, newRef);
     if (oldRef != null) {
-      myLocalErrorReporter.report(new DuplicateNameError(isInternal ? Error.Level.WARNING : Error.Level.ERROR, newRef, oldRef));
+      myLocalErrorReporter.report(new DuplicateNameError(isInternal ? GeneralError.Level.WARNING : GeneralError.Level.ERROR, newRef, oldRef));
     }
   }
 }

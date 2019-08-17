@@ -9,7 +9,7 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +60,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public DataCallExpression strip(LocalErrorReporter errorReporter) {
+  public DataCallExpression strip(ErrorReporter errorReporter) {
     return new StripVisitor(errorReporter).visitDataCall(this, null);
   }
 

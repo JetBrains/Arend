@@ -27,7 +27,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.DummyErrorReporter;
-import org.arend.error.Error;
+import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.DocFactory;
@@ -37,9 +37,8 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
 import org.arend.typechecking.TypecheckerState;
-import org.arend.typechecking.error.ListLocalErrorReporter;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.LocalErrorReporterCounter;
+import org.arend.typechecking.error.ListErrorReporter;
+import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.ImplicitArgsInference;
 import org.arend.typechecking.implicitargs.StdImplicitArgsInference;
@@ -70,23 +69,17 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   private final ImplicitArgsInference myArgsInference;
   protected final TypecheckerState state;
   protected Map<Referable, Binding> context;
-  protected LocalErrorReporter errorReporter;
+  protected ErrorReporter errorReporter;
 
-  private class MyErrorReporter implements LocalErrorReporter {
-    private final LocalErrorReporter myErrorReporter;
+  private class MyErrorReporter implements ErrorReporter {
+    private final ErrorReporter myErrorReporter;
 
-    private MyErrorReporter(LocalErrorReporter errorReporter) {
+    private MyErrorReporter(ErrorReporter errorReporter) {
       myErrorReporter = errorReporter;
     }
 
-    private void setStatus(Error error) {
-      myStatus = myStatus.max(error.level == Error.Level.ERROR ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.HAS_WARNINGS);
-    }
-
-    @Override
-    public void report(LocalError localError) {
-      setStatus(localError);
-      myErrorReporter.report(localError);
+    private void setStatus(GeneralError error) {
+      myStatus = myStatus.max(error.level == GeneralError.Level.ERROR ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.HAS_WARNINGS);
     }
 
     @Override
@@ -100,7 +93,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     myStatus = myStatus.max(status);
   }
 
-  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, LocalErrorReporter errorReporter, GlobalInstancePool pool) {
+  public CheckTypeVisitor(TypecheckerState state, Map<Referable, Binding> localContext, ErrorReporter errorReporter, GlobalInstancePool pool) {
     myFreeBindings = new HashSet<>();
     this.errorReporter = new MyErrorReporter(errorReporter);
     myEquations = new TwoStageEquations(this);
@@ -164,7 +157,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return allBindings;
   }
 
-  public LocalErrorReporter getErrorReporter() {
+  public ErrorReporter getErrorReporter() {
     return errorReporter;
   }
 
@@ -234,7 +227,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public TypecheckingResult checkExpr(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
       assert false;
-      errorReporter.report(new LocalError(Error.Level.ERROR, "Incomplete expression"));
+      errorReporter.report(new LocalError(GeneralError.Level.ERROR, "Incomplete expression"));
       return null;
     }
 
@@ -270,7 +263,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       result.type = result.type.subst(new ExprSubstitution(), substitution);
     }
 
-    LocalErrorReporterCounter counter = new LocalErrorReporterCounter(Error.Level.ERROR, errorReporter);
+    ErrorReporterCounter counter = new ErrorReporterCounter(GeneralError.Level.ERROR, errorReporter);
     if (result.expression != null) {
       result.expression = result.expression.strip(counter);
     }
@@ -281,7 +274,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   public Type checkType(Concrete.Expression expr, ExpectedType expectedType) {
     if (expr == null) {
       assert false;
-      errorReporter.report(new LocalError(Error.Level.ERROR, "Incomplete expression"));
+      errorReporter.report(new LocalError(GeneralError.Level.ERROR, "Incomplete expression"));
       return null;
     }
 
@@ -667,11 +660,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
     if (!typeCheckedDefinition.status().headerIsOK()) {
-      errorReporter.report(new HasErrors(Error.Level.ERROR, definition, expr));
+      errorReporter.report(new HasErrors(GeneralError.Level.ERROR, definition, expr));
       return null;
     } else {
       if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-        errorReporter.report(new HasErrors(Error.Level.WARNING, definition, expr));
+        errorReporter.report(new HasErrors(GeneralError.Level.WARNING, definition, expr));
       } else if (typeCheckedDefinition.status().hasDepProblems()) {
         setStatus(Definition.TypeCheckingStatus.DEP_PROBLEMS);
       }
@@ -1570,13 +1563,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public TypecheckingResult visitGoal(Concrete.GoalExpression expr, ExpectedType expectedType) {
-    List<Error> errors = Collections.emptyList();
+    List<GeneralError> errors = Collections.emptyList();
     TypecheckingResult exprResult = null;
     if (expr.getExpression() != null) {
-      LocalErrorReporter errorReporter = this.errorReporter;
+      ErrorReporter errorReporter = this.errorReporter;
       Definition.TypeCheckingStatus status = myStatus;
       errors = new ArrayList<>();
-      this.errorReporter = new ListLocalErrorReporter(errors);
+      this.errorReporter = new ListErrorReporter(errors);
       exprResult = checkExpr(expr.getExpression(), expectedType);
       this.errorReporter = errorReporter;
       myStatus = status;

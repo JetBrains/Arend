@@ -5,7 +5,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 import org.arend.util.Decision;
 
 public class UniverseExpression extends Expression implements Type {
@@ -41,7 +41,7 @@ public class UniverseExpression extends Expression implements Type {
   }
 
   @Override
-  public UniverseExpression strip(LocalErrorReporter errorReporter) {
+  public UniverseExpression strip(ErrorReporter errorReporter) {
     return this;
   }
 

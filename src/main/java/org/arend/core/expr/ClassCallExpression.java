@@ -12,8 +12,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.visitor.CheckForUniversesVisitor;
+import org.arend.error.ErrorReporter;
 
 import java.util.*;
 
@@ -168,7 +167,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   @Override
-  public ClassCallExpression strip(LocalErrorReporter errorReporter) {
+  public ClassCallExpression strip(ErrorReporter errorReporter) {
     return new StripVisitor(errorReporter).visitClassCall(this, null);
   }
 

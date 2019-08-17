@@ -23,9 +23,8 @@ import org.arend.typechecking.CancellationIndicator;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.CycleError;
-import org.arend.typechecking.error.ProxyError;
 import org.arend.typechecking.error.TerminationCheckError;
-import org.arend.typechecking.error.local.ProxyErrorReporter;
+import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
@@ -291,7 +290,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typecheckingHeaderStarted(myCurrentDefinition);
 
       CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
-      CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
+      CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
       if (definition.hasErrors()) {
         visitor.setHasErrors();
       }
@@ -385,7 +384,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
           if (entry.getKey().status().headerIsOK()) {
             entry.getKey().setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           }
-          myErrorReporter.report(new ProxyError(entry.getKey().getReferable(), new TypecheckingError("Mutually recursive function refers to data type '" + visitor.getFoundDefinition().getName() + "'", entry.getValue())));
+          myErrorReporter.report(new TypecheckingError("Mutually recursive function refers to data type '" + visitor.getFoundDefinition().getName() + "'", entry.getValue()).withDefinition(entry.getKey().getReferable()));
           it.remove();
           visitor.clear();
         }
@@ -416,7 +415,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       typechecked = myState.getTypechecked(myCurrentDefinition);
       clauses = new DefinitionTypechecker(pair.proj1).typecheckBody(typechecked, definition, Collections.emptySet(), pair.proj2);
     } else {
-      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new ProxyErrorReporter(definition.getData(), myErrorReporter), null);
+      CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
       checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
       DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
       if (isLevel) {
@@ -458,7 +457,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       for (DependentLink link = entry.getKey().getParameters(); link.hasNext(); link = link.getNext()) {
         link = link.getNextTyped(null);
         if (FindDefCallVisitor.findDefinition(link.getTypeExpr(), definitions.keySet()) != null) {
-          myErrorReporter.report(new ProxyError(entry.getKey().getReferable(), new TypecheckingError("Mutually recursive functions are not allowed in parameters", entry.getValue())));
+          myErrorReporter.report(new TypecheckingError("Mutually recursive functions are not allowed in parameters", entry.getValue()).withDefinition(entry.getKey().getReferable()));
         }
       }
     }

@@ -21,7 +21,8 @@ import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.error.Error;
+import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
@@ -30,8 +31,7 @@ import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
 import org.arend.typechecking.error.CycleError;
-import org.arend.typechecking.error.LocalErrorReporter;
-import org.arend.typechecking.error.LocalErrorReporterCounter;
+import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -956,7 +956,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
           if (!ok) {
-            errorReporter.report(new TypecheckingError(Error.Level.ERROR, "Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
+            errorReporter.report(new TypecheckingError(GeneralError.Level.ERROR, "Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
           }
         } else {
           classifyingExpr = null;
@@ -1060,8 +1060,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    LocalErrorReporter originalErrorReporter = errorReporter;
-    LocalErrorReporterCounter countingErrorReporter = new LocalErrorReporterCounter(Error.Level.ERROR, originalErrorReporter);
+    ErrorReporter originalErrorReporter = errorReporter;
+    ErrorReporterCounter countingErrorReporter = new ErrorReporterCounter(GeneralError.Level.ERROR, originalErrorReporter);
     errorReporter = countingErrorReporter;
 
     if (!def.getConstructorClauses().isEmpty()) {
@@ -1234,11 +1234,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (def.isTruncated()) {
       if (userSort == null) {
         String msg = "The data type cannot be truncated since its universe is not specified";
-        originalErrorReporter.report(new TypecheckingError(Error.Level.WARNING, msg, def));
+        originalErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, msg, def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
           String msg = "The data type will not be truncated since it already fits in the specified universe";
-          originalErrorReporter.report(new TypecheckingError(Error.Level.WARNING, msg, def.getUniverse() == null ? def : def.getUniverse()));
+          originalErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, msg, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
           dataDefinition.setIsTruncated(true);
         }
@@ -1450,7 +1450,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+  private boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, ErrorReporter errorReporter, Set<? extends Variable> variables) {
     List<SingleDependentLink> piParams = new ArrayList<>();
     type = type.getPiParameters(piParams, false);
     for (DependentLink piParam : piParams) {
@@ -1502,7 +1502,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, LocalErrorReporter errorReporter, Set<? extends Variable> variables) {
+  private static boolean checkNonPositiveError(Expression expr, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, ErrorReporter errorReporter, Set<? extends Variable> variables) {
     Variable def = expr.findBinding(variables);
     if (def == null) {
       return true;

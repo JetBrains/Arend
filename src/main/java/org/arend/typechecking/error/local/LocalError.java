@@ -1,16 +1,32 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.Error;
+import org.arend.error.GeneralError;
+import org.arend.naming.reference.GlobalReferable;
 
 import javax.annotation.Nonnull;
+import java.util.function.BiConsumer;
 
-public class LocalError extends Error {
+public class LocalError extends GeneralError {
+  public GlobalReferable definition;
+
   public LocalError(@Nonnull Level level, String message) {
     super(level, message);
   }
 
   @Override
-  public LocalError getLocalError() {
+  public Object getCause() {
+    return definition;
+  }
+
+  @Override
+  public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
+    if (definition != null) {
+      consumer.accept(definition, this);
+    }
+  }
+
+  public LocalError withDefinition(GlobalReferable definition) {
+    this.definition = definition;
     return this;
   }
 }

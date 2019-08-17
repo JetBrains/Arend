@@ -9,16 +9,16 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
-import org.arend.typechecking.error.LocalErrorReporter;
+import org.arend.error.ErrorReporter;
 import org.arend.typechecking.error.local.LocalError;
 
 import java.util.*;
 
 public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   private final Set<EvaluatingBinding> myBoundEvaluatingBindings = new HashSet<>();
-  private final LocalErrorReporter myErrorReporter;
+  private final ErrorReporter myErrorReporter;
 
-  public StripVisitor(LocalErrorReporter errorReporter) {
+  public StripVisitor(ErrorReporter errorReporter) {
     myErrorReporter = errorReporter;
   }
 

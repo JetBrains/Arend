@@ -62,7 +62,7 @@ public class ImplicitArgumentsTest extends TypeCheckingTestCase {
     context.add(new TypedBinding("f", Pi(params, Pi(Ref(params), Ref(params)))));
 
     typeCheckExpr(context, "f 0", null, 1);
-    assertTrue(errorList.get(0).getLocalError() instanceof ArgInferenceError);
+    assertTrue(errorList.get(0) instanceof ArgInferenceError);
   }
 
   @Test
