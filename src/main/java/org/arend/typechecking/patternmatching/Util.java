@@ -137,7 +137,7 @@ public class Util {
   }
 
   static void removeArguments(List<?> clauseElems, DependentLink parameters, List<DependentLink> elimParams) {
-    if (parameters != null && elimParams != null) {
+    if (parameters != null && elimParams != null && !elimParams.isEmpty()) {
       DependentLink link = parameters;
       for (int i = 0; i < elimParams.size(); i++, link = link.getNext()) {
         while (link != elimParams.get(i)) {
@@ -145,6 +145,7 @@ public class Util {
           link = link.getNext();
         }
       }
+      clauseElems.subList(elimParams.size(), clauseElems.size()).clear();
     }
   }
 
