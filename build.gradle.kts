@@ -18,7 +18,7 @@ dependencies {
 
     implementation("commons-cli:commons-cli:1.4")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.9.9.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.9.9.2")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
