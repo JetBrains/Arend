@@ -732,6 +732,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (resultTypeLevel == null && expectedType != null) {
       DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
+      if (resultTypeLevel == null && defCall != null) {
+        Expression normDefCall = defCall.normalize(NormalizeVisitor.Mode.WHNF);
+        if (normDefCall != null && normDefCall.isInstance(DefCallExpression.class)) {
+          resultTypeLevel = normDefCall.cast(DefCallExpression.class).getUseLevel();
+        }
+      }
     }
 
     GoodThisParametersVisitor goodThisParametersVisitor;

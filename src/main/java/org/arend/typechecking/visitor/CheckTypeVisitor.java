@@ -1709,6 +1709,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       Expression resultExprWithoutPi = resultExpr.getPiParameters(null, false);
       DefCallExpression defCall = resultExprWithoutPi.checkedCast(DefCallExpression.class);
       level = defCall == null ? null : defCall.getUseLevel();
+      if (level == null && defCall != null) {
+        Expression normDefCall = defCall.normalize(NormalizeVisitor.Mode.WHNF);
+        if (normDefCall != null && normDefCall.isInstance(DefCallExpression.class)) {
+          level = normDefCall.cast(DefCallExpression.class).getUseLevel();
+        }
+      }
 
       if (level == null) {
         Sort sort = resultType == null ? null : resultType.getSortOfType();
