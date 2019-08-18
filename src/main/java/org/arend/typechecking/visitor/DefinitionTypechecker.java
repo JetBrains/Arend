@@ -430,6 +430,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       boolean oldParametersOK = true;
       if (parameter instanceof Concrete.TelescopeParameter) {
         List<? extends Referable> referableList = parameter.getReferableList();
+        if (referableList.isEmpty()) {
+          errorReporter.report(new TypecheckingError("Empty parameter list", parameter));
+          continue;
+        }
+
         List<String> names = parameter.getNames();
         param = oldParameters != null
           ? oldParameters

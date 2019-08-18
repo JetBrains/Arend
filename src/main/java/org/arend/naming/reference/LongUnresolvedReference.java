@@ -95,16 +95,22 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @Nonnull
   @Override
-  public Referable resolve(Scope scope) {
+  public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
     if (resolved != null) {
       return resolved;
     }
 
     for (int i = 0; i < myPath.size() - 1; i++) {
+      if (resolvedRefs != null) {
+        resolvedRefs.add(scope.resolveName(myPath.get(i)));
+      }
       scope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
       if (scope == null) {
         Object data = getData();
         resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
+        if (resolvedRefs != null) {
+          resolvedRefs.set(i, resolved);
+        }
         return resolved;
       }
     }
@@ -115,6 +121,9 @@ public class LongUnresolvedReference implements UnresolvedReference {
       Object data = getData();
       resolved = new ErrorReference(data, myPath.size() == 1 ? null : make(data, myPath.subList(0, myPath.size() - 1)), myPath.size() - 1, name);
     }
+    if (resolvedRefs != null) {
+      resolvedRefs.add(resolved);
+    }
 
     return resolved;
   }
@@ -122,7 +131,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
   @Nullable
   @Override
   public Referable tryResolve(Scope scope) {
-    if (resolve(scope) instanceof ErrorReference) {
+    if (resolve(scope, null) instanceof ErrorReference) {
       resolved = null;
     }
     return resolved;
@@ -130,7 +139,7 @@ public class LongUnresolvedReference implements UnresolvedReference {
 
   @Nullable
   @Override
-  public Concrete.Expression resolveArgument(Scope scope) {
+  public Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs) {
     if (resolved != null) {
       return null;
     }
@@ -139,8 +148,13 @@ public class LongUnresolvedReference implements UnresolvedReference {
     for (int i = 0; i < myPath.size() - 1; i++) {
       Scope nextScope = scope.resolveNamespace(myPath.get(i), i < myPath.size() - 2);
       if (nextScope == null) {
-        return resolveField(prevScope, i == 0 ? 0 : i - 1);
+        return resolveField(prevScope, i - 1, resolvedRefs);
       }
+
+      if (resolvedRefs != null) {
+        resolvedRefs.add(scope.resolveName(myPath.get(i)));
+      }
+
       prevScope = scope;
       scope = nextScope;
     }
@@ -151,22 +165,43 @@ public class LongUnresolvedReference implements UnresolvedReference {
       if (myPath.size() == 1) {
         resolved = new ErrorReference(getData(), name);
       } else {
-        return resolveField(prevScope, myPath.size() - 2);
+        return resolveField(prevScope, myPath.size() - 2, resolvedRefs);
       }
+    }
+    if (resolvedRefs != null) {
+      resolvedRefs.add(resolved);
     }
 
     return null;
   }
 
-  private Concrete.Expression resolveField(Scope scope, int i) {
-    resolved = scope.resolveName(myPath.get(i));
+  private Concrete.Expression resolveField(Scope scope, int i, List<Referable> resolvedRefs) {
+    if (i == -1) {
+      resolved = scope.resolveName(myPath.get(0));
+      if (resolvedRefs != null) {
+        resolvedRefs.add(resolved);
+      }
+      i = 0;
+    } else {
+      resolved = resolvedRefs != null ? resolvedRefs.get(i) : scope.resolveName(myPath.get(i));
+    }
+
     ClassReferable classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
     if (classRef == null) {
       Object data = getData();
-      if (resolved != null) {
+      boolean wasResolved = resolved != null;
+      if (wasResolved) {
         i++;
       }
       resolved = new ErrorReference(data, i == 0 ? null : make(data, myPath.subList(0, i)), i, myPath.get(i));
+
+      if (resolvedRefs != null) {
+        if (wasResolved) {
+          resolvedRefs.add(resolved);
+        } else {
+          resolvedRefs.set(i, resolved);
+        }
+      }
       return null;
     }
 
@@ -176,7 +211,13 @@ public class LongUnresolvedReference implements UnresolvedReference {
       resolved = new ClassFieldImplScope(classRef, false).resolveName(myPath.get(i));
       if (resolved == null) {
         resolved = new ErrorReference(data, classRef, i, myPath.get(i));
-        return null;
+        if (resolvedRefs != null) {
+          resolvedRefs.add(resolved);
+        }
+        return result;
+      }
+      if (resolvedRefs != null) {
+        resolvedRefs.add(resolved);
       }
       if (i == myPath.size() - 1) {
         return result;
@@ -186,6 +227,9 @@ public class LongUnresolvedReference implements UnresolvedReference {
       classRef = resolved instanceof TypedReferable ? ((TypedReferable) resolved).getTypeClassReference() : null;
       if (classRef == null) {
         resolved = new ErrorReference(data, make(data, myPath.subList(0, i + 1)), i + 1, myPath.get(i + 1));
+        if (resolvedRefs != null) {
+          resolvedRefs.add(resolved);
+        }
         return null;
       }
     }

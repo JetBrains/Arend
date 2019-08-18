@@ -167,7 +167,7 @@ public final class Abstract {
 
   public interface ClassFieldImpl extends ParametersHolder, ClassReferenceHolder {
     @Nullable Object getData();
-    @Nullable Referable getImplementedField();
+    @Nullable Reference getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
   }
 

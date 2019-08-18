@@ -5,6 +5,7 @@ import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class NamedUnresolvedReference implements UnresolvedReference {
   private final Object myData;
@@ -44,7 +45,7 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @Nonnull
   @Override
-  public Referable resolve(Scope scope) {
+  public Referable resolve(Scope scope, List<Referable> resolvedRefs) {
     if (resolved != null) {
       return resolved;
     }
@@ -53,13 +54,16 @@ public class NamedUnresolvedReference implements UnresolvedReference {
     if (resolved == null) {
       resolved = new ErrorReference(myData, myName);
     }
+    if (resolvedRefs != null) {
+      resolvedRefs.add(resolved);
+    }
     return resolved;
   }
 
   @Nullable
   @Override
   public Referable tryResolve(Scope scope) {
-    if (resolve(scope) instanceof ErrorReference) {
+    if (resolve(scope, null) instanceof ErrorReference) {
       resolved = null;
     }
     return resolved;
@@ -67,8 +71,8 @@ public class NamedUnresolvedReference implements UnresolvedReference {
 
   @Nullable
   @Override
-  public Concrete.Expression resolveArgument(Scope scope) {
-    resolve(scope);
+  public Concrete.Expression resolveArgument(Scope scope, List<Referable> resolvedRefs) {
+    resolve(scope, resolvedRefs);
     return null;
   }
 }

@@ -68,7 +68,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   protected void resolve(Scope scope) {
     mySuperClasses.clear();
     for (Reference superClass : myUnresolvedSuperClasses) {
-      Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true);
+      Referable ref = ExpressionResolveNameVisitor.resolve(superClass.getReferent(), scope, true, null);
       if (ref instanceof TCClassReferable) {
         mySuperClasses.add((TCClassReferable) ref);
       }

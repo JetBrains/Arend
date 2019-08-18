@@ -23,6 +23,7 @@ import org.arend.util.LongName;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -168,6 +169,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       return null;
     }
 
+    if (myResolverListener != null) {
+      myResolverListener.beforeDefinitionResolved(def);
+    }
+
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
@@ -243,6 +248,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    if (myResolverListener != null) {
+      myResolverListener.definitionResolved(def);
+    }
     return null;
   }
 
@@ -276,6 +284,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
+    }
+
+    if (myResolverListener != null) {
+      myResolverListener.beforeDefinitionResolved(def);
     }
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
@@ -320,6 +332,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    if (myResolverListener != null) {
+      myResolverListener.definitionResolved(def);
+    }
     return null;
   }
 
@@ -352,6 +367,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   public Void visitClass(Concrete.ClassDefinition def, Scope scope) {
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
+    }
+
+    if (myResolverListener != null) {
+      myResolverListener.beforeDefinitionResolved(def);
     }
 
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
@@ -420,6 +439,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     def.setResolved();
+    if (myResolverListener != null) {
+      myResolverListener.definitionResolved(def);
+    }
     return null;
   }
 
@@ -451,9 +473,6 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Scope convertedScope = CachingScope.make(referableConverter == null ? scope : new ConvertingScope(referableConverter, scope));
     if (def instanceof Concrete.Definition) {
       ((Concrete.Definition) def).accept(this, convertedScope);
-      if (myResolverListener != null) {
-        myResolverListener.definitionResolved((Concrete.Definition) def);
-      }
     } else {
       myLocalErrorReporter = new LocalErrorReporter(groupRef, myErrorReporter);
     }
@@ -480,7 +499,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
       LongUnresolvedReference reference = new LongUnresolvedReference(namespaceCommand, path);
       Scope importedScope = kind == NamespaceCommand.Kind.IMPORT ? convertedScope.getImportedSubscope() : convertedScope;
-      reference.resolve(importedScope);
+      List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
+      reference.resolve(importedScope, resolvedRefs);
+      if (myResolverListener != null) {
+        myResolverListener.namespaceResolved(namespaceCommand, resolvedRefs);
+      }
       Scope curScope = reference.resolveNamespace(importedScope);
       if (curScope == null) {
         myLocalErrorReporter.report(reference.getErrorReference().getError());
@@ -488,7 +511,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
       if (curScope != null) {
         for (NameRenaming renaming : namespaceCommand.getOpenedReferences()) {
-          Referable ref = ExpressionResolveNameVisitor.resolve(renaming.getOldReference(), curScope);
+          Referable oldRef = renaming.getOldReference();
+          Referable ref = ExpressionResolveNameVisitor.resolve(oldRef, curScope);
+          if (myResolverListener != null) {
+            myResolverListener.renamingResolved(renaming, oldRef, ref);
+          }
           if (ref instanceof ErrorReference) {
             myLocalErrorReporter.report(((ErrorReference) ref).getError());
           }
