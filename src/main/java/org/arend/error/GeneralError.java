@@ -6,7 +6,6 @@ import org.arend.error.doc.LineDoc;
 import org.arend.naming.reference.DataContainer;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
-import org.arend.typechecking.error.local.LocalError;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -24,7 +23,7 @@ public class GeneralError {
     public String toString() {
       return "WARNING";
     }
-  }, WARNING, GOAL, ERROR }
+  }, GOAL, WARNING, ERROR }
 
   public GeneralError(@Nonnull Level level, String message) {
     this.level = level;
