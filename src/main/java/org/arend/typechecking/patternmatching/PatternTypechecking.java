@@ -160,10 +160,19 @@ public class PatternTypechecking {
     return result;
   }
 
-  Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean fullList) {
+  Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
     myContext = new HashMap<>();
-    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, fullList);
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, withElim);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
+  }
+
+  public List<Pattern> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, boolean withElim) {
+    if (patterns.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, patterns.get(0), withElim);
+    return result == null ? null : result.proj1;
   }
 
   private static DependentLink getFirstBinding(List<Pattern> patterns) {
@@ -184,7 +193,7 @@ public class PatternTypechecking {
   }
 
   private Type typecheckType(Concrete.Expression cType, Expression expectedType) {
-    if (cType == null) {
+    if (cType == null || myVisitor == null) {
       return null;
     }
 
@@ -197,6 +206,10 @@ public class PatternTypechecking {
   }
 
   private void typecheckAsPatterns(List<Concrete.TypedReferable> asPatterns, Expression expression, Expression expectedType) {
+    if (myVisitor == null) {
+      return;
+    }
+
     if (expression == null || asPatterns.isEmpty()) {
       if (!asPatterns.isEmpty()) {
         myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.AS_PATTERN_IGNORED, asPatterns.get(0)));
@@ -207,13 +220,13 @@ public class PatternTypechecking {
     expectedType = expectedType.copy();
     for (Concrete.TypedReferable typedReferable : asPatterns) {
       Type type = typecheckType(typedReferable.type, expectedType);
-      if (typedReferable.referable != null) {
+      if (typedReferable.referable != null && myContext != null) {
         myContext.put(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
       }
     }
   }
 
-  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, boolean fullList) {
+  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, boolean withElim) {
     List<Pattern> result = new ArrayList<>();
     List<Expression> exprs = new ArrayList<>();
 
@@ -223,13 +236,15 @@ public class PatternTypechecking {
         return null;
       }
 
-      if (!fullList && pattern != null) {
+      if (!withElim && pattern != null) {
         if (pattern.isExplicit()) {
           while (!parameters.isExplicit()) {
             result.add(new BindingPattern(parameters));
             if (exprs != null) {
               exprs.add(new ReferenceExpression(parameters));
-              myVisitor.addBinding(null, parameters);
+              if (myVisitor != null) {
+                myVisitor.addBinding(null, parameters);
+              }
             }
             parameters = parameters.getNext();
             if (!parameters.hasNext()) {
@@ -268,9 +283,9 @@ public class PatternTypechecking {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
           if (pattern != null) {
-            if (referable != null) {
+            if (referable != null && myContext != null) {
               myContext.put(referable, parameters);
-            } else {
+            } else if (myVisitor != null) {
               myVisitor.addBinding(null, parameters);
             }
           }
@@ -372,7 +387,7 @@ public class PatternTypechecking {
       List<ConCallExpression> conCalls = new ArrayList<>(1);
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         Referable conRef = conPattern.getConstructor();
-        if (constructor != null || conRef instanceof TCReferable && myVisitor.getTypecheckingState().getTypechecked((TCReferable) conRef) instanceof Constructor) {
+        if (constructor != null || conRef instanceof TCReferable && ((TCReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
           myErrorReporter.report(new ExpectedConstructor(conRef, dataCall, conPattern));
         }
         return null;
@@ -412,7 +427,7 @@ public class PatternTypechecking {
       }
     }
 
-    if (!fullList) {
+    if (!withElim) {
       while (!parameters.isExplicit()) {
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
@@ -457,7 +472,7 @@ public class PatternTypechecking {
   }
 
   // Chains the bindings in the leaves of patterns
-  private void fixPatterns(List<Pattern> patterns, ExprSubstitution substitution) {
+  private static void fixPatterns(List<Pattern> patterns, ExprSubstitution substitution) {
     List<DependentLink> leaves = new ArrayList<>();
     getLeaves(patterns, leaves);
 
@@ -484,7 +499,7 @@ public class PatternTypechecking {
     }
   }
 
-  private void getLeaves(List<Pattern> patterns, List<DependentLink> leaves) {
+  private static void getLeaves(List<Pattern> patterns, List<DependentLink> leaves) {
     for (Pattern pattern : patterns) {
       if (pattern instanceof ConstructorPattern) {
         getLeaves(((ConstructorPattern) pattern).getArguments(), leaves);
@@ -494,7 +509,7 @@ public class PatternTypechecking {
     }
   }
 
-  private int setLeaves(List<Pattern> patterns, List<DependentLink> leaves, int j) {
+  private static int setLeaves(List<Pattern> patterns, List<DependentLink> leaves, int j) {
     for (int i = 0; i < patterns.size(); i++) {
       Pattern pattern = patterns.get(i);
       if (pattern instanceof BindingPattern) {
