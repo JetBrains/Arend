@@ -2,8 +2,9 @@ package org.arend.term.abs;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.error.CountingErrorReporter;
-import org.arend.error.GeneralError;
+import org.arend.error.DummyErrorReporter;
 import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;
@@ -18,7 +19,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
+@SuppressWarnings("WeakerAccess")
 public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Definition>, AbstractExpressionVisitor<Void, Concrete.Expression>, AbstractLevelExpressionVisitor<Void, Concrete.LevelExpression> {
   private final ReferableConverter myReferableConverter;
   private final LocalErrorReporter myErrorReporter;
@@ -46,28 +49,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return result;
   }
 
-  public static List<Concrete.Parameter> convertParams(ReferableConverter referableConverter, List<? extends Abstract.Parameter> parameters) {
-    CountingErrorReporter cer = new CountingErrorReporter();
-    List<Concrete.Parameter> result;
+  public static <R> R convert(ReferableConverter referableConverter, boolean allowErrors, Function<ConcreteBuilder,R> function) {
+    ErrorReporter errorReporter = allowErrors ? DummyErrorReporter.INSTANCE : new CountingErrorReporter();
     try {
-      ConcreteBuilder cb = new ConcreteBuilder(referableConverter, cer, null);
-      result = cb.buildParameters(parameters);
+      R result = function.apply(new ConcreteBuilder(referableConverter, errorReporter, null));
+      return errorReporter instanceof CountingErrorReporter && ((CountingErrorReporter) errorReporter).getErrorsNumber() != 0 ? null : result;
     } catch (AbstractExpressionError.Exception e) {
       return null;
     }
-    if (cer.getErrorsNumber() == 0) return result; else return null;
   }
 
   public static Concrete.Expression convertExpression(ReferableConverter referableConverter, Abstract.Expression expression) {
-    CountingErrorReporter cer = new CountingErrorReporter();
-    Concrete.Expression result;
-    try {
-      ConcreteBuilder cb = new ConcreteBuilder(referableConverter, cer, null);
-      result = expression.accept(cb, null);
-    } catch (AbstractExpressionError.Exception e) {
-      return null;
-    }
-    if (cer.getErrorsNumber() == 0) return result; else return null;
+    return convert(referableConverter, false, builder -> expression.accept(builder, null));
   }
 
   @Override
@@ -223,7 +216,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  private void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  public void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
     TCFieldReferable coercingField = null;
     boolean isForced = false;
 
@@ -311,11 +304,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {
+  public Concrete.ReferenceExpression buildReference(Abstract.Reference reference) {
     return new Concrete.ReferenceExpression(reference.getData(), reference.getReferent());
   }
 
-  private List<Concrete.ReferenceExpression> buildReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
+  public List<Concrete.ReferenceExpression> buildReferences(Collection<? extends Abstract.Reference> absElimExpressions) {
     List<Concrete.ReferenceExpression> elimExpressions = new ArrayList<>(absElimExpressions.size());
     for (Abstract.Reference reference : absElimExpressions) {
       elimExpressions.add(buildReference(reference));
@@ -323,7 +316,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return elimExpressions;
   }
 
-  private List<Concrete.ClassFieldImpl> buildImplementationsSafe(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+  public List<Concrete.ClassFieldImpl> buildImplementationsSafe(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     try {
       return buildImplementations(absImplementations);
     } catch (AbstractExpressionError.Exception e) {
@@ -332,7 +325,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+  public List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
       Abstract.Reference implementedField = implementation.getImplementedField();
@@ -356,7 +349,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return implementations;
   }
 
-  private Concrete.Parameter buildParameter(Abstract.Parameter parameter, boolean isNamed) {
+  public Concrete.Parameter buildParameter(Abstract.Parameter parameter, boolean isNamed) {
     List<? extends Referable> referableList = parameter.getReferableList();
     Abstract.Expression type = parameter.getType();
     if (type == null) {
@@ -379,7 +372,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private List<Concrete.Parameter> buildParameters(Collection<? extends Abstract.Parameter> absParameters) {
+  public List<Concrete.Parameter> buildParameters(Collection<? extends Abstract.Parameter> absParameters) {
     List<Concrete.Parameter> parameters = new ArrayList<>(absParameters.size());
     for (Abstract.Parameter absParameter : absParameters) {
       parameters.add(buildParameter(absParameter, true));
@@ -387,7 +380,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return parameters;
   }
 
-  private List<Concrete.TypeParameter> buildTypeParameters(Collection<? extends Abstract.Parameter> absParameters) {
+  public List<Concrete.TypeParameter> buildTypeParameters(Collection<? extends Abstract.Parameter> absParameters) {
     List<Concrete.TypeParameter> parameters = new ArrayList<>(absParameters.size());
     for (Abstract.Parameter absParameter : absParameters) {
       Concrete.Parameter parameter = buildParameter(absParameter, false);
@@ -400,7 +393,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return parameters;
   }
 
-  private List<Concrete.TelescopeParameter> buildTelescopeParameters(Collection<? extends Abstract.Parameter> absParameters) {
+  public List<Concrete.TelescopeParameter> buildTelescopeParameters(Collection<? extends Abstract.Parameter> absParameters) {
     try {
       List<Concrete.TelescopeParameter> parameters = new ArrayList<>(absParameters.size());
       for (Abstract.Parameter absParameter : absParameters) {
@@ -418,7 +411,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private List<Concrete.TypedReferable> buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
+  public List<Concrete.TypedReferable> buildTypedReferables(List<? extends Abstract.TypedReferable> typedReferables) {
     List<Concrete.TypedReferable> result = new ArrayList<>();
     for (Abstract.TypedReferable typedReferable : typedReferables) {
       Referable referable = typedReferable.getReferable();
@@ -430,7 +423,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return result;
   }
 
-  private Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
+  public Concrete.Pattern buildPattern(Abstract.Pattern pattern) {
     Referable reference = pattern.getHeadReference();
     if (reference == null) {
       Integer number = pattern.getNumber();
@@ -457,7 +450,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
   }
 
-  private List<Concrete.Pattern> buildPatterns(Collection<? extends Abstract.Pattern> absPatterns) {
+  public List<Concrete.Pattern> buildPatterns(Collection<? extends Abstract.Pattern> absPatterns) {
     List<Concrete.Pattern> patterns = new ArrayList<>(absPatterns.size());
     for (Abstract.Pattern pattern : absPatterns) {
       patterns.add(buildPattern(pattern));
@@ -465,7 +458,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return patterns;
   }
 
-  private List<Concrete.FunctionClause> buildClauses(Collection<? extends Abstract.FunctionClause> absClauses) {
+  public List<Concrete.FunctionClause> buildClauses(Collection<? extends Abstract.FunctionClause> absClauses) {
     List<Concrete.FunctionClause> clauses = new ArrayList<>(absClauses.size());
     for (Abstract.FunctionClause clause : absClauses) {
       Collection<? extends Abstract.Pattern> patterns = clause.getPatterns();
