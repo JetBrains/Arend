@@ -1,6 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.Utils;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -16,6 +17,8 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.error.ErrorReporter;
+import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.MissingClausesError;
@@ -68,16 +71,20 @@ public class ElimTypechecking {
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
+    return getEliminatedParameters(expressions, clauses, parameters, visitor.getErrorReporter(), visitor.getContext());
+  }
+
+  public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, ErrorReporter errorReporter, Map<Referable, Binding> context) {
     List<DependentLink> elimParams = Collections.emptyList();
     if (!expressions.isEmpty()) {
       int expectedNumberOfPatterns = expressions.size();
-      DumbTypechecker.findImplicitPatterns(clauses, visitor.getErrorReporter(), false);
+      DumbTypechecker.findImplicitPatterns(clauses, errorReporter, false);
       for (Concrete.Clause clause : clauses) {
         if (clause.getPatterns() != null && clause.getPatterns().size() != expectedNumberOfPatterns) {
           if (clause.getPatterns().size() > expectedNumberOfPatterns) {
-            visitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, clause.getPatterns().get(expectedNumberOfPatterns)));
+            errorReporter.report(new TypecheckingError(TypecheckingError.Kind.TOO_MANY_PATTERNS, clause.getPatterns().get(expectedNumberOfPatterns)));
           } else {
-            visitor.getErrorReporter().report(new NotEnoughPatternsError(expectedNumberOfPatterns - clause.getPatterns().size(), clause));
+            errorReporter.report(new NotEnoughPatternsError(expectedNumberOfPatterns - clause.getPatterns().size(), clause));
           }
           return null;
         }
@@ -86,14 +93,14 @@ public class ElimTypechecking {
       DependentLink link = parameters;
       elimParams = new ArrayList<>(expressions.size());
       for (Concrete.ReferenceExpression expr : expressions) {
-        DependentLink elimParam = (DependentLink) visitor.getContext().get(expr.getReferent());
+        DependentLink elimParam = (DependentLink) context.get(expr.getReferent());
         while (elimParam != link) {
           if (!link.hasNext()) {
             link = parameters;
             while (link.hasNext() && link != elimParam) {
               link = link.getNext();
             }
-            visitor.getErrorReporter().report(new TypecheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
+            errorReporter.report(new TypecheckingError(link == elimParam ? "Variable elimination must be in the order of variable introduction" : "Only parameters can be eliminated", expr));
             return null;
           }
           link = link.getNext();

@@ -121,19 +121,7 @@ public class PatternTypechecking {
     }
 
     // Typecheck patterns
-    Pair<List<Pattern>, List<Expression>> result;
-    if (!elimParams.isEmpty()) {
-      // Put patterns in the correct order
-      // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
-      List<Concrete.Pattern> patterns1 = new ArrayList<>();
-      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-        int index = elimParams.indexOf(link);
-        patterns1.add(index < 0 ? null : patterns.get(index));
-      }
-      result = doTypechecking(patterns1, DependentLink.Helper.copy(parameters), sourceNode, true);
-    } else {
-      result = doTypechecking(patterns, DependentLink.Helper.copy(parameters), sourceNode, false);
-    }
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, elimParams, sourceNode);
 
     // Compute the context and the set of free bindings for CheckTypeVisitor
     if (result != null && result.proj2 != null && abstractParameters != null) {
@@ -162,16 +150,16 @@ public class PatternTypechecking {
 
   Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
     myContext = new HashMap<>();
-    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, sourceNode, withElim);
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, DependentLink.Helper.copy(parameters), sourceNode, withElim);
     return result == null ? null : new Pair<>(result.proj1, result.proj2 == null ? null : myContext);
   }
 
-  public List<Pattern> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, boolean withElim) {
+  public List<Pattern> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, List<DependentLink> elimParams) {
     if (patterns.isEmpty()) {
       return Collections.emptyList();
     }
 
-    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, patterns.get(0), withElim);
+    Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, elimParams, patterns.get(0));
     return result == null ? null : result.proj1;
   }
 
@@ -224,6 +212,20 @@ public class PatternTypechecking {
         myContext.put(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
       }
     }
+  }
+
+  private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
+    // Put patterns in the correct order
+    // If some parameters are not eliminated (i.e. absent in elimParams), then we put null in corresponding patterns
+    if (!elimParams.isEmpty()) {
+      List<Concrete.Pattern> patterns1 = new ArrayList<>();
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+        int index = elimParams.indexOf(link);
+        patterns1.add(index < 0 ? null : patterns.get(index));
+      }
+      patterns = patterns1;
+    }
+    return doTypechecking(patterns, DependentLink.Helper.copy(parameters), sourceNode, !elimParams.isEmpty());
   }
 
   private Pair<List<Pattern>, List<Expression>> doTypechecking(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, boolean withElim) {

@@ -204,7 +204,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   @Override
-  protected void visitClause(Concrete.Clause clause, Void params) {
+  public void visitClause(Concrete.Clause clause, Void params) {
     if (clause instanceof Concrete.FunctionClause) {
       Concrete.FunctionClause functionClause = (Concrete.FunctionClause) clause;
       try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
@@ -276,6 +276,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
 
     return null;
+  }
+
+  public void visitPatterns(List<Concrete.Pattern> patterns) {
+    visitPatterns(patterns, new HashMap<>(), true);
   }
 
   void visitPatterns(List<Concrete.Pattern> patterns, Map<String, Referable> usedNames, boolean resolvePatterns) {

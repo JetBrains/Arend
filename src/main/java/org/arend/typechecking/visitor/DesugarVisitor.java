@@ -9,6 +9,7 @@ import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.typecheckable.provider.EmptyConcreteProvider;
 
 import java.util.*;
 
@@ -24,6 +25,10 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   public static void desugar(Concrete.Definition definition, ConcreteProvider concreteProvider, ErrorReporter errorReporter) {
     definition.accept(new DesugarVisitor(concreteProvider, errorReporter), null);
     definition.setDesugarized();
+  }
+
+  public static void desugarPatterns(List<Concrete.Pattern> patterns, ErrorReporter errorReporter) {
+    new DesugarVisitor(EmptyConcreteProvider.INSTANCE, errorReporter).visitPatterns(patterns);
   }
 
   private Set<LocatedReferable> getClassFields(ClassReferable classRef) {
