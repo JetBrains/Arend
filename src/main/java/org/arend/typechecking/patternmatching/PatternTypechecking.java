@@ -70,7 +70,7 @@ public class PatternTypechecking {
         // If we have the absurd pattern, then RHS is ignored
         if (result.proj2 == null) {
           if (clause.getExpression() != null) {
-            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.RHS_IGNORED, clause.getExpression()));
+            myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.BODY_IGNORED, clause.getExpression()));
           }
           return new Pair<>(result.proj1, null);
         } else {

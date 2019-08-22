@@ -190,30 +190,26 @@ public class ElimTypechecking {
       if (elimParams.isEmpty()) {
         for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
           link = link.getNextTyped(null);
-          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
-          if (dataCall != null) {
-            List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
-            if (conCalls != null && conCalls.isEmpty()) {
-              emptyLink = link;
-              break;
-            }
+          List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr());
+          if (conCalls != null && conCalls.isEmpty()) {
+            emptyLink = link;
+            break;
           }
         }
       } else {
         for (DependentLink link : elimParams) {
-          DataCallExpression dataCall = link.getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
-          if (dataCall != null) {
-            List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
-            if (conCalls != null && conCalls.isEmpty()) {
-              emptyLink = link;
-              break;
-            }
+          List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr());
+          if (conCalls != null && conCalls.isEmpty()) {
+            emptyLink = link;
+            break;
           }
         }
       }
 
       if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
-        myVisitor.getErrorReporter().report(new TypecheckingError("Coverage check failed", sourceNode));
+        if (!reportMissingClauses(null, sourceNode, abstractParameters, parameters, elimParams)) {
+          reportNoClauses(sourceNode, abstractParameters, parameters, elimParams);
+        }
       }
 
       ElimTree elimTree = null;
@@ -231,61 +227,7 @@ public class ElimTypechecking {
     myContext = new Stack<>();
     ElimTree elimTree = clausesToElimTree(nonIntervalClauses, 0);
 
-    if (myMissingClauses != null && !myMissingClauses.isEmpty()) {
-      List<List<Pattern>> missingClauses = new ArrayList<>(myMissingClauses.size());
-      loop:
-      for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
-        List<Pattern> patterns = Util.unflattenClauses(missingClause.proj1);
-        List<Expression> expressions = new ArrayList<>(patterns.size());
-        for (Pattern pattern : patterns) {
-          expressions.add(pattern.toExpression());
-        }
-
-        if (!missingClause.proj2) {
-          if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions, false)) {
-            continue;
-          }
-
-          Util.addArguments(patterns, parameters);
-
-          int i = patterns.size() - 1;
-          for (; i >= 0; i--) {
-            if (!(patterns.get(i) instanceof BindingPattern)) {
-              break;
-            }
-          }
-          DependentLink link = parameters;
-          ExprSubstitution substitution = new ExprSubstitution();
-          for (int j = 0; j < i + 1; j++) {
-            substitution.add(link, patterns.get(j).toExpression());
-            link = link.getNext();
-          }
-          for (; link.hasNext(); link = link.getNext()) {
-            link = link.getNextTyped(null);
-            DataCallExpression dataCall = link.getTypeExpr().subst(substitution).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
-            if (dataCall != null) {
-              List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
-              if (conCalls != null && conCalls.isEmpty()) {
-                continue loop;
-              }
-            }
-          }
-
-          myOK = false;
-        }
-
-        Util.removeArguments(patterns, parameters, elimParams);
-        if (missingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
-          missingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
-          break;
-        }
-        missingClauses.add(patterns);
-      }
-
-      if (!missingClauses.isEmpty()) {
-        myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
-      }
-    }
+    reportMissingClauses(elimTree, sourceNode, abstractParameters, parameters, elimParams);
 
     if (myOK) {
       for (Concrete.FunctionClause clause : myUnusedClauses) {
@@ -293,6 +235,136 @@ public class ElimTypechecking {
       }
     }
     return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
+  }
+
+  private static List<ConCallExpression> getMatchedConstructors(Expression expr) {
+    DataCallExpression dataCall = expr.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
+    return dataCall == null ? null : dataCall.getMatchedConstructors();
+  }
+
+  private static List<List<Pattern>> generateMissingClauses(List<DependentLink> eliminatedParameters, int i, ExprSubstitution substitution) {
+    if (i == eliminatedParameters.size()) {
+      List<List<Pattern>> result = new ArrayList<>();
+      result.add(new ArrayList<>());
+      return result;
+    }
+
+    DependentLink link = eliminatedParameters.get(i);
+    List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
+    if (conCalls != null) {
+      List<List<Pattern>> totalResult = new ArrayList<>();
+      for (ConCallExpression conCall : conCalls) {
+        List<Expression> arguments = new ArrayList<>();
+        List<Pattern> patternArgs = new ArrayList<>();
+        for (DependentLink link1 = conCall.getDefinition().getParameters(); link1.hasNext(); link1 = link1.getNext()) {
+          arguments.add(new ReferenceExpression(link1));
+          patternArgs.add(new BindingPattern(link1));
+        }
+        substitution.add(link, ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments));
+        List<List<Pattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+        for (List<Pattern> patterns : result) {
+          patterns.add(new ConstructorPattern(conCall, new Patterns(patternArgs)));
+        }
+        totalResult.addAll(result);
+      }
+      substitution.remove(link);
+      return totalResult;
+    } else {
+      List<List<Pattern>> result = generateMissingClauses(eliminatedParameters, i + 1, substitution);
+      for (List<Pattern> patterns : result) {
+        patterns.add(new BindingPattern(link));
+      }
+      return result;
+    }
+  }
+
+  private void reportNoClauses(Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+    List<List<Pattern>> missingClauses = generateMissingClauses(elimParams.isEmpty() ? DependentLink.Helper.toList(parameters) : elimParams, 0, new ExprSubstitution());
+
+    if (missingClauses.isEmpty()) {
+      return;
+    }
+
+    if (missingClauses.size() == 1) {
+      boolean allVars = true;
+      for (Pattern pattern : missingClauses.get(0)) {
+        if (!(pattern instanceof BindingPattern)) {
+          allVars = false;
+          break;
+        }
+      }
+
+      if (allVars) {
+        myVisitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.BODY_REQUIRED, sourceNode));
+        return;
+      }
+    }
+
+    for (List<Pattern> patterns : missingClauses) {
+      Collections.reverse(patterns);
+    }
+
+    myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
+  }
+
+  private boolean reportMissingClauses(ElimTree elimTree, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams) {
+    if (myMissingClauses == null || myMissingClauses.isEmpty()) {
+      return false;
+    }
+
+    List<List<Pattern>> missingClauses = new ArrayList<>(myMissingClauses.size());
+    loop:
+    for (Pair<List<Util.ClauseElem>, Boolean> missingClause : myMissingClauses) {
+      List<Pattern> patterns = Util.unflattenClauses(missingClause.proj1);
+      List<Expression> expressions = new ArrayList<>(patterns.size());
+      for (Pattern pattern : patterns) {
+        expressions.add(pattern.toExpression());
+      }
+
+      if (!missingClause.proj2) {
+        if (elimTree != null && NormalizeVisitor.INSTANCE.doesEvaluate(elimTree, expressions, false)) {
+          continue;
+        }
+
+        Util.addArguments(patterns, parameters);
+
+        int i = patterns.size() - 1;
+        for (; i >= 0; i--) {
+          if (!(patterns.get(i) instanceof BindingPattern)) {
+            break;
+          }
+        }
+        DependentLink link = parameters;
+        ExprSubstitution substitution = new ExprSubstitution();
+        for (int j = 0; j < i + 1; j++) {
+          substitution.add(link, patterns.get(j).toExpression());
+          link = link.getNext();
+        }
+        for (; link.hasNext(); link = link.getNext()) {
+          link = link.getNextTyped(null);
+          List<ConCallExpression> conCalls = getMatchedConstructors(link.getTypeExpr().subst(substitution));
+          if (conCalls != null && conCalls.isEmpty()) {
+            continue loop;
+          }
+        }
+
+        myOK = false;
+      }
+
+      Util.removeArguments(patterns, parameters, elimParams);
+      if (missingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
+        missingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
+        break;
+      }
+      missingClauses.add(patterns);
+    }
+
+    if (!missingClauses.isEmpty()) {
+      myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
+      return true;
+    }
+
+    return false;
   }
 
   private static class ExtClause extends Clause {

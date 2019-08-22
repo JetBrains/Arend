@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Renamer {
-  private String myUnnamed = "unnamed";
+  private String myUnnamed = "_x";
   private int myBase = 1;
 
   public void setUnnamed(String unnamed) {

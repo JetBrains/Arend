@@ -10,13 +10,14 @@ import javax.annotation.Nonnull;
 public class TypecheckingError extends LocalError {
   public enum Kind {
     LEVEL_IN_FUNCTION("\\level is allowed only for lemmas and functions defined by pattern matching"),
-    RHS_IGNORED(Level.WEAK_WARNING, "The RHS is ignored"),
+    BODY_IGNORED(Level.WEAK_WARNING, "Body is ignored"),
     AS_PATTERN_IGNORED(Level.WEAK_WARNING, "As-pattern is ignored"),
     PATTERN_IGNORED(Level.WEAK_WARNING, "Pattern is ignored"),
     REDUNDANT_CLAUSE(Level.WEAK_WARNING, "Clause is redundant"),
     TOO_MANY_PATTERNS("Too many patterns"),
     EXPECTED_EXPLICIT_PATTERN("Expected an explicit pattern"),
-    IMPLICIT_PATTERN(Level.WARNING, "All patterns must be explicit");
+    IMPLICIT_PATTERN(Level.WARNING, "All patterns must be explicit"),
+    BODY_REQUIRED("Body is required");
 
     private final Level level;
     private final String message;
