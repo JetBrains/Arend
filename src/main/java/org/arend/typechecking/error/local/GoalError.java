@@ -76,14 +76,4 @@ public class GoalError extends TypecheckingError {
 
     return vList(expectedDoc, actualDoc, contextDoc, errorsDoc);
   }
-
-  @Override
-  public boolean equals(Object obj) {
-    return obj instanceof GoalError && cause.equals(((GoalError) obj).cause);
-  }
-
-  @Override
-  public int hashCode() {
-    return cause.hashCode();
-  }
 }
