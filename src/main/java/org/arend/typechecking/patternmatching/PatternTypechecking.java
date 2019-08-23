@@ -160,7 +160,26 @@ public class PatternTypechecking {
     }
 
     Pair<List<Pattern>, List<Expression>> result = doTypechecking(patterns, parameters, elimParams, patterns.get(0));
-    return result == null ? null : result.proj1;
+    if (result == null) {
+      return null;
+    }
+    if (elimParams.isEmpty()) {
+      return result.proj1;
+    }
+
+    List<Pattern> list = new ArrayList<>();
+    int i = 0, j = 0;
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+      if (i >= result.proj1.size() || j >= elimParams.size()) {
+        break;
+      }
+      if (elimParams.get(j) == link) {
+        list.add(result.proj1.get(i));
+        j++;
+      }
+      i++;
+    }
+    return list;
   }
 
   private static DependentLink getFirstBinding(List<Pattern> patterns) {
