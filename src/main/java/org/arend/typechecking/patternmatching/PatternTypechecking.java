@@ -472,10 +472,12 @@ public class PatternTypechecking {
         }
       }
 
-      for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
-        Expression expr = substitution.get(entry.getValue());
-        if (expr != null) {
-          entry.setValue(((ReferenceExpression) expr).getBinding());
+      if (myContext != null) {
+        for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
+          Expression expr = substitution.get(entry.getValue());
+          if (expr != null) {
+            entry.setValue(((ReferenceExpression) expr).getBinding());
+          }
         }
       }
 
