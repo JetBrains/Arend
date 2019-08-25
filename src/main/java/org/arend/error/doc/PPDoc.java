@@ -17,7 +17,7 @@ public class PPDoc extends CachingDoc {
   }
 
   @Override
-  protected String getString() {
+  public String getString() {
     StringBuilder builder = new StringBuilder();
     myPrettyPrintable.prettyPrint(builder, myPPConfig);
     return builder.toString();

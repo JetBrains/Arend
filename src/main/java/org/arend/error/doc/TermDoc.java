@@ -17,7 +17,7 @@ public class TermDoc extends CachingDoc {
   }
 
   @Override
-  protected String getString() {
+  public String getString() {
     StringBuilder builder = new StringBuilder();
     myTerm.prettyPrint(builder, myPPConfig);
     return builder.toString();
@@ -26,5 +26,10 @@ public class TermDoc extends CachingDoc {
   @Override
   public boolean isEmpty() {
     return false;
+  }
+
+  @Override
+  public <P, R> R accept(DocVisitor<? super P, ? extends R> visitor, P params) {
+    return visitor.visitTerm(this, params);
   }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 public abstract class CachingDoc extends Doc {
   private List<String> myText;
 
-  protected abstract String getString();
+  public abstract String getString();
 
   public List<? extends String> getText() {
     if (myText == null) {

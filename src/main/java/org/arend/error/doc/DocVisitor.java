@@ -8,4 +8,8 @@ public interface DocVisitor<P, R> {
   R visitReference(ReferenceDoc doc, P params);
   R visitCaching(CachingDoc doc, P params);
   R visitTermLine(TermLineDoc doc, P params);
+
+  default R visitTerm(TermDoc doc, P params) {
+    return visitCaching(doc, params);
+  }
 }
