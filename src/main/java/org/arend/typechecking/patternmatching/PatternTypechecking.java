@@ -168,16 +168,17 @@ public class PatternTypechecking {
     }
 
     List<Pattern> list = new ArrayList<>();
-    int i = 0, j = 0;
-    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
-      if (i >= result.proj1.size() || j >= elimParams.size()) {
-        break;
+    for (DependentLink elimParam : elimParams) {
+      int i = 0;
+      for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+        if (link == elimParam) {
+          break;
+        }
+        i++;
       }
-      if (elimParams.get(j) == link) {
+      if (i < result.proj1.size()) {
         list.add(result.proj1.get(i));
-        j++;
       }
-      i++;
     }
     return list;
   }
@@ -240,7 +241,7 @@ public class PatternTypechecking {
       List<Concrete.Pattern> patterns1 = new ArrayList<>();
       for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
         int index = elimParams.indexOf(link);
-        patterns1.add(index < 0 ? null : patterns.get(index));
+        patterns1.add(index < 0 || index >= patterns.size() ? null : patterns.get(index));
       }
       patterns = patterns1;
     }
