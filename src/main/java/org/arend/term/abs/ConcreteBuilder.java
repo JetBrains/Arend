@@ -439,7 +439,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     } else {
       Abstract.Expression type = pattern.getType();
       List<? extends Abstract.Pattern> args = pattern.getArguments();
-      if (reference instanceof GlobalReferable || !args.isEmpty()) {
+      if (reference instanceof GlobalReferable || reference instanceof LongUnresolvedReference || !args.isEmpty()) {
         if (type != null) {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Type annotation is allowed only for variables", type.getData()));
         }
