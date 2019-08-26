@@ -75,7 +75,7 @@ public class PatternTypechecking {
           return new Pair<>(result.proj1, null);
         } else {
           if (clause.getExpression() == null) {
-            myErrorReporter.report(new TypecheckingError("Required a RHS", clause));
+            myErrorReporter.report(new TypecheckingError("Required a body", clause));
             return null;
           }
         }
@@ -376,7 +376,7 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.TuplePattern) {
         List<ConCallExpression> conCalls = dataCall.getMatchedConstructors();
         if (conCalls == null) {
-          myErrorReporter.report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", pattern));
+          myErrorReporter.report(new ImpossibleEliminationError(dataCall, pattern));
           return null;
         }
         if (!conCalls.isEmpty()) {

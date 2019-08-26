@@ -1,9 +1,6 @@
 package org.arend.typechecking.implicitargs;
 
-import org.arend.core.context.binding.inference.ExpressionInferenceVariable;
-import org.arend.core.context.binding.inference.FunctionInferenceVariable;
-import org.arend.core.context.binding.inference.InferenceVariable;
-import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
+import org.arend.core.context.binding.inference.*;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
@@ -20,7 +17,11 @@ import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.error.local.NotPiType;
+import org.arend.typechecking.error.local.TypeMismatchError;
+import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
@@ -114,7 +115,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (classVarsOnly) {
           return result;
         }
-        infVar = new FunctionInferenceVariable(parameter.getName(), type, i + 1, result instanceof DefCallResult ? ((DefCallResult) result).getDefinition() : null, expr, myVisitor.getAllBindings());
+        infVar = result instanceof DefCallResult
+          ? new DefinitionInferenceVariable(((DefCallResult) result).getDefinition(), parameter, type, expr, myVisitor.getAllBindings())
+          : new FunctionInferenceVariable(parameter.getName(), type, i + 1, expr, myVisitor.getAllBindings());
       }
 
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
@@ -137,7 +140,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
-          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable("A", type, 1, Prelude.PATH_CON, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Expression binding = new InferenceReferenceExpression(new DefinitionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getParameters(), type, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), myVisitor.getErrorReporter(), fun);
 
@@ -182,7 +185,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   private void reportExplicitnessError(boolean isExplicit, Concrete.SourceNode sourceNode) {
-    myVisitor.getErrorReporter().report(new TypecheckingError("Expected an " + (isExplicit ? "explicit" : "implicit") + " argument", sourceNode));
+    myVisitor.getErrorReporter().report(new TypecheckingError(isExplicit ? TypecheckingError.Kind.EXPECTED_EXPLICIT_ARGUMENT : TypecheckingError.Kind.EXPECTED_IMPLICIT_ARGUMENT, sourceNode));
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {

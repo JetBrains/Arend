@@ -21,10 +21,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.MissingClausesError;
-import org.arend.typechecking.error.local.NotEnoughPatternsError;
-import org.arend.typechecking.error.local.TruncatedDataError;
-import org.arend.typechecking.error.local.TypecheckingError;
+import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
@@ -514,9 +511,10 @@ public class ElimTypechecking {
       if (someConPattern.getDefinition() instanceof Constructor) {
         dataType = ((Constructor) someConPattern.getDefinition()).getDataType();
         if (dataType.hasIndexedConstructors()) {
-          conCalls = ((DataCallExpression) new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall((ConCallExpression) someConPattern.getDataExpression(), null).accept(GetTypeVisitor.INSTANCE, null)).getMatchedConstructors();
+          DataCallExpression dataCall = (DataCallExpression) new SubstVisitor(conClauseData.substitution, LevelSubstitution.EMPTY).visitConCall((ConCallExpression) someConPattern.getDataExpression(), null).accept(GetTypeVisitor.INSTANCE, null);
+          conCalls = dataCall.getMatchedConstructors();
           if (conCalls == null) {
-            myVisitor.getErrorReporter().report(new TypecheckingError("Elimination is not possible here, cannot determine the set of eligible constructors", conClauseData.clause));
+            myVisitor.getErrorReporter().report(new ImpossibleEliminationError(dataCall, conClauseData.clause));
             myOK = false;
             return null;
           }

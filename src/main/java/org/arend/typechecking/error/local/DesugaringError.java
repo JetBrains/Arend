@@ -9,11 +9,14 @@ import javax.annotation.Nonnull;
 
 public class DesugaringError extends LocalError {
   public enum Kind {
-    REDUNDANT_COCLAUSE("Coclause is redundant");
+    REDUNDANT_COCLAUSE(Level.WEAK_WARNING, "Coclause is redundant"),
+    EXPECTED_EXPLICIT(Level.ERROR, "Expected an explicit argument");
 
+    private final Level level;
     private final String message;
 
-    Kind(String message) {
+    Kind(Level level, String message) {
+      this.level = level;
       this.message = message;
     }
   }
@@ -27,8 +30,8 @@ public class DesugaringError extends LocalError {
     this.kind = null;
   }
 
-  public DesugaringError(@Nonnull Level level, Kind kind, @Nonnull Concrete.SourceNode cause) {
-    super(level, kind.message);
+  public DesugaringError(Kind kind, @Nonnull Concrete.SourceNode cause) {
+    super(kind.level, kind.message);
     this.cause = cause;
     this.kind = kind;
   }

@@ -1,6 +1,6 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.binding.inference.FunctionInferenceVariable;
+import org.arend.core.context.binding.inference.DefinitionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
@@ -119,15 +119,13 @@ public class CoerceData {
         List<Expression> arguments = new ArrayList<>();
         DependentLink link = def.getParameters();
         ExprSubstitution substitution = new ExprSubstitution();
-        int index = 1;
         while (true) {
           DependentLink next = link.getNext();
           if (next.hasNext()) {
-            Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(link.getName(), link.getTypeExpr(), index, def, sourceNode, visitor.getAllBindings()), visitor.getEquations());
+            Expression arg = new InferenceReferenceExpression(new DefinitionInferenceVariable(def, link, link.getTypeExpr(), sourceNode, visitor.getAllBindings()), visitor.getEquations());
             substitution.add(link, arg);
             arguments.add(arg);
             link = next;
-            index++;
           } else {
             arguments.add(result.expression);
             break;

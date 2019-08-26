@@ -26,7 +26,7 @@ public class ConditionsError extends TypecheckingError {
   public final Expression evaluatedExpr2;
 
   public ConditionsError(Expression expr1, Expression expr2, ExprSubstitution substitution1, ExprSubstitution substitution2, Expression evaluatedExpr1, Expression evaluatedExpr2, Concrete.SourceNode sourceNode) {
-    super("Conditions check failed:", sourceNode);
+    super("Conditions check failed", sourceNode);
     this.expr1 = expr1;
     this.expr2 = expr2;
     this.substitution1 = substitution1;

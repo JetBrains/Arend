@@ -1,13 +1,15 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.error.local.DesugaringError;
+import org.arend.typechecking.error.local.LocalError;
+import org.arend.typechecking.error.local.WrongReferable;
+import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 import org.arend.typechecking.typecheckable.provider.EmptyConcreteProvider;
 
@@ -156,7 +158,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       FieldReferable fieldRef = it.next();
       boolean fieldExplicit = fieldRef.isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new DesugaringError("Expected an explicit argument", arguments.get(i).expression));
+        myErrorReporter.report(new DesugaringError(DesugaringError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }
@@ -283,7 +285,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
-          myErrorReporter.report(new DesugaringError(GeneralError.Level.WEAK_WARNING, DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+          myErrorReporter.report(new DesugaringError(DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);

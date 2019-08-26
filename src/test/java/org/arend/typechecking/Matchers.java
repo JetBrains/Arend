@@ -1,6 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.definition.Definition;
+import org.arend.core.expr.Expression;
 import org.arend.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
@@ -10,6 +11,8 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.local.*;
+import org.arend.typechecking.error.local.inference.ArgInferenceError;
+import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -17,6 +20,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -103,26 +107,6 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> duplicateInstanceError() {
-    return new TypeSafeDiagnosingMatcher<GeneralError>() {
-      @Override
-      protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error instanceof DuplicateInstanceError) {
-          description.appendText("Duplicate instance");
-          return true;
-        } else {
-          description.appendText("not a 'Duplicate instance' error");
-          return false;
-        }
-      }
-
-      @Override
-      public void describeTo(Description description) {
-        description.appendText("should be a 'Duplicate instance' error");
-      }
-    };
-  }
-
   public static Matcher<? super GeneralError> wrongReferable() {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
@@ -163,28 +147,39 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> instanceInference(TCReferable classRef) {
+  public static Matcher<? super GeneralError> instanceInference(TCReferable classRef, Expression classifyingExpression) {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error instanceof InstanceInferenceError && ((InstanceInferenceError) error).classRef.equals(classRef)) {
-          description.appendText("Instance inference for class '" + ((InstanceInferenceError) error).classRef.textRepresentation() + "'");
-          return true;
-        } else {
-          description.appendText(error instanceof InstanceInferenceError ? "'Instance inference for class " + ((InstanceInferenceError) error).classRef.textRepresentation() + "' error" : "not a 'Instance inference' error");
+        if (!(error instanceof InstanceInferenceError)) {
+          description.appendText("not a 'Instance inference' error");
           return false;
         }
+
+        InstanceInferenceError instanceInferenceError = (InstanceInferenceError) error;
+        if (!instanceInferenceError.classRef.equals(classRef)) {
+          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.textRepresentation() + "' error");
+          return false;
+        }
+
+        if (!Objects.equals(instanceInferenceError.classifyingExpression, classifyingExpression)) {
+          description.appendText("'Instance inference for class " + instanceInferenceError.classRef.textRepresentation() + (instanceInferenceError.classifyingExpression == null ? " without classifying expression" : " with classifying expression " + instanceInferenceError.classifyingExpression) + "' error");
+          return false;
+        }
+
+        description.appendText("Instance inference for class '" + instanceInferenceError.classRef.textRepresentation() + "'");
+        return true;
       }
 
       @Override
       public void describeTo(Description description) {
-        description.appendText("should be a 'Instance inference for class " + classRef + "' error");
+        description.appendText("should be a 'Instance inference for class " + classRef + "' error " + (classifyingExpression == null ? "without classifying expression" : "with classifying expression " + classifyingExpression));
       }
     };
   }
 
-  public static Matcher<? super GeneralError> instanceInference(Definition definition) {
-    return instanceInference(definition.getReferable());
+  public static Matcher<? super GeneralError> instanceInference(Definition definition, Expression classifyingExpression) {
+    return instanceInference(definition.getReferable(), classifyingExpression);
   }
 
   public static Matcher<? super GeneralError> argInferenceError() {

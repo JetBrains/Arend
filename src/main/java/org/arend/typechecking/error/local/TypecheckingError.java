@@ -17,7 +17,14 @@ public class TypecheckingError extends LocalError {
     TOO_MANY_PATTERNS("Too many patterns"),
     EXPECTED_EXPLICIT_PATTERN("Expected an explicit pattern"),
     IMPLICIT_PATTERN(Level.WARNING, "All patterns must be explicit"),
-    BODY_REQUIRED("Body is required");
+    BODY_REQUIRED("Body is required"),
+    DATA_WONT_BE_TRUNCATED(Level.WEAK_WARNING, "The data type will not be truncated since it already fits in the specified universe"),
+    TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
+    EXPECTED_EXPLICIT_ARGUMENT("Expected an explicit argument"),
+    EXPECTED_IMPLICIT_ARGUMENT("Expected an implicit argument"),
+    CASE_RESULT_TYPE("Cannot infer the result type"),
+    LEMMA_LEVEL("The level of a lemma must be \\Prop"),
+    PROPERTY_LEVEL("The level of a property must be \\Prop");
 
     private final Level level;
     private final String message;

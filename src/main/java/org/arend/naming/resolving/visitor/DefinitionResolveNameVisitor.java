@@ -2,8 +2,8 @@ package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
 import org.arend.error.DummyErrorReporter;
-import org.arend.error.GeneralError;
 import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -23,7 +23,6 @@ import org.arend.util.LongName;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -598,7 +597,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     for (NamespaceCommand cmd : namespaceCommands) {
       if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myLocalErrorReporter.report(new NamingError("\\import is allowed only on the top level", cmd));
+        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_IMPORT, cmd));
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }

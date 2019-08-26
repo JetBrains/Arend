@@ -531,7 +531,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   private boolean checkLevel(boolean isLemma, boolean isProperty, Integer level, Concrete.SourceNode sourceNode) {
     if ((isLemma || isProperty) && (level == null || level != -1)) {
-      errorReporter.report(new TypecheckingError("The level of a " + (isLemma ? "lemma" : "property") + " must be \\Prop", sourceNode));
+      errorReporter.report(new TypecheckingError(isLemma ? TypecheckingError.Kind.LEMMA_LEVEL : TypecheckingError.Kind.PROPERTY_LEVEL, sourceNode));
       return false;
     } else {
       return true;
@@ -967,7 +967,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
           if (!ok) {
-            errorReporter.report(new TypecheckingError(GeneralError.Level.ERROR, "Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
+            errorReporter.report(new TypecheckingError("Classifying field must be either a universe, a sigma type, a record, or a partially applied data or constructor", def.getResultType() == null ? def : def.getResultType()));
           }
         } else {
           classifyingExpr = null;
@@ -1244,19 +1244,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     // Check truncatedness
     if (def.isTruncated()) {
       if (userSort == null) {
-        String msg = "The data type cannot be truncated since its universe is not specified";
-        originalErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, msg, def));
+        originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.TRUNCATED_WITHOUT_UNIVERSE, def));
       } else {
         if (inferredSort.isLessOrEquals(userSort)) {
-          String msg = "The data type will not be truncated since it already fits in the specified universe";
-          originalErrorReporter.report(new TypecheckingError(GeneralError.Level.WARNING, msg, def.getUniverse() == null ? def : def.getUniverse()));
+          originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.DATA_WONT_BE_TRUNCATED, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
           dataDefinition.setIsTruncated(true);
         }
       }
     } else if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !inferredSort.isLessOrEquals(userSort)) {
-      String msg = "Actual universe " + inferredSort + " is not compatible with expected universe " + userSort;
-      countingErrorReporter.report(new TypecheckingError(msg, def.getUniverse() == null ? def : def.getUniverse()));
+      countingErrorReporter.report(new DataUniverseError(inferredSort, userSort, def.getUniverse() == null ? def : def.getUniverse()));
     }
 
     if (newDef) {
@@ -1645,7 +1642,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
       if (classifyingField != null && def.isForcedCoercingField() && def.getCoercingField() != null) {
-        errorReporter.report(new TypecheckingError("Field '" + def.getCoercingField().textRepresentation() + "' cannot be a classifying field since the class already has one: '" + classifyingField.getName() + "'", def));
+        errorReporter.report(new AnotherClassifyingFieldError(def.getCoercingField(), classifyingField, def));
       }
       if (classifyingField == null && def.getCoercingField() != null) {
         Definition definition = typechecker.getTypechecked(def.getCoercingField());

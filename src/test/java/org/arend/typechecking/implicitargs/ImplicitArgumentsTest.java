@@ -9,7 +9,7 @@ import org.arend.core.expr.PiExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.ArgInferenceError;
+import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.junit.Test;
 

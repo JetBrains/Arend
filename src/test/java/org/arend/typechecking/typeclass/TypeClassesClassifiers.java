@@ -1,8 +1,13 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.core.definition.Constructor;
+import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import java.util.Collections;
+
+import static org.arend.ExpressionFactory.ConCall;
 import static org.arend.typechecking.Matchers.instanceInference;
 
 public class TypeClassesClassifiers extends TypeCheckingTestCase {
@@ -22,7 +27,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
       "\\class C (d : D) | p : d = d\n" +
       "\\instance f : C con1 | p => path (\\lam _ => con1)\n" +
       "\\func g : con2 = con2 => p", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("C")));
+    assertThatErrorsAre(instanceInference(getDefinition("C"), ConCall((Constructor) getDefinition("D.con2"), Sort.STD, Collections.emptyList())));
   }
 
   @Test

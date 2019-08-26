@@ -65,7 +65,7 @@ public class BinOpParser {
   public void push(Concrete.Expression expression, boolean isExplicit) {
     if (myStack.isEmpty()) {
       if (!isExplicit) {
-        myErrorReporter.report(new NamingError("Expected an explicit expression", expression));
+        myErrorReporter.report(new NamingError(NamingError.Kind.EXPECTED_EXPLICIT, expression));
       }
       myStack.add(new StackElem(expression, null));
       return;

@@ -1,9 +1,10 @@
-package org.arend.typechecking.error.local;
+package org.arend.typechecking.error.local.inference;
 
 import org.arend.core.expr.Expression;
 import org.arend.error.doc.Doc;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.typechecking.error.local.TypecheckingError;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -29,22 +30,6 @@ public class ArgInferenceError extends TypecheckingError {
   public ArgInferenceError(String message, Expression expected, Expression actual, Concrete.SourceNode cause, Expression candidate) {
     this(message, expected, actual, cause, new Expression[1]);
     candidates[0] = candidate;
-  }
-
-  public static String functionArg(int index, String function) {
-    return "Cannot infer the " + ordinal(index) + " argument to function" + (function != null ? " " + function : "");
-  }
-
-  public static String typeOfFunctionArg(int index) {
-    return "Cannot infer type of the " + ordinal(index) + " argument of function";
-  }
-
-  public static String lambdaArg(int index) {
-    return "Cannot infer type of the " + ordinal(index) + " parameter of lambda";
-  }
-
-  public static String levelOfLambdaArg(int index) {
-    return "Cannot infer level of the type of the " + ordinal(index) + " parameter of lambda";
   }
 
   public static String expression() {

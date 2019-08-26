@@ -14,7 +14,9 @@ public class NamingError extends LocalError {
     COERCE_WITHOUT_PARAMETERS("\\coerce must have at least one parameter"),
     LEVEL_IN_FIELD("\\level is allowed only for properties"),
     CLASSIFYING_FIELD_IN_RECORD("Records cannot have classifying fields"),
-    INVALID_PRIORITY("The priority must be between 0 and 10");
+    INVALID_PRIORITY("The priority must be between 0 and 10"),
+    EXPECTED_EXPLICIT("Expected an explicit expression"),
+    MISPLACED_IMPORT("\\import is allowed only on the top level");
 
     private final String message;
 

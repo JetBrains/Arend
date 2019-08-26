@@ -12,10 +12,17 @@ import static org.arend.error.doc.DocFactory.vList;
 
 public class MultipleLibraries extends GeneralError {
   public List<String> libraries;
+  public String name;
 
-  public MultipleLibraries(List<String> libraries) {
+  public MultipleLibraries(String name, List<String> libraries) {
     super(Level.ERROR, "The following libraries have the same name. The first one will be used.");
+    this.name = name;
     this.libraries = libraries;
+  }
+
+  @Override
+  public String getShortMessage() {
+    return "There are several libraries named '" + name + "'";
   }
 
   @Override

@@ -90,7 +90,7 @@ public class FileLibraryResolver implements LibraryResolver {
         List<String> libraries = new ArrayList<>(2);
         libraries.add(prevLibrary.getName() + " (" + prevLibrary.getHeaderFile() + ")");
         libraries.add(library.getName() + " (" + library.getHeaderFile() + ")");
-        myErrorReporter.report(new MultipleLibraries(libraries));
+        myErrorReporter.report(new MultipleLibraries(library.getName(), libraries));
         return null;
       } else {
         return prevLibrary;

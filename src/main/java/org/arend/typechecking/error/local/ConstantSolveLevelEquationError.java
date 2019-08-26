@@ -4,7 +4,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.error.SourceInfo;
 import org.arend.error.doc.Doc;
-import org.arend.error.doc.LineDoc;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
@@ -14,13 +13,8 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
   public final LevelVariable variable;
 
   public ConstantSolveLevelEquationError(LevelVariable variable, Concrete.SourceNode cause) {
-    super("", cause);
+    super("Cannot solve equation " + variable + " <= constant", cause);
     this.variable = variable;
-  }
-
-  @Override
-  public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
-    return text("Cannot solve equation " + variable + " <= constant");
   }
 
   @Override
