@@ -1,5 +1,6 @@
 package org.arend.error.doc;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,12 +56,16 @@ public abstract class CachingDoc extends Doc {
     return true;
   }
 
+  protected LineDoc getLineDoc(@Nullable String indent, String text, boolean isFirst) {
+    return DocFactory.text(indent == null ? text : indent + text);
+  }
+
   @Override
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     List<? extends String> text = getText();
     List<LineDoc> result = new ArrayList<>(text.size());
     for (int i = 0; i < text.size(); i++) {
-      result.add(DocFactory.text(indent == 0 || !indentFirst && i == 0 ? text.get(i) : HangDoc.getIndent(indent) + text.get(i)));
+      result.add(getLineDoc(indent == 0 || !indentFirst && i == 0 ? null : HangDoc.getIndent(indent), text.get(i), i == 0));
     }
     return result;
   }
