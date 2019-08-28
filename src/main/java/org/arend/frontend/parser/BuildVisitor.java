@@ -1475,6 +1475,8 @@ public class BuildVisitor extends ArendBaseVisitor {
         patterns.add(visitLetClausePattern(subPattern));
       }
       return new Concrete.LetClausePattern(tokenPosition(tuplePattern.start), patterns);
+    } else if (tuplePattern instanceof TuplePatternUnknownContext) {
+      return new Concrete.LetClausePattern(tokenPosition(tuplePattern.start));
     } else {
       throw new IllegalStateException();
     }

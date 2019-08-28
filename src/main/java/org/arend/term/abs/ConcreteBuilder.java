@@ -666,6 +666,10 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
   private Concrete.LetClausePattern visitLetClausePattern(Abstract.LetClausePattern pattern) {
     Referable referable = pattern.getReferable();
+    if (referable == null && pattern.isIgnored()) {
+      return new Concrete.LetClausePattern(pattern);
+    }
+
     if (referable != null) {
       Abstract.Expression type = pattern.getType();
       return new Concrete.LetClausePattern(myReferableConverter.toDataReferable(referable), type == null ? null : type.accept(this, null));

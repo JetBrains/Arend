@@ -319,10 +319,14 @@ class ExpressionDeserialization {
     return new NewExpression(readClassCall(proto.getClassCall()));
   }
 
+  private String validName(String name) {
+    return name.isEmpty() ? null : name;
+  }
+
   private LetExpression readLet(ExpressionProtos.Expression.Let proto) throws DeserializationException {
     List<LetClause> clauses = new ArrayList<>();
     for (ExpressionProtos.Expression.Let.Clause cProto : proto.getClauseList()) {
-      LetClause clause = new LetClause(cProto.getName(), readLetClausePattern(cProto.getPattern()), readExpr(cProto.getExpression()));
+      LetClause clause = new LetClause(validName(cProto.getName()), readLetClausePattern(cProto.getPattern()), readExpr(cProto.getExpression()));
       registerBinding(clause);
       clauses.add(clause);
     }
@@ -350,7 +354,7 @@ class ExpressionDeserialization {
         return new TupleLetClausePattern(patterns);
       }
       case NAME:
-        return new NameLetClausePattern(proto.getName());
+        return new NameLetClausePattern(validName(proto.getName()));
       default:
         throw new DeserializationException("Unrecognized \\let pattern kind: " + proto.getKind());
     }

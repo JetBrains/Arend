@@ -1,8 +1,8 @@
 package org.arend.naming.resolving.visitor;
 
 import org.arend.core.context.Utils;
-import org.arend.error.GeneralError;
 import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -403,11 +403,10 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   private void visitLetClausePattern(Concrete.LetClausePattern pattern) {
-    Referable referable = pattern.getReferable();
     if (pattern.type != null) {
       pattern.type = pattern.type.accept(this, null);
     }
-    addReferable(referable, pattern.type, null);
+    addReferable(pattern.getReferable(), pattern.type, null);
 
     for (Concrete.LetClausePattern subPattern : pattern.getPatterns()) {
       visitLetClausePattern(subPattern);

@@ -594,19 +594,30 @@ public final class Concrete {
     private final Referable myReferable;
     public Expression type;
     private final List<LetClausePattern> myPatterns;
+    private final boolean myIgnored;
 
     public LetClausePattern(Referable referable, Expression type) {
       myData = referable;
       myReferable = referable;
       this.type = type;
       myPatterns = Collections.emptyList();
+      myIgnored = referable == null;
     }
 
     public LetClausePattern(Object data, List<LetClausePattern> patterns) {
       myData = data;
       myReferable = null;
-      this.type = null;
+      type = null;
       myPatterns = patterns;
+      myIgnored = false;
+    }
+
+    public LetClausePattern(Object data) {
+      myData = data;
+      myReferable = null;
+      type = null;
+      myPatterns = Collections.emptyList();
+      myIgnored = true;
     }
 
     @Nullable
@@ -615,10 +626,16 @@ public final class Concrete {
       return myData;
     }
 
+    public boolean isIgnored() {
+      return myIgnored;
+    }
+
+    @Nullable
     public Referable getReferable() {
       return myReferable;
     }
 
+    @Nonnull
     public List<? extends LetClausePattern> getPatterns() {
       return myPatterns;
     }

@@ -152,6 +152,7 @@ letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 
 tuplePattern : ID typeAnnotation?                       # tuplePatternID
              | '(' tuplePattern (',' tuplePattern)* ')' # tuplePatternList
+             | '_'                                      # tuplePatternUnknown
              ;
 
 typeAnnotation : ':' expr;

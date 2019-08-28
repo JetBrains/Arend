@@ -8,8 +8,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Renamer {
-  private String myUnnamed = "_x";
+  public final static String UNNAMED = "_x";
+  private String myUnnamed = UNNAMED;
   private int myBase = 1;
+
+  public static String getValidName_(String name) {
+    return name == null || name.isEmpty() || name.equals("_") ? UNNAMED : name;
+  }
+
+  public String getValidName(String name) {
+    return name == null || name.isEmpty() || name.equals("_") ? myUnnamed : name;
+  }
 
   public void setUnnamed(String unnamed) {
     myUnnamed = unnamed;
@@ -30,12 +39,9 @@ public class Renamer {
   }
 
   public String generateFreshName(Variable var, Collection<? extends Variable> variables) {
-    String name = var.getName();
+    String name = getValidName(var.getName());
     if (name == null) {
-      if (myUnnamed == null) {
-        return null;
-      }
-      name = myUnnamed;
+      return null;
     }
 
     String prefix = null;

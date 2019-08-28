@@ -172,6 +172,7 @@ public final class Abstract {
   }
 
   public interface LetClausePattern extends SourceNode {
+    boolean isIgnored();
     @Nullable Referable getReferable();
     @Nullable Abstract.Expression getType();
     @Nonnull List<? extends LetClausePattern> getPatterns();

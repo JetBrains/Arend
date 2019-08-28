@@ -350,10 +350,13 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     ExpressionProtos.Expression.Let.Builder builder = ExpressionProtos.Expression.Let.newBuilder();
     builder.setIsStrict(letExpression.isStrict());
     for (LetClause letClause : letExpression.getClauses()) {
-      builder.addClause(ExpressionProtos.Expression.Let.Clause.newBuilder()
-        .setName(letClause.getName())
+      ExpressionProtos.Expression.Let.Clause.Builder letBuilder = ExpressionProtos.Expression.Let.Clause.newBuilder()
         .setPattern(writeLetClausePattern(letClause.getPattern()))
-        .setExpression(writeExpr(letClause.getExpression())));
+        .setExpression(writeExpr(letClause.getExpression()));
+      if (letClause.getName() != null) {
+        letBuilder.setName(letClause.getName());
+      }
+      builder.addClause(letBuilder);
       registerBinding(letClause);
     }
     builder.setExpression(letExpression.getExpression().accept(this, null));
@@ -377,7 +380,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       }
     } else {
       builder.setKind(ExpressionProtos.Expression.Let.Pattern.Kind.NAME);
-      builder.setName(pattern.getName());
+      if (pattern.getName() != null) {
+        builder.setName(pattern.getName());
+      }
     }
     return builder.build();
   }

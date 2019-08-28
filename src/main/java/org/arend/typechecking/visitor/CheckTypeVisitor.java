@@ -32,6 +32,7 @@ import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.*;
+import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -1371,15 +1372,23 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (result == null) {
           return null;
         }
-        StringBuilder builder = new StringBuilder();
-        getLetClauseName(clause.getPattern(), builder);
-        return new Pair<>(new LetClause(builder.toString(), null, result.expression), result.type);
+
+        String name;
+        if (clause.getPattern().isIgnored()) {
+          name = null;
+        } else {
+          StringBuilder builder = new StringBuilder();
+          getLetClauseName(clause.getPattern(), builder);
+          name = Renamer.getValidName_(builder.toString());
+        }
+        return new Pair<>(new LetClause(name, null, result.expression), result.type);
       }
     }
   }
 
   private LetClausePattern typecheckLetClausePattern(Concrete.LetClausePattern pattern, Expression expression, Expression type) {
-    if (pattern.getReferable() != null) {
+    Referable referable = pattern.getReferable();
+    if (referable != null || pattern.isIgnored()) {
       if (pattern.type != null) {
         Type typeResult = checkType(pattern.type, ExpectedType.OMEGA);
         if (typeResult != null && !type.isLessOrEquals(typeResult.getExpr(), myEquations, pattern.type)) {
@@ -1387,8 +1396,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
       }
 
-      String name = pattern.getReferable().textRepresentation();
-      context.put(pattern.getReferable(), new TypedEvaluatingBinding(name, expression, type));
+      String name = referable == null ? null : referable.textRepresentation();
+      if (referable != null) {
+        context.put(referable, new TypedEvaluatingBinding(name, expression, type));
+      }
       return new NameLetClausePattern(name);
     }
 
@@ -1442,9 +1453,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (pair == null) {
             return null;
           }
-          if (clause.getPattern().getReferable() != null) {
-            pair.proj1.setPattern(new NameLetClausePattern(clause.getPattern().getReferable().textRepresentation()));
-            context.put(clause.getPattern().getReferable(), pair.proj1);
+          Referable referable = clause.getPattern().getReferable();
+          if (referable != null || clause.getPattern().isIgnored()) {
+            pair.proj1.setPattern(new NameLetClausePattern(referable == null ? null : referable.textRepresentation()));
+            if (referable != null) {
+              context.put(referable, pair.proj1);
+            }
           } else {
             myFreeBindings.add(pair.proj1);
             LetClausePattern pattern = typecheckLetClausePattern(clause.getPattern(), new ReferenceExpression(pair.proj1), pair.proj2);

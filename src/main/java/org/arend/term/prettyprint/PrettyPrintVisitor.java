@@ -739,8 +739,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   public void prettyPrintLetClausePattern(Concrete.LetClausePattern pattern) {
-    if (pattern.getReferable() != null) {
-      myBuilder.append(pattern.getReferable().textRepresentation());
+    if (pattern.getReferable() != null || pattern.isIgnored()) {
+      myBuilder.append(pattern.isIgnored() ? "_" : pattern.getReferable().textRepresentation());
       if (pattern.type != null) {
         myBuilder.append(" : ");
         pattern.type.accept(this, new Precedence(Concrete.Expression.PREC));
