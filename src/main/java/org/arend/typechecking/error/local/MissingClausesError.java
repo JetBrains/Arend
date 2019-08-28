@@ -21,6 +21,7 @@ public class MissingClausesError extends TypecheckingError {
   public final @Nullable List<? extends Concrete.Parameter> concreteParameters;
   public final @Nonnull DependentLink parameters;
   public final @Nonnull List<DependentLink> eliminatedParameters;
+  public int maxListSize = 10;
 
   public MissingClausesError(@Nonnull List<List<Pattern>> missingClauses, @Nullable List<? extends Concrete.Parameter> concreteParameters, @Nonnull DependentLink parameters, @Nonnull List<DependentLink> eliminatedParameters, Concrete.SourceNode cause) {
     super("Some clauses are missing", cause);
@@ -38,6 +39,14 @@ public class MissingClausesError extends TypecheckingError {
     return !eliminatedParameters.isEmpty();
   }
 
+  public List<List<Pattern>> getLimitedMissingClauses() {
+    return missingClauses.size() > maxListSize ? missingClauses.subList(0, maxListSize) : missingClauses;
+  }
+
+  public void setMaxListSize(@Nullable Integer maxSize) {
+    maxListSize = maxSize == null ? missingClauses.size() : maxSize;
+  }
+
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     PrettyPrinterConfig modPPConfig = new PrettyPrinterConfig() {
@@ -47,9 +56,12 @@ public class MissingClausesError extends TypecheckingError {
       }
     };
 
-    List<LineDoc> docs = new ArrayList<>(missingClauses.size());
-    for (List<Pattern> missingClause : missingClauses) {
-      docs.add(missingClause == null ? text("...") : hSep(text(", "), missingClause.stream().map(pattern -> termLine(pattern.toExpression(), modPPConfig)).collect(Collectors.toList())));
+    List<LineDoc> docs = new ArrayList<>();
+    for (List<Pattern> missingClause : getLimitedMissingClauses()) {
+      docs.add(hSep(text(", "), missingClause.stream().map(pattern -> termLine(pattern.toExpression(), modPPConfig)).collect(Collectors.toList())));
+    }
+    if (docs.size() < missingClauses.size()) {
+      docs.add(text("..."));
     }
     return vList(docs);
   }

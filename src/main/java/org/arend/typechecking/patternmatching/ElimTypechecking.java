@@ -42,8 +42,6 @@ public class ElimTypechecking {
   private final Integer myLevel;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
-
-  private static final int MISSING_CLAUSES_LIST_SIZE = 10;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, Integer level) {
@@ -356,10 +354,6 @@ public class ElimTypechecking {
       }
 
       Util.removeArguments(patterns, parameters, elimParams);
-      if (missingClauses.size() == MISSING_CLAUSES_LIST_SIZE) {
-        missingClauses.set(MISSING_CLAUSES_LIST_SIZE - 1, null);
-        break;
-      }
       missingClauses.add(patterns);
     }
 
