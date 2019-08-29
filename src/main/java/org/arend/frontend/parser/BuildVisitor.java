@@ -224,8 +224,8 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Precedence visitWithPrecedence(WithPrecedenceContext ctx) {
     int priority = Integer.parseInt(ctx.NUMBER().getText());
-    if (priority < 0 || priority > 10) {
-      priority = 11;
+    if (priority < 0 || priority > Precedence.MAX_PRIORITY) {
+      priority = Precedence.MAX_PRIORITY + 1;
     }
 
     PrecedenceWithoutPriority prec = (PrecedenceWithoutPriority) visit(ctx.associativity());

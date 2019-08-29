@@ -5,7 +5,8 @@ import javax.annotation.Nonnull;
 public class Precedence {
   public enum Associativity { LEFT_ASSOC, RIGHT_ASSOC, NON_ASSOC }
 
-  public static final Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, (byte) 10, false);
+  public static final byte MAX_PRIORITY = 10;
+  public static final Precedence DEFAULT = new Precedence(Associativity.RIGHT_ASSOC, MAX_PRIORITY, false);
 
   public final @Nonnull Associativity associativity;
   public final byte priority;
