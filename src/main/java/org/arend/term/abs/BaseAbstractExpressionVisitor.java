@@ -30,7 +30,12 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitThis(@Nullable Object data) {
+  public R visitThis(@Nullable Object data, P params) {
+    return defaultValue;
+  }
+
+  @Override
+  public R visitSection(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 

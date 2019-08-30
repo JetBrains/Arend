@@ -15,7 +15,8 @@ public interface AbstractExpressionVisitor<P, R> {
 
   R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params);
   R visitReference(@Nullable Object data, @Nonnull Referable referent, int lp, int lh, @Nullable Abstract.ErrorData errorData, P params);
-  R visitThis(@Nullable Object data);
+  R visitThis(@Nullable Object data, P params);
+  R visitSection(@Nullable Object data, @Nonnull Referable referent, /* @Nonnull */ @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, P params);
   R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* @Nonnull */ @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, P params);
   R visitPi(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, /* @Nonnull */ @Nullable Abstract.Expression codomain, @Nullable Abstract.ErrorData errorData, P params);
   R visitUniverse(@Nullable Object data, @Nullable Integer pLevelNum, @Nullable Integer hLevelNum, @Nullable Abstract.LevelExpression pLevel, @Nullable Abstract.LevelExpression hLevel, @Nullable Abstract.ErrorData errorData, P params);

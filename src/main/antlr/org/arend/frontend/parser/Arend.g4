@@ -111,14 +111,17 @@ associativity : '\\infix'               # nonAssocInfix
               | '\\fixr'                # rightAssoc
               ;
 
-expr  : NEW? appExpr (implementStatements argument*)?                                                   # app
+expr  : newExpr                                                                                         # app
       | <assoc=right> expr '->' expr                                                                    # arr
       | '\\Pi' tele+ '->' expr                                                                          # pi
       | '\\Sigma' tele*                                                                                 # sigma
       | '\\lam' tele+ '=>' expr                                                                         # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr                                        # let
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
+      | POSTFIX newExpr                                                                                 # section
       ;
+
+newExpr : NEW? appExpr (implementStatements argument*)?;
 
 caseArg : expr (AS ID)? (':' expr)?;
 

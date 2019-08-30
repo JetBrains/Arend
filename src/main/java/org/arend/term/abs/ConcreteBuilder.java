@@ -7,6 +7,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.naming.renamer.Renamer;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
@@ -487,8 +488,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.ThisExpression visitThis(@Nullable Object data) {
+  public Concrete.Expression visitThis(@Nullable Object data, Void params) {
     return new Concrete.ThisExpression(data, null);
+  }
+
+  @Override
+  public Concrete.Expression visitSection(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, Void params) {
+    if (argument == null) {
+      throwError(errorData);
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+    }
+
+    return Concrete.makeRightSection(data, referent, new LocalReferable(Renamer.UNNAMED), argument.accept(this, null));
   }
 
   @Override

@@ -199,6 +199,13 @@ public final class Concrete {
     }
   }
 
+  public static Expression makeRightSection(Object data, Referable function, Referable firstArg, Expression secondArg) {
+    List<Argument> arguments = new ArrayList<>(2);
+    arguments.add(new Argument(new ReferenceExpression(data, firstArg), true));
+    arguments.add(new Argument(secondArg, true));
+    return new LamExpression(data, Collections.singletonList(new NameParameter(data, true, firstArg)), AppExpression.make(data, new ReferenceExpression(data, function), arguments));
+  }
+
   public static class Argument {
     public Expression expression;
     private final boolean myExplicit;

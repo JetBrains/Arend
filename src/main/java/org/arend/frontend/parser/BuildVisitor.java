@@ -7,6 +7,7 @@ import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.*;
+import org.arend.naming.renamer.Renamer;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
@@ -46,11 +47,15 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private boolean getVars(ExprContext expr, List<ParsedLocalReferable> vars) {
-    if (!(expr instanceof AppContext && ((AppContext) expr).appExpr() instanceof AppArgumentContext && ((AppContext) expr).NEW() == null && ((AppContext) expr).implementStatements() == null)) {
+    if (!(expr instanceof AppContext)) {
+      return false;
+    }
+    NewExprContext newExpr = ((AppContext) expr).newExpr();
+    if (!(newExpr.appExpr() instanceof AppArgumentContext && newExpr.NEW() == null && newExpr.implementStatements() == null)) {
       return false;
     }
 
-    AppArgumentContext argCtx = (AppArgumentContext) ((AppContext) expr).appExpr();
+    AppArgumentContext argCtx = (AppArgumentContext) newExpr.appExpr();
     if (!argCtx.onlyLevelAtom().isEmpty()) {
       return false;
     }
@@ -1366,7 +1371,13 @@ public class BuildVisitor extends ArendBaseVisitor {
     return new Concrete.PiExpression(tokenPosition(ctx.start), visitTeles(ctx.tele()), visitExpr(ctx.expr()));
   }
 
+  @Override
   public Concrete.Expression visitApp(AppContext ctx) {
+    return visitNewExpr(ctx.newExpr());
+  }
+
+  @Override
+  public Concrete.Expression visitNewExpr(NewExprContext ctx) {
     Concrete.Expression expr = visitNew(ctx.NEW(), ctx.appExpr(), ctx.implementStatements());
     List<ArgumentContext> argumentCtxs = ctx.argument();
     if (!argumentCtxs.isEmpty()) {
@@ -1462,6 +1473,12 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
+  }
+
+  @Override
+  public Concrete.Expression visitSection(SectionContext ctx) {
+    Position position = tokenPosition(ctx.start);
+    return Concrete.makeRightSection(position, new NamedUnresolvedReference(position, getPostfixText(ctx.POSTFIX())), new ParsedLocalReferable(position, Renamer.UNNAMED), visitNewExpr(ctx.newExpr()));
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {
