@@ -20,7 +20,7 @@ public interface PrettyPrinterConfig {
   }
 
   default NormalizeVisitor.Mode getNormalizationMode() {
-    return NormalizeVisitor.Mode.RNF;
+    return getExpressionFlags().contains(ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS) ? NormalizeVisitor.Mode.RNF : NormalizeVisitor.Mode.RNF_EXP;
   }
 
   PrettyPrinterConfig DEFAULT = new PrettyPrinterConfig() {};

@@ -439,8 +439,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         param = oldParameters != null
           ? oldParameters
           : referableList.size() == 1 && referableList.get(0) instanceof HiddenLocalReferable
-          ? new TypedDependentLink(parameter.isExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
-          : parameter(parameter.isExplicit(), names, paramResult);
+            ? new TypedDependentLink(parameter.isExplicit(), names.get(0), paramResult, true, EmptyDependentLink.getInstance())
+            : parameter(parameter.isExplicit(), names, paramResult);
         numberOfParameters = names.size();
 
         if (oldParameters == null) {

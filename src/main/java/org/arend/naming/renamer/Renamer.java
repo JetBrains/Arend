@@ -1,5 +1,6 @@
 package org.arend.naming.renamer;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 
 import java.util.Collection;
@@ -34,7 +35,9 @@ public class Renamer {
 
   public void generateFreshNames(Collection<? extends Variable> variables) {
     for (Variable variable : variables) {
-      generateFreshName(variable, variables);
+      if (variable instanceof Binding) {
+        generateFreshName(variable, variables);
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.let.LetClause;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
@@ -19,7 +20,7 @@ import java.util.*;
 import static org.arend.core.expr.ExpressionFactory.*;
 
 public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mode, Expression>  {
-  public enum Mode { WHNF, NF, RNF }
+  public enum Mode { WHNF, NF, RNF, RNF_EXP }
 
   public static final NormalizeVisitor INSTANCE = new NormalizeVisitor();
 
@@ -44,7 +45,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       function = function.accept(this, mode);
     }
     for (Expression arg : args) {
-      function = AppExpression.make(function, mode == Mode.NF ? arg.accept(this, mode) : arg);
+      function = AppExpression.make(function, mode == Mode.WHNF ? arg : arg.accept(this, mode));
     }
     return function;
   }
@@ -70,7 +71,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   private Expression applyDefCall(DefCallExpression expr, Mode mode) {
-    if (mode != Mode.NF || expr.getDefCallArguments().isEmpty()) {
+    if (mode == Mode.WHNF || expr.getDefCallArguments().isEmpty()) {
       return expr;
     }
 
@@ -78,27 +79,24 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), ((FieldCallExpression) expr).getArgument().accept(this, mode));
     }
 
-    if (expr instanceof FunCallExpression) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, mode));
+    DependentLink link = expr.getDefinition().getParameters();
+    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
+    for (Expression arg : expr.getDefCallArguments()) {
+      args.add(mode == Mode.RNF_EXP && !link.isExplicit() ? arg : arg.accept(this, mode));
+      if (link.hasNext()) {
+        link = link.getNext();
       }
+    }
+
+    if (expr instanceof FunCallExpression) {
       return new FunCallExpression((FunctionDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
     if (expr instanceof DataCallExpression) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, mode));
-      }
       return new DataCallExpression((DataDefinition) expr.getDefinition(), expr.getSortArgument(), args);
     }
 
     if (expr instanceof ConCallExpression) {
-      List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-      for (Expression arg : expr.getDefCallArguments()) {
-        args.add(arg.accept(this, mode));
-      }
       return ConCallExpression.make((Constructor) expr.getDefinition(), expr.getSortArgument(), ((ConCallExpression) expr).getDataTypeArguments(), args);
     }
 
@@ -120,7 +118,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return arg1.accept(this, mode);
       }
 
-      if (mode == Mode.NF) {
+      if (mode != Mode.WHNF) {
         arg1 = arg1.accept(this, mode);
       }
       for (int i = 0; intExpr2.compare(i) > 0; i++) {
@@ -138,7 +136,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       arg2 = conCall2.getDefCallArguments().get(0);
       conCall2 = arg2.checkedCast(ConCallExpression.class);
     }
-    newDefCallArgs.add(mode == Mode.NF ? arg2.accept(this, mode) : arg2);
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
     return result;
   }
 
@@ -155,7 +153,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         return intExpr1.minus(arg2.cast(IntegerExpression.class));
       }
       if (intExpr1.isZero()) {
-        return Neg(mode == Mode.NF ? arg2.accept(this, mode) : arg2);
+        return Neg(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
       }
 
       ConCallExpression conCall2 = arg2.checkedCast(ConCallExpression.class);
@@ -171,14 +169,14 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
       List<Expression> newDefCallArgs = new ArrayList<>(2);
       newDefCallArgs.add(intExpr1);
-      newDefCallArgs.add(mode == Mode.NF ? arg2.accept(this, mode) : arg2);
+      newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
 
     ConCallExpression conCall1 = arg1.checkedCast(ConCallExpression.class);
     if (conCall1 == null || conCall1.getDefinition() != Prelude.SUC) {
       List<Expression> newDefCallArgs = new ArrayList<>(2);
-      newDefCallArgs.add(mode == Mode.NF ? arg1.accept(this, mode) : arg1);
+      newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
       newDefCallArgs.add(arg2.accept(this, mode));
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
@@ -197,7 +195,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
 
       List<Expression> newDefCallArgs = new ArrayList<>(2);
-      newDefCallArgs.add(mode == Mode.NF ? arg1.accept(this, mode) : arg1);
+      newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
       newDefCallArgs.add(intExpr2);
       return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
     }
@@ -211,8 +209,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     List<Expression> newDefCallArgs = new ArrayList<>(2);
-    newDefCallArgs.add(mode == Mode.NF ? arg1.accept(this, mode) : arg1);
-    newDefCallArgs.add(mode == Mode.NF ? arg2.accept(this, mode) : arg2);
+    newDefCallArgs.add(mode == Mode.WHNF ? arg1 : arg1.accept(this, mode));
+    newDefCallArgs.add(mode == Mode.WHNF ? arg2 : arg2.accept(this, mode));
     return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
   }
 
@@ -375,7 +373,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       }
       elimTree = elim.getOtherwise();
     } else {
-      elimTree = mode == Mode.RNF && body instanceof LeafElimTree ? null : (ElimTree) body;
+      elimTree = (mode == Mode.RNF || mode == Mode.RNF_EXP) && body instanceof LeafElimTree ? null : (ElimTree) body;
     }
 
     if (elimTree == null) {
@@ -528,7 +526,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Mode mode) {
-    if (mode != Mode.NF) return expr;
+    if (mode == Mode.WHNF) return expr;
 
     Map<ClassField, Expression> fieldSet = new HashMap<>();
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
@@ -544,7 +542,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Mode mode) {
-    if (mode == Mode.RNF) {
+    if (mode == Mode.RNF || mode == Mode.RNF_EXP) {
       return expr;
     }
     if (expr.getBinding() instanceof EvaluatingBinding) {
@@ -560,6 +558,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
+    if (mode == Mode.RNF || mode == Mode.RNF_EXP) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
+      return new LamExpression(expr.getResultSort(), link, expr.getBody().subst(substitution).accept(this, mode));
+    }
     if (mode == Mode.NF) {
       return new LamExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, mode));
     } else {
@@ -569,7 +572,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public PiExpression visitPi(PiExpression expr, Mode mode) {
-    if (mode == Mode.NF) {
+    if (mode != Mode.WHNF) {
       ExprSubstitution substitution = new ExprSubstitution();
       SingleDependentLink link = normalizeSingleParameters(expr.getParameters(), mode, substitution);
       return new PiExpression(expr.getResultSort(), link, expr.getCodomain().subst(substitution).accept(this, mode));
@@ -585,12 +588,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitError(ErrorExpression expr, Mode mode) {
-    return mode != Mode.NF || expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, mode), expr.getError());
+    return mode == Mode.WHNF || expr.getExpression() == null ? expr : new ErrorExpression(expr.getExpression().accept(this, mode), expr.getError());
   }
 
   @Override
   public Expression visitTuple(TupleExpression expr, Mode mode) {
-    if (mode != Mode.NF) return expr;
+    if (mode == Mode.WHNF) return expr;
     List<Expression> fields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
       fields.add(field.accept(this, mode));
@@ -600,7 +603,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public SigmaExpression visitSigma(SigmaExpression expr, Mode mode) {
-    return mode == Mode.NF ? new SigmaExpression(expr.getSort(), normalizeParameters(expr.getParameters(), mode, new ExprSubstitution())) : expr;
+    return mode == Mode.WHNF ? expr : new SigmaExpression(expr.getSort(), normalizeParameters(expr.getParameters(), mode, new ExprSubstitution()));
   }
 
   private DependentLink normalizeParameters(DependentLink parameters, Mode mode, ExprSubstitution substitution) {
@@ -628,19 +631,26 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (exprNorm != null) {
       return exprNorm.getFields().get(expr.getField()).accept(this, mode);
     } else {
-      return mode == Mode.NF ? ProjExpression.make(expr.getExpression().accept(this, mode), expr.getField()) : ProjExpression.make(newExpr, expr.getField());
+      return mode == Mode.WHNF ? ProjExpression.make(newExpr, expr.getField()) : ProjExpression.make(expr.getExpression().accept(this, mode), expr.getField());
     }
   }
 
   @Override
   public Expression visitNew(NewExpression expr, Mode mode) {
-    return mode == Mode.NF ? new NewExpression(visitClassCall(expr.getExpression(), mode)) : expr;
+    return mode == Mode.WHNF ? expr : new NewExpression(visitClassCall(expr.getExpression(), mode));
   }
 
   @Override
   public Expression visitLet(LetExpression let, Mode mode) {
-    if (mode == Mode.RNF) {
-      return let;
+    if (mode == Mode.RNF || mode == Mode.RNF_EXP) {
+      ExprSubstitution substitution = new ExprSubstitution();
+      List<LetClause> newClauses = new ArrayList<>(let.getClauses().size());
+      for (LetClause clause : let.getClauses()) {
+        LetClause newClause = new LetClause(clause.getName(), clause.getPattern(), clause.getExpression().accept(this, mode).subst(substitution));
+        substitution.add(clause, new ReferenceExpression(newClause));
+        newClauses.add(newClause);
+      }
+      return new LetExpression(let.isStrict(), newClauses, let.getExpression().accept(this, mode).subst(substitution));
     } else {
       return let.isStrict() ? let.getExpression().subst(let.getClausesSubstitution()).accept(this, mode) : let.getExpression().accept(this, mode);
     }
@@ -652,7 +662,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (result != null) {
       return result.accept(this, mode);
     }
-    if (mode != Mode.NF) {
+    if (mode == Mode.WHNF) {
       return expr;
     }
 
