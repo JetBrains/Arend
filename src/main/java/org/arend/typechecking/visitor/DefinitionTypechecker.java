@@ -738,6 +738,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           resultTypeLevel = normDefCall.cast(DefCallExpression.class).getUseLevel();
         }
       }
+      if (resultTypeLevel == null) {
+        Expression type = expectedType.getType();
+        Sort sort = type != null ? type.toSort() : null;
+        resultTypeLevel = sort != null && sort.getHLevel().isClosed() && sort.getHLevel() != Level.INFINITY ? sort.getHLevel().getConstant() : null;
+      }
     }
 
     GoodThisParametersVisitor goodThisParametersVisitor;
@@ -763,10 +768,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
         clauses = new ArrayList<>();
         EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
-        Body typedBody = elimParams == null ? null : (def.getResultTypeLevel() == null
-          ? new ElimTypechecking(typechecker, expectedType, flags)
-          : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel)
-          ).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+        Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
         if (typedBody != null) {
           if (newDef) {
             typedDef.setBody(typedBody);

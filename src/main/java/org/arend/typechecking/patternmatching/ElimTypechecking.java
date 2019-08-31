@@ -55,14 +55,7 @@ public class ElimTypechecking {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
-
-    if (flags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
-      Expression type = myExpectedType.getType();
-      Sort sort = type != null ? type.toSort() : null;
-      myLevel = sort != null && sort.getHLevel().isClosed() && sort.getHLevel() != Level.INFINITY ? sort.getHLevel().getConstant() + 1 : null;
-    } else {
-      myLevel = null;
-    }
+    myLevel = null;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
