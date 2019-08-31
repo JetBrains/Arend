@@ -9,6 +9,7 @@ import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.ResolverListener;
 import org.arend.naming.scope.*;
+import org.arend.term.Fixity;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ExpectedConstructor;
@@ -93,6 +94,13 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitReference(Concrete.ReferenceExpression expr, Void params) {
+    if (expr instanceof Concrete.FixityReferenceExpression) {
+      Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
+      if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
+        myErrorReporter.report(new NamingError("Unexpected " + (fixity == Fixity.INFIX ? "infix" : "postfix") + " operator", expr.getData()));
+      }
+    }
+
     Referable origRef = expr.getReferent();
     while (origRef instanceof RedirectingReferable) {
       origRef = ((RedirectingReferable) origRef).getOriginalReferable();

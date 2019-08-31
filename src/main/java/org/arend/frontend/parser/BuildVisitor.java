@@ -787,7 +787,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
     for (LongNameContext longNameCtx : ctx.longName()) {
-      superClasses.add(visitLongNameRef(longNameCtx));
+      superClasses.add(visitLongNameRef(longNameCtx, null, null));
     }
 
     List<? extends InternalConcreteLocatedReferable> fieldReferables;
@@ -848,7 +848,9 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.ReferenceExpression visitName(NameContext ctx) {
-    return visitLongNameRef(ctx.longName());
+    TerminalNode infixCtx = ctx.INFIX();
+    TerminalNode postfixCtx = infixCtx == null ? ctx.POSTFIX() : null;
+    return visitLongNameRef(ctx.longName(), infixCtx != null ? getInfixText(infixCtx) : postfixCtx != null ? getPostfixText(postfixCtx) : null, infixCtx != null ? Fixity.INFIX : postfixCtx != null ? Fixity.POSTFIX : null);
   }
 
   @Override
@@ -1405,18 +1407,26 @@ public class BuildVisitor extends ArendBaseVisitor {
     return expr;
   }
 
-  private List<String> visitLongNamePath(LongNameContext ctx) {
+  private ArrayList<String> visitLongNamePath(LongNameContext ctx) {
     List<TerminalNode> ids = ctx.ID();
-    List<String> result = new ArrayList<>(ids.size());
+    ArrayList<String> result = new ArrayList<>(ids.size());
     for (TerminalNode id : ids) {
       result.add(id.getText());
     }
     return result;
   }
 
-  private Concrete.ReferenceExpression visitLongNameRef(LongNameContext ctx) {
+  private Concrete.ReferenceExpression visitLongNameRef(LongNameContext ctx, String name, Fixity fixity) {
     Position position = tokenPosition(ctx.start);
-    return new Concrete.ReferenceExpression(position, LongUnresolvedReference.make(position, visitLongNamePath(ctx)));
+    ArrayList<String> names = visitLongNamePath(ctx);
+    if (name != null) {
+      names.add(name);
+    }
+
+    Referable referable = LongUnresolvedReference.make(position, names);
+    return fixity == null
+      ? new Concrete.ReferenceExpression(position, referable)
+      : new Concrete.FixityReferenceExpression(position, referable, fixity);
   }
 
   @Override

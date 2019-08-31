@@ -1,6 +1,7 @@
 package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
+import org.arend.term.Fixity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,7 +21,7 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params) {
+  public R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 

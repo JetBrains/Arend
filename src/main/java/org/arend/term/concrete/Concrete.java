@@ -308,7 +308,10 @@ public final class Concrete {
 
     public BinOpSequenceElem(@Nonnull Expression expression, @Nonnull Fixity fixity, boolean isExplicit) {
       this.expression = expression;
-      this.fixity = fixity;
+      this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : fixity;
+      if (expression instanceof FixityReferenceExpression) {
+        ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
+      }
       this.isExplicit = isExplicit;
     }
 
@@ -347,7 +350,7 @@ public final class Concrete {
     private final Concrete.LevelExpression myPLevel;
     private final Concrete.LevelExpression myHLevel;
 
-    public ReferenceExpression(Object data, Referable referable, Concrete.LevelExpression pLevel, Concrete.LevelExpression hLevel) {
+    public ReferenceExpression(Object data, Referable referable, LevelExpression pLevel, LevelExpression hLevel) {
       super(data);
       myReferent = referable;
       myPLevel = pLevel;
@@ -370,17 +373,30 @@ public final class Concrete {
       myReferent = referent;
     }
 
-    public Concrete.LevelExpression getPLevel() {
+    public LevelExpression getPLevel() {
       return myPLevel;
     }
 
-    public Concrete.LevelExpression getHLevel() {
+    public LevelExpression getHLevel() {
       return myHLevel;
     }
 
     @Override
     public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitReference(this, params);
+    }
+  }
+
+  public static class FixityReferenceExpression extends ReferenceExpression {
+    public Fixity fixity;
+
+    public FixityReferenceExpression(Object data, Referable referable, Fixity fixity) {
+      super(data, referable);
+      this.fixity = fixity;
+    }
+
+    public static ReferenceExpression make(Object data, Referable referable, Fixity fixity, LevelExpression pLevel, LevelExpression hLevel) {
+      return fixity == null ? new ReferenceExpression(data, referable, pLevel, hLevel) : new FixityReferenceExpression(data, referable, fixity);
     }
   }
 

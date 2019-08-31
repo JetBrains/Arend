@@ -5,6 +5,7 @@ import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.renamer.Renamer;
 import org.arend.term.Fixity;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
@@ -34,7 +35,23 @@ public class BinOpParser {
   }
 
   public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
-    for (Concrete.BinOpSequenceElem elem : expr.getSequence()) {
+    List<Concrete.BinOpSequenceElem> sequence = expr.getSequence();
+    Referable postfix = null;
+    Concrete.BinOpSequenceElem first = sequence.get(0);
+    if (first.fixity == Fixity.INFIX) {
+      myErrorReporter.report(new NamingError("Expected an argument before an infix operator", first.expression));
+    }
+    if (first.fixity == Fixity.POSTFIX && first.expression instanceof Concrete.ReferenceExpression) {
+      if (sequence.size() == 1) {
+        myErrorReporter.report(new NamingError("Expected an argument after a postfix operator", first.expression));
+        return first.expression;
+      }
+
+      postfix = ((Concrete.ReferenceExpression) first.expression).getReferent();
+      sequence = sequence.subList(1, sequence.size());
+    }
+
+    for (Concrete.BinOpSequenceElem elem : sequence) {
       Concrete.ReferenceExpression reference = elem.expression instanceof Concrete.ReferenceExpression ? (Concrete.ReferenceExpression) elem.expression : null;
       if (reference == null && elem.fixity != Fixity.NONFIX && elem.expression instanceof Concrete.AppExpression && ((Concrete.AppExpression) elem.expression).getFunction() instanceof Concrete.ReferenceExpression) {
         reference = (Concrete.ReferenceExpression) ((Concrete.AppExpression) elem.expression).getFunction();
@@ -59,7 +76,8 @@ public class BinOpParser {
       }
     }
 
-    return rollUp();
+    Concrete.Expression result = rollUp();
+    return postfix == null ? result : Concrete.makeRightSection(expr.getData(), postfix, new LocalReferable(Renamer.UNNAMED), result);
   }
 
   public void push(Concrete.Expression expression, boolean isExplicit) {
@@ -135,7 +153,7 @@ public class BinOpParser {
       if (topElem.precedence != null) {
         myStack.add(new StackElem(Concrete.AppExpression.make(midElem.expression.getData(), topElem.expression, midElem.expression, true), null));
       } else {
-        Referable leftRef = new LocalReferable(null);
+        Referable leftRef = new LocalReferable(Renamer.UNNAMED);
         myStack.add(new StackElem(new Concrete.LamExpression(midElem.expression.getData(), Collections.singletonList(new Concrete.NameParameter(midElem.expression.getData(), true, leftRef)), makeBinOp(new Concrete.ReferenceExpression(midElem.expression.getData(), leftRef), midElem.expression, topElem.expression)), null));
       }
     } else {

@@ -203,10 +203,10 @@ implementStatements : '{' coClause* '}';
 
 longName : ID ('.' ID)*;
 
-literal : longName                      # name
-        | '\\Prop'                      # prop
-        | '_'                           # unknown
-        | '{?' ID? ('(' expr? ')')? '}' # goal
+literal : longName ('.' (INFIX | POSTFIX))? # name
+        | '\\Prop'                          # prop
+        | '_'                               # unknown
+        | '{?' ID? ('(' expr? ')')? '}'     # goal
         ;
 
 universeAtom : TRUNCATED_UNIVERSE       # uniTruncatedUniverse

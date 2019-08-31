@@ -1,6 +1,7 @@
 package org.arend.term.abs;
 
 import org.arend.naming.reference.Referable;
+import org.arend.term.Fixity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -13,7 +14,7 @@ public interface AbstractExpressionVisitor<P, R> {
     return errorData != null;
   }
 
-  R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params);
+  R visitReference(@Nullable Object data, @Nonnull Referable referent, @Nullable Fixity fixity, @Nullable Abstract.LevelExpression level1, @Nullable Abstract.LevelExpression level2, @Nullable Abstract.ErrorData errorData, P params);
   R visitReference(@Nullable Object data, @Nonnull Referable referent, int lp, int lh, @Nullable Abstract.ErrorData errorData, P params);
   R visitThis(@Nullable Object data, P params);
   R visitSection(@Nullable Object data, @Nonnull Referable referent, /* @Nonnull */ @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, P params);
