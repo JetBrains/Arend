@@ -306,13 +306,27 @@ public final class Concrete {
     public final Fixity fixity;
     public final boolean isExplicit;
 
-    public BinOpSequenceElem(@Nonnull Expression expression, @Nonnull Fixity fixity, boolean isExplicit) {
+    public BinOpSequenceElem(@Nonnull Expression expression, Fixity fixity, boolean isExplicit) {
       this.expression = expression;
-      this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : fixity;
-      if (expression instanceof FixityReferenceExpression) {
+      this.fixity = fixity != Fixity.UNKNOWN ? fixity
+        : !isExplicit ? Fixity.NONFIX
+        : expression instanceof FixityReferenceExpression
+          ? ((FixityReferenceExpression) expression).fixity
+          : expression instanceof ReferenceExpression ? Fixity.UNKNOWN : Fixity.NONFIX;
+      if (isExplicit && fixity == Fixity.UNKNOWN && expression instanceof FixityReferenceExpression) {
         ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
       }
       this.isExplicit = isExplicit;
+    }
+
+    // Constructor for the first element in a BinOpSequence
+    public BinOpSequenceElem(@Nonnull Expression expression) {
+      this.expression = expression;
+      this.fixity = expression instanceof FixityReferenceExpression ? ((FixityReferenceExpression) expression).fixity : Fixity.NONFIX;
+      if (expression instanceof FixityReferenceExpression) {
+        ((FixityReferenceExpression) expression).fixity = Fixity.NONFIX;
+      }
+      this.isExplicit = true;
     }
 
     public boolean isReference() {

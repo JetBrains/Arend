@@ -118,7 +118,6 @@ expr  : newExpr                                                                 
       | '\\lam' tele+ '=>' expr                                                                         # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr                                        # let
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
-      | POSTFIX newExpr                                                                                 # section
       ;
 
 newExpr : NEW? appExpr (implementStatements argument*)?;
@@ -135,8 +134,6 @@ argument : atomFieldsAcc                # argumentExplicit
          | NEW appExpr implementStatements? # argumentNew
          | universeAtom                 # argumentUniverse
          | '{' expr '}'                 # argumentImplicit
-         | INFIX                        # argumentInfix
-         | POSTFIX                      # argumentPostfix
          ;
 
 clauses : '{' clause? ('|' clause)* '}' # clausesWithBraces
@@ -206,6 +203,8 @@ longName : ID ('.' ID)*;
 literal : longName ('.' (INFIX | POSTFIX))? # name
         | '\\Prop'                          # prop
         | '_'                               # unknown
+        | INFIX                             # infix
+        | POSTFIX                           # postfix
         | '{?' ID? ('(' expr? ')')? '}'     # goal
         ;
 

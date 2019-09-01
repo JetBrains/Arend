@@ -236,7 +236,7 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest(String name) {
     Group module = resolveNamesModule(
-      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infixl 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
@@ -257,7 +257,7 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixError(String name) {
     resolveNamesModule(
-      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B : \\Prop) => A $ B `" + name + "", 1);
   }
@@ -271,7 +271,7 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest2(String name) {
     Group module = resolveNamesModule(
-      "\\func \\infix 5 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\fix 5 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infixr 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => A $ B `" + name + " $ C");
     Iterator<? extends Group> it = module.getSubgroups().iterator();
@@ -292,7 +292,7 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest3(String name) {
     Group module = resolveNamesModule(
-      "\\func \\infix 6 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\fix 6 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
@@ -313,7 +313,7 @@ public class ParserTest extends NameResolverTestCase {
 
   private void postfixTest4(String name) {
     Group module = resolveNamesModule(
-      "\\func \\infix 4 " + name + " (A : \\Prop) => A\n" +
+      "\\func \\fix 4 " + name + " (A : \\Prop) => A\n" +
       "\\func \\infix 5 $ (A B : \\Prop) => A\n" +
       "\\func f (A B : \\Prop) => A $ B `" + name);
     Iterator<? extends Group> it = module.getSubgroups().iterator();
@@ -349,14 +349,14 @@ public class ParserTest extends NameResolverTestCase {
 
   @Test
   public void postfixTest5() {
-    postfixTest5("#", "$", "\\infix 5", "\\infix 5");
-    postfixTest5("foo", "$", "\\infix 6", "\\infix 5");
-    postfixTest5("#", "bar", "\\infix 5", "\\infix 6");
-    postfixTest5("foo", "bar", "\\infixl 5", "\\infix 5");
-    postfixTest5("foo", "$", "\\infix 5", "\\infixl 5");
-    postfixTest5("#", "bar", "\\infixr 5", "\\infixl 5");
-    postfixTest5("foo", "$", "\\infixl 6", "\\infixr 5");
-    postfixTest5("#", "$", "\\infixl 5", "\\infixr 6");
+    postfixTest5("#", "$", "\\fix 5", "\\fix 5");
+    postfixTest5("foo", "$", "\\fix 6", "\\fix 5");
+    postfixTest5("#", "bar", "\\fix 5", "\\fix 6");
+    postfixTest5("foo", "bar", "\\fixl 5", "\\fix 5");
+    postfixTest5("foo", "$", "\\fix 5", "\\fixl 5");
+    postfixTest5("#", "bar", "\\fixr 5", "\\fixl 5");
+    postfixTest5("foo", "$", "\\fixl 6", "\\fixr 5");
+    postfixTest5("#", "$", "\\fixl 5", "\\fixr 6");
   }
 
   @Test
@@ -369,7 +369,7 @@ public class ParserTest extends NameResolverTestCase {
     Group module = resolveNamesModule(
       "\\func \\infixr 1 >== (A B : \\Prop) => A\n" +
       "\\func \\infix 2 ==< (A B : \\Prop) => A\n" +
-      "\\func \\infix 2 qed (A : \\Prop) => A\n" +
+      "\\func \\fix 2 qed (A : \\Prop) => A\n" +
       "\\func g (A : \\Prop) => A\n" +
       "\\func f (A B C : \\Prop) => g A ==< g B >== g C `qed");
     Iterator<? extends Group> it = module.getSubgroups().iterator();

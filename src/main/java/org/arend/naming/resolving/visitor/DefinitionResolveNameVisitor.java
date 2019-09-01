@@ -118,7 +118,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       BinOpParser binOpParser = new BinOpParser(myLocalErrorReporter);
       expr = binOpParser.parse(binOpExpr);
       binOpExpr.getSequence().clear();
-      binOpExpr.getSequence().add(new Concrete.BinOpSequenceElem(expr, Fixity.NONFIX, true));
+      binOpExpr.getSequence().add(new Concrete.BinOpSequenceElem(expr));
 
       if (expr instanceof Concrete.AppExpression) {
         expr = ((Concrete.AppExpression) expr).getFunction();

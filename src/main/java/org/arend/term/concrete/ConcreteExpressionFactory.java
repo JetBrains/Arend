@@ -202,7 +202,7 @@ public class ConcreteExpressionFactory {
 
   public static Concrete.Expression cBinOp(Concrete.Expression left, Referable binOp, Concrete.Expression implicit, Concrete.Expression right) {
     List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(3);
-    sequence.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
+    sequence.add(new Concrete.BinOpSequenceElem(left));
     sequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(null, binOp), Fixity.UNKNOWN, true));
     if (implicit != null) {
       sequence.add(new Concrete.BinOpSequenceElem(implicit, Fixity.NONFIX, false));

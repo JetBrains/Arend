@@ -141,30 +141,6 @@ public class TypeCheckingTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void postfixTest() {
-    typeCheckModule(
-      "\\func \\infix 6 # (n : Nat) : Nat\n" +
-      "  | zero => zero\n" +
-      "  | suc n => suc (suc (n `#))\n" +
-      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
-      "  | zero => n\n" +
-      "  | suc m => suc (n $ m)\n" +
-      "\\func f : (1 $ 1 `#) = 3 => path (\\lam _ => 3)");
-  }
-
-  @Test
-  public void postfixTest2() {
-    typeCheckModule(
-      "\\func \\infix 4 d (n : Nat) : Nat\n" +
-      "  | zero => zero\n" +
-      "  | suc n => suc (suc (n `d))\n" +
-      "\\func \\infix 5 $ (n m : Nat) : Nat \\elim m\n" +
-      "  | zero => n\n" +
-      "  | suc m => suc (n $ m)\n" +
-      "\\func f : (1 $ 1 `d) = 4 => path (\\lam _ => 4)");
-  }
-
-  @Test
   public void infixLocal() {
     typeCheckExpr("\\lam (x # : \\Prop) ($ foo %% : \\Prop -> \\Prop -> \\Prop) => %% (foo ($ # x) #) x", null);
   }

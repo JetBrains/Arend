@@ -156,7 +156,7 @@ public final class Abstract {
 
   public interface BinOpSequenceElem extends SourceNode {
     /* @Nonnull */ @Nullable Expression getExpression();
-    @Nonnull Fixity getFixity();
+    boolean isVariable();
     boolean isExplicit();
   }
 

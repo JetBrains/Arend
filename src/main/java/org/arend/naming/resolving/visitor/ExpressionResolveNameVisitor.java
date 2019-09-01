@@ -97,7 +97,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
       if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
-        myErrorReporter.report(new NamingError("Unexpected " + (fixity == Fixity.INFIX ? "infix" : "postfix") + " operator", expr.getData()));
+        myErrorReporter.report(new NamingError((fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr.getData()));
       }
     }
 

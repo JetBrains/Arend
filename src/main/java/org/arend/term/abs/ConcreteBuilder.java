@@ -592,23 +592,14 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     }
 
     List<Concrete.BinOpSequenceElem> elems = new ArrayList<>(sequence.size());
-    elems.add(new Concrete.BinOpSequenceElem(left, Fixity.NONFIX, true));
+    elems.add(new Concrete.BinOpSequenceElem(left));
     for (Abstract.BinOpSequenceElem elem : sequence) {
       Abstract.Expression arg = elem.getExpression();
       if (arg == null) {
         continue;
       }
 
-      Concrete.Expression elemExpr = arg.accept(this, null);
-      Fixity fixity = elem.getFixity();
-      boolean isExplicit = elem.isExplicit();
-
-      if (!isExplicit && fixity != Fixity.NONFIX || (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) && !(elemExpr instanceof Concrete.ReferenceExpression)) {
-        myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Inconsistent model", elem));
-        fixity = isExplicit ? Fixity.UNKNOWN : Fixity.NONFIX;
-      }
-
-      elems.add(new Concrete.BinOpSequenceElem(elemExpr, fixity, isExplicit));
+      elems.add(new Concrete.BinOpSequenceElem(arg.accept(this, null), elem.isVariable() ? Fixity.UNKNOWN : Fixity.NONFIX, elem.isExplicit()));
     }
     return new Concrete.BinOpSequenceExpression(data, elems);
   }

@@ -36,19 +36,13 @@ public class BinOpParser {
 
   public Concrete.Expression parse(Concrete.BinOpSequenceExpression expr) {
     List<Concrete.BinOpSequenceElem> sequence = expr.getSequence();
-    Referable postfix = null;
     Concrete.BinOpSequenceElem first = sequence.get(0);
-    if (first.fixity == Fixity.INFIX) {
-      myErrorReporter.report(new NamingError("Expected an argument before an infix operator", first.expression));
-    }
-    if (first.fixity == Fixity.POSTFIX && first.expression instanceof Concrete.ReferenceExpression) {
-      if (sequence.size() == 1) {
-        myErrorReporter.report(new NamingError("Expected an argument after a postfix operator", first.expression));
-        return first.expression;
-      }
-
-      postfix = ((Concrete.ReferenceExpression) first.expression).getReferent();
-      sequence = sequence.subList(1, sequence.size());
+    if (first.fixity == Fixity.INFIX || first.fixity == Fixity.POSTFIX) {
+      LocalReferable firstArg = new LocalReferable(Renamer.UNNAMED);
+      List<Concrete.BinOpSequenceElem> newSequence = new ArrayList<>(sequence.size() + 1);
+      newSequence.add(new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(expr.getData(), firstArg)));
+      newSequence.addAll(sequence);
+      return new Concrete.LamExpression(expr.getData(), Collections.singletonList(new Concrete.NameParameter(expr.getData(), true, firstArg)), parse(new Concrete.BinOpSequenceExpression(expr.getData(), newSequence)));
     }
 
     for (Concrete.BinOpSequenceElem elem : sequence) {
@@ -65,7 +59,7 @@ public class BinOpParser {
         if (precedence == null) {
           precedence = Precedence.DEFAULT;
         }
-        push(reference, precedence, elem.fixity == Fixity.POSTFIX);
+        push(reference, precedence, elem.fixity == Fixity.POSTFIX && !precedence.isInfix);
         if (elem.expression instanceof Concrete.AppExpression) {
           for (Concrete.Argument argument : ((Concrete.AppExpression) elem.expression).getArguments()) {
             push(argument.expression, argument.isExplicit());
@@ -76,8 +70,7 @@ public class BinOpParser {
       }
     }
 
-    Concrete.Expression result = rollUp();
-    return postfix == null ? result : Concrete.makeRightSection(expr.getData(), postfix, new LocalReferable(Renamer.UNNAMED), result);
+    return rollUp();
   }
 
   public void push(Concrete.Expression expression, boolean isExplicit) {
@@ -99,9 +92,6 @@ public class BinOpParser {
 
   public void push(Concrete.ReferenceExpression reference, @Nonnull Precedence precedence, boolean isPostfix) {
     if (myStack.isEmpty()) {
-      if (isPostfix) {
-        myErrorReporter.report(new NamingError("Expected an argument before a postfix operator", reference));
-      }
       myStack.add(new StackElem(reference, precedence));
       return;
     }

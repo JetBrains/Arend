@@ -7,7 +7,6 @@ import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.*;
-import org.arend.naming.renamer.Renamer;
 import org.arend.term.*;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.*;
@@ -69,11 +68,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     vars.add(new ParsedLocalReferable(tokenPosition(argCtx.start), var));
 
     for (ArgumentContext argument : argCtx.argument()) {
-      if (argument instanceof ArgumentInfixContext) {
-        vars.add(new ParsedLocalReferable(tokenPosition(((ArgumentInfixContext) argument).INFIX().getSymbol()), getInfixText(((ArgumentInfixContext) argument).INFIX())));
-      } else if (argument instanceof ArgumentPostfixContext) {
-        vars.add(new ParsedLocalReferable(tokenPosition(((ArgumentPostfixContext) argument).POSTFIX().getSymbol()), getPostfixText(((ArgumentPostfixContext) argument).POSTFIX())));
-      } else if (argument instanceof ArgumentExplicitContext) {
+      if (argument instanceof ArgumentExplicitContext) {
         String arg = getVar(((ArgumentExplicitContext) argument).atomFieldsAcc());
         if (arg == null) {
           return false;
@@ -859,6 +854,18 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
+  public Concrete.FixityReferenceExpression visitInfix(InfixContext ctx) {
+    Position position = tokenPosition(ctx.start);
+    return new Concrete.FixityReferenceExpression(position, new NamedUnresolvedReference(position, getInfixText(ctx.INFIX())), Fixity.INFIX);
+  }
+
+  @Override
+  public Concrete.FixityReferenceExpression visitPostfix(PostfixContext ctx) {
+    Position position = tokenPosition(ctx.start);
+    return new Concrete.FixityReferenceExpression(position, new NamedUnresolvedReference(position, getPostfixText(ctx.POSTFIX())), Fixity.POSTFIX);
+  }
+
+  @Override
   public Concrete.GoalExpression visitGoal(GoalContext ctx) {
     TerminalNode id = ctx.ID();
     ExprContext exprCtx = ctx.expr();
@@ -993,7 +1000,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
 
     List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size());
-    sequence.add(new Concrete.BinOpSequenceElem(expr, Fixity.NONFIX, true));
+    sequence.add(new Concrete.BinOpSequenceElem(expr));
     for (ArgumentContext argumentCtx : argumentCtxs) {
       sequence.add(visitArgument(argumentCtx));
     }
@@ -1008,7 +1015,11 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.BinOpSequenceElem visitArgumentExplicit(ArgumentExplicitContext ctx) {
     AtomFieldsAccContext atomFieldsAcc = ctx.atomFieldsAcc();
-    return new Concrete.BinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && ((AtomLiteralContext) atomFieldsAcc.atom()).literal() instanceof NameContext ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+    return new Concrete.BinOpSequenceElem(visitAtomFieldsAcc(atomFieldsAcc), atomFieldsAcc.atom() instanceof AtomLiteralContext && isName(((AtomLiteralContext) atomFieldsAcc.atom()).literal()) && atomFieldsAcc.NUMBER().isEmpty() ? Fixity.UNKNOWN : Fixity.NONFIX, true);
+  }
+
+  private boolean isName(LiteralContext ctx) {
+    return ctx instanceof NameContext || ctx instanceof InfixContext || ctx instanceof PostfixContext;
   }
 
   @Override
@@ -1024,18 +1035,6 @@ public class BuildVisitor extends ArendBaseVisitor {
   @Override
   public Concrete.BinOpSequenceElem visitArgumentImplicit(ArgumentImplicitContext ctx) {
     return new Concrete.BinOpSequenceElem(visitExpr(ctx.expr()), Fixity.NONFIX, false);
-  }
-
-  @Override
-  public Concrete.BinOpSequenceElem visitArgumentInfix(ArgumentInfixContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    return new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, getInfixText(ctx.INFIX()))), Fixity.INFIX, true);
-  }
-
-  @Override
-  public Concrete.BinOpSequenceElem visitArgumentPostfix(ArgumentPostfixContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    return new Concrete.BinOpSequenceElem(new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, getPostfixText(ctx.POSTFIX()))), Fixity.POSTFIX, true);
   }
 
   @Override
@@ -1384,7 +1383,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<ArgumentContext> argumentCtxs = ctx.argument();
     if (!argumentCtxs.isEmpty()) {
       List<Concrete.BinOpSequenceElem> sequence = new ArrayList<>(argumentCtxs.size() + 1);
-      sequence.add(new Concrete.BinOpSequenceElem(expr, Fixity.NONFIX, true));
+      sequence.add(new Concrete.BinOpSequenceElem(expr));
       for (ArgumentContext argCtx : argumentCtxs) {
         sequence.add(visitArgument(argCtx));
       }
@@ -1483,12 +1482,6 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
-  }
-
-  @Override
-  public Concrete.Expression visitSection(SectionContext ctx) {
-    Position position = tokenPosition(ctx.start);
-    return Concrete.makeRightSection(position, new NamedUnresolvedReference(position, getPostfixText(ctx.POSTFIX())), new ParsedLocalReferable(position, Renamer.UNNAMED), visitNewExpr(ctx.newExpr()));
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {
