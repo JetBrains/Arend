@@ -141,7 +141,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     }
 
     for (LibraryDependency dependency : header.dependencies) {
-      Library loadedDependency = libraryManager.loadLibrary(dependency.name);
+      Library loadedDependency = libraryManager.loadDependency(this, dependency.name);
       if (loadedDependency == null) {
         return false;
       }

@@ -102,20 +102,20 @@ public class FileLibraryResolver implements LibraryResolver {
 
   @Nullable
   @Override
-  public Library resolve(String name) {
-    if (!FileUtils.isLibraryName(name)) {
+  public Library resolve(Library lib, String dependencyName) {
+    if (!FileUtils.isLibraryName(dependencyName)) {
       return null;
     }
 
-    FileLoadableHeaderLibrary library = myLibraries.get(name);
+    FileLoadableHeaderLibrary library = myLibraries.get(dependencyName);
     if (library != null) {
       return library;
     }
 
-    library = findLibrary(FileUtils.getCurrentDirectory(), name);
+    library = findLibrary(FileUtils.getCurrentDirectory(), dependencyName);
     if (library == null) {
       for (Path libDir : myLibDirs) {
-        library = findLibrary(libDir, name);
+        library = findLibrary(libDir, dependencyName);
         if (library != null) {
           break;
         }
@@ -123,7 +123,7 @@ public class FileLibraryResolver implements LibraryResolver {
     }
 
     if (library != null) {
-      myLibraries.put(name, library);
+      myLibraries.put(dependencyName, library);
     }
 
     return library;

@@ -5,16 +5,17 @@ import org.arend.library.Library;
 import javax.annotation.Nullable;
 
 /**
- * Resolves library's name.
+ * Resolves dependencies names of a library.
  */
 public interface LibraryResolver {
   /**
-   * Resolves library's name.
+   * Resolves dependencies names of a library.
    *
-   * @param name  library's name.
+   * @param library         a library.
+   * @param dependencyName  a name of a dependency of the library.
    *
    * @return corresponding library or null if the library cannot be resolved.
    */
   @Nullable
-  Library resolve(String name);
+  Library resolve(Library library, String dependencyName);
 }

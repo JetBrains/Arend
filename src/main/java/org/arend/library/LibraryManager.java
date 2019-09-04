@@ -110,6 +110,7 @@ public class LibraryManager {
    * Gets the library with the given name.
    *
    * @param libraryName the name of a library.
+   *
    * @return the library with the given name.
    */
   public Library getRegisteredLibrary(String libraryName) {
@@ -125,6 +126,7 @@ public class LibraryManager {
    * Gets the library satisfying given predicate.
    *
    * @param pred  a predicate to test libraries.
+   *
    * @return the library with the given name.
    */
   public Library getRegisteredLibrary(Predicate<Library> pred) {
@@ -137,20 +139,21 @@ public class LibraryManager {
   }
 
   /**
-   * Loads a library together with its dependencies and registers them in this library manager.
+   * Loads a dependency of a given library together with its dependencies and registers them in this library manager.
    *
-   * @param libraryName  the name of the library to load.
+   * @param library         a library.
+   * @param dependencyName  the name of the dependency to load.
    *
    * @return the loaded library if loading succeeded, null otherwise.
    */
-  public Library loadLibrary(String libraryName) {
-    Library library = myLibraryResolver.resolve(libraryName);
-    if (library == null) {
-      myLibraryErrorReporter.report(LibraryError.notFound(libraryName));
+  public Library loadDependency(Library library, String dependencyName) {
+    Library dependency = myLibraryResolver.resolve(library, dependencyName);
+    if (dependency == null) {
+      myLibraryErrorReporter.report(LibraryError.notFound(dependencyName));
       return null;
     }
 
-    return loadLibrary(library) ? library : null;
+    return loadLibrary(dependency) ? dependency : null;
   }
 
   /**

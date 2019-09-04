@@ -47,7 +47,7 @@ public abstract class ArendTestCase {
 
   @Before
   public void loadPrelude() {
-    libraryManager = new LibraryManager(name -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter);
+    libraryManager = new LibraryManager((lib,name) -> { throw new IllegalStateException(); }, new InstanceProviderSet(), errorReporter, errorReporter);
     preludeLibrary = new PreludeFileLibrary(null, typecheckerState);
     moduleScopeProvider = preludeLibrary.getModuleScopeProvider();
     libraryManager.loadLibrary(preludeLibrary);
