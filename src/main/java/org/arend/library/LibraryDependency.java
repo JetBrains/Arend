@@ -3,7 +3,7 @@ package org.arend.library;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
-public class LibraryDependency {
+public class LibraryDependency implements Comparable<LibraryDependency> {
   public final @Nonnull String name;
 
   public LibraryDependency(@Nonnull String name) {
@@ -21,5 +21,15 @@ public class LibraryDependency {
   @Override
   public int hashCode() {
     return Objects.hash(name);
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  @Override
+  public int compareTo(LibraryDependency another) {
+    return name.compareTo(another.name);
   }
 }
