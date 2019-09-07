@@ -410,7 +410,7 @@ public class PatternTypechecking {
       if (constructor == null || !dataCall.getMatchedConCall(constructor, conCalls) || conCalls.isEmpty() ) {
         Referable conRef = conPattern.getConstructor();
         if (constructor != null || conRef instanceof TCReferable && ((TCReferable) conRef).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
-          myErrorReporter.report(new ExpectedConstructor(conRef, dataCall, conPattern));
+          myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) conRef, dataCall, conPattern));
         }
         return null;
       }
