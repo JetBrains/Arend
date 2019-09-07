@@ -30,6 +30,7 @@ public class LibraryDependency implements Comparable<LibraryDependency> {
 
   @Override
   public int compareTo(LibraryDependency another) {
-    return name.compareTo(another.name);
+    int r = name.compareToIgnoreCase(another.name);
+    return r != 0 ? r : name.compareTo(another.name);
   }
 }
