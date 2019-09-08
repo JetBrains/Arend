@@ -344,11 +344,15 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (baseExpr instanceof Concrete.ReferenceExpression) {
       Concrete.ReferenceExpression refExpr = (Concrete.ReferenceExpression) baseExpr;
       if (refExpr.getReferent() instanceof NamedUnresolvedReference) {
-        ref = ((NamedUnresolvedReference) refExpr.getReferent()).resolve(myScope, null);
-        refExpr.setReferent(ref);
-        if (myResolverListener != null) {
-          myResolverListener.referenceResolved(null, refExpr.getReferent(), refExpr, Collections.singletonList(ref));
+        ref = refExpr.getReferent();
+        refExpr.setReferent(((NamedUnresolvedReference) ref).resolve(myScope, null));
+        if (refExpr.getReferent() instanceof ErrorReference) {
+          myErrorReporter.report(((ErrorReference) refExpr.getReferent()).getError());
         }
+        if (myResolverListener != null) {
+          myResolverListener.referenceResolved(null, ref, refExpr, Collections.singletonList(refExpr.getReferent()));
+        }
+        ref = refExpr.getReferent();
       }
     }
 
