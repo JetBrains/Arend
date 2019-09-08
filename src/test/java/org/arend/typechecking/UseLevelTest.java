@@ -285,4 +285,11 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "  \\where \\use \\level isProp {b : B} (x y : C b) : x = y => path (\\lam i => \\new C b ((\\case x.df \\return x.df = y.df \\with {}) @ i))\n" +
       "\\record R { \\property prop : C (\\new A) }", 1);
   }
+
+  @Test
+  public void resultTypeTest() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (p : \\Pi (x y : A) -> x = y) => A\n" +
+      "  \\where \\use \\level levelProp (A : \\Type) (p : \\Pi (x y : A) -> x = y) => p");
+  }
 }

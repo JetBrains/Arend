@@ -614,13 +614,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (ok) {
-            if (link.hasNext()) {
-              type = useParent instanceof DataDefinition
-                ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
-                : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
-            } else {
-              ok = false;
-            }
+            type = useParent instanceof DataDefinition
+              ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
+              : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
           }
         } else {
           ClassCallExpression classCall = null;
