@@ -45,7 +45,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   public static Concrete.Expression convert(Expression expression, PrettyPrinterConfig config) {
-    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor();
+    CollectFreeVariablesVisitor collector = new CollectFreeVariablesVisitor(config.getExpressionFlags());
     Set<Variable> variables = new HashSet<>();
     NormalizeVisitor.Mode mode = config.getNormalizationMode();
     if (mode != null) {
@@ -202,7 +202,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
 
       Concrete.Expression arg = expr.getArgument().accept(this, null);
-      if (arg instanceof Concrete.ReferenceExpression) {
+      if (refExpr != null && arg instanceof Concrete.ReferenceExpression) {
         return new Concrete.ReferenceExpression(null, ref(((Concrete.ReferenceExpression) arg).getReferent().textRepresentation() + "." + result.getReferent().textRepresentation()));
       } else {
         return Concrete.AppExpression.make(null, result, arg, false);
@@ -258,7 +258,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   @Override
-  public Concrete.Expression visitReference(ReferenceExpression expr, Void params) {
+  public Concrete.ReferenceExpression visitReference(ReferenceExpression expr, Void params) {
     return makeReference(myRenamer.getNewReferable(expr.getBinding()));
   }
 

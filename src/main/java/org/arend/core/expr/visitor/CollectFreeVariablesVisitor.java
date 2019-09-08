@@ -14,7 +14,12 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Variable>> {
-  private Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
+  private final Map<Binding, Set<Variable>> myFreeVariables = new HashMap<>();
+  private final EnumSet<ToAbstractVisitor.Flag> myFlags;
+
+  public CollectFreeVariablesVisitor(EnumSet<ToAbstractVisitor.Flag> flags) {
+    myFlags = flags;
+  }
 
   Set<Variable> getFreeVariables(Binding binding) {
     Set<Variable> freeVars = myFreeVariables.get(binding);
@@ -117,6 +122,26 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
         visitParameters(entry.getValue().getParameters(), vars -> visitElimTree(entry.getValue(), vars), variables);
       }
     }
+  }
+
+  @Override
+  public Void visitFieldCall(FieldCallExpression expr, Set<Variable> variables) {
+    if (expr.getDefinition().isHideable() && myFlags.contains(ToAbstractVisitor.Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+      return expr.getArgument().accept(this, variables);
+    }
+
+    if (myFlags.contains(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE)) {
+      ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
+      if (refExpr != null) {
+        variables.add(refExpr.getBinding().isHidden() ? expr.getDefinition() : refExpr.getBinding());
+        return null;
+      } else {
+        expr.getArgument().accept(this, variables);
+      }
+    }
+
+    variables.add(expr.getDefinition());
+    return null;
   }
 
   @Override
