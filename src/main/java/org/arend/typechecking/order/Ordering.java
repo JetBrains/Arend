@@ -179,6 +179,9 @@ public class Ordering {
     if (definition.enclosingClass != null) {
       visitor.addDependency(definition.enclosingClass);
     }
+    if (definition instanceof Concrete.UseDefinition && unit.isHeader()) {
+      visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
+    }
 
     TypecheckingOrderingListener.Recursion recursion = TypecheckingOrderingListener.Recursion.NO;
     definition.accept(visitor, unit.isHeader());
