@@ -26,8 +26,9 @@ public class LambdaInferenceError extends ArgInferenceError {
 
   @Override
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return isLevel
-      ? hList(text("Cannot infer level of the type of parameter '"), refDoc(parameter), text("'"))
-      : hList(text("Cannot infer type of parameter '"), refDoc(parameter), text("'"));
+    String start = isLevel ? "Cannot infer level of the type of " : "Cannot infer type of ";
+    return parameter == null
+      ? text(start + "a lambda parameter")
+      : hList(text(start + "parameter '"), refDoc(parameter), text("'"));
   }
 }
