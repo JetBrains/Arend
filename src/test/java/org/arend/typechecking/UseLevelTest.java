@@ -290,6 +290,14 @@ public class UseLevelTest extends TypeCheckingTestCase {
   public void resultTypeTest() {
     typeCheckModule(
       "\\func test (A : \\Type) (p : \\Pi (x y : A) -> x = y) => A\n" +
-      "  \\where \\use \\level levelProp (A : \\Type) (p : \\Pi (x y : A) -> x = y) => p");
+      "  \\where \\use \\level levelProp (A : \\Type) (p : \\Pi (x y : A) -> x = y) : \\Pi (x y : A) -> x = y => p");
+    assertEquals(-1, getDefinition("test").getParametersLevels().get(0).level);
+  }
+
+  @Test
+  public void missingResultTypeTest() {
+    typeCheckModule(
+      "\\func test (A : \\Type) (p : \\Pi (x y : A) -> x = y) => A\n" +
+      "  \\where \\use \\level levelProp (A : \\Type) (p : \\Pi (x y : A) -> x = y) => p", 1);
   }
 }

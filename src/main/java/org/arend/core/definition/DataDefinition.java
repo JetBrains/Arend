@@ -146,7 +146,7 @@ public class DataDefinition extends Definition {
     return myParametersLevels;
   }
 
-  public void addLevelParameters(ParametersLevel parametersLevel) {
+  public void addParametersLevel(ParametersLevel parametersLevel) {
     if (myParametersLevels.isEmpty()) {
       myParametersLevels = new ArrayList<>();
     }

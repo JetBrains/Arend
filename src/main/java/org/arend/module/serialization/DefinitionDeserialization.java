@@ -198,7 +198,7 @@ public class DefinitionDeserialization {
     }
     dataDef.setTypeClassParameters(readTypeClassParametersKind(dataProto.getTypeClassParametersList()));
     for (DefinitionProtos.Definition.ParametersLevel levelParametersProto : dataProto.getParametersLevelsList()) {
-      dataDef.addLevelParameters(readParametersLevel(defDeserializer, levelParametersProto));
+      dataDef.addParametersLevel(readParametersLevel(defDeserializer, levelParametersProto));
     }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
     defDeserializer.setIsHeader(false);
@@ -348,7 +348,7 @@ public class DefinitionDeserialization {
     }
     functionDef.setTypeClassParameters(readTypeClassParametersKind(functionProto.getTypeClassParametersList()));
     for (DefinitionProtos.Definition.ParametersLevel parametersLevelProto : functionProto.getParametersLevelsList()) {
-      functionDef.addLevelParameters(readParametersLevel(defDeserializer, parametersLevelProto));
+      functionDef.addParametersLevel(readParametersLevel(defDeserializer, parametersLevelProto));
     }
     if (functionProto.hasType()) {
       functionDef.setResultType(defDeserializer.readExpr(functionProto.getType()));

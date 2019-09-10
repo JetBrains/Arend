@@ -128,7 +128,7 @@ public class FunctionDefinition extends Definition implements Function {
     return myParametersLevels;
   }
 
-  public void addLevelParameters(ParametersLevel parametersLevel) {
+  public void addParametersLevel(ParametersLevel parametersLevel) {
     if (myParametersLevels.isEmpty()) {
       myParametersLevels = new ArrayList<>();
     }

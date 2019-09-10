@@ -614,9 +614,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (ok) {
-            type = useParent instanceof DataDefinition
-              ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
-              : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
+            if (link.hasNext() || resultType != null) {
+              type = useParent instanceof DataDefinition
+                ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
+                : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
+            } else {
+              ok = false;
+            }
           }
         } else {
           ClassCallExpression classCall = null;
@@ -676,10 +680,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (parameters == null) {
               ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
             } else {
-              ((DataDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
+              ((DataDefinition) useParent).addParametersLevel(new Definition.ParametersLevel(parameters, level));
             }
           } else if (useParent instanceof FunctionDefinition) {
-            ((FunctionDefinition) useParent).addLevelParameters(new Definition.ParametersLevel(parameters, level));
+            ((FunctionDefinition) useParent).addParametersLevel(new Definition.ParametersLevel(parameters, level));
           } else {
             if (levelFields == null) {
               ((ClassDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));
