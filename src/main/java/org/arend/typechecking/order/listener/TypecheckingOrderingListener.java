@@ -90,6 +90,14 @@ public class TypecheckingOrderingListener implements OrderingListener {
     CANCELLATION_INDICATOR.checkCanceled();
   }
 
+  public static CancellationIndicator getCancellationIndicator() {
+    return CANCELLATION_INDICATOR;
+  }
+
+  public static void resetCancellationIndicator() {
+    CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
+  }
+
   public ConcreteProvider getConcreteProvider() {
     return myConcreteProvider;
   }
