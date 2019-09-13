@@ -510,7 +510,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Definition typeDef = typechecker.getTypechecked((TCReferable) fun);
       if (typeDef != null) {
         boolean couldBe = false;
-        for (Definition.ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
+        for (ParametersLevel parametersLevel : typeDef.getParametersLevels()) {
           if (parametersLevel.level == -1) {
             if (parametersLevel.parameters == null) {
               return Decision.YES;
@@ -680,10 +680,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             if (parameters == null) {
               ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
             } else {
-              ((DataDefinition) useParent).addParametersLevel(new Definition.ParametersLevel(parameters, level));
+              ((DataDefinition) useParent).addParametersLevel(new ParametersLevel(parameters, level));
             }
           } else if (useParent instanceof FunctionDefinition) {
-            ((FunctionDefinition) useParent).addParametersLevel(new Definition.ParametersLevel(parameters, level));
+            ((FunctionDefinition) useParent).addParametersLevel(new ParametersLevel(parameters, level));
           } else {
             if (levelFields == null) {
               ((ClassDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((ClassDefinition) useParent).getSort().getPLevel(), new Level(level)));

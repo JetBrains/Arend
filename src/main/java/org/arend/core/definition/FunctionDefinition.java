@@ -11,7 +11,6 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.naming.reference.TCReferable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,7 +24,7 @@ public class FunctionDefinition extends Definition implements Function {
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
-  private List<ParametersLevel> myParametersLevels = Collections.emptyList();
+  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public FunctionDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -125,13 +124,10 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public List<? extends ParametersLevel> getParametersLevels() {
-    return myParametersLevels;
+    return myParametersLevels.getList();
   }
 
   public void addParametersLevel(ParametersLevel parametersLevel) {
-    if (myParametersLevels.isEmpty()) {
-      myParametersLevels = new ArrayList<>();
-    }
     myParametersLevels.add(parametersLevel);
   }
 

@@ -300,4 +300,54 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\func test (A : \\Type) (p : \\Pi (x y : A) -> x = y) => A\n" +
       "  \\where \\use \\level levelProp (A : \\Type) (p : \\Pi (x y : A) -> x = y) => p", 1);
   }
+
+  @Test
+  public void severalUseLevelsTest1() {
+    typeCheckModule(
+      "\\data D : \\oo-Type\n" +
+      "\\func f => D\n" +
+      "  \\where {\n" +
+      "    \\use \\level levelProp (x y : f) : x = y\n" +
+      "    \\use \\level levelSet (x y : f) (p q : x = y) : p = q\n" +
+      "  }");
+    assertEquals(1, getDefinition("f").getParametersLevels().size());
+    assertEquals(-1, getDefinition("f").getParametersLevels().get(0).level);
+  }
+
+  @Test
+  public void severalUseLevelsTest2() {
+    typeCheckModule(
+      "\\data D : \\Set\n" +
+      "\\func f (A : \\Set0) => D\n" +
+      "  \\where {\n" +
+      "    \\use \\level levelSet (A : \\Set0) (x y : f A) (p q : x = y) : p = q\n" +
+      "    \\use \\level levelProp (A : \\Set0) (x y : f A) : x = y\n" +
+      "  }");
+    assertEquals(1, getDefinition("f").getParametersLevels().size());
+    assertEquals(-1, getDefinition("f").getParametersLevels().get(0).level);
+  }
+
+  @Test
+  public void severalUseLevelsTest3() {
+    typeCheckModule(
+      "\\data D : \\Set\n" +
+      "\\func f (A : \\Set2) => D\n" +
+      "  \\where {\n" +
+      "    \\use \\level levelProp1 (A : \\Set1) (x y : f A) : x = y\n" +
+      "    \\use \\level levelProp2 (A : \\Set2) (x y : f A) : x = y\n" +
+      "  }");
+    assertEquals(2, getDefinition("f").getParametersLevels().size());
+  }
+
+  @Test
+  public void severalUseLevelsTest4() {
+    typeCheckModule(
+      "\\data D : \\Set\n" +
+      "\\func f (A : \\Set2) => D\n" +
+      "  \\where {\n" +
+      "    \\use \\level levelProp1 (A : \\Set0) (x y : f A) : x = y\n" +
+      "    \\use \\level levelProp2 (A : \\Set1) (x y : f A) : x = y\n" +
+      "  }");
+    assertEquals(2, getDefinition("f").getParametersLevels().size());
+  }
 }

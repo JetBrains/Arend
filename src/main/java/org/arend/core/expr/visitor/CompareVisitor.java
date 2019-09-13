@@ -50,7 +50,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (elimTree1 == elimTree2) {
       return true;
     }
-    if (!compareParameters(DependentLink.Helper.toList(elimTree1.getParameters()), DependentLink.Helper.toList(elimTree2.getParameters()))) {
+    if (!compareParameters(elimTree1.getParameters(), elimTree2.getParameters())) {
       return false;
     }
 
@@ -718,17 +718,20 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return true;
   }
 
-  private boolean compareParameters(List<DependentLink> params1, List<DependentLink> params2) {
-    if (params1.size() != params2.size()) {
+  public boolean compareParameters(DependentLink params1, DependentLink params2) {
+    List<DependentLink> list1 = DependentLink.Helper.toList(params1);
+    List<DependentLink> list2 = DependentLink.Helper.toList(params2);
+
+    if (list1.size() != list2.size()) {
       return false;
     }
 
     Equations.CMP origCMP = myCMP;
-    for (int i = 0; i < params1.size() && i < params2.size(); ++i) {
-      if (!compare(params1.get(i).getTypeExpr(), params2.get(i).getTypeExpr())) {
+    for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
+      if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr())) {
         return false;
       }
-      mySubstitution.put(params2.get(i), params1.get(i));
+      mySubstitution.put(list2.get(i), list1.get(i));
       myCMP = origCMP;
     }
 
@@ -787,7 +790,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (sigma2 == null) {
       return false;
     }
-    if (!compareParameters(DependentLink.Helper.toList(expr1.getParameters()), DependentLink.Helper.toList(sigma2.getParameters()))) {
+    if (!compareParameters(expr1.getParameters(), sigma2.getParameters())) {
       return false;
     }
     for (DependentLink link = sigma2.getParameters(); link.hasNext(); link = link.getNext()) {

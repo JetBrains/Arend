@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.definition.Definition;
+import org.arend.core.definition.ParametersLevel;
 import org.arend.core.sort.Sort;
 import org.arend.util.Decision;
 
@@ -28,7 +29,7 @@ public abstract class DefCallExpression extends Expression {
   }
 
   public Integer getUseLevel() {
-    for (Definition.ParametersLevel parametersLevel : myDefinition.getParametersLevels()) {
+    for (ParametersLevel parametersLevel : myDefinition.getParametersLevels()) {
       if (parametersLevel.checkExpressionsTypes(getDefCallArguments())) {
         return parametersLevel.level;
       }

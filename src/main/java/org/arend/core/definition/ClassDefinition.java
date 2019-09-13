@@ -21,7 +21,7 @@ public class ClassDefinition extends Definition {
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
   private List<ClassField> myTypecheckingFieldOrder;
-  private List<ParametersLevel> myParametersLevels = Collections.emptyList();
+  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -53,30 +53,32 @@ public class ClassDefinition extends Definition {
     myCoercingField = coercingField;
   }
 
-  public static class ParametersLevel extends Definition.ParametersLevel {
+  public static class ParametersLevel extends org.arend.core.definition.ParametersLevel {
     public final List<ClassField> fields;
 
     public ParametersLevel(DependentLink parameters, int level, List<ClassField> fields) {
       super(parameters, level);
       this.fields = fields;
     }
+
+    @Override
+    public boolean hasEquivalentDomain(org.arend.core.definition.ParametersLevel another) {
+      return another instanceof ParametersLevel && fields.equals(((ParametersLevel) another).fields) && super.hasEquivalentDomain(another);
+    }
   }
 
   @Override
   public List<? extends ParametersLevel> getParametersLevels() {
-    return myParametersLevels;
+    return myParametersLevels.getList();
   }
 
   public void addParametersLevel(ParametersLevel parametersLevel) {
-    if (myParametersLevels.isEmpty()) {
-      myParametersLevels = new ArrayList<>();
-    }
     myParametersLevels.add(parametersLevel);
   }
 
   public Integer getUseLevel(Map<ClassField,Expression> implemented) {
     loop:
-    for (ParametersLevel parametersLevel : myParametersLevels) {
+    for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
       if (parametersLevel.fields.size() != implemented.size()) {
         continue;
       }
@@ -199,10 +201,6 @@ public class ClassDefinition extends Definition {
 
   public LamExpression implementField(ClassField field, LamExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
-  }
-
-  public void removeImplementation(ClassField field) {
-    myImplemented.computeIfPresent(field, (f,i) -> new LamExpression(i.getResultSort(), i.getParameters(), new ErrorExpression(null, null)));
   }
 
   public Set<? extends ClassField> getGoodThisFields() {

@@ -242,7 +242,7 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
-  private DefinitionProtos.Definition.ParametersLevel writeParametersLevel(ExpressionSerialization defSerializer, Definition.ParametersLevel parametersLevel) {
+  private DefinitionProtos.Definition.ParametersLevel writeParametersLevel(ExpressionSerialization defSerializer, ParametersLevel parametersLevel) {
     DefinitionProtos.Definition.ParametersLevel.Builder builder = DefinitionProtos.Definition.ParametersLevel.newBuilder();
     builder.setHasParameters(parametersLevel.parameters != null);
     if (parametersLevel.parameters != null) {
@@ -252,9 +252,9 @@ public class DefinitionSerialization {
     return builder.build();
   }
 
-  private List<DefinitionProtos.Definition.ParametersLevel> writeParametersLevels(ExpressionSerialization defSerializer, List<? extends Definition.ParametersLevel> parametersLevels) {
+  private List<DefinitionProtos.Definition.ParametersLevel> writeParametersLevels(ExpressionSerialization defSerializer, List<? extends ParametersLevel> parametersLevels) {
     List<DefinitionProtos.Definition.ParametersLevel> result = new ArrayList<>();
-    for (Definition.ParametersLevel parametersLevel : parametersLevels) {
+    for (ParametersLevel parametersLevel : parametersLevels) {
       result.add(writeParametersLevel(defSerializer, parametersLevel));
     }
     return result;

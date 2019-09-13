@@ -24,7 +24,7 @@ public class DataDefinition extends Definition {
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
-  private List<ParametersLevel> myParametersLevels = Collections.emptyList();
+  private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
@@ -143,13 +143,10 @@ public class DataDefinition extends Definition {
 
   @Override
   public List<? extends ParametersLevel> getParametersLevels() {
-    return myParametersLevels;
+    return myParametersLevels.getList();
   }
 
   public void addParametersLevel(ParametersLevel parametersLevel) {
-    if (myParametersLevels.isEmpty()) {
-      myParametersLevels = new ArrayList<>();
-    }
     myParametersLevels.add(parametersLevel);
   }
 
