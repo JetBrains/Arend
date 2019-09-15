@@ -1,20 +1,15 @@
 package org.arend.typechecking.instance.pool;
 
-import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
-import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.LocalError;
-import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class LocalInstancePool implements InstancePool {
   static private class InstanceData {
@@ -61,17 +56,8 @@ public class LocalInstancePool implements InstancePool {
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if (instanceData.classRef.isSubClassOf(classRef) && Objects.equals(instanceData.key, classifyingExpression)) {
-        Expression result = instanceData.value;
-        if (instanceData.key == classifyingExpression) {
-          return result;
-        }
-        if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.LE, instanceData.key, classifyingExpression, instanceData.sourceNode)) {
-          LocalError error = new TypeMismatchError(instanceData.key, classifyingExpression, instanceData.sourceNode);
-          myVisitor.getErrorReporter().report(error);
-          result = new ErrorExpression(result, error);
-        }
-        return result;
+      if (instanceData.classRef.isSubClassOf(classRef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, Equations.CMP.EQ))) {
+        return instanceData.value;
       }
     }
     return null;
