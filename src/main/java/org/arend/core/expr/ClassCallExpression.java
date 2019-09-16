@@ -106,10 +106,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
     Expression newExpr = new NewExpression(new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
-    Collection<? extends ClassField> fields = getDefinition().getTypecheckingFieldOrder();
-    if (fields == null) {
-      fields = getDefinition().getFields();
-    }
+    Collection<? extends ClassField> fields = getDefinition().getOrderedFields();
     if (fields.isEmpty()) {
       return EmptyDependentLink.getInstance();
     }

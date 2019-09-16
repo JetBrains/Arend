@@ -26,7 +26,7 @@ public class InferenceReferenceExpression extends Expression {
           if (!field.isProperty()) {
             Expression impl = classCall.getImplementation(field, this);
             if (impl != null) {
-              equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
+              equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), field.getType(classCall.getSortArgument()).applyExpression(this), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
             }
           }
         }

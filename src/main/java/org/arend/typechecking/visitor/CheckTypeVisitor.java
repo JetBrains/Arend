@@ -91,6 +91,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void setStatus(Definition.TypeCheckingStatus status) {
     myStatus = myStatus.max(status);
   }
@@ -177,7 +178,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     CompareVisitor cmpVisitor = new CompareVisitor(DummyEquations.getInstance(), Equations.CMP.LE, expr);
-    if (expectedType instanceof Expression && cmpVisitor.nonNormalizingCompare(result.type, (Expression) expectedType)) {
+    if (expectedType instanceof Expression && cmpVisitor.nonNormalizingCompare(result.type, (Expression) expectedType, ExpectedType.OMEGA)) {
       return result;
     }
 
@@ -192,7 +193,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private TypecheckingResult checkResultExpr(Expression expectedType, TypecheckingResult result, Concrete.Expression expr) {
-    if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, expectedType)) {
+    if (new CompareVisitor(myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, expectedType, ExpectedType.OMEGA)) {
       result.expression = OfTypeExpression.make(result.expression, result.type, expectedType);
       return result;
     }
@@ -205,7 +206,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean checkNormalizedResult(ExpectedType expectedType, TypecheckingResult result, Concrete.Expression expr, boolean strict) {
-    if (expectedType instanceof Expression && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType) || expectedType == ExpectedType.OMEGA && result.type.isInstance(UniverseExpression.class)) {
+    if (expectedType instanceof Expression && new CompareVisitor(strict ? DummyEquations.getInstance() : myEquations, Equations.CMP.LE, expr).normalizedCompare(result.type, (Expression) expectedType, ExpectedType.OMEGA) || expectedType == ExpectedType.OMEGA && result.type.isInstance(UniverseExpression.class)) {
       if (!strict && expectedType instanceof Expression) {
         result.expression = OfTypeExpression.make(result.expression, result.type, (Expression) expectedType);
       }
@@ -320,7 +321,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       universe = new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
       InferenceVariable infVar = stuck.getInferenceVariable();
       if (infVar != null) {
-        myEquations.addEquation(type, universe, Equations.CMP.LE, expr, infVar, null);
+        myEquations.addEquation(type, universe, ExpectedType.OMEGA, Equations.CMP.LE, expr, infVar, null);
       }
     }
 
@@ -404,8 +405,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     for (Pair<Definition,Concrete.ClassFieldImpl> pair : implementations) {
       if (pair.proj1 instanceof ClassField) {
         ClassField field = (ClassField) pair.proj1;
-        Expression impl = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
-        if (impl != null) {
+        TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+        if (implResult != null) {
           Expression oldImpl = null;
           if (!field.isProperty()) {
             oldImpl = resultClassCall.getImplementationHere(field);
@@ -415,11 +416,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             }
           }
           if (oldImpl != null) {
-            if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, pair.proj2.implementation)) {
+            if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
               errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
             }
           } else if (!resultClassCall.isImplemented(field)) {
-            fieldSet.put(field, impl);
+            fieldSet.put(field, implResult.expression);
           }
         } else if (pseudoImplemented != null) {
           pseudoImplemented.add(field);
@@ -444,7 +445,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
                 Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
                 Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
                 if (oldImpl != null) {
-                  if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, pair.proj2.implementation)) {
+                  if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
                     errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
                   }
                 } else if (!resultClassCall.isImplemented(field)) {
@@ -464,7 +465,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
-  private Expression typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
+  private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
     PiExpression piType = field.getType(fieldSetClass.getSortArgument());
     ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(piType.getParameters(), fieldSetClass);
     Expression type = piType.getCodomain().accept(visitor, null);
@@ -474,25 +475,31 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
+      Expression result;
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
       if (classDef.getClassifyingField() == null) {
         Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody);
         if (instance == null) {
           ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, new Expression[0]);
           errorReporter.report(error);
-          return new ErrorExpression(null, error);
+          result = new ErrorExpression(null, error);
         } else {
-          return instance;
+          result = instance;
         }
       } else {
-        return new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, getAllBindings()), myEquations);
+        result = new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, getAllBindings()), myEquations);
       }
+      return new TypecheckingResult(result, type);
     }
 
     TypecheckingResult result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
       ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
       : checkExpr(implBody, type);
-    return result == null ? null : result.expression;
+    if (result == null) {
+      return null;
+    }
+    result.type = type;
+    return result;
   }
 
   @Override
@@ -855,7 +862,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         return Sort.STD;
       }
       Sort result = Sort.generateInferVars(getEquations(), false, sourceNode);
-      if (!CompareVisitor.compare(getEquations(), Equations.CMP.LE, type, new UniverseExpression(result), sourceNode)) {
+      if (!CompareVisitor.compare(getEquations(), Equations.CMP.LE, type, new UniverseExpression(result), ExpectedType.OMEGA, sourceNode)) {
         errorReporter.report(new TypeMismatchError(DocFactory.text("a type"), type, sourceNode));
       }
       return result;
@@ -1125,7 +1132,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (piExpectedType.getParameters().isExplicit() && !param.isExplicit()) {
             errorReporter.report(new ImplicitLambdaError(param.getReferableList().get(checked), expr));
           }
-          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, paramType)) {
+          if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, argExpr, argExpectedType, ExpectedType.OMEGA, paramType)) {
             if (!argType.isError()) {
               errorReporter.report(new TypeMismatchError("Type mismatch in an argument of the lambda", argExpectedType, argType, paramType));
             }
@@ -1487,8 +1494,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   // Other
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, Concrete.Expression expr) {
-    if (!CompareVisitor.compare(getEquations(), Equations.CMP.EQ, actual, expected, expr)) {
+  private boolean compareExpressions(boolean isLeft, Expression expected, Expression actual, ExpectedType type, Concrete.Expression expr) {
+    if (!CompareVisitor.compare(getEquations(), Equations.CMP.EQ, actual, expected, type, expr)) {
       errorReporter.report(new PathEndpointMismatchError(isLeft, expected, actual, expr));
       return false;
     }
@@ -1505,8 +1512,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ConCallExpression conCall = ((TypecheckingResult) result).expression.checkedCast(ConCallExpression.class);
       if (conCall != null && conCall.getDefinition() == Prelude.PATH_CON) {
         //noinspection RedundantIfStatement
-        if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), expr) ||
-          !compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), expr)) {
+        if (!compareExpressions(true, conCall.getDataTypeArguments().get(1), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Left()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Left()), expr) ||
+          !compareExpressions(false, conCall.getDataTypeArguments().get(2), AppExpression.make(conCall.getDefCallArguments().get(0), ExpressionFactory.Right()), AppExpression.make(conCall.getDataTypeArguments().get(0), ExpressionFactory.Right()), expr)) {
           return false;
         }
       }
@@ -1615,7 +1622,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       for (int i = 0; i < parameters.size(); i++) {
         link = parameters.get(i);
         if (link instanceof TypedDependentLink) {
-          if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, sourceNode)) {
+          if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
             ok = false;
             break;
           }
@@ -1630,7 +1637,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           break;
         }
         link = parameters.get(i);
-        if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, sourceNode)) {
+        if (!CompareVisitor.compare(equations, Equations.CMP.EQ, link.getTypeExpr(), expr, ExpectedType.OMEGA, sourceNode)) {
           ok = false;
           break;
         }
@@ -1640,7 +1647,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         level++;
       }
 
-      if (ok && resultType != null && !CompareVisitor.compare(equations, Equations.CMP.EQ, resultType, expr, sourceNode)) {
+      if (ok && resultType != null && !CompareVisitor.compare(equations, Equations.CMP.EQ, resultType, expr, ExpectedType.OMEGA, sourceNode)) {
         ok = false;
       }
     }

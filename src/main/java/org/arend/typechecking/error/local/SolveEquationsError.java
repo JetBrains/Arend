@@ -23,9 +23,9 @@ public class SolveEquationsError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     List<Doc> docs = new ArrayList<>(equations.size());
     for (Equation equation : equations) {
-      docs.add(hang(termDoc(equation.type, ppConfig),
+      docs.add(hang(termDoc(equation.expr1, ppConfig),
                 hang(text(equation.cmp == Equations.CMP.LE ? " <= " : equation.cmp == Equations.CMP.EQ ? " == " : " >= "),
-                  termDoc(equation.expr, ppConfig))));
+                  termDoc(equation.expr2, ppConfig))));
     }
     return vList(docs);
   }

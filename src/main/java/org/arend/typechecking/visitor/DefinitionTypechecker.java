@@ -487,7 +487,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             int i = 0;
             for (DependentLink link = param; i < numberOfParameters; link = link.getNext(), i++) {
               ReferenceExpression reference = new ReferenceExpression(link);
-              localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, paramResult.getSortOfType(), reference), classRef, reference, parameter);
+              if (classifyingField == null) {
+                localInstancePool.addInstance(null, null, classRef, reference, parameter);
+              } else {
+                Sort sortArg = paramResult.getSortOfType();
+                localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, reference), classifyingField.getType(sortArg).applyExpression(reference), classRef, reference, parameter);
+              }
             }
           }
         }
@@ -603,7 +608,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               ok = false;
               break;
             }
-            if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), Equations.CMP.EQ)) {
+            if (!Expression.compare(link.getTypeExpr(), defLink.getTypeExpr().subst(substitution), ExpectedType.OMEGA, Equations.CMP.EQ)) {
               if (parameters == null) {
                 parameters = DependentLink.Helper.take(typedDef.getParameters(), DependentLink.Helper.size(defLink));
               }
@@ -658,7 +663,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
                   break;
                 }
                 levelFields.add(classField);
-                if (!classField.getType(Sort.STD).applyExpression(thisExpr).equals(link.getTypeExpr())) {
+                if (!Expression.compare(classField.getType(Sort.STD).applyExpression(thisExpr), link.getTypeExpr(), ExpectedType.OMEGA, Equations.CMP.EQ)) {
                   if (parameters == null) {
                     int numberOfClassParameters = 0;
                     for (DependentLink link1 = link; link1 != classCallLink && link1.hasNext(); link1 = link1.getNext()) {
@@ -980,12 +985,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (link instanceof TypedDependentLink && typedDef.getTypeClassParameterKind(index) == Definition.TypeClassParameterKind.YES) {
             Expression type = link.getTypeExpr();
             if (type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
-              ClassField paramClassifyingField = ((ClassCallExpression) type).getDefinition().getClassifyingField();
-              Expression classifyingImpl = paramClassifyingField == null ? null : ((ClassCallExpression) type).getImplementation(paramClassifyingField, new ReferenceExpression(link));
+              ClassCallExpression classCall = (ClassCallExpression) type;
+              ClassField paramClassifyingField = classCall.getDefinition().getClassifyingField();
+              ReferenceExpression refExpr = new ReferenceExpression(link);
+              Expression classifyingImpl = paramClassifyingField == null ? null : classCall.getImplementation(paramClassifyingField, refExpr);
+              ExpectedType classifyingExprType = paramClassifyingField == null ? null : paramClassifyingField.getType(classCall.getSortArgument()).applyExpression(refExpr);
               if (classifyingImpl == null && paramClassifyingField != null) {
-                classifyingImpl = FieldCallExpression.make(paramClassifyingField, Sort.STD, new ReferenceExpression(link));
+                classifyingImpl = FieldCallExpression.make(paramClassifyingField, classCall.getSortArgument(), refExpr);
               }
-              if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr) != -1) {
+              if (classifyingImpl == null || classifyingExpr == null || compareExpressions(classifyingImpl, classifyingExpr, classifyingExprType) != -1) {
                 typedDef.setTypeClassParameter(index, Definition.TypeClassParameterKind.ONLY_LOCAL);
               }
             }
@@ -1322,7 +1330,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     Expression expectedType = constructor.getDataTypeExpression(Sort.STD);
-    if (type == null || !type.equals(expectedType)) {
+    if (type == null || !Expression.compare(type, expectedType, ExpectedType.OMEGA, Equations.CMP.EQ)) {
       errorReporter.report(new TypecheckingError("Expected an iterated path type in " + expectedType, sourceNode));
       return null;
     }
@@ -2042,12 +2050,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
     if (classDef != null) {
-      localInstancePool.addInstance(null, classDef.getReferable(), new ReferenceExpression(thisParam), thisSourceNode);
+      localInstancePool.addInstance(null, null, classDef.getReferable(), new ReferenceExpression(thisParam), thisSourceNode);
     }
     for (LocalInstance localInstance : localInstances) {
       ClassField classifyingField = localInstance.classDefinition.getClassifyingField();
       Expression instance = FieldCallExpression.make(localInstance.instanceField, Sort.STD, new ReferenceExpression(thisParam));
-      localInstancePool.addInstance(classifyingField == null ? null : FieldCallExpression.make(classifyingField, localInstance.instanceField.getType(Sort.STD).getSortOfType(), instance), localInstance.classReferable, instance, localInstance.concreteField);
+      if (classifyingField == null) {
+        localInstancePool.addInstance(null, null, localInstance.classReferable, instance, localInstance.concreteField);
+      } else {
+        Sort sortArg = localInstance.instanceField.getType(Sort.STD).getSortOfType();
+        localInstancePool.addInstance(FieldCallExpression.make(classifyingField, sortArg, instance), classifyingField.getType(sortArg).applyExpression(instance), localInstance.classReferable, instance, localInstance.concreteField);
+      }
     }
   }
 
@@ -2061,7 +2074,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
     LamExpression oldImpl = classDef.implementField(classField, implementation);
-    if (oldImpl != null && !classField.isProperty() && !oldImpl.substArgument(new ReferenceExpression(implementation.getParameters())).equals(implementation.getBody())) {
+    ReferenceExpression thisRef = new ReferenceExpression(implementation.getParameters());
+    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.substArgument(thisRef), implementation.getBody(), classField.getType(Sort.STD).applyExpression(thisRef), Equations.CMP.EQ)) {
       alreadyImplemented.add(classField.getReferable());
       return false;
     } else {
@@ -2069,7 +2083,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private int compareExpressions(Expression expr1, Expression expr2) {
+  private int compareExpressions(Expression expr1, Expression expr2, ExpectedType type) {
     if (expr2 instanceof ErrorExpression) {
       return 1;
     }
@@ -2090,10 +2104,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (expr2 instanceof DataCallExpression) {
       int cmp = 0;
       if (expr1 instanceof DataCallExpression && ((DataCallExpression) expr1).getDefinition() == ((DataCallExpression) expr2).getDefinition()) {
+        ExprSubstitution substitution = new ExprSubstitution();
+        DependentLink link = ((DataCallExpression) expr1).getDefinition().getParameters();
         List<Expression> args1 = ((DataCallExpression) expr1).getDefCallArguments();
         List<Expression> args2 = ((DataCallExpression) expr2).getDefCallArguments();
         for (int i = 0; i < args1.size(); i++) {
-          int argCmp = compareExpressions(args1.get(i), args2.get(i));
+          int argCmp = compareExpressions(args1.get(i), args2.get(i), link.getTypeExpr().subst(substitution));
           if (argCmp == 1) {
             cmp = 1;
             break;
@@ -2101,6 +2117,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (argCmp == -1) {
             cmp = -1;
           }
+
+          substitution.add(link, args1.get(i));
+          link = link.getNext();
         }
         if (cmp == -1) {
           return -1;
@@ -2108,7 +2127,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       for (Expression arg : ((DataCallExpression) expr2).getDefCallArguments()) {
-        if (compareExpressions(expr1, arg) != 1) {
+        if (compareExpressions(expr1, arg, null) != 1) {
           return -1;
         }
       }
@@ -2126,7 +2145,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             break;
           }
 
-          int argCmp = compareExpressions(entry.getValue(), impl2);
+          int argCmp = compareExpressions(entry.getValue(), impl2, null);
           if (argCmp == 1) {
             cmp = 1;
             break;
@@ -2141,7 +2160,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       for (Expression arg : ((ClassCallExpression) expr2).getImplementedHere().values()) {
-        if (compareExpressions(expr1, arg) != 1) {
+        if (compareExpressions(expr1, arg, null) != 1) {
           return -1;
         }
       }
@@ -2149,6 +2168,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return cmp;
     }
 
-    return Expression.compare(expr1, expr2, Equations.CMP.EQ) ? 0 : 1;
+    return Expression.compare(expr1, expr2, type, Equations.CMP.EQ) ? 0 : 1;
   }
 }

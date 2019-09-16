@@ -131,7 +131,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class A { | n : Nat }\n" +
       "\\func f => n", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("A"), null));
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 
   @Test
@@ -188,7 +188,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\data Nat'\n" +
       "\\instance B-inst : B Nat | c => 0\n" +
       "\\func f : Nat' => c", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("A"), DataCall((DataDefinition) getDefinition("Nat'"), Sort.STD)));
+    assertThatErrorsAre(instanceInferenceType(getDefinition("A"), DataCall((DataDefinition) getDefinition("Nat'"), Sort.STD)));
   }
 
   @Test
@@ -255,7 +255,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\instance a : A \\Set | c => Nat | n => 0\n" +
       "\\func f {c : A { | C => \\Set | n => 1 }} => 2\n" +
       "\\func g => f", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("A"), null));
+    assertThatErrorsAre(instanceInference(getDefinition("A")));
   }
 
   @Test
@@ -340,7 +340,7 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func g : Nat => f\n" +
       "  \\where \\instance ccc : C | x => 1", 1);
     assertThatErrorsAre(argInferenceError());
-    assertThatErrorsAre(not(instanceInference(getDefinition("C"), null)));
+    assertThatErrorsAre(not(instanceInference(getDefinition("C"))));
   }
 
   @Test
@@ -351,8 +351,8 @@ public class TypeClassesGlobal extends TypeCheckingTestCase {
       "\\func g : Nat => f\n" +
       "  \\where \\instance ccc : C Nat | x => 1", 1);
     assertThatErrorsAre(argInferenceError());
-    assertThatErrorsAre(not(instanceInference(getDefinition("C"), null)));
-    assertThatErrorsAre(not(instanceInference(getDefinition("C"), Nat())));
+    assertThatErrorsAre(not(instanceInference(getDefinition("C"))));
+    assertThatErrorsAre(not(instanceInferenceType(getDefinition("C"), Nat())));
   }
 
   @Test

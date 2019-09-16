@@ -1,5 +1,6 @@
 package org.arend.typechecking.typeclass;
 
+import org.arend.typechecking.Matchers;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
@@ -42,7 +43,7 @@ public class TypeClassesNamespaces extends TypeCheckingTestCase {
         "  \\func T => B 0 = 0\n" +
         "}\n" +
         "\\func f (t : M.T) => M.B 0", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("M.X"), Nat()));
+    assertThatErrorsAre(Matchers.instanceInferenceType(getDefinition("M.X"), Nat()));
   }
 
   @Test

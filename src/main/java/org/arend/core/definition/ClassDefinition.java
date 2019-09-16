@@ -231,6 +231,10 @@ public class ClassDefinition extends Definition {
     return myTypecheckingFieldOrder;
   }
 
+  public Collection<? extends ClassField> getOrderedFields() {
+    return myTypecheckingFieldOrder == null ? myFields : myTypecheckingFieldOrder;
+  }
+
   public void setTypecheckingFieldOrder(List<ClassField> fieldOrder) {
     myTypecheckingFieldOrder = fieldOrder;
   }

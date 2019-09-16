@@ -8,7 +8,6 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
-import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -21,7 +20,6 @@ import org.arend.error.ErrorReporter;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
-import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Pair;
 
@@ -79,7 +77,7 @@ public class ConditionsChecking {
     Expression evaluatedExpr1 = case1.subst(substitution1);
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
     Expression evaluatedExpr2 = case2.subst(substitution2);
-    if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+    if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs1.add(link3 == link1 ? (isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
@@ -129,7 +127,7 @@ public class ConditionsChecking {
 
     Expression evaluatedExpr1 = expr.subst(substitution1);
     Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
-    if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+    if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
       if (!pathSubstitution.isEmpty()) {
         link = parameters;
         for (int i = 0; i < clause.patterns.size(); i++) {
@@ -218,7 +216,7 @@ public class ConditionsChecking {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
-      if (evaluatedExpr1 == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null)) {
+      if (evaluatedExpr1 == null || !Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
         List<Expression> args = new ArrayList<>(clause.patterns.size());
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());

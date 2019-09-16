@@ -7,10 +7,13 @@ import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DataDefinition;
+import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
@@ -20,11 +23,12 @@ import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.util.Pair;
 
 import java.util.*;
 
 @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
+public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,ExpectedType>, Boolean> {
   private final Map<Binding, Binding> mySubstitution;
   private final Equations myEquations;
   private final Concrete.SourceNode mySourceNode;
@@ -38,15 +42,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     myCMP = cmp;
   }
 
-  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, Concrete.SourceNode sourceNode) {
-    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2);
+  public static boolean compare(Equations equations, Equations.CMP cmp, Expression expr1, Expression expr2, ExpectedType type, Concrete.SourceNode sourceNode) {
+    return new CompareVisitor(equations, cmp, sourceNode).compare(expr1, expr2, type);
   }
 
-  public static boolean compare(Equations equations, ElimTree tree1, ElimTree tree2, Concrete.SourceNode sourceNode) {
-    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(tree1, tree2);
+  // Only for tests
+  public static boolean compare(Equations equations, ElimTree elimTree1, ElimTree elimTree2, Concrete.SourceNode sourceNode) {
+    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(elimTree1, elimTree2, new ExprSubstitution(), EmptyDependentLink.getInstance(), null);
   }
 
-  private Boolean compare(ElimTree elimTree1, ElimTree elimTree2) {
+  private Boolean compare(ElimTree elimTree1, ElimTree elimTree2, ExprSubstitution substitution, DependentLink parameters, Expression type) {
     if (elimTree1 == elimTree2) {
       return true;
     }
@@ -54,11 +59,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
+    for (DependentLink link = elimTree1.getParameters(); link.hasNext() && parameters.hasNext(); link = link.getNext(), parameters = parameters.getNext()) {
+      substitution.add(parameters, new ReferenceExpression(link));
+    }
+
     boolean ok = false;
     if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
-      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression());
-    } else
-    if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
+      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression(), type == null ? null : type.subst(substitution));
+    } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
       BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
       if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
@@ -69,7 +77,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
             ok = false;
             break;
           }
-          ok = compare(entry.getValue(), elimTree);
+          ok = compare(entry.getValue(), elimTree, substitution, parameters, null); // TODO: Compute new parameters correctly
           if (!ok) {
             break;
           }
@@ -83,7 +91,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return ok;
   }
 
-  public boolean nonNormalizingCompare(Expression expr1, Expression expr2) {
+  public boolean nonNormalizingCompare(Expression expr1, Expression expr2, ExpectedType type) {
     // Optimization for let clause calls
     if (expr1.isInstance(ReferenceExpression.class) && expr2.isInstance(ReferenceExpression.class) && expr1.cast(ReferenceExpression.class).getBinding() == expr2.cast(ReferenceExpression.class).getBinding()) {
       return true;
@@ -112,7 +120,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       boolean normalCompare = myNormalCompare;
       myNormalCompare = false;
 
-      boolean ok = expr1.accept(this, expr2);
+      boolean ok = expr1.accept(this, new Pair<>(expr2, type));
 
       myNormalCompare = normalCompare;
       myCMP = origCMP;
@@ -122,7 +130,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     return false;
   }
 
-  public boolean normalizedCompare(Expression expr1, Expression expr2) {
+  public boolean normalizedCompare(Expression expr1, Expression expr2, ExpectedType type) {
     Expression stuck1 = expr1.getCanonicalStuckExpression();
     Expression stuck2 = expr2.getCanonicalStuckExpression();
     if (stuck1 != null && stuck1.isError() && (stuck2 == null || !stuck2.isInstance(InferenceReferenceExpression.class)) ||
@@ -133,7 +141,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     InferenceVariable stuckVar1 = expr1.getInferenceVariable();
     InferenceVariable stuckVar2 = expr2.getInferenceVariable();
     if (stuckVar1 != null || stuckVar2 != null) {
-      return myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2);
+      return myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2);
     }
 
     Equations.CMP origCMP = myCMP;
@@ -155,39 +163,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       ok = visitDefCall(expr2.cast(ConCallExpression.class), expr1, false);
     } else
     if (expr2.isInstance(LamExpression.class)) {
-      ok = visitLam(expr2.cast(LamExpression.class), expr1, false);
+      ok = visitLam(expr2.cast(LamExpression.class), expr1, type, false);
     } else
     if (expr2.isInstance(TupleExpression.class)) {
       ok = visitTuple(expr2.cast(TupleExpression.class), expr1, false);
     } else {
-      Expression type1 = myNormalCompare ? expr1.getType() : null;
-      if (type1 != null) {
-        type1 = type1.normalize(NormalizeVisitor.Mode.WHNF);
-      }
-      if (type1 != null && type1.isInstance(SigmaExpression.class) && !type1.cast(SigmaExpression.class).getParameters().hasNext()) {
+      Expression normType = type instanceof Expression ? (myNormalCompare ? ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF) : (Expression) type) : null;
+      // TODO: Replace with the check that the sort of normType is \Prop
+      if (normType != null && (normType.isInstance(SigmaExpression.class) && !normType.cast(SigmaExpression.class).getParameters().hasNext() || normType.isInstance(ClassCallExpression.class) && normType.cast(ClassCallExpression.class).isUnit())) {
         ok = true;
       } else {
-        Expression type2 = myNormalCompare ? expr2.getType() : null;
-        if (type2 != null) {
-          type2 = type2.normalize(NormalizeVisitor.Mode.WHNF);
-        }
-        if (type2 != null && type2.isInstance(SigmaExpression.class) && !type2.cast(SigmaExpression.class).getParameters().hasNext()) {
-          ok = true;
-        } else if (type1 != null && type1.isInstance(ClassCallExpression.class) && type2 != null && type2.isInstance(ClassCallExpression.class)) {
-          ClassCallExpression classCall1 = type1.cast(ClassCallExpression.class);
-          ClassCallExpression classCall2 = type2.cast(ClassCallExpression.class);
-          if (classCall1.isUnit() && classCall2.isUnit()) {
-            ok = classCall1.getDefinition().isSubClassOf(classCall2.getDefinition()) ? compareUnit(classCall2, classCall1, expr1, false) : compareUnit(classCall1, classCall2, expr2, true);
-          } else if (classCall1.isUnit()) {
-            ok = compareUnit(classCall1, classCall2, expr2, true);
-          } else if (classCall2.isUnit()) {
-            ok = compareUnit(classCall2, classCall1, expr1, false);
-          } else {
-            ok = expr1.accept(this, expr2);
-          }
-        } else {
-          ok = expr1.accept(this, expr2);
-        }
+        ok = expr1.accept(this, new Pair<>(expr2, type));
       }
     }
     if (ok) {
@@ -196,10 +182,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     InferenceVariable variable1 = stuck1 == null ? null : stuck1.getInferenceVariable();
     InferenceVariable variable2 = stuck2 == null ? null : stuck2.getInferenceVariable();
-    return (variable1 != null || variable2 != null) && myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), origCMP, variable1 != null ? variable1.getSourceNode() : variable2.getSourceNode(), variable1, variable2);
+    return (variable1 != null || variable2 != null) && myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, origCMP, variable1 != null ? variable1.getSourceNode() : variable2.getSourceNode(), variable1, variable2);
   }
 
-  public Boolean compare(Expression expr1, Expression expr2) {
+  public Boolean compare(Expression expr1, Expression expr2, ExpectedType type) {
     expr1 = expr1.getCanonicalExpression();
     expr2 = expr2.getCanonicalExpression();
     if (expr1 == expr2) {
@@ -212,10 +198,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return true;
     }
     if (infRefExpr1 != null) {
-      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
+      return myNormalCompare && myEquations.addEquation(infRefExpr1, expr2.subst(getSubstitution()).normalize(NormalizeVisitor.Mode.WHNF), type, myCMP, infRefExpr1.getVariable().getSourceNode(), infRefExpr1.getVariable(), expr2.getStuckInferenceVariable());
     }
     if (infRefExpr2 != null) {
-      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr2, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
+      return myNormalCompare && myEquations.addEquation(expr1.normalize(NormalizeVisitor.Mode.WHNF), infRefExpr2, type, myCMP, infRefExpr2.getVariable().getSourceNode(), expr1.getStuckInferenceVariable(), infRefExpr2.getVariable());
     }
 
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();
@@ -223,36 +209,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     if (stuckVar1 != stuckVar2 && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
       return false;
     }
-    if (stuckVar1 == stuckVar2 && nonNormalizingCompare(expr1, expr2)) {
+    if (stuckVar1 == stuckVar2 && nonNormalizingCompare(expr1, expr2, type)) {
       return true;
     }
 
-    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF));
-  }
-
-  private Boolean compareUnit(ClassCallExpression type1, ClassCallExpression type2, Expression expr2, boolean correctOrder) {
-    Sort sortArgument = type2.getSortArgument();
-
-    Equations.CMP origCMP = myCMP;
-    for (Map.Entry<ClassField, Expression> entry : type1.getImplementedHere().entrySet()) {
-      myCMP = origCMP;
-      if (!entry.getKey().isProperty() && !(type2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue(), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue())))) {
-        return false;
-      }
-    }
-
-    if (expr2.isInstance(NewExpression.class) && expr2.cast(NewExpression.class).getType().getDefinition().isSubClassOf(type1.getDefinition())) {
-      return true;
-    }
-
-    for (Map.Entry<ClassField, LamExpression> entry : type1.getDefinition().getImplemented()) {
-      myCMP = origCMP;
-      if (!entry.getKey().isProperty() && !(type2.getDefinition().getFields().contains(entry.getKey()) && (correctOrder ? compare(entry.getValue().substArgument(expr2), FieldCallExpression.make(entry.getKey(), sortArgument, expr2)) : compare(FieldCallExpression.make(entry.getKey(), sortArgument, expr2), entry.getValue().substArgument(expr2))))) {
-        return false;
-      }
-    }
-
-    return true;
+    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF), type);
   }
 
   private ExprSubstitution getSubstitution() {
@@ -264,7 +225,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitApp(AppExpression expr1, Expression expr2) {
+  public Boolean visitApp(AppExpression expr1, Pair<Expression,ExpectedType> pair) {
     List<Expression> args1 = new ArrayList<>();
     Expression fun1 = expr1;
     while (fun1.isInstance(AppExpression.class)) {
@@ -273,7 +234,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     List<Expression> args2 = new ArrayList<>();
-    Expression fun2 = expr2;
+    Expression fun2 = pair.proj1;
     while (fun2.isInstance(AppExpression.class)) {
       args2.add(fun2.cast(AppExpression.class).getArgument());
       fun2 = fun2.cast(AppExpression.class).getFunction();
@@ -282,7 +243,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     InferenceVariable var1 = fun1.getInferenceVariable();
     InferenceVariable var2 = fun2.getInferenceVariable();
     if (var1 != null || var2 != null) {
-      if (myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
+      if (myNormalCompare && myEquations.addEquation(expr1, pair.proj1.subst(getSubstitution()), pair.proj2, myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
         return true;
       }
     }
@@ -291,15 +252,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       return false;
     }
 
-    if (!compare(fun1, fun2)) {
+    if (!compare(fun1, fun2, null)) {
       return false;
     }
+    if (args1.isEmpty()) {
+      return true;
+    }
+
     Collections.reverse(args1);
     Collections.reverse(args2);
 
     myCMP = Equations.CMP.EQ;
+    Expression type1 = fun1.getType();
+    List<SingleDependentLink> params = Collections.emptyList();
+    if (type1 != null) {
+      params = new ArrayList<>();
+      type1.getPiParameters(params, false);
+    }
+
     for (int i = 0; i < args1.size(); i++) {
-      if (!compare(args1.get(i), args2.get(i))) {
+      if (!compare(args1.get(i), args2.get(i), i < params.size() ? params.get(i).getTypeExpr() : null)) {
         return false;
       }
     }
@@ -309,14 +281,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
   private Boolean comparePathEta(ConCallExpression conCall1, Expression expr2, boolean correctOrder) {
     SingleDependentLink param = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
+    ReferenceExpression paramRef = new ReferenceExpression(param);
     List<Expression> args = new ArrayList<>(5);
     for (Expression arg : conCall1.getDataTypeArguments()) {
       args.add(correctOrder ? arg : arg.subst(getSubstitution()));
     }
     args.add(expr2);
-    args.add(new ReferenceExpression(param));
+    args.add(paramRef);
     expr2 = new LamExpression(conCall1.getSortArgument(), param, new FunCallExpression(Prelude.AT, conCall1.getSortArgument(), args));
-    return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2) : compare(expr2, conCall1.getDefCallArguments().get(0));
+    Expression type = new PiExpression(conCall1.getSortArgument(), param, AppExpression.make(conCall1.getDataTypeArguments().get(0), paramRef));
+    return correctOrder ? compare(conCall1.getDefCallArguments().get(0), expr2, type) : compare(expr2, conCall1.getDefCallArguments().get(0), type);
   }
 
   private boolean compareDef(DefCallExpression expr1, DefCallExpression expr2, boolean correctOrder) {
@@ -337,23 +311,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     DefCallExpression defCall2 = expr2.checkedCast(DefCallExpression.class);
-    if (!compareDef(expr1, defCall2, correctOrder)) {
-      return false;
-    }
-    for (int i = 0; i < expr1.getDefCallArguments().size(); i++) {
-      if (correctOrder ? !compare(expr1.getDefCallArguments().get(i), defCall2.getDefCallArguments().get(i)) : !compare(defCall2.getDefCallArguments().get(i), expr1.getDefCallArguments().get(i))) {
-        return false;
-      }
-    }
-    return true;
+    return
+      compareDef(expr1, defCall2, correctOrder) &&
+      (correctOrder ? compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition()) : compareLists(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), defCall2.getDefinition().getParameters(), defCall2.getDefinition()));
   }
 
   @Override
-  public Boolean visitDefCall(DefCallExpression expr1, Expression expr2) {
-    if (expr1 instanceof ConCallExpression && expr2.isInstance(IntegerExpression.class)) {
-      return visitInteger(expr2.cast(IntegerExpression.class), expr1);
+  public Boolean visitDefCall(DefCallExpression expr1, Pair<Expression,ExpectedType> pair) {
+    if (expr1 instanceof ConCallExpression && pair.proj1.isInstance(IntegerExpression.class)) {
+      return visitInteger(pair.proj1.cast(IntegerExpression.class), expr1);
     }
-    return visitDefCall(expr1, expr2, true);
+    return visitDefCall(expr1, pair.proj1, true);
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
@@ -389,8 +357,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
       Collections.reverse(args);
 
+      DependentLink dataParams;
       List<Expression> oldDataArgs;
       if (dataCall1 != null) {
+        dataParams = dataCall1.getDefinition().getParameters();
         oldDataArgs = dataCall1.getDefCallArguments();
       } else {
         oldDataArgs = new ArrayList<>();
@@ -410,14 +380,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
         if (args.size() > oldDataArgs.size() || classCall1.getImplementedHere().size() > oldDataArgs.size() && !(correctOrder && myCMP == Equations.CMP.LE || !correctOrder && myCMP == Equations.CMP.GE)) {
           return null;
         }
+        dataParams = classCall1.getClassFieldParameters();
       }
 
-      Equations.CMP origCMP = myCMP;
-      for (int i = args.size() - 1, j = oldDataArgs.size() - 1; i >= 0; i--, j--) {
-        myCMP = dataCall1 != null && dataCall1.getDefinition().isCovariant(i) ? origCMP : Equations.CMP.EQ;
-        if (!compare(correctOrder ? oldDataArgs.get(j) : args.get(i), correctOrder ? args.get(i) : oldDataArgs.get(j))) {
-          return false;
-        }
+      List<Expression> oldList = oldDataArgs.subList(oldDataArgs.size() - args.size(), oldDataArgs.size());
+      if (!compareLists(correctOrder ? oldList : args, correctOrder ? args : oldList, dataParams, dataCall1 == null ? null : dataCall1.getDefinition())) {
+        return false;
       }
 
       Expression lam;
@@ -425,7 +393,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       List<SingleDependentLink> params = new ArrayList<>();
       if (dataCall1 != null) {
         int numberOfOldArgs = oldDataArgs.size() - args.size();
-        DependentLink dataParams = dataCall1.getDefinition().getParameters();
         for (int i = 0; i < numberOfOldArgs; i++) {
           dataParams = dataParams.getNext();
         }
@@ -494,33 +461,39 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       Expression finalExpr1 = correctOrder ? lam : fun;
       Expression finalExpr2 = correctOrder ? fun : lam.subst(getSubstitution());
       if (variable.isSolved()) {
-        return compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), myCMP, finalExpr1, finalExpr2, variable.getSourceNode());
+        return compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), myCMP, finalExpr1, finalExpr2, null, variable.getSourceNode());
       } else {
-        return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
+        return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, null, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
       }
     }
   }
 
   @Override
-  public Boolean visitDataCall(DataCallExpression dataCall1, Expression expr2) {
-    DataCallExpression dataCall2 = expr2.checkedCast(DataCallExpression.class);
+  public Boolean visitDataCall(DataCallExpression dataCall1, Pair<Expression,ExpectedType> pair) {
+    DataCallExpression dataCall2 = pair.proj1.checkedCast(DataCallExpression.class);
     if (!compareDef(dataCall1, dataCall2, true)) {
       return false;
     }
 
     Equations.CMP origCMP = myCMP;
+    DependentLink link = dataCall1.getDefinition().getParameters();
+    ExprSubstitution substitution = new ExprSubstitution();
     for (int i = 0; i < dataCall1.getDefCallArguments().size(); i++) {
       myCMP = dataCall1.getDefinition().isCovariant(i) ? origCMP : Equations.CMP.EQ;
-      if (!compare(dataCall1.getDefCallArguments().get(i), dataCall2.getDefCallArguments().get(i))) {
-         return false;
+      if (!compare(dataCall1.getDefCallArguments().get(i), dataCall2.getDefCallArguments().get(i), link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
+        return false;
+      }
+      if (link.hasNext()) {
+        substitution.add(link, dataCall1.getDefCallArguments().get(i));
+        link = link.getNext();
       }
     }
     return true;
   }
 
   @Override
-  public Boolean visitFieldCall(FieldCallExpression fieldCall1, Expression expr2) {
-    FieldCallExpression fieldCall2 = expr2.checkedCast(FieldCallExpression.class);
+  public Boolean visitFieldCall(FieldCallExpression fieldCall1, Pair<Expression,ExpectedType> pair) {
+    FieldCallExpression fieldCall2 = pair.proj1.checkedCast(FieldCallExpression.class);
     if (fieldCall2 == null || fieldCall1.getDefinition() != fieldCall2.getDefinition()) {
       return false;
     }
@@ -528,10 +501,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     InferenceVariable var1 = fieldCall1.getInferenceVariable();
     InferenceVariable var2 = fieldCall2.getInferenceVariable();
     if (var1 != null || var2 != null) {
-      return myNormalCompare && myEquations.addEquation(fieldCall1, fieldCall2.subst(getSubstitution()), Equations.CMP.EQ, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2);
+      return myNormalCompare && myEquations.addEquation(fieldCall1, fieldCall2.subst(getSubstitution()), pair.proj2, Equations.CMP.EQ, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2);
     }
 
-    return compare(fieldCall1.getArgument(), fieldCall2.getArgument());
+    return compare(fieldCall1.getArgument(), fieldCall2.getArgument(), null);
   }
 
   private boolean checkSubclassImpl(ClassCallExpression classCall1, ClassCallExpression classCall2, boolean correctOrder) {
@@ -542,17 +515,24 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
 
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
+      Binding binding = null;
       if (impl1 == null) {
         LamExpression lamImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
-        impl1 = lamImpl1 == null ? null : lamImpl1.getBody();
+        if (lamImpl1 != null) {
+          impl1 = lamImpl1.getBody();
+          binding = lamImpl1.getParameters();
+        }
       }
       if (impl1 == null) {
         return false;
       }
+      if (binding == null) {
+        binding = new TypedBinding("this", classCall2);
+      }
       if (!entry.getKey().isCovariant()) {
         myCMP = Equations.CMP.EQ;
       }
-      if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1)) {
+      if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)))) {
         return false;
       }
       myCMP = origCMP;
@@ -570,7 +550,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
           ok = false;
           break;
         }
-        if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+        if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA, mySourceNode)) {
           return false;
         }
       }
@@ -583,7 +563,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
             ok = false;
             break;
           }
-          if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), mySourceNode)) {
+          if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA, mySourceNode)) {
             return false;
           }
         }
@@ -594,8 +574,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitClassCall(ClassCallExpression expr1, Expression expr2) {
-    ClassCallExpression classCall2 = expr2.checkedCast(ClassCallExpression.class);
+  public Boolean visitClassCall(ClassCallExpression expr1, Pair<Expression,ExpectedType> pair) {
+    ClassCallExpression classCall2 = pair.proj1.checkedCast(ClassCallExpression.class);
     if (classCall2 == null) {
       return false;
     }
@@ -632,8 +612,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitReference(ReferenceExpression expr1, Expression expr2) {
-    ReferenceExpression ref2 = expr2.checkedCast(ReferenceExpression.class);
+  public Boolean visitReference(ReferenceExpression expr1, Pair<Expression,ExpectedType> pair) {
+    ReferenceExpression ref2 = pair.proj1.checkedCast(ReferenceExpression.class);
     if (ref2 == null) {
       return false;
     }
@@ -647,15 +627,15 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Expression expr2) {
+  public Boolean visitInferenceReference(InferenceReferenceExpression expr1, Pair<Expression,ExpectedType> pair) {
     if (expr1.getSubstExpression() == null) {
-      return expr2.isInstance(InferenceReferenceExpression.class) && expr2.cast(InferenceReferenceExpression.class).getVariable() == expr1.getVariable();
+      return pair.proj1.isInstance(InferenceReferenceExpression.class) && pair.proj1.cast(InferenceReferenceExpression.class).getVariable() == expr1.getVariable();
     } else {
-      return expr1.getSubstExpression().accept(this, expr2);
+      return expr1.getSubstExpression().accept(this, pair);
     }
   }
 
-  private Boolean visitLam(LamExpression expr1, Expression expr2, boolean correctOrder) {
+  private Boolean visitLam(LamExpression expr1, Expression expr2, ExpectedType type, boolean correctOrder) {
     List<DependentLink> params1 = new ArrayList<>();
     List<DependentLink> params2 = new ArrayList<>();
     Expression body1 = expr1.getLamParameters(params1);
@@ -676,7 +656,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
       }
     }
 
-    Boolean result = compare(correctOrder ? body1 : body2, correctOrder ? body2 : body1);
+    if (type instanceof Expression) {
+      type = ((Expression) type).dropPiParameter(Math.max(params1.size(), params2.size()));
+    }
+    Boolean result = compare(correctOrder ? body1 : body2, correctOrder ? body2 : body1, type);
     for (int i = 0; i < params1.size() && i < params2.size(); i++) {
       mySubstitution.remove(correctOrder ? params2.get(i) : params1.get(i));
     }
@@ -684,20 +667,20 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitLam(LamExpression expr1, Expression expr2) {
-    return visitLam(expr1, expr2, true);
+  public Boolean visitLam(LamExpression expr1, Pair<Expression,ExpectedType> pair) {
+    return visitLam(expr1, pair.proj1, pair.proj2, true);
   }
 
   @Override
-  public Boolean visitPi(PiExpression expr1, Expression expr2) {
-    if (!expr2.isInstance(PiExpression.class)) {
+  public Boolean visitPi(PiExpression expr1, Pair<Expression,ExpectedType> pair) {
+    if (!pair.proj1.isInstance(PiExpression.class)) {
       return false;
     }
-    PiExpression piExpr2 = expr2.cast(PiExpression.class);
+    PiExpression piExpr2 = pair.proj1.cast(PiExpression.class);
 
     Equations.CMP origCMP = myCMP;
     myCMP = Equations.CMP.EQ;
-    if (!compare(expr1.getParameters().getTypeExpr(), piExpr2.getParameters().getTypeExpr())) {
+    if (!compare(expr1.getParameters().getTypeExpr(), piExpr2.getParameters().getTypeExpr(), ExpectedType.OMEGA)) {
       return false;
     }
 
@@ -707,7 +690,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
     }
 
     myCMP = origCMP;
-    if (!compare(link1.hasNext() ? new PiExpression(expr1.getResultSort(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getResultSort(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain())) {
+    if (!compare(link1.hasNext() ? new PiExpression(expr1.getResultSort(), link1, expr1.getCodomain()) : expr1.getCodomain(), link2.hasNext() ? new PiExpression(piExpr2.getResultSort(), link2, piExpr2.getCodomain()) : piExpr2.getCodomain(), ExpectedType.OMEGA)) {
       return false;
     }
 
@@ -728,7 +711,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
     Equations.CMP origCMP = myCMP;
     for (int i = 0; i < list1.size() && i < list2.size(); ++i) {
-      if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr())) {
+      if (!compare(list1.get(i).getTypeExpr(), list2.get(i).getTypeExpr(), ExpectedType.OMEGA)) {
         return false;
       }
       mySubstitution.put(list2.get(i), list1.get(i));
@@ -740,53 +723,41 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
 
 
   @Override
-  public Boolean visitUniverse(UniverseExpression expr1, Expression expr2) {
-    return expr2.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), expr2.cast(UniverseExpression.class).getSort(), myCMP, myNormalCompare ? (myEquations == DummyEquations.getInstance() ? null : myEquations) : DummyEquations.getInstance(), mySourceNode);
+  public Boolean visitUniverse(UniverseExpression expr1, Pair<Expression,ExpectedType> pair) {
+    return pair.proj1.isInstance(UniverseExpression.class) && Sort.compare(expr1.getSort(), pair.proj1.cast(UniverseExpression.class).getSort(), myCMP, myNormalCompare ? (myEquations == DummyEquations.getInstance() ? null : myEquations) : DummyEquations.getInstance(), mySourceNode);
   }
 
   @Override
-  public Boolean visitError(ErrorExpression expr1, Expression expr2) {
-    return expr1.getError() instanceof GoalError && expr2.isInstance(ErrorExpression.class) && expr1.getError().equals(expr2.cast(ErrorExpression.class).getError());
+  public Boolean visitError(ErrorExpression expr1, Pair<Expression,ExpectedType> pair) {
+    return expr1.getError() instanceof GoalError && pair.proj1.isInstance(ErrorExpression.class) && expr1.getError().equals(pair.proj1.cast(ErrorExpression.class).getError());
   }
 
   @Override
-  public Boolean visitTuple(TupleExpression expr1, Expression expr2) {
-    return visitTuple(expr1, expr2, true);
+  public Boolean visitTuple(TupleExpression expr1, Pair<Expression,ExpectedType> pair) {
+    return visitTuple(expr1, pair.proj1, true);
   }
 
   private Boolean visitTuple(TupleExpression expr1, Expression expr2, boolean correctOrder) {
+    Expression type2 = expr2.getType();
+    if (type2 == null || !compare(correctOrder ? expr1.getSigmaType() : type2, correctOrder ? type2 : expr1.getSigmaType(), ExpectedType.OMEGA)) {
+      return false;
+    }
+
     if (expr2.isInstance(TupleExpression.class)) {
       TupleExpression tuple2 = expr2.cast(TupleExpression.class);
-      if (expr1.getFields().size() != tuple2.getFields().size()) {
-        return false;
-      } else {
-        for (int i = 0; i < expr1.getFields().size(); i++) {
-          if (correctOrder ? !compare(expr1.getFields().get(i), tuple2.getFields().get(i)) : !compare(tuple2.getFields().get(i), expr1.getFields().get(i))) {
-            return false;
-          }
-        }
-      }
+      return correctOrder ? compareLists(expr1.getFields(), tuple2.getFields(), expr1.getSigmaType().getParameters(), null) : compareLists(tuple2.getFields(), expr1.getFields(), tuple2.getSigmaType().getParameters(), null);
     } else {
-      Expression type2 = expr2.getType();
-      return type2 != null && compare(correctOrder ? expr1.getSigmaType() : type2, correctOrder ? type2 : expr1.getSigmaType()) && compareTupleEta(expr1, expr2, correctOrder);
-    }
-
-    return true;
-  }
-
-  private Boolean compareTupleEta(TupleExpression tuple1, Expression expr2, boolean correctOrder) {
-    int i = 0;
-    for (Expression field : tuple1.getFields()) {
-      if (correctOrder ? !compare(field, ProjExpression.make(expr2, i++)) : !compare(ProjExpression.make(expr2, i++), field)) {
-        return false;
+      List<Expression> args2 = new ArrayList<>(expr1.getFields().size());
+      for (int i = 0; i < expr1.getFields().size(); i++) {
+        args2.add(ProjExpression.make(expr2, i));
       }
+      return correctOrder ? compareLists(expr1.getFields(), args2, expr1.getSigmaType().getParameters(), null) : compareLists(args2, expr1.getFields(), expr1.getSigmaType().getParameters(), null);
     }
-    return true;
   }
 
   @Override
-  public Boolean visitSigma(SigmaExpression expr1, Expression expr2) {
-    SigmaExpression sigma2 = expr2.checkedCast(SigmaExpression.class);
+  public Boolean visitSigma(SigmaExpression expr1, Pair<Expression,ExpectedType> pair) {
+    SigmaExpression sigma2 = pair.proj1.checkedCast(SigmaExpression.class);
     if (sigma2 == null) {
       return false;
     }
@@ -800,63 +771,102 @@ public class CompareVisitor extends BaseExpressionVisitor<Expression, Boolean> {
   }
 
   @Override
-  public Boolean visitProj(ProjExpression expr1, Expression expr2) {
-    if (!expr2.isInstance(ProjExpression.class)) {
+  public Boolean visitProj(ProjExpression expr1, Pair<Expression,ExpectedType> pair) {
+    if (!pair.proj1.isInstance(ProjExpression.class)) {
       return false;
     }
-    ProjExpression proj2 = expr2.cast(ProjExpression.class);
-    return expr1.getField() == proj2.getField() && compare(expr1.getExpression(), proj2.getExpression());
+    ProjExpression proj2 = pair.proj1.cast(ProjExpression.class);
+    return expr1.getField() == proj2.getField() && compare(expr1.getExpression(), proj2.getExpression(), null);
   }
 
   @Override
-  public Boolean visitNew(NewExpression expr1, Expression expr2) {
+  public Boolean visitNew(NewExpression expr1, Pair<Expression,ExpectedType> pair) {
     return false;
   }
 
   @Override
-  public Boolean visitLet(LetExpression letExpr1, Expression expr2) {
+  public Boolean visitLet(LetExpression letExpr1, Pair<Expression,ExpectedType> pair) {
     throw new IllegalStateException();
   }
 
-  @Override
-  public Boolean visitCase(CaseExpression case1, Expression expr2) {
-    if (!expr2.isInstance(CaseExpression.class)) {
+  private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition) {
+    if (list1.size() != list2.size()) {
       return false;
     }
-    CaseExpression case2 = expr2.cast(CaseExpression.class);
+
+    Equations.CMP origCMP = myCMP;
+    ExprSubstitution substitution = new ExprSubstitution();
+    for (int i = 0; i < list1.size(); i++) {
+      if (definition instanceof DataDefinition) {
+        myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : Equations.CMP.EQ;
+      }
+      if (!compare(list1.get(i), list2.get(i), link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
+        myCMP = origCMP;
+        return false;
+      }
+      if (link.hasNext()) {
+        substitution.add(link, list1.get(i));
+        link = link.getNext();
+      }
+    }
+
+    myCMP = origCMP;
+    return true;
+  }
+
+  @Override
+  public Boolean visitCase(CaseExpression case1, Pair<Expression,ExpectedType> pair) {
+    if (!pair.proj1.isInstance(CaseExpression.class)) {
+      return false;
+    }
+    CaseExpression case2 = pair.proj1.cast(CaseExpression.class);
 
     if (case1.getArguments().size() != case2.getArguments().size()) {
       return false;
     }
 
-    for (int i = 0; i < case1.getArguments().size(); i++) {
-      if (!compare(case1.getArguments().get(i), case2.getArguments().get(i))) {
-        return false;
-      }
+    if (!compareParameters(case1.getParameters(), case2.getParameters())) {
+      return false;
     }
 
-    return compare(case1.getElimTree(), case2.getElimTree());
+    if (!compare(case1.getResultType(), case2.getResultType(), ExpectedType.OMEGA)) {
+      return false;
+    }
+
+    for (DependentLink link = case2.getParameters(); link.hasNext(); link = link.getNext()) {
+      mySubstitution.remove(link);
+    }
+
+    if (!compareLists(case1.getArguments(), case2.getArguments(), case1.getParameters(), null)) {
+      return false;
+    }
+
+    return compare(case1.getElimTree(), case2.getElimTree(), new ExprSubstitution(), case1.getParameters(), case1.getResultType());
   }
 
   @Override
-  public Boolean visitOfType(OfTypeExpression expr, Expression expr2) {
-    return expr.getExpression().accept(this, expr2);
+  public Boolean visitOfType(OfTypeExpression expr, Pair<Expression,ExpectedType> pair) {
+    return expr.getExpression().accept(this, pair);
   }
 
-  @Override
-  public Boolean visitInteger(IntegerExpression expr, Expression expr2) {
+  private boolean visitInteger(IntegerExpression expr1, Expression expr2) {
     if (expr2.isInstance(IntegerExpression.class)) {
-      return expr.isEqual(expr2.cast(IntegerExpression.class));
+      return expr1.isEqual(expr2.cast(IntegerExpression.class));
     }
 
     ConCallExpression conCall2 = expr2.checkedCast(ConCallExpression.class);
     Constructor constructor2 = conCall2 == null ? null : conCall2.getDefinition();
-    if (constructor2 == null || !expr.match(constructor2)) {
+    if (constructor2 == null || !expr1.match(constructor2)) {
       return false;
     }
     if (constructor2 == Prelude.ZERO) {
       return true;
     }
-    return compare(expr.pred(), conCall2.getDefCallArguments().get(0));
+    return compare(expr1.pred(), conCall2.getDefCallArguments().get(0), ExpressionFactory.Nat());
+  }
+
+  @Override
+  public Boolean visitInteger(IntegerExpression expr, Pair<Expression,ExpectedType> pair) {
+    return visitInteger(expr, pair.proj1);
   }
 }

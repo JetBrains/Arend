@@ -43,9 +43,10 @@ public abstract class Expression implements ExpectedType {
     return builder.toString();
   }
 
+  // Only for tests
   @Override
   public boolean equals(Object obj) {
-    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, Equations.CMP.EQ);
+    return this == obj || obj instanceof Expression && compare(this, (Expression) obj, null, Equations.CMP.EQ);
   }
 
   public boolean isError() {
@@ -67,7 +68,7 @@ public abstract class Expression implements ExpectedType {
   }
 
   public boolean isLessOrEquals(Expression type, Equations equations, Concrete.SourceNode sourceNode) {
-    return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, sourceNode);
+    return CompareVisitor.compare(equations, Equations.CMP.LE, this, type, ExpectedType.OMEGA, sourceNode);
   }
 
   public Sort toSort() {
@@ -132,8 +133,30 @@ public abstract class Expression implements ExpectedType {
     return accept(NormalizeVisitor.INSTANCE, mode);
   }
 
-  public static boolean compare(Expression expr1, Expression expr2, Equations.CMP cmp) {
-    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, null);
+  public static boolean compare(Expression expr1, Expression expr2, ExpectedType type, Equations.CMP cmp) {
+    return CompareVisitor.compare(DummyEquations.getInstance(), cmp, expr1, expr2, type, null);
+  }
+
+  public Expression dropPiParameter(int n) {
+    if (n == 0) {
+      return this;
+    }
+
+    Expression cod = normalize(NormalizeVisitor.Mode.WHNF);
+    while (cod.isInstance(PiExpression.class)) {
+      PiExpression piCod = cod.cast(PiExpression.class);
+      SingleDependentLink link = piCod.getParameters();
+      while (n > 0 && link.hasNext()) {
+        link = link.getNext();
+        n--;
+      }
+      if (n == 0) {
+        return link.hasNext() ? new PiExpression(piCod.getResultSort(), link, piCod.getCodomain()) : piCod.getCodomain();
+      }
+      cod = piCod.getCodomain().normalize(NormalizeVisitor.Mode.WHNF);
+    }
+
+    return null;
   }
 
   @Override

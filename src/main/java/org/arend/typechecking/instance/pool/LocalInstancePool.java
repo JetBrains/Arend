@@ -2,6 +2,7 @@ package org.arend.typechecking.instance.pool;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.term.concrete.Concrete;
@@ -14,12 +15,14 @@ import java.util.List;
 public class LocalInstancePool implements InstancePool {
   static private class InstanceData {
     final Expression key;
+    final ExpectedType keyType;
     final TCClassReferable classRef;
     final Expression value;
     final Concrete.SourceNode sourceNode;
 
-    InstanceData(Expression key, TCClassReferable classRef, Expression value, Concrete.SourceNode sourceNode) {
+    InstanceData(Expression key, ExpectedType keyType, TCClassReferable classRef, Expression value, Concrete.SourceNode sourceNode) {
       this.key = key;
+      this.keyType = keyType;
       this.classRef = classRef;
       this.value = value;
       this.sourceNode = sourceNode;
@@ -43,7 +46,7 @@ public class LocalInstancePool implements InstancePool {
     LocalInstancePool result = new LocalInstancePool(myVisitor);
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
-      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.classRef, newValue != null && newValue.isInstance(ReferenceExpression.class) ? newValue.cast(ReferenceExpression.class) : data.value, data.sourceNode));
+      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.keyType == null ? null : data.keyType.subst(substitution), data.classRef, newValue != null && newValue.isInstance(ReferenceExpression.class) ? newValue.cast(ReferenceExpression.class) : data.value, data.sourceNode));
     }
     return result;
   }
@@ -56,19 +59,19 @@ public class LocalInstancePool implements InstancePool {
   private Expression getInstance(Expression classifyingExpression, TCClassReferable classRef) {
     for (int i = myPool.size() - 1; i >= 0; i--) {
       InstanceData instanceData = myPool.get(i);
-      if (instanceData.classRef.isSubClassOf(classRef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, Equations.CMP.EQ))) {
+      if (instanceData.classRef.isSubClassOf(classRef) && (instanceData.key == classifyingExpression || instanceData.key != null && classifyingExpression != null && Expression.compare(instanceData.key, classifyingExpression, instanceData.keyType, Equations.CMP.EQ))) {
         return instanceData.value;
       }
     }
     return null;
   }
 
-  public Expression addInstance(Expression classifyingExpression, TCClassReferable classRef, Expression instance, Concrete.SourceNode sourceNode) {
+  public Expression addInstance(Expression classifyingExpression, ExpectedType classifyingExpressionType, TCClassReferable classRef, Expression instance, Concrete.SourceNode sourceNode) {
     Expression oldInstance = getInstance(classifyingExpression, classRef);
     if (oldInstance != null) {
       return oldInstance;
     } else {
-      myPool.add(new InstanceData(classifyingExpression, classRef, instance, sourceNode));
+      myPool.add(new InstanceData(classifyingExpression, classifyingExpressionType, classRef, instance, sourceNode));
       return null;
     }
   }

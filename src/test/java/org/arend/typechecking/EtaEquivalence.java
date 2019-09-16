@@ -5,47 +5,35 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.NewExpression;
+import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.junit.Test;
 
+import static org.arend.ExpressionFactory.ClassCall;
 import static org.arend.ExpressionFactory.Ref;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
-  public void classesEq() {
+  public void classesCmp() {
     typeCheckModule(
         "\\record Foo { | foo : Nat | bar : Nat }\n" +
         "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
-  }
+    NewExpression newExpr = new NewExpression((ClassCallExpression) f.getResultType());
+    ClassCallExpression classCall = ClassCall(newExpr.getExpression().getDefinition());
+    ReferenceExpression refExpr = Ref(f.getParameters());
 
-  @Test
-  public void classesGe() {
-    typeCheckModule(
-        "\\record Foo { | foo : Nat | bar : Nat }\n" +
-        "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
-    assertTrue(getDefinition("f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
-  }
-
-  @Test
-  public void classesLe() {
-    typeCheckModule(
-        "\\record Foo { | foo : Nat | bar : Nat }\n" +
-        "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
-    assertTrue(getDefinition("f") instanceof FunctionDefinition);
-    FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, new NewExpression((ClassCallExpression) f.getResultType()), Ref(f.getParameters()), null));
-    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, Ref(f.getParameters()), new NewExpression((ClassCallExpression) f.getResultType()), null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, refExpr, newExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.GE, refExpr, newExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, newExpr, refExpr, classCall, null));
+    assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, refExpr, newExpr, classCall, null));
   }
 
   @Test

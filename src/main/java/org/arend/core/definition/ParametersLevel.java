@@ -2,6 +2,7 @@ package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
@@ -27,7 +28,7 @@ public class ParametersLevel {
     ExprSubstitution substitution = new ExprSubstitution();
     for (Expression expr : exprList) {
       Expression type = expr.getType();
-      if (type == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, type, link.getTypeExpr().subst(substitution), null)) {
+      if (type == null || !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, type, link.getTypeExpr().subst(substitution), ExpectedType.OMEGA, null)) {
         return false;
       }
       substitution.add(link, expr);
