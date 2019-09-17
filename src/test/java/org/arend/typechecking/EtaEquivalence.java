@@ -126,6 +126,51 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   }
 
   @Test
+  public void unitClass5() {
+    typeCheckModule(
+      "\\record C (n : Nat)\n" +
+      "\\func f (x : C 0) (y : C 1) : x = y => path (\\lam _ => x)", 1);
+  }
+
+  @Test
+  public void unitClass6() {
+    typeCheckModule(
+      "\\record C (n : Nat)\n" +
+      "\\func f (x : C 0) (y : C 1) : x = {C} y => path (\\lam _ => x)", 1);
+  }
+
+  @Test
+  public void unitClass7() {
+    typeCheckModule(
+      "\\record C (n : Nat)\n" +
+      "\\func f (x : C 0) (y : C 0) : x = {C} y => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void unitClass8() {
+    typeCheckModule(
+      "\\record C (n m : Nat)\n" +
+      "\\func f (x : C 0) (y : C 0) : x = {C} y => path (\\lam _ => x)", 1);
+  }
+
+  @Test
+  public void typedComparison1() {
+    typeCheckModule(
+      "\\record C (n : Nat)\n" +
+      "\\record D (m : Nat) \\extends C\n" +
+      "\\func f (x : D 0 1) (y : D 0 2) : x = {C} y => path (\\lam _ => x)");
+  }
+
+  @Test
+  public void typedComparison2() {
+    typeCheckModule(
+      "\\record C (n : Nat)\n" +
+      "\\record D (m : Nat) \\extends C\n" +
+      "\\func f (x : C) : \\new D { | C => x | m => 0 } = {C} x => path (\\lam _ => x)\n" +
+      "\\func g (x : C) : x = {C} \\new D { | C => x | m => 0 } => path (\\lam _ => x)");
+  }
+
+  @Test
   public void sigmaTest() {
     typeCheckModule("\\func f (x : \\Sigma Nat Nat) : x = (x.1,x.2) => path (\\lam _ => x)");
   }

@@ -1,8 +1,6 @@
 package org.arend.typechecking;
 
-import org.arend.core.definition.Definition;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.type.ExpectedType;
 import org.arend.error.GeneralError;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NotInScopeError;
@@ -14,7 +12,6 @@ import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
-import org.arend.typechecking.implicitargs.equations.Equations;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -22,6 +19,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class Matchers {
   public static Matcher<? super GeneralError> typecheckingError() {
@@ -148,7 +146,7 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> instanceInference(TCReferable classRef, Expression classifyingExpression, ExpectedType type) {
+  public static Matcher<? super GeneralError> instanceInference(TCReferable classRef, Expression classifyingExpression) {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
@@ -163,7 +161,7 @@ public class Matchers {
           return false;
         }
 
-        if (instanceInferenceError.classifyingExpression == classifyingExpression || instanceInferenceError.classifyingExpression != null && classifyingExpression != null && !Expression.compare(instanceInferenceError.classifyingExpression, classifyingExpression, type, Equations.CMP.EQ)) {
+        if (!Objects.equals(instanceInferenceError.classifyingExpression, classifyingExpression)) {
           description.appendText("'Instance inference for class " + instanceInferenceError.classRef.textRepresentation() + (instanceInferenceError.classifyingExpression == null ? " without classifying expression" : " with classifying expression " + instanceInferenceError.classifyingExpression) + "' error");
           return false;
         }
@@ -179,16 +177,8 @@ public class Matchers {
     };
   }
 
-  public static Matcher<? super GeneralError> instanceInference(Definition definition) {
-    return instanceInference(definition.getReferable(), null, null);
-  }
-
-  public static Matcher<? super GeneralError> instanceInferenceType(Definition definition, Expression classifyingExpression) {
-    return instanceInference(definition.getReferable(), classifyingExpression, ExpectedType.OMEGA);
-  }
-
-  public static Matcher<? super GeneralError> instanceInference(Definition definition, Expression classifyingExpression, ExpectedType type) {
-    return instanceInference(definition.getReferable(), classifyingExpression, type);
+  public static Matcher<? super GeneralError> instanceInference(TCReferable definition) {
+    return instanceInference(definition, null);
   }
 
   public static Matcher<? super GeneralError> argInferenceError() {

@@ -76,6 +76,11 @@ public abstract class Expression implements ExpectedType {
     return universe == null ? null : universe.getSort();
   }
 
+  public Sort getSortOfType() {
+    Expression type = getType();
+    return type == null ? null : type.toSort();
+  }
+
   public Expression getType(boolean normalizing) {
     if (normalizing) {
       try {

@@ -1412,7 +1412,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             constructor.setClauses(clauses);
             constructor.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
           }
+
+          boolean dataSortIsProp = dataDefinition.getSort().isProp();
+          if (dataSortIsProp) {
+            dataDefinition.setSort(Sort.SET0);
+          }
           ConditionsChecking.check(body, clauses, oldConstructor, def, errorReporter);
+          if (dataSortIsProp) {
+            dataDefinition.setSort(Sort.PROP);
+          }
         }
       }
     }

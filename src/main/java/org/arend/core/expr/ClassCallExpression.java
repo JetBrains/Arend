@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.LinkList;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -111,7 +112,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
       return EmptyDependentLink.getInstance();
     }
 
-    DependentLink first = null, last = null;
+    LinkList list = new LinkList();
     for (ClassField field : fields) {
       if (isImplemented(field)) {
         continue;
@@ -120,17 +121,11 @@ public class ClassCallExpression extends DefCallExpression implements Type {
       PiExpression piExpr = field.getType(mySortArgument);
       Expression type = piExpr.applyExpression(newExpr);
       DependentLink link = new TypedDependentLink(true, field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
-      if (last != null) {
-        last.setNext(link);
-      }
-      last = link;
-      if (first == null) {
-        first = link;
-      }
       implementations.put(field, new ReferenceExpression(link));
+      list.append(link);
     }
 
-    return first;
+    return list.getFirst();
   }
 
   @Override

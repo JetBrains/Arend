@@ -7,7 +7,6 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.ExpressionFactory.DataCall;
-import static org.arend.typechecking.Matchers.instanceInference;
 
 public class TypeClassesLocal extends TypeCheckingTestCase {
   @Test
@@ -176,7 +175,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
       "\\class B \\extends A\n" +
       "\\data Nat'\n" +
       "\\func f {b : B Nat} : Nat' => c", 1);
-    assertThatErrorsAre(Matchers.instanceInferenceType(getDefinition("A"), DataCall((DataDefinition) getDefinition("Nat'"), Sort.STD)));
+    assertThatErrorsAre(Matchers.instanceInference(get("A"), DataCall((DataDefinition) getDefinition("Nat'"), Sort.STD)));
   }
 
   @Test

@@ -21,7 +21,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\instance B-inst : B\n" +
       "\\instance A-inst {b : B} : A | a => 0\n" +
       "\\func f => a", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("B")));
+    assertThatErrorsAre(instanceInference(get("B")));
   }
 
   @Ignore
@@ -32,7 +32,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class B\n" +
       "\\instance A-inst {b : B} : A | a => 0\n" +
       "\\func f => a", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("B")));
+    assertThatErrorsAre(instanceInference(get("B")));
   }
 
   @Ignore
@@ -55,7 +55,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\instance B-inst : B 0\n" +
       "\\instance A-inst {b : B 1} : A | a => 0\n" +
       "\\func f => a", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("B")));
+    assertThatErrorsAre(instanceInference(get("B")));
   }
 
   @Ignore
@@ -70,7 +70,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\instance B-inst : B (Data D)\n" +
       "\\instance A-inst {b : B (Data D')} : A | a => 0\n" +
       "\\func f => a", 1);
-    assertThatErrorsAre(instanceInference(getDefinition("B")));
+    assertThatErrorsAre(instanceInference(get("B")));
   }
 
   @Ignore
@@ -112,7 +112,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\instance Nat-inst : A Nat' | x => nat\n" +
       "\\instance Data-inst {T : \\Set} {d : A T} : A (Data T) | x => con x\n" +
       "\\func f : Data Nat => x", 1);
-    assertThatErrorsAre(Matchers.instanceInferenceType(getDefinition("A"), Nat()));
+    assertThatErrorsAre(Matchers.instanceInference(get("A"), Nat()));
   }
 
   @Test
@@ -122,7 +122,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\data Data (X : \\Set) | con X\n" +
       "\\instance Nat-inst : A Nat | x => 0 | Y => Nat\n" +
       "\\instance Data-inst {a : A} : A (Data a.Y) | x => con x | Y => Nat", 1);
-    assertThatErrorsAre(Matchers.instanceInferenceType(getDefinition("A"), FieldCall((ClassField) getDefinition("A.Y"), Sort.STD, Ref(getDefinition("Data-inst").getParameters()))));
+    assertThatErrorsAre(Matchers.instanceInference(get("A"), FieldCall((ClassField) getDefinition("A.Y"), Sort.STD, Ref(getDefinition("Data-inst").getParameters()))));
   }
 
   @Test
@@ -131,7 +131,7 @@ public class RecursiveInstances extends TypeCheckingTestCase {
       "\\class C (X : \\Type) | foo : X -> X\n" +
       "\\instance inst (c : C Nat) : C Nat | foo => c.foo\n" +
       "\\func f => foo 3", 1);
-    assertThatErrorsAre(Matchers.instanceInferenceType(getDefinition("C"), Nat()));
+    assertThatErrorsAre(Matchers.instanceInference(get("C"), Nat()));
   }
 
   @Test

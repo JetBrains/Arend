@@ -545,7 +545,7 @@ public class TwoStageEquations implements Equations {
 
     for (int i = 0; i < myEquations.size(); i++) {
       Equation equation = myEquations.get(i);
-      myEquations.set(i, new Equation(equation.expr1.subst(result), equation.expr2.subst(result), equation.type.subst(result), equation.cmp, equation.sourceNode));
+      myEquations.set(i, new Equation(equation.expr1.subst(result), equation.expr2.subst(result), equation.type == null ? null : equation.type.subst(result), equation.cmp, equation.sourceNode));
     }
 
     myPLevelEquations.clear();
