@@ -17,6 +17,8 @@ import org.arend.typechecking.instance.provider.InstanceProvider;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class GlobalInstancePool implements InstancePool {
@@ -45,9 +47,9 @@ public class GlobalInstancePool implements InstancePool {
   }
 
   @Override
-  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode) {
+  public Expression getInstance(Expression classifyingExpression, TCClassReferable classRef, Equations equations, Concrete.SourceNode sourceNode, RecursiveInstanceHoleExpression recursiveHoleExpression) {
     if (myInstancePool != null) {
-      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, equations, sourceNode);
+      Expression result = myInstancePool.getInstance(classifyingExpression, classRef, equations, sourceNode, recursiveHoleExpression);
       if (result != null) {
         return result;
       }
@@ -58,12 +60,13 @@ public class GlobalInstancePool implements InstancePool {
     }
 
     ClassField classifyingField;
-    if (classifyingExpression != null) {
-      classifyingExpression = classifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
-      while (classifyingExpression.isInstance(LamExpression.class)) {
-        classifyingExpression = classifyingExpression.cast(LamExpression.class).getBody();
+    Expression normClassifyingExpression = classifyingExpression;
+    if (normClassifyingExpression != null) {
+      normClassifyingExpression = normClassifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
+      while (normClassifyingExpression.isInstance(LamExpression.class)) {
+        normClassifyingExpression = normClassifyingExpression.cast(LamExpression.class).getBody();
       }
-      if (!(classifyingExpression.isInstance(DefCallExpression.class) || classifyingExpression.isInstance(SigmaExpression.class) || classifyingExpression.isInstance(UniverseExpression.class) || classifyingExpression.isInstance(IntegerExpression.class))) {
+      if (!(normClassifyingExpression.isInstance(DefCallExpression.class) || normClassifyingExpression.isInstance(SigmaExpression.class) || normClassifyingExpression.isInstance(UniverseExpression.class) || normClassifyingExpression.isInstance(IntegerExpression.class))) {
         return null;
       }
 
@@ -79,7 +82,7 @@ public class GlobalInstancePool implements InstancePool {
       classifyingField = null;
     }
 
-    Expression normClassifyingExpression = classifyingExpression;
+    Expression finalClassifyingExpression = normClassifyingExpression;
     class MyPredicate implements Predicate<Concrete.FunctionDefinition> {
       private FunctionDefinition instanceDef = null;
 
@@ -90,7 +93,7 @@ public class GlobalInstancePool implements InstancePool {
           return false;
         }
 
-        if (normClassifyingExpression == null) {
+        if (finalClassifyingExpression == null) {
           return true;
         }
 
@@ -102,11 +105,11 @@ public class GlobalInstancePool implements InstancePool {
           instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
         }
         return
-          instanceClassifyingExpr instanceof UniverseExpression && normClassifyingExpression.isInstance(UniverseExpression.class) ||
-          instanceClassifyingExpr instanceof SigmaExpression && normClassifyingExpression.isInstance(SigmaExpression.class) ||
-          instanceClassifyingExpr instanceof IntegerExpression && (normClassifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(normClassifyingExpression.cast(IntegerExpression.class)) ||
-            normClassifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(normClassifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
-          instanceClassifyingExpr instanceof DefCallExpression && normClassifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == normClassifyingExpression.cast(DefCallExpression.class).getDefinition();
+          instanceClassifyingExpr instanceof UniverseExpression && finalClassifyingExpression.isInstance(UniverseExpression.class) ||
+          instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression.isInstance(SigmaExpression.class) ||
+          instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(finalClassifyingExpression.cast(IntegerExpression.class)) ||
+            finalClassifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(finalClassifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
+          instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == finalClassifyingExpression.cast(DefCallExpression.class).getDefinition();
       }
     }
 
@@ -116,14 +119,17 @@ public class GlobalInstancePool implements InstancePool {
       return null;
     }
 
+    ClassDefinition classDef = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
     Concrete.Expression instanceExpr = new Concrete.ReferenceExpression(sourceNode.getData(), instance.getData());
     for (DependentLink link = predicate.instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
-      if (link.isExplicit()) {
-        instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new Concrete.HoleExpression(sourceNode.getData()), true);
+      List<RecursiveInstanceData> newRecursiveData = new ArrayList<>((recursiveHoleExpression == null ? 0 : recursiveHoleExpression.recursiveData.size()) + 1);
+      if (recursiveHoleExpression != null) {
+        newRecursiveData.addAll(recursiveHoleExpression.recursiveData);
       }
+      newRecursiveData.add(new RecursiveInstanceData(instance.getData(), classDef.getReferable(), classifyingExpression));
+      instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    ClassDefinition classDef = ((ClassCallExpression) predicate.instanceDef.getResultType()).getDefinition();
     Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode)), sourceNode);
     TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
     return result == null ? new ErrorExpression(null, null) : result.expression;

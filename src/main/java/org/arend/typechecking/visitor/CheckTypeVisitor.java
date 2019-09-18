@@ -49,6 +49,7 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.implicitargs.equations.TwoStageEquations;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
+import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.patternmatching.ConditionsChecking;
 import org.arend.typechecking.patternmatching.ElimTypechecking;
 import org.arend.typechecking.patternmatching.PatternTypechecking;
@@ -477,17 +478,18 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
       Expression result;
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
+      RecursiveInstanceHoleExpression holeExpr = implBody instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) implBody : null;
       if (classDef.getClassifyingField() == null) {
-        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody);
+        Expression instance = myInstancePool.getInstance(null, classDef.getReferable(), myEquations, implBody, holeExpr);
         if (instance == null) {
-          ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, new Expression[0]);
+          ArgInferenceError error = new InstanceInferenceError(classDef.getReferable(), implBody, holeExpr, new Expression[0]);
           errorReporter.report(error);
           result = new ErrorExpression(null, error);
         } else {
           result = instance;
         }
       } else {
-        result = new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, getAllBindings()), myEquations);
+        result = new InferenceReferenceExpression(new TypeClassInferenceVariable(field.getName(), type, classDef.getReferable(), false, implBody, holeExpr, getAllBindings()), myEquations);
       }
       return new TypecheckingResult(result, type);
     }

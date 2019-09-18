@@ -126,6 +126,18 @@ public class RecursiveInstances extends TypeCheckingTestCase {
   }
 
   @Test
+  public void noRecursiveLocalInstance3() {
+    typeCheckModule(
+      "\\class A (X : \\Set) { | x : X }\n" +
+      "\\data Data1 (X : \\Set) | con1 X\n" +
+      "\\data Data2 (X : \\Set) | con2 X\n" +
+      "\\instance Data1-inst {T : \\Set} {d : A T} : A (Data1 T) | x => con1 x\n" +
+      "\\instance Data2-inst {T : \\Set} {d : A T} : A (Data2 T) | x => con2 x\n" +
+      "\\func f : Data1 (Data2 Nat) => x", 1);
+    assertThatErrorsAre(Matchers.instanceInference(get("A"), Nat()));
+  }
+
+  @Test
   public void infRecursiveInstance() {
     typeCheckModule(
       "\\class C (X : \\Type) | foo : X -> X\n" +

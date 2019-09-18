@@ -23,6 +23,7 @@ import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
 import org.arend.typechecking.instance.pool.InstancePool;
+import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.result.DefCallResult;
 import org.arend.typechecking.result.TResult;
 import org.arend.typechecking.result.TypecheckingResult;
@@ -74,7 +75,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     return type != null ? type.getDefinition() : null;
   }
 
-  private TResult fixImplicitArgs(TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly) {
+  private TResult fixImplicitArgs(TResult result, List<? extends DependentLink> implicitParameters, Concrete.Expression expr, boolean classVarsOnly, RecursiveInstanceHoleExpression holeExpr) {
     ExprSubstitution substitution = new ExprSubstitution();
     int i = result instanceof DefCallResult ? ((DefCallResult) result).getArguments().size() : 0;
     for (DependentLink parameter : implicitParameters) {
@@ -92,9 +93,9 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             // If the class does not have a classifying field, infer instance immediately
             if (classDef.getClassifyingField() == null) {
               InstancePool instancePool = kind == Definition.TypeClassParameterKind.ONLY_LOCAL ? myVisitor.getInstancePool().getLocalInstancePool() : myVisitor.getInstancePool();
-              Expression instance = instancePool.getInstance(null, classRef, myVisitor.getEquations(), expr);
+              Expression instance = instancePool.getInstance(null, classRef, myVisitor.getEquations(), expr, holeExpr);
               if (instance == null) {
-                ArgInferenceError error = new InstanceInferenceError(classRef, expr, new Expression[0]);
+                ArgInferenceError error = new InstanceInferenceError(classRef, expr, holeExpr, new Expression[0]);
                 myVisitor.getErrorReporter().report(error);
                 instance = new ErrorExpression(null, error);
               }
@@ -105,7 +106,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
             }
 
             // Otherwise, generate type class inference variable
-            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), myVisitor.getAllBindings());
+            infVar = new TypeClassInferenceVariable(parameter.getName(), type, classRef, kind == Definition.TypeClassParameterKind.ONLY_LOCAL, defCallResult.getDefCall(), holeExpr, myVisitor.getAllBindings());
           }
         }
       }
@@ -155,12 +156,12 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         }
       }
 
-      result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false);
+      result = fixImplicitArgs(result, result.getImplicitParameters(), fun, false, null);
     }
 
     DependentLink param = result.getParameter();
     if (arg instanceof Concrete.HoleExpression && param.hasNext()) {
-      return fixImplicitArgs(result, Collections.singletonList(param), fun, false);
+      return fixImplicitArgs(result, Collections.singletonList(param), fun, false, arg instanceof RecursiveInstanceHoleExpression ? (RecursiveInstanceHoleExpression) arg : null);
     }
 
     TypecheckingResult argResult = myVisitor.checkArgument(arg, param.hasNext() ? param.getTypeExpr() : null, result);
@@ -255,7 +256,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           }
           if (!parameter.isExplicit() && expr.getArguments().get(current).isExplicit()) {
             List<? extends DependentLink> implicitParameters = result.getImplicitParameters();
-            result = fixImplicitArgs(result, implicitParameters, fun, false);
+            result = fixImplicitArgs(result, implicitParameters, fun, false, null);
             parameter = result.getParameter();
             numberOfImplicitArguments += implicitParameters.size();
           }
@@ -330,7 +331,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     }
 
     if (expectedParamsNumber != actualParams.size()) {
-      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, !(expectedType instanceof Expression));
+      result = fixImplicitArgs(result, actualParams.subList(0, actualParams.size() - expectedParamsNumber), expr, !(expectedType instanceof Expression), null);
     }
 
     return result;
