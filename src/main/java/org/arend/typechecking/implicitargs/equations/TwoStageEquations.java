@@ -556,6 +556,13 @@ public class TwoStageEquations implements Equations {
     myLowerBounds.clear();
   }
 
+  private void normalizeEquations() {
+    for (int i = 0; i < myEquations.size(); i++) {
+      Equation equation = myEquations.get(i);
+      myEquations.set(i, new Equation(equation.expr1.normalize(NormalizeVisitor.Mode.WHNF), equation.expr2.normalize(NormalizeVisitor.Mode.WHNF), equation.type, equation.cmp, equation.sourceNode));
+    }
+  }
+
   @Override
   public LevelSubstitution solve(Concrete.SourceNode sourceNode) {
     while (!myProps.isEmpty()) {
@@ -567,6 +574,7 @@ public class TwoStageEquations implements Equations {
 
     SimpleLevelSubstitution result = new SimpleLevelSubstitution();
     solveLevelEquations(result);
+    normalizeEquations();
     myFirstRun = false;
     solveClassCalls();
     myFirstRun = true;
