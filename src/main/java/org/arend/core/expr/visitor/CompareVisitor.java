@@ -504,7 +504,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       Expression finalExpr1 = correctOrder ? lam : fun;
       Expression finalExpr2 = correctOrder ? fun : lam.subst(getSubstitution());
       if (variable.isSolved()) {
-        return compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), myCMP, finalExpr1, finalExpr2, null, variable.getSourceNode());
+        CompareVisitor visitor = new CompareVisitor(myEquations, myCMP, variable.getSourceNode());
+        visitor.myNormalCompare = myNormalCompare;
+        return visitor.compare(finalExpr1, finalExpr2, null);
       } else {
         return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, null, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
       }
@@ -593,7 +595,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
           ok = false;
           break;
         }
-        if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA, mySourceNode)) {
+        Equations.CMP origCmp = myCMP;
+        myCMP = Equations.CMP.LE;
+        ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA);
+        myCMP = origCmp;
+        if (!ok) {
           return false;
         }
       }
@@ -606,7 +612,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
             ok = false;
             break;
           }
-          if (!compare(myNormalCompare ? myEquations : DummyEquations.getInstance(), Equations.CMP.LE, type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA, mySourceNode)) {
+          Equations.CMP origCmp = myCMP;
+          myCMP = Equations.CMP.LE;
+          ok = compare(type, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(thisExpr), ExpectedType.OMEGA);
+          myCMP = origCmp;
+          if (!ok) {
             return false;
           }
         }
