@@ -110,7 +110,7 @@ public class Prelude {
         break;
       case "I":
         INTERVAL = (DataDefinition) definition;
-        INTERVAL.setSort(Sort.PROP);
+        INTERVAL.setSort(new Sort(new Level(0), Level.INFINITY));
         INTERVAL.setMatchesOnInterval();
         LEFT = INTERVAL.getConstructor("left");
         RIGHT = INTERVAL.getConstructor("right");

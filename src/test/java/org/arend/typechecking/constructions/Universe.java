@@ -115,12 +115,12 @@ public class Universe extends TypeCheckingTestCase {
 
   @Test
   public void guessDataUniverseAsSet() {
-    typeCheckModule("\\data D : \\Prop | d1 | d2 I { _ => d1 }", 1);
+    typeCheckModule("\\data D (A : \\Prop) : \\Prop | d1 | d2 A { _ => d1 }", 1);
   }
 
   @Test
   public void guessDataUniverseAsSet2() {
-    typeCheckModule("\\data D : \\Set0 | d1 | d2 I { _ => d1 }");
+    typeCheckModule("\\data D (A : \\Prop) : \\Set0 | d1 | d2 A { _ => d1 }");
   }
 
   @Test

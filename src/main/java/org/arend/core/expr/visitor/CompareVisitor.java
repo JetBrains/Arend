@@ -34,6 +34,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   private final Concrete.SourceNode mySourceNode;
   private Equations.CMP myCMP;
   private boolean myNormalCompare = true;
+  private boolean myOnlySolveVars = false;
 
   public CompareVisitor(Equations equations, Equations.CMP cmp, Concrete.SourceNode sourceNode) {
     mySubstitution = new HashMap<>();
@@ -144,52 +145,56 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, myCMP, stuckVar1 != null ? stuckVar1.getSourceNode() : stuckVar2.getSourceNode(), stuckVar1, stuckVar2);
     }
 
-    Expression normType = type instanceof Expression ? (myNormalCompare ? ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF) : (Expression) type) : null;
-    // TODO: Replace with the check that the sort of normType is \Prop
-    if (normType != null && (normType.isInstance(SigmaExpression.class) && !normType.cast(SigmaExpression.class).getParameters().hasNext() || normType.isInstance(ClassCallExpression.class) && normType.cast(ClassCallExpression.class).isUnit())) {
-      return true;
-    }
-
-    if (myNormalCompare && (normType == null || normType.getStuckInferenceVariable() != null || normType.isInstance(ClassCallExpression.class))) {
-      Expression type1 = expr1.getType();
-      if (type1 != null && type1.getStuckInferenceVariable() != null) {
-        type1 = null;
-      }
-      if (type1 != null) {
-        type1 = type1.normalize(NormalizeVisitor.Mode.WHNF);
-        // TODO
-        // Sort sort1 = type1.getSortOfType();
-        // if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
-        //   return true;
-        // }
+    boolean onlySolveVars = myOnlySolveVars;
+    if (myNormalCompare && !myOnlySolveVars) {
+      Expression normType = type instanceof Expression ? ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF) : null;
+      if (normType != null && Sort.PROP.equals(normType.getSortOfType())) {
+        myOnlySolveVars = true;
       }
 
-      Expression type2 = expr2.getType();
-      if (type2 != null && type2.getStuckInferenceVariable() != null) {
-        type2 = null;
-      }
-      if (type2 != null) {
-        type2 = type2.normalize(NormalizeVisitor.Mode.WHNF);
-        // TODO
-        // Sort sort2 = type2.getSortOfType();
-        // if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
-        //   return true;
-        // }
-      }
+      if (!myOnlySolveVars && (normType == null || normType.getStuckInferenceVariable() != null || normType.isInstance(ClassCallExpression.class))) {
+        Expression type1 = expr1.getType();
+        if (type1 != null && type1.getStuckInferenceVariable() != null) {
+          type1 = null;
+        }
+        if (type1 != null) {
+          type1 = type1.normalize(NormalizeVisitor.Mode.WHNF);
+          Sort sort1 = type1.getSortOfType();
+          if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
+            myOnlySolveVars = true;
+          }
+        }
 
-      if (type1 != null && type2 != null && type1.isInstance(ClassCallExpression.class) && type2.isInstance(ClassCallExpression.class) && compareClassInstances(expr1, type1.cast(ClassCallExpression.class), expr2, type2.cast(ClassCallExpression.class), normType)) {
-        return true;
+        if (!myOnlySolveVars) {
+          Expression type2 = expr2.getType();
+          if (type2 != null && type2.getStuckInferenceVariable() != null) {
+            type2 = null;
+          }
+          if (type2 != null) {
+            type2 = type2.normalize(NormalizeVisitor.Mode.WHNF);
+            Sort sort2 = type2.getSortOfType();
+            if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
+              myOnlySolveVars = true;
+            }
+          }
+
+          if (!myOnlySolveVars && type1 != null && type2 != null && type1.isInstance(ClassCallExpression.class) && type2.isInstance(ClassCallExpression.class) && compareClassInstances(expr1, type1.cast(ClassCallExpression.class), expr2, type2.cast(ClassCallExpression.class), normType)) {
+            return true;
+          }
+        }
       }
     }
 
     Equations.CMP origCMP = myCMP;
-    Boolean dataAndApp = checkDefCallAndApp(expr1, expr2, true);
-    if (dataAndApp != null) {
-      return dataAndApp;
-    }
-    dataAndApp = checkDefCallAndApp(expr2, expr1, false);
-    if (dataAndApp != null) {
-      return dataAndApp;
+    if (!myOnlySolveVars) {
+      Boolean dataAndApp = checkDefCallAndApp(expr1, expr2, true);
+      if (dataAndApp != null) {
+        return dataAndApp;
+      }
+      dataAndApp = checkDefCallAndApp(expr2, expr1, false);
+      if (dataAndApp != null) {
+        return dataAndApp;
+      }
     }
 
     if (!expr1.isInstance(UniverseExpression.class) && !expr1.isInstance(PiExpression.class) && !expr1.isInstance(ClassCallExpression.class) && !expr1.isInstance(DataCallExpression.class) && !expr1.isInstance(AppExpression.class) && !expr1.isInstance(SigmaExpression.class) && !expr1.isInstance(LamExpression.class)) {
@@ -206,13 +211,17 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     } else {
       ok = expr1.accept(this, new Pair<>(expr2, type));
     }
-    if (ok) {
-      return true;
-    }
 
-    InferenceVariable variable1 = stuck1 == null ? null : stuck1.getInferenceVariable();
-    InferenceVariable variable2 = stuck2 == null ? null : stuck2.getInferenceVariable();
-    return (variable1 != null || variable2 != null) && myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, origCMP, variable1 != null ? variable1.getSourceNode() : variable2.getSourceNode(), variable1, variable2);
+    if (!ok && !myOnlySolveVars) {
+      InferenceVariable variable1 = stuck1 == null ? null : stuck1.getInferenceVariable();
+      InferenceVariable variable2 = stuck2 == null ? null : stuck2.getInferenceVariable();
+      ok = (variable1 != null || variable2 != null) && myNormalCompare && myEquations.addEquation(expr1, expr2.subst(getSubstitution()), type, origCMP, variable1 != null ? variable1.getSourceNode() : variable2.getSourceNode(), variable1, variable2);
+    }
+    if (myOnlySolveVars) {
+      ok = true;
+    }
+    myOnlySolveVars = onlySolveVars;
+    return ok;
   }
 
   public Boolean compare(Expression expr1, Expression expr2, ExpectedType type) {
@@ -237,9 +246,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     InferenceVariable stuckVar1 = expr1.getStuckInferenceVariable();
     InferenceVariable stuckVar2 = expr2.getStuckInferenceVariable();
     if (stuckVar1 != stuckVar2 && (!myNormalCompare || myEquations == DummyEquations.getInstance())) {
-      return false;
+      return myOnlySolveVars;
     }
     if (stuckVar1 == stuckVar2 && nonNormalizingCompare(expr1, expr2, type)) {
+      return true;
+    }
+
+    if (myOnlySolveVars && (stuckVar1 != null || stuckVar2 != null)) {
       return true;
     }
 
@@ -273,7 +286,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     InferenceVariable var1 = fun1.getInferenceVariable();
     InferenceVariable var2 = fun2.getInferenceVariable();
     if (var1 != null || var2 != null) {
-      if (myNormalCompare && myEquations.addEquation(expr1, pair.proj1.subst(getSubstitution()), pair.proj2, myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
+      if (myNormalCompare && !myOnlySolveVars && myEquations.addEquation(expr1, pair.proj1.subst(getSubstitution()), pair.proj2, myCMP, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2)) {
         return true;
       }
     }
@@ -398,6 +411,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       if (variable == null || dataCall1 != null && args.size() > dataCall1.getDefCallArguments().size() || classCall1 != null && args.size() > classCall1.getDefinition().getNumberOfNotImplementedFields()) {
         return null;
       }
+      if (myOnlySolveVars && !variable.isSolved()) {
+        return false;
+      }
       Collections.reverse(args);
 
       DependentLink dataParams;
@@ -494,7 +510,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       }
 
       for (int i = params.size() - 1; i >= 0; i--) {
-        if (!myNormalCompare || myEquations.isDummy()) {
+        if (!myNormalCompare || myOnlySolveVars || myEquations.isDummy()) {
           return false;
         }
         codSort = PiExpression.generateUpperBound(params.get(i).getType().getSortOfType(), codSort, myEquations, mySourceNode);
@@ -506,6 +522,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       if (variable.isSolved()) {
         CompareVisitor visitor = new CompareVisitor(myEquations, myCMP, variable.getSourceNode());
         visitor.myNormalCompare = myNormalCompare;
+        visitor.myOnlySolveVars = myOnlySolveVars;
         return visitor.compare(finalExpr1, finalExpr2, null);
       } else {
         return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, null, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
@@ -541,12 +558,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     FieldCallExpression fieldCall2 = pair.proj1.checkedCast(FieldCallExpression.class);
     if (fieldCall2 == null || fieldCall1.getDefinition() != fieldCall2.getDefinition()) {
       return false;
-    }
-
-    InferenceVariable var1 = fieldCall1.getInferenceVariable();
-    InferenceVariable var2 = fieldCall2.getInferenceVariable();
-    if (var1 != null || var2 != null) {
-      return myNormalCompare && myEquations.addEquation(fieldCall1, fieldCall2.subst(getSubstitution()), pair.proj2, Equations.CMP.EQ, var1 != null ? var1.getSourceNode() : var2.getSourceNode(), var1, var2);
     }
 
     return compare(fieldCall1.getArgument(), fieldCall2.getArgument(), null);

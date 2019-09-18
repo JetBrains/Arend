@@ -71,7 +71,7 @@ public class LemmaTest extends TypeCheckingTestCase {
       "\\class C (n : Nat) { \\field x : 0 = 0 }\n" +
       "\\lemma f : C 0 \\cowith\n" +
       "  | x => path (\\lam _ => 0)\n" +
-      "\\func g : f.x = path (\\lam _ => 0) => path (\\lam _ => path (\\lam _ => 0))", 1);
+      "\\func g : f.x = path (\\lam _ => 0) => path (\\lam _ => path (\\lam _ => 0))");
   }
 
   @Test
