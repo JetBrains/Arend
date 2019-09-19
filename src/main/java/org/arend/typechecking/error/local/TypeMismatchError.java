@@ -25,8 +25,9 @@ public class TypeMismatchError extends TypecheckingError {
 
   @Override
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
+    Doc expectedDoc = hang(text("Expected type:"), expected.prettyPrint(ppConfig));
     return vList(
-      hang(text("Expected type:"), expected.prettyPrint(ppConfig)),
-      hang(text("  Actual type:"), actual.prettyPrint(ppConfig)));
+      expectedDoc,
+      hang(text(expectedDoc.getHeight() == 1 ? "  Actual type:" : "Actual type:"), actual.prettyPrint(ppConfig)));
   }
 }
