@@ -1230,6 +1230,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
 
         boolean isCovariant = true;
+        dataDefinition.setCovariant(index, true);
         for (Constructor constructor : dataDefinition.getConstructors()) {
           if (!constructor.status().headerIsOK()) {
             continue;
@@ -1245,8 +1246,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             break;
           }
         }
-        if (isCovariant) {
-          dataDefinition.setCovariant(index);
+        if (!isCovariant) {
+          dataDefinition.setCovariant(index, false);
         }
       }
     }

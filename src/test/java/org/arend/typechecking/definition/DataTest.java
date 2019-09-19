@@ -15,6 +15,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.arend.typechecking.result.TypecheckingResult;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -233,6 +234,60 @@ public class DataTest extends TypeCheckingTestCase {
     DataDefinition d = (DataDefinition) getDefinition("D");
     assertTrue(d.isCovariant(0));
     assertTrue(d.isCovariant(1));
+  }
+
+  @Test
+  public void recursiveCovariantTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 A (D A)");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertTrue(d.isCovariant(0));
+  }
+
+  @Ignore
+  @Test
+  public void recursiveCovariantTest2() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 A (D B A)");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertTrue(d.isCovariant(0));
+    assertTrue(d.isCovariant(1));
+  }
+
+  @Test
+  public void nonCovariantTest() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1 (A -> B)\n" +
+      "  | con2 B");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertFalse(d.isCovariant(0));
+    assertTrue(d.isCovariant(1));
+  }
+
+  @Test
+  public void recursiveNonCovariantTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 (D (A -> Nat))");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertFalse(d.isCovariant(0));
+  }
+
+  @Test
+  public void recursiveNonCovariantTest2() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+      "  | con1\n" +
+      "  | con2 A (D B (A -> Nat))");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertFalse(d.isCovariant(0));
+    assertFalse(d.isCovariant(1));
   }
 
   @Test

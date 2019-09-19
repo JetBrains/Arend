@@ -1,4 +1,4 @@
-package org.arend.typechecking;
+package org.arend.typechecking.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -8,6 +8,7 @@ import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import java.util.ArrayList;

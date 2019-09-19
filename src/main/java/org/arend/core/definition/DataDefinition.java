@@ -19,7 +19,7 @@ public class DataDefinition extends Definition {
   private Sort mySort;
   private boolean myMatchesOnInterval;
   private boolean myIsTruncated;
-  private Set<Integer> myCovariantParameters;
+  private final Set<Integer> myCovariantParameters = new HashSet<>();
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
@@ -45,14 +45,15 @@ public class DataDefinition extends Definition {
   }
 
   public boolean isCovariant(int index) {
-    return myCovariantParameters != null && myCovariantParameters.contains(index);
+    return myCovariantParameters.contains(index);
   }
 
-  public void setCovariant(int index) {
-    if (myCovariantParameters == null) {
-      myCovariantParameters = new HashSet<>();
+  public void setCovariant(int index, boolean covariant) {
+    if (covariant) {
+      myCovariantParameters.add(index);
+    } else {
+      myCovariantParameters.remove(index);
     }
-    myCovariantParameters.add(index);
   }
 
   public boolean isTruncated() {

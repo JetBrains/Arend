@@ -239,7 +239,7 @@ public class DefinitionDeserialization {
     int index = 0;
     for (Boolean isCovariant : dataProto.getCovariantParameterList()) {
       if (isCovariant) {
-        dataDef.setCovariant(index);
+        dataDef.setCovariant(index, true);
       }
       index++;
     }
