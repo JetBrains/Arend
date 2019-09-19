@@ -13,6 +13,7 @@ import org.arend.naming.scope.Scope;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.Range;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,7 +58,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList());
+    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList(), Range.unbound());
   }
 
   @Override

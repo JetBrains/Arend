@@ -11,6 +11,7 @@ import org.arend.source.FileBinarySource;
 import org.arend.source.GZIPStreamBinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.Range;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,6 +24,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   protected Path myBinaryBasePath;
   protected Set<ModulePath> myModules;
   protected List<LibraryDependency> myDependencies;
+  protected Range<String> myLanguageVersion;
   protected boolean myComplete;
 
   /**
@@ -34,14 +36,16 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param modules           the list of modules of this library.
    * @param isComplete        true if {@code modules} contains all modules of this library, false otherwise.
    * @param dependencies      the list of dependencies of this library.
+   * @param languageVersion   language versions appropriate for this library.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, TypecheckerState typecheckerState) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<String> languageVersion, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
     myModules = modules;
     myComplete = isComplete;
+    myLanguageVersion = languageVersion;
     myDependencies = dependencies;
   }
 
@@ -68,7 +72,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(myModules, myDependencies);
+    return new LibraryHeader(myModules, myDependencies, myLanguageVersion);
   }
 
   @Override

@@ -8,6 +8,7 @@ import org.arend.library.error.LibraryIOError;
 import org.arend.module.ModulePath;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.util.FileUtils;
+import org.arend.util.Range;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -20,7 +21,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final Path myHeaderFile;
 
   public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile, TypecheckerState typecheckerState) {
-    super(config.getName(), null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), typecheckerState);
+    super(config.getName(), null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound(), typecheckerState);
     myConfig = config;
     myHeaderFile = headerFile;
   }
@@ -67,6 +68,16 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       }
     }
 
-    return new LibraryHeader(myModules, myDependencies);
+    if (myConfig.getLangVersion() != null) {
+      Range<String> range = Range.parseRange(myConfig.getLangVersion());
+      if (range != null) {
+        myLanguageVersion = range;
+      } else {
+        errorReporter.report(new LibraryIOError(myHeaderFile.toString(), "Cannot parse language version: " + myConfig.getLangVersion()));
+        return null;
+      }
+    }
+
+    return new LibraryHeader(myModules, myDependencies, myLanguageVersion);
   }
 }

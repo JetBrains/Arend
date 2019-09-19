@@ -1,9 +1,11 @@
 package org.arend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.prelude.Prelude;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.source.SourceLoader;
@@ -129,6 +131,15 @@ public abstract class SourceLibrary extends BaseLibrary {
     return DummyDependencyListener.INSTANCE;
   }
 
+  /**
+   * Indicates whether the library should be loaded if some errors occur.
+   *
+   * @return true if the library should be loaded despite errors, false otherwise.
+   */
+  protected boolean mustBeLoaded() {
+    return false;
+  }
+
   @Override
   public boolean load(LibraryManager libraryManager) {
     if (isLoaded()) {
@@ -139,10 +150,16 @@ public abstract class SourceLibrary extends BaseLibrary {
     if (header == null) {
       return false;
     }
+    if (!header.languageVersionRange.inRange(Prelude.VERSION)) {
+      libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectVersion(header.languageVersionRange));
+      if (!mustBeLoaded()) {
+        return false;
+      }
+    }
 
     for (LibraryDependency dependency : header.dependencies) {
       Library loadedDependency = libraryManager.loadDependency(this, dependency.name);
-      if (loadedDependency == null) {
+      if (loadedDependency == null && !mustBeLoaded()) {
         return false;
       }
       libraryManager.registerDependency(this, loadedDependency);

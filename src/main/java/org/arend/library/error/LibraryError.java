@@ -4,7 +4,9 @@ import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.module.ModulePath;
+import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
+import org.arend.util.Range;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +49,10 @@ public class LibraryError extends GeneralError {
 
   public static LibraryError incorrectLibrary(String libraryName) {
     return new LibraryError(Level.INFO, "Library cannot be typechecked", Stream.of(libraryName));
+  }
+
+  public static LibraryError incorrectVersion(Range<String> range) {
+    return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.empty());
   }
 
   @Override

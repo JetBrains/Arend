@@ -15,6 +15,7 @@ public class LibraryConfig {
   private String myBinariesDirectory;
   private List<String> myModules;
   private List<String> myDependencies;
+  private String myLangVersion;
 
   public String getName() {
     return myName;
@@ -56,6 +57,14 @@ public class LibraryConfig {
     myDependencies = dependencies;
   }
 
+  public String getLangVersion() {
+    return myLangVersion;
+  }
+
+  public void setLangVersion(String langVersion) {
+    myLangVersion = langVersion;
+  }
+
   @Override
   public String toString() {
     List<Doc> docs = new ArrayList<>();
@@ -73,6 +82,9 @@ public class LibraryConfig {
     }
     if (myDependencies != null) {
       docs.add(hList(text("dependencies: ["), hSep(text(", "), myDependencies.stream().map(DocFactory::text).collect(Collectors.toList())), text("]")));
+    }
+    if (myLangVersion != null) {
+      docs.add(text("langVersion: " + myLangVersion));
     }
     return vList(docs).toString();
   }

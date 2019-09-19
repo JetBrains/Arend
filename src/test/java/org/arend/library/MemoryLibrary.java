@@ -5,6 +5,7 @@ import org.arend.module.ModulePath;
 import org.arend.source.BinarySource;
 import org.arend.source.Source;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.util.Range;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,7 +34,7 @@ public class MemoryLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(new ArrayList<>(myRawSources.keySet()), Collections.emptyList());
+    return new LibraryHeader(new ArrayList<>(myRawSources.keySet()), Collections.emptyList(), Range.unbound());
   }
 
   public void addModule(ModulePath module, String text) {

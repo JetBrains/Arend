@@ -11,12 +11,14 @@ import org.arend.module.ModulePath;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
+import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
+import org.arend.util.Range;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -87,15 +89,21 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("srcdir").desc("project source directory").build());
       cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("outdir").desc("project output directory").build());
       cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
+      cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
       CommandLine cmdLine = new DefaultParser().parse(cmdOptions, args);
 
       if (cmdLine.hasOption("h")) {
         new HelpFormatter().printHelp("arend [FILES]", cmdOptions);
         return null;
-      } else {
-        return cmdLine;
       }
+
+      if (cmdLine.hasOption("v")) {
+        System.out.println("Arend " + Prelude.VERSION);
+        return null;
+      }
+
+      return cmdLine;
     } catch (ParseException e) {
       System.err.println(e.getMessage());
       return null;
@@ -190,7 +198,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, argFiles.isEmpty(), libraryDependencies, myTypecheckerState));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound(), myTypecheckerState));
     }
 
     // Load and typecheck libraries
