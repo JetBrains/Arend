@@ -6,10 +6,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.ParsingError;
 import org.arend.naming.BinOpParser;
-import org.arend.naming.error.DuplicateNameError;
-import org.arend.naming.error.DuplicateOpenedNameError;
-import org.arend.naming.error.NamingError;
-import org.arend.naming.error.ReferenceError;
+import org.arend.naming.error.*;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.naming.resolving.ResolverListener;
@@ -700,7 +697,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         name = renaming.getOldReference().textRepresentation();
       }
       if (defined.contains(name)) {
-        myLocalErrorReporter.report(new NamingError(GeneralError.Level.WARNING, "Definition '" + name + "' is not imported since it is defined in this module", renaming));
+        myLocalErrorReporter.report(new ExistingOpenedNameError(renaming));
       }
     }
   }
