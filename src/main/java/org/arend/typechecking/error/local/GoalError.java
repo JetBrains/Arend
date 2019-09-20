@@ -76,4 +76,9 @@ public class GoalError extends TypecheckingError {
 
     return vList(expectedDoc, actualDoc, contextDoc, errorsDoc);
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

@@ -4,6 +4,7 @@ import org.arend.core.context.Utils;
 import org.arend.error.DummyErrorReporter;
 import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
+import org.arend.error.ParsingError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
 import org.arend.naming.error.NamingError;
@@ -158,7 +159,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   private void checkPrecedence(Concrete.ReferableDefinition definition) {
     Precedence prec = definition.getData().getPrecedence();
     if (prec.priority < 0 || prec.priority > 10) {
-      myLocalErrorReporter.report(new NamingError(NamingError.Kind.INVALID_PRIORITY, definition.getData()));
+      myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.INVALID_PRIORITY, definition));
     }
   }
 
@@ -207,21 +208,21 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       Referable typeRef = def.getResultType() == null ? null : def.getResultType().getUnderlyingReferable();
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
-          myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def.getData()));
+          myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
           body.getClassFieldImpls().clear();
         } else {
           exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
         }
       } else {
         if (!(typeRef instanceof ErrorReference)) {
-          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType().getData()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def.getData()));
+          myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
         }
         body.getClassFieldImpls().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
       if (def.getResultType() == null) {
-        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def.getData()));
+        myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
       context.clear();
@@ -235,14 +236,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {
         if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
           if (isFunc) {
-            myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_COERCE, def.getData()));
+            myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_COERCE, def));
           }
           if (def.getParameters().isEmpty() && def.enclosingClass == null) {
-            myLocalErrorReporter.report(new NamingError(NamingError.Kind.COERCE_WITHOUT_PARAMETERS, def.getData()));
+            myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.COERCE_WITHOUT_PARAMETERS, def));
           }
         }
       } else {
-        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_USE, def.getData()));
+        myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_USE, def));
       }
     }
 
@@ -417,7 +418,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         field.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
       } else {
         if (field.getResultTypeLevel() != null && field.getKind() == ClassFieldKind.FIELD) {
-          myLocalErrorReporter.report(new NamingError(NamingError.Kind.LEVEL_IN_FIELD, field.getResultTypeLevel()));
+          myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.LEVEL_IN_FIELD, field));
           field.setResultTypeLevel(null);
         }
 
@@ -434,7 +435,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getData());
 
     if (def.isRecord() && def.isForcedCoercingField()) {
-      myLocalErrorReporter.report(new NamingError(NamingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def.getCoercingField()));
+      myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def));
     }
 
     def.setResolved();
@@ -597,7 +598,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     for (NamespaceCommand cmd : namespaceCommands) {
       if (!isTopLevel && cmd.getKind() == NamespaceCommand.Kind.IMPORT) {
-        myLocalErrorReporter.report(new NamingError(NamingError.Kind.MISPLACED_IMPORT, cmd));
+        myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_IMPORT, cmd));
       } else {
         checkNamespaceCommand(cmd, referables.keySet());
       }
@@ -674,7 +675,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (!name.isEmpty() && !"_".equals(name)) {
       Pair<LocatedReferable, ClassReferable> oldField = fields.get(name);
       if (oldField != null) {
-        myLocalErrorReporter.report(new ReferenceError(GeneralError.Level.WARNING, "Field '" + field.textRepresentation() + ("' is already defined in super class " + oldField.proj2.textRepresentation()), field));
+        myLocalErrorReporter.report(new ReferenceError(GeneralError.Level.WARNING, GeneralError.Stage.RESOLVER, "Field '" + field.textRepresentation() + ("' is already defined in super class " + oldField.proj2.textRepresentation()), field));
       }
     }
   }

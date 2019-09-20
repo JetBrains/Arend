@@ -1,9 +1,6 @@
 package org.arend.typechecking.error.local;
 
-import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
 import org.arend.term.concrete.Concrete;
-import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
@@ -20,11 +17,12 @@ public class TypecheckingError extends LocalError {
     BODY_REQUIRED("Body is required"),
     DATA_WONT_BE_TRUNCATED(Level.WEAK_WARNING, "The data type will not be truncated since it already fits in the specified universe"),
     TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
-    EXPECTED_EXPLICIT_ARGUMENT("Expected an explicit argument"),
-    EXPECTED_IMPLICIT_ARGUMENT("Expected an implicit argument"),
+    EXPECTED_EXPLICIT("Expected an explicit argument"),
+    EXPECTED_IMPLICIT("Expected an implicit argument"),
     CASE_RESULT_TYPE("Cannot infer the result type"),
     LEMMA_LEVEL("The level of a lemma must be \\Prop"),
-    PROPERTY_LEVEL("The level of a property must be \\Prop");
+    PROPERTY_LEVEL("The level of a property must be \\Prop"),
+    REDUNDANT_COCLAUSE(Level.WEAK_WARNING, "Coclause is redundant");
 
     private final Level level;
     private final String message;
@@ -62,17 +60,12 @@ public class TypecheckingError extends LocalError {
   }
 
   @Override
-  public Object getCause() {
-    return cause.getData();
+  public Concrete.SourceNode getCauseSourceNode() {
+    return cause;
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterConfig src) {
-    return DocFactory.ppDoc(cause, src);
-  }
-
-  @Override
-  public boolean isTypecheckingError() {
-    return true;
+  public Stage getStage() {
+    return Stage.TYPECHECKER;
   }
 }

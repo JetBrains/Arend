@@ -10,17 +10,19 @@ import org.arend.typechecking.error.local.LocalError;
 
 public class ReferenceError extends LocalError {
   public final Referable referable;
+  private final Stage myStage;
 
-  public ReferenceError(String message, Referable referable) {
-    this(Level.ERROR, message, referable);
+  public ReferenceError(Stage stage, String message, Referable referable) {
+    this(Level.ERROR, stage, message, referable);
   }
 
-  public ReferenceError(Level level, String message, Referable referable) {
+  public ReferenceError(Level level, Stage stage, String message, Referable referable) {
     super(level, message);
     this.referable = referable;
     if (referable instanceof GlobalReferable) {
       definition = (GlobalReferable) referable;
     }
+    myStage = stage;
   }
 
   @Override
@@ -37,5 +39,10 @@ public class ReferenceError extends LocalError {
   @Override
   public Doc getCauseDoc(PrettyPrinterConfig src) {
     return DocFactory.refDoc(referable);
+  }
+
+  @Override
+  public Stage getStage() {
+    return myStage;
   }
 }

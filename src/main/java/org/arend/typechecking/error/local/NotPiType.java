@@ -24,4 +24,9 @@ public class NotPiType extends TypecheckingError {
       hang(text("Type:"), termDoc(type, ppConfig))
     );
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

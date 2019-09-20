@@ -71,4 +71,9 @@ public class ConditionsError extends TypecheckingError {
 
     return hang(doc, hang(text("evaluates to"), termDoc(evaluatedExpr, ppConfig)));
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

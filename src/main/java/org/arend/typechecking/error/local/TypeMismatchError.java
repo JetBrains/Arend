@@ -30,4 +30,9 @@ public class TypeMismatchError extends TypecheckingError {
       expectedDoc,
       hang(text(expectedDoc.getHeight() == 1 ? "  Actual type:" : "Actual type:"), actual.prettyPrint(ppConfig)));
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

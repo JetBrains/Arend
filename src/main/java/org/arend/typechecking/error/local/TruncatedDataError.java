@@ -31,4 +31,9 @@ public class TruncatedDataError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return hang(indent(text("which does not fit in the universe of the eliminator type:")), termDoc(expectedType, ppConfig));
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

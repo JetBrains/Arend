@@ -43,4 +43,9 @@ public class ExceptionError extends GeneralError {
     exception.printStackTrace(new PrintWriter(stringWriter));
     return DocFactory.text(stringWriter.toString());
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

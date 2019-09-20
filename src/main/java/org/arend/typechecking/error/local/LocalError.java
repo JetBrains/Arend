@@ -15,7 +15,8 @@ public class LocalError extends GeneralError {
 
   @Override
   public Object getCause() {
-    return definition;
+    Object cause = super.getCause();
+    return cause != null ? cause : definition;
   }
 
   @Override

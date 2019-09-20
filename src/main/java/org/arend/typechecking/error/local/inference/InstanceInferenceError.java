@@ -56,4 +56,9 @@ public class InstanceInferenceError extends ArgInferenceError {
     list.add(super.getBodyDoc(ppConfig));
     return vList(list);
   }
+
+  @Override
+  public boolean isShort() {
+    return super.isShort() && classifyingExpression == null && holeExpression == null;
+  }
 }

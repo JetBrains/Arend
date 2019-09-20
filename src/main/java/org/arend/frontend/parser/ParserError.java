@@ -23,4 +23,9 @@ public class ParserError extends GeneralError {
   public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
     consumer.accept(new ModuleReferable(position.module), this);
   }
+
+  @Override
+  public Stage getStage() {
+    return Stage.PARSER;
+  }
 }

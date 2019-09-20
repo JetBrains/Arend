@@ -10,7 +10,7 @@ public class DuplicateNameError extends ReferenceError {
   private final Referable previous;
 
   public DuplicateNameError(Level level, Referable referable, Referable previous) {
-    super(level, "Duplicate name: " + referable.textRepresentation(), referable);
+    super(level, Stage.RESOLVER, "Duplicate name: " + referable.textRepresentation(), referable);
     this.previous = previous;
   }
 

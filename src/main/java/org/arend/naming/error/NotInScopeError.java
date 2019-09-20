@@ -31,4 +31,9 @@ public class NotInScopeError extends LocalError {
     LineDoc header = text(message + " '" + name + "'");
     return referable == null ? header : hList(header, text(" in "), refDoc(referable));
   }
+
+  @Override
+  public Stage getStage() {
+    return Stage.RESOLVER;
+  }
 }

@@ -38,7 +38,12 @@ public class TerminationCheckError extends GeneralError {
   }
 
   @Override
-  public boolean isTypecheckingError() {
-    return true;
+  public Stage getStage() {
+    return Stage.TYPECHECKER;
+  }
+
+  @Override
+  public boolean isShort() {
+    return false;
   }
 }

@@ -103,4 +103,9 @@ public class SolveLevelEquationsError extends TypecheckingError {
       builder.append(constant > 0 ? constant : 0);
     }
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

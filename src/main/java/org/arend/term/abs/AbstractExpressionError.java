@@ -29,4 +29,9 @@ public class AbstractExpressionError extends LocalError {
       this.error = error;
     }
   }
+
+  @Override
+  public Stage getStage() {
+    return Stage.PARSER;
+  }
 }

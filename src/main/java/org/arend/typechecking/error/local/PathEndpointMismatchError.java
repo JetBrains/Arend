@@ -25,4 +25,9 @@ public class PathEndpointMismatchError extends TypecheckingError {
       hang(text("Expected:"), termDoc(expected, ppConfig)),
       hang(text("  Actual:"), termDoc(actual, ppConfig)));
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

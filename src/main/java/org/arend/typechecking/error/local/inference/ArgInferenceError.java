@@ -73,4 +73,9 @@ public class ArgInferenceError extends TypecheckingError {
                 expected == null ? nullDoc() : hang(text("Expected type:"), termDoc(expected, ppConfig)),
                 actual   == null ? nullDoc() : hang(text("  Actual type:"), termDoc(actual, ppConfig))));
   }
+
+  @Override
+  public boolean isShort() {
+    return candidates.length == 0 && expected == null && actual == null;
+  }
 }

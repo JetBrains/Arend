@@ -1,6 +1,7 @@
 package org.arend.naming;
 
 import org.arend.error.ErrorReporter;
+import org.arend.error.ParsingError;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -76,7 +77,8 @@ public class BinOpParser {
   public void push(Concrete.Expression expression, boolean isExplicit) {
     if (myStack.isEmpty()) {
       if (!isExplicit) {
-        myErrorReporter.report(new NamingError(NamingError.Kind.EXPECTED_EXPLICIT, expression));
+        // This should never happen if the binOp expression is correct
+        myErrorReporter.report(new ParsingError("Expected an explicit expression", expression));
       }
       myStack.add(new StackElem(expression, null));
       return;

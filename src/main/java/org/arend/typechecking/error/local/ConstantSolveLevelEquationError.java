@@ -28,4 +28,9 @@ public class ConstantSolveLevelEquationError extends TypecheckingError {
     }
     return nullDoc();
   }
+
+  @Override
+  public boolean isShort() {
+    return !(variable instanceof InferenceLevelVariable && ((InferenceLevelVariable) variable).getSourceNode().getData() != getCause());
+  }
 }

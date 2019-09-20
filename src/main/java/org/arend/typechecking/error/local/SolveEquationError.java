@@ -23,4 +23,9 @@ public class SolveEquationError extends TypecheckingError {
       hang(text("1st expression:"), termDoc(expr1, ppConfig)),
       hang(text("2nd expression:"), termDoc(expr2, ppConfig)));
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }

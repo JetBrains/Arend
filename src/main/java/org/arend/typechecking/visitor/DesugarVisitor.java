@@ -6,8 +6,8 @@ import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.BaseConcreteExpressionVisitor;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.error.local.DesugaringError;
 import org.arend.typechecking.error.local.LocalError;
+import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
@@ -151,14 +151,14 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     Iterator<FieldReferable> it = notImplementedFields.iterator();
     for (int i = 0; i < arguments.size(); i++) {
       if (!it.hasNext()) {
-        myErrorReporter.report(new DesugaringError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
+        myErrorReporter.report(new TypecheckingError("Too many arguments. Class '" + ref.textRepresentation() + "' " + (notImplementedFields.isEmpty() ? "does not have fields" : "has only " + ArgInferenceError.number(notImplementedFields.size(), "field")), arguments.get(i).expression));
         break;
       }
 
       FieldReferable fieldRef = it.next();
       boolean fieldExplicit = fieldRef.isExplicitField();
       if (fieldExplicit && !arguments.get(i).isExplicit()) {
-        myErrorReporter.report(new DesugaringError(DesugaringError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
+        myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.EXPECTED_EXPLICIT, arguments.get(i).expression));
         while (i < arguments.size() && !arguments.get(i).isExplicit()) {
           i++;
         }
@@ -253,7 +253,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
           n = Concrete.NumberPattern.MAX_VALUE;
         }
         if (n == Concrete.NumberPattern.MAX_VALUE) {
-          myErrorReporter.report(new DesugaringError("Value too big", pattern));
+          myErrorReporter.report(new TypecheckingError("Value too big", pattern));
         }
         for (int j = 0; j < n; j++) {
           newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), !isNegative && j == n - 1 ? pattern.getAsReferables() : Collections.emptyList());
@@ -285,7 +285,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       boolean ok = true;
       if (classFieldImpl.getImplementedField() instanceof ClassReferable) {
         if (classFieldImpl.subClassFieldImpls.isEmpty()) {
-          myErrorReporter.report(new DesugaringError(DesugaringError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
+          myErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_COCLAUSE, classFieldImpl));
         }
         for (Concrete.ClassFieldImpl subClassFieldImpl : classFieldImpl.subClassFieldImpls) {
           visitClassFieldImpl(subClassFieldImpl, result);
@@ -306,7 +306,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       }
 
       if (!ok) {
-        LocalError error = new WrongReferable("Expected either a class or a field which has a class as its type", classFieldImpl.getImplementedField(), false, classFieldImpl);
+        LocalError error = new WrongReferable("Expected either a class or a field which has a class as its type", classFieldImpl.getImplementedField(), classFieldImpl);
         myErrorReporter.report(error);
         classFieldImpl.implementation = new Concrete.ErrorHoleExpression(classFieldImpl.getData(), error);
         result.add(classFieldImpl);

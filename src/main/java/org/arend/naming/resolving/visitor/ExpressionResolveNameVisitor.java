@@ -97,7 +97,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (expr instanceof Concrete.FixityReferenceExpression) {
       Fixity fixity = ((Concrete.FixityReferenceExpression) expr).fixity;
       if (fixity == Fixity.INFIX || fixity == Fixity.POSTFIX) {
-        myErrorReporter.report(new NamingError((fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr.getData()));
+        myErrorReporter.report(new NamingError((fixity == Fixity.INFIX ? "Infix" : "Postfix") + " notation is not allowed here", expr));
       }
     }
 
@@ -374,7 +374,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     if (classRef != null) {
       visitClassFieldImpls(expr.getStatements(), classRef);
     } else {
-      LocalError error = new NamingError("Expected a class or a class instance", expr.getBaseClassExpression().getData());
+      LocalError error = new NamingError("Expected a class or a class instance", expr.getBaseClassExpression());
       myErrorReporter.report(error);
       return new Concrete.ErrorHoleExpression(expr.getData(), error);
     }

@@ -3,10 +3,8 @@ package org.arend.typechecking.error;
 import org.arend.core.definition.Definition;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
-import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
 import org.arend.naming.reference.GlobalReferable;
-import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
@@ -53,6 +51,11 @@ public class CycleError extends GeneralError {
   }
 
   @Override
+  public Concrete.SourceNode getCauseSourceNode() {
+    return cause;
+  }
+
+  @Override
   public Object getCause() {
     if (cause != null) {
       Object data = cause.getData();
@@ -64,8 +67,9 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public Doc getCauseDoc(PrettyPrinterConfig src) {
-    return cause == null ? refDoc(cycle.get(0)) : cause.getData() instanceof Referable ? refDoc((Referable) cause.getData()) : DocFactory.ppDoc(cause, src);
+  public Doc getCauseDoc(PrettyPrinterConfig ppConfig) {
+    Doc causeDoc = super.getCauseDoc(ppConfig);
+    return causeDoc != null ? causeDoc : refDoc(cycle.get(0));
   }
 
   @Override
@@ -91,7 +95,7 @@ public class CycleError extends GeneralError {
   }
 
   @Override
-  public boolean isTypecheckingError() {
-    return true;
+  public Stage getStage() {
+    return Stage.TYPECHECKER;
   }
 }

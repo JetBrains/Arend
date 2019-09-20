@@ -11,16 +11,11 @@ import static org.arend.error.doc.DocFactory.text;
 
 public class ReferenceTypeError extends ReferenceError {
   public ReferenceTypeError(Referable referable) {
-    super("Cannot infer type of ", referable);
+    super(Stage.TYPECHECKER, "Cannot infer type of ", referable);
   }
 
   @Override
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig src) {
     return hList(text(message), refDoc(referable));
-  }
-
-  @Override
-  public boolean isTypecheckingError() {
-    return true;
   }
 }

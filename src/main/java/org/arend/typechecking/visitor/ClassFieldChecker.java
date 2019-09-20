@@ -31,10 +31,10 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     myThisParameter = thisParameter;
   }
 
-  private Concrete.Expression makeErrorExpression(Object data) {
-    LocalError error = new NamingError("Fields may refer only to previous fields", data);
+  private Concrete.Expression makeErrorExpression(Concrete.ReferenceExpression expr) {
+    LocalError error = new NamingError("Fields may refer only to previous fields", expr);
     myErrorReporter.report(error);
-    return new Concrete.ErrorHoleExpression(data, error);
+    return new Concrete.ErrorHoleExpression(expr.getData(), error);
   }
 
   private boolean isParent(TCClassReferable parent, TCClassReferable child) {
@@ -78,7 +78,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     if (ref instanceof TCReferable) {
       if (myFields.contains(ref)) {
         if (myFutureFields != null && myFutureFields.contains(ref)) {
-          return makeErrorExpression(expr.getData());
+          return makeErrorExpression(expr);
         } else {
           return Concrete.AppExpression.make(expr.getData(), expr, new Concrete.ThisExpression(expr.getData(), myThisParameter), false);
         }
@@ -87,7 +87,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
         if (def != null && !(def instanceof Concrete.ClassField)) {
           TCClassReferable defEnclosingClass = def.getRelatedDefinition().enclosingClass;
           if (myFutureFields != null && myClassReferable.equals(defEnclosingClass)) {
-            return makeErrorExpression(expr.getData());
+            return makeErrorExpression(expr);
           }
           if (isParent(defEnclosingClass, myClassReferable)) {
             return Concrete.AppExpression.make(expr.getData(), expr, getParentCall(defEnclosingClass, myClassReferable, new Concrete.ThisExpression(expr.getData(), myThisParameter)), false);

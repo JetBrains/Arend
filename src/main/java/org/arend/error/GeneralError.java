@@ -5,6 +5,8 @@ import org.arend.error.doc.DocStringBuilder;
 import org.arend.error.doc.LineDoc;
 import org.arend.naming.reference.DataContainer;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.naming.reference.Referable;
+import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
@@ -25,13 +27,20 @@ public class GeneralError {
     }
   }, GOAL, WARNING, ERROR }
 
+  public enum Stage { TYPECHECKER, RESOLVER, PARSER, OTHER }
+
   public GeneralError(@Nonnull Level level, String message) {
     this.level = level;
     this.message = message;
   }
 
-  public Object getCause() {
+  public Concrete.SourceNode getCauseSourceNode() {
     return null;
+  }
+
+  public Object getCause() {
+    Concrete.SourceNode sourceNode = getCauseSourceNode();
+    return sourceNode != null ? sourceNode.getData() : null;
   }
 
   public LineDoc getPositionDoc(PrettyPrinterConfig ppConfig) {
@@ -57,7 +66,13 @@ public class GeneralError {
   }
 
   public Doc getCauseDoc(PrettyPrinterConfig ppConfig) {
-    return null;
+    Object cause = getCause();
+    if (cause instanceof Referable) {
+      return refDoc((Referable) cause);
+    }
+
+    Concrete.SourceNode sourceNode = getCauseSourceNode();
+    return sourceNode != null ? sourceNode.prettyPrint(ppConfig) : null;
   }
 
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
@@ -78,8 +93,8 @@ public class GeneralError {
     return DocStringBuilder.build(getShortHeaderDoc(PrettyPrinterConfig.DEFAULT));
   }
 
-  public boolean isTypecheckingError() {
-    return false;
+  public Stage getStage() {
+    return Stage.OTHER;
   }
 
   public void forAffectedDefinitions(BiConsumer<GlobalReferable, GeneralError> consumer) {
@@ -97,5 +112,9 @@ public class GeneralError {
 
   public boolean isSevere() {
     return getCause() == null;
+  }
+
+  public boolean isShort() {
+    return true;
   }
 }

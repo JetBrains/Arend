@@ -186,7 +186,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   private void reportExplicitnessError(boolean isExplicit, Concrete.SourceNode sourceNode) {
-    myVisitor.getErrorReporter().report(new TypecheckingError(isExplicit ? TypecheckingError.Kind.EXPECTED_EXPLICIT_ARGUMENT : TypecheckingError.Kind.EXPECTED_IMPLICIT_ARGUMENT, sourceNode));
+    myVisitor.getErrorReporter().report(new TypecheckingError(isExplicit ? TypecheckingError.Kind.EXPECTED_EXPLICIT : TypecheckingError.Kind.EXPECTED_IMPLICIT, sourceNode));
   }
 
   private void typecheckDeferredArgument(Pair<InferenceVariable, Concrete.Expression> pair, TResult result) {

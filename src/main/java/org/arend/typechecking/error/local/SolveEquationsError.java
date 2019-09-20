@@ -29,4 +29,9 @@ public class SolveEquationsError extends TypecheckingError {
     }
     return vList(docs);
   }
+
+  @Override
+  public boolean isShort() {
+    return false;
+  }
 }
