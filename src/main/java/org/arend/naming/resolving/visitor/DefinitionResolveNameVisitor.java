@@ -7,6 +7,7 @@ import org.arend.error.GeneralError;
 import org.arend.error.ParsingError;
 import org.arend.naming.BinOpParser;
 import org.arend.naming.error.DuplicateNameError;
+import org.arend.naming.error.DuplicateOpenedNameError;
 import org.arend.naming.error.NamingError;
 import org.arend.naming.error.ReferenceError;
 import org.arend.naming.reference.*;
@@ -20,7 +21,6 @@ import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
-import org.arend.util.LongName;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;
@@ -567,7 +567,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (!fields.isEmpty()) {
       Map<String, Pair<LocatedReferable, ClassReferable>> superFields = collectClassFields(groupRef);
       for (Group.InternalReferable internalRef : fields) {
-        checkField(internalRef.getReferable(), superFields, groupRef);
+        checkField(internalRef.getReferable(), superFields);
       }
     }
 
@@ -630,7 +630,16 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         for (int j = i + 1; j < namespaces.size(); j++) {
           Referable ref = namespaces.get(j).proj2.get(entry.getKey());
           if (ref != null && !ref.equals(entry.getValue())) {
-            myLocalErrorReporter.report(new NamingError(GeneralError.Level.WARNING, "Definition '" + ref.textRepresentation() + "' is imported from modules " + new LongName(pair.proj1.getPath()) + " and " + new LongName(namespaces.get(j).proj1.getPath()), namespaces.get(j).proj1));
+            NamespaceCommand nsCmd = namespaces.get(j).proj1;
+            Object cause = nsCmd;
+            for (NameRenaming renaming : nsCmd.getOpenedReferences()) {
+              String name = renaming.getName();
+              if (entry.getKey().equals(name != null ? name : renaming.getOldReference().textRepresentation())) {
+                cause = renaming;
+                break;
+              }
+            }
+            myLocalErrorReporter.report(new DuplicateOpenedNameError(ref, pair.proj1, cause));
           }
         }
       }
@@ -666,7 +675,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     return fields;
   }
 
-  private void checkField(LocatedReferable field, Map<String, Pair<LocatedReferable, ClassReferable>> fields, LocatedReferable classRef) {
+  private void checkField(LocatedReferable field, Map<String, Pair<LocatedReferable, ClassReferable>> fields) {
     if (field == null || fields.isEmpty()) {
       return;
     }
