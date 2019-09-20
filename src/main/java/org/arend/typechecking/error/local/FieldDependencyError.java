@@ -7,20 +7,28 @@ import org.arend.term.prettyprint.PrettyPrinterConfig;
 
 import javax.annotation.Nonnull;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import static org.arend.error.doc.DocFactory.*;
 
 public class FieldDependencyError extends TypecheckingError {
-  public final ClassField field1;
-  public final ClassField field2;
+  public final ClassField field;
+  public final Set<ClassField> fields;
 
-  public FieldDependencyError(ClassField field1, ClassField field2, @Nonnull Concrete.SourceNode cause) {
+  public FieldDependencyError(ClassField field, Set<ClassField> fields, @Nonnull Concrete.SourceNode cause) {
     super("", cause);
-    this.field1 = field1;
-    this.field2 = field2;
+    this.field = field;
+    this.fields = fields;
   }
 
   @Override
   public LineDoc getShortHeaderDoc(PrettyPrinterConfig ppConfig) {
-    return hList(text("Field '"), refDoc(field1.getReferable()), text("' depends on '"), refDoc(field2.getReferable()), text(" but is not implemented"));
+    List<LineDoc> fieldDocs = new ArrayList<>();
+    for (ClassField field : fields) {
+      fieldDocs.add(refDoc(field.getReferable()));
+    }
+    return hList(text("Field '"), refDoc(field.getReferable()), text("' depends on "), hSep(text(", "), fieldDocs), text(" but is not implemented"));
   }
 }

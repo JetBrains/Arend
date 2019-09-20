@@ -7,29 +7,41 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.util.Pair;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class FindDefCallVisitor extends ProcessDefCallsVisitor<Void> {
-  private Definition myFoundDefinition;
-  private final Set<? extends Definition> myDefinitions;
+public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVisitor<Void> {
+  private final Set<T> myFoundDefinitions = new HashSet<>();
+  private final Set<? extends T> myDefinitions;
+  private final boolean myFindAll;
 
-  public FindDefCallVisitor(Set<? extends Definition> definitions) {
+  public FindDefCallVisitor(Set<? extends T> definitions, boolean findAll) {
     myDefinitions = definitions;
+    myFindAll = findAll;
   }
 
-  public Definition getFoundDefinition() {
-    return myFoundDefinition;
+  public T getFoundDefinition() {
+    Iterator<T> it = myFoundDefinitions.iterator();
+    return it.hasNext() ? it.next() : null;
+  }
+
+  public Set<T> getFoundDefinitions() {
+    return myFoundDefinitions;
   }
 
   public void clear() {
-    myFoundDefinition = null;
+    myFoundDefinitions.clear();
   }
 
-  public static Definition findDefinition(Expression expression, Set<? extends Definition> definitions) {
-    FindDefCallVisitor visitor = new FindDefCallVisitor(definitions);
+  public static <T extends Definition> T findDefinition(Expression expression, Set<? extends T> definitions) {
+    FindDefCallVisitor<T> visitor = new FindDefCallVisitor<>(definitions, false);
     expression.accept(visitor, null);
-    return visitor.myFoundDefinition;
+    return visitor.getFoundDefinition();
+  }
+
+  public static <T extends Definition> Set<T> findDefinitions(Expression expression, Set<? extends T> definitions) {
+    FindDefCallVisitor<T> visitor = new FindDefCallVisitor<>(definitions, true);
+    expression.accept(visitor, null);
+    return visitor.myFoundDefinitions;
   }
 
   public void findDefinition(Body body) {
@@ -45,7 +57,7 @@ public class FindDefCallVisitor extends ProcessDefCallsVisitor<Void> {
     } else if (body instanceof BranchElimTree) {
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
         findDefinition(entry.getValue());
-        if (myFoundDefinition != null) {
+        if (!myFindAll && !myFoundDefinitions.isEmpty()) {
           return;
         }
       }
@@ -56,9 +68,11 @@ public class FindDefCallVisitor extends ProcessDefCallsVisitor<Void> {
 
   @Override
   protected boolean processDefCall(DefCallExpression expression, Void param) {
+    //noinspection SuspiciousMethodCalls
     if (myDefinitions.contains(expression.getDefinition())) {
-      myFoundDefinition = expression.getDefinition();
-      return true;
+      //noinspection unchecked
+      myFoundDefinitions.add((T) expression.getDefinition());
+      return !myFindAll;
     } else {
       return false;
     }

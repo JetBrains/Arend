@@ -384,12 +384,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (defined != null) {
       for (ClassField field : baseClass.getFields()) {
         if (!defined.contains(field) && !resultClassCall.isImplemented(field)) {
-          ClassField found = (ClassField) FindDefCallVisitor.findDefinition(field.getType(Sort.STD).getCodomain(), defined);
-          if (found != null) {
+          Set<ClassField> found = FindDefCallVisitor.findDefinitions(field.getType(Sort.STD).getCodomain(), defined);
+          if (!found.isEmpty()) {
             Concrete.SourceNode sourceNode = null;
             for (Pair<Definition, Concrete.ClassFieldImpl> implementation : implementations) {
-              if (implementation.proj1 == found) {
+              if (implementation.proj1 instanceof ClassField && found.contains(implementation.proj1)) {
                 sourceNode = implementation.proj2;
+                break;
               }
             }
             if (sourceNode == null) {

@@ -382,17 +382,18 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     if (!functionDefinitions.isEmpty()) {
-      FindDefCallVisitor visitor = new FindDefCallVisitor(dataDefinitions);
+      FindDefCallVisitor<DataDefinition> visitor = new FindDefCallVisitor<>(dataDefinitions, false);
       Iterator<Map.Entry<FunctionDefinition, Concrete.Definition>> it = functionDefinitions.entrySet().iterator();
       while (it.hasNext()) {
         Map.Entry<FunctionDefinition, Concrete.Definition> entry = it.next();
         visitor.findDefinition(entry.getKey().getBody());
-        if (visitor.getFoundDefinition() != null) {
+        Definition found = visitor.getFoundDefinition();
+        if (found != null) {
           entry.getKey().setBody(null);
           if (entry.getKey().status().headerIsOK()) {
             entry.getKey().setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
           }
-          myErrorReporter.report(new TypecheckingError("Mutually recursive function refers to data type '" + visitor.getFoundDefinition().getName() + "'", entry.getValue()).withDefinition(entry.getKey().getReferable()));
+          myErrorReporter.report(new TypecheckingError("Mutually recursive function refers to data type '" + found.getName() + "'", entry.getValue()).withDefinition(entry.getKey().getReferable()));
           it.remove();
           visitor.clear();
         }
