@@ -31,8 +31,21 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return myFoundVariable;
   }
 
-  public static Expression findBindings(Expression expression, Set<Binding> bindings) {
-    return new ElimBindingVisitor(bindings).findBindings(expression, true);
+  public static Expression findBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
+    ElimBindingVisitor visitor = new ElimBindingVisitor(bindings);
+    visitor.myFoundVariable = expression.accept(visitor.myVisitor, null);
+    if (visitor.myFoundVariable == null) {
+      return expression;
+    }
+
+    if (removeImplementations) {
+      ClassCallExpression classCall = expression.checkedCast(ClassCallExpression.class);
+      if (classCall != null) {
+        return visitor.visitClassCall(classCall, true);
+      }
+    }
+
+    return expression.normalize(NormalizeVisitor.Mode.WHNF).accept(visitor, null);
   }
 
   private Expression findBindings(Expression expression, boolean normalize) {
@@ -97,17 +110,25 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, newArgs);
   }
 
-  @Override
-  public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
+  public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {
     Map<ClassField, Expression> newFieldSet = new HashMap<>();
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       Expression newImpl = findBindings(entry.getValue(), true);
       if (newImpl == null) {
-        return null;
+        if (removeImplementations) {
+          continue;
+        } else {
+          return null;
+        }
       }
       newFieldSet.put(entry.getKey(), newImpl);
     }
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.hasUniverses());
+  }
+
+  @Override
+  public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
+    return visitClassCall(expr, false);
   }
 
   @Override
@@ -231,7 +252,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public NewExpression visitNew(NewExpression expr, Void params) {
-    ClassCallExpression newExpr = visitClassCall(expr.getExpression(), null);
+    ClassCallExpression newExpr = visitClassCall(expr.getExpression(), false);
     return newExpr == null ? null : new NewExpression(newExpr);
   }
 

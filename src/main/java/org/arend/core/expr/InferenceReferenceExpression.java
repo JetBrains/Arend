@@ -45,6 +45,10 @@ public class InferenceReferenceExpression extends Expression {
     return mySubstExpression == null ? myVar : null;
   }
 
+  public InferenceVariable getOriginalVariable() {
+    return myVar;
+  }
+
   public Expression getSubstExpression() {
     return mySubstExpression;
   }

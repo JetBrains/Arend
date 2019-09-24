@@ -98,7 +98,7 @@ public class TwoStageEquations implements Equations {
       }
 
       if (result != null) {
-        SolveResult solveResult = solve(variable, result.normalize(NormalizeVisitor.Mode.WHNF));
+        SolveResult solveResult = solve(variable, result.normalize(NormalizeVisitor.Mode.WHNF), false);
         return solveResult != SolveResult.SOLVED || CompareVisitor.compare(this, cmp, expr1, expr2, type, sourceNode);
       }
     }
@@ -144,7 +144,7 @@ public class TwoStageEquations implements Equations {
         FieldCallExpression fieldCall = cType.checkedCast(FieldCallExpression.class);
         InferenceReferenceExpression infRef = fieldCall == null ? null : fieldCall.getArgument().checkedCast(InferenceReferenceExpression.class);
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
-          solve(cInf, cType);
+          solve(cInf, cType, false);
           return true;
         }
       }
@@ -162,7 +162,7 @@ public class TwoStageEquations implements Equations {
           }
           InferenceVariable infVar = new DerivedInferenceVariable(cInf.getName() + "-cod", cInf, new UniverseExpression(codSort), myVisitor.getAllBindings());
           Expression newRef = new InferenceReferenceExpression(infVar, this);
-          solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef));
+          solve(cInf, new PiExpression(piSort, pi.getParameters(), newRef), false);
           return addEquation(pi.getCodomain().normalize(NormalizeVisitor.Mode.WHNF), newRef, ExpectedType.OMEGA, cmp, sourceNode, pi.getCodomain().getStuckInferenceVariable(), infVar);
         }
       }
@@ -171,7 +171,7 @@ public class TwoStageEquations implements Equations {
       UniverseExpression universe = cType.checkedCast(UniverseExpression.class);
       if (universe != null) {
         Sort genSort = Sort.generateInferVars(this, true, cInf.getSourceNode());
-        solve(cInf, new UniverseExpression(genSort));
+        solve(cInf, new UniverseExpression(genSort), false);
         Sort sort = universe.getSort();
         if (cmp == CMP.LE) {
           Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
@@ -667,7 +667,12 @@ public class TwoStageEquations implements Equations {
       Expression upper = equation.getUpperBound();
       if (lower.isInstance(ClassCallExpression.class) && upper.isInstance(ClassCallExpression.class)) {
         if (!CompareVisitor.compare(DummyEquations.getInstance(), equation.cmp == CMP.EQ ? CMP.EQ : CMP.LE, lower, upper, ExpectedType.OMEGA, equation.sourceNode)) {
-          myVisitor.getErrorReporter().report(new SolveEquationError(lower, upper, equation.sourceNode));
+          InferenceReferenceExpression infRefExpr = lower.checkedCast(InferenceReferenceExpression.class);
+          if (infRefExpr != null) {
+            myVisitor.getErrorReporter().report(infRefExpr.getOriginalVariable().getErrorInfer(infRefExpr.getSubstExpression(), upper));
+          } else {
+            myVisitor.getErrorReporter().report(new SolveEquationError(lower, upper, equation.sourceNode));
+          }
         }
         iterator.remove();
         continue;
@@ -693,7 +698,7 @@ public class TwoStageEquations implements Equations {
     }
 
     for (Map.Entry<InferenceVariable, ClassCallExpression> entry : result.entrySet()) {
-      solve(entry.getKey(), entry.getValue());
+      solve(entry.getKey(), entry.getValue(), false);
     }
   }
 
@@ -754,7 +759,7 @@ public class TwoStageEquations implements Equations {
     }
 
     if (lowerBounds.size() == 1) {
-      solve(variable, lowerBounds.get(0));
+      solve(variable, lowerBounds.get(0), true);
       return;
     }
 
@@ -771,12 +776,14 @@ public class TwoStageEquations implements Equations {
       }
     }
 
-    Sort sortArgument = lowerBounds.get(0).getSortArgument();
-    Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
-    int originalSize = implementations.size();
-    ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations), classDef.hasUniverses());
+    Sort sortArgument = Sort.PROP;
     for (ClassCallExpression lowerBound : lowerBounds) {
       sortArgument = sortArgument.max(lowerBound.getSortArgument());
+    }
+
+    Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
+    ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations), classDef.hasUniverses());
+    for (ClassCallExpression lowerBound : lowerBounds) {
       for (ClassField field : classDef.getOrderedFields()) {
         Expression impl1 = implementations.get(field);
         if (impl1 != null) {
@@ -789,6 +796,14 @@ public class TwoStageEquations implements Equations {
         }
       }
     }
+
+    solve(variable, removeDependencies(solution, lowerBounds.get(0).getImplementedHere().size()), true);
+  }
+
+  private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
+    ClassDefinition classDef = solution.getDefinition();
+    Map<ClassField, Expression> implementations = solution.getImplementedHere();
+    Sort sortArgument = solution.getSortArgument();
 
     for (ClassField field : classDef.getOrderedFields()) {
       if (!implementations.containsKey(field)) {
@@ -806,20 +821,20 @@ public class TwoStageEquations implements Equations {
       }, null);
     }
 
-    ClassCallExpression finalSolution = solution;
+    ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
       Sort newSort = classDef.computeSort(implementations);
-      if (!newSort.equals(finalSolution.getSort())) {
-        finalSolution = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.hasUniverses());
+      if (!newSort.equals(sol.getSort())) {
+        sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.hasUniverses());
       }
     }
-    finalSolution.updateHasUniverses();
-    solve(variable, finalSolution);
+    sol.updateHasUniverses();
+    return sol;
   }
 
   private enum SolveResult { SOLVED, NOT_SOLVED, ERROR }
 
-  private SolveResult solve(InferenceVariable var, Expression expr) {
+  private SolveResult solve(InferenceVariable var, Expression expr, boolean isLowerBound) {
     if (expr.getInferenceVariable() == var) {
       return SolveResult.NOT_SOLVED;
     }
@@ -836,8 +851,12 @@ public class TwoStageEquations implements Equations {
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
     if (actualType == null || actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
-      Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds());
+      Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds(), isLowerBound);
       if (result != null) {
+        if (isLowerBound && expr.isInstance(ClassCallExpression.class)) {
+          ClassCallExpression classCall = result.cast(ClassCallExpression.class);
+          result = removeDependencies(classCall, classCall.getImplementedHere().size());
+        }
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return SolveResult.SOLVED;
       } else {
