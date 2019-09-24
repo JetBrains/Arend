@@ -18,9 +18,12 @@ public class BaseDefinitionTypechecker {
     }
   }
 
-  protected void checkElimBody(Concrete.FunctionDefinition def) {
+  protected boolean checkElimBody(Concrete.FunctionDefinition def) {
     if (def.isRecursive() && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
       errorReporter.report(new TypecheckingError("Recursive functions must be defined by pattern matching", def));
+      return false;
+    } else {
+      return true;
     }
   }
 }

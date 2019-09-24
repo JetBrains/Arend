@@ -180,10 +180,10 @@ class ExpressionDeserialization {
           ExpressionProtos.ElimTree.Branch.TupleClause tupleClause = branchProto.getTupleClause();
           children.put(new BranchElimTree.TupleConstructor(tupleClause.getLength(), tupleClause.getIsClassInstance()), readElimTree(tupleClause.getElimTree()));
         }
-        return new BranchElimTree(parameters, children);
+        return null; // new BranchElimTree(parameters, children); // TODO[elim]
       }
       case LEAF:
-        return new LeafElimTree(parameters, readExpr(proto.getLeaf().getExpr()));
+        return null; // new LeafElimTree(parameters, readExpr(proto.getLeaf().getExpr())); // TODO[elim]
       default:
         throw new DeserializationException("Unknown ElimTreeNode kind: " + proto.getKindCase());
     }
@@ -369,7 +369,7 @@ class ExpressionDeserialization {
     for (ExpressionProtos.Expression argument : proto.getArgumentList()) {
       arguments.add(readExpr(argument));
     }
-    return new CaseExpression(parameters, type, typeLevel, elimTree, arguments);
+    return null; // new CaseExpression(parameters, type, typeLevel, elimTree, arguments); // TODO[elim]
   }
 
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {

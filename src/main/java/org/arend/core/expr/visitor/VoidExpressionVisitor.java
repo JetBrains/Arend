@@ -2,7 +2,6 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
@@ -127,19 +126,14 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     return null;
   }
 
-  protected void visitElimTree(ElimTree elimTree, P params) {
-    visitParameters(elimTree.getParameters(), params);
-    if (elimTree instanceof LeafElimTree) {
-      ((LeafElimTree) elimTree).getExpression().accept(this, params);
-    } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        visitElimTree(entry.getValue(), params);
-      }
+  protected void visitElimBody(ElimBody elimBody, P params) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      visitParameters(clause.parameters, params);
+      clause.expression.accept(this, params);
     }
   }
 
   public void visitBody(Body body, P params) {
-    ElimTree elimTree = null;
     if (body instanceof IntervalElim) {
       for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
         if (pair.proj1 != null) {
@@ -149,13 +143,15 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
           pair.proj2.accept(this, params);
         }
       }
-      elimTree = ((IntervalElim) body).getOtherwise();
-    } else if (body instanceof ElimTree) {
-      elimTree = (ElimTree) body;
+      body = ((IntervalElim) body).getOtherwise();
     }
 
-    if (elimTree != null) {
-      visitElimTree(elimTree, params);
+    if (body instanceof Expression) {
+      ((Expression) body).accept(this, params);
+    } else if (body instanceof ElimBody) {
+      visitElimBody((ElimBody) body, params);
+    } else {
+      assert body == null;
     }
   }
 
@@ -165,7 +161,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
       arg.accept(this, params);
     }
     visitParameters(expr.getParameters(), params);
-    visitElimTree(expr.getElimTree(), params);
+    visitElimBody(expr.getElimBody(), params);
     return null;
   }
 

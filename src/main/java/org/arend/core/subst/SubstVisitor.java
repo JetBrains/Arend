@@ -4,10 +4,7 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
@@ -189,26 +186,18 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       arguments.add(arg.accept(this, null));
     }
 
+    List<ElimClause> elimClauses = new ArrayList<>();
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      DependentLink parameters = DependentLink.Helper.subst(clause.parameters, this);
+      elimClauses.add(new ElimClause(parameters, clause.expression.accept(this, null)));
+      DependentLink.Helper.freeSubsts(clause.parameters, myExprSubstitution);
+    }
+
     DependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     Expression type = expr.getResultType().accept(this, null);
     Expression typeLevel = expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
-    return new CaseExpression(parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
-  }
-
-  public ElimTree substElimTree(ElimTree elimTree) {
-    DependentLink vars = DependentLink.Helper.subst(elimTree.getParameters(), this);
-    if (elimTree instanceof LeafElimTree) {
-      elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
-    } else {
-      Map<Constructor, ElimTree> children = new HashMap<>();
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), substElimTree(entry.getValue()));
-      }
-      elimTree = new BranchElimTree(vars, children);
-    }
-    DependentLink.Helper.freeSubsts(elimTree.getParameters(), myExprSubstitution);
-    return elimTree;
+    return new CaseExpression(parameters, type, typeLevel, new ElimBody(elimClauses, expr.getElimTree()), arguments);
   }
 
   @Override

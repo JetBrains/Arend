@@ -6,16 +6,11 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.subst.ExprSubstitution;
-import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
 
 import java.util.*;
 
@@ -292,6 +287,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
     Expression newType = findBindings(expr.getResultType().subst(substitution), true);
     if (newType == null) {
+      myVisitor.freeParameters(parameters);
       return null;
     }
 
@@ -299,43 +295,31 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (expr.getResultTypeLevel() != null) {
       newTypeLevel = findBindings(expr.getResultTypeLevel().subst(substitution), true);
       if (newTypeLevel == null) {
+        myVisitor.freeParameters(parameters);
         return null;
       }
     } else {
       newTypeLevel = null;
     }
 
-    ElimTree newElimTree = findBindingInElimTree(expr.getElimTree());
     myVisitor.freeParameters(parameters);
-    return newElimTree == null ? null : new CaseExpression(parameters, newType, newTypeLevel, newElimTree, newArgs);
-  }
 
-  private ElimTree findBindingInElimTree(ElimTree elimTree) {
-    ExprSubstitution substitution = new ExprSubstitution();
-    DependentLink parameters = DependentLink.Helper.subst(elimTree.getParameters(), substitution);
-    if (!visitDependentLink(parameters)) {
-      return null;
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      Expression newExpr = findBindings(((LeafElimTree) elimTree).getExpression().subst(substitution), true);
-      myVisitor.freeParameters(parameters);
-      return newExpr == null ? null : new LeafElimTree(parameters, newExpr);
-    } else {
-      Map<Constructor, ElimTree> newChildren = new HashMap<>();
-      SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        ElimTree newElimTree = findBindingInElimTree(visitor.substElimTree(entry.getValue()));
-        if (newElimTree == null) {
-          myVisitor.freeParameters(parameters);
-          return null;
-        }
-        newChildren.put(entry.getKey(), newElimTree);
+    List<ElimClause> elimClauses = new ArrayList<>();
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      ExprSubstitution clauseSubst = new ExprSubstitution();
+      DependentLink clauseParams = DependentLink.Helper.subst(clause.parameters, clauseSubst);
+      if (!visitDependentLink(clauseParams)) {
+        return null;
       }
-
-      myVisitor.freeParameters(parameters);
-      return new BranchElimTree(parameters, newChildren);
+      Expression clauseExpr = findBindings(clause.expression.subst(clauseSubst), true);
+      myVisitor.freeParameters(clauseParams);
+      if (clauseExpr == null) {
+        return null;
+      }
+      elimClauses.add(new ElimClause(clauseParams, clauseExpr));
     }
+
+    return new CaseExpression(parameters, newType, newTypeLevel, new ElimBody(elimClauses, expr.getElimTree()), newArgs);
   }
 
   @Override

@@ -29,16 +29,19 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
           return true;
         }
       }
-      return findUniverse(((IntervalElim) body).getOtherwise());
-    } else if (body instanceof LeafElimTree) {
-      return findUniverse(((LeafElimTree) body).getExpression());
-    } else if (body instanceof BranchElimTree) {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
-        if (findUniverse(entry.getValue())) {
+      body = ((IntervalElim) body).getOtherwise();
+    }
+
+    if (body instanceof Expression) {
+      return findUniverse((Expression) body);
+    } else if (body instanceof ElimBody) {
+      for (ElimClause clause : ((ElimBody) body).getClauses()) {
+        if (findUniverse(clause.expression)) {
           return true;
         }
       }
     }
+
     return false;
   }
 

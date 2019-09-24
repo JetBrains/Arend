@@ -8,6 +8,7 @@ import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
@@ -36,25 +37,6 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
 
   // Bindings
-
-  private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
-  }
-
-  private class RollbackBindings implements AutoCloseable {
-    private final int myTargetSize;
-
-    private RollbackBindings(int targetSize) {
-      myTargetSize = targetSize;
-    }
-
-    @Override
-    public void close() {
-      for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
-        myBindingsMap.remove(myBindings.remove(i));
-      }
-    }
-  }
 
   @SuppressWarnings("UnusedReturnValue")
   private int registerBinding(Binding binding) {
@@ -163,8 +145,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return expr.accept(this, null);
   }
 
-  ExpressionProtos.ElimTree writeElimTree(ElimTree elimTree) {
+  ExpressionProtos.ElimTree writeElimBody(ElimBody elimBody) {
     ExpressionProtos.ElimTree.Builder builder = ExpressionProtos.ElimTree.newBuilder();
+    /* TODO[elim]
     builder.addAllParam(writeParameters(elimTree.getParameters()));
 
     if (elimTree instanceof LeafElimTree) {
@@ -191,6 +174,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
       builder.setBranch(branchBuilder);
     }
+    */
 
     return builder.build();
   }
@@ -390,7 +374,8 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
     ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
-    builder.setElimTree(writeElimTree(expr.getElimTree()));
+    // TODO[elim]
+    // builder.setElimTree(writeElimBody(expr.getElimTree()));
     builder.addAllParam(writeParameters(expr.getParameters()));
     builder.setResultType(writeExpr(expr.getResultType()));
     if (expr.getResultTypeLevel() != null) {

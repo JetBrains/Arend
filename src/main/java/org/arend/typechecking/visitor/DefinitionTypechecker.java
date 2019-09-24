@@ -810,7 +810,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (termResult != null) {
         if (termResult.expression != null) {
           if (newDef) {
-            typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+            typedDef.setBody(termResult.expression);
           }
         }
         if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
@@ -843,7 +843,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    checkElimBody(def);
+    if (!checkElimBody(def)) {
+      typedDef.setBody(null);
+    }
 
     if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
       Definition useParent = typechecker.getTypechecked(def.getUseParent());
@@ -876,17 +878,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typedDef.setResultType(new ErrorExpression(null, null));
       }
 
-      ElimTree elimTree;
-      if (typedDef.getActualBody() instanceof ElimTree) {
-        elimTree = (ElimTree) typedDef.getActualBody();
-      } else if (typedDef.getActualBody() instanceof IntervalElim) {
-        elimTree = ((IntervalElim) typedDef.getActualBody()).getOtherwise();
-      } else {
-        elimTree = null;
-      }
-
-      if (elimTree != null) {
-        goodThisParametersVisitor = new GoodThisParametersVisitor(elimTree, DependentLink.Helper.size(typedDef.getParameters()));
+      if (typedDef.getActualBody() instanceof ElimBody) {
+        goodThisParametersVisitor = new GoodThisParametersVisitor((ElimBody) typedDef.getActualBody(), DependentLink.Helper.size(typedDef.getParameters()));
       } else {
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
@@ -1442,16 +1435,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         constructor.setNumberOfIntervalParameters(numberOfNewParameters);
 
         List<Pair<Expression,Expression>> pairs;
-        ElimTree elimTree;
-        if (constructor.getBody() instanceof IntervalElim) {
-          pairs = ((IntervalElim) constructor.getBody()).getCases();
+        Body body = constructor.getBody();
+        if (body instanceof IntervalElim) {
+          pairs = ((IntervalElim) body).getCases();
           for (int i = 0; i < pairs.size(); i++) {
             pairs.set(i, new Pair<>(addAts(pairs.get(i).proj1, newParam, constructorType), addAts(pairs.get(i).proj2, newParam, constructorType)));
           }
-          elimTree = ((IntervalElim) constructor.getBody()).getOtherwise();
+          body = ((IntervalElim) body).getOtherwise();
         } else {
           pairs = new ArrayList<>();
-          elimTree = constructor.getBody() instanceof ElimTree ? (ElimTree) constructor.getBody() : null;
         }
 
         while (constructorType instanceof DataCallExpression && ((DataCallExpression) constructorType).getDefinition() == Prelude.PATH) {
@@ -1463,7 +1455,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           newParam = newParam.getNext();
         }
 
-        constructor.setBody(new IntervalElim(list.getFirst(), pairs, elimTree));
+        constructor.setBody(new IntervalElim(DependentLink.Helper.size(list.getFirst()), pairs, body));
       }
     }
 

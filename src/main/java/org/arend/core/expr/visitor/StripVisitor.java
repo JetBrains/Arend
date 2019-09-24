@@ -3,10 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.error.ErrorReporter;
@@ -166,25 +163,16 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitCase(CaseExpression expr, Void params) {
-    ElimTree elimTree = stripElimTree(expr.getElimTree());
+    List<ElimClause> elimClauses = new ArrayList<>();
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      visitParameters(clause.parameters);
+      elimClauses.add(new ElimClause(clause.parameters, clause.expression.accept(this, null)));
+    }
     for (int i = 0; i < expr.getArguments().size(); i++) {
       expr.getArguments().set(i, expr.getArguments().get(i).accept(this, null));
     }
     visitParameters(expr.getParameters());
-    return new CaseExpression(expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), elimTree, expr.getArguments());
-  }
-
-  private ElimTree stripElimTree(ElimTree elimTree) {
-    visitParameters(elimTree.getParameters());
-    if (elimTree instanceof LeafElimTree) {
-      return new LeafElimTree(elimTree.getParameters(), ((LeafElimTree) elimTree).getExpression().accept(this, null));
-    } else {
-      Map<Constructor, ElimTree> children = new HashMap<>();
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), stripElimTree(entry.getValue()));
-      }
-      return new BranchElimTree(elimTree.getParameters(), children);
-    }
+    return new CaseExpression(expr.getParameters(), expr.getResultType().accept(this, null), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null), new ElimBody(elimClauses, expr.getElimTree()), expr.getArguments());
   }
 
   @Override

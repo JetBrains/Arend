@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
+import org.arend.core.elimtree.Body;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.visitor.*;
 import org.arend.core.sort.Sort;
@@ -27,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Expression implements ExpectedType {
+public abstract class Expression implements ExpectedType, Body {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
@@ -247,6 +248,16 @@ public abstract class Expression implements ExpectedType {
   public Expression getFunction() {
     AppExpression app = checkedCast(AppExpression.class);
     return app != null ? app.getFunction() : this;
+  }
+
+  @Override
+  public Decision isWHNF(List<? extends Expression> arguments) {
+    return Decision.NO;
+  }
+
+  @Override
+  public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
+    return null;
   }
 
   public abstract Decision isWHNF();

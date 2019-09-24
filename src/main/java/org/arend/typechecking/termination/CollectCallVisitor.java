@@ -3,10 +3,7 @@ package org.arend.typechecking.termination;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.Clause;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -34,11 +31,11 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
   }
 
   private void collectIntervals() {
-    ElimTree elimTree;
-    if (myDefinition.getActualBody() instanceof IntervalElim) {
-      IntervalElim elim = (IntervalElim) myDefinition.getActualBody();
+    Body body = myDefinition.getActualBody();
+    if (body instanceof IntervalElim) {
+      IntervalElim elim = (IntervalElim) body;
       myVector = new ArrayList<>();
-      for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext()) {
+      for (DependentLink link = myDefinition.getParameters(); link.hasNext(); link = link.getNext()) {
         myVector.add(new BindingPattern(link));
       }
 
@@ -51,18 +48,6 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
         pair.proj2.accept(this, null);
         myVector.set(i, old);
       }
-
-      elimTree = elim.getOtherwise();
-    } else {
-      elimTree = (ElimTree) myDefinition.getActualBody();
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      myVector = new ArrayList<>();
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        myVector.add(new BindingPattern(link));
-      }
-      ((LeafElimTree) elimTree).getExpression().accept(this, null);
     }
 
     Expression resultType = myDefinition.getResultType();
@@ -119,7 +104,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     // strip currentExpression of App & Proj calls
     while (true) {
       if (argument instanceof AppExpression) {
-        argument = ((AppExpression) argument).getFunction();
+        argument = argument.getFunction();
       } else if (argument instanceof ProjExpression) {
         argument = ((ProjExpression) argument).getExpression();
       } else if (argument instanceof FunCallExpression && ((FunCallExpression) argument).getDefinition() == Prelude.AT) {

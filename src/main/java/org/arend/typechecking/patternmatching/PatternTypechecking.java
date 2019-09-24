@@ -7,6 +7,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
@@ -430,7 +431,7 @@ public class PatternTypechecking {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with interval conditions is not allowed here", conPattern));
           return null;
         }
-        if (conCall.getDefinition().getBody() instanceof ElimTree && NormalizeVisitor.INSTANCE.doesEvaluate((ElimTree) conCall.getDefinition().getBody(), conResult.proj2, true)) {
+        if (conCall.getDefinition().getBody() instanceof ElimBody && NormalizeVisitor.INSTANCE.doesEvaluate((ElimBody) conCall.getDefinition().getBody(), conResult.proj2, true)) {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with conditions is allowed only when patterns cannot evaluate", conPattern));
           return null;
         }

@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.util.Decision;
@@ -11,12 +12,12 @@ public class CaseExpression extends Expression {
   private final DependentLink myParameters;
   private final Expression myResultType;
   private final Expression myResultTypeLevel;
-  private final ElimTree myElimTree;
+  private final ElimBody myElimBody;
   private final List<Expression> myArguments;
 
-  public CaseExpression(DependentLink parameters, Expression resultType, Expression resultTypeLevel, ElimTree elimTree, List<Expression> arguments) {
+  public CaseExpression(DependentLink parameters, Expression resultType, Expression resultTypeLevel, ElimBody elimBody, List<Expression> arguments) {
     myParameters = parameters;
-    myElimTree = elimTree;
+    myElimBody = elimBody;
     myResultType = resultType;
     myResultTypeLevel = resultTypeLevel;
     myArguments = arguments;
@@ -35,7 +36,11 @@ public class CaseExpression extends Expression {
   }
 
   public ElimTree getElimTree() {
-    return myElimTree;
+    return myElimBody.getElimTree();
+  }
+
+  public ElimBody getElimBody() {
+    return myElimBody;
   }
 
   public List<Expression> getArguments() {
@@ -49,11 +54,11 @@ public class CaseExpression extends Expression {
 
   @Override
   public Decision isWHNF() {
-    return myElimTree.isWHNF(myArguments);
+    return myElimBody.isWHNF(myArguments);
   }
 
   @Override
   public Expression getStuckExpression() {
-    return myElimTree.getStuckExpression(myArguments, this);
+    return myElimBody.getStuckExpression(myArguments, this);
   }
 }

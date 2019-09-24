@@ -1,10 +1,9 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.SigmaExpression;
@@ -77,33 +76,41 @@ public class Util {
   }
 
   public static class ElimTreeWalker {
+    private final ElimBody myElimBody;
     private final Stack<ClauseElem> myStack = new Stack<>();
     private final BiConsumer<List<Pattern>, Expression> myConsumer;
 
-    public ElimTreeWalker(BiConsumer<List<Pattern>, Expression> consumer) {
+    public ElimTreeWalker(ElimBody elimBody, BiConsumer<List<Pattern>, Expression> consumer) {
+      myElimBody = elimBody;
       myConsumer = consumer;
+      walk(elimBody.getElimTree());
     }
 
-    public void walk(ElimTree elimTree) {
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-        myStack.push(new PatternClauseElem(new BindingPattern(link)));
+    private void walk(ElimTree elimTree) {
+      for (int i = 0; i < elimTree.getSkipped(); i++) {
+        myStack.push(null);
       }
       if (elimTree instanceof LeafElimTree) {
-        Expression expression = ((LeafElimTree) elimTree).getExpression();
-        if (expression != null) {
-          myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
+        ElimClause elimClause = myElimBody.getClause(((LeafElimTree) elimTree).getClause());
+        int i = 0;
+        for (DependentLink link = elimClause.parameters; link.hasNext(); link = link.getNext(), i++) {
+          while (myStack.get(i) != null) {
+            i++;
+          }
+          myStack.set(i, new PatternClauseElem(new BindingPattern(link)));
         }
+        myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), elimClause.expression);
       } else {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
-        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+        for (Map.Entry<Constructor, ElimChoice> entry : branchElimTree.getChildren()) {
           if (entry.getKey() != null) {
-            myStack.push(entry.getKey() instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
-            walk(entry.getValue());
+            myStack.push(entry.getKey() instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, EmptyDependentLink.getInstance() /* TODO[elim] */), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
+            walk(entry.getValue().elimTree);
             myStack.pop();
           }
         }
       }
-      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+      for (int i = 0; i < elimTree.getSkipped(); i++) {
         myStack.pop();
       }
     }

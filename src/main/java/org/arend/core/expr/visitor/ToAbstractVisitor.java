@@ -10,7 +10,7 @@ import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.pattern.*;
@@ -517,12 +517,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    return cCase(arguments, resultType, resultTypeLevel, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+    return cCase(arguments, resultType, resultTypeLevel, expr.getElimTree() != null ? visitElimBody(expr.getElimBody()) : Collections.emptyList());
   }
 
-  private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {
+  private List<Concrete.FunctionClause> visitElimBody(ElimBody elimBody) {
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
-    new Util.ElimTreeWalker((patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null)))).walk(elimTree);
+    new Util.ElimTreeWalker(elimBody, (patterns, expr) -> clauses.add(cClause(visitPatterns(patterns, new Patterns(patterns).getFirstBinding()), expr.accept(this, null))));
     return clauses;
   }
 

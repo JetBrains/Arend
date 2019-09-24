@@ -2,17 +2,13 @@ package org.arend.prelude;
 
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -32,8 +28,6 @@ import org.arend.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -139,10 +133,9 @@ public class Prelude {
         DependentLink atParams = DependentLink.Helper.take(AT.getParameters(), 3);
         SingleDependentLink intervalParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
         DependentLink pathParam = parameter("f", new PiExpression(Sort.STD, intervalParam, AppExpression.make(new ReferenceExpression(atParams), new ReferenceExpression(intervalParam))));
+        atParams.getNext().getNext().setNext(pathParam);
         pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
-        Map<Constructor, ElimTree> children = Collections.singletonMap(PATH_CON, new LeafElimTree(pathParam, AppExpression.make(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext()))));
-        ElimTree otherwise = new BranchElimTree(atParams, children);
-        AT.setBody(new IntervalElim(AT.getParameters(), Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
+        AT.setBody(new IntervalElim(5, Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), new ElimBody(Collections.singletonList(new ElimClause(atParams, AppExpression.make(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext())))), new BranchElimTree(3, Collections.singletonMap(PATH_CON, new ElimChoice(true, new LeafElimTree(2, 0)))))));
         AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }
@@ -156,11 +149,8 @@ public class Prelude {
         break;
       case "iso": {
         ISO = (FunctionDefinition) definition;
-        DependentLink isoParams = DependentLink.Helper.take(ISO.getParameters(), 6);
-        Map<Constructor, ElimTree> children = new HashMap<>();
-        children.put(LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams)));
-        children.put(RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), new ReferenceExpression(isoParams.getNext())));
-        ISO.setBody(new BranchElimTree(isoParams, children));
+        DependentLink isoParams = ISO.getParameters();
+        ISO.setBody(new IntervalElim(7, Collections.singletonList(new Pair<>(new ReferenceExpression(isoParams), new ReferenceExpression(isoParams.getNext()))), null));
         ISO.setResultType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR))));
         ISO.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;

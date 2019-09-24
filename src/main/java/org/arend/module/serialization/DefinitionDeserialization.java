@@ -289,7 +289,7 @@ public class DefinitionDeserialization {
         if (proto.getIntervalElim().hasOtherwise()) {
           elimTree = defDeserializer.readElimTree(proto.getIntervalElim().getOtherwise());
         }
-        return new IntervalElim(parameters, cases, elimTree);
+        return new IntervalElim(DependentLink.Helper.size(parameters), cases, elimTree);
       default:
         throw new DeserializationException("Unknown body kind: " + proto.getKindCase());
     }

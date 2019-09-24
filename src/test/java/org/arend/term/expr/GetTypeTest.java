@@ -4,7 +4,6 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.SigmaExpression;
@@ -26,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class GetTypeTest extends TypeCheckingTestCase {
   private void testType(Expression expected) {
     assertEquals(expected, ((FunctionDefinition) getDefinition("test")).getResultType());
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression().getType());
+    assertEquals(expected, ((Expression) ((FunctionDefinition) getDefinition("test")).getBody()).getType());
   }
 
   @Test
@@ -89,7 +88,7 @@ public class GetTypeTest extends TypeCheckingTestCase {
     SingleDependentLink F = singleParam("F", Pi(Nat(), Universe(new Level(0), new Level(LevelVariable.HVAR))));
     SingleDependentLink x = singleParam("x", Nat());
     SingleDependentLink f = singleParam("f", Pi(x, Apps(Ref(F), Ref(x))));
-    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), ((LeafElimTree) ((FunctionDefinition) def).getBody()).getExpression().getType().normalize(NormalizeVisitor.Mode.NF));
+    assertEquals(Pi(F, Pi(f, Apps(Ref(F), Zero()))), ((Expression) ((FunctionDefinition) def).getBody()).getType().normalize(NormalizeVisitor.Mode.NF));
   }
 
   @Test

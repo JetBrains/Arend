@@ -1,6 +1,5 @@
 package org.arend.core.elimtree;
 
-import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -8,13 +7,10 @@ import org.arend.core.expr.*;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BranchElimTree extends ElimTree {
-  private final Map<Constructor, ElimTree> myChildren;
+  private final Map<Constructor, ElimChoice> myChildren;
 
   public final static class TupleConstructor extends Constructor {
     private final int myLength;
@@ -66,18 +62,18 @@ public class BranchElimTree extends ElimTree {
     }
   }
 
-  public BranchElimTree(DependentLink parameters, Map<Constructor, ElimTree> children) {
-    super(parameters);
+  public BranchElimTree(int skipped, Map<Constructor, ElimChoice> children) {
+    super(skipped);
     myChildren = children;
   }
 
-  public ElimTree getChild(Constructor constructor) {
+  public ElimChoice getChild(Constructor constructor) {
     return myChildren.get(constructor);
   }
 
-  public ElimTree getTupleChild() {
+  public ElimChoice getTupleChild() {
     if (myChildren.size() == 1) {
-      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<Constructor, ElimChoice> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof TupleConstructor ? entry.getValue() : null;
     } else {
       return null;
@@ -86,7 +82,7 @@ public class BranchElimTree extends ElimTree {
 
   public TupleConstructor getTupleConstructor() {
     if (myChildren.size() == 1) {
-      Map.Entry<Constructor, ElimTree> entry = myChildren.entrySet().iterator().next();
+      Map.Entry<Constructor, ElimChoice> entry = myChildren.entrySet().iterator().next();
       return entry.getKey() instanceof TupleConstructor ? (TupleConstructor) entry.getKey() : null;
     } else {
       return null;
@@ -97,7 +93,7 @@ public class BranchElimTree extends ElimTree {
     return myChildren.size() == 1 && myChildren.keySet().iterator().next() instanceof TupleConstructor;
   }
 
-  public Collection<Map.Entry<Constructor, ElimTree>> getChildren() {
+  public Collection<Map.Entry<Constructor, ElimChoice>> getChildren() {
     return myChildren.entrySet();
   }
 
@@ -115,8 +111,7 @@ public class BranchElimTree extends ElimTree {
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree != null) {
+      if (myChildren.containsKey(conCall.getDefinition())) {
         newArguments = new ArrayList<>(conCall.getDefCallArguments().size() + arguments.size() - index - 1);
         newArguments.addAll(conCall.getDefCallArguments());
         newArguments.addAll(arguments.subList(index + 1, arguments.size()));
@@ -126,8 +121,7 @@ public class BranchElimTree extends ElimTree {
     } else if (argument.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr = argument.cast(IntegerExpression.class);
       boolean isZero = intExpr.isZero();
-      ElimTree elimTree = myChildren.get(isZero ? Prelude.ZERO : Prelude.SUC);
-      if (elimTree != null) {
+      if (myChildren.containsKey(isZero ? Prelude.ZERO : Prelude.SUC)) {
         newArguments = new ArrayList<>();
         if (!isZero) {
           newArguments.add(intExpr.pred());
@@ -142,40 +136,39 @@ public class BranchElimTree extends ElimTree {
 
   @Override
   public Decision isWHNF(List<? extends Expression> arguments) {
-    int index = DependentLink.Helper.size(getParameters());
-    Expression argument = arguments.get(index);
+    Expression argument = arguments.get(skipped);
     Decision decision = argument.isWHNF();
     if (decision == Decision.NO) {
       return Decision.NO;
     }
 
-    List<Expression> newArguments = getNewArguments(arguments, argument, index);
+    List<Expression> newArguments = getNewArguments(arguments, argument, skipped);
     if (newArguments == null) {
       return Decision.MAYBE;
     }
 
     if (isTupleTree()) {
-      ElimTree elimTree = getTupleChild();
-      if (elimTree != null) {
-        return elimTree.isWHNF(newArguments).min(decision);
+      ElimChoice elimChoice = getTupleChild();
+      if (elimChoice != null) {
+        return elimChoice.elimTree.isWHNF(newArguments).min(decision);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree != null) {
-        return elimTree.isWHNF(newArguments).min(decision);
+      ElimChoice elimChoice = myChildren.get(conCall.getDefinition());
+      if (elimChoice != null) {
+        return elimChoice.elimTree.isWHNF(newArguments).min(decision);
       } else {
-        elimTree = myChildren.get(null);
-        return elimTree == null ? decision : elimTree.isWHNF(newArguments).min(decision);
+        elimChoice = myChildren.get(null);
+        return elimChoice == null ? decision : elimChoice.elimTree.isWHNF(newArguments).min(decision);
       }
     } else if (argument.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr = argument.cast(IntegerExpression.class);
-      ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
-      if (elimTree != null) {
-        return elimTree.isWHNF(newArguments).min(decision);
+      ElimChoice elimChoice = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
+      if (elimChoice != null) {
+        return elimChoice.elimTree.isWHNF(newArguments).min(decision);
       } else {
-        elimTree = myChildren.get(null);
-        return elimTree == null ? decision : elimTree.isWHNF(newArguments).min(decision);
+        elimChoice = myChildren.get(null);
+        return elimChoice == null ? decision : elimChoice.elimTree.isWHNF(newArguments).min(decision);
       }
     }
 
@@ -184,39 +177,51 @@ public class BranchElimTree extends ElimTree {
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
-    int index = DependentLink.Helper.size(getParameters());
-    Expression argument = arguments.get(index);
+    Expression argument = arguments.get(skipped);
 
-    List<Expression> newArguments = getNewArguments(arguments, argument, index);
+    List<Expression> newArguments = getNewArguments(arguments, argument, skipped);
     if (newArguments == null) {
       return argument.getStuckExpression();
     }
 
     if (isTupleTree()) {
-      ElimTree elimTree = getTupleChild();
-      if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression);
+      ElimChoice elimChoice = getTupleChild();
+      if (elimChoice != null) {
+        return elimChoice.elimTree.getStuckExpression(newArguments, expression);
       }
     } else if (argument.isInstance(ConCallExpression.class)) {
       ConCallExpression conCall = argument.cast(ConCallExpression.class);
-      ElimTree elimTree = myChildren.get(conCall.getDefinition());
-      if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression);
+      ElimChoice elimChoice = myChildren.get(conCall.getDefinition());
+      if (elimChoice != null) {
+        return elimChoice.elimTree.getStuckExpression(newArguments, expression);
       } else {
-        elimTree = myChildren.get(null);
-        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+        elimChoice = myChildren.get(null);
+        return elimChoice != null ? elimChoice.elimTree.getStuckExpression(newArguments, expression) : expression;
       }
     } else if (argument.isInstance(IntegerExpression.class)) {
       IntegerExpression intExpr = argument.cast(IntegerExpression.class);
-      ElimTree elimTree = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
-      if (elimTree != null) {
-        return elimTree.getStuckExpression(newArguments, expression);
+      ElimChoice elimChoice = myChildren.get(intExpr.isZero() ? Prelude.ZERO : Prelude.SUC);
+      if (elimChoice != null) {
+        return elimChoice.elimTree.getStuckExpression(newArguments, expression);
       } else {
-        elimTree = myChildren.get(null);
-        return elimTree != null ? elimTree.getStuckExpression(newArguments, expression) : expression;
+        elimChoice = myChildren.get(null);
+        return elimChoice != null ? elimChoice.elimTree.getStuckExpression(newArguments, expression) : expression;
       }
     }
 
     return argument.getStuckExpression();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    BranchElimTree that = (BranchElimTree) o;
+    return skipped == that.skipped && myChildren.equals(that.myChildren);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(skipped, myChildren);
   }
 }

@@ -2,10 +2,8 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 
 import java.util.*;
@@ -33,50 +31,20 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     visitParameters(parameters, null);
   }
 
-  public GoodThisParametersVisitor(ElimTree elimTree, int numberOfParameters) {
+  public GoodThisParametersVisitor(ElimBody body, int numberOfParameters) {
     myGoodFields = Collections.emptySet();
     myGoodParameters = new ArrayList<>();
     for (int i = 0; i < numberOfParameters; i++) {
-      myGoodParameters.add(true);
+      myGoodParameters.add(false);
     }
-    myIndexMap = new HashMap<>();
-    checkElimTree(elimTree, 0, 0);
+    myIndexMap = Collections.emptyMap();
+    // TODO[elim]
   }
 
   public GoodThisParametersVisitor(Set<ClassField> fields) {
     myGoodFields = fields;
     myGoodParameters = new ArrayList<>(0);
     myIndexMap = Collections.emptyMap();
-  }
-
-  private void checkElimTree(ElimTree elimTree, int index, int skip) {
-    for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
-      if (skip == 0) {
-        myIndexMap.put(link, index);
-        index++;
-      } else {
-        skip--;
-      }
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      ((LeafElimTree) elimTree).getExpression().accept(this, null);
-    } else {
-      if (skip == 0) {
-        myGoodParameters.set(index, false);
-        index++;
-      } else {
-        skip--;
-      }
-
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        int toSkip = entry.getKey() == null ? 1 :
-          entry.getKey() instanceof BranchElimTree.TupleConstructor
-            ? ((BranchElimTree.TupleConstructor) entry.getKey()).getLength()
-            : DependentLink.Helper.size(entry.getKey().getParameters());
-        checkElimTree(entry.getValue(), index, skip + toSkip);
-      }
-    }
   }
 
   public List<Boolean> getGoodParameters() {

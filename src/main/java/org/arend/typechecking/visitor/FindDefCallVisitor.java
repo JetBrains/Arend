@@ -1,6 +1,5 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
@@ -51,12 +50,14 @@ public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVis
           return;
         }
       }
-      findDefinition(((IntervalElim) body).getOtherwise());
-    } else if (body instanceof LeafElimTree) {
-      ((LeafElimTree) body).getExpression().accept(this, null);
-    } else if (body instanceof BranchElimTree) {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
-        findDefinition(entry.getValue());
+      body = ((IntervalElim) body).getOtherwise();
+    }
+
+    if (body instanceof Expression) {
+      ((Expression) body).accept(this, null);
+    } else if (body instanceof ElimBody) {
+      for (ElimClause clause : ((ElimBody) body).getClauses()) {
+        clause.expression.accept(this, null);
         if (!myFindAll && !myFoundDefinitions.isEmpty()) {
           return;
         }

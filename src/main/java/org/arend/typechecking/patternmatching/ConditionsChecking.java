@@ -50,15 +50,15 @@ public class ConditionsChecking {
 
   private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     boolean ok = true;
-    DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
+    DependentLink link = DependentLink.Helper.get(definition.getParameters(), DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
       DependentLink link2 = link.getNext();
       for (int j = i + 1; j < cases.size(); j++) {
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, definition.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, definition.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, definition.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, definition.getParameters(), definition, def, errorReporter) && ok;
         link2 = link2.getNext();
       }
       link = link.getNext();
@@ -96,10 +96,10 @@ public class ConditionsChecking {
   private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, ErrorReporter errorReporter) {
     boolean ok = true;
     List<Pair<Expression, Expression>> cases = elim.getCases();
-    int prefixLength = DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size();
+    int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
-      ok = checkIntervalClauseCondition(cases.get(i), true, elim.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
-      ok = checkIntervalClauseCondition(cases.get(i), false, elim.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), true, definition.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), false, definition.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
     }
     return ok;
   }
@@ -174,20 +174,24 @@ public class ConditionsChecking {
         if (conPattern.getDefinition() == Prelude.PATH_CON) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
           Expression lamRef = new ReferenceExpression(lamParam);
-          Map<Constructor, ElimTree> children = new HashMap<>();
-          children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
-          children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
-          children.put(null, new LeafElimTree(lamParam, AppExpression.make(conPattern.getArguments().get(0).toExpression(), lamRef)));
-          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), null, new BranchElimTree(EmptyDependentLink.getInstance(), children), Collections.singletonList(lamRef))));
+          List<ElimClause> clauses = new ArrayList<>(3);
+          clauses.add(new ElimClause(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
+          clauses.add(new ElimClause(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
+          clauses.add(new ElimClause(lamParam, AppExpression.make(conPattern.getArguments().get(0).toExpression(), lamRef)));
+          Map<Constructor, ElimChoice> children = new HashMap<>();
+          children.put(Prelude.LEFT, new ElimChoice(true, new LeafElimTree(0, 0)));
+          children.put(Prelude.RIGHT, new ElimChoice(true, new LeafElimTree(0, 1)));
+          children.put(null, new ElimChoice(false, new LeafElimTree(1, 2)));
+          substitution.add(((BindingPattern) conPattern.getArguments().get(0)).getBinding(), new LamExpression(conPattern.getSortArgument(), lamParam, new CaseExpression(lamParam, AppExpression.make(conPattern.getDataTypeArguments().get(0), lamRef), null, new ElimBody(clauses, new BranchElimTree(0, children)), Collections.singletonList(lamRef))));
         }
       }
     }
   }
 
-  public static boolean check(List<Clause> clauses, ElimTree elimTree, ErrorReporter errorReporter) {
+  public static boolean check(List<Clause> clauses, ElimBody elimBody, ErrorReporter errorReporter) {
     boolean ok = true;
     for (Clause clause : clauses) {
-      if (!checkClause(clause, elimTree, null, errorReporter)) {
+      if (!checkClause(clause, elimBody, null, errorReporter)) {
         ok = false;
       }
     }
@@ -195,7 +199,7 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, ErrorReporter errorReporter) {
+  private static boolean checkClause(Clause clause, ElimBody elimBody, Definition definition, ErrorReporter errorReporter) {
     if (clause.expression == null) {
       return true;
     }
@@ -211,7 +215,7 @@ public class ConditionsChecking {
     for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
       Expression evaluatedExpr1;
       if (definition == null) {
-        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
+        evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimBody, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
       } else {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
@@ -273,7 +277,7 @@ public class ConditionsChecking {
 
         ExprSubstitution substitution = new ExprSubstitution();
         int j = 0;
-        for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext(), j++) {
+        for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), j++) {
           substitution.add(link, conPattern.getArguments().get(j).toExpression());
         }
         j = 0;

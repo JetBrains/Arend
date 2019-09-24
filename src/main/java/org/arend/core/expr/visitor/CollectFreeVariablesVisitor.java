@@ -3,10 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 
@@ -109,18 +106,14 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
         expr.getResultTypeLevel().accept(this, vars);
       }
     }, variables);
-    visitParameters(expr.getElimTree().getParameters(), vars -> visitElimTree(expr.getElimTree(), vars), variables);
+    visitElimBody(expr.getElimBody(), variables);
     return null;
   }
 
   @Override
-  protected void visitElimTree(ElimTree elimTree, Set<Variable> variables) {
-    if (elimTree instanceof LeafElimTree) {
-      ((LeafElimTree) elimTree).getExpression().accept(this, variables);
-    } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        visitParameters(entry.getValue().getParameters(), vars -> visitElimTree(entry.getValue(), vars), variables);
-      }
+  protected void visitElimBody(ElimBody elimBody, Set<Variable> variables) {
+    for (ElimClause clause : elimBody.getClauses()) {
+      visitParameters(clause.parameters, vars -> clause.expression.accept(this, vars), variables);
     }
   }
 

@@ -2,10 +2,7 @@ package org.arend.module.serialization;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ClauseBase;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.pattern.BindingPattern;
@@ -294,7 +291,8 @@ public class DefinitionSerialization {
     if (body instanceof IntervalElim) {
       IntervalElim intervalElim = (IntervalElim) body;
       DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
-      intervalBuilder.addAllParam(defSerializer.writeParameters(intervalElim.getParameters()));
+      // TODO[elim]
+      // intervalBuilder.addAllParam(defSerializer.writeParameters(intervalElim.getParameters()));
       for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
         DefinitionProtos.Body.ExpressionPair.Builder pairBuilder = DefinitionProtos.Body.ExpressionPair.newBuilder();
         if (pair.proj1 != null) {
@@ -306,11 +304,14 @@ public class DefinitionSerialization {
         intervalBuilder.addCase(pairBuilder);
       }
       if (intervalElim.getOtherwise() != null) {
-        intervalBuilder.setOtherwise(defSerializer.writeElimTree(intervalElim.getOtherwise()));
+        // TODO[elim]
+        // intervalBuilder.setOtherwise(defSerializer.writeElimBody(intervalElim.getOtherwise()));
       }
       bodyBuilder.setIntervalElim(intervalBuilder);
-    } else if (body instanceof ElimTree) {
-      bodyBuilder.setElimTree(defSerializer.writeElimTree((ElimTree) body));
+    } else if (body instanceof Expression) {
+      // TODO[elim]
+    } else if (body instanceof ElimBody) {
+      bodyBuilder.setElimTree(defSerializer.writeElimBody((ElimBody) body));
     } else {
       throw new IllegalStateException();
     }

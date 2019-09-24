@@ -3,10 +3,7 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
-import org.arend.core.elimtree.BranchElimTree;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.LeafElimTree;
+import org.arend.core.elimtree.ElimClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 
@@ -172,27 +169,19 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
       return result;
     }
 
-    return findBindingInElimTree(expr.getElimTree());
-  }
+    for (ElimClause clause : expr.getElimBody().getClauses()) {
+      result = visitDependentLink(clause.parameters);
+      if (result != null) {
+        return result;
+      }
 
-  private Variable findBindingInElimTree(ElimTree elimTree) {
-    Variable result = visitDependentLink(elimTree.getParameters());
-    if (result != null) {
-      return result;
-    }
-
-    if (elimTree instanceof LeafElimTree) {
-      result = ((LeafElimTree) elimTree).getExpression().accept(this, null);
-    } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        result = findBindingInElimTree(entry.getValue());
-        if (result != null) {
-          return result;
-        }
+      result = clause.expression.accept(this, null);
+      if (result != null) {
+        return result;
       }
     }
 
-    return result;
+    return null;
   }
 
   @Override

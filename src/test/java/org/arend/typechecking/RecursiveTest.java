@@ -1,6 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.definition.Definition;
+import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.junit.Test;
 
@@ -37,7 +38,7 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void functionError() {
-    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status(), Definition.TypeCheckingStatus.HAS_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat => x + y", 1).status(), Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
   }
 
   @Test
@@ -69,21 +70,21 @@ public class RecursiveTest extends TypeCheckingTestCase {
   public void bodyBodyTest() {
     typeCheckModule(
       "\\func f (x : Nat) : \\Type => g 0\n" +
-      "\\func g (x : Nat) : \\Type => f 0", 2);
+      "\\func g (x : Nat) : \\Type => f 0", 3);
   }
 
   @Test
   public void bodyBodyTest2() {
     typeCheckModule(
       "\\func f (x : Nat) : Nat => g 0\n" +
-      "\\func g (x : Nat) : Nat => f 0", 2);
+      "\\func g (x : Nat) : Nat => f 0", 3);
   }
 
   @Test
   public void bodyBodyLemmaTest() {
     typeCheckModule(
       "\\lemma f (x : Nat) : x = x => g x\n" +
-      "\\lemma g (x : Nat) : x = x => f x", 2);
+      "\\lemma g (x : Nat) : x = x => f x", 3);
   }
 
   @Test
@@ -118,6 +119,12 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void resultTypeTestError() {
+    typeCheckModule("\\func f (n : Nat) : \\let t => f \\in Nat | 0 => 0 | suc n => n", 1);
+    assertThatErrorsAre(instanceOf(CycleError.class));
+  }
+
+  @Test
+  public void resultTypeTestError2() {
     typeCheckModule(
       "\\func f (n : Nat) : \\let t => g 0 \\in Nat | 0 => 0 | suc n => g n\n" +
       "\\func g (n : Nat) : Nat | 0 => 0 | suc n => f n", 2);

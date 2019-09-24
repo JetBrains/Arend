@@ -12,7 +12,7 @@ import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
-import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ElimBody;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.ExpectedType;
@@ -1771,13 +1771,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
-    if (elimTree == null) {
+    ElimBody elimBody = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    if (elimBody == null) {
       return null;
     }
 
-    ConditionsChecking.check(resultClauses, elimTree, errorReporter);
-    TypecheckingResult result = new TypecheckingResult(new CaseExpression(list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
+    ConditionsChecking.check(resultClauses, elimBody, errorReporter);
+    TypecheckingResult result = new TypecheckingResult(new CaseExpression(list.getFirst(), resultExpr, resultTypeLevel, elimBody, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }
 }
