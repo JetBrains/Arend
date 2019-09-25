@@ -259,6 +259,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   @Override
   public Concrete.Definition visitClass(Abstract.ClassDefinition def) {
     reportError(def.getErrorData());
+    if (!(myDefinition instanceof TCClassReferable)) {
+      return null;
+    }
 
     List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
     List<Concrete.ClassField> classFields = new ArrayList<>();
