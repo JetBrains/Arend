@@ -4,6 +4,7 @@ import org.arend.core.definition.Definition;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
@@ -239,7 +240,7 @@ public class Ordering {
       }
 
       if (unit.isHeader() && units.size() == 1) {
-        if (unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == Concrete.FunctionDefinition.Kind.LEVEL) {
+        if (unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == FunctionKind.LEVEL) {
           myOrderingListener.unitFound(unit, recursion);
           return OrderResult.REPORTED;
         }
@@ -270,12 +271,12 @@ public class Ordering {
     for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
       Concrete.FunctionDefinition def = myConcreteProvider.getConcreteFunction(usedDefinition);
       if (def != null) {
-        Concrete.FunctionDefinition.Kind kind = def.getKind();
+        FunctionKind kind = def.getKind();
         if (kind.isUse()) {
           Definition typechecked = myState.getTypechecked(def.getData());
           if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
-            updateState(currentState, new TypecheckingUnit(def, kind == Concrete.FunctionDefinition.Kind.LEVEL));
-            if (kind == Concrete.FunctionDefinition.Kind.LEVEL) {
+            updateState(currentState, new TypecheckingUnit(def, kind == FunctionKind.LEVEL));
+            if (kind == FunctionKind.LEVEL) {
               myDeferredDefinitions.add(def);
             }
           }

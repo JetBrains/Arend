@@ -9,6 +9,7 @@ import org.arend.naming.scope.CachingScope;
 import org.arend.naming.scope.LexicalScope;
 import org.arend.naming.scope.NamespaceCommandNamespace;
 import org.arend.naming.scope.Scope;
+import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
@@ -63,7 +64,7 @@ public class InstanceProviderSet {
       }
       if (ref instanceof TCReferable) {
         Concrete.FunctionDefinition instance = concreteProvider.getConcreteInstance((GlobalReferable) ref);
-        if (instance != null && instance.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE) {
+        if (instance != null && instance.getKind() == FunctionKind.INSTANCE) {
           if (used) {
             instanceProvider = new SimpleInstanceProvider(instanceProvider);
             used = false;

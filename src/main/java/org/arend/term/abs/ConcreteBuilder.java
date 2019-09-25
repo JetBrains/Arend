@@ -132,17 +132,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       typeLevel = null;
     }
 
-    Concrete.FunctionDefinition.Kind kind = def.isCoerce()
-      ? Concrete.FunctionDefinition.Kind.COERCE
-      : def.isLevel()
-        ? Concrete.FunctionDefinition.Kind.LEVEL
-        : def.isLemma()
-          ? Concrete.FunctionDefinition.Kind.LEMMA
-          : def.isInstance()
-            ? Concrete.FunctionDefinition.Kind.INSTANCE
-            : Concrete.FunctionDefinition.Kind.FUNC;
-
-    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(kind, myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
+    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
     setEnclosingClass(result, def);
     result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
     return result;

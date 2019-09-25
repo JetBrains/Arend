@@ -204,7 +204,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     if (body instanceof Concrete.CoelimFunctionBody) {
       Referable typeRef = def.getResultType() == null ? null : def.getResultType().getUnderlyingReferable();
       if (typeRef instanceof ClassReferable) {
-        if (def.getKind() == Concrete.FunctionDefinition.Kind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
+        if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
           myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
           body.getClassFieldImpls().clear();
         } else {
@@ -231,7 +231,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       TCReferable useParent = def.getUseParent();
       boolean isFunc = myConcreteProvider.isFunction(useParent);
       if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {
-        if (def.getKind() == Concrete.FunctionDefinition.Kind.COERCE) {
+        if (def.getKind() == FunctionKind.COERCE) {
           if (isFunc) {
             myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.MISPLACED_COERCE, def));
           }

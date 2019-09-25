@@ -280,7 +280,18 @@ public class DefinitionSerialization {
     if (definition.getResultTypeLevel() != null) {
       builder.setTypeLevel(defSerializer.writeExpr(definition.getResultTypeLevel()));
     }
-    builder.setIsLemma(definition.isLemma());
+    DefinitionProtos.Definition.FunctionKind kind;
+    switch (definition.getKind()) {
+      case LEMMA:
+        kind = DefinitionProtos.Definition.FunctionKind.LEMMA;
+        break;
+      case SFUNC:
+        kind = DefinitionProtos.Definition.FunctionKind.SFUNC;
+        break;
+      default:
+        kind = DefinitionProtos.Definition.FunctionKind.FUNC;
+    }
+    builder.setKind(kind);
     builder.setVisibleParameter(definition.getVisibleParameter());
     if (definition.status().bodyIsOK() && definition.getActualBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getActualBody()));

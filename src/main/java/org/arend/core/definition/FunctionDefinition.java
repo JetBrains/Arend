@@ -15,12 +15,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class FunctionDefinition extends Definition implements Function {
+  public enum Kind { FUNC, SFUNC, LEMMA }
+
   private DependentLink myParameters;
   private Expression myResultType;
   private Expression myResultTypeLevel;
   private Body myBody;
   private List<Integer> myParametersTypecheckingOrder;
-  private boolean myLemma;
+  private Kind myKind = Kind.FUNC;
   private List<Boolean> myGoodThisParameters = Collections.emptyList();
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
   private int myVisibleParameter = -1;
@@ -33,7 +35,7 @@ public class FunctionDefinition extends Definition implements Function {
 
   @Override
   public Body getBody() {
-    return myLemma ? null : myBody;
+    return myKind == Kind.FUNC ? myBody : null;
   }
 
   public Body getActualBody() {
@@ -44,12 +46,16 @@ public class FunctionDefinition extends Definition implements Function {
     myBody = body;
   }
 
-  public boolean isLemma() {
-    return myLemma;
+  public boolean isSFunc() {
+    return myKind != Kind.FUNC;
   }
 
-  public void setIsLemma(boolean isLemma) {
-    myLemma = isLemma;
+  public Kind getKind() {
+    return myKind;
+  }
+
+  public void setKind(Kind kind) {
+    myKind = kind;
   }
 
   @Override

@@ -357,7 +357,18 @@ public class DefinitionDeserialization {
       functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
     }
     defDeserializer.setIsHeader(false);
-    functionDef.setIsLemma(functionProto.getIsLemma());
+    FunctionDefinition.Kind kind;
+    switch (functionProto.getKind()) {
+      case LEMMA:
+        kind = FunctionDefinition.Kind.LEMMA;
+        break;
+      case SFUNC:
+        kind = FunctionDefinition.Kind.SFUNC;
+        break;
+      default:
+        kind = FunctionDefinition.Kind.FUNC;
+    }
+    functionDef.setKind(kind);
     functionDef.setVisibleParameter(functionProto.getVisibleParameter());
     if (functionProto.hasBody()) {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));

@@ -39,6 +39,7 @@ returnExpr  : expr                                  # returnExprExpr
             ;
 
 funcKw    : '\\func'            # funcKwFunc
+          | '\\sfunc'           # funcKwSFunc
           | '\\lemma'           # funcKwLemma
           | '\\use' useMod      # funcKwUse
           ;

@@ -3,6 +3,7 @@ package org.arend.frontend;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
@@ -35,7 +36,7 @@ public class ConcreteReferableProvider implements ConcreteProvider {
   public Concrete.FunctionDefinition getConcreteInstance(GlobalReferable referable) {
     if (referable instanceof ConcreteLocatedReferable) {
       Concrete.ReferableDefinition def = ((ConcreteLocatedReferable) referable).getDefinition();
-      if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind() == Concrete.FunctionDefinition.Kind.INSTANCE) {
+      if (def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind() == FunctionKind.INSTANCE) {
         return (Concrete.FunctionDefinition) def;
       }
     }

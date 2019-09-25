@@ -1,6 +1,7 @@
 package org.arend.typechecking.visitor;
 
 import org.arend.error.ErrorReporter;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.TypecheckingError;
 
@@ -12,7 +13,7 @@ public class BaseDefinitionTypechecker {
   }
 
   protected void checkFunctionLevel(Concrete.FunctionDefinition def) {
-    if (def.getResultTypeLevel() != null && !(def.getKind() == Concrete.FunctionDefinition.Kind.LEMMA || def.getBody() instanceof Concrete.ElimFunctionBody)) {
+    if (def.getResultTypeLevel() != null && !(def.getKind() == FunctionKind.LEMMA || def.getBody() instanceof Concrete.ElimFunctionBody)) {
       errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IN_FUNCTION, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }

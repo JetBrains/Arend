@@ -6,6 +6,7 @@ import org.arend.core.expr.LetExpression;
 import org.arend.core.expr.let.LetClause;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.LocalReferable;
+import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.expr.ConcreteCompareVisitor;
@@ -70,7 +71,7 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     arguments.add(cTele(cvars(X), cUniverseStd(0)));
     arguments.add(cTele(cvars(x), cVar(X)));
     ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, reference, arguments, cVar(X), null, body(cVar(x)));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(FunctionKind.FUNC, reference, arguments, cVar(X), null, body(cVar(x)));
     reference.setDefinition(def);
     def.accept(new PrettyPrintVisitor(new StringBuilder(), 0), null);
   }

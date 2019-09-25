@@ -5,7 +5,9 @@ import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
+import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
+import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -216,10 +218,7 @@ public final class Abstract {
     @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
     boolean withTerm();
     boolean isCowith();
-    boolean isCoerce();
-    boolean isLevel();
-    boolean isLemma();
-    boolean isInstance();
+    FunctionKind getFunctionKind();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {

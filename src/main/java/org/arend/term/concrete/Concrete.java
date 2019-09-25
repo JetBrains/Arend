@@ -5,6 +5,7 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
+import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrintable;
@@ -1477,36 +1478,10 @@ public final class Concrete {
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final FunctionBody myBody;
-    private final Kind myKind;
+    private final FunctionKind myKind;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public enum Kind {
-      COERCE, LEVEL,
-      FUNC {
-        @Override
-        public boolean isUse() {
-          return false;
-        }
-      },
-      LEMMA {
-        @Override
-        public boolean isUse() {
-          return false;
-        }
-      },
-      INSTANCE {
-        @Override
-        public boolean isUse() {
-          return false;
-        }
-      };
-
-      public boolean isUse() {
-        return true;
-      }
-    }
-
-    public FunctionDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+    public FunctionDefinition(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable);
       myKind = kind;
       myResolved = Resolved.NOT_RESOLVED;
@@ -1516,7 +1491,7 @@ public final class Concrete {
       myBody = body;
     }
 
-    public Kind getKind() {
+    public FunctionKind getKind() {
       return myKind;
     }
 
@@ -1570,13 +1545,13 @@ public final class Concrete {
   public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
 
-    private UseDefinition(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
+    private UseDefinition(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
       super(kind, referable, parameters, resultType, resultTypeLevel, body);
       myCoerceParent = coerceParent;
     }
 
-    public static FunctionDefinition make(Kind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
-      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? Kind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
+    public static FunctionDefinition make(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
+      return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? FunctionKind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
     }
 
     public TCReferable getUseParent() {

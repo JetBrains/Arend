@@ -448,7 +448,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       throw new IllegalStateException();
     }
 
-    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.INSTANCE, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(FunctionKind.INSTANCE, reference, parameters, returnPair.proj1, returnPair.proj2, body);
     funcDef.enclosingClass = enclosingClass;
     reference.setDefinition(funcDef);
     List<Group> subgroups = new ArrayList<>();
@@ -541,15 +541,18 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent);
-    boolean isUse = ctx.funcKw() instanceof FuncKwUseContext;
+    FuncKwContext funcKw = ctx.funcKw();
+    boolean isUse = funcKw instanceof FuncKwUseContext;
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
-      isUse ? (((FuncKwUseContext) ctx.funcKw()).useMod() instanceof UseCoerceContext
-              ? Concrete.FunctionDefinition.Kind.COERCE
-              : Concrete.FunctionDefinition.Kind.LEVEL)
-            : ctx.funcKw() instanceof FuncKwLemmaContext
-              ? Concrete.FunctionDefinition.Kind.LEMMA
-              : Concrete.FunctionDefinition.Kind.FUNC,
+      isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
+              ? FunctionKind.COERCE
+              : FunctionKind.LEVEL)
+            : funcKw instanceof FuncKwLemmaContext
+              ? FunctionKind.LEMMA
+              : funcKw instanceof FuncKwSFuncContext
+                ? FunctionKind.SFUNC
+                : FunctionKind.FUNC,
       referable, visitFunctionParameters(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
     if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));

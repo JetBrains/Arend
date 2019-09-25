@@ -102,7 +102,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     boolean check;
     if (expr1.isInstance(FunCallExpression.class)) {
       FunCallExpression funCall2 = expr2.checkedCast(FunCallExpression.class);
-      check = funCall2 != null && expr1.cast(FunCallExpression.class).getDefinition() == funCall2.getDefinition() && !funCall2.getDefinition().isLemma();
+      check = funCall2 != null && expr1.cast(FunCallExpression.class).getDefinition() == funCall2.getDefinition() && !funCall2.getDefinition().isSFunc();
     } else if (expr1.isInstance(AppExpression.class)) {
       check = expr2.isInstance(AppExpression.class);
     } else if (expr1.isInstance(FieldCallExpression.class)) {

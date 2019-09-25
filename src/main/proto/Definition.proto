@@ -108,16 +108,22 @@ message Definition {
         }
     }
     message FunctionData {
-        repeated Telescope param = 2;
-        repeated int32 parameters_typechecking_order = 7;
-        repeated bool good_this_parameters = 10;
-        repeated TypeClassParameterKind type_class_parameters = 14;
+        repeated Telescope param = 1;
+        repeated int32 parameters_typechecking_order = 2;
+        repeated bool good_this_parameters = 3;
+        repeated TypeClassParameterKind type_class_parameters = 4;
         Expression type = 5;
-        Expression type_level = 9;
-        Body body = 6;
-        bool isLemma = 8;
-        int32 visible_parameter = 12;
-        repeated ParametersLevel parameters_levels = 13;
+        Expression type_level = 6;
+        Body body = 7;
+        FunctionKind kind = 8;
+        int32 visible_parameter = 9;
+        repeated ParametersLevel parameters_levels = 10;
+    }
+
+    enum FunctionKind {
+        FUNC = 0;
+        SFUNC = 1;
+        LEMMA = 2;
     }
 
     enum TypeClassParameterKind {

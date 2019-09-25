@@ -17,6 +17,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
@@ -413,7 +414,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     List<Clause> clauses;
     Definition typechecked;
     Concrete.Definition definition = unit.getDefinition();
-    boolean isLevel = definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == Concrete.FunctionDefinition.Kind.LEVEL;
+    boolean isLevel = definition instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.LEVEL;
     if (isLevel && !unit.isHeader()) {
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (pair == null) {

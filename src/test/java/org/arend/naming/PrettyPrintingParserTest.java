@@ -17,6 +17,7 @@ import org.arend.core.sort.Sort;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
+import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -142,7 +143,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     LocalReferable y = ref("y");
     LocalReferable z = ref("z");
     ConcreteLocatedReferable reference = new ConcreteLocatedReferable(null, "f", Precedence.DEFAULT, MODULE_PATH);
-    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(Concrete.FunctionDefinition.Kind.FUNC, reference, cTeleArgs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), null, body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
+    Concrete.FunctionDefinition def = new Concrete.FunctionDefinition(FunctionKind.FUNC, reference, cTeleArgs(cTele(false, cvars(x), cUniverseStd(1)), cTele(cvars(A), cPi(cUniverseStd(1), cUniverseStd(0)))), cPi(cApps(cVar(A), cVar(x)), cPi(cPi(cUniverseStd(1), cUniverseStd(1)), cPi(cUniverseStd(1), cUniverseStd(1)))), null, body(cLam(cargs(cName(t), cName(y), cName(z)), cApps(cVar(y), cVar(z)))));
     reference.setDefinition(def);
     testDef(def, def);
   }

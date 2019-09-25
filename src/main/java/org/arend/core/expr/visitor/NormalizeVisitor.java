@@ -494,7 +494,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitDefCall(DefCallExpression expr, Mode mode) {
-    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isLemma() ||
+    if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() ||
         expr.getDefinition() instanceof ClassField && ((ClassField) expr.getDefinition()).isProperty()) {
       return expr;
     }

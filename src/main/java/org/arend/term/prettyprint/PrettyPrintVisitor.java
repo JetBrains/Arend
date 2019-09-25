@@ -5,6 +5,7 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.Fixity;
+import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.Concrete.BinOpSequenceElem;
@@ -933,7 +934,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        pp.prettyPrintBody(def.getBody(), def.getKind() != Concrete.FunctionDefinition.Kind.INSTANCE);
+        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.INSTANCE);
       }
 
       @Override
