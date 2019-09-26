@@ -107,7 +107,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         Object data = term.getData();
         body = new Concrete.TermFunctionBody(data, term.accept(this, null));
       } else if (def.isCowith()) {
-        body = new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(def.getClassFieldImpls()));
+        body = new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(def, def.getClassFieldImpls()));
       } else {
         body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
       }
@@ -252,7 +252,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return null;
     }
 
-    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def.getClassFieldImpls());
+    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def, def.getClassFieldImpls());
     List<Concrete.ClassField> classFields = new ArrayList<>();
     Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
     buildClassParameters(def.getParameters(), classDef, classFields);
@@ -309,16 +309,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return elimExpressions;
   }
 
-  public List<Concrete.ClassFieldImpl> buildImplementationsSafe(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+  public List<Concrete.ClassFieldImpl> buildImplementationsSafe(Object data, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     try {
-      return buildImplementations(absImplementations);
+      return buildImplementations(data, absImplementations);
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
       return Collections.emptyList();
     }
   }
 
-  public List<Concrete.ClassFieldImpl> buildImplementations(Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
+  private List<Concrete.ClassFieldImpl> buildImplementations(Object data, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
       Abstract.Reference implementedField = implementation.getImplementedField();
@@ -336,7 +336,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
         implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, Collections.emptyList()));
       } else {
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), null, buildImplementations(implementation.getClassFieldImpls())));
+        AbstractExpressionError error = AbstractExpressionError.incomplete(data);
+        myErrorReporter.report(error);
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), implementation.hasImplementation() ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
       }
     }
     return implementations;
@@ -638,7 +640,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
     Concrete.Expression result = baseClass.accept(this, null);
     if (implementations != null) {
-      result = Concrete.ClassExtExpression.make(data, result, buildImplementations(implementations));
+      result = Concrete.ClassExtExpression.make(data, result, buildImplementations(data, implementations));
     }
     if (evalKind != null) {
       result = new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result);

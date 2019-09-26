@@ -171,6 +171,7 @@ public final class Abstract {
     @Nullable Object getData();
     @Nullable Reference getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
+    boolean hasImplementation();
   }
 
   public interface LetClausePattern extends SourceNode {
