@@ -86,7 +86,7 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params) {
+  public R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 
@@ -102,11 +102,6 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
 
   @Override
   public R visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, @Nullable Abstract.ErrorData errorData, P params) {
-    return defaultValue;
-  }
-
-  @Override
-  public R visitEval(@Nullable Object data, boolean isPEval, @Nullable Abstract.Expression expr, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 }

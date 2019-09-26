@@ -117,10 +117,11 @@ expr  : newExpr                                                                 
       | '\\lam' tele+ '=>' expr                                                                         # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr                                        # let
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
-      | (EVAL | PEVAL) argumentAppExpr                                                                  # eval
       ;
 
-newExpr : NEW? appExpr (implementStatements argument*)?;
+newExpr : appPrefix? appExpr (implementStatements argument*)?;
+
+appPrefix : NEW EVAL? | EVAL | PEVAL;
 
 caseArg : expr (AS ID)? (':' expr)?;
 
@@ -133,7 +134,7 @@ appExpr : argumentAppExpr                             # appArgument
 argumentAppExpr : atomFieldsAcc onlyLevelAtom* argument*;
 
 argument : atomFieldsAcc                # argumentExplicit
-         | NEW appExpr implementStatements? # argumentNew
+         | appPrefix appExpr implementStatements? # argumentNew
          | universeAtom                 # argumentUniverse
          | '{' expr '}'                 # argumentImplicit
          ;

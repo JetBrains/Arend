@@ -27,9 +27,8 @@ public interface AbstractExpressionVisitor<P, R> {
   R visitBinOpSequence(@Nullable Object data, @Nonnull Abstract.Expression left, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params);
   R visitCase(@Nullable Object data, @Nonnull Collection<? extends Abstract.CaseArgument> arguments, @Nullable Abstract.Expression resultType, @Nullable Abstract.Expression resultTypeLevel, @Nonnull Collection<? extends Abstract.FunctionClause> clauses, @Nullable Abstract.ErrorData errorData, P params);
   R visitFieldAccs(@Nullable Object data, @Nonnull Abstract.Expression expression, @Nonnull Collection<Integer> fieldAccs, @Nullable Abstract.ErrorData errorData, P params);
-  R visitClassExt(@Nullable Object data, boolean isNew, /* @Nonnull */ @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params);
+  R visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, /* @Nonnull */ @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, P params);
   R visitLet(@Nullable Object data, boolean isStrict, @Nonnull Collection<? extends Abstract.LetClause> clauses, /* @Nonnull */ @Nullable Abstract.Expression expression, @Nullable Abstract.ErrorData errorData, P params);
   R visitNumericLiteral(@Nullable Object data, @Nonnull BigInteger number, @Nullable Abstract.ErrorData errorData, P params);
   R visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, @Nullable Abstract.ErrorData errorData, P params);
-  R visitEval(@Nullable Object data, boolean isPEval, /* @Nonnull */ @Nullable Abstract.Expression expr, @Nullable Abstract.ErrorData errorData, P params);
 }

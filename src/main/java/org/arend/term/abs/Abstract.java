@@ -4,10 +4,8 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.ClassFieldKind;
-import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
-import org.arend.term.concrete.Concrete;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -138,6 +136,8 @@ public final class Abstract {
   }
 
   // Expression
+
+  public enum EvalKind { EVAL, PEVAL }
 
   public static final int INFINITY_LEVEL = -33;
 

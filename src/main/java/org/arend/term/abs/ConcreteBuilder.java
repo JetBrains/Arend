@@ -630,7 +630,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, Void params) {
+  public Concrete.Expression visitClassExt(@Nullable Object data, boolean isNew, @Nullable Abstract.EvalKind evalKind, @Nullable Abstract.Expression baseClass, @Nullable Collection<? extends Abstract.ClassFieldImpl> implementations, @Nonnull Collection<? extends Abstract.BinOpSequenceElem> sequence, @Nullable Abstract.ErrorData errorData, Void params) {
     if (baseClass == null) {
       throwError(errorData);
       throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
@@ -639,6 +639,9 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     Concrete.Expression result = baseClass.accept(this, null);
     if (implementations != null) {
       result = Concrete.ClassExtExpression.make(data, result, buildImplementations(implementations));
+    }
+    if (evalKind != null) {
+      result = new Concrete.EvalExpression(data, evalKind == Abstract.EvalKind.PEVAL, result);
     }
     if (isNew) {
       result = new Concrete.NewExpression(data, result);
@@ -715,16 +718,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.Expression visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
     return new Concrete.TypedExpression(data, expr.accept(this, null), type.accept(this, null));
-  }
-
-  @Override
-  public Concrete.Expression visitEval(@Nullable Object data, boolean isPEval, @Nullable Abstract.Expression expr, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (expr == null) {
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
-    return new Concrete.EvalExpression(data, isPEval, expr.accept(this, null));
   }
 
   // LevelExpression
