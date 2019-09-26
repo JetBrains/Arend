@@ -28,6 +28,7 @@ message Expression {
         Universe universe = 18;
         SmallInteger small_integer = 21;
         BigInteger big_integer = 22;
+        PEval pEval = 23;
     }
 
     message App {
@@ -105,6 +106,9 @@ message Expression {
         Expression result_type = 2;
         Expression result_type_level = 6;
         repeated Expression argument = 3;
+    }
+    message PEval {
+        FunCall fun_call = 1;
     }
     message New {
         ClassCall class_call = 1;

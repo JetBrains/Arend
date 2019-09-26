@@ -160,6 +160,10 @@ public class ConcreteExpressionFactory {
     return new Concrete.NewExpression(null, expr);
   }
 
+  public static Concrete.EvalExpression cEval(boolean isPEval, Concrete.Expression expr) {
+    return new Concrete.EvalExpression(null, isPEval, expr);
+  }
+
   public static Concrete.CaseArgument cCaseArg(Concrete.Expression expression, Referable referable, Concrete.Expression type) {
     return new Concrete.CaseArgument(expression, referable, type);
   }

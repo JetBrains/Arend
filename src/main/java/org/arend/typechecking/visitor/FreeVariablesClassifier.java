@@ -227,4 +227,9 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
   public Result visitInteger(IntegerExpression expr, Boolean good) {
     return Result.NONE;
   }
+
+  @Override
+  public Result visitPEval(PEvalExpression expr, Boolean good) {
+    return expr.getExpression().accept(this, good);
+  }
 }

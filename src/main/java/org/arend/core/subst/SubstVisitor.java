@@ -53,6 +53,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public FunCallExpression visitFunCall(FunCallExpression expr, Void params) {
+    return (FunCallExpression) visitDefCall(expr, null);
+  }
+
+  @Override
   public DataCallExpression visitDataCall(DataCallExpression expr, Void params) {
     return (DataCallExpression) visitDefCall(expr, null);
   }
@@ -167,6 +172,11 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   @Override
   public Expression visitNew(NewExpression expr, Void params) {
     return new NewExpression(visitClassCall(expr.getExpression(), null));
+  }
+
+  @Override
+  public Expression visitPEval(PEvalExpression expr, Void params) {
+    return new PEvalExpression(visitFunCall(expr.getExpression(), null));
   }
 
   @Override

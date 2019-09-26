@@ -653,7 +653,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitCase(Concrete.CaseExpression expr, Precedence prec) {
     if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append('(');
     myBuilder.append("\\case ");
-    new ListLayout<Concrete.CaseArgument>(){
+    new ListLayout<Concrete.CaseArgument>() {
       @Override
       void printListElement(PrettyPrintVisitor ppv, Concrete.CaseArgument caseArg) {
         caseArg.expression.accept(ppv, new Precedence(Concrete.Expression.PREC));
@@ -679,6 +679,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     prettyPrintClauses(Collections.emptyList(), expr.getClauses(), true);
     myIndent -= INDENT;
     if (prec.priority > Concrete.CaseExpression.PREC) myBuilder.append(')');
+    return null;
+  }
+
+  @Override
+  public Void visitEval(Concrete.EvalExpression expr, Precedence prec) {
+    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append('(');
+    myBuilder.append(expr.isPEval() ? "\\peval " : "\\eval ");
+    expr.getExpression().accept(this, new Precedence(Concrete.Expression.PREC));
+    if (prec.priority > Concrete.EvalExpression.PREC) myBuilder.append(')');
     return null;
   }
 

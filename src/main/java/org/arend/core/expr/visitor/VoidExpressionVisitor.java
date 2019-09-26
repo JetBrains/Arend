@@ -119,6 +119,12 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   }
 
   @Override
+  public Void visitPEval(PEvalExpression expr, P params) {
+    visitFunCall(expr.getExpression(), params);
+    return null;
+  }
+
+  @Override
   public Void visitLet(LetExpression expr, P params) {
     for (LetClause clause : expr.getClauses()) {
       clause.getExpression().accept(this, params);

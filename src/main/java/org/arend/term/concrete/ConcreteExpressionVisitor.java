@@ -14,6 +14,7 @@ public interface ConcreteExpressionVisitor<P, R> {
   R visitSigma(Concrete.SigmaExpression expr, P params);
   R visitBinOpSequence(Concrete.BinOpSequenceExpression expr, P params);
   R visitCase(Concrete.CaseExpression expr, P params);
+  R visitEval(Concrete.EvalExpression expr, P params);
   R visitProj(Concrete.ProjExpression expr, P params);
   R visitClassExt(Concrete.ClassExtExpression expr, P params);
   R visitNew(Concrete.NewExpression expr, P params);

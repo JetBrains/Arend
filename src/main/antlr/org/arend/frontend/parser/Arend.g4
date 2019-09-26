@@ -56,8 +56,6 @@ classBody : '{' classStat* '}'                                      # classBodyS
           | classFieldOrImpl*                                       # classBodyFieldOrImpl
           ;
 
-fieldSyn : ID '=>' precedence ID;
-
 functionBody  : '=>' expr             # withoutElim
               | '\\cowith' coClauses  # cowithElim
               | elim? clauses         # withElim
@@ -119,17 +117,20 @@ expr  : newExpr                                                                 
       | '\\lam' tele+ '=>' expr                                                                         # lam
       | (LET | LETS) '|'? letClause ('|' letClause)* '\\in' expr                                        # let
       | '\\case' caseArg (',' caseArg)* ('\\return' returnExpr)? '\\with' '{' clause? ('|' clause)* '}' # case
+      | (EVAL | PEVAL) argumentAppExpr                                                                  # eval
       ;
 
 newExpr : NEW? appExpr (implementStatements argument*)?;
 
 caseArg : expr (AS ID)? (':' expr)?;
 
-appExpr : atomFieldsAcc onlyLevelAtom* argument*      # appArgument
+appExpr : argumentAppExpr                             # appArgument
         | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse
         | UNIVERSE (maybeLevelAtom maybeLevelAtom?)?  # universe
         | SET maybeLevelAtom?                         # setUniverse
         ;
+
+argumentAppExpr : atomFieldsAcc onlyLevelAtom* argument*;
 
 argument : atomFieldsAcc                # argumentExplicit
          | NEW appExpr implementStatements? # argumentNew
@@ -230,6 +231,8 @@ fieldTele : '(' CLASSIFYING? ID+ ':' expr ')'        # explicitFieldTele
 
 LET : '\\let';
 LETS : '\\let!';
+EVAL : '\\eval';
+PEVAL : '\\peval';
 AS : '\\as';
 USING : '\\using';
 TRUNCATED : '\\truncated';

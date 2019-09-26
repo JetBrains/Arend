@@ -196,4 +196,9 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public IntegerExpression visitInteger(IntegerExpression expr, Void params) {
     return expr;
   }
+
+  @Override
+  public Expression visitPEval(PEvalExpression expr, Void params) {
+    return new PEvalExpression(visitFunCall(expr.getExpression(), null));
+  }
 }

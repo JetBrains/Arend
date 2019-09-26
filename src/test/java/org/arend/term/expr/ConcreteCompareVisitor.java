@@ -301,6 +301,15 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
+  public Boolean visitEval(Concrete.EvalExpression expr, Concrete.Expression expr2) {
+    if (!(expr2 instanceof Concrete.EvalExpression)) {
+      return false;
+    }
+    Concrete.EvalExpression eval2 = (Concrete.EvalExpression) expr2;
+    return expr.isPEval() == eval2.isPEval() && compare(expr.getExpression(), eval2.getExpression());
+  }
+
+  @Override
   public Boolean visitProj(Concrete.ProjExpression expr1, Concrete.Expression expr2) {
     return expr2 instanceof Concrete.ProjExpression && expr1.getField() == ((Concrete.ProjExpression) expr2).getField() && compare(expr1.getExpression(), ((Concrete.ProjExpression) expr2).getExpression());
   }

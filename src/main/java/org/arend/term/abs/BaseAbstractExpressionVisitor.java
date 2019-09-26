@@ -36,11 +36,6 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
   }
 
   @Override
-  public R visitSection(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, P params) {
-    return defaultValue;
-  }
-
-  @Override
   public R visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
@@ -107,6 +102,11 @@ public class BaseAbstractExpressionVisitor<P, R> implements AbstractExpressionVi
 
   @Override
   public R visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, @Nullable Abstract.ErrorData errorData, P params) {
+    return defaultValue;
+  }
+
+  @Override
+  public R visitEval(@Nullable Object data, boolean isPEval, @Nullable Abstract.Expression expr, @Nullable Abstract.ErrorData errorData, P params) {
     return defaultValue;
   }
 }

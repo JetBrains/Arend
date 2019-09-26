@@ -164,7 +164,12 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
 
   @Override
   public Variable visitNew(NewExpression expr, Void params) {
-    return expr.getExpression().accept(this, null);
+    return visitClassCall(expr.getExpression(), null);
+  }
+
+  @Override
+  public Variable visitPEval(PEvalExpression expr, Void params) {
+    return visitFunCall(expr.getExpression(), null);
   }
 
   @Override

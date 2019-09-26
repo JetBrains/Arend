@@ -219,6 +219,8 @@ class ExpressionDeserialization {
         return readProj(proto.getProj());
       case NEW:
         return readNew(proto.getNew());
+      case PEVAL:
+        return readPEval(proto.getPEval());
       case LET:
         return readLet(proto.getLet());
       case CASE:
@@ -317,6 +319,10 @@ class ExpressionDeserialization {
 
   private NewExpression readNew(ExpressionProtos.Expression.New proto) throws DeserializationException {
     return new NewExpression(readClassCall(proto.getClassCall()));
+  }
+
+  private PEvalExpression readPEval(ExpressionProtos.Expression.PEval proto) throws DeserializationException {
+    return new PEvalExpression(readFunCall(proto.getFunCall()));
   }
 
   private String validName(String name) {

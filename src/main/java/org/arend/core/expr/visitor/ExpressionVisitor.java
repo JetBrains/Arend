@@ -19,6 +19,7 @@ public interface ExpressionVisitor<P, R> {
   R visitTuple(TupleExpression expr, P params);
   R visitProj(ProjExpression expr, P params);
   R visitNew(NewExpression expr, P params);
+  R visitPEval(PEvalExpression expr, P params);
   R visitLet(LetExpression expr, P params);
   R visitCase(CaseExpression expr, P params);
   R visitOfType(OfTypeExpression expr, P params);

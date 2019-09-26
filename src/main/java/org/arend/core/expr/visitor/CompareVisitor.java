@@ -18,6 +18,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
@@ -972,5 +973,46 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   @Override
   public Boolean visitInteger(IntegerExpression expr, Pair<Expression,ExpectedType> pair) {
     return visitInteger(expr, pair.proj1);
+  }
+
+  @Override
+  public Boolean visitPEval(PEvalExpression expr, Pair<Expression, ExpectedType> pair) {
+    if (!pair.proj1.isInstance(PEvalExpression.class)) {
+      return false;
+    }
+
+    FunCallExpression funCall2 = pair.proj1.cast(PEvalExpression.class).getExpression();
+    if (!compareDef(expr.getExpression(), funCall2, true)) {
+      return false;
+    }
+
+    if (!(expr.getExpression().getDefinition().getActualBody() instanceof ElimTree)) {
+      return null;
+    }
+
+    Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getExpression().getDefCallArguments());
+    Stack<Expression> stack2 = NormalizeVisitor.INSTANCE.makeStack(funCall2.getDefCallArguments());
+
+    ExprSubstitution substitution = new ExprSubstitution();
+    LevelSubstitution levelSubstitution = expr.getExpression().getSortArgument().toLevelSubstitution();
+    ElimTree elimTree = (ElimTree) expr.getExpression().getDefinition().getActualBody();
+    while (true) {
+      for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
+        Expression arg1 = stack1.pop();
+        if (!compare(arg1, stack2.pop(), link.getTypeExpr().subst(substitution, levelSubstitution))) {
+          return false;
+        }
+        substitution.add(link, arg1);
+      }
+      if (elimTree instanceof LeafElimTree || stack1.isEmpty() || stack2.isEmpty()) {
+        return stack1.isEmpty() && stack2.isEmpty();
+      }
+
+      ElimTree elimTree2 = NormalizeVisitor.INSTANCE.updateStack(stack2, (BranchElimTree) elimTree);
+      elimTree = NormalizeVisitor.INSTANCE.updateStack(stack1, (BranchElimTree) elimTree);
+      if (elimTree == null || elimTree != elimTree2) {
+        return false;
+      }
+    }
   }
 }

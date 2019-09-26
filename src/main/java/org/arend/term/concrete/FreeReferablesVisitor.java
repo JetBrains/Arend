@@ -193,6 +193,11 @@ public class FreeReferablesVisitor implements ConcreteExpressionVisitor<Void, TC
   }
 
   @Override
+  public TCReferable visitEval(Concrete.EvalExpression expr, Void params) {
+    return expr.getExpression().accept(this, null);
+  }
+
+  @Override
   public TCReferable visitProj(Concrete.ProjExpression expr, Void params) {
     return expr.expression.accept(this, null);
   }

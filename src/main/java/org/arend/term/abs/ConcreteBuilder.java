@@ -7,7 +7,6 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.naming.renamer.Renamer;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
 import org.arend.term.concrete.Concrete;
@@ -486,16 +485,6 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.Expression visitSection(@Nullable Object data, @Nonnull Referable referent, @Nullable Abstract.Expression argument, @Nullable Abstract.ErrorData errorData, Void params) {
-    if (argument == null) {
-      throwError(errorData);
-      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
-    }
-
-    return Concrete.makeRightSection(data, referent, new LocalReferable(Renamer.UNNAMED), argument.accept(this, null));
-  }
-
-  @Override
   public Concrete.Expression visitLam(@Nullable Object data, @Nonnull Collection<? extends Abstract.Parameter> parameters, @Nullable Abstract.Expression body, @Nullable Abstract.ErrorData errorData, Void params) {
     if (body == null) {
       throwError(errorData);
@@ -726,6 +715,16 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   public Concrete.Expression visitTyped(@Nullable Object data, @Nonnull Abstract.Expression expr, @Nonnull Abstract.Expression type, @Nullable Abstract.ErrorData errorData, Void params) {
     reportError(errorData);
     return new Concrete.TypedExpression(data, expr.accept(this, null), type.accept(this, null));
+  }
+
+  @Override
+  public Concrete.Expression visitEval(@Nullable Object data, boolean isPEval, @Nullable Abstract.Expression expr, @Nullable Abstract.ErrorData errorData, Void params) {
+    if (expr == null) {
+      throwError(errorData);
+      throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+    }
+
+    return new Concrete.EvalExpression(data, isPEval, expr.accept(this, null));
   }
 
   // LevelExpression

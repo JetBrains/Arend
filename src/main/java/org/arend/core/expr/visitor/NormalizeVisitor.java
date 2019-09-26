@@ -387,7 +387,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return result == null ? applyDefCall(expr, mode) : result.accept(this, mode);
   }
 
-  private Stack<Expression> makeStack(List<? extends Expression> arguments) {
+  public Stack<Expression> makeStack(List<? extends Expression> arguments) {
     Stack<Expression> stack = new Stack<>();
     for (int i = arguments.size() - 1; i >= 0; i--) {
       stack.push(arguments.get(i));
@@ -438,7 +438,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
   }
 
-  private ElimTree updateStack(Stack<Expression> stack, BranchElimTree branchElimTree) {
+  public ElimTree updateStack(Stack<Expression> stack, BranchElimTree branchElimTree) {
     Expression argument = stack.peek().accept(this, Mode.WHNF);
     ConCallExpression conCall = argument.checkedCast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
@@ -698,5 +698,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public IntegerExpression visitInteger(IntegerExpression expr, Mode params) {
     return expr;
+  }
+
+  @Override
+  public Expression visitPEval(PEvalExpression expr, Mode mode) {
+    return mode == Mode.WHNF ? expr : new PEvalExpression((FunCallExpression) applyDefCall(expr.getExpression(), mode));
   }
 }

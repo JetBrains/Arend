@@ -104,6 +104,11 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
   }
 
   @Override
+  public Boolean visitPEval(PEvalExpression expr, P param) {
+    return expr.getExpression().accept(this, param);
+  }
+
+  @Override
   public Boolean visitUniverse(UniverseExpression expression, P param) {
     return false;
   }

@@ -948,6 +948,35 @@ public final class Concrete {
     }
   }
 
+  public static class EvalExpression extends Expression {
+    public static final byte PREC = -7;
+    private final boolean myPEVal;
+    private Expression myExpression;
+
+    public EvalExpression(Object data, boolean isPEval, Expression expression) {
+      super(data);
+      myPEVal = isPEval;
+      myExpression = expression;
+    }
+
+    public boolean isPEval() {
+      return myPEVal;
+    }
+
+    public Expression getExpression() {
+      return myExpression;
+    }
+
+    public void setExpression(Expression expression) {
+      myExpression = expression;
+    }
+
+    @Override
+    public <P, R> R accept(ConcreteExpressionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitEval(this, params);
+    }
+  }
+
   public static class FunctionClause extends Clause {
     public Expression expression;
 

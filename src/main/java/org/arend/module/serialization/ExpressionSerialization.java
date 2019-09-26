@@ -204,8 +204,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return ExpressionProtos.Expression.newBuilder().setApp(builder).build();
   }
 
-  @Override
-  public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
+  private ExpressionProtos.Expression.FunCall writeFunCall(FunCallExpression expr) {
     ExpressionProtos.Expression.FunCall.Builder builder = ExpressionProtos.Expression.FunCall.newBuilder();
     builder.setFunRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
     builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
@@ -213,7 +212,12 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     for (Expression arg : expr.getDefCallArguments()) {
       builder.addArgument(arg.accept(this, null));
     }
-    return ExpressionProtos.Expression.newBuilder().setFunCall(builder).build();
+    return builder.build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitFunCall(FunCallExpression expr, Void params) {
+    return ExpressionProtos.Expression.newBuilder().setFunCall(writeFunCall(expr)).build();
   }
 
   @Override
@@ -343,6 +347,13 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     ExpressionProtos.Expression.New.Builder builder = ExpressionProtos.Expression.New.newBuilder();
     builder.setClassCall(writeClassCall(expr.getExpression()));
     return ExpressionProtos.Expression.newBuilder().setNew(builder).build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitPEval(PEvalExpression expr, Void params) {
+    ExpressionProtos.Expression.PEval.Builder builder = ExpressionProtos.Expression.PEval.newBuilder();
+    builder.setFunCall(writeFunCall(expr.getExpression()));
+    return ExpressionProtos.Expression.newBuilder().setPEval(builder).build();
   }
 
   @Override

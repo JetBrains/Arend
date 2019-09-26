@@ -158,6 +158,12 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   }
 
   @Override
+  public Concrete.Expression visitEval(Concrete.EvalExpression expr, P params) {
+    expr.setExpression(expr.getExpression().accept(this, params));
+    return expr;
+  }
+
+  @Override
   public Concrete.Expression visitProj(Concrete.ProjExpression expr, P params) {
     expr.expression = expr.expression.accept(this, params);
     return expr;

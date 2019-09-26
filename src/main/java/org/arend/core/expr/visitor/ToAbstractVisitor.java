@@ -483,7 +483,12 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitNew(NewExpression expr, Void params) {
-    return cNew(expr.getExpression().accept(this, null));
+    return cNew(visitClassCall(expr.getExpression(), null));
+  }
+
+  @Override
+  public Concrete.Expression visitPEval(PEvalExpression expr, Void params) {
+    return cEval(true, visitFunCall(expr.getExpression(), null));
   }
 
   @Override

@@ -1780,4 +1780,53 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     TypecheckingResult result = new TypecheckingResult(new CaseExpression(list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }
+
+  @Override
+  public TypecheckingResult visitEval(Concrete.EvalExpression expr, ExpectedType expectedType) {
+    TypecheckingResult result = checkExpr(expr.getExpression(), expr.isPEval() ? null : expectedType);
+    if (result == null) {
+      return null;
+    }
+
+    FunCallExpression funCall = result.expression.checkedCast(FunCallExpression.class);
+    if (funCall == null || funCall.getDefinition().getKind() != FunctionDefinition.Kind.SFUNC) {
+      errorReporter.report(new TypecheckingError("Expected a function" + (funCall == null ? "" : " (defined as \\sfunc)") + " applied to arguments", expr.getExpression()));
+      return null;
+    }
+    if (!(funCall.getDefinition().getActualBody() instanceof ElimTree)) {
+      errorReporter.report(new FunctionWithoutBodyError(funCall.getDefinition(), expr.getExpression()));
+      return null;
+    }
+
+    Expression normExpr = NormalizeVisitor.INSTANCE.eval((ElimTree) funCall.getDefinition().getActualBody(), funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution());
+    if (normExpr == null) {
+      errorReporter.report(new TypecheckingError("Expression does not evaluate", expr.getExpression()));
+      return null;
+    }
+
+    if (!expr.isPEval()) {
+      return new TypecheckingResult(normExpr, result.type);
+    }
+
+    Expression typeType = result.type.getType();
+    if (typeType == null) {
+      errorReporter.report(new TypecheckingError("Cannot infer the universe of the type of the expression", expr.getExpression()));
+      return null;
+    }
+
+    Sort sortArg;
+    typeType = typeType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (typeType.isInstance(UniverseExpression.class)) {
+      sortArg = typeType.cast(UniverseExpression.class).getSort();
+    } else {
+      sortArg = Sort.generateInferVars(myEquations, false, expr.getExpression());
+      myEquations.addEquation(typeType, new UniverseExpression(sortArg), ExpectedType.OMEGA, Equations.CMP.LE, expr.getExpression(), typeType.getStuckInferenceVariable(), null);
+    }
+
+    List<Expression> args = new ArrayList<>(3);
+    args.add(result.type);
+    args.add(funCall);
+    args.add(normExpr);
+    return checkResult(expectedType, new TypecheckingResult(new PEvalExpression(funCall), new FunCallExpression(Prelude.PATH_INFIX, sortArg, args)), expr);
+  }
 }

@@ -54,7 +54,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       return false;
     }
 
-    AppArgumentContext argCtx = (AppArgumentContext) newExpr.appExpr();
+    ArgumentAppExprContext argCtx = ((AppArgumentContext) newExpr.appExpr()).argumentAppExpr();
     if (!argCtx.onlyLevelAtom().isEmpty()) {
       return false;
     }
@@ -971,6 +971,11 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.Expression visitAppArgument(AppArgumentContext ctx) {
+    return visitArgumentAppExpr(ctx.argumentAppExpr());
+  }
+
+  @Override
+  public Concrete.Expression visitArgumentAppExpr(ArgumentAppExprContext ctx) {
     Concrete.Expression expr = visitAtomFieldsAcc(ctx.atomFieldsAcc());
     List<OnlyLevelAtomContext> onlyLevelAtoms = ctx.onlyLevelAtom();
     if (!onlyLevelAtoms.isEmpty()) {
@@ -1485,6 +1490,11 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
+  }
+
+  @Override
+  public Concrete.EvalExpression visitEval(EvalContext ctx) {
+    return new Concrete.EvalExpression(tokenPosition(ctx.start), ctx.PEVAL() != null, visitArgumentAppExpr(ctx.argumentAppExpr()));
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {

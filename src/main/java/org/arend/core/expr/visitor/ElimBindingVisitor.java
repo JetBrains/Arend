@@ -257,6 +257,12 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
+  public Expression visitPEval(PEvalExpression expr, Void params) {
+    Expression result = visitFunCall(expr.getExpression(), null);
+    return result instanceof FunCallExpression ? new PEvalExpression((FunCallExpression) result) : null;
+  }
+
+  @Override
   public LetExpression visitLet(LetExpression letExpression, Void params) {
     throw new IllegalStateException();
     /*
