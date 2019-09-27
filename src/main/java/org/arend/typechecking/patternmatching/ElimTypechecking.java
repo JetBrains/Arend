@@ -40,15 +40,17 @@ public class ElimTypechecking {
   private final EnumSet<PatternTypechecking.Flag> myFlags;
   private final Expression myExpectedType;
   private final Integer myLevel;
+  private final boolean mySFunc;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, Integer level) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, Integer level, boolean isSFunc) {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
     myLevel = level == null ? null : level + 1;
+    mySFunc = isSFunc;
   }
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
@@ -56,6 +58,7 @@ public class ElimTypechecking {
     myExpectedType = expectedType;
     myFlags = flags;
     myLevel = null;
+    mySFunc = false;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -523,8 +526,12 @@ public class ElimTypechecking {
         return null;
       }
 
-      if (dataType != null && dataType.isTruncated()) {
-        boolean ok = myLevel != null && myLevel <= dataType.getSort().getHLevel().getConstant() + 1;
+      if (dataType != null && dataType.isSquashed()) {
+        if (!mySFunc && myLevel != null) {
+          myVisitor.getErrorReporter().report(new SquashedDataError(dataType, myLevel - 1, conClauseData.clause));
+        }
+
+        boolean ok = !dataType.isTruncated() || myLevel != null && myLevel <= dataType.getSort().getHLevel().getConstant() + 1;
         if (!ok) {
           Expression type = myExpectedType.getType();
           if (type != null) {

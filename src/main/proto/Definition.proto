@@ -83,17 +83,18 @@ message Definition {
         repeated int32 field = 2;
     }
     message DataData {
-        repeated Telescope param = 2;
-        repeated int32 parameters_typechecking_order = 15;
-        repeated bool good_this_parameters = 17;
-        repeated TypeClassParameterKind type_class_parameters = 20;
-        Sort sort = 7;
-        repeated Constructor constructor = 3;
-        bool matches_on_interval = 5;
-        bool is_truncated = 16;
-        repeated bool covariant_parameter = 8;
-        CoerceData coerce_data = 14;
-        repeated ParametersLevel parameters_levels = 19;
+        repeated Telescope param = 1;
+        repeated int32 parameters_typechecking_order = 2;
+        repeated bool good_this_parameters = 3;
+        repeated TypeClassParameterKind type_class_parameters = 4;
+        Sort sort = 5;
+        repeated Constructor constructor = 6;
+        bool matches_on_interval = 7;
+        bool is_truncated = 8;
+        bool is_squashed = 9;
+        repeated bool covariant_parameter = 10;
+        CoerceData coerce_data = 11;
+        repeated ParametersLevel parameters_levels = 12;
 
         message Constructor {
             Referable referable = 1;

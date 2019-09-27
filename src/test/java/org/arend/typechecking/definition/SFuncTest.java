@@ -31,10 +31,56 @@ public class SFuncTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void evalNotSFunc() {
+    typeCheckModule(
+      "\\func pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
+      "\\func test => \\eval pred 2", 1);
+  }
+
+  @Test
   public void pevalTest() {
     typeCheckModule(
       "\\sfunc pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
       "\\func test : pred 3 = 2 => \\peval pred 3");
+  }
+
+  @Test
+  public void pevalNotSFunc() {
+    typeCheckModule(
+      "\\func pred (n : Nat) : Nat | 0 => 0 | suc n => n\n" +
+      "\\func test => \\peval pred 1", 1);
+  }
+
+  @Test
+  public void squashedByUseTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
+      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
+      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
+      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a");
+  }
+
+  @Test
+  public void squashedByTruncationTest() {
+    typeCheckModule(
+      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
+      "\\sfunc f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : \\level A p \\elim d | con a => a");
+  }
+
+  @Test
+  public void squashedByUseError() {
+    typeCheckModule(
+      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
+      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
+      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) : \\level A p \\elim d | con a => a", 1);
+  }
+
+  @Test
+  public void squashedByTruncationError() {
+    typeCheckModule(
+      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) : \\level A p \\elim d | con a => a", 1);
   }
 
   @Test

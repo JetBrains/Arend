@@ -234,7 +234,8 @@ public class DefinitionDeserialization {
     if (dataProto.getMatchesOnInterval()) {
       dataDef.setMatchesOnInterval();
     }
-    dataDef.setIsTruncated(dataProto.getIsTruncated());
+    dataDef.setTruncated(dataProto.getIsTruncated());
+    dataDef.setSquashed(dataProto.getIsSquashed());
 
     int index = 0;
     for (Boolean isCovariant : dataProto.getCovariantParameterList()) {

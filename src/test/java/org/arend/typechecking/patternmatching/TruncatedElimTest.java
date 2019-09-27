@@ -1,7 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
-import org.arend.typechecking.error.local.TypeMismatchError;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.*;
@@ -182,7 +181,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "\\truncated \\data \\infixr 2 || (A B : \\Type) : \\Prop\n" +
       "    | byLeft A\n" +
       "    | byRight B\n" +
-      "\\func rec {A B C : \\Type} (p : \\Pi (x y : C) -> x = y) (f : A -> C) (g : B -> C) (t : A || B) : \\level C p \\elim t\n" +
+      "\\sfunc rec {A B C : \\Type} (p : \\Pi (x y : C) -> x = y) (f : A -> C) (g : B -> C) (t : A || B) : \\level C p \\elim t\n" +
       "  | byLeft a => f a\n" +
       "  | byRight b => g b");
   }

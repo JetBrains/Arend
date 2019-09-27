@@ -16,6 +16,7 @@ public class TypecheckingError extends LocalError {
     IMPLICIT_PATTERN(Level.WARNING, "All patterns must be explicit"),
     BODY_REQUIRED("Body is required"),
     DATA_WONT_BE_TRUNCATED(Level.WEAK_WARNING, "The data type will not be truncated since it already fits in the specified universe"),
+    USELESS_LEVEL(Level.WEAK_WARNING, "Actual level is smaller than the specified one"),
     TRUNCATED_WITHOUT_UNIVERSE(Level.WARNING, "The data type cannot be truncated since its universe is not specified"),
     EXPECTED_EXPLICIT("Expected an explicit argument"),
     EXPECTED_IMPLICIT("Expected an implicit argument"),

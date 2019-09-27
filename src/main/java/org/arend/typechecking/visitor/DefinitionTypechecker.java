@@ -682,10 +682,17 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         Integer level = typechecker.getExpressionLevel(link, def.getResultType() == null ? null : resultType, ok ? type : null, DummyEquations.getInstance(), def);
         if (level != null && newDef) {
           if (useParent instanceof DataDefinition) {
+            DataDefinition dataDef = (DataDefinition) useParent;
             if (parameters == null) {
-              ((DataDefinition) useParent).setSort(level == -1 ? Sort.PROP : new Sort(((DataDefinition) useParent).getSort().getPLevel(), new Level(level)));
+              Sort newSort = level == -1 ? Sort.PROP : new Sort(dataDef.getSort().getPLevel(), new Level(level));
+              if (dataDef.getSort().isLessOrEquals(newSort)) {
+                errorReporter.report(new TypecheckingError(TypecheckingError.Kind.USELESS_LEVEL, def));
+              } else {
+                dataDef.setSort(newSort);
+                dataDef.setSquashed(true);
+              }
             } else {
-              ((DataDefinition) useParent).addParametersLevel(new ParametersLevel(parameters, level));
+              dataDef.addParametersLevel(new ParametersLevel(parameters, level));
             }
           } else if (useParent instanceof FunctionDefinition) {
             ((FunctionDefinition) useParent).addParametersLevel(new ParametersLevel(parameters, level));
@@ -770,7 +777,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       clauses = new ArrayList<>();
       EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
-      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel, def.getKind().isSFunc() || def.getResultTypeLevel() == null).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);
@@ -1257,7 +1264,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (inferredSort.isLessOrEquals(userSort)) {
           originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.DATA_WONT_BE_TRUNCATED, def.getUniverse() == null ? def : def.getUniverse()));
         } else if (newDef) {
-          dataDefinition.setIsTruncated(true);
+          dataDefinition.setTruncated(true);
+          dataDefinition.setSquashed(true);
         }
       }
     } else if (countingErrorReporter.getErrorsNumber() == 0 && userSort != null && !inferredSort.isLessOrEquals(userSort)) {

@@ -18,7 +18,8 @@ public class DataDefinition extends Definition {
   private DependentLink myParameters;
   private Sort mySort;
   private boolean myMatchesOnInterval;
-  private boolean myIsTruncated;
+  private boolean myTruncated;
+  private boolean mySquashed;
   private final Set<Integer> myCovariantParameters = new HashSet<>();
   private final CoerceData myCoerce = new CoerceData(this);
   private List<Integer> myParametersTypecheckingOrder;
@@ -57,11 +58,19 @@ public class DataDefinition extends Definition {
   }
 
   public boolean isTruncated() {
-    return myIsTruncated;
+    return myTruncated;
   }
 
-  public void setIsTruncated(boolean value) {
-    myIsTruncated = value;
+  public void setTruncated(boolean value) {
+    myTruncated = value;
+  }
+
+  public boolean isSquashed() {
+    return mySquashed;
+  }
+
+  public void setSquashed(boolean value) {
+    mySquashed = value;
   }
 
   @Override
