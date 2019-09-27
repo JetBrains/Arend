@@ -675,9 +675,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       errorReporter.report(new HasErrors(GeneralError.Level.ERROR, definition, expr));
       return null;
     } else {
-      if (typeCheckedDefinition.status() == Definition.TypeCheckingStatus.BODY_HAS_ERRORS) {
-        errorReporter.report(new HasErrors(GeneralError.Level.WARNING, definition, expr));
-      } else if (typeCheckedDefinition.status().hasDepProblems()) {
+      if (typeCheckedDefinition.status().hasDepProblems()) {
         setStatus(Definition.TypeCheckingStatus.DEP_PROBLEMS);
       }
       return typeCheckedDefinition;

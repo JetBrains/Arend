@@ -498,7 +498,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         expr.getDefinition() instanceof ClassField && ((ClassField) expr.getDefinition()).isProperty()) {
       return expr;
     }
-    if (!expr.getDefinition().status().bodyIsOK()) {
+    if (expr.getDefinition().status() != Definition.TypeCheckingStatus.NO_ERRORS && expr.getDefinition() instanceof Function && ((Function) expr.getDefinition()).getBody() == null) {
       return applyDefCall(expr, mode);
     }
 

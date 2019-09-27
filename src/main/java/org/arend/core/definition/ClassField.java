@@ -20,7 +20,7 @@ public class ClassField extends Definition {
   private boolean myCovariant;
 
   public ClassField(TCFieldReferable referable, ClassDefinition parentClass) {
-    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myParentClass = parentClass;
   }
 

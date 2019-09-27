@@ -299,8 +299,8 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\class X {\n" +
       "  | A : (B (\\lam _ => 0) -> Nat) -> \\Prop\n" +
       "  | B : (A (\\lam _ => 0) -> Nat) -> \\Prop\n" +
-      "}", 2);
-    assertThatErrorsAre(Matchers.error(), Matchers.hasErrors(getDefinition("X.A").getReferable()));
+      "}", 1);
+    assertThatErrorsAre(Matchers.error());
   }
 
   @Test

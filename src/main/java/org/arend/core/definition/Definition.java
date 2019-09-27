@@ -98,22 +98,18 @@ public abstract class Definition implements Variable {
   }
 
   public enum TypeCheckingStatus {
-    HEADER_NEEDS_TYPE_CHECKING, HEADER_HAS_ERRORS, BODY_NEEDS_TYPE_CHECKING, BODY_HAS_ERRORS, HAS_ERRORS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
+    HEADER_NEEDS_TYPE_CHECKING, BODY_NEEDS_TYPE_CHECKING, HAS_ERRORS, HAS_WARNINGS, DEP_PROBLEMS, NO_ERRORS;
 
     public boolean isOK() {
       return this.ordinal() >= DEP_PROBLEMS.ordinal();
     }
 
-    public boolean bodyIsOK() {
-      return headerIsOK() && this != BODY_HAS_ERRORS && this != BODY_NEEDS_TYPE_CHECKING;
-    }
-
     public boolean headerIsOK() {
-      return this != HEADER_HAS_ERRORS && this != HEADER_NEEDS_TYPE_CHECKING;
+      return this != HEADER_NEEDS_TYPE_CHECKING;
     }
 
     public boolean hasErrors() {
-      return this == HAS_ERRORS || this == BODY_HAS_ERRORS || this == HEADER_HAS_ERRORS;
+      return this == HAS_ERRORS;
     }
 
     public boolean hasDepProblems() {
@@ -121,7 +117,7 @@ public abstract class Definition implements Variable {
     }
 
     public boolean needsTypeChecking() {
-      return this == HEADER_HAS_ERRORS || this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
+      return this == HEADER_NEEDS_TYPE_CHECKING || this == BODY_NEEDS_TYPE_CHECKING;
     }
 
     public boolean withoutErrors() {
@@ -139,6 +135,10 @@ public abstract class Definition implements Variable {
 
   public void setStatus(TypeCheckingStatus status) {
     myStatus = status;
+  }
+
+  public void addStatus(TypeCheckingStatus status) {
+    myStatus = myStatus.needsTypeChecking() && !status.needsTypeChecking() ? status : myStatus.max(status);
   }
 
   public abstract void fill();

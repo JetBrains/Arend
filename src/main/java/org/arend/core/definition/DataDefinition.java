@@ -27,7 +27,7 @@ public class DataDefinition extends Definition {
   private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public DataDefinition(TCReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myConstructors = new ArrayList<>();
   }
 

@@ -248,7 +248,7 @@ public class ElimTest extends TypeCheckingTestCase {
                      "  | zero, suc y' => test zero y'\n" +
                      "  | suc x', suc y' => test (suc x') y'\n" +
                      "\n" +
-                     "\\func zero-is-one : 1 = 0 => test 0 1", 3);
+                     "\\func zero-is-one : 1 = 0 => test 0 1", 2);
   }
 
   @Test

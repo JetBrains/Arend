@@ -49,7 +49,7 @@ public class TerminationCheckTest extends TypeCheckingTestCase {
   public void test33() {
     typeCheckModule(minus + "\\func \\infix 9 / (x y : Nat) : Nat => div' x (-.p x - y)\n" +
       "\\where \\func div' (x : Nat) (y' : Nat) : Nat\n" +
-      "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''))\n", 2);
+      "\\elim y' | zero => zero | suc y'' => suc (div' x (x - suc y''))\n", 1);
   }
 
   @Test

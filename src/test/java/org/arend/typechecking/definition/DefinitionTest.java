@@ -47,7 +47,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
-        "\\func test => D", 2);
+        "\\func test => D", 1);
   }
 
   @Test
@@ -55,7 +55,7 @@ public class DefinitionTest extends TypeCheckingTestCase {
     typeCheckModule(
         "\\data E (n : Nat) | e\n" +
         "\\data D (n : Nat -> Nat) (E n) | d\n" +
-        "\\func test => d", 2);
+        "\\func test => d", 1);
   }
 
   @Test

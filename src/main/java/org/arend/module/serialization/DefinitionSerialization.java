@@ -147,7 +147,7 @@ public class DefinitionSerialization {
       builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
     }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
-    if (definition.status().headerIsOK()) {
+    if (definition.getSort() != null) {
       builder.setSort(defSerializer.writeSort(definition.getSort()));
     }
 
@@ -293,7 +293,7 @@ public class DefinitionSerialization {
     }
     builder.setKind(kind);
     builder.setVisibleParameter(definition.getVisibleParameter());
-    if (definition.status().bodyIsOK() && definition.getActualBody() != null) {
+    if (definition.getActualBody() != null) {
       builder.setBody(writeBody(defSerializer, definition.getActualBody()));
     }
 

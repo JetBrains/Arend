@@ -90,7 +90,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (dataDef.getSort() == null || dataDef.getSort().getPLevel().isInfinity()) {
         errorReporter.report(new TypecheckingError("Cannot infer the sort of a recursive data type", definition));
         if (typechecked == null) {
-          dataDef.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+          dataDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+          dataDef.setSort(Sort.SET0);
         }
       }
       return dataDef;
@@ -110,7 +111,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (definition instanceof DataDefinition) {
       try {
         if (!typecheckDataBody((DataDefinition) definition, (Concrete.DataDefinition) def, false, dataDefinitions, newDef) && newDef) {
-          definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+          definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         }
       } catch (IncorrectExpressionException e) {
         errorReporter.report(new TypecheckingError(e.getMessage(), def));
@@ -177,10 +178,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typechecker.getTypecheckingState().record(def.getData(), definition);
     }
     if (def.isRecursive()) {
-      definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      definition.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
 
       for (Concrete.ClassField field : def.getFields()) {
-        addField(field.getData(), definition, new PiExpression(Sort.STD, new TypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD), true), new ErrorExpression(null, null)), null).setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        addField(field.getData(), definition, new PiExpression(Sort.STD, new TypedSingleDependentLink(false, "this", new ClassCallExpression(definition, Sort.STD), true), new ErrorExpression(null, null)), null).setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
       }
     } else {
       try {
@@ -420,11 +421,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (Concrete.TypeParameter parameter : Objects.requireNonNull(Concrete.getParameters(def, true))) {
       Type paramResult = typechecker.checkType(parameter.getType(), expectedSort == null ? ExpectedType.OMEGA : new UniverseExpression(expectedSort), true);
       if (paramResult == null) {
-        sort = null;
         paramResult = new TypeExpression(new ErrorExpression(null, null), Sort.SET0);
-      } else if (sort != null) {
-        sort = sort.max(paramResult.getSortOfType());
       }
+      sort = sort.max(paramResult.getSortOfType());
 
       DependentLink param;
       int numberOfParameters;
@@ -575,13 +574,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      if (expectedType == null && def.isRecursive()) {
+      if (expectedType == null) {
         expectedType = new ErrorExpression(null, null);
       }
 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
-      typedDef.setStatus(paramsOk && expectedType != null ? Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING : Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
       typedDef.setKind(isSFunc ? (def.getKind() == FunctionKind.SFUNC ? FunctionDefinition.Kind.SFUNC : FunctionDefinition.Kind.LEMMA) : FunctionDefinition.Kind.FUNC);
     }
 
@@ -620,7 +619,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
 
           if (ok) {
-            if (link.hasNext() || resultType != null) {
+            if (link.hasNext() || def.getResultType() != null) {
               type = useParent instanceof DataDefinition
                 ? new DataCallExpression((DataDefinition) useParent, Sort.STD, defCallArgs)
                 : new FunCallExpression((FunctionDefinition) useParent, Sort.STD, defCallArgs);
@@ -638,7 +637,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               break;
             }
           }
-          if (!classCallLink.hasNext() && resultType != null) {
+          if (!classCallLink.hasNext() && def.getResultType() != null) {
             PiExpression piType = resultType.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(PiExpression.class);
             if (piType != null) {
               classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
@@ -680,7 +679,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           }
         }
 
-        Integer level = typechecker.getExpressionLevel(link, resultType, ok ? type : null, DummyEquations.getInstance(), def);
+        Integer level = typechecker.getExpressionLevel(link, def.getResultType() == null ? null : resultType, ok ? type : null, DummyEquations.getInstance(), def);
         if (level != null && newDef) {
           if (useParent instanceof DataDefinition) {
             if (parameters == null) {
@@ -734,8 +733,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
-    Integer resultTypeLevel = expectedType == null ? null : typecheckResultTypeLevel(def, typedDef, newDef);
-    if (resultTypeLevel == null && expectedType != null) {
+    Integer resultTypeLevel = expectedType.isError() ? null : typecheckResultTypeLevel(def, typedDef, newDef);
+    if (resultTypeLevel == null && !expectedType.isError()) {
       DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
       if (resultTypeLevel == null && defCall != null) {
@@ -754,9 +753,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     GoodThisParametersVisitor goodThisParametersVisitor;
     if (newDef) {
       goodThisParametersVisitor = new GoodThisParametersVisitor(typedDef.getParameters());
-      if (expectedType != null) {
-        expectedType.accept(goodThisParametersVisitor, null);
-      }
+      expectedType.accept(goodThisParametersVisitor, null);
       if (typedDef.getResultTypeLevel() != null) {
         typedDef.getResultTypeLevel().accept(goodThisParametersVisitor, null);
       }
@@ -769,31 +766,29 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     Concrete.FunctionBody body = def.getBody();
     boolean bodyIsOK = false;
     if (body instanceof Concrete.ElimFunctionBody) {
-      if (expectedType != null) {
-        Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
-        List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
-        clauses = new ArrayList<>();
-        EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
-        Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
-        if (typedBody != null) {
-          if (newDef) {
-            typedDef.setBody(typedBody);
-            typedDef.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-          }
-          boolean conditionsResult = typedDef.isSFunc() || ConditionsChecking.check(typedBody, clauses, typedDef, def, errorReporter);
-          if (newDef && !conditionsResult) {
-            typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-          }
-        } else {
-          clauses = null;
+      Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
+      List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
+      clauses = new ArrayList<>();
+      EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
+      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+      if (typedBody != null) {
+        if (newDef) {
+          typedDef.setBody(typedBody);
+          typedDef.addStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         }
+        boolean conditionsResult = typedDef.isSFunc() || ConditionsChecking.check(typedBody, clauses, typedDef, def, errorReporter);
+        if (newDef && !conditionsResult) {
+          typedDef.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+        }
+      } else {
+        clauses = null;
       }
     } else if (body instanceof Concrete.CoelimFunctionBody) {
       if (def.getResultType() != null) {
         Referable typeRef = def.getResultType().getUnderlyingReferable();
         if (typeRef instanceof ClassReferable) {
           ClassCallExpression result = typecheckCoClauses(typedDef, def, def.getResultType(), def.getResultTypeLevel(), body.getClassFieldImpls());
-          if (newDef) {
+          if (newDef && !def.isRecursive()) {
             typedDef.setResultType(result);
           }
           typecheckResultTypeLevel(def, typedDef, newDef);
@@ -801,16 +796,16 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           TypecheckingResult result = typechecker.finalCheckExpr(def.getResultType(), def.getKind() == FunctionKind.LEMMA ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
           if (newDef && result != null) {
             typedDef.setResultType(result.expression);
-            typedDef.setStatus(typechecker.getStatus());
+            typedDef.addStatus(typechecker.getStatus());
           }
         }
         bodyIsOK = true;
       }
     } else {
-      TypecheckingResult termResult = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType, true);
+      TypecheckingResult termResult = typechecker.finalCheckExpr(((Concrete.TermFunctionBody) body).getTerm(), expectedType.isError() ? null : expectedType, true);
       if (termResult != null) {
         if (termResult.expression != null) {
-          if (newDef) {
+          if (newDef && !def.isRecursive()) {
             typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
           }
         }
@@ -822,12 +817,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
         if (termResult.expression instanceof NewExpression) {
           bodyIsOK = true;
-          if (newDef && (expectedType == null || !typedDef.isSFunc())) {
+          if (newDef && (expectedType.isError() || !typedDef.isSFunc())) {
             typedDef.setBody(null);
-            typedDef.setResultType(((NewExpression) termResult.expression).getExpression());
+            if (!def.isRecursive()) {
+              typedDef.setResultType(((NewExpression) termResult.expression).getExpression());
+            }
           }
         } else {
-          if (newDef && (expectedType == null || !typedDef.isSFunc())) {
+          if (newDef && !def.isRecursive() && (expectedType.isError() || !typedDef.isSFunc())) {
             typedDef.setResultType(termResult.type);
           }
           if (def.getResultType() == null && def.getKind() == FunctionKind.LEMMA) {
@@ -870,7 +867,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      if (expectedType == null && typedDef.getResultType() != null) {
+      if (expectedType.isError() && typedDef.getResultType() != null) {
         typedDef.getResultType().accept(goodThisParametersVisitor, null);
       }
       if (typedDef.getResultType() == null) {
@@ -1008,7 +1005,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (def.hasErrors()) {
         typechecker.setHasErrors();
       }
-      typedDef.setStatus(typechecker.getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
+      typedDef.addStatus(typechecker.getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
     }
 
     return clauses;
@@ -1041,15 +1038,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     calculateParametersTypecheckingOrder(dataDefinition);
 
     if (!paramsOk) {
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
         for (Concrete.Constructor constructor : clause.getConstructors()) {
           typechecker.getTypecheckingState().rewrite(constructor.getData(), new Constructor(constructor.getData(), dataDefinition));
         }
       }
-    } else {
-      dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
     }
+
+    dataDefinition.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
   }
 
   private boolean typecheckDataBody(DataDefinition dataDefinition, Concrete.DataDefinition def, boolean polyHLevel, Set<DataDefinition> dataDefinitions, boolean newDef) {
@@ -1203,8 +1199,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     }
-    if (newDef) {
-      dataDefinition.setStatus(dataOk ? Definition.TypeCheckingStatus.NO_ERRORS : Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    if (newDef && !dataOk) {
+      dataDefinition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
     }
 
     errorReporter = originalErrorReporter;
@@ -1273,7 +1269,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (def.hasErrors()) {
         typechecker.setHasErrors();
       }
-      dataDefinition.setStatus(typechecker.getStatus().max(dataDefinition.status()));
+      dataDefinition.addStatus(typechecker.getStatus());
 
       boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());
       if (!hasUniverses) {
@@ -1792,7 +1788,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.BODY_HAS_ERRORS : typechecker.getStatus());
+      typedDef.setStatus(!classOk ? Definition.TypeCheckingStatus.HAS_ERRORS : typechecker.getStatus());
       typedDef.updateSort();
 
       typedDef.setHasUniverses(false);
@@ -2047,7 +2043,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setIsProperty();
     }
     if (!ok) {
-      typedDef.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+      typedDef.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
     }
     return typedDef;
   }

@@ -220,7 +220,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     } else {
       throw new IllegalStateException();
     }
-    typechecked.setStatus(Definition.TypeCheckingStatus.HEADER_HAS_ERRORS);
+    typechecked.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myState.record(definition.getData(), typechecked);
     return typechecked;
   }
@@ -240,7 +240,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
           if (typechecked == null) {
             typechecked = newDefinition(definition);
           }
-          typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS.max(typechecked.status()));
+          typechecked.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
 
           if (!unit1.isHeader()) {
             typecheckingUnitStarted(definition.getData());
@@ -391,9 +391,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
         Definition found = visitor.getFoundDefinition();
         if (found != null) {
           entry.getKey().setBody(null);
-          if (entry.getKey().status().headerIsOK()) {
-            entry.getKey().setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
-          }
+          entry.getKey().addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
           myErrorReporter.report(new TypecheckingError("Mutually recursive function refers to data type '" + found.getName() + "'", entry.getValue()).withDefinition(entry.getKey().getReferable()));
           it.remove();
           visitor.clear();
@@ -475,7 +473,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     DefinitionCallGraph callCategory = new DefinitionCallGraph(definitionCallGraph);
     if (!callCategory.checkTermination()) {
       for (FunctionDefinition definition : definitions.keySet()) {
-        definition.setStatus(Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+        definition.addStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
         definition.setBody(null);
       }
       for (Map.Entry<Definition, Set<RecursiveBehavior<Definition>>> entry : callCategory.myErrorInfo.entrySet()) {

@@ -29,7 +29,7 @@ public class FunctionDefinition extends Definition implements Function {
   private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public FunctionDefinition(TCReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myParameters = EmptyDependentLink.getInstance();
   }
 

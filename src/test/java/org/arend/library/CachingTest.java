@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.arend.module.ModulePath.moduleName;
-import static org.arend.typechecking.Matchers.*;
+import static org.arend.typechecking.Matchers.goal;
+import static org.arend.typechecking.Matchers.typecheckingError;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -29,7 +30,7 @@ public class CachingTest extends LibraryTestCase {
 
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
-    assertThat(errorList, hasSize(2));
+    assertThat(errorList, hasSize(1));
     errorList.clear();
 
     Definition.TypeCheckingStatus aStatus = typecheckerState.getTypechecked(get(aClass.getGroupScope(), "a")).status();
@@ -95,7 +96,7 @@ public class CachingTest extends LibraryTestCase {
 
     typechecking.typecheckLibrary(library);
     library.persistUpdateModules(errorReporter);
-    assertThatErrorsAre(typecheckingError(), hasErrors(get(aGroup.getGroupScope(), "a")));
+    assertThatErrorsAre(typecheckingError());
     errorList.clear();
 
     libraryManager.unloadLibrary(library);

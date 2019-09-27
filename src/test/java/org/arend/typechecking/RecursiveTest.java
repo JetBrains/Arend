@@ -5,7 +5,8 @@ import org.arend.typechecking.error.TerminationCheckError;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public class RecursiveTest extends TypeCheckingTestCase {
   @Test
@@ -16,13 +17,13 @@ public class RecursiveTest extends TypeCheckingTestCase {
   @Test
   public void dataLeftError() {
     Definition def = typeCheckDef("\\data List (A : \\Type0) | nil | cons (List A -> A)", 1);
-    assertEquals(Definition.TypeCheckingStatus.BODY_HAS_ERRORS, def.status());
+    assertEquals(Definition.TypeCheckingStatus.HAS_ERRORS, def.status());
   }
 
   @Test
   public void dataRightError() {
     Definition def = typeCheckDef("\\data List (B : \\oo-Type0 -> \\Type0) (A : \\Type0) | nil | cons (B (List B A))", 1);
-    assertEquals(Definition.TypeCheckingStatus.BODY_HAS_ERRORS, def.status());
+    assertEquals(Definition.TypeCheckingStatus.HAS_ERRORS, def.status());
   }
 
   @Test
@@ -42,7 +43,7 @@ public class RecursiveTest extends TypeCheckingTestCase {
 
   @Test
   public void functionError2() {
-    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status(), Definition.TypeCheckingStatus.BODY_HAS_ERRORS);
+    assertSame(typeCheckDef("\\func \\infixr 9 + (x y : Nat) : Nat \\elim x | zero => y | suc zero => y | suc (suc x'') => y + y", 1).status(), Definition.TypeCheckingStatus.HAS_ERRORS);
   }
 
   @Test

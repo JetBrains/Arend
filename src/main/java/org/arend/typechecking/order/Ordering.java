@@ -208,7 +208,7 @@ public class Ordering {
         Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
         if (dependency instanceof Concrete.Definition) {
           Definition typechecked = myState.getTypechecked(tcReferable);
-          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
+          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING) {
             updateState(currentState, new TypecheckingUnit((Concrete.Definition) dependency, myRefToHeaders));
           }
         }
@@ -274,7 +274,7 @@ public class Ordering {
         FunctionKind kind = def.getKind();
         if (kind.isUse()) {
           Definition typechecked = myState.getTypechecked(def.getData());
-          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_HAS_ERRORS) {
+          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING) {
             updateState(currentState, new TypecheckingUnit(def, kind == FunctionKind.LEVEL));
             if (kind == FunctionKind.LEVEL) {
               myDeferredDefinitions.add(def);

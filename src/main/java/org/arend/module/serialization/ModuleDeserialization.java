@@ -123,7 +123,6 @@ public class ModuleDeserialization {
           assert def instanceof ClassDefinition;
           ClassField res = new ClassField((TCFieldReferable) absField, (ClassDefinition) def);
           ((ClassDefinition) def).addPersonalField(res);
-          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
           myState.record(absField, res);
           myCallTargetProvider.putCallTarget(fieldProto.getReferable().getIndex(), res);
         }
@@ -147,7 +146,6 @@ public class ModuleDeserialization {
           assert def instanceof DataDefinition;
           Constructor res = new Constructor(absConstructor, (DataDefinition) def);
           ((DataDefinition) def).addConstructor(res);
-          res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
           myState.record(absConstructor, res);
           myCallTargetProvider.putCallTarget(constructorProto.getReferable().getIndex(), res);
         }
@@ -275,7 +273,6 @@ public class ModuleDeserialization {
             TCFieldReferable absField = new FieldReferableImpl(readPrecedence(fieldReferable.getPrecedence()), fieldReferable.getName(), fieldProto.getIsExplicit(), fieldProto.getIsParameter(), referable, null);
             ClassField res = new ClassField(absField, classDef);
             classDef.addPersonalField(res);
-            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absField, res);
             myCallTargetProvider.putCallTarget(fieldReferable.getIndex(), res);
           }
@@ -290,7 +287,6 @@ public class ModuleDeserialization {
             TCReferable absConstructor = new LocatedReferableImpl(readPrecedence(conReferable.getPrecedence()), conReferable.getName(), referable, LocatedReferableImpl.Kind.CONSTRUCTOR);
             Constructor res = new Constructor(absConstructor, dataDef);
             dataDef.addConstructor(res);
-            res.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
             myState.record(absConstructor, res);
             myCallTargetProvider.putCallTarget(conReferable.getIndex(), res);
           }
@@ -303,7 +299,6 @@ public class ModuleDeserialization {
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }
-    def.setStatus(Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     return def;
   }
 

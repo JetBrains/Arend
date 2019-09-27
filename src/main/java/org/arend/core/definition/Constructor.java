@@ -32,7 +32,7 @@ public class Constructor extends Definition implements Function {
   private List<TypeClassParameterKind> myTypeClassParameters = Collections.emptyList();
 
   public Constructor(TCReferable referable, DataDefinition dataType) {
-    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myDataType = dataType;
     myParameters = null;
     myClauses = Collections.emptyList();

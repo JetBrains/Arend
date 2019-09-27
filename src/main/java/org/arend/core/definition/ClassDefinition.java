@@ -24,7 +24,7 @@ public class ClassDefinition extends Definition {
   private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public ClassDefinition(TCClassReferable referable) {
-    super(referable, TypeCheckingStatus.HEADER_HAS_ERRORS);
+    super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     mySuperClasses = new LinkedHashSet<>();
     myFields = new LinkedHashSet<>();
     myPersonalFields = new ArrayList<>();
