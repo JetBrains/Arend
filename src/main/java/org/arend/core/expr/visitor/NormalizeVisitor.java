@@ -495,10 +495,8 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   @Override
   public Expression visitDefCall(DefCallExpression expr, Mode mode) {
     if (expr.getDefinition() instanceof FunctionDefinition && ((FunctionDefinition) expr.getDefinition()).isSFunc() ||
-        expr.getDefinition() instanceof ClassField && ((ClassField) expr.getDefinition()).isProperty()) {
-      return expr;
-    }
-    if (expr.getDefinition().status() != Definition.TypeCheckingStatus.NO_ERRORS && expr.getDefinition() instanceof Function && ((Function) expr.getDefinition()).getBody() == null) {
+        expr.getDefinition() instanceof ClassField && ((ClassField) expr.getDefinition()).isProperty() ||
+        expr.getDefinition().status() != Definition.TypeCheckingStatus.NO_ERRORS && expr.getDefinition() instanceof Function && ((Function) expr.getDefinition()).getBody() == null) {
       return applyDefCall(expr, mode);
     }
 
@@ -658,9 +656,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitCase(CaseExpression expr, Mode mode) {
-    Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
-    if (result != null) {
-      return result.accept(this, mode);
+    if (!expr.isSFunc()) {
+      Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+      if (result != null) {
+        return result.accept(this, mode);
+      }
     }
     if (mode == Mode.WHNF) {
       return expr;
@@ -672,7 +672,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
+    return new CaseExpression(expr.isSFunc(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
   }
 
   private ElimTree normalizeElimTree(ElimTree elimTree, Mode mode) {

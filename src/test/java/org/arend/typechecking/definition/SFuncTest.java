@@ -1,5 +1,7 @@
 package org.arend.typechecking.definition;
 
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -112,5 +114,12 @@ public class SFuncTest extends TypeCheckingTestCase {
       "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func test : (\\peval f true) = (\\peval f false) => idp", 1);
     assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void caseNormTest() {
+    typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
+    Expression expr = ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression();
+    assertSame(expr, expr.normalize(NormalizeVisitor.Mode.WHNF));
   }
 }

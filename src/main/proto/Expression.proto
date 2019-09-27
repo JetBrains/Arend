@@ -101,11 +101,12 @@ message Expression {
         }
     }
     message Case {
-        ElimTree elim_tree = 4;
-        repeated Telescope param = 5;
-        Expression result_type = 2;
-        Expression result_type_level = 6;
-        repeated Expression argument = 3;
+        bool isSFunc = 1;
+        ElimTree elim_tree = 2;
+        repeated Telescope param = 3;
+        Expression result_type = 4;
+        Expression result_type_level = 5;
+        repeated Expression argument = 6;
     }
     message PEval {
         FunCall fun_call = 1;

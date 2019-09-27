@@ -176,14 +176,14 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
     TypedSingleDependentLink y = singleParam("y", Nat());
     myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));
     ElimTree elimTree = new BranchElimTree(EmptyDependentLink.getInstance(), myMap);
-    Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(x, Nat(), null, elimTree, Collections.singletonList(Ref(x))));
+    Expression cExpr = new LamExpression(Sort.SET0, x, new CaseExpression(false, x, Nat(), null, elimTree, Collections.singletonList(Ref(x))));
 
     LocalReferable cx = ref("x");
     LocalReferable cy = ref("y");
     List<Concrete.FunctionClause> cfc = new ArrayList<>();
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.ZERO.getReferable(), Collections.emptyList())), cZero()));
     cfc.add(cClause(Collections.singletonList(cConPattern(true, Prelude.SUC.getReferable(), Collections.singletonList(cNamePattern(true, cy)))), cVar(cy)));
-    Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(Collections.singletonList(cCaseArg(cVar(cx), null, null)), null, null, cfc));
+    Concrete.Expression ccExpr = cLam(cargs(cTele(cvars(cx), cNat())), cCase(false, Collections.singletonList(cCaseArg(cVar(cx), null, null)), null, null, cfc));
 
     testExpr(ccExpr, cExpr);
   }

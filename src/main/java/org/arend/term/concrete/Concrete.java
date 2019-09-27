@@ -901,17 +901,23 @@ public final class Concrete {
 
   public static class CaseExpression extends Expression {
     public static final byte PREC = -8;
+    private final boolean mySFunc;
     private final List<CaseArgument> myArguments;
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final List<FunctionClause> myClauses;
 
-    public CaseExpression(Object data, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
+    public CaseExpression(Object data, boolean isSFunc, List<CaseArgument> arguments, Expression resultType, Expression resultTypeLevel, List<FunctionClause> clauses) {
       super(data);
+      mySFunc = isSFunc;
       myArguments = arguments;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
       myClauses = clauses;
+    }
+
+    public boolean isSFunc() {
+      return mySFunc;
     }
 
     @Nonnull

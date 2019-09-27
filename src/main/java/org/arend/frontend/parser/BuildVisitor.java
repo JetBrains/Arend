@@ -1502,7 +1502,10 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
 
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
-    return new Concrete.CaseExpression(tokenPosition(ctx.start), caseArgs, returnPair.proj1, returnPair.proj2, clauses);
+    Concrete.Expression result = new Concrete.CaseExpression(tokenPosition(ctx.start), ctx.SCASE() != null, caseArgs, returnPair.proj1, returnPair.proj2, clauses);
+    boolean isPEval = ctx.PEVAL() != null;
+    boolean isEval = !isPEval && ctx.EVAL() != null;
+    return isPEval || isEval ? new Concrete.EvalExpression(result.getData(), isPEval, result) : result;
   }
 
   private Concrete.LetClausePattern visitLetClausePattern(TuplePatternContext tuplePattern) {

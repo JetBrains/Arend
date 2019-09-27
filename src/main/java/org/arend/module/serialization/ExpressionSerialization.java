@@ -401,6 +401,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
     ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
+    builder.setIsSFunc(expr.isSFunc());
     builder.setElimTree(writeElimTree(expr.getElimTree()));
     builder.addAllParam(writeParameters(expr.getParameters()));
     builder.setResultType(writeExpr(expr.getResultType()));

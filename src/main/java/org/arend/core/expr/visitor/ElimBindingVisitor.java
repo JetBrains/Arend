@@ -313,7 +313,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
     ElimTree newElimTree = findBindingInElimTree(expr.getElimTree());
     myVisitor.freeParameters(parameters);
-    return newElimTree == null ? null : new CaseExpression(parameters, newType, newTypeLevel, newElimTree, newArgs);
+    return newElimTree == null ? null : new CaseExpression(expr.isSFunc(), parameters, newType, newTypeLevel, newElimTree, newArgs);
   }
 
   private ElimTree findBindingInElimTree(ElimTree elimTree) {

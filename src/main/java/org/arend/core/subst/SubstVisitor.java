@@ -203,7 +203,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     Expression type = expr.getResultType().accept(this, null);
     Expression typeLevel = expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
-    return new CaseExpression(parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
+    return new CaseExpression(expr.isSFunc(), parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
   }
 
   public ElimTree substElimTree(ElimTree elimTree) {
