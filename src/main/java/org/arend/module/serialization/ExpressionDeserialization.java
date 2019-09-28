@@ -322,7 +322,7 @@ class ExpressionDeserialization {
   }
 
   private PEvalExpression readPEval(ExpressionProtos.Expression.PEval proto) throws DeserializationException {
-    return new PEvalExpression(readFunCall(proto.getFunCall()));
+    return new PEvalExpression(readExpr(proto.getExpression()));
   }
 
   private String validName(String name) {

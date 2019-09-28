@@ -981,21 +981,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return false;
     }
 
-    FunCallExpression funCall2 = pair.proj1.cast(PEvalExpression.class).getExpression();
-    if (!compareDef(expr.getExpression(), funCall2, true)) {
+    PEvalExpression peval2 = pair.proj1.cast(PEvalExpression.class);
+    Expression expr2 = peval2.getExpression();
+    if (expr.getExpression() instanceof FunCallExpression && expr2 instanceof FunCallExpression) {
+      if (!compareDef((FunCallExpression) expr.getExpression(), (FunCallExpression) expr2, true)) {
+        return false;
+      }
+    } else if (!(expr.getExpression() instanceof CaseExpression && expr2 instanceof CaseExpression)) {
       return false;
     }
 
-    if (!(expr.getExpression().getDefinition().getActualBody() instanceof ElimTree)) {
+    ElimTree elimTree = expr.getElimTree();
+    if (elimTree == null) {
       return null;
     }
 
-    Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getExpression().getDefCallArguments());
-    Stack<Expression> stack2 = NormalizeVisitor.INSTANCE.makeStack(funCall2.getDefCallArguments());
+    Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getArguments());
+    Stack<Expression> stack2 = NormalizeVisitor.INSTANCE.makeStack(peval2.getArguments());
 
     ExprSubstitution substitution = new ExprSubstitution();
-    LevelSubstitution levelSubstitution = expr.getExpression().getSortArgument().toLevelSubstitution();
-    ElimTree elimTree = (ElimTree) expr.getExpression().getDefinition().getActualBody();
+    LevelSubstitution levelSubstitution = expr.getLevelSubstitution();
     while (true) {
       for (DependentLink link = elimTree.getParameters(); link.hasNext(); link = link.getNext()) {
         Expression arg1 = stack1.pop();

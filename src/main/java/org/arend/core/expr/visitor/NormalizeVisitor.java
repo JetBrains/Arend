@@ -702,6 +702,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitPEval(PEvalExpression expr, Mode mode) {
-    return mode == Mode.WHNF ? expr : new PEvalExpression((FunCallExpression) applyDefCall(expr.getExpression(), mode));
+    return mode == Mode.WHNF ? expr : new PEvalExpression(expr.getExpression().accept(this, mode));
   }
 }

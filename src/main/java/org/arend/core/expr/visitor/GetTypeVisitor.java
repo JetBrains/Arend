@@ -1,7 +1,6 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -171,25 +170,20 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
-    FunCallExpression funCall = expr.getExpression();
-    if (!(funCall.getDefinition().getActualBody() instanceof ElimTree)) {
+    Expression normExpr = expr.eval();
+    if (normExpr == null) {
       return null;
     }
 
-    Expression type = visitFunCall(funCall, null);
+    Expression type = expr.getExpression().accept(this, null);
     Sort sortArg = type == null ? null : type.getSortOfType();
     if (sortArg == null) {
       return null;
     }
 
-    Expression normExpr = NormalizeVisitor.INSTANCE.eval((ElimTree) funCall.getDefinition().getActualBody(), funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution());
-    if (normExpr == null) {
-      return null;
-    }
-
     List<Expression> args = new ArrayList<>(3);
     args.add(type);
-    args.add(funCall);
+    args.add(expr.getExpression());
     args.add(normExpr);
     return new FunCallExpression(Prelude.PATH_INFIX, sortArg, args);
   }

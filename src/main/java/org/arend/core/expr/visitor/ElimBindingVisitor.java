@@ -258,8 +258,8 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
-    Expression result = visitFunCall(expr.getExpression(), null);
-    return result instanceof FunCallExpression ? new PEvalExpression((FunCallExpression) result) : null;
+    Expression result = expr.getExpression().accept(this, null);
+    return result != null ? new PEvalExpression(result) : null;
   }
 
   @Override

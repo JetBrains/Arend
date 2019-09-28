@@ -137,7 +137,7 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
 
   @Override
   public Variable visitPEval(PEvalExpression expr, Void params) {
-    return visitFunCall(expr.getExpression(), null);
+    return expr.getExpression().accept(this, null);
   }
 
   @Override

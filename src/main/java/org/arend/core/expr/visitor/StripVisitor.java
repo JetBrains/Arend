@@ -199,6 +199,6 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitPEval(PEvalExpression expr, Void params) {
-    return new PEvalExpression(visitFunCall(expr.getExpression(), null));
+    return new PEvalExpression(expr.getExpression().accept(this, null));
   }
 }

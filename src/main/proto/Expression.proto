@@ -109,7 +109,7 @@ message Expression {
         repeated Expression argument = 6;
     }
     message PEval {
-        FunCall fun_call = 1;
+        Expression expression = 1;
     }
     message New {
         ClassCall class_call = 1;

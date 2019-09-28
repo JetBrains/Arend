@@ -1769,7 +1769,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, expr.getResultTypeLevel() == null).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, expr.isSFunc() || expr.getResultTypeLevel() == null).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }
@@ -1786,17 +1786,22 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
-    FunCallExpression funCall = result.expression.checkedCast(FunCallExpression.class);
-    if (funCall == null || funCall.getDefinition().getKind() != FunctionDefinition.Kind.SFUNC) {
-      errorReporter.report(new TypecheckingError("Expected a function" + (funCall == null ? "" : " (defined as \\sfunc)") + " applied to arguments", expr.getExpression()));
+    FunCallExpression funCall = result.expression instanceof FunCallExpression ? (FunCallExpression) result.expression : null;
+    CaseExpression caseExpr = funCall != null ? null : result.expression instanceof CaseExpression ? (CaseExpression) result.expression : null;
+    if ((caseExpr == null || !caseExpr.isSFunc()) && (funCall == null || funCall.getDefinition().getKind() != FunctionDefinition.Kind.SFUNC)) {
+      errorReporter.report(new TypecheckingError(
+        funCall != null ? "Expected a function (defined as \\sfunc) applied to arguments" :
+        caseExpr != null ? "Expected an \\scase expression" :
+          "Expected a function or an \\scase expression", expr.getExpression()));
       return null;
     }
-    if (!(funCall.getDefinition().getActualBody() instanceof ElimTree)) {
+    if (funCall != null && !(funCall.getDefinition().getActualBody() instanceof ElimTree)) {
       errorReporter.report(new FunctionWithoutBodyError(funCall.getDefinition(), expr.getExpression()));
       return null;
     }
 
-    Expression normExpr = NormalizeVisitor.INSTANCE.eval((ElimTree) funCall.getDefinition().getActualBody(), funCall.getDefCallArguments(), new ExprSubstitution(), funCall.getSortArgument().toLevelSubstitution());
+    PEvalExpression pEvalResult = new PEvalExpression(result.expression);
+    Expression normExpr = pEvalResult.eval();
     if (normExpr == null) {
       errorReporter.report(new TypecheckingError("Expression does not evaluate", expr.getExpression()));
       return null;
@@ -1823,8 +1828,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     List<Expression> args = new ArrayList<>(3);
     args.add(result.type);
-    args.add(funCall);
+    args.add(result.expression);
     args.add(normExpr);
-    return checkResult(expectedType, new TypecheckingResult(new PEvalExpression(funCall), new FunCallExpression(Prelude.PATH_INFIX, sortArg, args)), expr);
+    return checkResult(expectedType, new TypecheckingResult(pEvalResult, new FunCallExpression(Prelude.PATH_INFIX, sortArg, args)), expr);
   }
 }

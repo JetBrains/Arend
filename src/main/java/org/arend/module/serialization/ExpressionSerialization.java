@@ -352,7 +352,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitPEval(PEvalExpression expr, Void params) {
     ExpressionProtos.Expression.PEval.Builder builder = ExpressionProtos.Expression.PEval.newBuilder();
-    builder.setFunCall(writeFunCall(expr.getExpression()));
+    builder.setExpression(expr.getExpression().accept(this, null));
     return ExpressionProtos.Expression.newBuilder().setPEval(builder).build();
   }
 

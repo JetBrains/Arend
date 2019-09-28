@@ -107,7 +107,7 @@ public class SFuncTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void pevalCmpErrorTest() {
+  public void pevalCmpError() {
     typeCheckModule(
       "\\data Bool | true | false\n" +
       "\\sfunc f (b : Bool) : Nat | true => 0 | false => 0\n" +
@@ -121,5 +121,88 @@ public class SFuncTest extends TypeCheckingTestCase {
     typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
     Expression expr = ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression();
     assertSame(expr, expr.normalize(NormalizeVisitor.Mode.WHNF));
+  }
+
+  @Test
+  public void evalCaseTest() {
+    typeCheckModule("\\func test : Nat => \\eval \\scase 2 \\with { | 0 => 0 | suc n => n }");
+    Expression expr = ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression();
+    assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizeVisitor.Mode.WHNF));
+  }
+
+  @Test
+  public void evalCaseNotSFunc() {
+    typeCheckModule("\\func test => \\eval \\case 2 \\return Nat \\with { | 0 => 0 | suc n => n}", 1);
+  }
+
+  @Test
+  public void pevalCaseTest() {
+    typeCheckModule("\\func test : (\\scase 3 \\return Nat \\with { | 0 => 0 | suc n => n }) = 2 => \\peval \\scase 3 \\return Nat \\with { | 0 => 0 | suc n => n }");
+  }
+
+  @Test
+  public void pevalCaseNotSFunc() {
+    typeCheckModule("\\func test => \\peval \\case 1 \\return Nat \\with { | 0 => 0 | suc n => n }", 1);
+  }
+
+  @Test
+  public void squashedByUseCaseTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
+      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
+      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\scase d \\return \\level A p \\with { | con a => a }");
+  }
+
+  @Test
+  public void squashedByTruncationCaseTest() {
+    typeCheckModule(
+      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\scase d \\return \\level A p \\with { | con a => a }");
+  }
+
+  @Test
+  public void squashedByUseCaseError() {
+    typeCheckModule(
+      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
+      "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
+      "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A p) => \\case d \\return \\level A p \\with { | con a => a }", 1);
+  }
+
+  @Test
+  public void squashedByTruncationCaseError() {
+    typeCheckModule(
+      "\\truncated \\data D (A : \\Type) : \\Prop | con A\n" +
+      "\\func f {A : \\Type} (p : \\Pi (x y : A) -> x = y) (d : D A) => \\case d \\return \\level A p \\with { | con a => a }", 1);
+  }
+
+  @Test
+  public void pevalPropCaseTest() {
+    typeCheckModule(
+      "\\data D (A : \\Type) (p : \\Pi (x y : A) -> x = y) | con A\n" +
+        "  \\where \\use \\level levelProp {A : \\Type} {p : \\Pi (x y : A) -> x = y} (d1 d2 : D A p) : d1 = d2 \\elim d1, d2\n" +
+        "    | con a1, con a2 => path (\\lam i => con (p a1 a2 @ i))\n" +
+        "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+        "\\func test {A : \\Type} (p : \\Pi (x y : A) -> x = y) (a1 a2 : A) : (\\peval \\scase con a1 \\return \\level A p \\with { | con a => a }) = (\\peval \\scase con a2 \\return \\level A p \\with { | con a => a }) => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void pevalCmpCaseTest() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func f (b : Bool) : Nat | true => 0 | false => 0\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func test : (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) = (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) => idp");
+  }
+
+  @Test
+  public void pevalCmpCaseError() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func test : (\\peval \\scase true \\return Nat \\with { | true => 0 | false => 0 }) = (\\peval \\scase false \\return Nat \\with { | true => 0 | false => 0 }) => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

@@ -120,7 +120,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
   @Override
   public Void visitPEval(PEvalExpression expr, P params) {
-    visitFunCall(expr.getExpression(), params);
+    expr.getExpression().accept(this, params);
     return null;
   }
 

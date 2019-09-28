@@ -137,7 +137,7 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
 
   @Override
   public Boolean visitPEval(PEvalExpression expr, Void params) {
-    return visitFunCall(expr.getExpression(), null);
+    return expr.getExpression().accept(this, null);
   }
 
   @Override
