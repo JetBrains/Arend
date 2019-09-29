@@ -151,6 +151,10 @@ public class Level {
       return cmp == Equations.CMP.LE || !level1.isClosed() && (equations == null || equations.addEquation(INFINITY, level1, Equations.CMP.LE, sourceNode));
     }
 
+    if (level2.getVar() == null && level1.getVar() != null && !(level1.getVar() instanceof InferenceLevelVariable)) {
+      return false;
+    }
+
     if (level1.getVar() == null && cmp == Equations.CMP.LE) {
       if (level1.myConstant <= level2.myConstant + level2.myMaxConstant) {
         return true;

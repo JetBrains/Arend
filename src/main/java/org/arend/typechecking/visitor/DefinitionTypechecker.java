@@ -740,11 +740,15 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
-    boolean withForcedLevel = false;
-    Integer resultTypeLevel = expectedType.isError() ? null : typecheckResultTypeLevel(def, typedDef, newDef);
-    if (resultTypeLevel != null) {
-      withForcedLevel = true;
+
+    Level actualResultTypeLevel;
+    {
+      Expression type = expectedType.getType();
+      Sort sort = type != null ? type.toSort() : null;
+      actualResultTypeLevel = sort != null ? sort.getHLevel() : Level.INFINITY;
     }
+
+    Integer resultTypeLevel = expectedType.isError() ? null : typecheckResultTypeLevel(def, typedDef, newDef);
     if (resultTypeLevel == null && !expectedType.isError()) {
       DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
@@ -753,13 +757,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (defCall != null) {
           resultTypeLevel = defCall.getUseLevel();
         }
-      }
-      if (resultTypeLevel != null) {
-        withForcedLevel = true;
-      } else {
-        Expression type = expectedType.getType();
-        Sort sort = type != null ? type.toSort() : null;
-        resultTypeLevel = sort != null && sort.getHLevel().isClosed() && sort.getHLevel() != Level.INFINITY ? sort.getHLevel().getConstant() : null;
       }
     }
 
@@ -783,7 +780,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       clauses = new ArrayList<>();
       EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
-      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel, !withForcedLevel || def.getKind().isSFunc()).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel, actualResultTypeLevel, def.getKind().isSFunc()).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);

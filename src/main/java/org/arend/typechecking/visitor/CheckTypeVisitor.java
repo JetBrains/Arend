@@ -1672,7 +1672,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     LinkList list = new LinkList();
     List<Expression> expressions = new ArrayList<>(caseArgs.size());
 
-    boolean withForcedLevel = false;
     ExprSubstitution substitution = new ExprSubstitution();
     Type resultType = null;
     Expression resultExpr;
@@ -1711,7 +1710,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (levelResult != null) {
             resultTypeLevel = levelResult.expression;
             level = getExpressionLevel(EmptyDependentLink.getInstance(), levelResult.type, resultExpr, myEquations, expr.getResultTypeLevel());
-            withForcedLevel = true;
           }
         }
       }
@@ -1728,10 +1726,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
+    Expression resultExprWithoutPi = null;
+    Level actualLevel = Level.INFINITY;
     // Try to infer level either directly or from a path type.
-    if (level == null && expr.getResultTypeLevel() == null) {
+    {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
-      Expression resultExprWithoutPi = null;
       if (sort == null) {
         resultExprWithoutPi = resultExpr.getPiParameters(null, false);
         Expression type = resultExprWithoutPi.getType();
@@ -1739,11 +1738,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           sort = type.toSort();
         }
       }
-      if (sort != null && sort.getHLevel().isClosed()) {
-        if (sort.getHLevel() != Level.INFINITY) {
-          level = sort.getHLevel().getConstant();
-        }
-      } else if (sort == null || sort.getHLevel().getVar() instanceof InferenceLevelVariable) {
+      if (sort != null) {
+        actualLevel = sort.getHLevel();
+      }
+      if (sort == null || actualLevel.getVar() instanceof InferenceLevelVariable) {
         if (resultExprWithoutPi == null) {
           resultExprWithoutPi = resultExpr.getPiParameters(null, false);
         }
@@ -1753,36 +1751,39 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           Expression bodyType = lamExpr == null ? null : lamExpr.getBody().getType();
           UniverseExpression universeBodyType = bodyType == null ? null : bodyType.checkedCast(UniverseExpression.class);
           if (universeBodyType != null && universeBodyType.getSort().getHLevel().isClosed() && universeBodyType.getSort().getHLevel() != Level.INFINITY) {
-            level = universeBodyType.getSort().getHLevel().getConstant() - 1;
-            if (level < -1) {
-              level = -1;
+            int level2 = universeBodyType.getSort().getHLevel().getConstant() - 1;
+            if (level2 < -1) {
+              level2 = -1;
+            }
+            if (level == null || level2 < level) {
+              level = level2;
             }
           }
         }
       }
+    }
 
-      if (level == null || level != -1) {
-        DefCallExpression defCall = resultExpr.checkedCast(DefCallExpression.class);
-        Integer level2 = defCall == null ? null : defCall.getUseLevel();
-        if (level2 == null) {
-          if (resultExprWithoutPi == null) {
-            resultExprWithoutPi = resultExpr.getPiParameters(null, false);
-          }
-          defCall = resultExprWithoutPi.checkedCast(DefCallExpression.class);
-          if (defCall != null) {
-            level2 = defCall.getUseLevel();
-          }
+    // Try to infer level from \\use annotations of the definition in the result type.
+    if (expr.getResultTypeLevel() == null) {
+      DefCallExpression defCall = resultExpr.checkedCast(DefCallExpression.class);
+      Integer level2 = defCall == null ? null : defCall.getUseLevel();
+      if (level2 == null) {
+        if (resultExprWithoutPi == null) {
+          resultExprWithoutPi = resultExpr.getPiParameters(null, false);
         }
+        defCall = resultExprWithoutPi.checkedCast(DefCallExpression.class);
+        if (defCall != null) {
+          level2 = defCall.getUseLevel();
+        }
+      }
 
-        if (level2 != null && (level == null || level2 < level)) {
-          level = level2;
-          withForcedLevel = true;
-        }
+      if (level2 != null && (level == null || level2 < level)) {
+        level = level2;
       }
     }
 
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, !withForcedLevel || expr.isSFunc()).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, actualLevel, expr.isSFunc()).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }

@@ -3,11 +3,12 @@ package org.arend.typechecking;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.DataDefinition;
+import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class UseLevelTest extends TypeCheckingTestCase {
   @Test
@@ -23,6 +24,9 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
     assertEquals(Sort.PROP, ((DataDefinition) getDefinition("Dec")).getSort());
+    FunctionDefinition def = (FunctionDefinition) getDefinition("Dec.isProp");
+    assertNull(def.getBody());
+    assertNotNull(def.getActualBody());
   }
 
   @Test

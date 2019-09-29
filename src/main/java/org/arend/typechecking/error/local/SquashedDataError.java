@@ -11,9 +11,9 @@ import static org.arend.error.doc.DocFactory.*;
 
 public class SquashedDataError extends TypecheckingError {
   public final DataDefinition dataDef;
-  public final int level;
+  public final org.arend.core.sort.Level level;
 
-  public SquashedDataError(DataDefinition dataDef, int level, @Nonnull Concrete.SourceNode cause) {
+  public SquashedDataError(DataDefinition dataDef, org.arend.core.sort.Level level, @Nonnull Concrete.SourceNode cause) {
     super("", cause);
     this.dataDef = dataDef;
     this.level = level;
