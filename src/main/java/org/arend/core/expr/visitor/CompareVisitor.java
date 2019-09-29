@@ -148,7 +148,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
     boolean onlySolveVars = myOnlySolveVars;
     if (myNormalCompare && !myOnlySolveVars) {
-      Expression normType = type instanceof Expression ? ((Expression) type).normalize(NormalizeVisitor.Mode.WHNF) : null;
+      Expression normType = type instanceof Expression ? (Expression) type : null;
       if (normType != null && Sort.PROP.equals(normType.getSortOfType())) {
         myOnlySolveVars = true;
       }
@@ -204,7 +204,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
     boolean ok;
     if (expr2.isInstance(ConCallExpression.class) && expr2.cast(ConCallExpression.class).getDefinition() == Prelude.PATH_CON) {
-      ok = visitDefCall(expr2.cast(ConCallExpression.class), expr1, false);
+      ok = visitDefCall(expr2.cast(ConCallExpression.class), expr1, type, false);
     } else if (expr2.isInstance(LamExpression.class)) {
       ok = visitLam(expr2.cast(LamExpression.class), expr1, type, false);
     } else if (expr2.isInstance(TupleExpression.class)) {
@@ -257,7 +257,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return true;
     }
 
-    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF), type);
+    return myNormalCompare && normalizedCompare(expr1.normalize(NormalizeVisitor.Mode.WHNF), expr2.normalize(NormalizeVisitor.Mode.WHNF), type == null ? null : type.normalize(NormalizeVisitor.Mode.WHNF));
   }
 
   private ExprSubstitution getSubstitution() {
@@ -349,7 +349,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       : Sort.compare(expr2.getSortArgument(), expr1.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
   }
 
-  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2, boolean correctOrder) {
+  private Boolean visitDefCall(DefCallExpression expr1, Expression expr2, ExpectedType type, boolean correctOrder) {
     if (expr1.getDefinition() == Prelude.PATH_CON && !expr2.isInstance(ConCallExpression.class)) {
       return comparePathEta((ConCallExpression) expr1, expr2, correctOrder);
     }
@@ -361,13 +361,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
     ExprSubstitution substitution = new ExprSubstitution();
     if (expr1 instanceof ConCallExpression) {
-      ConCallExpression conCall = (ConCallExpression) expr1;
-      DependentLink link = conCall.getDefinition().getDataType().getParameters();
-      for (Expression argument : conCall.getDataTypeArguments()) {
-        if (link.hasNext()) {
-          substitution.add(link, argument);
-          link = link.getNext();
-        }
+      if (type instanceof Expression && ((Expression) type).isInstance(DataCallExpression.class)) {
+        ((Expression) type).cast(DataCallExpression.class).addArguments(substitution);
+      } else {
+        substitution = null;
       }
     }
     return correctOrder ? compareLists(expr1.getDefCallArguments(), defCall2.getDefCallArguments(), expr1.getDefinition().getParameters(), expr1.getDefinition(), substitution) : compareLists(defCall2.getDefCallArguments(), expr1.getDefCallArguments(), defCall2.getDefinition().getParameters(), defCall2.getDefinition(), substitution);
@@ -378,7 +375,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     if (expr1 instanceof ConCallExpression && pair.proj1.isInstance(IntegerExpression.class)) {
       return visitInteger(pair.proj1.cast(IntegerExpression.class), expr1);
     }
-    return visitDefCall(expr1, pair.proj1, true);
+    return visitDefCall(expr1, pair.proj1, pair.proj2, true);
   }
 
   private Boolean checkDefCallAndApp(Expression expr1, Expression expr2, boolean correctOrder) {
@@ -529,29 +526,6 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
         return myNormalCompare && myEquations.addEquation(finalExpr1, finalExpr2, null, myCMP, variable.getSourceNode(), correctOrder ? null : variable, correctOrder ? variable : null) ? true : null;
       }
     }
-  }
-
-  @Override
-  public Boolean visitDataCall(DataCallExpression dataCall1, Pair<Expression,ExpectedType> pair) {
-    DataCallExpression dataCall2 = pair.proj1.checkedCast(DataCallExpression.class);
-    if (!compareDef(dataCall1, dataCall2, true)) {
-      return false;
-    }
-
-    Equations.CMP origCMP = myCMP;
-    DependentLink link = dataCall1.getDefinition().getParameters();
-    ExprSubstitution substitution = new ExprSubstitution();
-    for (int i = 0; i < dataCall1.getDefCallArguments().size(); i++) {
-      myCMP = dataCall1.getDefinition().isCovariant(i) ? origCMP : Equations.CMP.EQ;
-      if (!compare(dataCall1.getDefCallArguments().get(i), dataCall2.getDefCallArguments().get(i), link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
-        return false;
-      }
-      if (link.hasNext()) {
-        substitution.add(link, dataCall1.getDefCallArguments().get(i));
-        link = link.getNext();
-      }
-    }
-    return true;
   }
 
   @Override
@@ -905,12 +879,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       if (definition instanceof DataDefinition) {
         myCMP = ((DataDefinition) definition).isCovariant(i) ? origCMP : Equations.CMP.EQ;
       }
-      if (!compare(list1.get(i), list2.get(i), link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
+      if (!compare(list1.get(i), list2.get(i), substitution != null && link.hasNext() ? link.getTypeExpr().subst(substitution) : null)) {
         myCMP = origCMP;
         return false;
       }
-      if (link.hasNext()) {
-        substitution.add(link, list1.get(i));
+      if (substitution != null && link.hasNext()) {
+        substitution.add(link, (myCMP == Equations.CMP.LE ? list2 : list1).get(i));
         link = link.getNext();
       }
     }

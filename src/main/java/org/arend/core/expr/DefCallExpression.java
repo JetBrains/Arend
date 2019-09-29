@@ -1,8 +1,10 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.ParametersLevel;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.util.Decision;
 
 import java.util.Collections;
@@ -17,6 +19,15 @@ public abstract class DefCallExpression extends Expression {
 
   public List<? extends Expression> getDefCallArguments() {
     return Collections.emptyList();
+  }
+
+  public ExprSubstitution addArguments(ExprSubstitution substitution) {
+    DependentLink link = myDefinition.getParameters();
+    for (Expression argument : getDefCallArguments()) {
+      substitution.add(link, argument);
+      link = link.getNext();
+    }
+    return substitution;
   }
 
   public abstract Sort getSortArgument();
