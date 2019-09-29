@@ -86,6 +86,6 @@ public class LemmaTest extends TypeCheckingTestCase {
 
   @Test
   public void lemmaLevelError() {
-    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 1);
+    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => path (\\lam _ => p)) => x", 1);
   }
 }

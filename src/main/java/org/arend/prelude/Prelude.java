@@ -63,8 +63,6 @@ public class Prelude {
   public static FunctionDefinition PATH_INFIX;
   public static Constructor PATH_CON;
 
-  public static FunctionDefinition IN_PROP;
-
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
@@ -168,10 +166,6 @@ public class Prelude {
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
         break;
-      case "inProp":
-        IN_PROP = (FunctionDefinition) definition;
-        IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-        break;
       case "<=":
         LESS_OR_EQ = (DataDefinition) definition;
         ZERO_LESS_OR_EQ = LESS_OR_EQ.getConstructor("zero<=_");
@@ -220,7 +214,6 @@ public class Prelude {
     consumer.accept(SQUEEZE_R);
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
-    consumer.accept(IN_PROP);
     consumer.accept(PATH_INFIX);
     consumer.accept(AT);
     consumer.accept(COERCE);

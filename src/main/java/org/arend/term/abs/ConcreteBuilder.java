@@ -336,9 +336,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
 
         implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, Collections.emptyList()));
       } else {
-        AbstractExpressionError error = AbstractExpressionError.incomplete(data);
-        myErrorReporter.report(error);
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), implementation.hasImplementation() ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
+        AbstractExpressionError error = implementation.hasImplementation() ? AbstractExpressionError.incomplete(data) : null;
+        if (error != null) {
+          myErrorReporter.report(error);
+        }
+        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), error != null ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
       }
     }
     return implementations;

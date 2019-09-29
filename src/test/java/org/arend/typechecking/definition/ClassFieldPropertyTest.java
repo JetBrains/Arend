@@ -65,7 +65,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   public void propertySetLevel() {
     typeCheckModule(
       "\\class A {\n" +
-      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q)\n" +
+      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => path (\\lam _ => p))\n" +
       "}", 1);
   }
 

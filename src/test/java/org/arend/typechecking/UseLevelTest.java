@@ -19,7 +19,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\data Dec (A : \\Prop) | yes A | no (A -> Empty)\n" +
       "  \\where\n" +
       "    \\use \\level isProp {A : \\Prop} (d1 d2 : Dec A) : d1 = d2\n" +
-      "      | yes a1, yes a2 => path (\\lam i => yes (Path.inProp a1 a2 @ i))\n" +
+      "      | yes a1, yes a2 => path (\\lam _ => yes a1)\n" +
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
@@ -37,7 +37,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\data Dec (A : \\Type) | yes A | no (A -> Empty)\n" +
       "  \\where\n" +
       "    \\use \\level isProp {A : \\Prop} (d1 d2 : Dec A) : d1 = d2\n" +
-      "      | yes a1, yes a2 => path (\\lam i => yes (Path.inProp a1 a2 @ i))\n" +
+      "      | yes a1, yes a2 => path (\\lam _ => yes a1)\n" +
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
