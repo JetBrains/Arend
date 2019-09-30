@@ -43,22 +43,24 @@ public class ElimTypechecking {
   private final Expression myExpectedType;
   private final Integer myLevel;
   private final Level myActualLevel;
+  private final int myActualLevelSub;
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
 
-  private static Integer getMinPlus1(Integer level1, Level l2) {
+  private static Integer getMinPlus1(Integer level1, Level l2, int sub) {
     Integer level2 = !l2.isInfinity() && l2.isClosed() ? l2.getConstant() : null;
-    Integer result = level1 != null && level2 != null ? Integer.valueOf(Math.min(level1, level2)) : level1 != null ? level1 : level2;
+    Integer result = level1 != null && level2 != null ? Integer.valueOf(Math.min(level1, level2 - sub)) : level2 != null ? Integer.valueOf(level2 - sub) : level1;
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, boolean isSFunc) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc) {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
-    myLevel = getMinPlus1(level, actualLevel);
+    myLevel = getMinPlus1(level, actualLevel, actualLevelSub);
     myActualLevel = isSFunc ? null : actualLevel;
+    myActualLevelSub = isSFunc ? 0 : actualLevelSub;
   }
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
@@ -67,6 +69,7 @@ public class ElimTypechecking {
     myFlags = flags;
     myLevel = null;
     myActualLevel = Level.INFINITY;
+    myActualLevelSub = 0;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -535,8 +538,8 @@ public class ElimTypechecking {
       }
 
       if (dataType != null && dataType.isSquashed()) {
-        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause)) {
-          myVisitor.getErrorReporter().report(new SquashedDataError(dataType, myActualLevel, conClauseData.clause));
+        if (myActualLevel != null && !Level.compare(myActualLevel, dataType.getSort().getHLevel().add(myActualLevelSub), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause)) {
+          myVisitor.getErrorReporter().report(new SquashedDataError(dataType, myActualLevel, myActualLevelSub, conClauseData.clause));
         }
 
         boolean ok = !dataType.isTruncated() || myLevel != null && myLevel <= dataType.getSort().getHLevel().getConstant() + 1;

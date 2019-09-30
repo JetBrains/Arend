@@ -4,6 +4,7 @@ import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.TypedEvaluatingBinding;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -1726,39 +1727,39 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    Expression resultExprWithoutPi = null;
+    Expression resultExprWithoutPi = resultExpr.getPiParameters(null, false);
     Level actualLevel = Level.INFINITY;
+    int actualLevelSub = 0;
     // Try to infer level either directly or from a path type.
     {
       Sort sort = resultType == null ? null : resultType.getSortOfType();
-      if (sort == null) {
-        resultExprWithoutPi = resultExpr.getPiParameters(null, false);
-        Expression type = resultExprWithoutPi.getType();
-        if (type != null) {
-          sort = type.toSort();
-        }
-      }
       if (sort != null) {
         actualLevel = sort.getHLevel();
       }
-      if (sort == null || actualLevel.getVar() instanceof InferenceLevelVariable) {
-        if (resultExprWithoutPi == null) {
-          resultExprWithoutPi = resultExpr.getPiParameters(null, false);
-        }
-        DataCallExpression dataCall = resultExprWithoutPi.checkedCast(DataCallExpression.class);
-        if (dataCall != null && dataCall.getDefinition() == Prelude.PATH) {
-          LamExpression lamExpr = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(LamExpression.class);
-          Expression bodyType = lamExpr == null ? null : lamExpr.getBody().getType();
-          UniverseExpression universeBodyType = bodyType == null ? null : bodyType.checkedCast(UniverseExpression.class);
-          if (universeBodyType != null && universeBodyType.getSort().getHLevel().isClosed() && universeBodyType.getSort().getHLevel() != Level.INFINITY) {
-            int level2 = universeBodyType.getSort().getHLevel().getConstant() - 1;
-            if (level2 < -1) {
-              level2 = -1;
+
+      if (!actualLevel.isProp()) {
+        Expression pathType = resultExprWithoutPi;
+        while (pathType.isInstance(DataCallExpression.class)) {
+          DataCallExpression dataCall = pathType.cast(DataCallExpression.class);
+          if (dataCall.getDefinition() == Prelude.PATH) {
+            actualLevelSub++;
+            pathType = dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF);
+            if (pathType.isInstance(LamExpression.class)) {
+              pathType = pathType.cast(LamExpression.class).getBody().normalize(NormalizeVisitor.Mode.WHNF);
+            } else {
+              pathType = AppExpression.make(pathType, new ReferenceExpression(new TypedBinding("i", ExpressionFactory.Interval())));
+              break;
             }
-            if (level == null || level2 < level) {
-              level = level2;
-            }
+          } else {
+            break;
           }
+        }
+
+        Sort pathSort = pathType.getSortOfType();
+        if (pathSort != null && !pathSort.getHLevel().isInfinity()) {
+          actualLevel = pathSort.getHLevel();
+        } else {
+          actualLevelSub = 0;
         }
       }
     }
@@ -1768,9 +1769,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       DefCallExpression defCall = resultExpr.checkedCast(DefCallExpression.class);
       Integer level2 = defCall == null ? null : defCall.getUseLevel();
       if (level2 == null) {
-        if (resultExprWithoutPi == null) {
-          resultExprWithoutPi = resultExpr.getPiParameters(null, false);
-        }
         defCall = resultExprWithoutPi.checkedCast(DefCallExpression.class);
         if (defCall != null) {
           level2 = defCall.getUseLevel();
@@ -1783,7 +1781,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, actualLevel, expr.isSFunc()).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, actualLevel, actualLevelSub, expr.isSFunc()).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }
