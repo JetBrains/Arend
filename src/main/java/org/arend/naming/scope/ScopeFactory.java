@@ -272,6 +272,11 @@ public class ScopeFactory {
       }
     }
 
+    // Parameters are not visible in \extends
+    if (parentSourceNode instanceof Abstract.ClassDefinition && sourceNode instanceof Abstract.Reference) {
+      return parentScope;
+    }
+
     // Extend the scope with parameters
     if (parentSourceNode instanceof Abstract.ParametersHolder) {
       List<? extends Abstract.Parameter> parameters = ((Abstract.ParametersHolder) parentSourceNode).getParameters();
