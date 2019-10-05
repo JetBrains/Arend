@@ -160,7 +160,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       typeParameters = buildTypeParameters(def.getParameters());
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
-      typeParameters = Collections.emptyList();
+      typeParameters = new ArrayList<>();
     }
 
     Collection<? extends Abstract.ConstructorClause> absClauses = def.getClauses();
@@ -314,7 +314,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return buildImplementations(data, absImplementations);
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
   }
 
@@ -404,7 +404,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return parameters;
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
   }
 
