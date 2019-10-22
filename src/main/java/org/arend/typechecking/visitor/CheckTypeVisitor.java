@@ -640,6 +640,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
+    if (!(referable instanceof GlobalReferable)) {
+      if (sourceNode != null) {
+        errorReporter.report(new WrongReferable("Expected a definition", referable, sourceNode));
+      }
+      return null;
+    }
+
     Definition definition = referable instanceof TCReferable ? state.getTypechecked((TCReferable) referable) : null;
     if (definition == null && sourceNode != null) {
       errorReporter.report(new TypecheckingError("Internal error: definition '" + referable.textRepresentation() + "' was not typechecked", sourceNode));
