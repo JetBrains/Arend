@@ -16,12 +16,8 @@ public class TypecheckingUnit {
     return myDefinition;
   }
 
-  public boolean isHeader() {
-    return myHeader;
-  }
-
   public static boolean hasHeader(Concrete.Definition definition) {
-    return definition instanceof Concrete.FunctionDefinition || definition instanceof Concrete.DataDefinition;
+    return definition instanceof Concrete.FunctionDefinition && !((Concrete.FunctionDefinition) definition).getKind().isUse() || definition instanceof Concrete.DataDefinition;
   }
 
   @Override

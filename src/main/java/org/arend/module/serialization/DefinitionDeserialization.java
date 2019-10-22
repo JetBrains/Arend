@@ -34,7 +34,6 @@ public class DefinitionDeserialization {
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
-        defDeserializer.setIsHeader(false);
         ClassDefinition classDef = (ClassDefinition) def;
         fillInClassDefinition(defDeserializer, defProto.getClass_(), classDef);
         break;
@@ -112,7 +111,7 @@ public class DefinitionDeserialization {
     for (int superClassRef : classProto.getSuperClassRefList()) {
       ClassDefinition superClass = myCallTargetProvider.getCallTarget(superClassRef, ClassDefinition.class);
       classDef.addSuperClass(superClass);
-      myDependencyListener.dependsOn(classDef.getReferable(), true, superClass.getReferable());
+      myDependencyListener.dependsOn(classDef.getReferable(), superClass.getReferable());
       TCClassReferable classRef = classDef.getReferable();
       if (classRef instanceof ClassReferableImpl) {
         ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
@@ -201,7 +200,6 @@ public class DefinitionDeserialization {
       dataDef.addParametersLevel(readParametersLevel(defDeserializer, levelParametersProto));
     }
     dataDef.setSort(defDeserializer.readSort(dataProto.getSort()));
-    defDeserializer.setIsHeader(false);
 
     for (DefinitionProtos.Definition.DataData.Constructor constructorProto : dataProto.getConstructorList()) {
       Constructor constructor = myCallTargetProvider.getCallTarget(constructorProto.getReferable().getIndex(), Constructor.class);
@@ -357,7 +355,6 @@ public class DefinitionDeserialization {
     if (functionProto.hasTypeLevel()) {
       functionDef.setResultTypeLevel(defDeserializer.readExpr(functionProto.getTypeLevel()));
     }
-    defDeserializer.setIsHeader(false);
     FunctionDefinition.Kind kind;
     switch (functionProto.getKind()) {
       case LEMMA:

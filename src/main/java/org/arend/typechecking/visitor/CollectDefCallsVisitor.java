@@ -8,7 +8,7 @@ import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
 
 import java.util.*;
 
-public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
+public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   private final ConcreteProvider myConcreteProvider;
   private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;
@@ -86,38 +86,8 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
   }
 
   @Override
-  public void visitFunctionHeader(Concrete.FunctionDefinition def, Boolean isHeader) {
-    if (isHeader) {
-      super.visitFunctionHeader(def, true);
-    }
-  }
-
-  @Override
-  public Void visitFunctionBody(Concrete.FunctionDefinition def, Boolean isHeader) {
-    if (!isHeader) {
-      super.visitFunctionBody(def, false);
-    }
-    return null;
-  }
-
-  @Override
-  public void visitDataHeader(Concrete.DataDefinition def, Boolean isHeader) {
-    if (isHeader) {
-      super.visitDataHeader(def, true);
-    }
-  }
-
-  @Override
-  public Void visitDataBody(Concrete.DataDefinition def, Boolean isHeader) {
-    if (!isHeader) {
-      super.visitDataBody(def, false);
-    }
-    return null;
-  }
-
-  @Override
-  public Void visitClass(Concrete.ClassDefinition def, Boolean isHeader) {
-    visitClassHeader(def, isHeader);
+  public Void visitClass(Concrete.ClassDefinition def, Void params) {
+    visitClassHeader(def, null);
 
     myExcluded = new HashSet<>();
     new ClassFieldImplScope(def.getData(), false).find(ref -> {
@@ -127,14 +97,14 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
       return false;
     });
 
-    visitClassBody(def, isHeader);
+    visitClassBody(def, null);
 
     myExcluded = null;
     return null;
   }
 
   @Override
-  protected void visitPattern(Concrete.Pattern pattern, Boolean params) {
+  protected void visitPattern(Concrete.Pattern pattern, Void params) {
     if (pattern instanceof Concrete.ConstructorPattern) {
       Referable constructor = ((Concrete.ConstructorPattern) pattern).getConstructor();
       if (constructor instanceof TCReferable) {
@@ -145,7 +115,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
   }
 
   @Override
-  public Void visitApp(Concrete.AppExpression expr, Boolean ignore) {
+  public Void visitApp(Concrete.AppExpression expr, Void params) {
     if (expr.getFunction() instanceof Concrete.ReferenceExpression) {
       Referable ref = ((Concrete.ReferenceExpression) expr.getFunction()).getReferent();
       if (ref instanceof TCReferable) {
@@ -161,7 +131,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Boolean, Void> {
   }
 
   @Override
-  public Void visitReference(Concrete.ReferenceExpression expr, Boolean ignore) {
+  public Void visitReference(Concrete.ReferenceExpression expr, Void params) {
     if (expr.getReferent() instanceof TCReferable) {
       addDependency((TCReferable) expr.getReferent(), false);
     }

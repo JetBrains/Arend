@@ -15,10 +15,7 @@ import org.arend.typechecking.error.local.LocalError;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class Concrete {
   private Concrete() {}
@@ -1209,6 +1206,19 @@ public final class Concrete {
     @Override
     public String toString() {
       return myReferable.textRepresentation();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ReferableDefinition that = (ReferableDefinition) o;
+      return myReferable.equals(that.myReferable);
+    }
+
+    @Override
+    public int hashCode() {
+      return myReferable.hashCode();
     }
   }
 

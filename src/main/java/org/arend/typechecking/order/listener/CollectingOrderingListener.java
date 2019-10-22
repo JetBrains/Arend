@@ -1,18 +1,29 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.SCC;
-import org.arend.typechecking.typecheckable.TypecheckingUnit;
-import org.arend.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
+  private static class DefinitionUnit {
+    final Concrete.Definition definition;
+    final boolean isHeaderOnly;
+    final boolean isRecursive;
+
+    public DefinitionUnit(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive) {
+      this.definition = definition;
+      this.isHeaderOnly = isHeaderOnly;
+      this.isRecursive = isRecursive;
+    }
+  }
+
   private final List<Object> myList = new ArrayList<>();
 
   @Override
-  public void unitFound(TypecheckingUnit unit, Recursion recursion) {
-    myList.add(new Pair<>(unit, recursion));
+  public void definitionFound(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive) {
+    myList.add(new DefinitionUnit(definition, isHeaderOnly, isRecursive));
   }
 
   @Override
@@ -25,9 +36,8 @@ public class CollectingOrderingListener implements OrderingListener {
       if (o instanceof SCC) {
         listener.sccFound((SCC) o);
       } else {
-        //noinspection unchecked
-        Pair<TypecheckingUnit, Recursion> pair = (Pair<TypecheckingUnit, Recursion>) o;
-        listener.unitFound(pair.proj1, pair.proj2);
+        DefinitionUnit unit = (DefinitionUnit) o;
+        listener.definitionFound(unit.definition, unit.isHeaderOnly, unit.isRecursive);
       }
     }
   }

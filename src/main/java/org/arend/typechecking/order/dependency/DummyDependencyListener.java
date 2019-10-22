@@ -11,7 +11,7 @@ public class DummyDependencyListener implements DependencyListener {
   private DummyDependencyListener() { }
 
   @Override
-  public void dependsOn(TCReferable def1, boolean header, TCReferable def2) {
+  public void dependsOn(TCReferable def1, TCReferable def2) {
 
   }
 

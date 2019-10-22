@@ -1,10 +1,9 @@
 package org.arend.typechecking.order.listener;
 
+import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.order.SCC;
-import org.arend.typechecking.typecheckable.TypecheckingUnit;
 
 public interface OrderingListener {
-  enum Recursion { NO, IN_HEADER, IN_BODY }
-  void unitFound(TypecheckingUnit unit, Recursion recursion);
+  void definitionFound(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive);
   void sccFound(SCC scc);
 }

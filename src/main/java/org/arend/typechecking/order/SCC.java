@@ -1,18 +1,17 @@
 package org.arend.typechecking.order;
 
-import org.arend.typechecking.typecheckable.TypecheckingUnit;
+import org.arend.term.concrete.Concrete;
 
-import java.util.Collection;
 import java.util.List;
 
 public class SCC {
-  private final List<TypecheckingUnit> myUnits;
+  private final List<Concrete.Definition> myDefinitions;
 
-  public SCC(List<TypecheckingUnit> units) {
-    myUnits = units;
+  public SCC(List<Concrete.Definition> definitions) {
+    myDefinitions = definitions;
   }
 
-  public Collection<? extends TypecheckingUnit> getUnits() {
-    return myUnits;
+  public List<? extends Concrete.Definition> getDefinitions() {
+    return myDefinitions;
   }
 }

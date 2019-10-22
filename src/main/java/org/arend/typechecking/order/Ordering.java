@@ -4,7 +4,6 @@ import org.arend.core.definition.Definition;
 import org.arend.naming.reference.LocatedReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
-import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.TypecheckerState;
@@ -41,10 +40,10 @@ public class Ordering {
   private final ReferableConverter myReferableConverter;
   private final TypecheckerState myState;
   private final PartialComparator<TCReferable> myComparator;
-  private final Deque<Concrete.Definition> myDeferredDefinitions = new ArrayDeque<>();
   private final boolean myRefToHeaders;
+  private final boolean myRefToUse;
 
-  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, boolean refToHeaders) {
+  public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator, boolean refToHeaders, boolean refToUse) {
     myInstanceProviderSet = instanceProviderSet;
     myConcreteProvider = concreteProvider;
     myOrderingListener = orderingListener;
@@ -53,6 +52,7 @@ public class Ordering {
     myState = state;
     myComparator = comparator;
     myRefToHeaders = refToHeaders;
+    myRefToUse = refToUse;
   }
 
   public Ordering(InstanceProviderSet instanceProviderSet, ConcreteProvider concreteProvider, OrderingListener orderingListener, DependencyListener dependencyListener, ReferableConverter referableConverter, TypecheckerState state, PartialComparator<TCReferable> comparator) {
@@ -64,6 +64,7 @@ public class Ordering {
     myState = state;
     myComparator = comparator;
     myRefToHeaders = false;
+    myRefToUse = true;
   }
 
   public TypecheckerState getTypecheckerState() {
@@ -126,9 +127,6 @@ public class Ordering {
       // myDependencyListener.update(definition.getData());
       doOrderRecursively(typecheckingUnit);
     }
-    while (!myDeferredDefinitions.isEmpty()) {
-      doOrderRecursively(new TypecheckingUnit(myDeferredDefinitions.pop(), false));
-    }
   }
 
   public Definition getTypechecked(TCReferable definition) {
@@ -157,41 +155,23 @@ public class Ordering {
     myIndex++;
     myStack.push(unit);
 
-    TypecheckingUnit header = null;
-    if (!unit.isHeader() && TypecheckingUnit.hasHeader(definition)) {
-      header = new TypecheckingUnit(definition, true);
-      OrderResult result = updateState(currentState, header);
-
-      if (result == OrderResult.RECURSION_ERROR) {
-        myStack.pop();
-        currentState.onStack = false;
-        myOrderingListener.unitFound(unit, TypecheckingOrderingListener.Recursion.IN_HEADER);
-        return OrderResult.REPORTED;
-      }
-
-      if (result == OrderResult.REPORTED) {
-        header = null;
-      }
-    }
-
     Set<TCReferable> dependencies = new LinkedHashSet<>();
     InstanceProvider instanceProvider = myInstanceProviderSet.get(definition.getData());
     CollectDefCallsVisitor visitor = new CollectDefCallsVisitor(myConcreteProvider, instanceProvider, dependencies);
     if (definition.enclosingClass != null) {
       visitor.addDependency(definition.enclosingClass);
     }
-    if (definition instanceof Concrete.UseDefinition && unit.isHeader()) {
+    if (definition instanceof Concrete.UseDefinition) {
       visitor.addDependency(((Concrete.UseDefinition) definition).getUseParent());
+    }
+    if (myRefToUse) {
+      for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
+        visitor.addDependency(usedDefinition);
+      }
     }
 
     TypecheckingOrderingListener.Recursion recursion = TypecheckingOrderingListener.Recursion.NO;
-    definition.accept(visitor, unit.isHeader());
-
-    if (unit.isHeader() && dependencies.contains(definition.getData())) {
-      myStack.pop();
-      currentState.onStack = false;
-      return OrderResult.RECURSION_ERROR;
-    }
+    definition.accept(visitor, null);
 
     for (TCReferable referable : dependencies) {
       TCReferable tcReferable = referable.getTypecheckable();
@@ -204,7 +184,7 @@ public class Ordering {
           recursion = TypecheckingOrderingListener.Recursion.IN_BODY;
         }
       } else {
-        myDependencyListener.dependsOn(definition.getData(), unit.isHeader(), tcReferable);
+        myDependencyListener.dependsOn(definition.getData(), tcReferable);
         Concrete.ReferableDefinition dependency = myConcreteProvider.getConcrete(tcReferable);
         if (dependency instanceof Concrete.Definition) {
           Definition typechecked = myState.getTypechecked(tcReferable);
@@ -225,13 +205,8 @@ public class Ordering {
         units.add(unit);
       } while (!unit.equals(originalUnit));
 
-      // This can happen only when the definition is \\use \\coerce
-      if (units.size() == 2 && units.get(0).getDefinition().getData() == units.get(1).getDefinition().getData() && units.get(0).isHeader() != units.get(1).isHeader()) {
-        units.remove(units.get(0).isHeader() ? 1 : 0);
-      }
-
       Collections.reverse(units);
-      new TypecheckingUnitComparator(myComparator).sort(units);
+      new DefinitionComparator(myComparator).sort(units);
       scc = new SCC(units);
 
       if (myRefToHeaders) {
@@ -239,49 +214,16 @@ public class Ordering {
         return OrderResult.REPORTED;
       }
 
-      if (unit.isHeader() && units.size() == 1) {
-        if (unit.getDefinition() instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) unit.getDefinition()).getKind() == FunctionKind.LEVEL) {
-          myOrderingListener.unitFound(unit, recursion);
-          return OrderResult.REPORTED;
-        }
-        return OrderResult.NOT_REPORTED;
-      }
-
       if (units.size() == 1) {
-        myOrderingListener.unitFound(unit, recursion);
-        doOrderUsedDefinitions(currentState, unit.getDefinition());
+        myOrderingListener.definitionFound(unit, recursion);
         return OrderResult.REPORTED;
       }
     }
 
-    if (header != null) {
-      myOrderingListener.sccFound(new SCC(Collections.singletonList(header)));
-    }
     if (scc != null) {
       myOrderingListener.sccFound(scc);
-      for (TypecheckingUnit sccUnit : scc.getUnits()) {
-        doOrderUsedDefinitions(currentState, sccUnit.getDefinition());
-      }
     }
 
     return OrderResult.REPORTED;
-  }
-
-  private void doOrderUsedDefinitions(DefState currentState, Concrete.Definition definition) {
-    for (TCReferable usedDefinition : definition.getUsedDefinitions()) {
-      Concrete.FunctionDefinition def = myConcreteProvider.getConcreteFunction(usedDefinition);
-      if (def != null) {
-        FunctionKind kind = def.getKind();
-        if (kind.isUse()) {
-          Definition typechecked = myState.getTypechecked(def.getData());
-          if (typechecked == null || typechecked.status() == Definition.TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING) {
-            updateState(currentState, new TypecheckingUnit(def, kind == FunctionKind.LEVEL));
-            if (kind == FunctionKind.LEVEL) {
-              myDeferredDefinitions.add(def);
-            }
-          }
-        }
-      }
-    }
   }
 }

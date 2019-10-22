@@ -354,4 +354,39 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "  }");
     assertEquals(2, getDefinition("f").getParametersLevels().size());
   }
+
+  @Test
+  public void selfDataTest() {
+    typeCheckModule(
+      "\\data D | con Nat\n" +
+      "  \\where \\use \\level levelProp (d1 d2 : D) : d1 = d2 => path (\\lam _ => d1)", 1);
+  }
+
+  @Test
+  public void selfClassTest() {
+    typeCheckModule(
+      "\\record C (x : Nat)\n" +
+      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = {C} c2 => path (\\lam _ => c1)", 1);
+  }
+
+  @Test
+  public void selfClassTest2() {
+    typeCheckModule(
+      "\\record C (x : Nat)\n" +
+      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = c2 => path (\\lam _ => c1)", 1);
+  }
+
+  @Test
+  public void selfClassTest3() {
+    typeCheckModule(
+      "\\record C (x y : Nat)\n" +
+      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = {C x} c2 => path (\\lam _ => c1)", 1);
+  }
+
+  @Test
+  public void selfClassTest4() {
+    typeCheckModule(
+      "\\record C (x y : Nat)\n" +
+      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = c2 => path (\\lam _ => c1)", 1);
+  }
 }
