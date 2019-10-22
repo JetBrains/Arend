@@ -5,7 +5,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteReferableDefinitionVisitor;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.Collection;
 import java.util.Collections;

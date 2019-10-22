@@ -1,43 +1,67 @@
 package org.arend.typechecking.order.listener;
 
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.order.SCC;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CollectingOrderingListener implements OrderingListener {
-  private static class DefinitionUnit {
+  private static class MyUnit {
     final Concrete.Definition definition;
-    final boolean isHeaderOnly;
-    final boolean isRecursive;
+    final boolean withLoops;
 
-    public DefinitionUnit(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive) {
+    public MyUnit(Concrete.Definition definition, boolean withLoops) {
       this.definition = definition;
-      this.isHeaderOnly = isHeaderOnly;
-      this.isRecursive = isRecursive;
+      this.withLoops = withLoops;
+    }
+  }
+
+  private static class MyDefinitions {
+    final List<Concrete.Definition> definitions;
+    final boolean isCycle;
+
+    private MyDefinitions(List<Concrete.Definition> definitions, boolean isCycle) {
+      this.definitions = definitions;
+      this.isCycle = isCycle;
     }
   }
 
   private final List<Object> myList = new ArrayList<>();
 
   @Override
-  public void definitionFound(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive) {
-    myList.add(new DefinitionUnit(definition, isHeaderOnly, isRecursive));
+  public void unitFound(Concrete.Definition unit, boolean recursive) {
+    myList.add(new MyUnit(unit, recursive));
   }
 
   @Override
-  public void sccFound(SCC scc) {
-    myList.add(scc);
+  public void cycleFound(List<Concrete.Definition> definitions) {
+    myList.add(new MyDefinitions(definitions, true));
+  }
+
+  @Override
+  public void headerFound(Concrete.Definition definition) {
+    myList.add(definition);
+  }
+
+  @Override
+  public void bodiesFound(List<Concrete.Definition> bodies) {
+    myList.add(new MyDefinitions(bodies, false));
   }
 
   public void feed(OrderingListener listener) {
     for (Object o : myList) {
-      if (o instanceof SCC) {
-        listener.sccFound((SCC) o);
+      if (o instanceof MyUnit) {
+        MyUnit unit = (MyUnit) o;
+        listener.unitFound(unit.definition, unit.withLoops);
+      } else if (o instanceof MyDefinitions) {
+        MyDefinitions definitions = (MyDefinitions) o;
+        if (definitions.isCycle) {
+          listener.cycleFound(definitions.definitions);
+        } else {
+          listener.bodiesFound(definitions.definitions);
+        }
       } else {
-        DefinitionUnit unit = (DefinitionUnit) o;
-        listener.definitionFound(unit.definition, unit.isHeaderOnly, unit.isRecursive);
+        listener.headerFound((Concrete.Definition) o);
       }
     }
   }

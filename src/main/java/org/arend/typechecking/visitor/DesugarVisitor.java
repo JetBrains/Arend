@@ -10,8 +10,8 @@ import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.error.local.WrongReferable;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
-import org.arend.typechecking.typecheckable.provider.EmptyConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
+import org.arend.typechecking.provider.EmptyConcreteProvider;
 
 import java.util.*;
 

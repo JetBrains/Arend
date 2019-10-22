@@ -27,7 +27,7 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.Pair;
 
 import java.util.Arrays;

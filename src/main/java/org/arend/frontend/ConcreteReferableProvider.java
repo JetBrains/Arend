@@ -5,7 +5,7 @@ import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 
 import javax.annotation.Nullable;
 

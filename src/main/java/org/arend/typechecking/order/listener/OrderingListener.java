@@ -1,9 +1,12 @@
 package org.arend.typechecking.order.listener;
 
 import org.arend.term.concrete.Concrete;
-import org.arend.typechecking.order.SCC;
+
+import java.util.List;
 
 public interface OrderingListener {
-  void definitionFound(Concrete.Definition definition, boolean isHeaderOnly, boolean isRecursive);
-  void sccFound(SCC scc);
+  void unitFound(Concrete.Definition definition, boolean recursive);
+  void cycleFound(List<Concrete.Definition> definitions);
+  void headerFound(Concrete.Definition definitions);
+  void bodiesFound(List<Concrete.Definition> definitions);
 }

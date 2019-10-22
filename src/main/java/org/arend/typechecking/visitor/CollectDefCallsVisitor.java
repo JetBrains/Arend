@@ -4,7 +4,7 @@ import org.arend.naming.reference.*;
 import org.arend.naming.scope.ClassFieldImplScope;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.instance.provider.InstanceProvider;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
 
@@ -13,12 +13,14 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   private final InstanceProvider myInstanceProvider;
   private final Collection<TCReferable> myDependencies;
   private final Deque<TCReferable> myDeque = new ArrayDeque<>();
+  private final boolean myWithBodies;
   private Set<TCReferable> myExcluded;
 
-  public CollectDefCallsVisitor(ConcreteProvider concreteProvider, InstanceProvider instanceProvider, Collection<TCReferable> dependencies) {
+  public CollectDefCallsVisitor(ConcreteProvider concreteProvider, InstanceProvider instanceProvider, Collection<TCReferable> dependencies, boolean withBodies) {
     myConcreteProvider = concreteProvider;
     myInstanceProvider = instanceProvider;
     myDependencies = dependencies;
+    myWithBodies = withBodies;
   }
 
   public void addDependency(TCReferable dependency) {
@@ -83,6 +85,30 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
       myDeque.push(instance.getData());
       return false;
     });
+  }
+
+  @Override
+  protected Void visitFunctionBody(Concrete.FunctionDefinition def, Void params) {
+    if (myWithBodies) {
+      super.visitFunctionBody(def, params);
+    }
+    return null;
+  }
+
+  @Override
+  protected Void visitDataBody(Concrete.DataDefinition def, Void params) {
+    if (myWithBodies) {
+      super.visitDataBody(def, params);
+    }
+    return null;
+  }
+
+  @Override
+  protected Void visitClassBody(Concrete.ClassDefinition def, Void params) {
+    if (myWithBodies) {
+      super.visitClassBody(def, params);
+    }
+    return null;
   }
 
   @Override

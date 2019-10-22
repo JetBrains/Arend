@@ -1,4 +1,4 @@
-package org.arend.typechecking.typecheckable.provider;
+package org.arend.typechecking.provider;
 
 import org.arend.naming.reference.ClassReferable;
 import org.arend.naming.reference.GlobalReferable;
