@@ -10,19 +10,21 @@ public class CollectingOrderingListener implements OrderingListener {
     final Concrete.Definition definition;
     final boolean withLoops;
 
-    public MyUnit(Concrete.Definition definition, boolean withLoops) {
+    MyUnit(Concrete.Definition definition, boolean withLoops) {
       this.definition = definition;
       this.withLoops = withLoops;
     }
   }
 
   private static class MyDefinitions {
-    final List<Concrete.Definition> definitions;
-    final boolean isCycle;
+    enum Kind { CYCLE, BODIES, USE }
 
-    private MyDefinitions(List<Concrete.Definition> definitions, boolean isCycle) {
+    final List<? extends Concrete.Definition> definitions;
+    final Kind kind;
+
+    MyDefinitions(List<? extends Concrete.Definition> definitions, Kind kind) {
       this.definitions = definitions;
-      this.isCycle = isCycle;
+      this.kind = kind;
     }
   }
 
@@ -35,7 +37,7 @@ public class CollectingOrderingListener implements OrderingListener {
 
   @Override
   public void cycleFound(List<Concrete.Definition> definitions) {
-    myList.add(new MyDefinitions(definitions, true));
+    myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.CYCLE));
   }
 
   @Override
@@ -45,9 +47,15 @@ public class CollectingOrderingListener implements OrderingListener {
 
   @Override
   public void bodiesFound(List<Concrete.Definition> bodies) {
-    myList.add(new MyDefinitions(bodies, false));
+    myList.add(new MyDefinitions(bodies, MyDefinitions.Kind.BODIES));
   }
 
+  @Override
+  public void useFound(List<Concrete.UseDefinition> definitions) {
+    myList.add(new MyDefinitions(definitions, MyDefinitions.Kind.USE));
+  }
+
+  @SuppressWarnings("unchecked")
   public void feed(OrderingListener listener) {
     for (Object o : myList) {
       if (o instanceof MyUnit) {
@@ -55,10 +63,12 @@ public class CollectingOrderingListener implements OrderingListener {
         listener.unitFound(unit.definition, unit.withLoops);
       } else if (o instanceof MyDefinitions) {
         MyDefinitions definitions = (MyDefinitions) o;
-        if (definitions.isCycle) {
-          listener.cycleFound(definitions.definitions);
+        if (definitions.kind == MyDefinitions.Kind.USE) {
+          listener.useFound((List<Concrete.UseDefinition>) definitions.definitions);
+        } else if (definitions.kind == MyDefinitions.Kind.BODIES) {
+          listener.bodiesFound((List<Concrete.Definition>) definitions.definitions);
         } else {
-          listener.bodiesFound(definitions.definitions);
+          listener.cycleFound((List<Concrete.Definition>) definitions.definitions);
         }
       } else {
         listener.headerFound((Concrete.Definition) o);

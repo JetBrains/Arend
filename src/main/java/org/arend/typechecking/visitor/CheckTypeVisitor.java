@@ -1611,6 +1611,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode) {
+    return getExpressionLevel(link, type, expr, equations, sourceNode, errorReporter);
+  }
+
+  public static Integer getExpressionLevel(DependentLink link, Expression type, Expression expr, Equations equations, Concrete.SourceNode sourceNode, ErrorReporter errorReporter) {
     boolean ok = expr != null;
 
     int level = -2;

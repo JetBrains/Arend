@@ -184,6 +184,14 @@ public class Ordering extends BellmanFord<Concrete.Definition> {
       for (Concrete.Definition definition : scc) {
         ordering.order(definition);
       }
+
+      List<Concrete.UseDefinition> useDefinitions = new ArrayList<>();
+      for (Concrete.Definition definition : scc) {
+        if (definition instanceof Concrete.UseDefinition) {
+          useDefinitions.add((Concrete.UseDefinition) definition);
+        }
+      }
+      myOrderingListener.useFound(useDefinitions);
       return;
     }
 

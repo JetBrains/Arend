@@ -22,6 +22,7 @@ import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
 import org.arend.typechecking.ThreadCancellationIndicator;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.UseTypechecking;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -32,9 +33,9 @@ import org.arend.typechecking.order.Ordering;
 import org.arend.typechecking.order.PartialComparator;
 import org.arend.typechecking.order.dependency.DependencyListener;
 import org.arend.typechecking.order.dependency.DummyDependencyListener;
+import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.termination.DefinitionCallGraph;
 import org.arend.typechecking.termination.RecursiveBehavior;
-import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.typechecking.visitor.*;
 import org.arend.util.ComputationInterruptedException;
 import org.arend.util.Pair;
@@ -353,6 +354,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
     for (Concrete.Definition definition : orderedDefinitions) {
       typecheckingBodyFinished(definition.getData(), myState.getTypechecked(definition.getData()));
     }
+  }
+
+  @Override
+  public void useFound(List<Concrete.UseDefinition> definitions) {
+    UseTypechecking.typecheck(definitions, myState, myErrorReporter);
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {
