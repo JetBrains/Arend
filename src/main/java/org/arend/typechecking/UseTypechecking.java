@@ -13,16 +13,25 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.CoerceCycleError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
+import org.arend.typechecking.order.DFS;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.util.Pair;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class UseTypechecking {
   public static void typecheck(List<Concrete.UseDefinition> definitions, TypecheckerState state, ErrorReporter errorReporter) {
+    Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap = new HashMap<>();
+    Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap = new HashMap<>();
+
     for (Concrete.UseDefinition definition : definitions) {
       Definition typedDefinition = state.getTypechecked(definition.getData());
       if (!(typedDefinition instanceof FunctionDefinition)) {
@@ -33,12 +42,69 @@ public class UseTypechecking {
       if (definition.getKind() == FunctionKind.LEVEL) {
         typecheckLevel(definition, typedDef, state, errorReporter);
       } else if (definition.getKind() == FunctionKind.COERCE) {
-        typecheckCoerce(definition, typedDef, state, errorReporter);
+        typecheckCoerce(definition, typedDef, state, errorReporter, fromMap, toMap);
+      }
+    }
+
+    registerCoerce(fromMap, true, errorReporter, definitions);
+    registerCoerce(toMap, false, errorReporter, definitions);
+  }
+
+  private static void registerCoerce(Map<Definition, List<Pair<Definition,FunctionDefinition>>> depMap, boolean isFrom, ErrorReporter errorReporter, List<Concrete.UseDefinition> definitions) {
+    if (depMap.isEmpty()) {
+      return;
+    }
+
+    List<Definition> order = new ArrayList<>();
+    try {
+      DFS<Definition> dfs = new DFS<Definition>() {
+        @Override
+        protected void forDependencies(Definition unit, Consumer<Definition> consumer) {
+          List<Pair<Definition, FunctionDefinition>> deps = depMap.get(unit);
+          if (deps != null) {
+            for (Pair<Definition, FunctionDefinition> dep : deps) {
+              if (dep.proj1 != null) {
+                consumer.accept(dep.proj1);
+              }
+            }
+          }
+        }
+
+        @Override
+        protected void onExit(Definition unit) {
+          order.add(unit);
+        }
+      };
+      for (Definition definition : depMap.keySet()) {
+        dfs.visit(definition);
+      }
+    } catch (DFS.CycleException e) {
+      List<Concrete.UseDefinition> coerceDefs = new ArrayList<>();
+      for (Concrete.UseDefinition definition : definitions) {
+        if (definition.getKind() == FunctionKind.COERCE) {
+          coerceDefs.add(definition);
+        }
+      }
+      errorReporter.report(new CoerceCycleError(coerceDefs));
+      return;
+    }
+
+    for (Definition definition : order) {
+      List<Pair<Definition, FunctionDefinition>> deps = depMap.get(definition);
+      if (deps != null) {
+        CoerceData coerceData = definition.getCoerceData();
+        for (Pair<Definition, FunctionDefinition> dep : deps) {
+          if (isFrom) {
+            coerceData.addCoerceFrom(dep.proj1, dep.proj2);
+          } else {
+            coerceData.addCoerceTo(dep.proj1, dep.proj2);
+          }
+        }
       }
     }
   }
 
-  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, TypecheckerState state, ErrorReporter errorReporter) {
+  private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, TypecheckerState state, ErrorReporter errorReporter, Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap) {
     Definition useParent = state.getTypechecked(def.getUseParent());
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
       Referable paramRef = def.getParameters().get(def.getParameters().size() - 1).getType().getUnderlyingReferable();
@@ -53,9 +119,9 @@ public class UseTypechecking {
       } else {
         typedDef.setVisibleParameter(DependentLink.Helper.size(typedDef.getParameters()) - 1);
         if (resultDef == useParent) {
-          useParent.getCoerceData().addCoerceFrom(paramDef, typedDef);
+          fromMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(paramDef, typedDef));
         } else {
-          useParent.getCoerceData().addCoerceTo(resultDef, typedDef);
+          toMap.computeIfAbsent(useParent, k -> new ArrayList<>()).add(new Pair<>(resultDef, typedDef));
         }
       }
     }
