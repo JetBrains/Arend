@@ -1,10 +1,13 @@
 package org.arend.typechecking.order.listener;
 
-import org.arend.typechecking.order.SCC;
-import org.arend.typechecking.typecheckable.TypecheckingUnit;
+import org.arend.term.concrete.Concrete;
+
+import java.util.List;
 
 public interface OrderingListener {
-  enum Recursion { NO, IN_HEADER, IN_BODY }
-  void unitFound(TypecheckingUnit unit, Recursion recursion);
-  void sccFound(SCC scc);
+  void unitFound(Concrete.Definition definition, boolean recursive);
+  void cycleFound(List<Concrete.Definition> definitions);
+  void headerFound(Concrete.Definition definition);
+  void bodiesFound(List<Concrete.Definition> definitions);
+  void useFound(List<Concrete.UseDefinition> definitions);
 }

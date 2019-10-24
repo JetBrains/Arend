@@ -16,7 +16,7 @@ public class DependencyCollector implements DependencyListener {
   }
 
   @Override
-  public void dependsOn(TCReferable def1, boolean header, TCReferable def2) {
+  public void dependsOn(TCReferable def1, TCReferable def2) {
     myDependencies.computeIfAbsent(def1, k -> new HashSet<>()).add(def2);
     myReverseDependencies.computeIfAbsent(def2, k -> new HashSet<>()).add(def1);
   }

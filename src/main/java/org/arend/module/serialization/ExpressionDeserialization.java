@@ -30,16 +30,11 @@ class ExpressionDeserialization {
 
   private final DependencyListener myDependencyListener;
   private final TCReferable myDefinition;
-  private boolean myHeader = true;
 
   ExpressionDeserialization(CallTargetProvider callTargetProvider, DependencyListener dependencyListener, TCReferable definition) {
     myCallTargetProvider = callTargetProvider;
     myDependencyListener = dependencyListener;
     myDefinition = definition;
-  }
-
-  public void setIsHeader(boolean isHeader) {
-    myHeader = isHeader;
   }
 
   // Bindings
@@ -251,20 +246,20 @@ class ExpressionDeserialization {
 
   private FunCallExpression readFunCall(ExpressionProtos.Expression.FunCall proto) throws DeserializationException {
     FunctionDefinition functionDefinition = myCallTargetProvider.getCallTarget(proto.getFunRef(), FunctionDefinition.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, functionDefinition.getReferable());
+    myDependencyListener.dependsOn(myDefinition, functionDefinition.getReferable());
     return new FunCallExpression(functionDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
   private Expression readConCall(ExpressionProtos.Expression.ConCall proto) throws DeserializationException {
     Constructor constructor = myCallTargetProvider.getCallTarget(proto.getConstructorRef(), Constructor.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, constructor.getDataType().getReferable());
+    myDependencyListener.dependsOn(myDefinition, constructor.getDataType().getReferable());
     return ConCallExpression.make(constructor, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())),
         readExprList(proto.getDatatypeArgumentList()), readExprList(proto.getArgumentList()));
   }
 
   private DataCallExpression readDataCall(ExpressionProtos.Expression.DataCall proto) throws DeserializationException {
     DataDefinition dataDefinition = myCallTargetProvider.getCallTarget(proto.getDataRef(), DataDefinition.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, dataDefinition.getReferable());
+    myDependencyListener.dependsOn(myDefinition, dataDefinition.getReferable());
     return new DataCallExpression(dataDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExprList(proto.getArgumentList()));
   }
 
@@ -275,7 +270,7 @@ class ExpressionDeserialization {
     }
 
     ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, classDefinition.getReferable());
+    myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
     return new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
   }
 
@@ -380,7 +375,7 @@ class ExpressionDeserialization {
 
   private Expression readFieldCall(ExpressionProtos.Expression.FieldCall proto) throws DeserializationException {
     ClassField classField = myCallTargetProvider.getCallTarget(proto.getFieldRef(), ClassField.class);
-    myDependencyListener.dependsOn(myDefinition, myHeader, classField.getParentClass().getReferable());
+    myDependencyListener.dependsOn(myDefinition, classField.getParentClass().getReferable());
     return FieldCallExpression.make(classField, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), readExpr(proto.getExpression()));
   }
 

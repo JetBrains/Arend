@@ -17,7 +17,7 @@ import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.group.ChildGroup;
 import org.arend.term.group.Group;
 import org.arend.typechecking.error.local.LocalErrorReporter;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.Pair;
 
 import javax.annotation.Nonnull;

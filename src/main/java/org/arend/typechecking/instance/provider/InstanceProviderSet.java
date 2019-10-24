@@ -13,7 +13,7 @@ import org.arend.term.FunctionKind;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
-import org.arend.typechecking.typecheckable.provider.ConcreteProvider;
+import org.arend.typechecking.provider.ConcreteProvider;
 
 import java.util.*;
 import java.util.function.Function;
