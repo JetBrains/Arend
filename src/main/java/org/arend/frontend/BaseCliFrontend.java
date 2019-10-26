@@ -2,8 +2,10 @@ package org.arend.frontend;
 
 import org.apache.commons.cli.*;
 import org.arend.core.definition.Definition;
+import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.error.GeneralError;
 import org.arend.error.ListErrorReporter;
+import org.arend.error.doc.DocStringBuilder;
 import org.arend.frontend.library.FileSourceLibrary;
 import org.arend.library.*;
 import org.arend.library.error.LibraryError;
@@ -13,8 +15,10 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.prelude.Prelude;
 import org.arend.prelude.PreludeResourceLibrary;
+import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.SimpleTypecheckerState;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.error.local.GoalError;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.FileUtils;
@@ -265,11 +269,23 @@ public abstract class BaseCliFrontend {
         }
       });
 
+      //Print error
+      String errorText;
+      if (error instanceof GoalError) {
+        errorText = DocStringBuilder.build(error.getDoc(new PrettyPrinterConfig() {
+          @Override
+          public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
+            return EnumSet.of(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE,
+                    ToAbstractVisitor.Flag.HIDE_HIDEABLE_DEFINITIONS);
+          }
+        }));
+      } else errorText = error.toString();
+
       if (error.isSevere()) {
-        System.err.println(error);
+        System.err.println(errorText);
         System.err.flush();
       } else {
-        System.out.println(error);
+        System.out.println(errorText);
       }
     }
     myErrorReporter.getErrorList().clear();
