@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.arend.frontend.parser.ArendParser.*;
 
-public class BuildVisitor extends ArendBaseVisitor {
+public class BuildVisitor extends ArendBaseVisitor<Object> {
   private final ModulePath myModule;
   private final ErrorReporter myErrorReporter;
 
@@ -990,8 +990,8 @@ public class BuildVisitor extends ArendBaseVisitor {
         Concrete.LevelExpression level1;
         Concrete.LevelExpression level2;
         if (obj1 instanceof Pair) {
-          level1 = (Concrete.LevelExpression) ((Pair) obj1).proj1;
-          level2 = (Concrete.LevelExpression) ((Pair) obj1).proj2;
+          level1 = (Concrete.LevelExpression) ((Pair<?, ?>) obj1).proj1;
+          level2 = (Concrete.LevelExpression) ((Pair<?, ?>) obj1).proj2;
         } else {
           level1 = (Concrete.LevelExpression) obj1;
           level2 = obj2 instanceof Concrete.LevelExpression ? (Concrete.LevelExpression) obj2 : null;

@@ -231,7 +231,7 @@ public abstract class Expression implements ExpectedType, Body {
     return this;
   }
 
-  public boolean isInstance(Class clazz) {
+  public boolean isInstance(Class<?> clazz) {
     return clazz.isInstance(this);
   }
 
