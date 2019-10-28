@@ -23,6 +23,8 @@ dependencies {
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
 
+    implementation("org.jetbrains:annotations:17.0.0")
+
     antlr("org.antlr:antlr4:4.7.2")
     implementation("org.antlr:antlr4-runtime:4.7.2")
 }

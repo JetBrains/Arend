@@ -14,6 +14,7 @@ import org.arend.term.expr.ConcreteCompareVisitor;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.util.ArendModule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -101,12 +102,12 @@ public class PrettyPrintingTest extends TypeCheckingTestCase {
     def.accept(new PrettyPrintVisitor(new StringBuilder(), Concrete.Expression.PREC), null);
   }
 
-  private void testDefinition(String s) {
+  private void testDefinition(@ArendModule String s) {
     ConcreteLocatedReferable def = resolveNamesDef(s);
     StringBuilder sb = new StringBuilder();
     PrettyPrintVisitor visitor = new PrettyPrintVisitor(sb, 0);
     ((Concrete.Definition) def.getDefinition()).accept(visitor, null);
-    String s2 = sb.toString();
+    @ArendModule String s2 = sb.toString();
     ConcreteLocatedReferable def2 = resolveNamesDef(s2);
     assertTrue(ConcreteCompareVisitor.compare(def.getDefinition(), def2.getDefinition()));
   }

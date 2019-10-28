@@ -18,6 +18,8 @@ import org.arend.typechecking.error.local.LocalErrorReporter;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
+import org.arend.util.ArendClass;
+import org.arend.util.ArendModule;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -117,23 +119,23 @@ public class TypeCheckingTestCase extends NameResolverTestCase {
     typeCheckModule(group, 0);
   }
 
-  protected ChildGroup typeCheckModule(String text, int errors) {
+  protected ChildGroup typeCheckModule(@ArendModule String text, int errors) {
     lastGroup = resolveNamesModule(text);
     typeCheckModule(lastGroup, errors);
     return lastGroup;
   }
 
-  protected ChildGroup typeCheckModule(String text) {
+  protected ChildGroup typeCheckModule(@ArendModule String text) {
     return typeCheckModule(text, 0);
   }
 
-  protected ChildGroup typeCheckClass(String instance, String global, int errors) {
+  protected ChildGroup typeCheckClass(@ArendClass String instance, String global, int errors) {
     lastGroup = resolveNamesDefGroup("\\class Test {\n" + instance + (global.isEmpty() ? "" : "\n} \\where {\n" + global) + "\n}");
     typeCheckModule(lastGroup, errors);
     return lastGroup;
   }
 
-  protected ChildGroup typeCheckClass(String instance, String global) {
+  protected ChildGroup typeCheckClass(@ArendClass String instance, String global) {
     return typeCheckClass(instance, global, 0);
   }
 }

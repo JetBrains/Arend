@@ -10,6 +10,8 @@ import org.arend.term.group.ChildGroup;
 import org.arend.term.group.FileGroup;
 import org.arend.term.group.Group;
 import org.antlr.v4.runtime.*;
+import org.arend.util.ArendExpr;
+import org.arend.util.ArendModule;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,18 +48,18 @@ public abstract class ParserTestCase extends ArendTestCase {
   }
 
 
-  Concrete.Expression parseExpr(String text, int errors) {
+  Concrete.Expression parseExpr(@ArendExpr String text, int errors) {
     ArendParser.ExprContext ctx = _parse(text).expr();
     Concrete.Expression expr = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitExpr(ctx) : null;
     assertThat(errorList, containsErrors(errors));
     return expr;
   }
 
-  protected Concrete.Expression parseExpr(String text) {
+  protected Concrete.Expression parseExpr(@ArendExpr String text) {
     return parseExpr(text, 0);
   }
 
-  ChildGroup parseDef(String text, int errors) {
+  ChildGroup parseDef(@ArendModule String text, int errors) {
     ArendParser.DefinitionContext ctx = _parse(text).definition();
     List<Group> subgroups = new ArrayList<>(1);
     FileGroup fileGroup = new FileGroup(new ModuleReferable(MODULE_PATH), subgroups, Collections.emptyList());
@@ -69,11 +71,11 @@ public abstract class ParserTestCase extends ArendTestCase {
     return definition;
   }
 
-  protected ChildGroup parseDef(String text) {
+  protected ChildGroup parseDef(@ArendModule String text) {
     return parseDef(text, 0);
   }
 
-  protected ChildGroup parseModule(String text, int errors) {
+  protected ChildGroup parseModule(@ArendModule String text, int errors) {
     ArendParser.StatementsContext tree = _parse(text).statements();
     FileGroup group = errorList.isEmpty() ? new BuildVisitor(MODULE_PATH, errorReporter).visitStatements(tree) : null;
     if (group != null) {
@@ -83,7 +85,7 @@ public abstract class ParserTestCase extends ArendTestCase {
     return group;
   }
 
-  protected ChildGroup parseModule(String text) {
+  protected ChildGroup parseModule(@ArendModule String text) {
     return parseModule(text, 0);
   }
 
