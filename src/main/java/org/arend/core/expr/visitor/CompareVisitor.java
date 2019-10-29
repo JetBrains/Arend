@@ -967,7 +967,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
     ElimTree elimTree = expr.getElimTree();
     if (elimTree == null) {
-      return null;
+      return false;
     }
 
     Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getArguments());
