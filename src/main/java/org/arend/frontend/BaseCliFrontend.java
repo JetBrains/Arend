@@ -275,8 +275,7 @@ public abstract class BaseCliFrontend {
         errorText = DocStringBuilder.build(error.getDoc(new PrettyPrinterConfig() {
           @Override
           public EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
-            return EnumSet.of(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE,
-                    ToAbstractVisitor.Flag.HIDE_HIDEABLE_DEFINITIONS);
+            return EnumSet.of(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE);
           }
         }));
       } else errorText = error.toString();

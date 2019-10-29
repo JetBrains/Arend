@@ -117,4 +117,8 @@ public class GeneralError {
   public boolean isShort() {
     return true;
   }
+
+  public boolean hasExpressions() {
+    return !isShort();
+  }
 }

@@ -48,4 +48,9 @@ public class ExceptionError extends GeneralError {
   public boolean isShort() {
     return false;
   }
+
+  @Override
+  public boolean hasExpressions() {
+    return false;
+  }
 }

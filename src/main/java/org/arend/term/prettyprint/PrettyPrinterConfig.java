@@ -12,6 +12,7 @@ public interface PrettyPrinterConfig {
 
   default EnumSet<ToAbstractVisitor.Flag> getExpressionFlags() {
     return EnumSet.of(
+      ToAbstractVisitor.Flag.SHOW_COERCE_DEFINITIONS,
       ToAbstractVisitor.Flag.SHOW_INFERENCE_LEVEL_VARS,
       ToAbstractVisitor.Flag.SHOW_IMPLICIT_ARGS,
       ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE,

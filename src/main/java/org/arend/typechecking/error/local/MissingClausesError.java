@@ -70,4 +70,9 @@ public class MissingClausesError extends TypecheckingError {
   public boolean isShort() {
     return false;
   }
+
+  @Override
+  public boolean hasExpressions() {
+    return false;
+  }
 }

@@ -126,7 +126,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
 
   @Override
   public Void visitFieldCall(FieldCallExpression expr, Set<Variable> variables) {
-    if (expr.getDefinition().isHideable() && myFlags.contains(ToAbstractVisitor.Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+    if (expr.getDefinition().isHideable() && !myFlags.contains(ToAbstractVisitor.Flag.SHOW_COERCE_DEFINITIONS)) {
       return expr.getArgument().accept(this, variables);
     }
 

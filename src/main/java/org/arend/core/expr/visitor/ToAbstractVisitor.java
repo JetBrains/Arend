@@ -32,7 +32,7 @@ import java.util.*;
 import static org.arend.term.concrete.ConcreteExpressionFactory.*;
 
 public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expression> {
-  public enum Flag { HIDE_HIDEABLE_DEFINITIONS, SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
+  public enum Flag { SHOW_COERCE_DEFINITIONS, SHOW_CON_PARAMS, SHOW_FIELD_INSTANCE, SHOW_IMPLICIT_ARGS, SHOW_TYPES_IN_LAM, SHOW_PREFIX_PATH, SHOW_BIN_OP_IMPLICIT_ARGS, SHOW_CASE_RESULT_TYPE, SHOW_INFERENCE_LEVEL_VARS }
 
   private final PrettyPrinterConfig myConfig;
   private final CollectFreeVariablesVisitor myFreeVariablesCollector;
@@ -106,7 +106,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
-        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), hasFlag(Flag.SHOW_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, expr.getDefCallArguments().get(2).accept(this, null));
+        return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), hasFlag(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, expr.getDefCallArguments().get(2).accept(this, null));
       }
     }
     return null;
@@ -175,7 +175,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitDefCall(DefCallExpression expr, Void params) {
-    if (expr.getDefinition().isHideable() && hasFlag(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+    if (expr.getDefinition().isHideable() && !hasFlag(Flag.SHOW_COERCE_DEFINITIONS)) {
       int index = 0;
       for (DependentLink link = expr.getDefinition().getParameters(); link.hasNext(); link = link.getNext()) {
         if (index == expr.getDefinition().getVisibleParameter()) {
@@ -190,7 +190,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    if (expr.getDefinition().isHideable() && hasFlag(Flag.HIDE_HIDEABLE_DEFINITIONS)) {
+    if (expr.getDefinition().isHideable() && !hasFlag(Flag.SHOW_COERCE_DEFINITIONS)) {
       return expr.getArgument().accept(this, null);
     }
 
