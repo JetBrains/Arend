@@ -50,10 +50,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
   // Only for tests
   public static boolean compare(Equations equations, ElimTree elimTree1, ElimTree elimTree2, Concrete.SourceNode sourceNode) {
-    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(elimTree1, elimTree2, new ExprSubstitution(), EmptyDependentLink.getInstance(), null);
+    return new CompareVisitor(equations, Equations.CMP.EQ, sourceNode).compare(elimTree1, elimTree2, null);
   }
 
-  private Boolean compare(ElimTree elimTree1, ElimTree elimTree2, ExprSubstitution substitution, DependentLink parameters, Expression type) {
+  private Boolean compare(ElimTree elimTree1, ElimTree elimTree2, ExpectedType type) {
     if (elimTree1 == elimTree2) {
       return true;
     }
@@ -61,13 +61,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return false;
     }
 
-    for (DependentLink link = elimTree1.getParameters(); link.hasNext() && parameters.hasNext(); link = link.getNext(), parameters = parameters.getNext()) {
-      substitution.add(parameters, new ReferenceExpression(link));
-    }
-
     boolean ok = false;
     if (elimTree1 instanceof LeafElimTree && elimTree2 instanceof LeafElimTree) {
-      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression(), type == null ? null : type.subst(substitution));
+      ok = compare(((LeafElimTree) elimTree1).getExpression(), ((LeafElimTree) elimTree2).getExpression(), type);
     } else if (elimTree1 instanceof BranchElimTree && elimTree2 instanceof BranchElimTree) {
       BranchElimTree branchElimTree1 = (BranchElimTree) elimTree1;
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
@@ -79,7 +75,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
             ok = false;
             break;
           }
-          ok = compare(entry.getValue(), elimTree, substitution, parameters, null); // TODO: Compute new parameters correctly
+          ok = compare(entry.getValue(), elimTree, type);
           if (!ok) {
             break;
           }
@@ -920,7 +916,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return false;
     }
 
-    return compare(case1.getElimTree(), case2.getElimTree(), new ExprSubstitution(), case1.getParameters(), case1.getResultType());
+    return compare(case1.getElimTree(), case2.getElimTree(), pair.proj2);
   }
 
   @Override
