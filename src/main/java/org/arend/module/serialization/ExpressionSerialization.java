@@ -278,6 +278,11 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   }
 
   @Override
+  public ExpressionProtos.Expression visitSubst(SubstExpression expr, Void params) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public ExpressionProtos.Expression visitLam(LamExpression expr, Void params) {
     ExpressionProtos.Expression.Lam.Builder builder = ExpressionProtos.Expression.Lam.newBuilder();
     builder.setResultSort(writeSort(expr.getResultSort()));

@@ -80,6 +80,11 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
   }
 
   @Override
+  public Boolean visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
+  @Override
   public Boolean visitLam(LamExpression expr, Void params) {
     return visitDependentLink(expr.getParameters()) || findBinding(expr.getBody(), true);
   }

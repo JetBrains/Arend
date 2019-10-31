@@ -99,6 +99,11 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
     }
   }
 
+  @Override
+  public Expression visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
   private void visitParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);

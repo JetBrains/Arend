@@ -57,6 +57,11 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     return null;
   }
 
+  @Override
+  public Void visitSubst(SubstExpression expr, P params) {
+    return expr.getSubstExpression().accept(this, params);
+  }
+
   public void visitParameters(DependentLink link, P params) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);

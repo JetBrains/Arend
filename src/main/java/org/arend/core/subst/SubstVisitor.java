@@ -118,6 +118,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitSubst(SubstExpression expr, Void params) {
+    ExprSubstitution newSubstitution = new ExprSubstitution(expr.getSubstitution());
+    newSubstitution.subst(myExprSubstitution);
+    newSubstitution.addAll(myExprSubstitution);
+    return expr.getExpression().accept(new SubstVisitor(newSubstitution, myLevelSubstitution), null);
+  }
+
+  @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), this);
     LamExpression result = new LamExpression(expr.getResultSort().subst(myLevelSubstitution), parameters, expr.getBody().accept(this, null));

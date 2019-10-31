@@ -79,6 +79,11 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
   }
 
   @Override
+  public Variable visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
+  @Override
   public Variable visitLam(LamExpression expr, Void params) {
     Variable result = visitParameters(expr.getParameters());
     if (result != null) {

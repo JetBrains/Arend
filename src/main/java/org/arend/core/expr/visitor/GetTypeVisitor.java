@@ -88,6 +88,12 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
   }
 
   @Override
+  public Expression visitSubst(SubstExpression expr, Void params) {
+    Expression type = expr.accept(this, null);
+    return type == null ? null : SubstExpression.make(type, expr.getSubstitution());
+  }
+
+  @Override
   public Expression visitLam(LamExpression expr, Void ignored) {
     return new PiExpression(expr.getResultSort(), expr.getParameters(), expr.getBody().accept(this, null));
   }

@@ -674,6 +674,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     }
   }
 
+  @Override
+  public Boolean visitSubst(SubstExpression expr, Pair<Expression, ExpectedType> pair) {
+    return expr.getSubstExpression().accept(this, pair);
+  }
+
   private Boolean visitLam(LamExpression expr1, Expression expr2, ExpectedType type, boolean correctOrder) {
     List<DependentLink> params1 = new ArrayList<>();
     List<DependentLink> params2 = new ArrayList<>();

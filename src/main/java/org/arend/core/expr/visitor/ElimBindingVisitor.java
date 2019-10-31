@@ -150,6 +150,11 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   @Override
+  public Expression visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
+  @Override
   public LamExpression visitLam(LamExpression expr, Void params) {
     ExprSubstitution substitution = new ExprSubstitution();
     SingleDependentLink parameters = DependentLink.Helper.subst(expr.getParameters(), substitution);

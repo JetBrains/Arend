@@ -47,6 +47,7 @@ public class ElimTypechecking {
   private boolean myOK;
   private Stack<Util.ClauseElem> myContext;
   private List<Pair<List<Util.ClauseElem>, Boolean>> myMissingClauses;
+  private final boolean myCase;
 
   private static Integer getMinPlus1(Integer level1, Level l2, int sub) {
     Integer level2 = !l2.isInfinity() && l2.isClosed() ? l2.getConstant() : null;
@@ -54,13 +55,14 @@ public class ElimTypechecking {
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, boolean isCase) {
     myVisitor = visitor;
     myExpectedType = expectedType;
     myFlags = flags;
     myLevel = getMinPlus1(level, actualLevel, actualLevelSub);
     myActualLevel = isSFunc ? null : actualLevel;
     myActualLevelSub = isSFunc ? 0 : actualLevelSub;
+    myCase = isCase;
   }
 
   public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
@@ -70,6 +72,7 @@ public class ElimTypechecking {
     myLevel = null;
     myActualLevel = Level.INFINITY;
     myActualLevelSub = 0;
+    myCase = false;
   }
 
   public static List<DependentLink> getEliminatedParameters(List<? extends Concrete.ReferenceExpression> expressions, List<? extends Concrete.Clause> clauses, DependentLink parameters, CheckTypeVisitor visitor) {
@@ -472,7 +475,7 @@ public class ElimTypechecking {
         myUnusedClauses.remove(clauseData.clause);
         DependentLink vars = clauseData.patterns.isEmpty() ? EmptyDependentLink.getInstance() : DependentLink.Helper.subst(((BindingPattern) clauseData.patterns.get(0)).getBinding(), clauseData.substitution, true);
         clauseData.substitution.subst(new ExprSubstitution(clauseData.substitution));
-        return new LeafElimTree(vars, clauseData.expression.subst(clauseData.substitution));
+        return new LeafElimTree(vars, myCase ? SubstExpression.make(clauseData.expression, clauseData.substitution) : clauseData.expression.subst(clauseData.substitution));
       }
 
       // Make new list of variables

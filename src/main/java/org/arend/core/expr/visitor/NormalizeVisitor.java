@@ -571,6 +571,11 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   @Override
+  public Expression visitSubst(SubstExpression expr, Mode mode) {
+    return expr.getSubstExpression().accept(this, mode);
+  }
+
+  @Override
   public Expression visitLam(LamExpression expr, Mode mode) {
     if (mode == Mode.RNF || mode == Mode.RNF_EXP) {
       ExprSubstitution substitution = new ExprSubstitution();

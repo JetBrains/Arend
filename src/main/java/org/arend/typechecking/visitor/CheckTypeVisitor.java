@@ -1791,7 +1791,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
 
     List<Clause> resultClauses = new ArrayList<>();
-    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, actualLevel, actualLevelSub, expr.isSFunc()).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    ElimTree elimTree = new ElimTypechecking(this, resultExpr, EnumSet.of(PatternTypechecking.Flag.ALLOW_CONDITIONS, PatternTypechecking.Flag.CHECK_COVERAGE), level, actualLevel, actualLevelSub, expr.isSFunc(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;
     }

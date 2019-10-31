@@ -261,6 +261,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, null) : new Concrete.InferenceReferenceExpression(null, expr.getVariable());
   }
 
+  @Override
+  public Concrete.Expression visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
   private LocalReferable makeLocalReference(Binding var, Set<Variable> freeVars, boolean genName) {
     return !genName && !freeVars.contains(var) ? null : myRenamer.generateFreshReferable(var, freeVars);
   }

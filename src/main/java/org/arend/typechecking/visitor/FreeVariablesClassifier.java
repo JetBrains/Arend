@@ -103,6 +103,11 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
     return expr.getSubstExpression() != null ? expr.getSubstExpression().accept(this, good) : Result.NONE;
   }
 
+  @Override
+  public Result visitSubst(SubstExpression expr, Boolean good) {
+    return expr.getSubstExpression().accept(this, good);
+  }
+
   private Result visitParameters(DependentLink link) {
     for (; link.hasNext(); link = link.getNext()) {
       link = link.getNextTyped(null);

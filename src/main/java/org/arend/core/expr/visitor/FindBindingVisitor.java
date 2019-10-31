@@ -77,6 +77,11 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
   }
 
   @Override
+  public Variable visitSubst(SubstExpression expr, Void params) {
+    return expr.getSubstExpression().accept(this, null);
+  }
+
+  @Override
   public Variable visitLam(LamExpression expr, Void params) {
     Variable result = visitDependentLink(expr.getParameters());
     return result != null ? result : expr.getBody().accept(this, null);
