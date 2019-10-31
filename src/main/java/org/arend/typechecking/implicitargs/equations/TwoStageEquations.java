@@ -80,7 +80,7 @@ public class TwoStageEquations implements Equations {
       Expression result = null;
 
       // expr1 == field call
-      FieldCallExpression fieldCall1 = expr1.getFunction().checkedCast(FieldCallExpression.class);
+      FieldCallExpression fieldCall1 = expr1.getFunction().cast(FieldCallExpression.class);
       InferenceVariable variable = fieldCall1 == null ? null : fieldCall1.getArgument().getInferenceVariable();
       if (variable != null) {
         // expr1 == class field call
@@ -89,7 +89,7 @@ public class TwoStageEquations implements Equations {
 
       // expr2 == field call
       if (variable == null) {
-        FieldCallExpression fieldCall2 = expr2.getFunction().checkedCast(FieldCallExpression.class);
+        FieldCallExpression fieldCall2 = expr2.getFunction().cast(FieldCallExpression.class);
         variable = fieldCall2 == null ? null : fieldCall2.getArgument().getInferenceVariable();
         if (variable != null) {
           // expr2 == class field call
@@ -109,9 +109,10 @@ public class TwoStageEquations implements Equations {
     if (inf1 != null && inf2 == null || inf2 != null && inf1 == null) {
       InferenceVariable cInf = inf1 != null ? inf1 : inf2;
       Expression cType = (inf1 != null ? expr2 : expr1).normalize(NormalizeVisitor.Mode.WHNF);
+      Expression cTypeExpr = cType.getUnderlyingExpression();
 
       // cType /= Pi, cType /= Type, cType /= Class, cType /= stuck on ?X
-      if (!cType.isInstance(PiExpression.class) && !cType.isInstance(UniverseExpression.class) && !cType.isInstance(ClassCallExpression.class) && cType.getStuckInferenceVariable() == null) {
+      if (!(cTypeExpr instanceof PiExpression) && !(cTypeExpr instanceof UniverseExpression) && !(cTypeExpr instanceof ClassCallExpression) && cTypeExpr.getStuckInferenceVariable() == null) {
         cmp = CMP.EQ;
       }
 
@@ -119,7 +120,7 @@ public class TwoStageEquations implements Equations {
         cmp = cmp.not();
       }
 
-      if (cType.isInstance(UniverseExpression.class) && cType.cast(UniverseExpression.class).getSort().isProp()) {
+      if (cTypeExpr instanceof UniverseExpression && ((UniverseExpression) cTypeExpr).getSort().isProp()) {
         if (cmp == CMP.LE) {
           myProps.push(cInf);
           return true;
@@ -130,19 +131,18 @@ public class TwoStageEquations implements Equations {
 
       // If cType is not pi, classCall, universe, or a stuck expression, then solve immediately.
       if (cmp != CMP.EQ) {
-        Expression cod = cType;
-        while (cod.isInstance(PiExpression.class)) {
-          cod = cod.cast(PiExpression.class).getCodomain();
+        Expression cod = cTypeExpr;
+        while (cod instanceof PiExpression) {
+          cod = ((PiExpression) cod).getCodomain().getUnderlyingExpression();
         }
-        if (!cod.isInstance(ClassCallExpression.class) && !cod.isInstance(UniverseExpression.class) && cod.getStuckInferenceVariable() == null) {
+        if (!(cod instanceof ClassCallExpression) && !(cod instanceof UniverseExpression) && cod.getStuckInferenceVariable() == null) {
           cmp = CMP.EQ;
         }
       }
 
       // ?x == _
       if (cmp == CMP.EQ) {
-        FieldCallExpression fieldCall = cType.checkedCast(FieldCallExpression.class);
-        InferenceReferenceExpression infRef = fieldCall == null ? null : fieldCall.getArgument().checkedCast(InferenceReferenceExpression.class);
+        InferenceReferenceExpression infRef = cTypeExpr instanceof FieldCallExpression ? ((FieldCallExpression) cTypeExpr).getArgument().cast(InferenceReferenceExpression.class) : null;
         if (infRef == null || !(infRef.getVariable() instanceof TypeClassInferenceVariable)) {
           solve(cInf, cType, false);
           return true;
@@ -150,8 +150,8 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Pi
-      if (cType.isInstance(PiExpression.class)) {
-        PiExpression pi = cType.cast(PiExpression.class);
+      if (cTypeExpr instanceof PiExpression) {
+        PiExpression pi = (PiExpression) cTypeExpr;
         Sort domSort = pi.getParameters().getType().getSortOfType();
         Sort codSort = Sort.generateInferVars(this, false, sourceNode);
         Sort piSort = PiExpression.generateUpperBound(domSort, codSort, this, sourceNode);
@@ -168,11 +168,10 @@ public class TwoStageEquations implements Equations {
       }
 
       // ?x <> Type
-      UniverseExpression universe = cType.checkedCast(UniverseExpression.class);
-      if (universe != null) {
+      if (cTypeExpr instanceof UniverseExpression) {
         Sort genSort = Sort.generateInferVars(this, true, cInf.getSourceNode());
         solve(cInf, new UniverseExpression(genSort), false);
-        Sort sort = universe.getSort();
+        Sort sort = ((UniverseExpression) cTypeExpr).getSort();
         if (cmp == CMP.LE) {
           Sort.compare(sort, genSort, CMP.LE, this, sourceNode);
         } else {
@@ -643,11 +642,14 @@ public class TwoStageEquations implements Equations {
       Expression upper = equation.getUpperBound();
       InferenceVariable var1 = upper.getInferenceVariable();
       InferenceVariable var2 = lower.getInferenceVariable();
-      if (var1 != null && (var2 != null || lower.isInstance(ClassCallExpression.class))) {
-        lowerBounds.computeIfAbsent(var1, k -> new LinkedHashSet<>()).add(new Wrapper(lower));
-        if (lower.isInstance(ClassCallExpression.class)) {
-          updated = true;
-          iterator.remove();
+      if (var1 != null) {
+        boolean isClassCall = lower.isInstance(ClassCallExpression.class);
+        if (isClassCall || var2 != null) {
+          lowerBounds.computeIfAbsent(var1, k -> new LinkedHashSet<>()).add(new Wrapper(lower));
+          if (isClassCall) {
+            updated = true;
+            iterator.remove();
+          }
         }
       }
     }
@@ -667,7 +669,7 @@ public class TwoStageEquations implements Equations {
       Expression upper = equation.getUpperBound();
       if (lower.isInstance(ClassCallExpression.class) && upper.isInstance(ClassCallExpression.class)) {
         if (!CompareVisitor.compare(DummyEquations.getInstance(), equation.cmp == CMP.EQ ? CMP.EQ : CMP.LE, lower, upper, ExpectedType.OMEGA, equation.sourceNode)) {
-          InferenceReferenceExpression infRefExpr = lower.checkedCast(InferenceReferenceExpression.class);
+          InferenceReferenceExpression infRefExpr = lower.cast(InferenceReferenceExpression.class);
           if (infRefExpr != null) {
             myVisitor.getErrorReporter().report(infRefExpr.getOriginalVariable().getErrorInfer(infRefExpr.getSubstExpression(), upper));
           } else {
@@ -682,9 +684,9 @@ public class TwoStageEquations implements Equations {
       }
 
       InferenceVariable var = lower.getInferenceVariable();
-      if (var != null && upper.isInstance(ClassCallExpression.class)) {
+      ClassCallExpression newResult = var == null ? null : upper.cast(ClassCallExpression.class);
+      if (newResult != null) {
         ClassCallExpression oldResult = result.get(var);
-        ClassCallExpression newResult = upper.cast(ClassCallExpression.class);
         if (oldResult == null || newResult.isLessOrEquals(oldResult, DummyEquations.getInstance(), var.getSourceNode())) {
           result.put(var, newResult);
         } else if (!oldResult.isLessOrEquals(newResult, DummyEquations.getInstance(), var.getSourceNode())) {
@@ -717,7 +719,7 @@ public class TwoStageEquations implements Equations {
       calculateLowerBoundsOfVariable(entry.getKey(), varResult, lowerBounds, new HashSet<>());
       List<ClassCallExpression> list = new ArrayList<>(varResult.size());
       for (Wrapper wrapper : varResult) {
-        list.add(wrapper.expression.cast(ClassCallExpression.class));
+        list.add((ClassCallExpression) wrapper.expression);
       }
       result.add(new Pair<>(entry.getKey(), list));
     }
@@ -735,7 +737,9 @@ public class TwoStageEquations implements Equations {
     }
 
     for (Wrapper wrapper : varLowerBounds) {
-      if (wrapper.expression.isInstance(ClassCallExpression.class)) {
+      ClassCallExpression classCall = wrapper.expression.cast(ClassCallExpression.class);
+      if (classCall != null) {
+        wrapper.expression = classCall;
         result.add(wrapper);
       } else {
         InferenceVariable var = wrapper.expression.getInferenceVariable();
@@ -853,9 +857,11 @@ public class TwoStageEquations implements Equations {
     if (actualType == null || actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
       Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds(), isLowerBound);
       if (result != null) {
-        if (isLowerBound && expr.isInstance(ClassCallExpression.class)) {
+        if (isLowerBound) {
           ClassCallExpression classCall = result.cast(ClassCallExpression.class);
-          result = removeDependencies(classCall, classCall.getImplementedHere().size());
+          if (classCall != null) {
+            result = removeDependencies(classCall, classCall.getImplementedHere().size());
+          }
         }
         var.solve(this, OfTypeExpression.make(result, actualType, expectedType));
         return SolveResult.SOLVED;

@@ -39,7 +39,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
 
     if (removeImplementations) {
-      ClassCallExpression classCall = expression.checkedCast(ClassCallExpression.class);
+      ClassCallExpression classCall = expression.cast(ClassCallExpression.class);
       if (classCall != null) {
         return visitor.visitClassCall(classCall, true);
       }

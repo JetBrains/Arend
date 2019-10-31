@@ -50,9 +50,9 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   }
 
   private Expression checkArgument(Expression arg, Expression type) {
-    ReferenceExpression refArg = arg.checkedCast(ReferenceExpression.class);
+    ReferenceExpression refArg = arg.cast(ReferenceExpression.class);
     if (refArg != null && refArg.getBinding() == myBinding) {
-      ClassCallExpression argType = type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+      ClassCallExpression argType = type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
       if (argType != null && argType.getDefinition() != myBindingType.getDefinition()) {
         Map<ClassField, Expression> implementations = new HashMap<>();
         List<? extends ClassField> fieldOrder = argType.getDefinition().getTypecheckingFieldOrder();
@@ -127,7 +127,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
+    ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding() == myBinding) {
       Expression impl = myBindingType.getImplementation(expr.getDefinition(), refExpr);
       if (impl != null) {

@@ -566,7 +566,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (needProp && isProp == Decision.MAYBE) {
           Sort sort = expectedTypeResult.getSortOfType();
           if (sort == null || !sort.isProp()) {
-            DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
+            DefCallExpression defCall = expectedType.cast(DefCallExpression.class);
             Integer level = defCall == null ? null : defCall.getUseLevel();
             if (!checkLevel(true, false, level, def)) {
               isSFunc = false;
@@ -636,10 +636,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     Integer resultTypeLevel = expectedType.isError() ? null : typecheckResultTypeLevel(def, typedDef, newDef);
     if (resultTypeLevel == null && !expectedType.isError()) {
-      DefCallExpression defCall = expectedType.checkedCast(DefCallExpression.class);
+      DefCallExpression defCall = expectedType.cast(DefCallExpression.class);
       resultTypeLevel = defCall == null ? null : defCall.getUseLevel();
       if (resultTypeLevel == null) {
-        defCall = expectedType.getPiParameters(null, false).checkedCast(DefCallExpression.class);
+        defCall = expectedType.getPiParameters(null, false).cast(DefCallExpression.class);
         if (defCall != null) {
           resultTypeLevel = defCall.getUseLevel();
         }
@@ -1364,7 +1364,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    DataCallExpression dataCall = type.checkedCast(DataCallExpression.class);
+    DataCallExpression dataCall = type.cast(DataCallExpression.class);
     if (dataCall != null) {
       List<? extends Expression> exprs = dataCall.getDefCallArguments();
       DataDefinition typeDef = dataCall.getDefinition();
@@ -1372,8 +1372,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       for (int i = 0; i < exprs.size(); i++) {
         if (typeDef.isCovariant(i)) {
           Expression expr = exprs.get(i).normalize(NormalizeVisitor.Mode.WHNF);
-          while (expr.isInstance(LamExpression.class)) {
-            expr = expr.cast(LamExpression.class).getBody().normalize(NormalizeVisitor.Mode.WHNF);
+          for (LamExpression lam = expr.cast(LamExpression.class); lam != null; lam = expr.cast(LamExpression.class)) {
+            expr = lam.getBody().normalize(NormalizeVisitor.Mode.WHNF);
           }
           if (!checkPositiveness(expr, index, parameters, constructor, errorReporter, variables)) {
             return false;
@@ -1385,12 +1385,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     } else {
-      if (type.isInstance(AppExpression.class)) {
-        for (; type.isInstance(AppExpression.class); type = type.cast(AppExpression.class).getFunction()) {
-          if (!checkNonPositiveError(type.cast(AppExpression.class).getArgument(), index, parameters, constructor, errorReporter, variables)) {
-            return false;
-          }
+      for (AppExpression app = type.cast(AppExpression.class); app != null; app = type.cast(AppExpression.class)) {
+        if (!checkNonPositiveError(app.getArgument(), index, parameters, constructor, errorReporter, variables)) {
+          return false;
         }
+        type = app.getFunction();
       }
       if (!type.isInstance(ReferenceExpression.class)) {
         //noinspection RedundantIfStatement
@@ -1857,7 +1856,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             isProperty = true;
             Sort sort = typeResult.getSortOfType();
             if (sort == null || !sort.isProp()) {
-              DefCallExpression defCall = propLevel == Decision.NO ? null : typeExpr.checkedCast(DefCallExpression.class);
+              DefCallExpression defCall = propLevel == Decision.NO ? null : typeExpr.cast(DefCallExpression.class);
               Integer level = defCall == null ? null : defCall.getUseLevel();
               if (def.getKind() == ClassFieldKind.PROPERTY && !checkLevel(false, true, level , def) || def.getKind() == ClassFieldKind.ANY && (level == null || level != -1)) {
                 isProperty = false;

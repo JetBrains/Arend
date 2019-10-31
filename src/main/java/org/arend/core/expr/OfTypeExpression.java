@@ -13,15 +13,19 @@ public class OfTypeExpression extends Expression {
   }
 
   public static Expression make(Expression expression, Expression actualType, Expression expectedType) {
-    if ((expectedType.isInstance(PiExpression.class) || expectedType.isInstance(SigmaExpression.class) || expectedType.isInstance(ClassCallExpression.class)) &&
-        !(actualType.isInstance(PiExpression.class) || actualType.isInstance(SigmaExpression.class) || actualType.isInstance(ClassCallExpression.class))) {
-      while (expression.isInstance(OfTypeExpression.class)) {
-        expression = expression.cast(OfTypeExpression.class).myExpression;
-      }
-      return new OfTypeExpression(expression, expectedType);
-    } else {
+    Expression expectedType1 = expectedType.getUnderlyingExpression();
+    if (!(expectedType1 instanceof PiExpression || expectedType1 instanceof SigmaExpression || expectedType1 instanceof ClassCallExpression)) {
       return expression;
     }
+    Expression actualType1 = actualType.getUnderlyingExpression();
+    if (actualType1 instanceof PiExpression || actualType1 instanceof SigmaExpression || actualType1 instanceof ClassCallExpression) {
+      return expression;
+    }
+
+    while (expression instanceof OfTypeExpression) {
+      expression = ((OfTypeExpression) expression).myExpression;
+    }
+    return new OfTypeExpression(expression, expectedType);
   }
 
   public Expression getExpression() {
@@ -38,13 +42,18 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
-  public <T extends Expression> T cast(Class<T> clazz) {
-    return clazz.isInstance(this) ? clazz.cast(this) : myExpression.cast(clazz);
+  public Expression getUnderlyingExpression() {
+    return myExpression.getUnderlyingExpression();
   }
 
   @Override
   public boolean isInstance(Class clazz) {
-    return clazz.isInstance(myExpression) || clazz.isInstance(this);
+    return clazz.isInstance(this) || myExpression.isInstance(clazz);
+  }
+
+  @Override
+  public <T extends Expression> T cast(Class<T> clazz) {
+    return clazz.isInstance(this) ? clazz.cast(this) : myExpression.cast(clazz);
   }
 
   @Override

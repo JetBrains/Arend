@@ -25,8 +25,11 @@ public class ConCallExpression extends DefCallExpression {
     if (constructor == Prelude.ZERO) {
       return new SmallIntegerExpression(0);
     }
-    if (constructor == Prelude.SUC && !arguments.isEmpty() && arguments.get(0).isInstance(IntegerExpression.class)) {
-      return arguments.get(0).cast(IntegerExpression.class).suc();
+    if (constructor == Prelude.SUC && !arguments.isEmpty()) {
+      IntegerExpression intExpr = arguments.get(0).cast(IntegerExpression.class);
+      if (intExpr != null) {
+        return intExpr.suc();
+      }
     }
     return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
   }

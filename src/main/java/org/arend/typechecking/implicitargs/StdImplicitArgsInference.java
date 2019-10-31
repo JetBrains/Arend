@@ -71,7 +71,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return null;
     }
 
-    ClassCallExpression type = link.getTypeExpr().checkedCast(ClassCallExpression.class);
+    ClassCallExpression type = link.getTypeExpr().cast(ClassCallExpression.class);
     return type != null ? type.getDefinition() : null;
   }
 
@@ -215,7 +215,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
     if (result instanceof DefCallResult && expr.getArguments().get(0).isExplicit() && expectedType != null) {
       DefCallResult defCallResult = (DefCallResult) result;
       if (defCallResult.getDefinition() instanceof Constructor && defCallResult.getArguments().size() < DependentLink.Helper.size(((Constructor) defCallResult.getDefinition()).getDataTypeParameters())) {
-        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class) : null;
+        DataCallExpression dataCall = expectedType instanceof Expression ? ((Expression) expectedType).normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class) : null;
         if (dataCall != null) {
           if (((Constructor) defCallResult.getDefinition()).getDataType() != dataCall.getDefinition()) {
             myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, refDoc(((Constructor) defCallResult.getDefinition()).getDataType().getReferable()), fun));

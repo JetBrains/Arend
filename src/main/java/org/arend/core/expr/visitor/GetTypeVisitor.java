@@ -54,7 +54,11 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     } else {
       type = arg.accept(this, null);
     }
-    return type == null || !type.isInstance(ClassCallExpression.class) ? null : type.cast(ClassCallExpression.class).getImplementation(expr.getDefinition(), arg);
+    if (type == null) {
+      return null;
+    }
+    ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+    return classCall == null ? null : classCall.getImplementation(expr.getDefinition(), arg);
   }
 
   @Override
@@ -119,18 +123,19 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     if (myNormalizing) {
       type = type.normalize(NormalizeVisitor.Mode.WHNF);
     }
-    if (type.isInstance(ErrorExpression.class)) {
+    type = type.getUnderlyingExpression();
+    if (type instanceof ErrorExpression) {
       return type;
     }
 
-    if (!type.isInstance(SigmaExpression.class)) {
+    if (!(type instanceof SigmaExpression)) {
       if (myNormalizing) {
         throw new IncorrectExpressionException("Expression " + expr + " should have a sigma type");
       } else {
         return null;
       }
     }
-    DependentLink params = type.cast(SigmaExpression.class).getParameters();
+    DependentLink params = ((SigmaExpression) type).getParameters();
     if (expr.getField() == 0) {
       return params.getTypeExpr();
     }

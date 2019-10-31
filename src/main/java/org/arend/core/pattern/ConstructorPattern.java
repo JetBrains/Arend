@@ -122,15 +122,15 @@ public class ConstructorPattern implements Pattern {
 
   public List<? extends Expression> getMatchingExpressionArguments(Expression expression) {
     if (myExpression instanceof SigmaExpression) {
-      TupleExpression tuple = expression.checkedCast(TupleExpression.class);
+      TupleExpression tuple = expression.cast(TupleExpression.class);
       return tuple == null ? null : tuple.getFields();
     }
 
     if (myExpression instanceof ConCallExpression) {
-      ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
+      ConCallExpression conCall = expression.cast(ConCallExpression.class);
       Constructor myConstructor = ((ConCallExpression) myExpression).getDefinition();
       if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
-        IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
+        IntegerExpression intExpr = expression.cast(IntegerExpression.class);
         if (intExpr != null) {
           return myConstructor == Prelude.ZERO && intExpr.isZero()
             ? Collections.emptyList()
@@ -145,7 +145,7 @@ public class ConstructorPattern implements Pattern {
       return conCall.getDefCallArguments();
     }
 
-    NewExpression newExpr = expression.checkedCast(NewExpression.class);
+    NewExpression newExpr = expression.cast(NewExpression.class);
     if (newExpr == null) {
       return null;
     }
@@ -167,13 +167,13 @@ public class ConstructorPattern implements Pattern {
     }
 
     if (myExpression instanceof ConCallExpression) {
-      ConCallExpression conCall = expression.checkedCast(ConCallExpression.class);
+      ConCallExpression conCall = expression.cast(ConCallExpression.class);
       Constructor myConstructor = ((ConCallExpression) myExpression).getDefinition();
       if (conCall != null && conCall.getDefinition() != myConstructor) {
         return MatchResult.FAIL;
       }
       if (conCall == null && (myConstructor == Prelude.ZERO || myConstructor == Prelude.SUC)) {
-        IntegerExpression intExpr = expression.checkedCast(IntegerExpression.class);
+        IntegerExpression intExpr = expression.cast(IntegerExpression.class);
         if (intExpr != null && (myConstructor == Prelude.ZERO) != intExpr.isZero()) {
           return MatchResult.FAIL;
         }

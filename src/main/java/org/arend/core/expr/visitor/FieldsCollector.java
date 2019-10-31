@@ -43,9 +43,9 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
       return;
     }
 
-    ClassCallExpression classCall = type.checkedCast(ClassCallExpression.class);
+    ClassCallExpression classCall = type.cast(ClassCallExpression.class);
     if (classCall == null) {
-      classCall = type.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+      classCall = type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
     }
     if (classCall != null) {
       myResult.addAll(classCall.getDefinition().getFields());

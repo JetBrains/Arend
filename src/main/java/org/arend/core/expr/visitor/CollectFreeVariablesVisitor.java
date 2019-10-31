@@ -131,7 +131,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
     }
 
     if (myFlags.contains(ToAbstractVisitor.Flag.SHOW_FIELD_INSTANCE)) {
-      ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
+      ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
       if (refExpr != null) {
         variables.add(refExpr.getBinding().isHidden() ? expr.getDefinition() : refExpr.getBinding());
         return null;

@@ -88,7 +88,7 @@ public class PatternTypechecking {
         for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
           Expression expr = substitution.get(entry.getValue());
           if (expr != null) {
-            entry.setValue(expr.cast(ReferenceExpression.class).getBinding());
+            entry.setValue(((ReferenceExpression) expr).getBinding());
           }
         }
         expectedType = expectedType.subst(substitution);
@@ -320,16 +320,18 @@ public class PatternTypechecking {
       if (pattern instanceof Concrete.TuplePattern) {
         List<Concrete.Pattern> patternArgs = ((Concrete.TuplePattern) pattern).getPatterns();
         // Either sigma or class patterns
-        if (expr.isInstance(SigmaExpression.class) || expr.isInstance(ClassCallExpression.class)) {
-          DependentLink newParameters = expr.isInstance(SigmaExpression.class) ? DependentLink.Helper.copy(expr.cast(SigmaExpression.class).getParameters()) : expr.cast(ClassCallExpression.class).getClassFieldParameters();
+        SigmaExpression sigmaExpr = expr.cast(SigmaExpression.class);
+        ClassCallExpression classCall = sigmaExpr == null ? expr.cast(ClassCallExpression.class) : null;
+        if (sigmaExpr != null || classCall != null) {
+          DependentLink newParameters = sigmaExpr != null ? DependentLink.Helper.copy(sigmaExpr.getParameters()) : classCall.getClassFieldParameters();
           Pair<List<Pattern>, List<Expression>> conResult = doTypechecking(patternArgs, newParameters, pattern, false);
           if (conResult == null) {
             return null;
           }
 
-          ConstructorPattern newPattern = expr.isInstance(SigmaExpression.class)
-            ? new ConstructorPattern(expr.cast(SigmaExpression.class), new Patterns(conResult.proj1))
-            : new ConstructorPattern(expr.cast(ClassCallExpression.class), new Patterns(conResult.proj1));
+          ConstructorPattern newPattern = sigmaExpr != null
+            ? new ConstructorPattern(sigmaExpr, new Patterns(conResult.proj1))
+            : new ConstructorPattern(classCall, new Patterns(conResult.proj1));
           result.add(newPattern);
           if (conResult.proj2 == null) {
             exprs = null;
@@ -360,13 +362,13 @@ public class PatternTypechecking {
       }
 
       // Constructor patterns
-      if (!expr.isInstance(DataCallExpression.class)) {
+      DataCallExpression dataCall = expr.cast(DataCallExpression.class);
+      if (dataCall == null) {
         if (!expr.isError()) {
           myErrorReporter.report(new TypeMismatchError(DocFactory.text("a data type"), expr, pattern));
         }
         return null;
       }
-      DataCallExpression dataCall = expr.cast(DataCallExpression.class);
       if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;

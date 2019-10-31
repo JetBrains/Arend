@@ -13,7 +13,8 @@ public class ProjExpression extends Expression {
   }
 
   public static Expression make(Expression expression, int field) {
-    return expression.isInstance(TupleExpression.class) ? expression.cast(TupleExpression.class).getFields().get(field) : new ProjExpression(expression, field);
+    TupleExpression tuple = expression.cast(TupleExpression.class);
+    return tuple != null ? tuple.getFields().get(field) : new ProjExpression(expression, field);
   }
 
   public Expression getExpression() {

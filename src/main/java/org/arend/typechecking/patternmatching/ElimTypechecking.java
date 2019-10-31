@@ -247,7 +247,7 @@ public class ElimTypechecking {
   }
 
   private static List<ConCallExpression> getMatchedConstructors(Expression expr) {
-    DataCallExpression dataCall = expr.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(DataCallExpression.class);
+    DataCallExpression dataCall = expr.normalize(NormalizeVisitor.Mode.WHNF).cast(DataCallExpression.class);
     return dataCall == null ? null : dataCall.getMatchedConstructors();
   }
 
@@ -547,7 +547,7 @@ public class ElimTypechecking {
           Expression type = myExpectedType.getType();
           if (type != null) {
             type = type.normalize(NormalizeVisitor.Mode.WHNF);
-            UniverseExpression universe = type.checkedCast(UniverseExpression.class);
+            UniverseExpression universe = type.cast(UniverseExpression.class);
             if (universe != null) {
               ok = Level.compare(universe.getSort().getHLevel(), dataType.getSort().getHLevel(), Equations.CMP.LE, myVisitor.getEquations(), conClauseData.clause);
             } else {

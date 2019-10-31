@@ -32,7 +32,8 @@ public class TypecheckingResult implements TResult {
   @Override
   public DependentLink getParameter() {
     type = type.normalize(NormalizeVisitor.Mode.WHNF);
-    return type.isInstance(PiExpression.class) ? type.cast(PiExpression.class).getParameters() : EmptyDependentLink.getInstance();
+    PiExpression pi = type.cast(PiExpression.class);
+    return pi != null ? pi.getParameters() : EmptyDependentLink.getInstance();
   }
 
   @Override

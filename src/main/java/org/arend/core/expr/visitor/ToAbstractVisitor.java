@@ -103,7 +103,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       return null;
     }
 
-    LamExpression expr1 = expr.getDefCallArguments().get(0).checkedCast(LamExpression.class);
+    LamExpression expr1 = expr.getDefCallArguments().get(0).cast(LamExpression.class);
     if (expr1 != null) {
       if (!expr1.getBody().findBinding(expr1.getParameters())) {
         return cBinOp(expr.getDefCallArguments().get(1).accept(this, null), Prelude.PATH_INFIX.getReferable(), hasFlag(Flag.SHOW_BIN_OP_IMPLICIT_ARGS) ? expr1.getBody().accept(this, null) : null, expr.getDefCallArguments().get(2).accept(this, null));
@@ -115,13 +115,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   @Override
   public Concrete.Expression visitApp(AppExpression expr, Void params) {
     List<Expression> args = new ArrayList<>();
-    Expression fun = expr;
-    while (fun.isInstance(AppExpression.class)) {
-      args.add(fun.cast(AppExpression.class).getArgument());
-      fun = fun.cast(AppExpression.class).getFunction();
-    }
-    Collections.reverse(args);
-
+    Expression fun = expr.getArguments(args);
     Concrete.Expression result = fun.accept(this, null);
     boolean[] isExplicit = new boolean[args.size()];
     getArgumentsExplicitness(fun, isExplicit);
@@ -148,7 +142,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   }
 
   private void visitArgument(Expression arg, boolean isExplicit, List<Concrete.Argument> arguments) {
-    ReferenceExpression refExpr = arg.checkedCast(ReferenceExpression.class);
+    ReferenceExpression refExpr = arg.cast(ReferenceExpression.class);
     if (refExpr != null && refExpr.getBinding().isHidden()) {
       if (isExplicit) {
         arguments.add(new Concrete.Argument(new Concrete.ThisExpression(null, null), true));
@@ -196,7 +190,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.ReferenceExpression result = makeReference(expr.getDefinition().getReferable());
     if (hasFlag(Flag.SHOW_FIELD_INSTANCE)) {
-      ReferenceExpression refExpr = expr.getArgument().checkedCast(ReferenceExpression.class);
+      ReferenceExpression refExpr = expr.getArgument().cast(ReferenceExpression.class);
       if (refExpr != null && refExpr.getBinding().isHidden()) {
         return result;
       }
@@ -350,22 +344,24 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitLam(LamExpression lamExpr, Void ignore) {
+    Expression body = lamExpr.getBody();
     List<Concrete.Parameter> parameters = new ArrayList<>();
     Expression expr = lamExpr;
-    for (; expr.isInstance(LamExpression.class); expr = expr.cast(LamExpression.class).getBody()) {
+    for (; lamExpr != null; lamExpr = expr.cast(LamExpression.class)) {
       if (hasFlag(Flag.SHOW_TYPES_IN_LAM)) {
-        visitDependentLink(expr.cast(LamExpression.class).getParameters(), parameters, true);
+        visitDependentLink(lamExpr.getParameters(), parameters, true);
       } else {
-        SingleDependentLink params = expr.cast(LamExpression.class).getParameters();
+        SingleDependentLink params = lamExpr.getParameters();
         Set<Variable> freeVars = myFreeVariablesCollector.getFreeVariables(params.getNextTyped(null));
         for (SingleDependentLink link = params; link.hasNext(); link = link.getNext()) {
           parameters.add(cName(link.isExplicit(), makeLocalReference(link, freeVars, false)));
         }
       }
+      expr = lamExpr.getBody();
     }
 
     Concrete.LamExpression result = cLam(parameters, expr.accept(this, null));
-    return lamExpr.getBody().isInstance(ClassCallExpression.class) ? result : etaReduce(result);
+    return body.isInstance(ClassCallExpression.class) ? result : etaReduce(result);
   }
 
   private void visitDependentLink(DependentLink parameters, List<? super Concrete.TypeParameter> args, boolean isNamed) {
@@ -392,14 +388,15 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   public Concrete.Expression visitPi(PiExpression piExpr, Void ignore) {
     List<List<Concrete.TypeParameter>> parameters = new ArrayList<>();
     Expression expr = piExpr;
-    for (; expr.isInstance(PiExpression.class); expr = expr.cast(PiExpression.class).getCodomain()) {
+    for (; piExpr != null; piExpr = expr.cast(PiExpression.class)) {
       List<Concrete.TypeParameter> params = new ArrayList<>();
-      visitDependentLink(expr.cast(PiExpression.class).getParameters(), params, false);
+      visitDependentLink(piExpr.getParameters(), params, false);
       if (!parameters.isEmpty() && parameters.get(parameters.size() - 1) instanceof Concrete.TelescopeParameter && !params.isEmpty() && params.get(0) instanceof Concrete.TelescopeParameter) {
         parameters.get(parameters.size() - 1).addAll(params);
       } else {
         parameters.add(params);
       }
+      expr = piExpr.getCodomain();
     }
 
     Concrete.Expression result = expr.accept(this, null);

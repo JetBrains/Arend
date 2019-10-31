@@ -45,8 +45,8 @@ public class CoerceData {
   }
 
   public static TypecheckingResult coerce(TypecheckingResult result, ExpectedType expectedType, Concrete.Expression sourceNode, CheckTypeVisitor visitor) {
-    DefCallExpression actualDefCall = result.type.checkedCast(DefCallExpression.class);
-    DefCallExpression expectedDefCall = expectedType instanceof Expression ? ((Expression) expectedType).checkedCast(DefCallExpression.class) : null;
+    DefCallExpression actualDefCall = result.type.cast(DefCallExpression.class);
+    DefCallExpression expectedDefCall = expectedType instanceof Expression ? ((Expression) expectedType).cast(DefCallExpression.class) : null;
     if (actualDefCall != null && expectedDefCall != null && (actualDefCall.getDefinition() == expectedDefCall.getDefinition() || actualDefCall.getDefinition() instanceof ClassDefinition && expectedDefCall.getDefinition() instanceof ClassDefinition && ((ClassDefinition) actualDefCall.getDefinition()).isSubClassOf((ClassDefinition) expectedDefCall.getDefinition()))) {
       return null;
     }
@@ -112,7 +112,7 @@ public class CoerceData {
     for (Definition def : defs) {
       if (def instanceof ClassField) {
         ClassField field = (ClassField) def;
-        ClassCallExpression classCall = result.type.checkedCast(ClassCallExpression.class);
+        ClassCallExpression classCall = result.type.cast(ClassCallExpression.class);
         Sort sort = classCall == null ? Sort.generateInferVars(visitor.getEquations(), field.getParentClass().hasUniverses(), sourceNode) : classCall.getSortArgument();
         result = new TypecheckingResult(FieldCallExpression.make(field, sort, result.expression), field.getType(sort).applyExpression(result.expression).normalize(NormalizeVisitor.Mode.WHNF));
       } else {
@@ -212,7 +212,7 @@ public class CoerceData {
   }
 
   public void addCoercingField(ClassField coercingField) {
-    DefCallExpression defCall = coercingField.getType(Sort.STD).getCodomain().checkedCast(DefCallExpression.class);
+    DefCallExpression defCall = coercingField.getType(Sort.STD).getCodomain().cast(DefCallExpression.class);
     Definition classifyingDefinition = defCall == null ? null : defCall.getDefinition();
     if (!(classifyingDefinition instanceof DataDefinition || classifyingDefinition instanceof ClassDefinition || classifyingDefinition instanceof Constructor)) {
       classifyingDefinition = null;

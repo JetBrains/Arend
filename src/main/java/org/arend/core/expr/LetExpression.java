@@ -39,7 +39,7 @@ public class LetExpression extends Expression {
       return expression;
     }
 
-    TupleExpression tuple = expression.checkedCast(TupleExpression.class);
+    TupleExpression tuple = expression.cast(TupleExpression.class);
     if (tuple != null) {
       if (tuple.getFields().size() != pattern.getPatterns().size()) {
         return expression;
@@ -52,7 +52,7 @@ public class LetExpression extends Expression {
       return new TupleExpression(fields, tuple.getSigmaType());
     }
 
-    NewExpression newExpr = expression.checkedCast(NewExpression.class);
+    NewExpression newExpr = expression.cast(NewExpression.class);
     if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
       ClassCallExpression classCall = newExpr.getExpression();
       Map<ClassField, Expression> implementations = new HashMap<>();

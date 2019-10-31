@@ -109,7 +109,7 @@ public class UseTypechecking {
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
       Referable paramRef = def.getParameters().get(def.getParameters().size() - 1).getType().getUnderlyingReferable();
       Definition paramDef = paramRef instanceof TCReferable ? state.getTypechecked((TCReferable) paramRef) : null;
-      DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().checkedCast(DefCallExpression.class);
+      DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().cast(DefCallExpression.class);
       Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
 
       if ((resultDef == useParent) == (paramDef == useParent)) {
@@ -169,15 +169,15 @@ public class UseTypechecking {
         DependentLink classCallLink = link;
         for (; classCallLink.hasNext(); classCallLink = classCallLink.getNext()) {
           classCallLink = classCallLink.getNextTyped(null);
-          classCall = classCallLink.getTypeExpr().checkedCast(ClassCallExpression.class);
+          classCall = classCallLink.getTypeExpr().cast(ClassCallExpression.class);
           if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
             break;
           }
         }
         if (!classCallLink.hasNext() && def.getResultType() != null) {
-          PiExpression piType = resultType.normalize(NormalizeVisitor.Mode.WHNF).checkedCast(PiExpression.class);
+          PiExpression piType = resultType.normalize(NormalizeVisitor.Mode.WHNF).cast(PiExpression.class);
           if (piType != null) {
-            classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).checkedCast(ClassCallExpression.class);
+            classCall = piType.getParameters().getTypeExpr().normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
             if (classCall != null && classCall.getDefinition() == useParent && (!classCall.hasUniverses() || classCall.getSortArgument().equals(Sort.STD))) {
               classCallLink = piType.getParameters();
             }

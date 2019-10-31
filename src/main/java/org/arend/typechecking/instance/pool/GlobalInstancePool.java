@@ -62,11 +62,11 @@ public class GlobalInstancePool implements InstancePool {
     ClassField classifyingField;
     Expression normClassifyingExpression = classifyingExpression;
     if (normClassifyingExpression != null) {
-      normClassifyingExpression = normClassifyingExpression.normalize(NormalizeVisitor.Mode.WHNF);
-      while (normClassifyingExpression.isInstance(LamExpression.class)) {
-        normClassifyingExpression = normClassifyingExpression.cast(LamExpression.class).getBody();
+      normClassifyingExpression = normClassifyingExpression.normalize(NormalizeVisitor.Mode.WHNF).getUnderlyingExpression();
+      while (normClassifyingExpression instanceof LamExpression) {
+        normClassifyingExpression = ((LamExpression) normClassifyingExpression).getBody().getUnderlyingExpression();
       }
-      if (!(normClassifyingExpression.isInstance(DefCallExpression.class) || normClassifyingExpression.isInstance(SigmaExpression.class) || normClassifyingExpression.isInstance(UniverseExpression.class) || normClassifyingExpression.isInstance(IntegerExpression.class))) {
+      if (!(normClassifyingExpression instanceof DefCallExpression || normClassifyingExpression instanceof SigmaExpression || normClassifyingExpression instanceof UniverseExpression || normClassifyingExpression instanceof IntegerExpression)) {
         return null;
       }
 
@@ -105,11 +105,11 @@ public class GlobalInstancePool implements InstancePool {
           instanceClassifyingExpr = ((LamExpression) instanceClassifyingExpr).getBody();
         }
         return
-          instanceClassifyingExpr instanceof UniverseExpression && finalClassifyingExpression.isInstance(UniverseExpression.class) ||
-          instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression.isInstance(SigmaExpression.class) ||
-          instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression.isInstance(IntegerExpression.class) && ((IntegerExpression) instanceClassifyingExpr).isEqual(finalClassifyingExpression.cast(IntegerExpression.class)) ||
-            finalClassifyingExpression.isInstance(ConCallExpression.class) && ((IntegerExpression) instanceClassifyingExpr).match(finalClassifyingExpression.cast(ConCallExpression.class).getDefinition())) ||
-          instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression.isInstance(DefCallExpression.class) && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == finalClassifyingExpression.cast(DefCallExpression.class).getDefinition();
+          instanceClassifyingExpr instanceof UniverseExpression && finalClassifyingExpression instanceof UniverseExpression ||
+          instanceClassifyingExpr instanceof SigmaExpression && finalClassifyingExpression instanceof SigmaExpression ||
+          instanceClassifyingExpr instanceof IntegerExpression && (finalClassifyingExpression instanceof IntegerExpression && ((IntegerExpression) instanceClassifyingExpr).isEqual((IntegerExpression) finalClassifyingExpression) ||
+            finalClassifyingExpression instanceof ConCallExpression && ((IntegerExpression) instanceClassifyingExpr).match(((ConCallExpression) finalClassifyingExpression).getDefinition())) ||
+          instanceClassifyingExpr instanceof DefCallExpression && finalClassifyingExpression instanceof DefCallExpression && ((DefCallExpression) instanceClassifyingExpr).getDefinition() == ((DefCallExpression) finalClassifyingExpression).getDefinition();
       }
     }
 

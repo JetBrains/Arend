@@ -23,12 +23,13 @@ public class FieldCallExpression extends DefCallExpression {
       return new FieldCallExpression(definition, sortArgument, thisExpr);
     }
 
-    if (thisExpr.isInstance(NewExpression.class)) {
-      Expression impl = thisExpr.cast(NewExpression.class).getExpression().getImplementation(definition, thisExpr);
+    NewExpression newExpr = thisExpr.cast(NewExpression.class);
+    if (newExpr != null) {
+      Expression impl = newExpr.getExpression().getImplementation(definition, thisExpr);
       assert impl != null;
       return impl;
     } else {
-      ErrorExpression errorExpr = thisExpr.checkedCast(ErrorExpression.class);
+      ErrorExpression errorExpr = thisExpr.cast(ErrorExpression.class);
       if (errorExpr != null && errorExpr.getExpression() != null) {
         return new FieldCallExpression(definition, sortArgument, new ErrorExpression(null, errorExpr.getError()));
       } else {
@@ -70,10 +71,11 @@ public class FieldCallExpression extends DefCallExpression {
       return Decision.NO;
     }
     Expression type = myArgument.getType(false);
-    if (type == null || !type.isInstance(ClassCallExpression.class)) {
+    if (type == null) {
       return Decision.MAYBE;
     }
-    return type.cast(ClassCallExpression.class).isImplemented(getDefinition()) ? Decision.NO : Decision.YES;
+    ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+    return classCall == null ? Decision.MAYBE : classCall.isImplemented(getDefinition()) ? Decision.NO : Decision.YES;
   }
 
   @Override

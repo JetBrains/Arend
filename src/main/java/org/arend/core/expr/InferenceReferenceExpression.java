@@ -19,19 +19,17 @@ public class InferenceReferenceExpression extends Expression {
 
     binding.setReference(this);
     Expression type = binding.getType().normalize(NormalizeVisitor.Mode.WHNF);
-    if (type.isInstance(ClassCallExpression.class)) {
-      ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-      if (!classCall.getDefinition().getFields().isEmpty()) {
-        for (ClassField field : classCall.getDefinition().getFields()) {
-          if (!field.isProperty()) {
-            Expression impl = classCall.getImplementation(field, this);
-            if (impl != null) {
-              equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), field.getType(classCall.getSortArgument()).applyExpression(this), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
-            }
+    ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+    if (classCall != null && !classCall.getDefinition().getFields().isEmpty()) {
+      for (ClassField field : classCall.getDefinition().getFields()) {
+        if (!field.isProperty()) {
+          Expression impl = classCall.getImplementation(field, this);
+          if (impl != null) {
+            equations.addEquation(FieldCallExpression.make(field, classCall.getSortArgument(), this), impl.normalize(NormalizeVisitor.Mode.WHNF), field.getType(classCall.getSortArgument()).applyExpression(this), Equations.CMP.EQ, binding.getSourceNode(), binding, impl.getStuckInferenceVariable());
           }
         }
-        type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
       }
+      type = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument());
     }
     binding.setType(type);
   }
@@ -63,13 +61,18 @@ public class InferenceReferenceExpression extends Expression {
   }
 
   @Override
-  public <E extends Expression> E cast(Class<E> clazz) {
-    return clazz.isInstance(this) ? clazz.cast(this) : mySubstExpression.cast(clazz);
+  public Expression getUnderlyingExpression() {
+    return mySubstExpression == null ? this : mySubstExpression.getUnderlyingExpression();
   }
 
   @Override
   public boolean isInstance(Class clazz) {
     return mySubstExpression != null && mySubstExpression.isInstance(clazz) || clazz.isInstance(this);
+  }
+
+  @Override
+  public <T extends Expression> T cast(Class<T> clazz) {
+    return clazz.isInstance(this) ? clazz.cast(this) : mySubstExpression != null ? mySubstExpression.cast(clazz) : null;
   }
 
   @Override

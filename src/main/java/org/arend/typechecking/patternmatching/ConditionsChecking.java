@@ -199,11 +199,11 @@ public class ConditionsChecking {
     if (clause.expression == null) {
       return true;
     }
-    Expression expr = clause.expression;
-    while (expr.isInstance(LetExpression.class) || expr.isInstance(LamExpression.class)) {
-      expr = expr.isInstance(LetExpression.class) ? expr.cast(LetExpression.class).getExpression() : expr.cast(LamExpression.class).getBody();
+    Expression expr = clause.expression.getUnderlyingExpression();
+    while (expr instanceof LetExpression || expr instanceof LamExpression) {
+      expr = (expr instanceof LetExpression ? ((LetExpression) expr).getExpression() : ((LamExpression) expr).getBody()).getUnderlyingExpression();
     }
-    if (expr.isInstance(ErrorExpression.class)) {
+    if (expr instanceof ErrorExpression) {
       return true;
     }
 

@@ -46,7 +46,8 @@ public class LocalInstancePool implements InstancePool {
     LocalInstancePool result = new LocalInstancePool(myVisitor);
     for (InstanceData data : myPool) {
       Expression newValue = data.value instanceof ReferenceExpression ? substitution.get(((ReferenceExpression) data.value).getBinding()) : null;
-      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.keyType == null ? null : data.keyType.subst(substitution), data.classRef, newValue != null && newValue.isInstance(ReferenceExpression.class) ? newValue.cast(ReferenceExpression.class) : data.value, data.sourceNode));
+      newValue = newValue == null ? null : newValue.cast(ReferenceExpression.class);
+      result.myPool.add(new InstanceData(data.key == null ? null : data.key.subst(substitution), data.keyType == null ? null : data.keyType.subst(substitution), data.classRef, newValue == null ? data.value : newValue, data.sourceNode));
     }
     return result;
   }
