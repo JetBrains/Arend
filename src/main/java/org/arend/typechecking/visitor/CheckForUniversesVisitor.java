@@ -18,12 +18,10 @@ public class CheckForUniversesVisitor extends ProcessDefCallsVisitor<Void> {
     myCheckTopLevel = checkTopLevel;
   }
 
-  public static boolean findUniverse(Expression expr) {
-    return expr != null && expr.accept(new CheckForUniversesVisitor(true), null);
-  }
-
   public static boolean findUniverse(Body body) {
-    if (body instanceof IntervalElim) {
+    if (body instanceof Expression) {
+      return ((Expression) body).accept(new CheckForUniversesVisitor(true), null);
+    } else if (body instanceof IntervalElim) {
       for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
         if (findUniverse(pair.proj1) || findUniverse(pair.proj2)) {
           return true;

@@ -165,6 +165,7 @@ message Body {
     oneof kind {
         ElimTree elim_tree = 1;
         IntervalElim interval_elim = 2;
+        Expression expression = 3;
     }
 
     message ExpressionPair {
@@ -172,7 +173,6 @@ message Body {
         Expression right = 2;
     }
     message IntervalElim {
-        repeated Telescope param = 3;
         repeated ExpressionPair case = 1;
         ElimTree otherwise = 2;
     }

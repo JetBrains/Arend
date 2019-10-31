@@ -4,7 +4,6 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
@@ -27,16 +26,16 @@ import static org.junit.Assert.assertNotNull;
 
 public class DefCall extends TypeCheckingTestCase {
   private void test(Expression expected) {
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression());
+    assertEquals(expected, ((FunctionDefinition) getDefinition("test")).getBody());
   }
 
   private void testFI(Expression expected) {
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) getDefinition("Test.test")).getBody()).getExpression());
+    assertEquals(expected, ((FunctionDefinition) getDefinition("Test.test")).getBody());
   }
 
   private void testType(Expression expected) {
     assertEquals(expected, ((FunctionDefinition) getDefinition("test")).getResultType());
-    assertEquals(expected, ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression().getType());
+    assertEquals(expected, ((Expression) ((FunctionDefinition) getDefinition("test")).getBody()).getType());
   }
 
   private DependentLink getThis() {

@@ -1,10 +1,10 @@
 package org.arend.core.expr;
 
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
-import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.util.Decision;
 
@@ -22,12 +22,19 @@ public class PEvalExpression extends Expression {
     return myExpression;
   }
 
-  public ElimTree getElimTree() {
+  public Body getBody() {
     if (myExpression instanceof FunCallExpression) {
-      Body body = ((FunCallExpression) myExpression).getDefinition().getActualBody();
-      return body instanceof ElimTree ? (ElimTree) body : null;
+      return ((FunCallExpression) myExpression).getDefinition().getActualBody();
     } else {
       return myExpression instanceof CaseExpression ? ((CaseExpression) myExpression).getElimTree() : null;
+    }
+  }
+
+  public DependentLink getParameters() {
+    if (myExpression instanceof FunCallExpression) {
+      return ((FunCallExpression) myExpression).getDefinition().getParameters();
+    } else {
+      return myExpression instanceof CaseExpression ? ((CaseExpression) myExpression).getParameters() : EmptyDependentLink.getInstance();
     }
   }
 
@@ -40,8 +47,7 @@ public class PEvalExpression extends Expression {
   }
 
   public Expression eval() {
-    ElimTree elimTree = getElimTree();
-    return elimTree == null ? null : NormalizeVisitor.INSTANCE.eval(elimTree, getArguments(), new ExprSubstitution(), getLevelSubstitution());
+    return NormalizeVisitor.INSTANCE.eval(myExpression);
   }
 
   @Override

@@ -1,7 +1,6 @@
 package org.arend.typechecking.definition;
 
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ExpressionFactory;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -155,14 +154,14 @@ public class SFuncTest extends TypeCheckingTestCase {
   @Test
   public void caseNormTest() {
     typeCheckModule("\\func test : Nat => \\scase 0 \\with { | 0 => 0 | suc n => n }");
-    Expression expr = ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression();
+    Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
     assertSame(expr, expr.normalize(NormalizeVisitor.Mode.WHNF));
   }
 
   @Test
   public void evalCaseTest() {
     typeCheckModule("\\func test : Nat => \\eval \\scase 2 \\with { | 0 => 0 | suc n => n }");
-    Expression expr = ((LeafElimTree) ((FunctionDefinition) getDefinition("test")).getBody()).getExpression();
+    Expression expr = (Expression) ((FunctionDefinition) getDefinition("test")).getBody();
     assertEquals(ExpressionFactory.Suc(ExpressionFactory.Zero()), expr.normalize(NormalizeVisitor.Mode.WHNF));
   }
 

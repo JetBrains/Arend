@@ -224,7 +224,7 @@ public class DefinitionDeserialization {
       }
       constructor.setTypeClassParameters(readTypeClassParametersKind(constructorProto.getTypeClassParametersList()));
       if (constructorProto.hasConditions()) {
-        constructor.setBody(readBody(defDeserializer, constructorProto.getConditions()));
+        constructor.setBody(readBody(defDeserializer, constructorProto.getConditions(), DependentLink.Helper.size(constructor.getParameters())));
       }
       constructor.setNumberOfIntervalParameters(constructorProto.getNumberOfIntervalParameters());
     }
@@ -274,12 +274,11 @@ public class DefinitionDeserialization {
     return new ClauseBase(readPatterns(defDeserializer, clause.getPatternList(), new LinkList()).getPatternList(), defDeserializer.readExpr(clause.getExpression()));
   }
 
-  private Body readBody(ExpressionDeserialization defDeserializer, DefinitionProtos.Body proto) throws DeserializationException {
+  private Body readBody(ExpressionDeserialization defDeserializer, DefinitionProtos.Body proto, int numberOfParameters) throws DeserializationException {
     switch (proto.getKindCase()) {
       case ELIM_TREE:
         return defDeserializer.readElimTree(proto.getElimTree());
       case INTERVAL_ELIM:
-        DependentLink parameters = defDeserializer.readParameters(proto.getIntervalElim().getParamList());
         List<Pair<Expression, Expression>> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
           cases.add(new Pair<>(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
@@ -288,7 +287,9 @@ public class DefinitionDeserialization {
         if (proto.getIntervalElim().hasOtherwise()) {
           elimTree = defDeserializer.readElimTree(proto.getIntervalElim().getOtherwise());
         }
-        return new IntervalElim(parameters, cases, elimTree);
+        return new IntervalElim(numberOfParameters, cases, elimTree);
+      case EXPRESSION:
+        return defDeserializer.readExpr(proto.getExpression());
       default:
         throw new DeserializationException("Unknown body kind: " + proto.getKindCase());
     }
@@ -369,7 +370,7 @@ public class DefinitionDeserialization {
     functionDef.setKind(kind);
     functionDef.setVisibleParameter(functionProto.getVisibleParameter());
     if (functionProto.hasBody()) {
-      functionDef.setBody(readBody(defDeserializer, functionProto.getBody()));
+      functionDef.setBody(readBody(defDeserializer, functionProto.getBody(), DependentLink.Helper.size(functionDef.getParameters())));
     }
     // setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
   }

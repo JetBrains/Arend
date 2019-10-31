@@ -1,11 +1,7 @@
 package org.arend.typechecking;
 
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.LeafElimTree;
-import org.arend.core.expr.ClassCallExpression;
-import org.arend.core.expr.LamExpression;
-import org.arend.core.expr.NewExpression;
-import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
@@ -59,7 +55,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   @Test
   public void onlyDefCallsExpanded() {
     FunctionDefinition fun = (FunctionDefinition) typeCheckDef("\\func f (x : Nat -> Nat) => x");
-    assertFalse(((LeafElimTree) fun.getBody()).getExpression().isInstance(LamExpression.class));
+    assertFalse(((Expression) fun.getBody()).isInstance(LamExpression.class));
   }
 
   @Test

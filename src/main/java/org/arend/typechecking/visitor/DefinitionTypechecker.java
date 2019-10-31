@@ -6,7 +6,10 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.Clause;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
@@ -699,7 +702,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (termResult != null) {
         if (termResult.expression != null) {
           if (newDef && !def.isRecursive()) {
-            typedDef.setBody(new LeafElimTree(typedDef.getParameters(), termResult.expression));
+            typedDef.setBody(termResult.expression);
           }
         }
         if (termResult.expression instanceof FunCallExpression && ((FunCallExpression) termResult.expression).getDefinition().getActualBody() == null && ((FunCallExpression) termResult.expression).getDefinition().status() != Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING) {
@@ -734,7 +737,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    checkElimBody(def);
+    if (!checkElimBody(def)) {
+      typedDef.setBody(null);
+    }
 
     if (newDef) {
       if (expectedType.isError() && typedDef.getResultType() != null) {
@@ -755,6 +760,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
       if (elimTree != null) {
         goodThisParametersVisitor = new GoodThisParametersVisitor(elimTree, DependentLink.Helper.size(typedDef.getParameters()));
+      } else if (typedDef.getActualBody() instanceof Expression) {
+        goodThisParametersVisitor = new GoodThisParametersVisitor((Expression) typedDef.getActualBody(), typedDef.getParameters());
       } else {
         goodThisParametersVisitor.visitBody(typedDef.getActualBody(), null);
       }
@@ -1331,7 +1338,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           newParam = newParam.getNext();
         }
 
-        constructor.setBody(new IntervalElim(list.getFirst(), pairs, elimTree));
+        constructor.setBody(new IntervalElim(DependentLink.Helper.size(list.getFirst()), pairs, elimTree));
       }
     }
 

@@ -1,6 +1,5 @@
 package org.arend.core.elimtree;
 
-import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.ErrorExpression;
@@ -13,18 +12,14 @@ import org.arend.util.Pair;
 import java.util.List;
 
 public class IntervalElim implements Body {
-  private final DependentLink myParameters;
+  private final int myNumberOfParameters;
   private final List<Pair<Expression, Expression>> myCases;
   private final ElimTree myOtherwise;
 
-  public IntervalElim(DependentLink parameters, List<Pair<Expression, Expression>> cases, ElimTree otherwise) {
-    myParameters = parameters;
+  public IntervalElim(int numberOfParameters, List<Pair<Expression, Expression>> cases, ElimTree otherwise) {
+    myNumberOfParameters = numberOfParameters;
     myCases = cases;
     myOtherwise = otherwise;
-  }
-
-  public DependentLink getParameters() {
-    return myParameters;
   }
 
   public List<Pair<Expression, Expression>> getCases() {
@@ -47,7 +42,7 @@ public class IntervalElim implements Body {
 
   @Override
   public Decision isWHNF(List<? extends Expression> arguments) {
-    int offset = DependentLink.Helper.size(myParameters) - myCases.size();
+    int offset = myNumberOfParameters - myCases.size();
     Decision result = Decision.YES;
     for (int i = 0; i < myCases.size(); i++) {
       Expression arg = arguments.get(offset + i);
@@ -71,7 +66,7 @@ public class IntervalElim implements Body {
 
   @Override
   public Expression getStuckExpression(List<? extends Expression> arguments, Expression expression) {
-    int offset = DependentLink.Helper.size(myParameters) - myCases.size();
+    int offset = myNumberOfParameters - myCases.size();
     for (int i = 0; i < myCases.size(); i++) {
       if (arguments.get(offset + i).isInstance(ConCallExpression.class)) {
         Constructor constructor = arguments.get(offset + i).cast(ConCallExpression.class).getDefinition();

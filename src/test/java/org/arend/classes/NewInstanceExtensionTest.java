@@ -1,9 +1,7 @@
 package org.arend.classes;
 
-import org.arend.core.definition.ClassDefinition;
 import org.arend.core.definition.FunctionDefinition;
-import org.arend.core.elimtree.LeafElimTree;
-import org.arend.core.expr.ClassCallExpression;
+import org.arend.core.expr.Expression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Level;
@@ -77,6 +75,6 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record C (A : \\Type) (a : A)\n" +
       "\\func f : \\Sigma (C (\\suc \\lp) (\\suc \\lh)) Nat => (\\new C \\level 1 1 Nat 0, 0)");
-    assertEquals(new Sort(new Level(1), new Level(1)), ((LeafElimTree) ((FunctionDefinition) getDefinition("f")).getBody()).getExpression().cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getExpression().getSortArgument());
+    assertEquals(new Sort(new Level(1), new Level(1)), ((Expression) ((FunctionDefinition) getDefinition("f")).getBody()).cast(TupleExpression.class).getFields().get(0).cast(NewExpression.class).getExpression().getSortArgument());
   }
 }

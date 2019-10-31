@@ -306,7 +306,6 @@ public class DefinitionSerialization {
     if (body instanceof IntervalElim) {
       IntervalElim intervalElim = (IntervalElim) body;
       DefinitionProtos.Body.IntervalElim.Builder intervalBuilder = DefinitionProtos.Body.IntervalElim.newBuilder();
-      intervalBuilder.addAllParam(defSerializer.writeParameters(intervalElim.getParameters()));
       for (Pair<Expression, Expression> pair : intervalElim.getCases()) {
         DefinitionProtos.Body.ExpressionPair.Builder pairBuilder = DefinitionProtos.Body.ExpressionPair.newBuilder();
         if (pair.proj1 != null) {
@@ -323,6 +322,8 @@ public class DefinitionSerialization {
       bodyBuilder.setIntervalElim(intervalBuilder);
     } else if (body instanceof ElimTree) {
       bodyBuilder.setElimTree(defSerializer.writeElimTree((ElimTree) body));
+    } else if (body instanceof Expression) {
+      bodyBuilder.setExpression(defSerializer.writeExpr((Expression) body));
     } else {
       throw new IllegalStateException();
     }

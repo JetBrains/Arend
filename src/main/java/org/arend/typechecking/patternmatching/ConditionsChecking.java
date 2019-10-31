@@ -50,15 +50,15 @@ public class ConditionsChecking {
 
   private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     boolean ok = true;
-    DependentLink link = DependentLink.Helper.get(elim.getParameters(), DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size());
+    DependentLink link = DependentLink.Helper.get(definition.getParameters(), DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
       DependentLink link2 = link.getNext();
       for (int j = i + 1; j < cases.size(); j++) {
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, elim.getParameters(), definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, definition, def, errorReporter) && ok;
         link2 = link2.getNext();
       }
       link = link.getNext();
@@ -66,7 +66,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, DependentLink parameters, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
+  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {
@@ -79,11 +79,11 @@ public class ConditionsChecking {
     Expression evaluatedExpr2 = case2.subst(substitution2);
     if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
-      for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
+      for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs1.add(link3 == link1 ? (isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
       List<Expression> defCallArgs2 = new ArrayList<>();
-      for (DependentLink link3 = parameters; link3.hasNext(); link3 = link3.getNext()) {
+      for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
       errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
@@ -96,15 +96,15 @@ public class ConditionsChecking {
   private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, ErrorReporter errorReporter) {
     boolean ok = true;
     List<Pair<Expression, Expression>> cases = elim.getCases();
-    int prefixLength = DependentLink.Helper.size(elim.getParameters()) - elim.getCases().size();
+    int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
-      ok = checkIntervalClauseCondition(cases.get(i), true, elim.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
-      ok = checkIntervalClauseCondition(cases.get(i), false, elim.getParameters(), prefixLength + i, clause, definition, errorReporter) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, definition, errorReporter) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, definition, errorReporter) && ok;
     }
     return ok;
   }
 
-  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, DependentLink parameters, int index, Clause clause, Definition definition, ErrorReporter errorReporter) {
+  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, Clause clause, Definition definition, ErrorReporter errorReporter) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null) {
       return true;
@@ -114,7 +114,7 @@ public class ConditionsChecking {
     collectPaths(clause.patterns, pathSubstitution);
 
     ExprSubstitution substitution1 = new ExprSubstitution();
-    DependentLink link = parameters;
+    DependentLink link = definition.getParameters();
     for (int i = 0; i < clause.patterns.size(); i++) {
       if (i != index) {
         substitution1.add(link, clause.patterns.get(i).toExpression().subst(pathSubstitution));
@@ -129,7 +129,7 @@ public class ConditionsChecking {
     Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
     if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
       if (!pathSubstitution.isEmpty()) {
-        link = parameters;
+        link = definition.getParameters();
         for (int i = 0; i < clause.patterns.size(); i++) {
           if (i != index) {
             substitution1.add(link, clause.patterns.get(i).toExpression());
@@ -140,7 +140,7 @@ public class ConditionsChecking {
 
       List<Expression> defCallArgs1 = new ArrayList<>();
       int i = 0;
-      for (link = parameters; link.hasNext(); link = link.getNext(), i++) {
+      for (link = definition.getParameters(); link.hasNext(); link = link.getNext(), i++) {
         defCallArgs1.add(i == index ? (isLeft ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link));
       }
 
@@ -151,7 +151,7 @@ public class ConditionsChecking {
 
       if (!pathSubstitution.isEmpty()) {
         substitution1 = new ExprSubstitution();
-        link = parameters;
+        link = definition.getParameters();
         for (i = 0; i < clause.patterns.size(); i++) {
           if (i != index) {
             substitution1.add(link, clause.patterns.get(i).toExpression());
@@ -273,7 +273,7 @@ public class ConditionsChecking {
 
         ExprSubstitution substitution = new ExprSubstitution();
         int j = 0;
-        for (DependentLink link = elim.getParameters(); link.hasNext(); link = link.getNext(), j++) {
+        for (DependentLink link = constructor.getParameters(); link.hasNext(); link = link.getNext(), j++) {
           substitution.add(link, conPattern.getArguments().get(j).toExpression());
         }
         j = 0;

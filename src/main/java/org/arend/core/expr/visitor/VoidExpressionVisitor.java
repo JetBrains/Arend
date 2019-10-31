@@ -145,7 +145,6 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   }
 
   public void visitBody(Body body, P params) {
-    ElimTree elimTree = null;
     if (body instanceof IntervalElim) {
       for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
         if (pair.proj1 != null) {
@@ -155,13 +154,15 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
           pair.proj2.accept(this, params);
         }
       }
-      elimTree = ((IntervalElim) body).getOtherwise();
-    } else if (body instanceof ElimTree) {
-      elimTree = (ElimTree) body;
+      body = ((IntervalElim) body).getOtherwise();
     }
 
-    if (elimTree != null) {
-      visitElimTree(elimTree, params);
+    if (body instanceof Expression) {
+      ((Expression) body).accept(this, params);
+    } else if (body instanceof ElimTree) {
+      visitElimTree((ElimTree) body, params);
+    } else {
+      assert body == null;
     }
   }
 

@@ -43,6 +43,21 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
     checkElimTree(elimTree, 0, 0);
   }
 
+  public GoodThisParametersVisitor(Expression expression, DependentLink parameters) {
+    myGoodFields = Collections.emptySet();
+    myGoodParameters = new ArrayList<>();
+    myIndexMap = new HashMap<>();
+
+    int index = 0;
+    for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
+      myGoodParameters.add(true);
+      myIndexMap.put(link, index);
+      index++;
+    }
+
+    expression.accept(this, null);
+  }
+
   public GoodThisParametersVisitor(Set<ClassField> fields) {
     myGoodFields = fields;
     myGoodParameters = new ArrayList<>(0);

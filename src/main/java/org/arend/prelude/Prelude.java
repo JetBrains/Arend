@@ -140,7 +140,7 @@ public class Prelude {
         pathParam.setNext(parameter("i", ExpressionFactory.Interval()));
         Map<Constructor, ElimTree> children = Collections.singletonMap(PATH_CON, new LeafElimTree(pathParam, AppExpression.make(new ReferenceExpression(pathParam), new ReferenceExpression(pathParam.getNext()))));
         ElimTree otherwise = new BranchElimTree(atParams, children);
-        AT.setBody(new IntervalElim(AT.getParameters(), Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
+        AT.setBody(new IntervalElim(5, Collections.singletonList(new Pair<>(new ReferenceExpression(AT.getParameters().getNext()), new ReferenceExpression(AT.getParameters().getNext().getNext()))), otherwise));
         AT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       }

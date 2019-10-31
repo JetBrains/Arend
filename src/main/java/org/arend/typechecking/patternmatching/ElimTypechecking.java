@@ -134,7 +134,7 @@ public class ElimTypechecking {
       return null;
     }
 
-    myUnusedClauses = new HashSet<>(funClauses);
+    myUnusedClauses = new LinkedHashSet<>(funClauses);
 
     List<ExtClause> intervalClauses = Collections.emptyList();
     List<ExtClause> nonIntervalClauses = clauses;
@@ -230,7 +230,7 @@ public class ElimTypechecking {
         elimTree = new BranchElimTree(DependentLink.Helper.take(parameters, index), Collections.emptyMap());
       }
 
-      return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
+      return cases == null ? elimTree : new IntervalElim(DependentLink.Helper.size(parameters), cases, elimTree);
     }
 
     myContext = new Stack<>();
@@ -243,7 +243,7 @@ public class ElimTypechecking {
         myVisitor.getErrorReporter().report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
       }
     }
-    return cases == null ? elimTree : new IntervalElim(parameters, cases, elimTree);
+    return cases == null ? elimTree : new IntervalElim(DependentLink.Helper.size(parameters), cases, elimTree);
   }
 
   private static List<ConCallExpression> getMatchedConstructors(Expression expr) {

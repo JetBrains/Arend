@@ -7,7 +7,10 @@ import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.util.Pair;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVisitor<Void> {
   private final Set<T> myFoundDefinitions = new HashSet<>();
@@ -45,7 +48,9 @@ public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVis
   }
 
   public void findDefinition(Body body) {
-    if (body instanceof IntervalElim) {
+    if (body instanceof Expression) {
+      ((Expression) body).accept(this, null);
+    } else if (body instanceof IntervalElim) {
       for (Pair<Expression, Expression> pair : ((IntervalElim) body).getCases()) {
         if (pair.proj1.accept(this, null) || pair.proj2.accept(this, null)) {
           return;

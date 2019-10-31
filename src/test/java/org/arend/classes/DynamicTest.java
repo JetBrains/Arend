@@ -1,9 +1,7 @@
 package org.arend.classes;
 
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
@@ -496,23 +494,23 @@ public class DynamicTest extends TypeCheckingTestCase {
     assertTrue(aClass.getFields().isEmpty());
     FunctionDefinition pFun = (FunctionDefinition) getDefinition("A.p");
     assertEquals(Nat(), pFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
-    assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), Zero()), pFun.getBody());
+    assertEquals(Zero(), pFun.getBody());
     FunctionDefinition qFun = (FunctionDefinition) getDefinition("A.q");
     List<DependentLink> qParams = new ArrayList<>();
     Expression qType = qFun.getTypeWithParams(qParams, Sort.SET0);
     assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(qType, qParams));
-    assertEquals(new LeafElimTree(param("\\this", ClassCall(aClass)), FunCall(pFun, Sort.SET0)), qFun.getBody());
+    assertEquals(FunCall(pFun, Sort.SET0), qFun.getBody());
 
     ClassDefinition bClass = (ClassDefinition) getDefinition("A.B");
     assertTrue(bClass.getFields().isEmpty());
     FunctionDefinition fFun = (FunctionDefinition) getDefinition("A.B.f");
     assertEquals(Nat(), fFun.getTypeWithParams(new ArrayList<>(), Sort.SET0));
-    assertEquals(new LeafElimTree(EmptyDependentLink.getInstance(), FunCall(pFun, Sort.SET0)), fFun.getBody());
+    assertEquals(FunCall(pFun, Sort.SET0), fFun.getBody());
     FunctionDefinition gFun = (FunctionDefinition) getDefinition("A.B.g");
     List<DependentLink> gParams = new ArrayList<>();
     Expression gType = gFun.getTypeWithParams(gParams, Sort.SET0);
     assertEquals(Pi(ClassCall(bClass), Nat()), fromPiParameters(gType, gParams));
-    assertEquals(new LeafElimTree(param("\\this", ClassCall(bClass)), FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0))), gFun.getBody());
+    assertEquals(FunCall(plus, Sort.SET0, FunCall(fFun, Sort.SET0), FunCall(pFun, Sort.SET0)), gFun.getBody());
 
     ClassDefinition cClass = (ClassDefinition) getDefinition("A.C");
     assertEquals(1, cClass.getFields().size());
@@ -523,14 +521,14 @@ public class DynamicTest extends TypeCheckingTestCase {
     Expression hType = hFun.getTypeWithParams(hParams, Sort.SET0);
     assertEquals(Pi(ClassCall(aClass), Nat()), fromPiParameters(hType, hParams));
     DependentLink hFunParam = param("\\this", ClassCall(aClass));
-    assertEquals(new LeafElimTree(hFunParam, FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, Ref(hFunParam)))), hFun.getBody());
+    assertEquals(FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, Ref(hFunParam))), hFun.getBody());
     FunctionDefinition kFun = (FunctionDefinition) getDefinition("A.C.k");
     List<DependentLink> kParams = new ArrayList<>();
     Expression kType = kFun.getTypeWithParams(kParams, Sort.SET0);
     assertEquals(Pi(ClassCall(cClass), Nat()), fromPiParameters(kType, kParams));
     DependentLink kFunParam = param("\\this", ClassCall(cClass));
     Expression aRef = FieldCall(cParent, Sort.PROP, Ref(kFunParam));
-    assertEquals(new LeafElimTree(kFunParam, FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef)))), kFun.getBody());
+    assertEquals(FunCall(plus, Sort.SET0, FunCall(hFun, Sort.SET0, aRef), FunCall(plus, Sort.SET0, FunCall(pFun, Sort.SET0), FunCall(qFun, Sort.SET0, aRef))), kFun.getBody());
   }
 
   @Test

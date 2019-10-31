@@ -1,12 +1,10 @@
 package org.arend.core.subst;
 
 import org.arend.core.context.binding.Variable;
+import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ExprSubstitution {
   private Map<Variable, Expression> mySubstExprs;
@@ -77,6 +75,20 @@ public class ExprSubstitution {
       }
       mySubstExprs.putAll(substitution.mySubstExprs);
     }
+  }
+
+  public ExprSubstitution add(DependentLink link, List<? extends Expression> args) {
+    if (!args.isEmpty() && mySubstExprs.isEmpty() && link.hasNext()) {
+      mySubstExprs = new HashMap<>();
+    }
+    for (Expression arg : args) {
+      if (!link.hasNext()) {
+        break;
+      }
+      mySubstExprs.put(link, arg);
+      link = link.getNext();
+    }
+    return this;
   }
 
   public void subst(ExprSubstitution subst) {

@@ -214,7 +214,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     return new FunCallExpression(Prelude.MINUS, expr.getSortArgument(), newDefCallArgs);
   }
 
-  private Expression visitDefCall(DefCallExpression expr, LevelSubstitution levelSubstitution, Mode mode) {
+  private Expression visitFunctionDefCall(DefCallExpression expr, Mode mode) {
     Definition definition = expr.getDefinition();
     if (definition == Prelude.COERCE || definition == Prelude.COERCE2) {
       LamExpression lamExpr = expr.getDefCallArguments().get(0).accept(this, Mode.WHNF).checkedCast(LamExpression.class);
@@ -327,7 +327,6 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return intArg != null ? intArg.suc() : Suc(arg);
     }
 
-    ElimTree elimTree;
     Body body = ((Function) definition).getBody();
     if (body instanceof IntervalElim) {
       IntervalElim elim = (IntervalElim) body;
@@ -342,7 +341,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
         ConCallExpression conCall = arg.checkedCast(ConCallExpression.class);
         if (conCall != null) {
           ExprSubstitution substitution = getDataTypeArgumentsSubstitution(expr);
-          DependentLink link = elim.getParameters();
+          DependentLink link = definition.getParameters();
           for (int j = 0; j < defCallArgs.size(); j++) {
             if (j != i) {
               substitution.add(link, defCallArgs.get(j));
@@ -371,16 +370,18 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           }
         }
       }
-      elimTree = elim.getOtherwise();
+      body = elim.getOtherwise();
+    }
+
+    Expression result;
+    if (body instanceof Expression) {
+      result = mode == Mode.RNF || mode == Mode.RNF_EXP ? null : ((Expression) body).subst(getDataTypeArgumentsSubstitution(expr).add(definition.getParameters(), defCallArgs), expr.getSortArgument().toLevelSubstitution());
+    } else if (body instanceof ElimTree) {
+      result = eval((ElimTree) body, defCallArgs, getDataTypeArgumentsSubstitution(expr), expr.getSortArgument().toLevelSubstitution());
     } else {
-      elimTree = (mode == Mode.RNF || mode == Mode.RNF_EXP) && body instanceof LeafElimTree ? null : (ElimTree) body;
+      assert body == null;
+      result = null;
     }
-
-    if (elimTree == null) {
-      return applyDefCall(expr, mode);
-    }
-
-    Expression result = eval(elimTree, defCallArgs, getDataTypeArgumentsSubstitution(expr), levelSubstitution);
 
     TypecheckingOrderingListener.checkCanceled();
 
@@ -393,6 +394,24 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       stack.push(arguments.get(i));
     }
     return stack;
+  }
+
+  public Expression eval(Expression expr) {
+    if (expr instanceof FunCallExpression) {
+      FunCallExpression funCall = (FunCallExpression) expr;
+      Body body = funCall.getDefinition().getActualBody();
+      if (body instanceof Expression) {
+        return ((Expression) body).subst(new ExprSubstitution().add(funCall.getDefinition().getParameters(), funCall.getDefCallArguments()), funCall.getSortArgument().toLevelSubstitution());
+      } else if (body instanceof ElimTree) {
+        return eval((ElimTree) body, funCall.getDefCallArguments(), getDataTypeArgumentsSubstitution(funCall), funCall.getSortArgument().toLevelSubstitution());
+      } else {
+        return null;
+      }
+    } else if (expr instanceof CaseExpression) {
+      return eval(((CaseExpression) expr).getElimTree(), ((CaseExpression) expr).getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
+    } else {
+      return null;
+    }
   }
 
   public Expression eval(ElimTree elimTree, List<? extends Expression> arguments, ExprSubstitution substitution, LevelSubstitution levelSubstitution) {
@@ -515,11 +534,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       return FieldCallExpression.make((ClassField) expr.getDefinition(), expr.getSortArgument(), mode == Mode.NF ? thisExpr.accept(this, mode) : thisExpr);
     }
 
-    if (expr.getDefinition() instanceof Function) {
-      return visitDefCall(expr, expr.getSortArgument().toLevelSubstitution(), mode);
-    }
-
-    return applyDefCall(expr, mode);
+    return expr.getDefinition() instanceof Function ? visitFunctionDefCall(expr, mode) : applyDefCall(expr, mode);
   }
 
   @Override

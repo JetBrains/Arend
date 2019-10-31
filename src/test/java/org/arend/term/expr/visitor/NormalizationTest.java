@@ -424,7 +424,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
         "  | suc n => fsuc (Fin n)\n" +
         "\\func f (n : Nat) (x : Fin n) => fsuc $ x");
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    Expression term = ((LeafElimTree) f.getBody()).getExpression().normalize(NormalizeVisitor.Mode.NF);
+    Expression term = ((Expression) f.getBody()).normalize(NormalizeVisitor.Mode.NF);
     ConCallExpression conCall = term.cast(ConCallExpression.class);
     assertEquals(getDefinition("fsuc"), conCall.getDefinition());
     assertEquals(1, conCall.getDefCallArguments().size());

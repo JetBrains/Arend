@@ -9,6 +9,7 @@ import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DataDefinition;
 import org.arend.core.definition.Definition;
+import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
@@ -961,10 +962,32 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       return false;
     }
 
-    ElimTree elimTree = expr.getElimTree();
-    if (elimTree == null) {
+    Body body = expr.getBody();
+    if (body == null) {
       return false;
     }
+    if (body instanceof Expression) {
+      if (expr.getArguments().size() != peval2.getArguments().size()) {
+        return false;
+      }
+      ExprSubstitution substitution = new ExprSubstitution();
+      LevelSubstitution levelSubstitution = expr.getLevelSubstitution();
+      int i = 0;
+      List<? extends Expression> args1 = expr.getArguments();
+      List<? extends Expression> args2 = peval2.getArguments();
+      for (DependentLink link = expr.getParameters(); link.hasNext(); link = link.getNext()) {
+        Expression arg1 = args1.get(i);
+        if (!compare(arg1, args2.get(i), link.getTypeExpr().subst(substitution, levelSubstitution))) {
+          return false;
+        }
+        substitution.add(link, arg1);
+      }
+      return true;
+    }
+    if (!(body instanceof ElimTree)) {
+      return false;
+    }
+    ElimTree elimTree = (ElimTree) body;
 
     Stack<Expression> stack1 = NormalizeVisitor.INSTANCE.makeStack(expr.getArguments());
     Stack<Expression> stack2 = NormalizeVisitor.INSTANCE.makeStack(peval2.getArguments());

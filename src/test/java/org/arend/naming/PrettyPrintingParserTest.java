@@ -200,12 +200,12 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       "\\func g2 => 0 * (1 * 2)\n" +
       "\\func h1 => (0 & 1) & 2\n" +
       "\\func h2 => 0 & (1 & 2)");
-    testExpr("(0 + 1) + 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("f1")).getBody()).getExpression());
-    testExpr("0 + (1 + 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f2")).getBody()).getExpression());
-    testExpr("0 * 1 * 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("g1")).getBody()).getExpression());
-    testExpr("0 * (1 * 2)", ((LeafElimTree) ((FunctionDefinition) getDefinition("g2")).getBody()).getExpression());
-    testExpr("(0 & 1) & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h1")).getBody()).getExpression());
-    testExpr("0 & 1 & 2", ((LeafElimTree) ((FunctionDefinition) getDefinition("h2")).getBody()).getExpression());
+    testExpr("(0 + 1) + 2", (Expression) ((FunctionDefinition) getDefinition("f1")).getBody());
+    testExpr("0 + (1 + 2)", (Expression) ((FunctionDefinition) getDefinition("f2")).getBody());
+    testExpr("0 * 1 * 2", (Expression) ((FunctionDefinition) getDefinition("g1")).getBody());
+    testExpr("0 * (1 * 2)", (Expression) ((FunctionDefinition) getDefinition("g2")).getBody());
+    testExpr("(0 & 1) & 2", (Expression) ((FunctionDefinition) getDefinition("h1")).getBody());
+    testExpr("0 & 1 & 2", (Expression) ((FunctionDefinition) getDefinition("h2")).getBody());
   }
 
   @Test
@@ -215,6 +215,6 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
       "\\func \\infixl 7 * (x y : Nat) => x\n" +
       "\\func \\infixr 6 & (x y : Nat) => x\n" +
       "\\func f (x y z : Nat) => ((x + suc y) * (suc y & (z & x))) * (suc (z + y))");
-    testExpr("(x + suc y) * (suc y & z & x) * suc (z + y)", ((LeafElimTree) ((FunctionDefinition) getDefinition("f")).getBody()).getExpression());
+    testExpr("(x + suc y) * (suc y & z & x) * suc (z + y)", (Expression) ((FunctionDefinition) getDefinition("f")).getBody());
   }
 }
