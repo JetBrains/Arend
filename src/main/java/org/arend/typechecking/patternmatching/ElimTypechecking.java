@@ -1,5 +1,8 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.SingleConstructor;
+import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
@@ -530,7 +533,12 @@ public class ElimTypechecking {
           constructors = new ArrayList<>(dataType.getConstructors());
         }
       } else {
-        constructors = Collections.singletonList(new BranchElimTree.TupleConstructor(someConPattern.getLength(), someConPattern.getDefinition() instanceof ClassDefinition));
+        if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
+          ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
+          constructors = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
+        } else {
+          constructors = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
+        }
         dataType = null;
       }
 
@@ -566,7 +574,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myLevel != null && !constructors.isEmpty() && !(constructors.get(0) instanceof BranchElimTree.TupleConstructor)) {
+      if (myLevel != null && !constructors.isEmpty() && !(constructors.get(0) instanceof SingleConstructor)) {
         //noinspection ConstantConditions
         constructors.removeIf(constructor -> numberOfIntervals + (constructor.getBody() instanceof IntervalElim ? ((IntervalElim) constructor.getBody()).getNumberOfTotalElim() : 0) > myLevel);
       }
@@ -581,7 +589,7 @@ public class ElimTypechecking {
           }
         } else {
           Definition def = ((ConstructorPattern) clauseData.patterns.get(index)).getDefinition();
-          if (!(def instanceof Constructor) && !constructors.isEmpty() && constructors.get(0) instanceof BranchElimTree.TupleConstructor) {
+          if (!(def instanceof Constructor) && !constructors.isEmpty() && constructors.get(0) instanceof SingleConstructor) {
             def = constructors.get(0);
           }
           if (def instanceof Constructor) {
@@ -637,7 +645,7 @@ public class ElimTypechecking {
               substExpr = ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), dataTypesArgs, arguments);
               conParameters = DependentLink.Helper.subst(conParameters, DependentLink.Helper.toSubstitution(constructor.getDataTypeParameters(), dataTypesArgs));
             } else {
-              if (constructor instanceof BranchElimTree.TupleConstructor) {
+              if (constructor instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
                 if (someConPattern.getDefinition() instanceof ClassDefinition) {
                   Map<ClassField, Expression> implementations = new HashMap<>();

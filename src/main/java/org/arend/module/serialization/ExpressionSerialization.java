@@ -1,6 +1,9 @@
 package org.arend.module.serialization;
 
 import com.google.protobuf.ByteString;
+import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.SingleConstructor;
+import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -178,12 +181,22 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
         if (entry.getKey() == null) {
           branchBuilder.setNullClause(writeElimTree(entry.getValue()));
-        } else if (entry.getKey() instanceof BranchElimTree.TupleConstructor) {
-          ExpressionProtos.ElimTree.Branch.TupleClause.Builder tupleClauseBuilder = ExpressionProtos.ElimTree.Branch.TupleClause.newBuilder();
-          tupleClauseBuilder.setLength(((BranchElimTree.TupleConstructor) entry.getKey()).getLength());
-          tupleClauseBuilder.setIsClassInstance(((BranchElimTree.TupleConstructor) entry.getKey()).isClassInstance());
-          tupleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
-          branchBuilder.setTupleClause(tupleClauseBuilder.build());
+        } else if (entry.getKey() instanceof SingleConstructor) {
+          ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
+          if (entry.getKey() instanceof TupleConstructor) {
+            singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(((TupleConstructor) entry.getKey()).getLength()).build());
+          } else {
+            ClassConstructor classCon = (ClassConstructor) entry.getKey();
+            ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
+            conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDef()));
+            conBuilder.setSort(writeSort(classCon.getSort()));
+            for (ClassField field : classCon.getImplementedFields()) {
+              conBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
+            }
+            singleClauseBuilder.setClass_(conBuilder.build());
+          }
+          singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
+          branchBuilder.setSingleClause(singleClauseBuilder.build());
         } else {
           branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
         }

@@ -1,5 +1,7 @@
 package org.arend.module.serialization;
 
+import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
@@ -19,10 +21,7 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.typechecking.order.dependency.DependencyListener;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class ExpressionDeserialization {
   private final CallTargetProvider myCallTargetProvider;
@@ -171,9 +170,20 @@ class ExpressionDeserialization {
         if (branchProto.hasNullClause()) {
           children.put(null, readElimTree(branchProto.getNullClause()));
         }
-        if (branchProto.hasTupleClause()) {
-          ExpressionProtos.ElimTree.Branch.TupleClause tupleClause = branchProto.getTupleClause();
-          children.put(new BranchElimTree.TupleConstructor(tupleClause.getLength(), tupleClause.getIsClassInstance()), readElimTree(tupleClause.getElimTree()));
+        if (branchProto.hasSingleClause()) {
+          ExpressionProtos.ElimTree.Branch.SingleConstructorClause singleClause = branchProto.getSingleClause();
+          ElimTree elimTree = readElimTree(singleClause.getElimTree());
+          if (singleClause.hasTuple()) {
+            children.put(new TupleConstructor(singleClause.getTuple().getLength()), elimTree);
+          }
+          if (singleClause.hasClass_()) {
+            ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class classProto = singleClause.getClass_();
+            Set<ClassField> fields = new HashSet<>();
+            for (Integer fieldRef : classProto.getFieldList()) {
+              fields.add(myCallTargetProvider.getCallTarget(fieldRef, ClassField.class));
+            }
+            children.put(new ClassConstructor(myCallTargetProvider.getCallTarget(classProto.getClassRef(), ClassDefinition.class), readSort(classProto.getSort()), fields), elimTree);
+          }
         }
         return new BranchElimTree(parameters, children);
       }

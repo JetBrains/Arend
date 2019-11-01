@@ -1,5 +1,6 @@
 package org.arend.typechecking.patternmatching;
 
+import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
@@ -35,7 +36,7 @@ public class Util {
   }
 
   static DataClauseElem makeDataClauseElem(Constructor constructor, ConstructorPattern pattern) {
-    return constructor instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
+    return constructor instanceof SingleConstructor ? new TupleClauseElem(pattern) : new ConstructorClauseElem(constructor);
   }
 
   public static class TupleClauseElem implements DataClauseElem {
@@ -97,7 +98,7 @@ public class Util {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
         for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
           if (entry.getKey() != null) {
-            myStack.push(entry.getKey() instanceof BranchElimTree.TupleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
+            myStack.push(entry.getKey() instanceof SingleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
             walk(entry.getValue());
             myStack.pop();
           }

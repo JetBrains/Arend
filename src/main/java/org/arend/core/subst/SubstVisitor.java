@@ -1,5 +1,6 @@
 package org.arend.core.subst;
 
+import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -216,7 +217,14 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     } else {
       Map<Constructor, ElimTree> children = new HashMap<>();
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        children.put(entry.getKey(), substElimTree(entry.getValue()));
+        Constructor constructor;
+        if (!myLevelSubstitution.isEmpty() && entry.getKey() instanceof ClassConstructor) {
+          ClassConstructor classCon = (ClassConstructor) entry.getKey();
+          constructor = new ClassConstructor(classCon.getClassDef(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
+        } else {
+          constructor = entry.getKey();
+        }
+        children.put(constructor, substElimTree(entry.getValue()));
       }
       elimTree = new BranchElimTree(vars, children);
     }

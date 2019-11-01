@@ -183,13 +183,25 @@ message ElimTree {
         Expression expr = 1;
     }
     message Branch {
-        message TupleClause {
-            int32 length = 1;
-            bool is_class_instance = 3;
-            ElimTree elim_tree = 2;
+        message SingleConstructorClause {
+            oneof kind {
+                Tuple tuple = 1;
+                Class class = 2;
+            }
+            ElimTree elim_tree = 3;
+
+            message Tuple {
+                int32 length = 1;
+            }
+
+            message Class {
+                int32 class_ref = 1;
+                Sort sort = 2;
+                repeated int32 field = 3;
+            }
         }
         map<int32, ElimTree> clauses = 1;
         ElimTree null_clause = 2;
-        TupleClause tuple_clause = 4;
+        SingleConstructorClause single_clause = 5;
     }
 }

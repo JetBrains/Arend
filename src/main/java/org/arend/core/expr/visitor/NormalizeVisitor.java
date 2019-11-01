@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
@@ -469,7 +470,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       constructor = intExpr.isZero() ? Prelude.ZERO : Prelude.SUC;
     }
 
-    ElimTree elimTree = constructor == null ? branchElimTree.getTupleChild() : branchElimTree.getChild(constructor);
+    ElimTree elimTree = constructor == null ? branchElimTree.getSingleChild() : branchElimTree.getChild(constructor);
     if (elimTree != null) {
       stack.pop();
 
@@ -481,15 +482,12 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
             ? Collections.emptyList()
             : Collections.singletonList(intExpr.pred());
       } else {
-        BranchElimTree.TupleConstructor tupleConstructor = branchElimTree.getTupleConstructor();
-        if (tupleConstructor == null) {
+        SingleConstructor singleConstructor = branchElimTree.getSingleConstructor();
+        if (singleConstructor == null) {
           return null;
         }
 
-        args = tupleConstructor.getMatchedArguments(argument);
-        if (args == null) {
-          return null;
-        }
+        args = singleConstructor.getMatchedArguments(argument);
       }
 
       for (int i = args.size() - 1; i >= 0; i--) {

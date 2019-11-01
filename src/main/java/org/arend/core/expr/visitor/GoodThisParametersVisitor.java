@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -86,8 +87,8 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         int toSkip = entry.getKey() == null ? 1 :
-          entry.getKey() instanceof BranchElimTree.TupleConstructor
-            ? ((BranchElimTree.TupleConstructor) entry.getKey()).getLength()
+          entry.getKey() instanceof SingleConstructor
+            ? ((SingleConstructor) entry.getKey()).getLength()
             : DependentLink.Helper.size(entry.getKey().getParameters());
         checkElimTree(entry.getValue(), index, skip + toSkip);
       }
