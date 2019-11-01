@@ -165,6 +165,7 @@ public class Prelude {
       }
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
+        FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "<=":
         LESS_OR_EQ = (DataDefinition) definition;
