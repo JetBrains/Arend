@@ -28,7 +28,7 @@ public class Renamer {
     }
 
     if (var instanceof Binding) {
-      Character c = getDataTypeStartingCharacter(((Binding) var).getTypeExpr());
+      Character c = getTypeStartingCharacter(((Binding) var).getTypeExpr());
       if (c != null) {
         return c.toString();
       }
@@ -41,7 +41,12 @@ public class Renamer {
     myUnnamed = unnamed;
   }
 
-  public static Character getDataTypeStartingCharacter(Expression type) {
+  public static String getNameFromType(Expression type, String def) {
+    Character c = getTypeStartingCharacter(type);
+    return c != null ? c.toString() : getValidName(def, UNNAMED);
+  }
+
+  public static Character getTypeStartingCharacter(Expression type) {
     if (type == null) {
       return null;
     }
