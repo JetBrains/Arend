@@ -2,6 +2,10 @@ package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
+import org.arend.core.expr.AppExpression;
+import org.arend.core.expr.DefCallExpression;
+import org.arend.core.expr.Expression;
+import org.arend.core.expr.ReferenceExpression;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -13,16 +17,49 @@ public class Renamer {
   private String myUnnamed = UNNAMED;
   private int myBase = 1;
 
-  public static String getValidName_(String name) {
-    return name == null || name.isEmpty() || name.equals("_") ? UNNAMED : name;
+  public static String getValidName(String name, String unnamed) {
+    return name == null || name.isEmpty() || name.equals("_") ? unnamed : name;
   }
 
-  public String getValidName(String name) {
-    return name == null || name.isEmpty() || name.equals("_") ? myUnnamed : name;
+  public String getValidName(Variable var) {
+    String name = var.getName();
+    if (name != null && !name.isEmpty() && !name.equals("_")) {
+      return name;
+    }
+
+    if (var instanceof Binding) {
+      Character c = getDataTypeStartingCharacter(((Binding) var).getTypeExpr());
+      if (c != null) {
+        return c.toString();
+      }
+    }
+
+    return myUnnamed;
   }
 
   public void setUnnamed(String unnamed) {
     myUnnamed = unnamed;
+  }
+
+  public static Character getDataTypeStartingCharacter(Expression type) {
+    if (type == null) {
+      return null;
+    }
+
+    String name;
+    type = type.getUnderlyingExpression();
+    while (type instanceof AppExpression) {
+      type = type.getFunction().getUnderlyingExpression();
+    }
+    if (type instanceof DefCallExpression) {
+      name = ((DefCallExpression) type).getDefinition().getName();
+    } else if (type instanceof ReferenceExpression) {
+      name = ((ReferenceExpression) type).getBinding().getName();
+    } else {
+      return null;
+    }
+
+    return name.isEmpty() ? null : Character.toLowerCase(name.charAt(0));
   }
 
   public void setBase(int base) {
@@ -42,7 +79,7 @@ public class Renamer {
   }
 
   public String generateFreshName(Variable var, Collection<? extends Variable> variables) {
-    String name = getValidName(var.getName());
+    String name = getValidName(var);
     if (name == null) {
       return null;
     }

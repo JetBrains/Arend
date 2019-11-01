@@ -1395,7 +1395,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         } else {
           StringBuilder builder = new StringBuilder();
           getLetClauseName(clause.getPattern(), builder);
-          name = Renamer.getValidName_(builder.toString());
+          name = Renamer.getValidName(builder.toString(), Renamer.UNNAMED);
         }
         return new Pair<>(new LetClause(name, null, result.expression), result.type);
       }
