@@ -14,6 +14,16 @@ public class PatternTest extends NameResolverTestCase {
   }
 
   @Test
+  public void matchOnHitIsFine() {
+    resolveNamesModule(
+      "\\data S1 | base | loop I \\with {" +
+              " left => base | right => base }\n" +
+              "\\func test (a : \\Sigma S1 S1) : S1 \\elim a\n" +
+              "  | (base, base) => base\n" +
+              "  | (a, b) => a", 0);
+  }
+
+  @Test
   public void matchedImplicitAvailable() {
     resolveNamesModule(
       "\\data Nat | zero | suc Nat\n" +
