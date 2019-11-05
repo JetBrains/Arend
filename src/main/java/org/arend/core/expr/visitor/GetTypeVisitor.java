@@ -50,15 +50,15 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type;
     if (arg instanceof FieldCallExpression) {
       arg = normalizeFieldCall((FieldCallExpression) arg);
-      type = arg instanceof NewExpression ? ((NewExpression) arg).getExpression() : null;
+      return arg instanceof NewExpression ? ((NewExpression) arg).getImplementation(expr.getDefinition(), arg) : null;
     } else {
       type = arg.accept(this, null);
+      if (type == null) {
+        return null;
+      }
+      ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+      return classCall == null ? null : classCall.getImplementation(expr.getDefinition(), arg);
     }
-    if (type == null) {
-      return null;
-    }
-    ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-    return classCall == null ? null : classCall.getImplementation(expr.getDefinition(), arg);
   }
 
   @Override
@@ -156,7 +156,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitNew(NewExpression expr, Void params) {
-    return expr.getExpression();
+    return expr.getType();
   }
 
   @Override

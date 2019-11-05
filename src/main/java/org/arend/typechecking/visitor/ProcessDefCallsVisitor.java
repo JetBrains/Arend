@@ -100,7 +100,7 @@ public abstract class ProcessDefCallsVisitor<P> extends BaseExpressionVisitor<P,
 
   @Override
   public Boolean visitNew(NewExpression expression, P param) {
-    return expression.getExpression().accept(this, param);
+    return expression.getClassCall().accept(this, param) || expression.getRenewExpression() != null && expression.getRenewExpression().accept(this, param);
   }
 
   @Override

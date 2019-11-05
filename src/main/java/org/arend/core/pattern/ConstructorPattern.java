@@ -94,7 +94,7 @@ public class ConstructorPattern implements Pattern {
         implementations.put(field, arguments.get(i++));
       }
     }
-    return new NewExpression(new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
+    return new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
   }
 
   @Override
@@ -152,7 +152,7 @@ public class ConstructorPattern implements Pattern {
     List<Expression> arguments = new ArrayList<>();
     for (ClassField field : ((ClassCallExpression) myExpression).getDefinition().getFields()) {
       if (!((ClassCallExpression) myExpression).getDefinition().isImplemented(field)) {
-        arguments.add(newExpr.getExpression().getImplementation(field, newExpr));
+        arguments.add(newExpr.getImplementation(field, newExpr));
       }
     }
     return arguments;

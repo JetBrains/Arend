@@ -18,17 +18,19 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   private final Binding myBinding;
   private final ClassCallExpression myBindingType;
   private final Map<ClassField, Expression> myImplementations;
+  private final Expression myRenewExpression;
   private boolean myOK = true;
 
-  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, Expression> implementations) {
+  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, Expression> implementations, Expression renewExpr) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myBinding = binding;
     myBindingType = bindingType;
     myImplementations = implementations;
+    myRenewExpression = renewExpr;
   }
 
-  public ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType) {
-    this(binding, bindingType, new HashMap<>(bindingType.getImplementedHere()));
+  public ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Expression renewExpr) {
+    this(binding, bindingType, new HashMap<>(bindingType.getImplementedHere()), renewExpr);
   }
 
   public boolean isOK() {
@@ -43,6 +45,9 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
     if (expr.getBinding() == myBinding) {
+      if (myRenewExpression != null) {
+        return myRenewExpression;
+      }
       myOK = false;
       return expr;
     }
@@ -63,7 +68,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
           Expression impl = myImplementations.computeIfAbsent(field, e -> {
             LamExpression lamImpl = myBindingType.getDefinition().getImplementation(field);
             if (lamImpl != null) {
-              ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), myBindingType, myImplementations);
+              ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), myBindingType, myImplementations, null);
               Expression impl1 = lamImpl.getBody().accept(visitor, null);
               if (visitor.isOK()) {
                 return impl1;
@@ -79,7 +84,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
           }
         }
 
-        return new NewExpression(new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false));
+        return new NewExpression(null, new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false));
       }
     }
 

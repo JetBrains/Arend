@@ -137,7 +137,8 @@ public class FindBindingVisitor extends BaseExpressionVisitor<Void, Variable> {
 
   @Override
   public Variable visitNew(NewExpression expr, Void params) {
-    return visitClassCall(expr.getExpression(), null);
+    Variable result = visitClassCall(expr.getClassCall(), null);
+    return result != null ? result : expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null);
   }
 
   @Override

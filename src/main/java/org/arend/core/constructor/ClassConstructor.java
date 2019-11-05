@@ -45,7 +45,7 @@ public final class ClassConstructor extends SingleConstructor {
     NewExpression newExpr = argument.cast(NewExpression.class);
     for (ClassField field : myClassDef.getFields()) {
       if (!myClassDef.isImplemented(field) && !myImplementedFields.contains(field)) {
-        Expression impl = newExpr == null ? null : newExpr.getExpression().getImplementationHere(field);
+        Expression impl = newExpr == null ? null : newExpr.getImplementationHere(field);
         args.add(impl != null ? impl : FieldCallExpression.make(field, mySort, argument));
       }
     }

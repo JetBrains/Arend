@@ -1,17 +1,57 @@
 package org.arend.core.expr;
 
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.core.sort.Sort;
 import org.arend.util.Decision;
 
-public class NewExpression extends Expression {
-  private final ClassCallExpression myExpression;
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
-  public NewExpression(ClassCallExpression expression) {
-    myExpression = expression;
+public class NewExpression extends Expression {
+  private final Expression myRenewExpression;
+  private final ClassCallExpression myClassCall;
+
+  public NewExpression(Expression renewExpression, ClassCallExpression classCall) {
+    NewExpression newExpr = renewExpression == null ? null : renewExpression.cast(NewExpression.class);
+    if (newExpr != null) {
+      myRenewExpression = newExpr.myRenewExpression;
+      Map<ClassField, Expression> implementations = new HashMap<>();
+      for (ClassField field : classCall.getDefinition().getFields()) {
+        if (classCall.getDefinition().isImplemented(field)) {
+          continue;
+        }
+        Expression impl = classCall.getImplementationHere(field);
+        if (impl == null) {
+          impl = newExpr.myClassCall.getImplementationHere(field);
+        }
+        implementations.put(field, impl);
+      }
+      myClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false);
+    } else {
+      myRenewExpression = renewExpression;
+      myClassCall = classCall;
+    }
   }
 
-  public ClassCallExpression getExpression() {
-    return myExpression;
+  @Nullable
+  public Expression getRenewExpression() {
+    return myRenewExpression;
+  }
+
+  public ClassCallExpression getClassCall() {
+    return myClassCall;
+  }
+
+  public Expression getImplementationHere(ClassField field) {
+    Expression impl = myClassCall.getImplementationHere(field);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
+  }
+
+  public Expression getImplementation(ClassField field, Expression thisExpr) {
+    Expression impl = myClassCall.getImplementation(field, thisExpr);
+    return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
   }
 
   @Override
@@ -31,6 +71,21 @@ public class NewExpression extends Expression {
 
   @Override
   public ClassCallExpression getType() {
-    return myExpression;
+    if (myRenewExpression == null) {
+      return myClassCall;
+    }
+
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    for (ClassField field : myClassCall.getDefinition().getFields()) {
+      if (myClassCall.getDefinition().isImplemented(field)) {
+        continue;
+      }
+      Expression impl = myClassCall.getImplementationHere(field);
+      if (impl == null) {
+        impl = FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
+      }
+      implementations.put(field, impl);
+    }
+    return new ClassCallExpression(myClassCall.getDefinition(), myClassCall.getSortArgument(), implementations, Sort.PROP, false);
   }
 }

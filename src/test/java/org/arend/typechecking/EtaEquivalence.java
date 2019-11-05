@@ -20,8 +20,8 @@ public class EtaEquivalence extends TypeCheckingTestCase {
         "\\func f (l : Foo) => \\new Foo { | foo => l.foo | bar => l.bar }");
     assertTrue(getDefinition("f") instanceof FunctionDefinition);
     FunctionDefinition f = (FunctionDefinition) getDefinition("f");
-    NewExpression newExpr = new NewExpression((ClassCallExpression) f.getResultType());
-    ClassCallExpression classCall = ClassCall(newExpr.getExpression().getDefinition());
+    NewExpression newExpr = new NewExpression(null, (ClassCallExpression) f.getResultType());
+    ClassCallExpression classCall = ClassCall(newExpr.getClassCall().getDefinition());
     ReferenceExpression refExpr = Ref(f.getParameters());
 
     assertTrue(CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, newExpr, refExpr, classCall, null));

@@ -361,6 +361,6 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\record B \\extends A | n => 0\n" +
       "\\data D (a : A) | ddd\n" +
       "\\func b : D (\\new B) => ddd");
-    assertEquals(getDefinition("B"), ((NewExpression) ((DataCallExpression) ((FunctionDefinition) getDefinition("b")).getResultType()).getDefCallArguments().get(0)).getExpression().getDefinition());
+    assertEquals(getDefinition("B"), ((NewExpression) ((DataCallExpression) ((FunctionDefinition) getDefinition("b")).getResultType()).getDefCallArguments().get(0)).getClassCall().getDefinition());
   }
 }

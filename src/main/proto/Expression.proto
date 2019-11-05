@@ -113,6 +113,7 @@ message Expression {
     }
     message New {
         ClassCall class_call = 1;
+        Expression renew = 2;
     }
     message Pi {
         Sort resultSort = 8;

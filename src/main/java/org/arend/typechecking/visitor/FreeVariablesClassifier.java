@@ -159,7 +159,11 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
 
   @Override
   public Result visitNew(NewExpression expr, Boolean good) {
-    return visitClassCall(expr.getExpression(), good);
+    Result result = visitClassCall(expr.getClassCall(), good);
+    if (expr.getRenewExpression() == null || result == Result.BOTH || result == Result.BAD) {
+      return result;
+    }
+    return result.add(expr.getRenewExpression().accept(this, false));
   }
 
   @Override

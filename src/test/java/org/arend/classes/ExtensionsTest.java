@@ -221,7 +221,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class A { | n : Nat -> Nat | k : Nat }\n" +
       "\\class B { | m : Nat | a : A }\n" +
       "\\class C \\extends B { | m => 0 | a { | n => \\lam x => x | k => 1 } }");
-    NewExpression newExpr = new NewExpression(new ClassCallExpression((ClassDefinition) getDefinition("C"), Sort.STD));
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression((ClassDefinition) getDefinition("C"), Sort.STD));
 
     Expression fieldCallA = FieldCallExpression.make((ClassField) getDefinition("B.a"), Sort.STD, newExpr);
     assertTrue(fieldCallA instanceof NewExpression);

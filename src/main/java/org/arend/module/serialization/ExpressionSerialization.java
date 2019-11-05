@@ -363,7 +363,10 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitNew(NewExpression expr, Void params) {
     ExpressionProtos.Expression.New.Builder builder = ExpressionProtos.Expression.New.newBuilder();
-    builder.setClassCall(writeClassCall(expr.getExpression()));
+    builder.setClassCall(writeClassCall(expr.getClassCall()));
+    if (expr.getRenewExpression() != null) {
+      builder.setRenew(writeExpr(expr.getRenewExpression()));
+    }
     return ExpressionProtos.Expression.newBuilder().setNew(builder).build();
   }
 

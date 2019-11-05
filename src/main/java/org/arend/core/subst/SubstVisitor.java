@@ -175,7 +175,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public Expression visitNew(NewExpression expr, Void params) {
-    return new NewExpression(visitClassCall(expr.getExpression(), null));
+    return new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null), visitClassCall(expr.getClassCall(), null));
   }
 
   @Override

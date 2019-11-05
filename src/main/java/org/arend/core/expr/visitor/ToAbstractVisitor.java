@@ -224,11 +224,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     return result != null ? result : visitDefCall(expr, params);
   }
 
-  @Override
-  public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
-    List<Concrete.Argument> arguments = new ArrayList<>();
+  private List<Concrete.ClassFieldImpl> visitClassFieldImpls(ClassCallExpression expr, List<Concrete.Argument> arguments) {
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
-    boolean canBeArgument = true;
+    boolean canBeArgument = arguments != null;
     for (ClassField field : expr.getDefinition().getFields()) {
       Expression implementation = expr.getImplementationHere(field);
       if (implementation != null) {
@@ -242,7 +240,13 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
         canBeArgument = false;
       }
     }
+    return statements;
+  }
 
+  @Override
+  public Concrete.Expression visitClassCall(ClassCallExpression expr, Void params) {
+    List<Concrete.Argument> arguments = new ArrayList<>();
+    List<Concrete.ClassFieldImpl> statements = visitClassFieldImpls(expr, arguments);
     Concrete.Expression defCallExpr = Concrete.AppExpression.make(null, makeReference(expr.getDefinition().getReferable()), arguments);
     if (statements.isEmpty()) {
       return defCallExpr;
@@ -485,7 +489,11 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
   @Override
   public Concrete.Expression visitNew(NewExpression expr, Void params) {
-    return cNew(visitClassCall(expr.getExpression(), null));
+    if (expr.getRenewExpression() == null) {
+      return cNew(visitClassCall(expr.getClassCall(), null));
+    } else {
+      return cNew(cClassExt(expr.getRenewExpression().accept(this, null), visitClassFieldImpls(expr.getClassCall(), null)));
+    }
   }
 
   @Override

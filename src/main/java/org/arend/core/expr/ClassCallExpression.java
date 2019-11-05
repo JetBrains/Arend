@@ -66,17 +66,6 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return myImplementations.get(field);
   }
 
-  public List<Expression> getImplementedHereList() {
-    List<Expression> result = new ArrayList<>();
-    for (ClassField field : getDefinition().getFields()) {
-      Expression impl = myImplementations.get(field);
-      if (impl != null) {
-        result.add(impl);
-      }
-    }
-    return result;
-  }
-
   public Expression getImplementation(ClassField field, Expression thisExpr) {
     Expression expr = myImplementations.get(field);
     if (expr != null) {
@@ -106,7 +95,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
-    Expression newExpr = new NewExpression(new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
+    Expression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
     Collection<? extends ClassField> fields = getDefinition().getOrderedFields();
     if (fields.isEmpty()) {
       return EmptyDependentLink.getInstance();

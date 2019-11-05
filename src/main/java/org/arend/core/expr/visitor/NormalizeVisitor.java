@@ -654,7 +654,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitNew(NewExpression expr, Mode mode) {
-    return mode == Mode.WHNF ? expr : new NewExpression(visitClassCall(expr.getExpression(), mode));
+    return mode == Mode.WHNF ? expr : new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, mode), visitClassCall(expr.getClassCall(), mode));
   }
 
   @Override

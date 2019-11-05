@@ -64,7 +64,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
     NewExpression newExpr = expr.getArgument().cast(NewExpression.class);
     if (newExpr != null) {
-      return newExpr.getExpression().getImplementation(expr.getDefinition(), expr.getArgument()).accept(this, null);
+      return newExpr.getImplementation(expr.getDefinition(), expr.getArgument()).accept(this, null);
     } else {
       return FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), expr.getArgument().accept(this, null));
     }
@@ -155,7 +155,7 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public NewExpression visitNew(NewExpression expr, Void params) {
-    return new NewExpression(visitClassCall(expr.getExpression(), null));
+    return new NewExpression(expr.getRenewExpression() == null ? null : expr.getRenewExpression().accept(this, null), visitClassCall(expr.getClassCall(), null));
   }
 
   @Override

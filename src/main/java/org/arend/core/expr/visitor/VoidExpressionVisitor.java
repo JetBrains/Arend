@@ -119,7 +119,10 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
   @Override
   public Void visitNew(NewExpression expr, P params) {
-    visitClassCall(expr.getExpression(), params);
+    visitClassCall(expr.getClassCall(), params);
+    if (expr.getRenewExpression() != null) {
+      expr.getRenewExpression().accept(this, params);
+    }
     return null;
   }
 

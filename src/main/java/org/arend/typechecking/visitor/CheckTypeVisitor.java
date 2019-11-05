@@ -385,15 +385,19 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
-    return typecheckClassExt(expr.getStatements(), expectedType, null, classCall, null, expr);
+    return typecheckClassExt(expr.getStatements(), expectedType, classCall, null, expr);
   }
 
-  public TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression implExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
+  public TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
+    return typecheckClassExt(classFieldImpls, expectedType, null, null, classCallExpr, pseudoImplemented, expr);
+  }
+
+  private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression renewExpr, Map<ClassField, Expression> additionalImpls, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
     Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
 
-    Set<ClassField> defined = implExpr == null ? null : new HashSet<>();
+    Set<ClassField> defined = renewExpr == null ? null : new HashSet<>();
     List<Pair<Definition,Concrete.ClassFieldImpl>> implementations = new ArrayList<>(classFieldImpls.size());
     for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
       Definition definition = referableToDefinition(classFieldImpl.getImplementedField(), classFieldImpl);
@@ -427,7 +431,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             errorReporter.report(new FieldDependencyError(field, found, sourceNode));
             return null;
           }
-          fieldSet.put(field, FieldCallExpression.make(field, classCallExpr.getSortArgument(), implExpr));
+          additionalImpls.put(field, FieldCallExpression.make(field, classCallExpr.getSortArgument(), renewExpr));
         }
       }
     }
@@ -435,7 +439,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     for (Pair<Definition,Concrete.ClassFieldImpl> pair : implementations) {
       if (pair.proj1 instanceof ClassField) {
         ClassField field = (ClassField) pair.proj1;
-        TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+        TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall, renewExpr);
         if (implResult != null) {
           Expression oldImpl = null;
           if (!field.isProperty()) {
@@ -495,9 +499,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
 
-  private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
+  private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass, Expression renewExpr) {
     PiExpression piType = field.getType(fieldSetClass.getSortArgument());
-    ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(piType.getParameters(), fieldSetClass);
+    ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(piType.getParameters(), fieldSetClass, renewExpr);
     Expression type = piType.getCodomain().accept(visitor, null);
     if (!visitor.isOK()) {
       errorReporter.report(new TypecheckingError("The type of '" + field.getName() + "' depends non-trivially on \\this parameter", implBody));
@@ -586,13 +590,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           expectedClassCall.updateHasUniverses();
         }
         pseudoImplemented = new HashSet<>();
-        exprResult = typecheckClassExt(expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getStatements() : Collections.emptyList(), null, null, expectedClassCall, pseudoImplemented, expr.getExpression());
+        exprResult = typecheckClassExt(expr.getExpression() instanceof Concrete.ClassExtExpression ? ((Concrete.ClassExtExpression) expr.getExpression()).getStatements() : Collections.emptyList(), null, expectedClassCall, pseudoImplemented, expr.getExpression());
         if (exprResult == null) {
           return null;
         }
       }
     }
 
+    Map<ClassField, Expression> additionalImpls = null;
+    Expression renewExpr = null;
     if (exprResult == null) {
       Concrete.Expression baseClassExpr;
       List<Concrete.ClassFieldImpl> classFieldImpls;
@@ -610,7 +616,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
 
       typeCheckedBaseClass.expression = typeCheckedBaseClass.expression.normalize(NormalizeVisitor.Mode.WHNF);
-      Expression implExpr = null;
       ClassCallExpression classCall = typeCheckedBaseClass.expression.cast(ClassCallExpression.class);
       if (classCall == null) {
         classCall = typeCheckedBaseClass.type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
@@ -618,10 +623,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           errorReporter.report(new TypecheckingError("Expected a class or a class instance", baseClassExpr));
           return null;
         }
-        implExpr = typeCheckedBaseClass.expression;
+        renewExpr = typeCheckedBaseClass.expression;
       }
 
-      exprResult = typecheckClassExt(classFieldImpls, null, implExpr, classCall, null, baseClassExpr);
+      if (renewExpr != null) {
+        additionalImpls = new HashMap<>();
+      }
+      exprResult = typecheckClassExt(classFieldImpls, null, renewExpr, additionalImpls, classCall, null, baseClassExpr);
       if (exprResult == null) {
         return null;
       }
@@ -635,8 +643,15 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new TypecheckingResult(new ErrorExpression(null, error), normExpr);
     }
 
-    if (checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
-      return checkResult(expectedType, new TypecheckingResult(new NewExpression(classCallExpr), normExpr), expr);
+    if (renewExpr != null || checkAllImplemented(classCallExpr, pseudoImplemented, expr)) {
+      ClassCallExpression classCallType;
+      if (renewExpr != null) {
+        classCallType = new ClassCallExpression(classCallExpr.getDefinition(), classCallExpr.getSortArgument(), additionalImpls, Sort.PROP, false);
+        additionalImpls.putAll(classCallExpr.getImplementedHere());
+      } else {
+        classCallType = classCallExpr;
+      }
+      return checkResult(expectedType, new TypecheckingResult(new NewExpression(renewExpr, classCallExpr), classCallType), expr);
     } else {
       return null;
     }

@@ -137,7 +137,10 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
 
   @Override
   public Boolean visitNew(NewExpression expr, Void params) {
-    return visitClassCall(expr.getExpression(), null);
+    if (visitClassCall(expr.getClassCall(), null)) {
+      return true;
+    }
+    return expr.getRenewExpression() != null && findBinding(expr.getRenewExpression(), true);
   }
 
   @Override

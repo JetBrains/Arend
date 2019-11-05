@@ -607,7 +607,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
       type = (ClassCallExpression) typeResult.expression;
       pseudoImplemented = new HashSet<>();
-      result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, ExpectedType.OMEGA, null, type, pseudoImplemented, resultType), null, def);
+      result = typechecker.finalize(typechecker.typecheckClassExt(classFieldImpls, ExpectedType.OMEGA, type, pseudoImplemented, resultType), null, def);
       if (result == null || !(result.expression instanceof ClassCallExpression)) {
         return null;
       }
@@ -716,7 +716,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (newDef && (expectedType.isError() || !typedDef.isSFunc())) {
             typedDef.setBody(null);
             if (!def.isRecursive()) {
-              typedDef.setResultType(((NewExpression) termResult.expression).getExpression());
+              typedDef.setResultType(((NewExpression) termResult.expression).getType());
             }
           }
         } else {
@@ -778,7 +778,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         ClassField classifyingField = typecheckedResultType.getDefinition().getClassifyingField();
         Expression classifyingExpr;
         if (classifyingField != null) {
-          classifyingExpr = typecheckedResultType.getImplementation(classifyingField, new NewExpression(typecheckedResultType));
+          classifyingExpr = typecheckedResultType.getImplementation(classifyingField, new NewExpression(null, typecheckedResultType));
           Set<SingleDependentLink> params = new LinkedHashSet<>();
           while (classifyingExpr instanceof LamExpression) {
             for (SingleDependentLink link = ((LamExpression) classifyingExpr).getParameters(); link.hasNext(); link = link.getNext()) {
