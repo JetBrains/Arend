@@ -199,15 +199,11 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
 
         if (replace) {
-          Map<ClassField, Expression> implementations = new HashMap<>(actualClassCall.getImplementedHere());
-          ClassCallExpression newClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getSortArgument(), implementations, Sort.PROP, false);
-          for (ClassField field : newClassCall.getDefinition().getFields()) {
-            if (!newClassCall.isImplemented(field)) {
-              implementations.put(field, FieldCallExpression.make(field, newClassCall.getSortArgument(), result.expression));
-            }
+          if (!actualClassCall.getImplementedHere().isEmpty()) {
+            actualClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getSortArgument(), Collections.emptyMap(), actualClassCall.getSort(), actualClassCall.hasUniverses());
           }
-          result.expression = new NewExpression(newClassCall);
-          result.type = newClassCall;
+          result.expression = new NewExpression(result.expression, actualClassCall);
+          result.type = result.expression.getType();
           return checkResultExpr(expectedClassCall, result, expr);
         }
       }
