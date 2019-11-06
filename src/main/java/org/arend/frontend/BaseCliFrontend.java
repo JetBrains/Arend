@@ -41,7 +41,21 @@ public abstract class BaseCliFrontend {
   private final FileLibraryResolver myLibraryResolver = new FileLibraryResolver(new ArrayList<>(), myTypecheckerState, System.err::println);
   private final LibraryManager myLibraryManager = new MyLibraryManager();
 
+  private static String timeToString(long time) {
+    if (time < 10000) {
+      return time + "ms";
+    }
+    if (time < 60000) {
+      return time / 1000 + ("." + (time / 100 % 10)) + "s";
+    }
+
+    long seconds = time / 1000;
+    return (seconds / 60) + "m" + (seconds % 60) + "s";
+  }
+
   private class MyLibraryManager extends LibraryManager {
+    private long time;
+
     MyLibraryManager() {
       super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println);
     }
@@ -49,13 +63,15 @@ public abstract class BaseCliFrontend {
     @Override
     protected void beforeLibraryLoading(Library library) {
       System.out.println("[INFO] Loading library " + library.getName());
+      time = System.currentTimeMillis();
     }
 
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
+      time = System.currentTimeMillis() - time;
       flushErrors();
       System.err.flush();
-      System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName());
+      System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName() + (successful ? " (" + timeToString(time) + ")" : ""));
     }
   }
 
@@ -227,7 +243,9 @@ public abstract class BaseCliFrontend {
 
       System.out.println("--- Typechecking " + library.getName() + " ---");
       Collection<? extends ModulePath> modules = library.getUpdatedModules();
+      long time = System.currentTimeMillis();
       new MyTypechecking().typecheckLibrary(library);
+      time = System.currentTimeMillis() - time;
       flushErrors();
 
       // Output nice per-module typechecking results
@@ -249,7 +267,7 @@ public abstract class BaseCliFrontend {
       if (numWithGoals > 0) {
         System.out.println("Number of modules with goals: " + numWithGoals);
       }
-      System.out.println("--- Done ---");
+      System.out.println("--- Done (" + timeToString(time) + ") ---");
 
       // Persist updated modules
       if (library.supportsPersisting()) {
