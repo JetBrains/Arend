@@ -9,6 +9,7 @@ public enum FunctionKind {
   SFUNC { @Override public boolean isSFunc() { return true; } },
   LEMMA { @Override public boolean isSFunc() { return true; } },
   FUNC,
+  CONS,
   INSTANCE;
 
   public boolean isUse() {

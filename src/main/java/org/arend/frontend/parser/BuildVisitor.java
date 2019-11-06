@@ -552,7 +552,9 @@ public class BuildVisitor extends ArendBaseVisitor {
               ? FunctionKind.LEMMA
               : funcKw instanceof FuncKwSFuncContext
                 ? FunctionKind.SFUNC
-                : FunctionKind.FUNC,
+                : funcKw instanceof FuncKwConsContext
+                  ? FunctionKind.CONS
+                  : FunctionKind.FUNC,
       referable, visitFunctionParameters(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
     if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
