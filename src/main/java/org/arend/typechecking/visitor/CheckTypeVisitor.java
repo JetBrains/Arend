@@ -186,6 +186,33 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     result.type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
     expectedType = expectedType.normalize(NormalizeVisitor.Mode.WHNF);
+    if (expectedType instanceof Expression) {
+      ClassCallExpression actualClassCall = result.type.cast(ClassCallExpression.class);
+      ClassCallExpression expectedClassCall = ((Expression) expectedType).cast(ClassCallExpression.class);
+      if (actualClassCall != null && expectedClassCall != null && actualClassCall.getDefinition().isSubClassOf(expectedClassCall.getDefinition())) {
+        boolean replace = false;
+        for (ClassField field : expectedClassCall.getImplementedHere().keySet()) {
+          if (!actualClassCall.isImplemented(field)) {
+            replace = true;
+            break;
+          }
+        }
+
+        if (replace) {
+          Map<ClassField, Expression> implementations = new HashMap<>(actualClassCall.getImplementedHere());
+          ClassCallExpression newClassCall = new ClassCallExpression(actualClassCall.getDefinition(), actualClassCall.getSortArgument(), implementations, Sort.PROP, false);
+          for (ClassField field : newClassCall.getDefinition().getFields()) {
+            if (!newClassCall.isImplemented(field)) {
+              implementations.put(field, FieldCallExpression.make(field, newClassCall.getSortArgument(), result.expression));
+            }
+          }
+          result.expression = new NewExpression(newClassCall);
+          result.type = newClassCall;
+          return checkResultExpr(expectedClassCall, result, expr);
+        }
+      }
+    }
+
     TypecheckingResult coercedResult = CoerceData.coerce(result, expectedType, expr, this);
     if (coercedResult != null) {
       return coercedResult;
