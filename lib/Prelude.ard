@@ -20,6 +20,8 @@
 
 \func \infix 1 = {A : \Type} (a a' : A) => Path (\lam _ => A) a a'
 
+\func idp {A : \Type} {a : A} => path (\lam _ => a)
+
 \func \infixl 9 @ {A : I -> \Type} {a : A left} {a' : A right} (p : Path A a a') (i : I) : A i \elim p, i
   | _, left => a
   | _, right => a'

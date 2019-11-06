@@ -63,6 +63,7 @@ public class Prelude {
   public static FunctionDefinition PATH_INFIX;
   public static Constructor PATH_CON;
 
+  public static FunctionDefinition IDP;
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
@@ -131,6 +132,9 @@ public class Prelude {
       case "=":
         PATH_INFIX = (FunctionDefinition) definition;
         PATH_INFIX.getParameters().setType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
+        break;
+      case "idp":
+        IDP = (FunctionDefinition) definition;
         break;
       case "@": {
         AT = (FunctionDefinition) definition;
@@ -216,6 +220,7 @@ public class Prelude {
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
     consumer.accept(PATH_INFIX);
+    consumer.accept(IDP);
     consumer.accept(AT);
     consumer.accept(COERCE);
     consumer.accept(COERCE2);
