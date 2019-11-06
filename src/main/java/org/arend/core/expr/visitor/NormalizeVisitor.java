@@ -487,7 +487,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           return null;
         }
 
-        args = singleConstructor.getMatchedArguments(argument);
+        args = singleConstructor.getMatchedArguments(argument, true);
+        if (args == null) {
+          return null;
+        }
       }
 
       for (int i = args.size() - 1; i >= 0; i--) {
