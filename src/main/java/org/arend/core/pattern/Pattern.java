@@ -13,5 +13,9 @@ public interface Pattern {
   MatchResult match(Expression expression, List<Expression> result);
   boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2);
 
+  default Expression toPatternExpression() {
+    return toExpression();
+  }
+
   enum MatchResult { OK, MAYBE, FAIL }
 }

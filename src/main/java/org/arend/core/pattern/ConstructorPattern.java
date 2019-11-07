@@ -111,6 +111,19 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
+  public Expression toPatternExpression() {
+    List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
+      Expression argument = pattern.toPatternExpression();
+      if (argument == null) {
+        return null;
+      }
+      arguments.add(argument);
+    }
+    return (myExpression instanceof ClassCallExpression ? new ConstructorPattern(new SigmaExpression(Sort.PROP, getParameters()), myPatterns) : this).toExpression(arguments);
+  }
+
+  @Override
   public DependentLink getFirstBinding() {
     return myPatterns.getFirstBinding();
   }

@@ -117,23 +117,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
         @Override
         void printRight(PrettyPrintVisitor pp) {
-          new ListLayout<Concrete.Argument>() {
-            @Override
-            void printListElement(PrettyPrintVisitor ppv, Concrete.Argument arg) {
-              if (arg.isExplicit()) {
-                arg.getExpression().accept(ppv, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
-              } else {
-                ppv.myBuilder.append("{");
-                arg.getExpression().accept(ppv, new Precedence(Concrete.Expression.PREC));
-                ppv.myBuilder.append('}');
-              }
-            }
-
-            @Override
-            String getSeparator() {
-              return " ";
-            }
-          }.doPrettyPrint(pp, args, noIndent);
+          printArguments(pp, args, noIndent);
         }
 
         @Override
@@ -1241,6 +1225,26 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
     }
 
     return null;
+  }
+
+  static public void printArguments(PrettyPrintVisitor pp, List<Concrete.Argument> args, boolean noIndent) {
+    new ListLayout<Concrete.Argument>() {
+      @Override
+      void printListElement(PrettyPrintVisitor ppv, Concrete.Argument arg) {
+        if (arg.isExplicit()) {
+          arg.getExpression().accept(ppv, new Precedence((byte) (Concrete.AppExpression.PREC + 1)));
+        } else {
+          ppv.myBuilder.append("{");
+          arg.getExpression().accept(ppv, new Precedence(Concrete.Expression.PREC));
+          ppv.myBuilder.append('}');
+        }
+      }
+
+      @Override
+      String getSeparator() {
+        return " ";
+      }
+    }.doPrettyPrint(pp, args, noIndent);
   }
 
   public interface AbstractLayout {

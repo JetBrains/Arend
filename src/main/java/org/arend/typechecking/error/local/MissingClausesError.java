@@ -58,7 +58,7 @@ public class MissingClausesError extends TypecheckingError {
 
     List<LineDoc> docs = new ArrayList<>();
     for (List<Pattern> missingClause : getLimitedMissingClauses()) {
-      docs.add(hSep(text(", "), missingClause.stream().map(pattern -> termLine(pattern.toExpression(), modPPConfig)).collect(Collectors.toList())));
+      docs.add(hSep(text(", "), missingClause.stream().map(pattern -> termLine(pattern.toPatternExpression(), modPPConfig)).collect(Collectors.toList())));
     }
     if (docs.size() < missingClauses.size()) {
       docs.add(text("..."));
