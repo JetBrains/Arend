@@ -296,6 +296,9 @@ public class ModuleDeserialization {
       case FUNCTION:
         def = new FunctionDefinition(referable);
         break;
+      case CONSTRUCTOR:
+        def = new DConstructor(referable);
+        break;
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
     }

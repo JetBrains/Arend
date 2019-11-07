@@ -21,6 +21,10 @@ public abstract class DefCallExpression extends Expression {
     return Collections.emptyList();
   }
 
+  public List<? extends Expression> getConCallArguments() {
+    return getDefCallArguments();
+  }
+
   public ExprSubstitution addArguments(ExprSubstitution substitution) {
     DependentLink link = myDefinition.getParameters();
     for (Expression argument : getDefCallArguments()) {

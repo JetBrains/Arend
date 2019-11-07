@@ -8,6 +8,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.prelude.Prelude;
 
 import java.util.*;
@@ -15,6 +16,11 @@ import java.util.*;
 public class ConstructorPattern implements Pattern {
   private final Expression myExpression; // Either conCall, classCall, or Sigma.
   private final Patterns myPatterns;
+
+  private ConstructorPattern(Expression expression, Patterns patterns) {
+    myExpression = expression;
+    myPatterns = patterns;
+  }
 
   public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
     myExpression = conCall;
@@ -200,5 +206,14 @@ public class ConstructorPattern implements Pattern {
     }
 
     return false;
+  }
+
+  @Override
+  public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
+    List<Pattern> patterns = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
+      patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
+    }
+    return new ConstructorPattern(myExpression.subst(exprSubst, levelSubst), new Patterns(patterns));
   }
 }

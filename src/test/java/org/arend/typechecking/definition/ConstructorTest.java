@@ -24,7 +24,7 @@ public class ConstructorTest extends TypeCheckingTestCase {
   public void lambdaTest() {
     typeCheckModule(
       "\\data D2 | con2 (Nat -> Nat)\n" +
-      "\\cons con => con2 (\\lam _ => 0)");
+      "\\cons con => con2 (\\lam _ => 0)", 1);
   }
 
   @Test
@@ -56,12 +56,45 @@ public class ConstructorTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void variableError() {
-    typeCheckDef("\\cons con {A : \\Type} (a : A) => a", 1);
+  public void variableTest2() {
+    typeCheckDef("\\cons con {A : \\Type} (a : A) => a");
+  }
+
+  @Test
+  public void parametersTest() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil");
   }
 
   @Test
   public void parametersError() {
-    typeCheckDef("\\cons con (n m : Nat) => suc n", 1);
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single (A : \\Type) (a : A) => cons a nil", 1);
+  }
+
+  @Test
+  public void parametersError2() {
+    typeCheckDef("\\cons con {x : Nat} (n : Nat) => suc n", 1);
+  }
+
+  @Test
+  public void elimError() {
+    typeCheckDef(
+      "\\cons con (n : Nat) : Nat \\elim n\n" +
+      "  | 0 => 0\n" +
+      "  | suc n => suc n", 1);
+  }
+
+  @Test
+  public void cowithError() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type)\n" +
+      "  | proj1 : A\n" +
+      "  | proj2 : B\n" +
+      "\\cons pair {A B : \\Type} (a : A) (b : B) : Pair A B \\cowith\n" +
+      "  | proj1 => a\n" +
+      "  | proj2 => b", 1);
   }
 }

@@ -17,6 +17,7 @@ import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.ReferableConverter;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
 import org.arend.typechecking.CancellationIndicator;
@@ -178,7 +179,6 @@ public class TypecheckingOrderingListener implements OrderingListener {
     if (definition instanceof Concrete.DataDefinition) {
       typechecked = new DataDefinition(definition.getData());
       ((DataDefinition) typechecked).setSort(Sort.SET0);
-      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
       for (Concrete.ConstructorClause constructorClause : ((Concrete.DataDefinition) definition).getConstructorClauses()) {
         for (Concrete.Constructor constructor : constructorClause.getConstructors()) {
           Constructor tcConstructor = new Constructor(constructor.getData(), (DataDefinition) typechecked);
@@ -189,12 +189,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
         }
       }
     } else if (definition instanceof Concrete.FunctionDefinition) {
-      typechecked = new FunctionDefinition(definition.getData());
+      typechecked = ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression(null, null));
-      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
     } else if (definition instanceof Concrete.ClassDefinition) {
       typechecked = new ClassDefinition((TCClassReferable) definition.getData());
-      typechecked.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
       for (Concrete.ClassField field : ((Concrete.ClassDefinition) definition).getFields()) {
         ClassField classField = new ClassField(field.getData(), (ClassDefinition) typechecked);
         classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression(null, null)));

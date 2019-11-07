@@ -1,5 +1,6 @@
 package org.arend.core.expr;
 
+import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
@@ -26,6 +27,11 @@ public class FunCallExpression extends DefCallExpression {
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return myArguments;
+  }
+
+  @Override
+  public List<? extends Expression> getConCallArguments() {
+    return getDefinition() instanceof DConstructor ? myArguments.subList(((DConstructor) getDefinition()).getNumberOfParameters(), myArguments.size()) : myArguments;
   }
 
   @Override
