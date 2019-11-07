@@ -2,6 +2,7 @@ package org.arend.naming;
 
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.module.ModulePath;
+import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocatedReferableImpl;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.scope.EmptyScope;
@@ -77,10 +78,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfix() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), MODULE_PATH);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 7, true), MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
 
@@ -91,10 +92,10 @@ public class NameResolverTest extends NameResolverTestCase {
 
   @Test
   public void parserInfixError() {
-    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH);
+    ConcreteLocatedReferable plusRef = new ConcreteLocatedReferable(null, "+", new Precedence(Precedence.Associativity.LEFT_ASSOC, (byte) 6, true), MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
     Concrete.Definition plus = new Concrete.FunctionDefinition(FunctionKind.FUNC, plusRef, Collections.emptyList(), null, null, null);
     plusRef.setDefinition(plus);
-    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), MODULE_PATH);
+    ConcreteLocatedReferable mulRef = new ConcreteLocatedReferable(null, "*", new Precedence(Precedence.Associativity.RIGHT_ASSOC, (byte) 6, true), MODULE_PATH, GlobalReferable.Kind.TYPECHECKABLE);
     Concrete.Definition mul = new Concrete.FunctionDefinition(FunctionKind.FUNC, mulRef, Collections.emptyList(), null, null, null);
     mulRef.setDefinition(mul);
     resolveNamesExpr(new ListScope(plusRef, mulRef), "11 + 2 * 3", 1);
@@ -661,7 +662,7 @@ public class NameResolverTest extends NameResolverTestCase {
     moduleScopeProvider = module -> module.equals(Prelude.MODULE_PATH)
       ? preludeLibrary.getModuleScopeProvider().forModule(module)
       : module.equals(new ModulePath("Mod"))
-        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", module))
+        ? new SingletonScope(new LocatedReferableImpl(Precedence.DEFAULT, "foo", module, GlobalReferable.Kind.TYPECHECKABLE))
         : EmptyScope.INSTANCE;
     /*
     resolveNamesModule(

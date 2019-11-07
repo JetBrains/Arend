@@ -20,11 +20,11 @@ public class LocatedReferableImpl implements TCReferable {
     myKind = kind;
   }
 
-  public LocatedReferableImpl(Precedence precedence, String name, ModulePath parent) {
+  public LocatedReferableImpl(Precedence precedence, String name, ModulePath parent, Kind kind) {
     myPrecedence = precedence;
     myName = name;
     myParent = new ModuleReferable(parent);
-    myKind = Kind.TYPECHECKABLE;
+    myKind = kind;
   }
 
   @Nonnull

@@ -7,6 +7,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
+import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
@@ -25,6 +27,7 @@ import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.instance.pool.GlobalInstancePool;
 import org.arend.typechecking.instance.pool.InstancePool;
@@ -38,6 +41,7 @@ public class PatternTypechecking {
   private final ErrorReporter myErrorReporter;
   private final EnumSet<Flag> myFlags;
   private final CheckTypeVisitor myVisitor;
+  private final TypecheckerState myState;
   private Map<Referable, Binding> myContext;
 
   public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, CHECK_COVERAGE, CONTEXT_FREE }
@@ -46,6 +50,14 @@ public class PatternTypechecking {
     myErrorReporter = errorReporter;
     myFlags = flags;
     myVisitor = visitor;
+    myState = visitor.getTypecheckingState();
+  }
+
+  public PatternTypechecking(ErrorReporter errorReporter, EnumSet<Flag> flags, TypecheckerState state) {
+    myErrorReporter = errorReporter;
+    myFlags = flags;
+    myVisitor = null;
+    myState = state;
   }
 
   private void collectBindings(List<Pattern> patterns) {
@@ -358,6 +370,15 @@ public class PatternTypechecking {
             }
             return null;
           }
+        }
+      }
+
+      // Defined constructor patterns
+      if (pattern instanceof Concrete.ConstructorPattern) {
+        Concrete.ConstructorPattern conPattern = (Concrete.ConstructorPattern) pattern;
+        Definition def = conPattern.getConstructor() instanceof TCReferable ? myState.getTypechecked((TCReferable) conPattern.getConstructor()) : null;
+        if (def instanceof DConstructor) {
+          // TODO: Match parameters of def, recursively typecheck patterns, and substitute the result into def.getPattern()
         }
       }
 

@@ -24,8 +24,8 @@ public class ConcreteLocatedReferable extends LocatedReferableImpl implements So
     myPosition = position;
   }
 
-  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, ModulePath modulePath) {
-    super(precedence, name, modulePath);
+  public ConcreteLocatedReferable(Position position, @Nonnull String name, Precedence precedence, ModulePath modulePath, Kind kind) {
+    super(precedence, name, modulePath, kind);
     myPosition = position;
   }
 

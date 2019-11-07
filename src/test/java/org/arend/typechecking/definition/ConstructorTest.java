@@ -3,6 +3,8 @@ package org.arend.typechecking.definition;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.arend.typechecking.Matchers.missingClauses;
+
 public class ConstructorTest extends TypeCheckingTestCase {
   @Test
   public void constructorTest() {
@@ -96,5 +98,29 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\cons pair {A B : \\Type} (a : A) (b : B) : Pair A B \\cowith\n" +
       "  | proj1 => a\n" +
       "  | proj2 => b", 1);
+  }
+
+  @Test
+  public void patternsCoverageTest() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
+      "\\func f {A : \\Type} (xs : List A) : Nat\n" +
+      "  | nil => 3\n" +
+      "  | single x => 2\n" +
+      "  | cons _ (cons _ _) => 1\n" +
+      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+  }
+
+  @Test
+  public void patternsCoverageError() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
+      "\\func f {A : \\Type} (xs : List A) : Nat\n" +
+      "  | single x => 2\n" +
+      "  | cons (cons _) => 1", 1);
+    assertThatErrorsAre(missingClauses(1));
   }
 }
