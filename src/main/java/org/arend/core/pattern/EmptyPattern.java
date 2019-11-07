@@ -3,9 +3,13 @@ package org.arend.core.pattern;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.SigmaExpression;
+import org.arend.core.expr.TupleExpression;
+import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +21,11 @@ public class EmptyPattern implements Pattern {
   @Override
   public Expression toExpression() {
     return null;
+  }
+
+  @Override
+  public Expression toPatternExpression() {
+    return new TupleExpression(Collections.emptyList(), new SigmaExpression(Sort.PROP, EmptyDependentLink.getInstance()));
   }
 
   @Override

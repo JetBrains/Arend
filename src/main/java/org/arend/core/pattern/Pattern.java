@@ -16,5 +16,9 @@ public interface Pattern {
   boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2);
   Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst);
 
+  default Expression toPatternExpression() {
+    return toExpression();
+  }
+
   enum MatchResult { OK, MAYBE, FAIL }
 }

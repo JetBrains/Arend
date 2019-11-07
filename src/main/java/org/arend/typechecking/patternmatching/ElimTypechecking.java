@@ -300,7 +300,7 @@ public class ElimTypechecking {
       return;
     }
 
-    if (missingClauses.size() == 1) {
+    if (missingClauses.size() == 1 && elimParams.isEmpty()) {
       boolean allVars = true;
       for (Pattern pattern : missingClauses.get(0)) {
         if (!(pattern instanceof BindingPattern)) {
@@ -317,6 +317,32 @@ public class ElimTypechecking {
 
     for (List<Pattern> patterns : missingClauses) {
       Collections.reverse(patterns);
+    }
+
+    if (!elimParams.isEmpty()) {
+      for (List<Pattern> patterns : missingClauses) {
+        for (int i = 0; i < patterns.size(); i++) {
+          if (patterns.get(i) instanceof BindingPattern) {
+            ConstructorPattern newPattern;
+            List<Pattern> args;
+            Expression type = ((BindingPattern) patterns.get(i)).getBinding().getTypeExpr().getUnderlyingExpression();
+            if (type instanceof SigmaExpression) {
+              args = new ArrayList<>();
+              newPattern = new ConstructorPattern((SigmaExpression) type, new Patterns(args));
+            } else if (type instanceof ClassCallExpression) {
+              args = new ArrayList<>();
+              newPattern = new ConstructorPattern((ClassCallExpression) type, new Patterns(args));
+            } else {
+              continue;
+            }
+
+            patterns.set(i, newPattern);
+            for (DependentLink link = newPattern.getParameters(); link.hasNext(); link = link.getNext()) {
+              args.add(new BindingPattern(link));
+            }
+          }
+        }
+      }
     }
 
     myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
