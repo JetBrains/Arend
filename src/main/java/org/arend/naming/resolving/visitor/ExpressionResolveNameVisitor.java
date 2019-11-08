@@ -264,7 +264,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
       if (namePattern.type == null) {
         Referable ref = myParentScope.resolveName(name);
-        if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR) {
+        if (ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor()) {
           return (GlobalReferable) ref;
         }
       }
@@ -319,7 +319,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       Referable referable = resolve(origReferable, myParentScope, false, resolvedList);
       if (referable instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) referable).getError());
-      } else if (referable instanceof GlobalReferable && ((GlobalReferable) referable).getKind() != GlobalReferable.Kind.CONSTRUCTOR) {
+      } else if (referable instanceof GlobalReferable && !((GlobalReferable) referable).getKind().isConstructor()) {
         myErrorReporter.report(new ExpectedConstructorError((GlobalReferable) referable, null, pattern));
       }
 

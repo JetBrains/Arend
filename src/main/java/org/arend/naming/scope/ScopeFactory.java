@@ -122,7 +122,7 @@ public class ScopeFactory {
       Referable ref = pattern.getHeadReference();
       if (ref != null) {
         ref = ExpressionResolveNameVisitor.resolve(ref, parentScope);
-        if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR)) {
+        if (!(ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor())) {
           referables.add(ref);
         }
       }

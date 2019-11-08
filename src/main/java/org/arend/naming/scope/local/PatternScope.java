@@ -43,7 +43,7 @@ public class PatternScope implements Scope {
             globalScope = myParent.getGlobalSubscope();
           }
           Referable resolved = globalScope.resolveName(ref.textRepresentation());
-          if ((resolved == null || !(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind() == GlobalReferable.Kind.CONSTRUCTOR)) && pred.test(ref)) {
+          if ((resolved == null || !(resolved instanceof GlobalReferable && ((GlobalReferable) resolved).getKind().isConstructor())) && pred.test(ref)) {
             return ref;
           }
         }

@@ -199,7 +199,7 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new ModuleReferable(modulePath);
       } else {
-        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CONSTRUCTOR ? LocatedReferableImpl.Kind.CONSTRUCTOR : LocatedReferableImpl.Kind.TYPECHECKABLE);
+        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CONSTRUCTOR ? LocatedReferableImpl.Kind.DEFINED_CONSTRUCTOR : LocatedReferableImpl.Kind.TYPECHECKABLE);
       }
     }
 

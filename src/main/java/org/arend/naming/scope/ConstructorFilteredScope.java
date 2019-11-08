@@ -17,7 +17,7 @@ public class ConstructorFilteredScope implements Scope {
   @Nullable
   @Override
   public Referable find(Predicate<Referable> pred) {
-    return myScope.find(ref -> ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind() == GlobalReferable.Kind.CONSTRUCTOR && pred.test(ref));
+    return myScope.find(ref -> ref instanceof GlobalReferable && ((GlobalReferable) ref).getKind().isConstructor() && pred.test(ref));
   }
 
   @Nullable

@@ -541,7 +541,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     FuncKwContext funcKw = ctx.funcKw();
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, funcKw instanceof FuncKwConsContext ? GlobalReferable.Kind.CONSTRUCTOR : GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, funcKw instanceof FuncKwConsContext ? GlobalReferable.Kind.DEFINED_CONSTRUCTOR : GlobalReferable.Kind.TYPECHECKABLE);
     boolean isUse = funcKw instanceof FuncKwUseContext;
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
