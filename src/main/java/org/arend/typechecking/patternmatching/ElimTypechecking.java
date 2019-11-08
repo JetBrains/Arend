@@ -126,7 +126,7 @@ public class ElimTypechecking {
 
   public Body typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor);
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor, !myCase);
     myOK = true;
     for (Concrete.FunctionClause clause : funClauses) {
       Pair<List<Pattern>, TypecheckingResult> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);

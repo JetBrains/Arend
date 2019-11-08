@@ -4,6 +4,7 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
 import static org.arend.typechecking.Matchers.missingClauses;
+import static org.arend.typechecking.Matchers.typeMismatchError;
 
 public class ConstructorTest extends TypeCheckingTestCase {
   @Test
@@ -101,7 +102,7 @@ public class ConstructorTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void patternsCoverageTest() {
+  public void patternsTest() {
     typeCheckModule(
       "\\data List (A : \\Type) | cons A (List A) | nil\n" +
       "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
@@ -114,13 +115,85 @@ public class ConstructorTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void patternsCaseTest() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
+      "\\func f {A : \\Type} (xs : List A) : Nat => \\case xs \\with {\n" +
+      "  | nil => 3\n" +
+      "  | single x => 2\n" +
+      "  | cons _ (cons _ _) => 1\n" +
+      "}\n" +
+      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+  }
+
+  @Test
   public void patternsCoverageError() {
     typeCheckModule(
       "\\data List (A : \\Type) | cons A (List A) | nil\n" +
       "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
       "\\func f {A : \\Type} (xs : List A) : Nat\n" +
       "  | single x => 2\n" +
-      "  | cons (cons _) => 1", 1);
+      "  | cons _ (cons _ _) => 1", 1);
     assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void patternsCaseCoverageError() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
+      "\\func f {A : \\Type} (xs : List A) : Nat => \\case xs \\with {\n" +
+      "  | single x => 2\n" +
+      "  | cons _ (cons _ _) => 1\n" +
+      "}", 1);
+    assertThatErrorsAre(missingClauses(1));
+  }
+
+  @Test
+  public void patternsParametersTest() {
+    typeCheckModule(
+      "\\data D2 (n : Nat) | con2 (n = 0)\n" +
+      "\\cons single (p : 0 = 0) => con2 p\n" +
+      "\\func f (d : D2 0) : Nat\n" +
+      "  | single _ => 3\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func test1 : f (single idp) = 3 => idp\n" +
+      "\\func test2 : f (con2 idp) = 3 => idp");
+  }
+
+  @Test
+  public void patternsParametersCaseTest() {
+    typeCheckModule(
+      "\\data D2 (n : Nat) | con2 (n = 0)\n" +
+      "\\cons single (p : 0 = 0) => con2 p\n" +
+      "\\func f (d : D2 0) : Nat => \\case d \\with {\n" +
+      "  | single _ => 3\n" +
+      "}\n" +
+      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
+      "\\func test1 : f (single idp) = 3 => idp\n" +
+      "\\func test2 : f (con2 idp) = 3 => idp");
+  }
+
+  @Test
+  public void patternsParametersMismatchError() {
+    typeCheckModule(
+      "\\data D2 (n : Nat) | con2 (n = 0)\n" +
+      "\\cons single (p : 0 = 0) => con2 p\n" +
+      "\\func f (d : D2 1) : Nat\n" +
+      "  | single _ => 0", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void patternsParametersMismatchCaseError() {
+    typeCheckModule(
+      "\\data D2 (n : Nat) | con2 (n = 0)\n" +
+      "\\cons single (p : 0 = 0) => con2 p\n" +
+      "\\func f (d : D2 1) : Nat => \\case d \\with {\n" +
+      "  | single _ => 0\n" +
+      "}", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }

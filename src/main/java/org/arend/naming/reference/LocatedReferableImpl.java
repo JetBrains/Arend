@@ -12,7 +12,7 @@ public class LocatedReferableImpl implements TCReferable {
   private final LocatedReferable myParent;
   private final Kind myKind;
 
-  public LocatedReferableImpl(Precedence precedence, String name, LocatedReferable parent, Kind kind) {
+  public LocatedReferableImpl(Precedence precedence, String name, @Nullable LocatedReferable parent, Kind kind) {
     assert kind == Kind.TYPECHECKABLE || parent instanceof TCReferable;
     myPrecedence = precedence;
     myName = name;
@@ -20,7 +20,7 @@ public class LocatedReferableImpl implements TCReferable {
     myKind = kind;
   }
 
-  public LocatedReferableImpl(Precedence precedence, String name, ModulePath parent, Kind kind) {
+  public LocatedReferableImpl(Precedence precedence, String name, @Nonnull ModulePath parent, Kind kind) {
     myPrecedence = precedence;
     myName = name;
     myParent = new ModuleReferable(parent);

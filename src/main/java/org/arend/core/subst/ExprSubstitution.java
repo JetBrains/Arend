@@ -97,6 +97,15 @@ public class ExprSubstitution {
     }
   }
 
+  public void subst(LevelSubstitution subst) {
+    if (subst.isEmpty()) {
+      return;
+    }
+    for (Map.Entry<Variable, Expression> entry : mySubstExprs.entrySet()) {
+      entry.setValue(entry.getValue().subst(subst));
+    }
+  }
+
   public String toString() {
     return mySubstExprs.toString();
   }

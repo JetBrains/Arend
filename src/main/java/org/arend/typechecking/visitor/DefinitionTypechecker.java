@@ -963,7 +963,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
 
-          if (pattern != null) {
+          if (newDef && pattern != null) {
             ((DConstructor) typedDef).setPattern(pattern);
             ((DConstructor) typedDef).setNumberOfParameters(numberOfParameters);
           }
@@ -1057,7 +1057,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (!def.getConstructorClauses().isEmpty()) {
       Map<Referable, Binding> context = typechecker.getContext();
       Set<? extends Binding> freeBindings = typechecker.getFreeBindings();
-      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), typechecker);
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), typechecker, true);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
