@@ -399,7 +399,7 @@ public class PatternTypechecking {
             link = link.getNext();
           }
 
-          Expression actualType = constructor.getResultType().subst(substitution, levelSubst);
+          Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF);
           if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
             myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
             return null;
