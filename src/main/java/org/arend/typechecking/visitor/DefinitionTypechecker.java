@@ -637,6 +637,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return new BindingPattern(var);
     }
 
+    if (expr instanceof IntegerExpression) {
+      int n;
+      try {
+        n = checkNumberInPattern(((IntegerExpression) expr).getSmallInteger(), errorReporter, sourceNode);
+      } catch (ArithmeticException e) {
+        n = Concrete.NumberPattern.MAX_VALUE;
+      }
+      Pattern pattern = new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), new Patterns(Collections.emptyList()));
+      for (int i = 0; i < n; i++) {
+        pattern = new ConstructorPattern(new ConCallExpression(Prelude.SUC, Sort.PROP, Collections.emptyList(), Collections.emptyList()), new Patterns(Collections.singletonList(pattern)));
+      }
+      return pattern;
+    }
+
     if (!(expr instanceof ConCallExpression || expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() instanceof DConstructor || expr instanceof TupleExpression)) {
       errorReporter.report(new TypecheckingError("\\cons must contain only constructors and variables", sourceNode));
       return null;

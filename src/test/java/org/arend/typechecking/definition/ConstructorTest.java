@@ -226,4 +226,19 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "  | con n m k => n Nat.+ m Nat.+ k\n" +
       "  | _ => 0");
   }
+
+  @Test
+  public void numberTest() {
+    typeCheckModule(
+      "\\cons one => 1\n" +
+      "\\func f (x : Nat) : Nat\n" +
+      " | 0 => 10\n" +
+      " | one => 20\n" +
+      " | suc (suc x) => x");
+  }
+
+  @Test
+  public void numberError() {
+    typeCheckDef("\\cons one => 200", 1);
+  }
 }

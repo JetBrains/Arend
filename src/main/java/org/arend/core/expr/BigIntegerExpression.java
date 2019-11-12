@@ -23,7 +23,7 @@ public class BigIntegerExpression extends IntegerExpression {
 
   @Override
   public int getSmallInteger() {
-    return myInteger.intValue();
+    return myInteger.intValueExact();
   }
 
   @Override
