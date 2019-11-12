@@ -196,4 +196,15 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "}", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void tupleTest() {
+    typeCheckModule(
+      "\\data D1 | con1 Nat\n" +
+      "\\data D2 (d1 : D1) | con2 (d1' : D1) (p : d1 = d1')\n" +
+      "\\cons con (n : Nat) (d : D1) (p : con1 (suc n) = d) : \\Sigma (x : D1) (D2 x) => (con1 (suc n), con2 d p)\n" +
+      "\\func f (q : \\Sigma (x : D1) (D2 x)) : Nat\n" +
+      "  | con n _ _ => n\n" +
+      "  | _ => 0");
+  }
 }

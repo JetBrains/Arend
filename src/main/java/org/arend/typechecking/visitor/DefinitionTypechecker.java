@@ -635,14 +635,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return new BindingPattern(var);
     }
 
-    if (!(expr instanceof ConCallExpression || expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() instanceof DConstructor)) {
+    if (!(expr instanceof ConCallExpression || expr instanceof FunCallExpression && ((FunCallExpression) expr).getDefinition() instanceof DConstructor || expr instanceof TupleExpression)) {
       errorReporter.report(new TypecheckingError("\\cons must contain only constructors and variables", sourceNode));
       return null;
     }
 
-    DefCallExpression defCall = (DefCallExpression) expr;
     List<Pattern> patterns = new ArrayList<>();
-    for (Expression argument : defCall.getConCallArguments()) {
+    List<? extends Expression> arguments = expr instanceof DefCallExpression ? ((DefCallExpression) expr).getConCallArguments() : ((TupleExpression) expr).getFields();
+    for (Expression argument : arguments) {
       Pattern pattern = checkDConstructor(argument, usedVars, sourceNode);
       if (pattern == null) {
         return null;
@@ -653,6 +653,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (expr instanceof ConCallExpression) {
       ConCallExpression conCall = (ConCallExpression) expr;
       return new ConstructorPattern(new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.emptyList()), new Patterns(patterns));
+    }
+
+    if (expr instanceof TupleExpression) {
+      return new ConstructorPattern(((TupleExpression) expr).getSigmaType(), new Patterns(patterns));
     }
 
     DConstructor constructor = (DConstructor) ((FunCallExpression) expr).getDefinition();
@@ -667,6 +671,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       patternSubst.put(link, patternArg);
       link = link.getNext();
     }
+    DefCallExpression defCall = (DefCallExpression) expr;
     return pattern.subst(new ExprSubstitution().add(constructor.getParameters(), defCall.getDefCallArguments().subList(0, constructor.getNumberOfParameters())), defCall.getSortArgument().toLevelSubstitution(), patternSubst);
   }
 
