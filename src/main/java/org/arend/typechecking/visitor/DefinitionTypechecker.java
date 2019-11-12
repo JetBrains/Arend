@@ -651,7 +651,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (expr instanceof ConCallExpression) {
-      return new ConstructorPattern((ConCallExpression) expr, new Patterns(patterns));
+      ConCallExpression conCall = (ConCallExpression) expr;
+      return new ConstructorPattern(new ConCallExpression(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), Collections.emptyList()), new Patterns(patterns));
     }
 
     DConstructor constructor = (DConstructor) ((FunCallExpression) expr).getDefinition();

@@ -53,6 +53,8 @@ public class BindingPattern implements Pattern {
 
   @Override
   public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
-    return patternSubst.get(myBinding);
+    Pattern result = patternSubst.get(myBinding);
+    assert result != null;
+    return result;
   }
 }

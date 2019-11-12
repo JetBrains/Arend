@@ -394,9 +394,15 @@ public class PatternTypechecking {
           LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
-          for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
-            substitution.add(link, new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, myVisitor.getAllBindings()), myVisitor.getEquations()));
-            link = link.getNext();
+          List<Expression> args = new ArrayList<>();
+          if (constructor.getNumberOfParameters() > 0) {
+            Set<Binding> bindings = myVisitor.getAllBindings();
+            for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
+              Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
+              args.add(arg);
+              substitution.add(link, arg);
+              link = link.getNext();
+            }
           }
 
           Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF);
@@ -424,7 +430,8 @@ public class PatternTypechecking {
             typecheckAsPatterns(pattern.getAsReferables(), null, null);
             parameters = parameters.getNext();
           } else {
-            Expression newExpr = new FunCallExpression(constructor, sortArg.subst(levelSolution), pair.proj2);
+            args.addAll(pair.proj2);
+            Expression newExpr = new FunCallExpression(constructor, sortArg.subst(levelSolution), args);
             typecheckAsPatterns(pattern.getAsReferables(), newExpr, parameters.getTypeExpr());
             exprs.add(newExpr);
             parameters = DependentLink.Helper.subst(parameters.getNext(), new ExprSubstitution(parameters, newExpr));
