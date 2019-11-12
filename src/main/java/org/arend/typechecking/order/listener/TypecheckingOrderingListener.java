@@ -54,7 +54,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCReferable> myComparator;
-  private TCReferable myCurrentDefinition;
+  private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
   private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
@@ -102,9 +102,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
       try {
         return runnable.getAsBoolean();
       } catch (ComputationInterruptedException ignored) {
-        if (myCurrentDefinition != null) {
-          typecheckingInterrupted(myCurrentDefinition, myState.reset(myCurrentDefinition));
+        for (TCReferable currentDefinition : myCurrentDefinitions) {
+          typecheckingInterrupted(currentDefinition, myState.reset(currentDefinition));
         }
+        myCurrentDefinitions = Collections.emptyList();
         return false;
       } finally {
         if (cancellationIndicator != null) {
@@ -230,17 +231,17 @@ public class TypecheckingOrderingListener implements OrderingListener {
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
-    myCurrentDefinition = definition.getData();
-    typecheckingUnitStarted(myCurrentDefinition);
+    myCurrentDefinitions = Collections.singletonList(definition.getData());
+    typecheckingUnitStarted(definition.getData());
     clauses = definition.accept(new DefinitionTypechecker(checkTypeVisitor), null);
-    typechecked = myState.getTypechecked(myCurrentDefinition);
+    typechecked = myState.getTypechecked(definition.getData());
 
     if (definition.isRecursive() && typechecked instanceof FunctionDefinition && clauses != null) {
       checkRecursiveFunctions(Collections.singletonMap((FunctionDefinition) typechecked, definition), Collections.singletonMap((FunctionDefinition) typechecked, clauses));
     }
 
     typecheckingUnitFinished(definition.getData(), typechecked);
-    myCurrentDefinition = null;
+    myCurrentDefinitions = Collections.emptyList();
   }
 
   @Override
@@ -266,8 +267,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
   @Override
   public void headerFound(Concrete.Definition definition) {
-    myCurrentDefinition = definition.getData();
-    typecheckingHeaderStarted(myCurrentDefinition);
+    myCurrentDefinitions = Collections.singletonList(definition.getData());
+    typecheckingHeaderStarted(definition.getData());
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
@@ -283,7 +284,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     }
 
     typecheckingHeaderFinished(definition.getData(), typechecked);
-    myCurrentDefinition = null;
+    myCurrentDefinitions = Collections.emptyList();
     if (!typechecked.status().headerIsOK()) {
       myHeadersAreOK = false;
     }
@@ -308,9 +309,12 @@ public class TypecheckingOrderingListener implements OrderingListener {
     orderedDefinitions.addAll(otherDefs);
 
     DefinitionTypechecker typechecking = new DefinitionTypechecker(null);
+    myCurrentDefinitions = new ArrayList<>();
     for (Concrete.Definition definition : orderedDefinitions) {
-      myCurrentDefinition = definition.getData();
-      typecheckingBodyStarted(myCurrentDefinition);
+      myCurrentDefinitions.add(definition.getData());
+    }
+    for (Concrete.Definition definition : orderedDefinitions) {
+      typecheckingBodyStarted(definition.getData());
 
       Definition def = myState.getTypechecked(definition.getData());
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
@@ -322,9 +326,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
           clausesMap.put((FunctionDefinition) def, clauses);
         }
       }
-
-      myCurrentDefinition = null;
     }
+    myCurrentDefinitions = Collections.emptyList();
 
     myHeadersAreOK = true;
 
@@ -356,7 +359,13 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
   @Override
   public void useFound(List<Concrete.UseDefinition> definitions) {
+    myCurrentDefinitions = new ArrayList<>();
+    for (Concrete.UseDefinition definition : definitions) {
+      myCurrentDefinitions.add(definition.getData());
+      myCurrentDefinitions.add(definition.getUseParent());
+    }
     UseTypechecking.typecheck(definitions, myState, myErrorReporter);
+    myCurrentDefinitions = Collections.emptyList();
   }
 
   private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {
