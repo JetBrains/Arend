@@ -323,13 +323,11 @@ public class PatternTypechecking {
         result.add(new BindingPattern(parameters));
         if (exprs != null) {
           exprs.add(new ReferenceExpression(parameters));
-          if (pattern != null) {
-            if (referable != null && myContext != null) {
-              myContext.put(referable, parameters);
-            } else if (myVisitor != null) {
-              myVisitor.addBinding(null, parameters);
-            }
-          }
+        }
+        if (referable != null && myContext != null) {
+          myContext.put(referable, parameters);
+        } else if (myVisitor != null) {
+          myVisitor.addBinding(null, parameters);
         }
         parameters = parameters.getNext();
         continue;

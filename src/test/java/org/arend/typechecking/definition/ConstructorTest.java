@@ -104,6 +104,19 @@ public class ConstructorTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void patternsElimTest() {
+    typeCheckModule(
+      "\\data List (A : \\Type) | cons A (List A) | nil\n" +
+      "\\cons single {A : \\Type} (a : A) => cons a nil\n" +
+      "\\func f {A : \\Type} (xs : List A) : Nat \\elim xs\n" +
+      "  | nil => 3\n" +
+      "  | single x => 2\n" +
+      "  | cons _ (cons _ _) => 1\n" +
+      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+  }
+
+  @Test
   public void patternsCaseTest() {
     typeCheckModule(
       "\\data List (A : \\Type) | cons A (List A) | nil\n" +
