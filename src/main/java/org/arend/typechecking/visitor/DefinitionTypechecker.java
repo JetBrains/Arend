@@ -597,12 +597,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return paramsOk;
   }
 
-  private ClassCallExpression typecheckCoClauses(FunctionDefinition typedDef, Concrete.FunctionDefinition def, Concrete.Expression resultType, Concrete.Expression resultTypeLevel, List<Concrete.ClassFieldImpl> classFieldImpls) {
+  // Returns a pair consisting of classCalls corresponding to the body and the type (so, the first one is an extension of the second).
+  private Pair<ClassCallExpression,ClassCallExpression> typecheckCoClauses(FunctionDefinition typedDef, Concrete.FunctionDefinition def, List<Concrete.ClassFieldImpl> classFieldImpls) {
     ClassCallExpression type;
     TypecheckingResult result;
     Set<ClassField> pseudoImplemented;
-    if (typedDef.isSFunc()) {
-      TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, def.getKind() == FunctionKind.LEMMA && resultTypeLevel == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
+    Concrete.Expression resultType = def.getResultType();
+    if (typedDef.isSFunc() || def.getKind() == FunctionKind.CONS) {
+      TypecheckingResult typeResult = typechecker.finalCheckExpr(resultType, def.getKind() == FunctionKind.LEMMA && def.getResultTypeLevel() == null ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, false);
       if (typeResult == null || !(typeResult.expression instanceof ClassCallExpression)) {
         return null;
       }
@@ -622,7 +624,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     typechecker.checkAllImplemented((ClassCallExpression) result.expression, pseudoImplemented, def);
-    return type;
+    return new Pair<>((ClassCallExpression) result.expression, type);
   }
 
   private Pattern checkDConstructor(Expression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
@@ -675,6 +677,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return pattern.subst(new ExprSubstitution().add(constructor.getParameters(), defCall.getDefCallArguments().subList(0, constructor.getNumberOfParameters())), defCall.getSortArgument().toLevelSubstitution(), patternSubst);
   }
 
+  private Pattern checkDConstructor(ClassCallExpression type, NewExpression expr, Set<DependentLink> usedVars, Concrete.SourceNode sourceNode) {
+    List<Pattern> patterns = new ArrayList<>();
+    for (ClassField field : type.getDefinition().getFields()) {
+      if (!type.isImplemented(field)) {
+        Pattern pattern = checkDConstructor(expr.getImplementation(field), usedVars, sourceNode);
+        if (pattern == null) {
+          return null;
+        }
+        patterns.add(pattern);
+      }
+    }
+    return new ConstructorPattern(type, new Patterns(patterns));
+  }
+
   private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
 
@@ -712,6 +728,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     List<Clause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
     boolean bodyIsOK = false;
+    ClassCallExpression consType = null;
     if (body instanceof Concrete.ElimFunctionBody) {
       Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
@@ -734,9 +751,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (def.getResultType() != null) {
         Referable typeRef = def.getResultType().getUnderlyingReferable();
         if (typeRef instanceof ClassReferable) {
-          ClassCallExpression result = typecheckCoClauses(typedDef, def, def.getResultType(), def.getResultTypeLevel(), body.getClassFieldImpls());
-          if (newDef && !def.isRecursive()) {
-            typedDef.setResultType(result);
+          Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, body.getClassFieldImpls());
+          if (result != null) {
+            if (newDef && !def.isRecursive()) {
+              typedDef.setResultType(def.getKind() == FunctionKind.CONS ? result.proj1 : result.proj2);
+            }
+            consType = result.proj2;
           }
           typecheckResultTypeLevel(def, typedDef, newDef);
         } else {
@@ -930,52 +950,60 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (typedDef instanceof DConstructor) {
-      if (typedDef.getBody() instanceof Expression) {
-        Set<DependentLink> usedVars = new HashSet<>();
-        Pattern pattern = checkDConstructor((Expression) typedDef.getBody(), usedVars, def.getBody());
-        if (pattern != null) {
-          int numberOfParameters = 0;
-          for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
-            if (usedVars.contains(link)) {
-              break;
-            }
-            numberOfParameters++;
-          }
+      Set<DependentLink> usedVars = new HashSet<>();
+      Pattern pattern = null;
+      if (body instanceof Concrete.TermFunctionBody) {
+        if (typedDef.getBody() instanceof Expression) {
+          pattern = checkDConstructor((Expression) typedDef.getBody(), usedVars, body.getTerm());
+        }
+      } else if (body instanceof Concrete.CoelimFunctionBody) {
+        if (consType != null && typedDef.getResultType() instanceof ClassCallExpression) {
+          pattern = checkDConstructor(consType, new NewExpression(null, (ClassCallExpression) typedDef.getResultType()), usedVars, def);
+        }
+      } else {
+        errorReporter.report(new TypecheckingError("\\cons cannot be defined by pattern matching", def));
+      }
 
-          for (DependentLink link = DependentLink.Helper.get(typedDef.getParameters(), numberOfParameters); link.hasNext(); link = link.getNext()) {
-            if (!usedVars.contains(link)) {
-              errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must be listed before other parameters", def));
+      if (pattern != null) {
+        int numberOfParameters = 0;
+        for (DependentLink link = typedDef.getParameters(); link.hasNext(); link = link.getNext()) {
+          if (usedVars.contains(link)) {
+            break;
+          }
+          numberOfParameters++;
+        }
+
+        for (DependentLink link = DependentLink.Helper.get(typedDef.getParameters(), numberOfParameters); link.hasNext(); link = link.getNext()) {
+          if (!usedVars.contains(link)) {
+            errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must be listed before other parameters", def));
+            pattern = null;
+            break;
+          }
+        }
+
+        if (pattern != null) {
+          DependentLink link = typedDef.getParameters();
+          for (int i = 0; i < numberOfParameters; i++) {
+            if (link.isExplicit()) {
+              errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must be implicit", def));
               pattern = null;
               break;
             }
-          }
-
-          if (pattern != null) {
-            DependentLink link = typedDef.getParameters();
-            for (int i = 0; i < numberOfParameters; i++) {
-              if (link.isExplicit()) {
-                errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must be implicit", def));
-                pattern = null;
-                break;
+            if (!typedDef.getResultType().findBinding(link)) {
+              if (!typedDef.getResultType().isError()) {
+                errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must occur in the result type", def));
               }
-              if (!typedDef.getResultType().findBinding(link)) {
-                if (!typedDef.getResultType().isError()) {
-                  errorReporter.report(new TypecheckingError("Parameters of \\cons that do not occur in patterns must occur in the result type", def));
-                }
-                pattern = null;
-                break;
-              }
-              link = link.getNext();
+              pattern = null;
+              break;
             }
-          }
-
-          if (newDef && pattern != null) {
-            ((DConstructor) typedDef).setPattern(pattern);
-            ((DConstructor) typedDef).setNumberOfParameters(numberOfParameters);
+            link = link.getNext();
           }
         }
-      } else {
-        errorReporter.report(new TypecheckingError("Expected an expression", def.getBody()));
+
+        if (newDef && pattern != null) {
+          ((DConstructor) typedDef).setPattern(pattern);
+          ((DConstructor) typedDef).setNumberOfParameters(numberOfParameters);
+        }
       }
     }
 

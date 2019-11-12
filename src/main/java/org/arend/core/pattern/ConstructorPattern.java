@@ -171,7 +171,7 @@ public class ConstructorPattern implements Pattern {
     List<Expression> arguments = new ArrayList<>();
     for (ClassField field : ((ClassCallExpression) myExpression).getDefinition().getFields()) {
       if (!((ClassCallExpression) myExpression).getDefinition().isImplemented(field)) {
-        arguments.add(newExpr.getImplementation(field, newExpr));
+        arguments.add(newExpr.getImplementation(field));
       }
     }
     return arguments;

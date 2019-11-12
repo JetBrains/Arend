@@ -429,8 +429,9 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
+    boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
     List<Concrete.TelescopeParameter> parameters = visitFunctionParameters(ctx.tele());
-    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent, LocatedReferableImpl.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent, isInstance ? LocatedReferableImpl.Kind.TYPECHECKABLE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
 
     Concrete.FunctionBody body;
@@ -448,7 +449,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       throw new IllegalStateException();
     }
 
-    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(FunctionKind.INSTANCE, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
     funcDef.enclosingClass = enclosingClass;
     reference.setDefinition(funcDef);
     List<Group> subgroups = new ArrayList<>();
@@ -541,7 +542,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     List<Group> subgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     FuncKwContext funcKw = ctx.funcKw();
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, funcKw instanceof FuncKwConsContext ? GlobalReferable.Kind.DEFINED_CONSTRUCTOR : GlobalReferable.Kind.TYPECHECKABLE);
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, GlobalReferable.Kind.TYPECHECKABLE);
     boolean isUse = funcKw instanceof FuncKwUseContext;
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
@@ -552,9 +553,7 @@ public class BuildVisitor extends ArendBaseVisitor {
               ? FunctionKind.LEMMA
               : funcKw instanceof FuncKwSFuncContext
                 ? FunctionKind.SFUNC
-                : funcKw instanceof FuncKwConsContext
-                  ? FunctionKind.CONS
-                  : FunctionKind.FUNC,
+                : FunctionKind.FUNC,
       referable, visitFunctionParameters(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
     if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));

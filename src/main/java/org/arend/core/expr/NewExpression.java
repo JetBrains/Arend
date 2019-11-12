@@ -49,8 +49,8 @@ public class NewExpression extends Expression {
     return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
   }
 
-  public Expression getImplementation(ClassField field, Expression thisExpr) {
-    Expression impl = myClassCall.getImplementation(field, thisExpr);
+  public Expression getImplementation(ClassField field) {
+    Expression impl = myClassCall.getImplementation(field, this);
     return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
   }
 

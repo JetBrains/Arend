@@ -91,17 +91,6 @@ public class ConstructorTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void cowithError() {
-    typeCheckModule(
-      "\\record Pair (A B : \\Type)\n" +
-      "  | proj1 : A\n" +
-      "  | proj2 : B\n" +
-      "\\cons pair {A B : \\Type} (a : A) (b : B) : Pair A B \\cowith\n" +
-      "  | proj1 => a\n" +
-      "  | proj2 => b", 1);
-  }
-
-  @Test
   public void patternsTest() {
     typeCheckModule(
       "\\data List (A : \\Type) | cons A (List A) | nil\n" +
@@ -205,6 +194,23 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\cons con (n : Nat) (d : D1) (p : con1 (suc n) = d) : \\Sigma (x : D1) (D2 x) => (con1 (suc n), con2 d p)\n" +
       "\\func f (q : \\Sigma (x : D1) (D2 x)) : Nat\n" +
       "  | con n _ _ => n\n" +
+      "  | _ => 0");
+  }
+
+  @Test
+  public void cowithTest() {
+    typeCheckModule(
+      "\\record Pair (A B : \\Type)\n" +
+      "  | proj1 : A\n" +
+      "  | proj2 : B\n" +
+      "\\cons pair {A B : \\Type} (a : A) (b : B) : Pair A B\n" +
+      "  | proj1 => a\n" +
+      "  | proj2 => b\n" +
+      "\\data D1 | con1 (Pair Nat Nat)\n" +
+      "\\data D2 | con2 D1 Nat\n" +
+      "\\cons con (n m k : Nat) => con2 (con1 (pair (suc n) m)) (suc k)\n" +
+      "\\func f (d : D2) : Nat\n" +
+      "  | con n m k => n Nat.+ m Nat.+ k\n" +
       "  | _ => 0");
   }
 }
