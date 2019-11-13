@@ -199,7 +199,7 @@ public class ModuleDeserialization {
       if (parent == null) {
         referable = new ModuleReferable(modulePath);
       } else {
-        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, LocatedReferableImpl.Kind.TYPECHECKABLE);
+        referable = new DataLocatedReferableImpl(readPrecedence(referableProto.getPrecedence()), referableProto.getName(), parent.getReferable(), null, groupProto.getDefinition().getDefinitionDataCase() == DefinitionProtos.Definition.DefinitionDataCase.CONSTRUCTOR ? LocatedReferableImpl.Kind.DEFINED_CONSTRUCTOR : LocatedReferableImpl.Kind.TYPECHECKABLE);
       }
     }
 
@@ -295,6 +295,9 @@ public class ModuleDeserialization {
         break;
       case FUNCTION:
         def = new FunctionDefinition(referable);
+        break;
+      case CONSTRUCTOR:
+        def = new DConstructor(referable);
         break;
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());

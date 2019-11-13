@@ -246,15 +246,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         int n = ((Concrete.NumberPattern) pattern).getNumber();
         Concrete.Pattern newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.ZERO.getReferable(), Collections.emptyList(), n == 0 ? pattern.getAsReferables() : Collections.emptyList());
         boolean isNegative = n < 0;
-        if (isNegative) {
-          n = -n;
-        }
-        if (n > Concrete.NumberPattern.MAX_VALUE) {
-          n = Concrete.NumberPattern.MAX_VALUE;
-        }
-        if (n == Concrete.NumberPattern.MAX_VALUE) {
-          myErrorReporter.report(new TypecheckingError("Value too big", pattern));
-        }
+        n = BaseDefinitionTypechecker.checkNumberInPattern(n, myErrorReporter, pattern);
         for (int j = 0; j < n; j++) {
           newPattern = new Concrete.ConstructorPattern(pattern.getData(), true, Prelude.SUC.getReferable(), Collections.singletonList(newPattern), !isNegative && j == n - 1 ? pattern.getAsReferables() : Collections.emptyList());
         }

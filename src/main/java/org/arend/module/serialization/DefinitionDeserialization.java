@@ -34,16 +34,16 @@ public class DefinitionDeserialization {
 
     switch (defProto.getDefinitionDataCase()) {
       case CLASS:
-        ClassDefinition classDef = (ClassDefinition) def;
-        fillInClassDefinition(defDeserializer, defProto.getClass_(), classDef);
+        fillInClassDefinition(defDeserializer, defProto.getClass_(), (ClassDefinition) def);
         break;
       case DATA:
-        DataDefinition dataDef = (DataDefinition) def;
-        fillInDataDefinition(defDeserializer, defProto.getData(), dataDef);
+        fillInDataDefinition(defDeserializer, defProto.getData(), (DataDefinition) def);
+        break;
+      case CONSTRUCTOR:
+        fillInDConstructor(defDeserializer, defProto.getConstructor(), (DConstructor) def);
         break;
       case FUNCTION:
-        FunctionDefinition functionDef = (FunctionDefinition) def;
-        fillInFunctionDefinition(defDeserializer, defProto.getFunction(), functionDef);
+        fillInFunctionDefinition(defDeserializer, defProto.getFunction(), (FunctionDefinition) def);
         break;
       default:
         throw new DeserializationException("Unknown Definition kind: " + defProto.getDefinitionDataCase());
@@ -373,6 +373,14 @@ public class DefinitionDeserialization {
       functionDef.setBody(readBody(defDeserializer, functionProto.getBody(), DependentLink.Helper.size(functionDef.getParameters())));
     }
     // setTypeClassReference(functionDef.getReferable(), functionDef.getParameters(), functionDef.getResultType());
+  }
+
+  private void fillInDConstructor(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DConstructorData constructorProto, DConstructor constructorDef) throws DeserializationException {
+    fillInFunctionDefinition(defDeserializer, constructorProto.getFunction(), constructorDef);
+    constructorDef.setNumberOfParameters(constructorProto.getNumberOfParameters());
+    if (constructorProto.hasPattern()) {
+      constructorDef.setPattern(readPattern(defDeserializer, constructorProto.getPattern(), new LinkList()));
+    }
   }
 
   // To implement this function properly, we need to serialize references to class synonyms

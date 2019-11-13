@@ -1,6 +1,9 @@
 package org.arend.typechecking.implicitargs;
 
-import org.arend.core.context.binding.inference.*;
+import org.arend.core.context.binding.inference.ExpressionInferenceVariable;
+import org.arend.core.context.binding.inference.FunctionInferenceVariable;
+import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
@@ -117,8 +120,8 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           return result;
         }
         infVar = result instanceof DefCallResult
-          ? new DefinitionInferenceVariable(((DefCallResult) result).getDefinition(), parameter, type, expr, myVisitor.getAllBindings())
-          : new FunctionInferenceVariable(parameter.getName(), type, i + 1, expr, myVisitor.getAllBindings());
+          ? new FunctionInferenceVariable(((DefCallResult) result).getDefinition(), parameter, i + 1, type, expr, myVisitor.getAllBindings())
+          : new FunctionInferenceVariable(null, parameter, i + 1, type, expr, myVisitor.getAllBindings());
       }
 
       Expression binding = new InferenceReferenceExpression(infVar, myVisitor.getEquations());
@@ -141,7 +144,7 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
         if (defCallResult.getDefinition() == Prelude.PATH_CON && defCallResult.getArguments().isEmpty()) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", Interval());
           UniverseExpression type = new UniverseExpression(new Sort(defCallResult.getSortArgument().getPLevel(), defCallResult.getSortArgument().getHLevel().add(1)));
-          Expression binding = new InferenceReferenceExpression(new DefinitionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getParameters(), type, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
+          Expression binding = new InferenceReferenceExpression(new FunctionInferenceVariable(Prelude.PATH_CON, Prelude.PATH_CON.getDataTypeParameters(), 1, type, fun, myVisitor.getAllBindings()), myVisitor.getEquations());
           Sort sort = type.getSort().succ();
           result = result.applyExpression(new LamExpression(sort, lamParam, binding), myVisitor.getErrorReporter(), fun);
 

@@ -25,7 +25,7 @@ public class FieldCallExpression extends DefCallExpression {
 
     NewExpression newExpr = thisExpr.cast(NewExpression.class);
     if (newExpr != null) {
-      Expression impl = newExpr.getImplementation(definition, thisExpr);
+      Expression impl = newExpr.getImplementation(definition);
       assert impl != null;
       return impl;
     } else {

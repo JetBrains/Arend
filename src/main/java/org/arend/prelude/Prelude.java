@@ -18,7 +18,6 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
 import org.arend.module.ModulePath;
-import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
@@ -241,7 +240,7 @@ public class Prelude {
 
   public static void initialize(Scope scope, TypecheckerState state) {
     for (Referable ref : scope.getElements()) {
-      if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+      if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
         update(state.getTypechecked((TCReferable) ref));
       }
     }
@@ -250,7 +249,7 @@ public class Prelude {
       Scope childScope = scope.resolveNamespace(name, true);
       assert childScope != null;
       for (Referable ref : childScope.getElements()) {
-        if (ref instanceof TCReferable && ((TCReferable) ref).getKind() == GlobalReferable.Kind.TYPECHECKABLE) {
+        if (ref instanceof TCReferable && ((TCReferable) ref).getKind().isTypecheckable()) {
           update(state.getTypechecked((TCReferable) ref));
         }
       }

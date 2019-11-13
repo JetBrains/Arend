@@ -4,8 +4,10 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 
 import java.util.List;
+import java.util.Map;
 
 public class BindingPattern implements Pattern {
   private final DependentLink myBinding;
@@ -47,5 +49,12 @@ public class BindingPattern implements Pattern {
       substitution1.add(myBinding, other.toExpression());
     }
     return true;
+  }
+
+  @Override
+  public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
+    Pattern result = patternSubst.get(myBinding);
+    assert result != null;
+    return result;
   }
 }

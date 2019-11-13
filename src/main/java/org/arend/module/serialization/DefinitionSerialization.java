@@ -42,6 +42,8 @@ public class DefinitionSerialization {
       out.setClass_(writeClassDefinition(defSerializer, (ClassDefinition) definition));
     } else if (definition instanceof DataDefinition) {
       out.setData(writeDataDefinition(defSerializer, (DataDefinition) definition));
+    } else if (definition instanceof DConstructor) {
+      out.setConstructor(writeDConstructor(defSerializer, (DConstructor) definition));
     } else if (definition instanceof FunctionDefinition) {
       out.setFunction(writeFunctionDefinition(defSerializer, (FunctionDefinition) definition));
     } else {
@@ -298,6 +300,16 @@ public class DefinitionSerialization {
       builder.setBody(writeBody(defSerializer, definition.getActualBody()));
     }
 
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.DConstructorData writeDConstructor(ExpressionSerialization defSerializer, DConstructor definition) {
+    DefinitionProtos.Definition.DConstructorData.Builder builder = DefinitionProtos.Definition.DConstructorData.newBuilder();
+    builder.setFunction(writeFunctionDefinition(defSerializer, definition));
+    builder.setNumberOfParameters(definition.getNumberOfParameters());
+    if (definition.getPattern() != null) {
+      builder.setPattern(writePattern(defSerializer, definition.getPattern()));
+    }
     return builder.build();
   }
 

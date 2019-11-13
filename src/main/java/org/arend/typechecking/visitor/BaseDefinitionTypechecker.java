@@ -27,4 +27,17 @@ public class BaseDefinitionTypechecker {
       return true;
     }
   }
+
+  public static int checkNumberInPattern(int n, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+    if (n < 0) {
+      n = -n;
+    }
+    if (n > Concrete.NumberPattern.MAX_VALUE) {
+      n = Concrete.NumberPattern.MAX_VALUE;
+    }
+    if (n == Concrete.NumberPattern.MAX_VALUE) {
+      errorReporter.report(new TypecheckingError("Value too big", sourceNode));
+    }
+    return n;
+  }
 }

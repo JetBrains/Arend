@@ -35,7 +35,7 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   }
 
   public ConcreteClassReferable(Position position, @Nonnull String name, Precedence precedence, Collection<? extends ConcreteClassFieldReferable> fields, List<? extends Reference> superClasses, ChildGroup group, ModulePath parent) {
-    super(position, name, precedence, parent);
+    super(position, name, precedence, parent, Kind.TYPECHECKABLE);
     myFields = fields;
     myUnresolvedSuperClasses = superClasses;
     mySuperClasses = new ArrayList<>(superClasses.size());

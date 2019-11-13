@@ -13,6 +13,7 @@ message Definition {
         ClassData class = 5;
         DataData data = 6;
         FunctionData function = 7;
+        DConstructorData constructor = 10;
     }
     bool hasTypeClassReference = 8;
     bool hasUniverses = 9;
@@ -119,6 +120,11 @@ message Definition {
         FunctionKind kind = 8;
         int32 visible_parameter = 9;
         repeated ParametersLevel parameters_levels = 10;
+    }
+    message DConstructorData {
+        FunctionData function = 1;
+        int32 number_of_parameters = 2;
+        Pattern pattern = 3;
     }
 
     enum FunctionKind {

@@ -9,6 +9,7 @@ import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.*;
@@ -179,7 +180,8 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
       }
     }
 
-    return visitParameters(makeReference(expr.getDefinition().getReferable()), expr.getDefinition().getParameters(), expr.getDefCallArguments());
+    int skip = hasFlag(Flag.SHOW_CON_PARAMS) || !(expr.getDefinition() instanceof DConstructor) ? 0 : ((DConstructor) expr.getDefinition()).getNumberOfParameters();
+    return visitParameters(makeReference(expr.getDefinition().getReferable()), DependentLink.Helper.get(expr.getDefinition().getParameters(), skip), skip == 0 ? expr.getDefCallArguments() : expr.getDefCallArguments().subList(skip, expr.getDefCallArguments().size()));
   }
 
   @Override

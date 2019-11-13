@@ -14,6 +14,7 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.naming.renamer.Renamer;
 
 import java.util.*;
 
@@ -109,7 +110,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
       PiExpression piExpr = field.getType(mySortArgument);
       Expression type = piExpr.applyExpression(newExpr);
-      DependentLink link = new TypedDependentLink(true, field.getName(), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
+      DependentLink link = new TypedDependentLink(true, Renamer.getNameFromType(type, field.getName()), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
       implementations.put(field, new ReferenceExpression(link));
       list.append(link);
     }

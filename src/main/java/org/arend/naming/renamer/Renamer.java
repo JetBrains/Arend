@@ -2,10 +2,12 @@ package org.arend.naming.renamer;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
+import org.arend.core.definition.ClassField;
 import org.arend.core.expr.AppExpression;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
+import org.arend.core.sort.Sort;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -16,6 +18,7 @@ public class Renamer {
   public final static String UNNAMED = "_x";
   private String myUnnamed = UNNAMED;
   private int myBase = 1;
+  private boolean myForceTypeSCName = false;
 
   public static String getValidName(String name, String unnamed) {
     return name == null || name.isEmpty() || name.equals("_") ? unnamed : name;
@@ -23,12 +26,18 @@ public class Renamer {
 
   public String getValidName(Variable var) {
     String name = var.getName();
-    if (name != null && !name.isEmpty() && !name.equals("_")) {
+    Expression typeExpr = null;
+    if (var instanceof Binding)
+      typeExpr = ((Binding) var).getTypeExpr();
+    else if (var instanceof ClassField)
+      typeExpr = ((ClassField) var).getType(Sort.STD).getCodomain();
+
+    if (name != null && !name.isEmpty() && !name.equals("_") && (typeExpr == null || !myForceTypeSCName)) {
       return name;
     }
 
-    if (var instanceof Binding) {
-      Character c = getDataTypeStartingCharacter(((Binding) var).getTypeExpr());
+    if (typeExpr != null) {
+      Character c = getTypeStartingCharacter(typeExpr);
       if (c != null) {
         return c.toString();
       }
@@ -41,7 +50,12 @@ public class Renamer {
     myUnnamed = unnamed;
   }
 
-  public static Character getDataTypeStartingCharacter(Expression type) {
+  public static String getNameFromType(Expression type, String def) {
+    Character c = getTypeStartingCharacter(type);
+    return c != null ? c.toString() : getValidName(def, UNNAMED);
+  }
+
+  public static Character getTypeStartingCharacter(Expression type) {
     if (type == null) {
       return null;
     }
@@ -116,6 +130,10 @@ public class Renamer {
 
     return name;
   }
+
+  public void setForceTypeSCName(boolean value) { myForceTypeSCName = value; }
+
+  public boolean getForceTypeSCName() { return myForceTypeSCName; }
 
   private static String getPrefix(String name) {
     int i = name.length() - 1;

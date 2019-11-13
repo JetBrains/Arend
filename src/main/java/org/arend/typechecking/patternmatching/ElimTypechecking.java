@@ -9,7 +9,10 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
-import org.arend.core.definition.*;
+import org.arend.core.definition.ClassField;
+import org.arend.core.definition.Constructor;
+import org.arend.core.definition.DataDefinition;
+import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.GetTypeVisitor;
@@ -126,7 +129,7 @@ public class ElimTypechecking {
 
   public Body typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor);
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor, !myCase);
     myOK = true;
     for (Concrete.FunctionClause clause : funClauses) {
       Pair<List<Pattern>, TypecheckingResult> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
@@ -300,7 +303,7 @@ public class ElimTypechecking {
       return;
     }
 
-    if (missingClauses.size() == 1) {
+    if (missingClauses.size() == 1 && elimParams.isEmpty()) {
       boolean allVars = true;
       for (Pattern pattern : missingClauses.get(0)) {
         if (!(pattern instanceof BindingPattern)) {
@@ -317,6 +320,32 @@ public class ElimTypechecking {
 
     for (List<Pattern> patterns : missingClauses) {
       Collections.reverse(patterns);
+    }
+
+    if (!elimParams.isEmpty()) {
+      for (List<Pattern> patterns : missingClauses) {
+        for (int i = 0; i < patterns.size(); i++) {
+          if (patterns.get(i) instanceof BindingPattern) {
+            ConstructorPattern newPattern;
+            List<Pattern> args;
+            Expression type = ((BindingPattern) patterns.get(i)).getBinding().getTypeExpr().getUnderlyingExpression();
+            if (type instanceof SigmaExpression) {
+              args = new ArrayList<>();
+              newPattern = new ConstructorPattern((SigmaExpression) type, new Patterns(args));
+            } else if (type instanceof ClassCallExpression) {
+              args = new ArrayList<>();
+              newPattern = new ConstructorPattern((ClassCallExpression) type, new Patterns(args));
+            } else {
+              continue;
+            }
+
+            patterns.set(i, newPattern);
+            for (DependentLink link = newPattern.getParameters(); link.hasNext(); link = link.getNext()) {
+              args.add(new BindingPattern(link));
+            }
+          }
+        }
+      }
     }
 
     myVisitor.getErrorReporter().report(new MissingClausesError(missingClauses, abstractParameters, parameters, elimParams, sourceNode));
@@ -647,17 +676,17 @@ public class ElimTypechecking {
             } else {
               if (constructor instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
-                if (someConPattern.getDefinition() instanceof ClassDefinition) {
+                if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
+                  ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
                   Map<ClassField, Expression> implementations = new HashMap<>();
-                  ClassDefinition classDef = (ClassDefinition) someConPattern.getDefinition();
                   DependentLink link = conParameters;
-                  for (ClassField field : classDef.getFields()) {
-                    if (!classDef.isImplemented(field)) {
+                  for (ClassField field : classCall.getDefinition().getFields()) {
+                    if (!classCall.isImplemented(field)) {
                       implementations.put(field, new ReferenceExpression(link));
                       link = link.getNext();
                     }
                   }
-                  substExpr = new NewExpression(null, new ClassCallExpression(classDef, someConPattern.getSortArgument(), implementations, Sort.PROP, false));
+                  substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
                 } else {
                   substExpr = new TupleExpression(arguments, (SigmaExpression) someConPattern.getDataExpression());
                   conParameters = DependentLink.Helper.copy(conParameters);

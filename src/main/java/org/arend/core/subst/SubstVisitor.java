@@ -70,7 +70,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
       args.add(arg.accept(this, null));
     }
 
-    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
+    return new ConCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
   @Override

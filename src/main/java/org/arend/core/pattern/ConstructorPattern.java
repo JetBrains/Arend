@@ -8,6 +8,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.LevelSubstitution;
 import org.arend.prelude.Prelude;
 
 import java.util.*;
@@ -15,6 +16,11 @@ import java.util.*;
 public class ConstructorPattern implements Pattern {
   private final Expression myExpression; // Either conCall, classCall, or Sigma.
   private final Patterns myPatterns;
+
+  private ConstructorPattern(Expression expression, Patterns patterns) {
+    myExpression = expression;
+    myPatterns = patterns;
+  }
 
   public ConstructorPattern(ConCallExpression conCall, Patterns patterns) {
     myExpression = conCall;
@@ -111,6 +117,19 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
+  public Expression toPatternExpression() {
+    List<Expression> arguments = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
+      Expression argument = pattern.toPatternExpression();
+      if (argument == null) {
+        return null;
+      }
+      arguments.add(argument);
+    }
+    return (myExpression instanceof ClassCallExpression ? new ConstructorPattern(new SigmaExpression(Sort.PROP, getParameters()), myPatterns) : this).toExpression(arguments);
+  }
+
+  @Override
   public DependentLink getFirstBinding() {
     return myPatterns.getFirstBinding();
   }
@@ -152,7 +171,7 @@ public class ConstructorPattern implements Pattern {
     List<Expression> arguments = new ArrayList<>();
     for (ClassField field : ((ClassCallExpression) myExpression).getDefinition().getFields()) {
       if (!((ClassCallExpression) myExpression).getDefinition().isImplemented(field)) {
-        arguments.add(newExpr.getImplementation(field, newExpr));
+        arguments.add(newExpr.getImplementation(field));
       }
     }
     return arguments;
@@ -200,5 +219,14 @@ public class ConstructorPattern implements Pattern {
     }
 
     return false;
+  }
+
+  @Override
+  public Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst) {
+    List<Pattern> patterns = new ArrayList<>(myPatterns.getPatternList().size());
+    for (Pattern pattern : myPatterns.getPatternList()) {
+      patterns.add(pattern.subst(exprSubst, levelSubst, patternSubst));
+    }
+    return new ConstructorPattern(myExpression.subst(exprSubst, levelSubst), new Patterns(patterns));
   }
 }

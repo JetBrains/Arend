@@ -31,18 +31,22 @@ definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?  
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
             | classKw precedence ID fieldTele* ('\\extends' longName (',' longName)*)? classBody where?     # defClass
             | '\\module' ID where?                                                                          # defModule
-            | '\\instance' precedence ID tele* (':' returnExpr)? instanceBody where?                        # defInstance
+            | instanceKw precedence ID tele* (':' returnExpr)? instanceBody where?                          # defInstance
             ;
 
 returnExpr  : expr                                  # returnExprExpr
             | '\\level' atomFieldsAcc atomFieldsAcc # returnExprLevel
             ;
 
-funcKw    : '\\func'            # funcKwFunc
-          | '\\sfunc'           # funcKwSFunc
-          | '\\lemma'           # funcKwLemma
-          | '\\use' useMod      # funcKwUse
-          ;
+funcKw      : '\\func'            # funcKwFunc
+            | '\\sfunc'           # funcKwSFunc
+            | '\\lemma'           # funcKwLemma
+            | '\\use' useMod      # funcKwUse
+            ;
+
+instanceKw  : '\\instance'        # funcKwInstance
+            | '\\cons'            # funcKwCons
+            ;
 
 useMod    : '\\coerce'          # useCoerce
           | '\\level'           # useLevel

@@ -50,7 +50,7 @@ public class GetTypeVisitor implements ExpressionVisitor<Void, Expression> {
     Expression type;
     if (arg instanceof FieldCallExpression) {
       arg = normalizeFieldCall((FieldCallExpression) arg);
-      return arg instanceof NewExpression ? ((NewExpression) arg).getImplementation(expr.getDefinition(), arg) : null;
+      return arg instanceof NewExpression ? ((NewExpression) arg).getImplementation(expr.getDefinition()) : null;
     } else {
       type = arg.accept(this, null);
       if (type == null) {
