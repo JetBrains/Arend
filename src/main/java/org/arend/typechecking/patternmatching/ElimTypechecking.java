@@ -1,6 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.Utils;
@@ -565,8 +566,11 @@ public class ElimTypechecking {
         if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
           ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
           constructors = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
-        } else {
+        } else if (someConPattern.getDataExpression() instanceof SigmaExpression) {
           constructors = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
+        } else {
+          assert someConPattern.getDefinition() == Prelude.IDP;
+          constructors = Collections.singletonList(new IdpConstructor());
         }
         dataType = null;
       }
@@ -693,7 +697,7 @@ public class ElimTypechecking {
                 }
               } else {
                 conParameters = constructor.getParameters();
-                List<Expression> dataTypesArgs = new ArrayList<>(someConPattern.getDataTypeArguments().size());
+                List<Expression> dataTypesArgs = new ArrayList<>();
                 for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
                   dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
                 }

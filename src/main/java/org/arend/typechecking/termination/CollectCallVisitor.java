@@ -82,7 +82,7 @@ public class CollectCallVisitor extends ProcessDefCallsVisitor<Void> {
     }
     ConstructorPattern conPattern = (ConstructorPattern) pattern2;
 
-    List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1);
+    List<? extends Expression> exprArguments = conPattern.getMatchingExpressionArguments(expr1, false);
     if (exprArguments != null) {
       BaseCallMatrix.R ord = isLess(exprArguments, conPattern.getArguments());
       if (ord != BaseCallMatrix.R.Unknown) return ord;

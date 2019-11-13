@@ -6,6 +6,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
@@ -14,7 +15,7 @@ import org.arend.prelude.Prelude;
 import java.util.*;
 
 public class ConstructorPattern implements Pattern {
-  private final Expression myExpression; // Either conCall, classCall, or Sigma.
+  private final Expression myExpression; // Either conCall, classCall, Sigma, or FunCall(idp).
   private final Patterns myPatterns;
 
   private ConstructorPattern(Expression expression, Patterns patterns) {
@@ -37,6 +38,11 @@ public class ConstructorPattern implements Pattern {
     myPatterns = patterns;
   }
 
+  public ConstructorPattern(FunCallExpression funCall, Patterns patterns) {
+    myExpression = funCall;
+    myPatterns = patterns;
+  }
+
   public ConstructorPattern(ConstructorPattern pattern, Patterns patterns) {
     myExpression = pattern.myExpression;
     myPatterns = patterns;
@@ -54,8 +60,12 @@ public class ConstructorPattern implements Pattern {
     return myExpression instanceof DefCallExpression ? ((DefCallExpression) myExpression).getDefinition() : null;
   }
 
-  public List<Expression> getDataTypeArguments() {
-    return myExpression instanceof ConCallExpression ? ((ConCallExpression) myExpression).getDataTypeArguments() : null;
+  public List<? extends Expression> getDataTypeArguments() {
+    return myExpression instanceof ConCallExpression
+      ? ((ConCallExpression) myExpression).getDataTypeArguments()
+      : myExpression instanceof FunCallExpression
+        ? ((FunCallExpression) myExpression).getDefCallArguments()
+        : null;
   }
 
   public List<Pattern> getArguments() {
@@ -67,11 +77,11 @@ public class ConstructorPattern implements Pattern {
   }
 
   public DependentLink getParameters() {
-    return myExpression instanceof ConCallExpression
-      ? ((ConCallExpression) myExpression).getDefinition().getParameters()
-      : myExpression instanceof SigmaExpression
-        ? ((SigmaExpression) myExpression).getParameters()
-        : ((ClassCallExpression) myExpression).getClassFieldParameters();
+    return myExpression instanceof ClassCallExpression
+      ? ((ClassCallExpression) myExpression).getClassFieldParameters()
+      : myExpression instanceof DefCallExpression
+        ? ((DefCallExpression) myExpression).getDefinition().getParameters()
+        : ((SigmaExpression) myExpression).getParameters();
   }
 
   public int getLength() {
@@ -79,7 +89,9 @@ public class ConstructorPattern implements Pattern {
       ? DependentLink.Helper.size(((ConCallExpression) myExpression).getDefinition().getParameters())
       : myExpression instanceof SigmaExpression
         ? DependentLink.Helper.size(((SigmaExpression) myExpression).getParameters())
-        : ((ClassCallExpression) myExpression).getDefinition().getNumberOfNotImplementedFields();
+        : myExpression instanceof ClassCallExpression
+          ? ((ClassCallExpression) myExpression).getDefinition().getNumberOfNotImplementedFields()
+          : 0;
   }
 
   public Expression toExpression(List<Expression> arguments) {
@@ -90,6 +102,10 @@ public class ConstructorPattern implements Pattern {
     if (myExpression instanceof ConCallExpression) {
       ConCallExpression conCall = (ConCallExpression) myExpression;
       return ConCallExpression.make(conCall.getDefinition(), conCall.getSortArgument(), conCall.getDataTypeArguments(), arguments);
+    }
+
+    if (myExpression instanceof FunCallExpression) {
+      return myExpression;
     }
 
     ClassCallExpression classCall = (ClassCallExpression) myExpression;
@@ -139,10 +155,30 @@ public class ConstructorPattern implements Pattern {
     return myPatterns.getLastBinding();
   }
 
-  public List<? extends Expression> getMatchingExpressionArguments(Expression expression) {
+  public List<? extends Expression> getMatchingExpressionArguments(Expression expression, boolean normalize) {
     if (myExpression instanceof SigmaExpression) {
       TupleExpression tuple = expression.cast(TupleExpression.class);
       return tuple == null ? null : tuple.getFields();
+    }
+
+    if (myExpression instanceof FunCallExpression) {
+      expression = expression.getUnderlyingExpression();
+      if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() == Prelude.IDP) {
+        return Collections.emptyList();
+      }
+      if (!(expression instanceof ConCallExpression && ((ConCallExpression) expression).getDefinition() == Prelude.PATH_CON)) {
+        return null;
+      }
+      Expression arg = ((ConCallExpression) expression).getDefCallArguments().get(0);
+      if (normalize) {
+        arg = arg.normalize(NormalizeVisitor.Mode.WHNF);
+      }
+      LamExpression lamExpr = arg.cast(LamExpression.class);
+      if (lamExpr == null) {
+        return null;
+      }
+      Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
+      return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
     }
 
     if (myExpression instanceof ConCallExpression) {
@@ -179,8 +215,8 @@ public class ConstructorPattern implements Pattern {
 
   @Override
   public MatchResult match(Expression expression, List<Expression> result) {
-    expression = expression.normalize(NormalizeVisitor.Mode.WHNF);
-    List<? extends Expression> arguments = getMatchingExpressionArguments(expression);
+    expression = expression.normalize(NormalizeVisitor.Mode.WHNF); // TODO[idp]: Implement IDP_WHNF
+    List<? extends Expression> arguments = getMatchingExpressionArguments(expression, true);
     if (arguments != null) {
       return myPatterns.match(arguments, result);
     }

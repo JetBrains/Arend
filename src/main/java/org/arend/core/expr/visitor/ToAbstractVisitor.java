@@ -81,7 +81,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     }
     if (pattern instanceof ConstructorPattern) {
       Definition def = ((ConstructorPattern) pattern).getDefinition();
-      return def instanceof Constructor
+      return def instanceof Constructor || def instanceof DConstructor
         ? cConPattern(isExplicit, def.getReferable(), visitPatterns(((ConstructorPattern) pattern).getArguments(), def.getParameters()))
         : cTuplePattern(isExplicit, visitPatterns(((ConstructorPattern) pattern).getArguments(), EmptyDependentLink.getInstance()));
     }
