@@ -326,6 +326,9 @@ public class DefinitionDeserialization {
         if (expression instanceof SigmaExpression) {
           return new ConstructorPattern((SigmaExpression) expression, patterns);
         }
+        if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
+          return new ConstructorPattern((FunCallExpression) expression, patterns);
+        }
         throw new DeserializationException("Wrong pattern expression");
       default:
         throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
