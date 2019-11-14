@@ -59,7 +59,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
+  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression parameter : expr.getDataTypeArguments()) {
       dataTypeArgs.add(parameter.accept(this, null));

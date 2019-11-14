@@ -70,4 +70,18 @@ public class IdpTest extends TypeCheckingTestCase {
       "  | _, idp => idp\n" +
       "}");
   }
+
+  @Test
+  public void substInPattern() {
+    typeCheckModule(
+      "\\func K {A : \\Type} {a : A} (p : \\Sigma (x : A) (a = x)) : p = (a,idp) \\elim p\n" +
+      "  | (_,idp) => idp");
+  }
+
+  @Test
+  public void substInPattern2() {
+    typeCheckModule(
+      "\\func K {A : \\Type} {a : A} (p : \\Sigma (x : A) (x = a)) : p = (a,idp) \\elim p\n" +
+      "  | (_,idp) => idp");
+  }
 }

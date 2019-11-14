@@ -103,7 +103,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   }
 
   @Override
-  public Expression visitConCall(ConCallExpression expr, Void params) {
+  public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
     DependentLink dataLink = expr.getDefinition().getDataTypeParameters();
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression arg : expr.getDataTypeArguments()) {
@@ -118,7 +118,7 @@ public class ReplaceBindingVisitor extends SubstVisitor {
       link = link.getNext();
     }
 
-    return ConCallExpression.make(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
+    return new ConCallExpression(expr.getDefinition(), expr.getSortArgument(), dataTypeArgs, args);
   }
 
   @Override
