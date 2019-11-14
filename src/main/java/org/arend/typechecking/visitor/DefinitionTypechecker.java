@@ -1128,14 +1128,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             dataOk = false;
           }
           if (elimParams != null) {
-            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), elimParams, def);
+            ExprSubstitution substitution = new ExprSubstitution();
+            result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, elimParams, def);
             if (instancePool != null && result != null && result.proj2 != null) {
-              ExprSubstitution substitution = new ExprSubstitution();
-              DependentLink link = dataDefinition.getParameters();
-              for (Expression expr : result.proj2) {
-                substitution.add(link, expr);
-                link = link.getNext();
-              }
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
             if (result != null && result.proj2 == null) {
