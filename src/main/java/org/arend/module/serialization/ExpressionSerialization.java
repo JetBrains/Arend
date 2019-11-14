@@ -2,6 +2,7 @@ package org.arend.module.serialization;
 
 import com.google.protobuf.ByteString;
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.binding.Binding;
@@ -185,7 +186,9 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
           ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
           if (entry.getKey() instanceof TupleConstructor) {
             singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(((TupleConstructor) entry.getKey()).getLength()).build());
-          } else {
+          } else if (entry.getKey() instanceof IdpConstructor) {
+            singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
+          } else if (entry.getKey() instanceof ClassConstructor) {
             ClassConstructor classCon = (ClassConstructor) entry.getKey();
             ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
             conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDef()));
@@ -194,6 +197,8 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
               conBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
             }
             singleClauseBuilder.setClass_(conBuilder.build());
+          } else {
+            throw new IllegalStateException("Unknown SingleConstructor type");
           }
           singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
           branchBuilder.setSingleClause(singleClauseBuilder.build());
