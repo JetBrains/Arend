@@ -29,6 +29,10 @@ public class IdpConstructor extends SingleConstructor {
     }
 
     LamExpression lamExpr = ((ConCallExpression) argument).getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
-    return lamExpr == null || NormalizingFindBindingVisitor.findBinding(lamExpr.getBody(), lamExpr.getParameters()) ? null : Collections.emptyList();
+    if (lamExpr == null) {
+      return null;
+    }
+    Expression body = lamExpr.getParameters().getNext().hasNext() ? new LamExpression(lamExpr.getResultSort(), lamExpr.getParameters().getNext(), lamExpr.getBody()) : lamExpr.getBody();
+    return NormalizingFindBindingVisitor.findBinding(body, lamExpr.getParameters()) ? null : Collections.emptyList();
   }
 }

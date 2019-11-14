@@ -17,6 +17,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.expr.visitor.ElimBindingVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
@@ -391,20 +392,63 @@ public class PatternTypechecking {
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> args = new ArrayList<>();
-          if (constructor.getNumberOfParameters() > 0) {
-            Set<Binding> bindings = myVisitor.getAllBindings();
-            for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
-              Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
-              args.add(arg);
-              substitution.add(link, arg);
-              link = link.getNext();
-            }
-          }
 
-          Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF);
-          if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
-            myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
-            return null;
+          if (constructor == Prelude.IDP) {
+            DataCallExpression dataCall = expr.cast(DataCallExpression.class);
+            LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
+            Expression type = typeLam == null ? null : ElimBindingVisitor.elimLamBinding(typeLam);
+            if (type == null) {
+              myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution, levelSubst), conPattern));
+              return null;
+            }
+
+            Expression varExpr = dataCall.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.WHNF);
+            Expression otherExpr = dataCall.getDefCallArguments().get(1).normalize(NormalizeVisitor.Mode.WHNF);
+            ReferenceExpression refExpr = varExpr.cast(ReferenceExpression.class);
+            if (refExpr == null) {
+              refExpr = otherExpr.cast(ReferenceExpression.class);
+              otherExpr = varExpr;
+            }
+            if (refExpr == null) {
+              myErrorReporter.report(new IdpPatternError(IdpPatternError.noVariable(), dataCall, conPattern));
+              return null;
+            }
+            otherExpr = ElimBindingVisitor.elimBinding(otherExpr, refExpr.getBinding());
+            type = ElimBindingVisitor.elimBinding(type, refExpr.getBinding());
+            if (otherExpr == null || type == null) {
+              myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(refExpr.getBinding().getName()), dataCall, conPattern));
+              return null;
+            }
+
+            args.add(type);
+            substitution.add(link, type);
+            link = link.getNext();
+            args.add(otherExpr);
+            substitution.add(link, otherExpr);
+            link = link.getNext();
+
+            ExprSubstitution varSubst = new ExprSubstitution(refExpr.getBinding(), otherExpr);
+            paramsSubst.subst(varSubst);
+            for (DependentLink paramLink = linkList.getFirst(); paramLink.hasNext(); paramLink = paramLink.getNext()) {
+              paramLink = paramLink.getNextTyped(null);
+              paramLink.setType(paramLink.getType().subst(new SubstVisitor(varSubst, LevelSubstitution.EMPTY)));
+            }
+          } else {
+            if (constructor.getNumberOfParameters() > 0) {
+              Set<Binding> bindings = myVisitor.getAllBindings();
+              for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
+                Expression arg = new InferenceReferenceExpression(new FunctionInferenceVariable(constructor, link, i + 1, link.getTypeExpr().subst(substitution, levelSubst), conPattern, bindings), myVisitor.getEquations());
+                args.add(arg);
+                substitution.add(link, arg);
+                link = link.getNext();
+              }
+            }
+
+            Expression actualType = constructor.getResultType().subst(substitution, levelSubst).normalize(NormalizeVisitor.Mode.WHNF);
+            if (!CompareVisitor.compare(myVisitor.getEquations(), Equations.CMP.EQ, actualType, expr, ExpectedType.OMEGA, conPattern)) {
+              myErrorReporter.report(new TypeMismatchError(expr, actualType, conPattern));
+              return null;
+            }
           }
           LevelSubstitution levelSolution = myFinal ? myVisitor.getEquations().solve(conPattern) : LevelSubstitution.EMPTY;
           substitution.subst(levelSolution);

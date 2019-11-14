@@ -855,7 +855,7 @@ public class TwoStageEquations implements Equations {
     Expression expectedType = var.getType();
     Expression actualType = expr.getType();
     if (actualType == null || actualType.isLessOrEquals(expectedType, myFirstRun ? this : DummyEquations.getInstance(), var.getSourceNode())) {
-      Expression result = actualType == null ? null : ElimBindingVisitor.findBindings(expr, var.getBounds(), isLowerBound);
+      Expression result = actualType == null ? null : ElimBindingVisitor.keepBindings(expr, var.getBounds(), isLowerBound);
       if (result != null) {
         if (isLowerBound) {
           ClassCallExpression classCall = result.cast(ClassCallExpression.class);

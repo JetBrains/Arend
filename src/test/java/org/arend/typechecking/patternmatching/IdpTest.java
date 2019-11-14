@@ -22,23 +22,15 @@ public class IdpTest extends TypeCheckingTestCase {
   @Test
   public void natTest() {
     typeCheckModule(
-      "\\func test {n : A} (p : n = n Nat.+ n) (B : Nat -> \\Type) (b : B n) : B (n Nat.+ n) \\elim p\n" +
+      "\\func test {n : Nat} (p : n = n Nat.+ n) (B : Nat -> \\Type) (b : B n) : B (n Nat.+ n) \\elim p\n" +
       "  | idp => b", 1);
   }
 
   @Test
   public void reorderTest() {
     typeCheckModule(
-      "\\func f {A : \\Type} (B : A -> \\Type) {a a' : A} (b : B a) (p : a = a') (b' : B a') : \\Sigma (B a) (B a) (B a') (B a') \\elim p\n" +
-      "  | idp => (b,b',b,b')\n" +
-      "\\func test {n : Nat} (p q : n = 0) : f (\\lam n => n = 0) p q idp = (p,q,p,q) => idp");
-  }
-
-  @Test
-  public void reorderError() {
-    typeCheckModule(
       "\\func f {A : \\Type} (B : A -> \\Type) {a a' : A} (b : B a) (b' : B a') (p : a = a') : \\Sigma (B a) (B a) (B a') (B a') \\elim p\n" +
-      "  | idp => (b,b',b,b')", 1);
+      "  | idp => (b,b',b,b')");
   }
 
   @Test
@@ -74,8 +66,8 @@ public class IdpTest extends TypeCheckingTestCase {
   @Test
   public void caseIdpTest() {
     typeCheckModule(
-      "\\func f (x : Nat) (p : x = 0) : Nat => \\case x \\as x, p : x = 0 \\return x = 0 \\with {\n" +
-      "  | idp => idp\n" +
+      "\\func f (x : Nat) (p : x = 0) => \\case x \\as x, p : x = 0 \\return x = 0 \\with {\n" +
+      "  | _, idp => idp\n" +
       "}");
   }
 }

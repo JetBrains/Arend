@@ -20,20 +20,32 @@ import org.arend.core.subst.SubstVisitor;
 import java.util.*;
 
 public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> {
-  private final FindMissingBindingVisitor myVisitor;
+  private final FindMissingBindingVisitor myKeepVisitor;
+  private final FindBindingVisitor myElimVisitor;
   private Variable myFoundVariable = null;
 
-  private ElimBindingVisitor(Set<Binding> bindings) {
-    myVisitor = new FindMissingBindingVisitor(bindings);
+  private ElimBindingVisitor(Set<Binding> bindings, boolean keep) {
+    myKeepVisitor = keep ? new FindMissingBindingVisitor(bindings) : null;
+    myElimVisitor = keep ? null : new FindBindingVisitor(bindings);
   }
 
   public Variable getFoundVariable() {
     return myFoundVariable;
   }
 
-  public static Expression findBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
-    ElimBindingVisitor visitor = new ElimBindingVisitor(bindings);
-    visitor.myFoundVariable = expression.accept(visitor.myVisitor, null);
+  public static Expression elimLamBinding(LamExpression expr) {
+    return elimBinding(expr.getParameters().getNext().hasNext() ? new LamExpression(expr.getResultSort(), expr.getParameters().getNext(), expr.getBody()) : expr.getBody(), expr.getParameters());
+  }
+
+  public static Expression elimBinding(Expression expression, Binding binding) {
+    ElimBindingVisitor visitor = new ElimBindingVisitor(Collections.singleton(binding), false);
+    visitor.myFoundVariable = expression.accept(visitor.myElimVisitor, null);
+    return visitor.myFoundVariable == null ? expression : expression.normalize(NormalizeVisitor.Mode.WHNF).accept(visitor, null);
+  }
+
+  public static Expression keepBindings(Expression expression, Set<Binding> bindings, boolean removeImplementations) {
+    ElimBindingVisitor visitor = new ElimBindingVisitor(bindings, true);
+    visitor.myFoundVariable = expression.accept(visitor.myKeepVisitor, null);
     if (visitor.myFoundVariable == null) {
       return expression;
     }
@@ -48,8 +60,8 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     return expression.normalize(NormalizeVisitor.Mode.WHNF).accept(visitor, null);
   }
 
-  private Expression findBindings(Expression expression, boolean normalize) {
-    myFoundVariable = expression.accept(myVisitor, null);
+  private Expression acceptSelf(Expression expression, boolean normalize) {
+    myFoundVariable = expression.accept(myKeepVisitor != null ? myKeepVisitor : myElimVisitor, null);
     if (myFoundVariable == null) {
       return expression;
     }
@@ -58,11 +70,11 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitApp(AppExpression expr, Void params) {
-    Expression result = findBindings(expr.getFunction(), false);
+    Expression result = acceptSelf(expr.getFunction(), false);
     if (result == null) {
       return null;
     }
-    Expression arg = findBindings(expr.getArgument(), true);
+    Expression arg = acceptSelf(expr.getArgument(), true);
     if (arg == null) {
       return null;
     }
@@ -72,7 +84,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   private List<Expression> visitDefCallArguments(List<? extends Expression> args) {
     List<Expression> result = new ArrayList<>(args.size());
     for (Expression arg : args) {
-      Expression newArg = findBindings(arg, true);
+      Expression newArg = acceptSelf(arg, true);
       if (newArg == null) {
         return null;
       }
@@ -89,7 +101,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitFieldCall(FieldCallExpression expr, Void params) {
-    Expression newExpr = findBindings(expr.getArgument(), false);
+    Expression newExpr = acceptSelf(expr.getArgument(), false);
     return newExpr == null ? null : FieldCallExpression.make(expr.getDefinition(), expr.getSortArgument(), newExpr);
   }
 
@@ -101,7 +113,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
     List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
     for (Expression arg : expr.getDataTypeArguments()) {
-      Expression newArg = findBindings(arg, true);
+      Expression newArg = acceptSelf(arg, true);
       if (newArg == null) {
         return null;
       }
@@ -113,7 +125,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {
     Map<ClassField, Expression> newFieldSet = new HashMap<>();
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Expression newImpl = findBindings(entry.getValue(), true);
+      Expression newImpl = acceptSelf(entry.getValue(), true);
       if (newImpl == null) {
         if (removeImplementations) {
           continue;
@@ -133,7 +145,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitReference(ReferenceExpression expr, Void params) {
-    if (!myVisitor.getBindings().contains(expr.getBinding())) {
+    if (myKeepVisitor != null ? !myKeepVisitor.getBindings().contains(expr.getBinding()) : myElimVisitor.getBindings().contains(expr.getBinding())) {
       if (expr.getBinding() instanceof EvaluatingBinding) {
         return ((EvaluatingBinding) expr.getBinding()).getExpression().accept(this, null);
       }
@@ -146,7 +158,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitInferenceReference(InferenceReferenceExpression expr, Void params) {
-    return expr.getSubstExpression() != null ? findBindings(expr.getSubstExpression(), true) : expr;
+    return expr.getSubstExpression() != null ? acceptSelf(expr.getSubstExpression(), true) : expr;
   }
 
   @Override
@@ -161,8 +173,10 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (!visitDependentLink(parameters)) {
       return null;
     }
-    Expression body = findBindings(expr.getBody().subst(substitution), true);
-    myVisitor.freeParameters(parameters);
+    Expression body = acceptSelf(expr.getBody().subst(substitution), true);
+    if (myKeepVisitor != null) {
+      myKeepVisitor.freeParameters(parameters);
+    }
     if (body == null) {
       return null;
     }
@@ -176,8 +190,10 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (!visitDependentLink(parameters)) {
       return null;
     }
-    Expression codomain = findBindings(expr.getCodomain().subst(substitution), true);
-    myVisitor.freeParameters(parameters);
+    Expression codomain = acceptSelf(expr.getCodomain().subst(substitution), true);
+    if (myKeepVisitor != null) {
+      myKeepVisitor.freeParameters(parameters);
+    }
     if (codomain == null) {
       return null;
     }
@@ -194,7 +210,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (expr.getExpression() == null) {
       return expr;
     }
-    Expression errorExpr = findBindings(expr.getExpression(), true);
+    Expression errorExpr = acceptSelf(expr.getExpression(), true);
     if (errorExpr == null) {
       myFoundVariable = null;
       return new ErrorExpression(null, expr.getError());
@@ -207,14 +223,14 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   public TupleExpression visitTuple(TupleExpression expr, Void params) {
     List<Expression> newFields = new ArrayList<>(expr.getFields().size());
     for (Expression field : expr.getFields()) {
-      Expression newField = findBindings(field, true);
+      Expression newField = acceptSelf(field, true);
       if (newField == null) {
         return null;
       }
       newFields.add(newField);
     }
 
-    SigmaExpression sigmaExpr = (SigmaExpression) findBindings(expr.getSigmaType(), false);
+    SigmaExpression sigmaExpr = (SigmaExpression) acceptSelf(expr.getSigmaType(), false);
     return sigmaExpr == null ? null : new TupleExpression(newFields, sigmaExpr);
   }
 
@@ -222,7 +238,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   public SigmaExpression visitSigma(SigmaExpression expr, Void params) {
     DependentLink parameters = DependentLink.Helper.copy(expr.getParameters());
     if (visitDependentLink(parameters)) {
-      myVisitor.freeParameters(parameters);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.freeParameters(parameters);
+      }
       return new SigmaExpression(expr.getSort(), parameters);
     } else {
       return null;
@@ -231,26 +249,30 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
 
   @Override
   public Expression visitProj(ProjExpression expr, Void params) {
-    Expression newExpr = findBindings(expr.getExpression(), false);
+    Expression newExpr = acceptSelf(expr.getExpression(), false);
     return newExpr == null ? null : ProjExpression.make(newExpr, expr.getField());
   }
 
   private boolean visitDependentLink(DependentLink parameters) {
     for (DependentLink link = parameters; link.hasNext(); link = link.getNext()) {
       DependentLink link1 = link.getNextTyped(null);
-      Expression type = findBindings(link1.getTypeExpr(), true);
+      Expression type = acceptSelf(link1.getTypeExpr(), true);
       if (type == null) {
-        for (; parameters != link; parameters = parameters.getNext()) {
-          myVisitor.getBindings().remove(parameters);
+        if (myKeepVisitor != null) {
+          for (; parameters != link; parameters = parameters.getNext()) {
+            myKeepVisitor.getBindings().remove(parameters);
+          }
         }
         return false;
       }
       link1.setType(type instanceof Type ? (Type) type : new TypeExpression(type, link1.getType().getSortOfType()));
 
-      for (; link != link1; link = link.getNext()) {
-        myVisitor.getBindings().add(link);
+      if (myKeepVisitor != null) {
+        for (; link != link1; link = link.getNext()) {
+          myKeepVisitor.getBindings().add(link);
+        }
+        myKeepVisitor.getBindings().add(link);
       }
-      myVisitor.getBindings().add(link);
     }
     return true;
   }
@@ -266,7 +288,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (renew == null) {
       return new NewExpression(null, classCall);
     }
-    renew = findBindings(renew, true);
+    renew = acceptSelf(renew, true);
     if (renew == null) {
       return null;
     }
@@ -301,7 +323,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   public CaseExpression visitCase(CaseExpression expr, Void params) {
     List<Expression> newArgs = new ArrayList<>(expr.getArguments().size());
     for (Expression argument : expr.getArguments()) {
-      Expression newArg = findBindings(argument, true);
+      Expression newArg = acceptSelf(argument, true);
       if (newArg == null) {
         return null;
       }
@@ -313,14 +335,14 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       return null;
     }
 
-    Expression newType = findBindings(expr.getResultType().subst(substitution), true);
+    Expression newType = acceptSelf(expr.getResultType().subst(substitution), true);
     if (newType == null) {
       return null;
     }
 
     Expression newTypeLevel;
     if (expr.getResultTypeLevel() != null) {
-      newTypeLevel = findBindings(expr.getResultTypeLevel().subst(substitution), true);
+      newTypeLevel = acceptSelf(expr.getResultTypeLevel().subst(substitution), true);
       if (newTypeLevel == null) {
         return null;
       }
@@ -329,7 +351,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
 
     ElimTree newElimTree = findBindingInElimTree(expr.getElimTree());
-    myVisitor.freeParameters(parameters);
+    if (myKeepVisitor != null) {
+      myKeepVisitor.freeParameters(parameters);
+    }
     return newElimTree == null ? null : new CaseExpression(expr.isSFunc(), parameters, newType, newTypeLevel, newElimTree, newArgs);
   }
 
@@ -341,8 +365,10 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     }
 
     if (elimTree instanceof LeafElimTree) {
-      Expression newExpr = findBindings(((LeafElimTree) elimTree).getExpression().subst(substitution), true);
-      myVisitor.freeParameters(parameters);
+      Expression newExpr = acceptSelf(((LeafElimTree) elimTree).getExpression().subst(substitution), true);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.freeParameters(parameters);
+      }
       return newExpr == null ? null : new LeafElimTree(parameters, newExpr);
     } else {
       Map<Constructor, ElimTree> newChildren = new HashMap<>();
@@ -350,24 +376,28 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         ElimTree newElimTree = findBindingInElimTree(visitor.substElimTree(entry.getValue()));
         if (newElimTree == null) {
-          myVisitor.freeParameters(parameters);
+          if (myKeepVisitor != null) {
+            myKeepVisitor.freeParameters(parameters);
+          }
           return null;
         }
         newChildren.put(entry.getKey(), newElimTree);
       }
 
-      myVisitor.freeParameters(parameters);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.freeParameters(parameters);
+      }
       return new BranchElimTree(parameters, newChildren);
     }
   }
 
   @Override
   public OfTypeExpression visitOfType(OfTypeExpression expr, Void params) {
-    Expression newExpr = findBindings(expr.getExpression(), true);
+    Expression newExpr = acceptSelf(expr.getExpression(), true);
     if (newExpr == null) {
       return null;
     }
-    Expression newType = findBindings(expr.getTypeOf(), true);
+    Expression newType = acceptSelf(expr.getTypeOf(), true);
     return newType == null ? null : new OfTypeExpression(newExpr, newType);
   }
 
