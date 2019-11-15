@@ -84,4 +84,15 @@ public class IdpTest extends TypeCheckingTestCase {
       "\\func K {A : \\Type} {a : A} (p : \\Sigma (x : A) (x = a)) : p = (a,idp) \\elim p\n" +
       "  | (_,idp) => idp");
   }
+
+  @Test
+  public void extTest() {
+    typeCheckModule(
+      "\\func \\infix 4 *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a'' \\elim q\n" +
+      "  | idp => p\n" +
+      "\\func ext {A B : \\Type} (f : A -> B) (b0 : B) (x1 x'1 : A) (x'2 : f x'1 = b0) (p : x1 = x'1)\n" +
+      "  : (x1, path (\\lam i => f (p @ i)) *> x'2 ) = {\\Sigma (a : A) (f a = b0)} (x'1,x'2) \\elim x'2, p\n" +
+      "  | idp, idp => idp\n" +
+      "\\func test {A B : \\Type} (f : A -> B) (x1 : A) : ext f (f x1) x1 x1 idp idp = idp => idp");
+  }
 }

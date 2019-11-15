@@ -474,6 +474,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     ElimTree elimTree = constructor == null ? branchElimTree.getSingleChild() : branchElimTree.getChild(constructor);
     if (elimTree == null && constructor == Prelude.PATH_CON && branchElimTree.getSingleConstructor() instanceof IdpConstructor) {
       elimTree = branchElimTree.getSingleChild();
+      constructor = null;
     }
     if (elimTree != null) {
       stack.pop();
