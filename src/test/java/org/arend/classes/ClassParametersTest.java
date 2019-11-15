@@ -48,7 +48,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "  | a : A\n" +
       "}\n" +
       "\\func f (c : C { | A => Nat }) : c => 1\n" +
-      "\\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => path (\\lam _ => 1)");
+      "\\func g : f (\\new C { | A => Nat | a => 0 }) = 1 => idp");
   }
 
   @Test
@@ -92,7 +92,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C2 (B : \\Set0)\n" +
       "\\class D \\extends C2, C1\n" +
       "\\func d => \\new D { | n => 0 | B => \\Prop }\n" +
-      "\\func test3 : 0 = d => path (\\lam _ => 0)\n", 1);
+      "\\func test3 : 0 = d => idp", 1);
     assertThatErrorsAre(typeMismatchError());
   }
 
@@ -106,9 +106,9 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\func g (d : D) : Nat => d.n\n" +
       "\\func h (d : D) : Nat => d.m\n" +
       "\\func d => \\new D { | m => 0 | n => 1 | b => \\Prop }\n" +
-      "\\func test1 : g d = 1 => path (\\lam _ => 1)\n" +
-      "\\func test2 : h d = 0 => path (\\lam _ => 0)\n" +
-      "\\func test3 : 1 = d => path (\\lam _ => 1)\n");
+      "\\func test1 : g d = 1 => idp\n" +
+      "\\func test2 : h d = 0 => idp\n" +
+      "\\func test3 : 1 = d => idp\n");
   }
 
 
@@ -181,7 +181,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (x : Nat) {y : Nat} (p : y = 0)\n" +
       "\\class D {z : Nat} (w : z = 1) \\extends C\n" +
-      "\\func f => \\new D 0 (path (\\lam _ => 0)) (path (\\lam _ => 1))");
+      "\\func f => \\new D 0 idp idp");
   }
 
   @Test
@@ -204,7 +204,6 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
   public void testImplementedField() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
       "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 2);
@@ -213,7 +212,6 @@ public class ClassParametersTest extends TypeCheckingTestCase {
   @Test
   public void testImplementedField2() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
       "\\func f => \\new T { | z => 0 | p => idp | q => idp }");
@@ -237,7 +235,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C | nn : Nat\n" +
       "\\instance cc : C | nn => 3\n" +
       "\\record R {x : C}\n" +
-      "\\func f (r : R) : r.x.nn = 3 => path (\\lam _ => 3)");
+      "\\func f (r : R) : r.x.nn = 3 => idp");
   }
 
   @Test
@@ -246,7 +244,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C | nn : Nat\n" +
       "\\instance cc : C | nn => 3\n" +
       "\\record R (n : Nat) {x : C}\n" +
-      "\\func f (r : R 0) : r.x.nn = 3 => path (\\lam _ => 3)");
+      "\\func f (r : R 0) : r.x.nn = 3 => idp");
   }
 
   @Test
@@ -255,7 +253,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C (X : \\Type) | xx : X\n" +
       "\\instance cc : C Nat | xx => 3\n" +
       "\\record R {x : C Nat}\n" +
-      "\\func f (r : R) : r.x.xx = 3 => path (\\lam _ => 3)");
+      "\\func f (r : R) : r.x.xx = 3 => idp");
   }
 
   @Test
@@ -264,7 +262,7 @@ public class ClassParametersTest extends TypeCheckingTestCase {
       "\\class C (X : \\Type) | xx : X\n" +
       "\\instance cc : C Nat | xx => 3\n" +
       "\\record R (n : Nat) {x : C Nat}\n" +
-      "\\func f (r : R 0) : r.x.xx = 3 => path (\\lam _ => 3)");
+      "\\func f (r : R 0) : r.x.xx = 3 => idp");
   }
 
   @Test

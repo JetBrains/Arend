@@ -19,7 +19,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\data Dec (A : \\Prop) | yes A | no (A -> Empty)\n" +
       "  \\where\n" +
       "    \\use \\level isProp {A : \\Prop} (d1 d2 : Dec A) : d1 = d2\n" +
-      "      | yes a1, yes a2 => path (\\lam _ => yes a1)\n" +
+      "      | yes a1, yes a2 => idp\n" +
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
@@ -37,7 +37,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\data Dec (A : \\Type) | yes A | no (A -> Empty)\n" +
       "  \\where\n" +
       "    \\use \\level isProp {A : \\Prop} (d1 d2 : Dec A) : d1 = d2\n" +
-      "      | yes a1, yes a2 => path (\\lam _ => yes a1)\n" +
+      "      | yes a1, yes a2 => idp\n" +
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
@@ -120,7 +120,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
   @Test
   public void mutualRecursion() {
     typeCheckModule(
-      "\\func f (c : C) : c = c => path (\\lam _ => c)\n" +
+      "\\func f (c : C) : c = c => idp\n" +
       "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1");
   }
 
@@ -128,7 +128,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
   public void mutualRecursion2() {
     typeCheckModule(
       "\\class C \\where \\use \\level isProp (c1 c2 : C) : c1 = c2 => f c1\n" +
-      "\\func f (c : C) : c = c => path (\\lam _ => c)");
+      "\\func f (c : C) : c = c => idp");
   }
 
   @Test
@@ -139,7 +139,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\func absurd {A : \\Type} (e : Empty) : A\n" +
       "\\data D | con1 | con2 Empty \\where\n" +
       "  \\use \\level isProp (d1 d2 : D) : d1 = d2 \\elim d1, d2\n" +
-      "    | con1, con1 => path (\\lam _ => con1)\n" +
+      "    | con1, con1 => idp\n" +
       "    | _, con2 e => absurd e\n" +
       "    | con2 e, _ => absurd e");
   }
@@ -157,7 +157,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
   public void useRecordTest() {
     typeCheckModule(
       "\\record R\n" +
-      "  \\where \\use \\level isProp : \\Pi (x y : R) -> x = y => \\lam x y => path (\\lam _ => x)");
+      "  \\where \\use \\level isProp : \\Pi (x y : R) -> x = y => \\lam x y => idp");
   }
 
   @Test
@@ -166,7 +166,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
       "\\func f (x : TrP Nat) : D (\\new B) => \\case x \\with { | inP _ => ddd }");
   }
@@ -177,7 +177,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\data TrP (A : \\Type) | inP A | truncP (x y : TrP A) (i : I) \\elim i { | left => x | right => y }\n" +
       "\\func f (x : TrP Nat) : D (\\new A) => \\case x \\with { | inP _ => ddd }", 1);
   }
@@ -212,7 +212,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\lemma f : D (\\new B) => ddd");
   }
 
@@ -222,7 +222,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\lemma f : D (\\new A) => ddd", 1);
   }
 
@@ -254,7 +254,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\record R { \\property prop : D (\\new B) }");
   }
 
@@ -264,7 +264,7 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "\\record A\n" +
       "\\record B \\extends A\n" +
       "\\data D (a : A) : \\Set | ddd\n" +
-      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => path (\\lam _ => ddd)\n" +
+      "  \\where \\use \\level isProp {b : B} (x y : D b) : x = y | ddd, ddd => idp\n" +
       "\\record R { \\property prop : D (\\new A) }", 1);
   }
 
@@ -359,34 +359,34 @@ public class UseLevelTest extends TypeCheckingTestCase {
   public void selfDataTest() {
     typeCheckModule(
       "\\data D | con Nat\n" +
-      "  \\where \\use \\level levelProp (d1 d2 : D) : d1 = d2 => path (\\lam _ => d1)", 1);
+      "  \\where \\use \\level levelProp (d1 d2 : D) : d1 = d2 => idp", 1);
   }
 
   @Test
   public void selfClassTest() {
     typeCheckModule(
       "\\record C (x : Nat)\n" +
-      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = {C} c2 => path (\\lam _ => c1)", 1);
+      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = {C} c2 => idp", 1);
   }
 
   @Test
   public void selfClassTest2() {
     typeCheckModule(
       "\\record C (x : Nat)\n" +
-      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = c2 => path (\\lam _ => c1)", 1);
+      "  \\where \\use \\level levelProp (c1 c2 : C) : c1 = c2 => idp", 1);
   }
 
   @Test
   public void selfClassTest3() {
     typeCheckModule(
       "\\record C (x y : Nat)\n" +
-      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = {C x} c2 => path (\\lam _ => c1)", 1);
+      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = {C x} c2 => idp", 1);
   }
 
   @Test
   public void selfClassTest4() {
     typeCheckModule(
       "\\record C (x y : Nat)\n" +
-      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = c2 => path (\\lam _ => c1)", 1);
+      "  \\where \\use \\level levelProp (x : Nat) (c1 c2 : C x) : c1 = c2 => idp", 1);
   }
 }

@@ -99,8 +99,8 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "  | nil => 3\n" +
       "  | single x => 2\n" +
       "  | cons _ (cons _ _) => 1\n" +
-      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
-      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+      "\\func test1 : f (single 5) = 2 => idp\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => idp");
   }
 
   @Test
@@ -112,8 +112,8 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "  | nil => 3\n" +
       "  | single x => 2\n" +
       "  | cons _ (cons _ _) => 1\n" +
-      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
-      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+      "\\func test1 : f (single 5) = 2 => idp\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => idp");
   }
 
   @Test
@@ -126,8 +126,8 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "  | single x => 2\n" +
       "  | cons _ (cons _ _) => 1\n" +
       "}\n" +
-      "\\func test1 : f (single 5) = 2 => path (\\lam _ => 2)\n" +
-      "\\func test2 : f (cons 4 nil) = 2 => path (\\lam _ => 2)");
+      "\\func test1 : f (single 5) = 2 => idp\n" +
+      "\\func test2 : f (cons 4 nil) = 2 => idp");
   }
 
   @Test
@@ -160,7 +160,6 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\cons single (p : 0 = 0) => con2 p\n" +
       "\\func f (d : D2 0) : Nat\n" +
       "  | single _ => 3\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func test1 : f (single idp) = 3 => idp\n" +
       "\\func test2 : f (con2 idp) = 3 => idp");
   }
@@ -173,7 +172,6 @@ public class ConstructorTest extends TypeCheckingTestCase {
       "\\func f (d : D2 0) : Nat => \\case d \\with {\n" +
       "  | single _ => 3\n" +
       "}\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func test1 : f (single idp) = 3 => idp\n" +
       "\\func test2 : f (con2 idp) = 3 => idp");
   }

@@ -42,8 +42,8 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void squeezeTest() {
     typeCheckModule(
-        "\\func squeeze1 (i j : I) => coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
-        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j"
+        "\\func squeeze1 (i j : I) => coe (\\lam x => left = x) idp j @ i\n" +
+        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j"
     );
   }
 
@@ -58,11 +58,10 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void inv0Test() {
     typeCheckModule(
-        "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\func transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\func inv {A : \\Type} {a a' : A} (p : a = a') => transport (\\lam a'' => a'' = a) p idp\n" +
-        "\\func squeeze1 (i j : I) : I => coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
-        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+        "\\func squeeze1 (i j : I) : I => coe (\\lam x => left = x) idp j @ i\n" +
+        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j\n" +
         "\\func psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
         "\\func Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
         "  => coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
@@ -73,11 +72,10 @@ public class PathsTest extends TypeCheckingTestCase {
   @Test
   public void invTest() {
     typeCheckModule(
-        "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
         "\\func transport {A : \\Type} (B : A -> \\Type) {a a' : A} (p : a = a') (b : B a) => coe (\\lam i => B (p @ i)) b right\n" +
         "\\func inv {A : \\Type} {a a' : A} (p : a = a') => transport (\\lam a'' => a'' = a) p idp\n" +
-        "\\func squeeze1 (i j : I) : I => coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
-        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+        "\\func squeeze1 (i j : I) : I => coe (\\lam x => left = x) idp j @ i\n" +
+        "\\func squeeze (i j : I) => coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j\n" +
         "\\func psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i => path (\\lam j => p @ squeeze i j)\n" +
         "\\func Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p\n" +
         "  => coe (\\lam i => B (p @ i) (psqueeze p i)) b right\n" +
@@ -87,8 +85,6 @@ public class PathsTest extends TypeCheckingTestCase {
 
   @Test
   public void idpTypeTest() {
-    typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} : a = a => path (\\lam _ => a)\n" +
-      "\\func f : 3 = 3 => idp");
+    typeCheckDef("\\func f : 3 = 3 => idp");
   }
 }

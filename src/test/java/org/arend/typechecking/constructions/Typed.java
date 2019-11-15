@@ -27,15 +27,12 @@ public class Typed extends TypeCheckingTestCase {
 
   @Test
   public void typedTuple() {
-    typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-      "\\func f => ((0,idp) : \\Sigma (x : Nat) (x = 0))");
+    typeCheckDef("\\func f => ((0,idp) : \\Sigma (x : Nat) (x = 0))");
   }
 
   @Test
   public void typedTupleField() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func f => ((0, idp : 0 = 0) : \\Sigma (x : Nat) (x = 0))\n" +
       "\\func g (p : \\Sigma (x : Nat) (x = 0)) => p.1\n" +
       "\\func h => g f");
@@ -44,7 +41,6 @@ public class Typed extends TypeCheckingTestCase {
   @Test
   public void typedTupleFieldError() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func f => (0, idp : 0 = 0)\n" +
       "\\func g (p : \\Sigma (x : Nat) (x = 0)) => p.1\n" +
       "\\func h => g f", 1);

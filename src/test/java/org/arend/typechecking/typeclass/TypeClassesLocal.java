@@ -149,7 +149,7 @@ public class TypeClassesLocal extends TypeCheckingTestCase {
   public void recordWithoutClassifyingField2() {
     typeCheckModule(
       "\\record A { | n : Nat }\n" +
-      "\\func f (a : A) : n = n => path (\\lam _ => n)", 3);
+      "\\func f (a : A) : n = n => idp", 1);
   }
 
   @Test

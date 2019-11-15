@@ -12,7 +12,7 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat\n" +
       "  | 0 => 0\n" +
       "  | suc _ \\as x => x\n" +
-      "\\func g : f 2 = 2 => path (\\lam _ => 2)");
+      "\\func g : f 2 = 2 => idp");
   }
 
   @Test
@@ -21,7 +21,7 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat\n" +
       "  | 0 \\as x => x\n" +
       "  | suc n => suc n\n" +
-      "\\func g : f 0 = 0 => path (\\lam _ => 0)");
+      "\\func g : f 0 = 0 => idp");
   }
 
   @Test
@@ -30,7 +30,7 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) : Nat\n" +
       "  | 0 => 0\n" +
       "  | suc _ \\as x : Nat => x\n" +
-      "\\func g : f 1 = 1 => path (\\lam _ => 1)");
+      "\\func g : f 1 = 1 => idp");
   }
 
   @Test
@@ -48,7 +48,7 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "\\record R (x y : Nat)\n" +
       "\\func f (r : R) : Nat\n" +
       "  | (a,b) \\as p => a Nat.+ R.x {p} Nat.+ b Nat.+ R.y {p}\n" +
-      "\\func g : f (\\new R 3 4) = 14 => path (\\lam _ => 14)");
+      "\\func g : f (\\new R 3 4) = 14 => idp");
   }
 
   @Test
@@ -57,7 +57,7 @@ public class AsPatternsTest extends TypeCheckingTestCase {
       "\\record R (x y : Nat)\n" +
       "\\func f (r : R) : Nat\n" +
       "  | (a,b) \\as p : R => a Nat.+ p.x Nat.+ b Nat.+ p.y\n" +
-      "\\func g : f (\\new R 3 4) = 14 => path (\\lam _ => 14)");
+      "\\func g : f (\\new R 3 4) = 14 => idp");
   }
 
   @Test

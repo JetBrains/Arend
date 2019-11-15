@@ -19,7 +19,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | A { | a' => 1 }\n" +
       "  | a => 2\n" +
       "  | b' => 3\n" +
-      "\\func f : I.a' = 1 => path (\\lam _ => 1)");
+      "\\func f : I.a' = 1 => idp");
   }
 
   @Test
@@ -70,7 +70,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
       "  | b' => 3\n" +
-      "\\func f : I.a = 1 => path (\\lam _ => 1)");
+      "\\func f : I.a = 1 => idp");
   }
 
   @Test
@@ -96,7 +96,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "  | A => \\new A { | a => 1 | a' => 2 }\n" +
       "  | b => 0\n" +
       "  | b' => 3\n" +
-      "\\func f : I.a = 1 => path (\\lam _ => 1)");
+      "\\func f : I.a = 1 => idp");
   }
 
   @Test
@@ -119,7 +119,7 @@ public class SuperClassImplementTest extends TypeCheckingTestCase  {
       "\\instance I : B 1 2\n" +
       "  | b => 0\n" +
       "  | b' => 3\n" +
-      "\\func f : I.a = 1 => path (\\lam _ => 1)");
+      "\\func f : I.a = 1 => idp");
   }
 
   @Test

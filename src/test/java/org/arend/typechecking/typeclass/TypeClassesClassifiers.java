@@ -16,7 +16,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2\n" +
       "\\class C (d : D) | p : d = d\n" +
-      "\\instance f : C con1 | p => path (\\lam _ => con1)\n" +
+      "\\instance f : C con1 | p => idp\n" +
       "\\func g : con1 = con1 => p");
   }
 
@@ -25,7 +25,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2\n" +
       "\\class C (d : D) | p : d = d\n" +
-      "\\instance f : C con1 | p => path (\\lam _ => con1)\n" +
+      "\\instance f : C con1 | p => idp\n" +
       "\\func g : con2 = con2 => p", 1);
     assertThatErrorsAre(Matchers.instanceInference(get("C"), ConCall((Constructor) getDefinition("D.con2"), Sort.STD, Collections.emptyList())));
   }
@@ -35,7 +35,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 (x y : Nat) | con2\n" +
       "\\class C (d : Nat -> D) | p : d = d\n" +
-      "\\instance f : C (con1 0) | p => path (\\lam _ => con1 0)\n" +
+      "\\instance f : C (con1 0) | p => idp\n" +
       "\\func g : con1 0 = con1 0 => p");
   }
 
@@ -44,7 +44,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 (x y : Nat) | con2\n" +
       "\\class C (d : Nat -> D) | p (n : Nat) : d n = d n\n" +
-      "\\instance f : C (con1 0) | p n => path (\\lam _ => con1 0 n)\n" +
+      "\\instance f : C (con1 0) | p n => idp\n" +
       "\\func g : con1 0 2 = con1 0 2 => p 2");
   }
 
@@ -53,7 +53,7 @@ public class TypeClassesClassifiers extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 (x y : Nat) | con2\n" +
       "\\class C (d : Nat -> D) | p (n : Nat) : d n = d n\n" +
-      "\\instance f : C (\\lam x => con1 x x) | p n => path (\\lam _ => con1 n n)", 1);
+      "\\instance f : C (\\lam x => con1 x x) | p n => idp", 1);
   }
 
   @Test

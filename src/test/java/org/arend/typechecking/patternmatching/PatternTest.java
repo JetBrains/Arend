@@ -373,7 +373,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func f (n : Nat) (n : Nat) : Nat \\elim n\n" +
       "  | suc _ => 2\n" +
       "  | zero => n\n" +
-      "\\func g : f 1 0 = 1 => path (\\lam _ => 1)");
+      "\\func g : f 1 0 = 1 => idp");
   }
 
   @Test
@@ -422,7 +422,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func ff (x : Foo) : Nat'\n" +
       "  | foo (suc' (suc' (suc' zero'))) => zero'\n" +
       "  | foo n => n\n" +
-      "\\func test : ff (foo (suc' (suc' zero'))) = suc' (suc' zero') => path (\\lam _ => suc' (suc' zero'))");
+      "\\func test : ff (foo (suc' (suc' zero'))) = suc' (suc' zero') => idp");
   }
 
   @Test
@@ -431,7 +431,7 @@ public class PatternTest extends TypeCheckingTestCase {
       "\\func ff (x : Nat) : Nat\n" +
       "  | suc zero => zero\n" +
       "  | n => n\n" +
-      "\\func test : ff (suc (suc (suc zero))) = 3 => path (\\lam _ => 3)");
+      "\\func test : ff (suc (suc (suc zero))) = 3 => idp");
   }
 
   @Test
@@ -455,7 +455,6 @@ public class PatternTest extends TypeCheckingTestCase {
   public void implicitParametersAndCase() {
     typeCheckModule(
       "\\data D | con {n : Nat} (p : n = n)\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func foo (d : D) => \\case d \\as d \\return d = d \\with {\n" +
       "  | con p => idp\n" +
       "}");

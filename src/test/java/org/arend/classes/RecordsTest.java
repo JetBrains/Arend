@@ -77,7 +77,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x => d\n" +
         "  | y => d\n" +
         "}\n" +
-        "\\func test (p : diagonal 0) : p.x = 0 => path (\\lam _ => 0)");
+        "\\func test (p : diagonal 0) : p.x = 0 => idp");
   }
 
   @Test
@@ -343,8 +343,7 @@ public class RecordsTest extends TypeCheckingTestCase {
       "\\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith\n" +
       "  | fst => p.snd\n" +
       "  | snd => p.fst\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-      "\\func idpe {A : \\Type} (a : A) => path (\\lam _ => a)\n" +
+      "\\func idpe {A : \\Type} (a : A) : a = a => idp\n" +
       "\\func swap-inv1 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp\n" +
       "\\func swap-inv2 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {_}\n" +
       "\\func swap-inv3 {A B : \\Type} (p : Pair A B) : swap (swap p) = p => idp {_} {p}\n" +

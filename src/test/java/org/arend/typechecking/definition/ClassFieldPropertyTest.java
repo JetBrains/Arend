@@ -31,7 +31,6 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class C {\n" +
       "  | p : 0 = 0\n" +
       "}\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func foo (x : 0 = 0) : p {\\new C x} = x => idp");
   }
 
@@ -41,7 +40,6 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class C {\n" +
       "  | p : 0 = 0\n" +
       "}\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func inst : C \\cowith | p => idp\n" +
       "\\func foo : p {inst} = idp => idp");
   }
