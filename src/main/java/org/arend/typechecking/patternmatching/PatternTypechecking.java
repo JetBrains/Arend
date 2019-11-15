@@ -8,6 +8,7 @@ import org.arend.core.context.binding.inference.FunctionInferenceVariable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.Definition;
@@ -18,6 +19,7 @@ import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.ElimBindingVisitor;
+import org.arend.core.expr.visitor.FreeVariablesCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
@@ -265,7 +267,7 @@ public class PatternTypechecking {
   private static class Result {
     List<Pattern> patterns;
     List<Expression> exprs;
-    ExprSubstitution substitution;
+    ExprSubstitution substitution; // Substitutes e for x if we matched on a path e = x
 
     public Result(List<Pattern> patterns, List<Expression> exprs, ExprSubstitution substitution) {
       this.patterns = patterns;
@@ -431,21 +433,45 @@ public class PatternTypechecking {
               return null;
             }
 
-            Expression varExpr = dataCall.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.WHNF);
-            Expression otherExpr = dataCall.getDefCallArguments().get(1).normalize(NormalizeVisitor.Mode.WHNF);
-            ReferenceExpression refExpr = varExpr.cast(ReferenceExpression.class);
-            if (refExpr == null) {
-              refExpr = otherExpr.cast(ReferenceExpression.class);
-              otherExpr = varExpr;
-            }
-            if (refExpr == null) {
+            Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.WHNF);
+            Expression expr2 = dataCall.getDefCallArguments().get(1).normalize(NormalizeVisitor.Mode.WHNF);
+            ReferenceExpression refExpr1 = expr1.cast(ReferenceExpression.class);
+            ReferenceExpression refExpr2 = expr2.cast(ReferenceExpression.class);
+            if (refExpr1 == null && refExpr2 == null) {
               myErrorReporter.report(new IdpPatternError(IdpPatternError.noVariable(), dataCall, conPattern));
               return null;
             }
-            otherExpr = ElimBindingVisitor.elimBinding(otherExpr, refExpr.getBinding());
-            type = ElimBindingVisitor.elimBinding(type, refExpr.getBinding());
+
+            int num = 0;
+            for (DependentLink paramLink = linkList.getFirst(); paramLink.hasNext(); paramLink = paramLink.getNext()) {
+              if (refExpr1 != null && refExpr1.getBinding() == paramLink) {
+                if (num == 2) {
+                  num = 1;
+                  break;
+                } else {
+                  num = 1;
+                }
+              }
+              if (refExpr2 != null && refExpr2.getBinding() == paramLink) {
+                if (num == 1) {
+                  num = 2;
+                  break;
+                } else {
+                  num = 2;
+                }
+              }
+            }
+            if (num == 0) {
+              myErrorReporter.report(new IdpPatternError(IdpPatternError.noParameter(), dataCall, conPattern));
+              return null;
+            }
+            Binding substVar = num == 1 ? refExpr1.getBinding() : refExpr2.getBinding();
+            Expression otherExpr = num == 1 ? expr2 : expr1;
+
+            otherExpr = ElimBindingVisitor.elimBinding(otherExpr, substVar);
+            type = ElimBindingVisitor.elimBinding(type, substVar);
             if (otherExpr == null || type == null) {
-              myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(refExpr.getBinding().getName()), dataCall, conPattern));
+              myErrorReporter.report(new IdpPatternError(IdpPatternError.variable(substVar.getName()), dataCall, conPattern));
               return null;
             }
 
@@ -456,10 +482,26 @@ public class PatternTypechecking {
             substitution.add(link, otherExpr);
             link = link.getNext();
 
-            varSubst = new ExprSubstitution(refExpr.getBinding(), otherExpr);
+            varSubst = new ExprSubstitution(substVar, otherExpr);
             paramsSubst.subst(varSubst);
-            for (DependentLink paramLink = linkList.getFirst(); paramLink.hasNext(); paramLink = paramLink.getNext()) {
-              paramLink = paramLink.getNextTyped(null);
+            Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
+            Binding banVar = null;
+            List<DependentLink> params = DependentLink.Helper.toList(linkList.getFirst());
+            for (int i = params.size() - 1; i >= 0; i--) {
+              DependentLink paramLink = params.get(i);
+              if (paramLink == substVar) {
+                break;
+              }
+              if (freeVars.contains(paramLink)) {
+                banVar = paramLink;
+              }
+              if (paramLink instanceof UntypedDependentLink) {
+                continue;
+              }
+              if (banVar != null && paramLink.getTypeExpr().findBinding(substVar)) {
+                myErrorReporter.report(new IdpPatternError(IdpPatternError.subst(substVar.getName(), paramLink.getName(), banVar.getName()), null, conPattern));
+                return null;
+              }
               paramLink.setType(paramLink.getType().subst(new SubstVisitor(varSubst, LevelSubstitution.EMPTY)));
             }
             listSubst(result, exprs, varSubst);

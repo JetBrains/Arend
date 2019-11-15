@@ -72,6 +72,14 @@ public class IdpTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void caseExprTest() {
+    typeCheckModule(
+      "\\func f (f : Nat -> Nat) (x : Nat) (p : f x = 0) => \\case f x \\as x', p : x' = 0 \\return x' = 0 \\with {\n" +
+      "  | _, idp => idp\n" +
+      "}");
+  }
+
+  @Test
   public void substInPattern() {
     typeCheckModule(
       "\\func K {A : \\Type} {a : A} (p : \\Sigma (x : A) (a = x)) : p = (a,idp) \\elim p\n" +
@@ -94,5 +102,29 @@ public class IdpTest extends TypeCheckingTestCase {
       "  : (x1, path (\\lam i => f (p @ i)) *> x'2 ) = {\\Sigma (a : A) (f a = b0)} (x'1,x'2) \\elim x'2, p\n" +
       "  | idp, idp => idp\n" +
       "\\func test {A B : \\Type} (f : A -> B) (x1 : A) : ext f (f x1) x1 x1 idp idp = idp => idp");
+  }
+
+  @Test
+  public void substError() {
+    typeCheckDef(
+      "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : b = b -> A} (q : b = b) (p : a' q = a) : Nat \\elim p\n" +
+      "  | idp => 0", 1);
+  }
+
+  @Test
+  public void chooseVarTest() {
+    typeCheckModule(
+      "\\func f {A : \\Type} (B : A -> \\Type) {a : A} (b : B a) {a' : A} (p : a = a') : B a' \\elim p\n" +
+      "  | idp => b\n" +
+      "\\func g {A : \\Type} (B : A -> \\Type) {a' : A} (b : B a') {a : A} (p : a = a') : B a' \\elim p\n" +
+      "  | idp => b");
+  }
+
+  @Test
+  public void caseVarError() {
+    typeCheckModule(
+      "\\func f (x : Nat) (p : x = 0) => \\case p : x = 0 \\return Nat \\with {\n" +
+      "  | idp => 0\n" +
+      "}", 1);
   }
 }
