@@ -67,7 +67,7 @@ class ExpressionDeserialization {
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
   }
 
-  private Variable readBindingRef(int index) throws DeserializationException {
+  Variable readBindingRef(int index) throws DeserializationException {
     if (index == 0) {
       return null;
     } else {

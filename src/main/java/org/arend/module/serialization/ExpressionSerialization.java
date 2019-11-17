@@ -77,7 +77,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return builder.build();
   }
 
-  private int writeBindingRef(Binding binding) {
+  int writeBindingRef(Binding binding) {
     if (binding == null) {
       return 0;
     } else {

@@ -124,7 +124,19 @@ message Definition {
     message DConstructorData {
         FunctionData function = 1;
         int32 number_of_parameters = 2;
-        Pattern pattern = 3;
+        DPattern pattern = 3;
+    }
+
+    message DPattern {
+        oneof kind {
+            int32 binding = 1;
+            Constructor constructor = 2;
+        }
+
+        message Constructor {
+            Expression expression = 1;
+            repeated DPattern pattern = 2;
+        }
     }
 
     enum FunctionKind {
