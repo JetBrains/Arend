@@ -127,4 +127,18 @@ public class IdpTest extends TypeCheckingTestCase {
       "  | idp => 0\n" +
       "}", 1);
   }
+
+  @Test
+  public void parametersTest() {
+    typeCheckModule(
+      "\\func f {x : Nat} (t : \\Sigma (x = 0) (x = 1)) : 0 = 1\n" +
+      "  | (idp,q) => q");
+  }
+
+  @Test
+  public void parametersTest2() {
+    typeCheckModule(
+      "\\func f {x : Nat} (t : \\Sigma (x = 0) (x = 1)) : 1 = 0\n" +
+      "  | (q,idp) => q");
+  }
 }

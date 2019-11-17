@@ -483,7 +483,7 @@ public class PatternTypechecking {
             link = link.getNext();
 
             varSubst = new ExprSubstitution(substVar, otherExpr);
-            paramsSubst.subst(varSubst);
+            paramsSubst.addSubst(substVar, otherExpr);
             Set<Binding> freeVars = FreeVariablesCollector.getFreeVariables(otherExpr);
             Binding banVar = null;
             List<DependentLink> params = DependentLink.Helper.toList(linkList.getFirst());
