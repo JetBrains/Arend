@@ -40,6 +40,6 @@ public class IdpPatternError extends TypecheckingError {
 
   @Override
   public boolean isShort() {
-    return false;
+    return expectedType == null;
   }
 }
