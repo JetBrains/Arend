@@ -779,6 +779,12 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         }
       }
 
+      if ((definition == Prelude.PATH_INFIX || definition == Prelude.PATH) && hLevel.isProp()) {
+        InferenceLevelVariable pl = new InferenceLevelVariable(LevelVariable.LvlType.PLVL, definition.hasUniverses(), expr);
+        getEquations().addVariable(pl);
+        pLevel = new Level(pl);
+      }
+
       sortArgument = new Sort(pLevel, hLevel);
     }
 

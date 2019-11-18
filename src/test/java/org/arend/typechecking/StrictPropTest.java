@@ -19,6 +19,11 @@ public class StrictPropTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void setPiTest() {
+    typeCheckDef("\\func f {A : \\Set} (x y : A) : \\Pi (p q : = \\level \\Prop x y) -> p = q => \\lam p q => idp");
+  }
+
+  @Test
   public void classTest() {
     typeCheckModule(
       "\\record B\n" +
