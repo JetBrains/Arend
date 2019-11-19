@@ -8,6 +8,8 @@ import org.arend.core.expr.TupleExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ErrorReporter;
+import org.arend.term.concrete.Concrete;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +46,7 @@ public class EmptyPattern implements Pattern {
   }
 
   @Override
-  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+  public boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     return other instanceof EmptyPattern || other instanceof BindingPattern;
   }
 

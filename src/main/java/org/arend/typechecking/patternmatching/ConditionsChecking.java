@@ -35,7 +35,7 @@ public class ConditionsChecking {
     myErrorReporter = errorReporter;
   }
 
-  public boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def) {
+  public boolean check(Body body, List<ExtClause> clauses, Definition definition, Concrete.SourceNode def) {
     boolean ok;
     if (body instanceof IntervalElim) {
       ok = checkIntervals((IntervalElim) body, definition, def);
@@ -48,7 +48,7 @@ public class ConditionsChecking {
       ok = true;
     }
 
-    for (Clause clause : clauses) {
+    for (ExtClause clause : clauses) {
       if (!checkClause(clause, null, definition)) {
         ok = false;
       }
@@ -193,9 +193,9 @@ public class ConditionsChecking {
     }
   }
 
-  public boolean check(List<Clause> clauses, ElimTree elimTree) {
+  public boolean check(List<ExtClause> clauses, ElimTree elimTree) {
     boolean ok = true;
-    for (Clause clause : clauses) {
+    for (ExtClause clause : clauses) {
       if (!checkClause(clause, elimTree, null)) {
         ok = false;
       }
@@ -204,7 +204,7 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean checkClause(Clause clause, ElimTree elimTree, Definition definition) {
+  private boolean checkClause(ExtClause clause, ElimTree elimTree, Definition definition) {
     if (clause.expression == null) {
       return true;
     }
@@ -217,7 +217,13 @@ public class ConditionsChecking {
     }
 
     boolean ok = true;
-    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
+    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns, clause.substitution, clause.clause)) {
+      if (!clause.substitution.isEmpty()) {
+        for (int i = 0; i < pair.proj1.size(); i++) {
+          pair.proj1.set(i, pair.proj1.get(i).subst(clause.substitution));
+        }
+      }
+
       Expression evaluatedExpr1;
       if (definition == null) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
@@ -238,10 +244,10 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns) {
+  private List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     List<Pair<List<Expression>, ExprSubstitution>> result = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i))) {
+      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i), idpSubst, sourceNode)) {
         List<Expression> list = new ArrayList<>(patterns.size());
         for (int j = 0; j < patterns.size(); j++) {
           if (i == j) {
@@ -256,12 +262,12 @@ public class ConditionsChecking {
     return result;
   }
 
-  private static List<Pair<Expression, ExprSubstitution>> collectPatterns(Pattern pattern) {
+  private List<Pair<Expression, ExprSubstitution>> collectPatterns(Pattern pattern, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     if (pattern instanceof BindingPattern) {
       return Collections.emptyList();
     }
     ConstructorPattern conPattern = (ConstructorPattern) pattern;
-    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments());
+    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments(), idpSubst, sourceNode);
     List<Pair<Expression, ExprSubstitution>> result = new ArrayList<>(collectedPatterns.size());
     for (Pair<List<Expression>, ExprSubstitution> pair : collectedPatterns) {
       result.add(new Pair<>(conPattern.toExpression(pair.proj1), pair.proj2));
@@ -318,7 +324,7 @@ public class ConditionsChecking {
     for (ClauseBase clause : constructor.getClauses()) {
       ExprSubstitution substitution1 = new ExprSubstitution();
       ExprSubstitution substitution2 = new ExprSubstitution();
-      if (conPattern.getPatterns().unify(new Patterns(clause.patterns), substitution1, substitution2)) {
+      if (conPattern.getPatterns().unify(idpSubst, new Patterns(clause.patterns), substitution1, substitution2, myErrorReporter, sourceNode)) {
         result.add(new Pair<>(clause.expression.subst(substitution2), substitution1));
       }
     }

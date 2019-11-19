@@ -10,7 +10,9 @@ import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ErrorReporter;
 import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
 
 import java.util.*;
 
@@ -238,7 +240,7 @@ public class ConstructorPattern implements Pattern {
   }
 
   @Override
-  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+  public boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     if (other instanceof BindingPattern) {
       if (substitution2 != null) {
         substitution2.add(((BindingPattern) other).getBinding(), toExpression());
@@ -251,7 +253,7 @@ public class ConstructorPattern implements Pattern {
       return (myExpression instanceof SigmaExpression && conPattern.myExpression instanceof SigmaExpression ||
               myExpression instanceof DefCallExpression && conPattern.myExpression instanceof DefCallExpression &&
                 ((DefCallExpression) myExpression).getDefinition() == ((DefCallExpression) conPattern.myExpression).getDefinition())
-        && myPatterns.unify(conPattern.myPatterns, substitution1, substitution2);
+        && myPatterns.unify(idpSubst, conPattern.myPatterns, substitution1, substitution2, errorReporter, sourceNode);
     }
 
     return false;

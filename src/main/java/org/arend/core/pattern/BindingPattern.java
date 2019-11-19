@@ -5,6 +5,9 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ErrorReporter;
+import org.arend.term.concrete.Concrete;
+import org.arend.typechecking.error.local.PatternUnificationError;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +47,18 @@ public class BindingPattern implements Pattern {
   }
 
   @Override
-  public boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+  public boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
+    Expression substExpr = idpSubst == null ? null : idpSubst.get(myBinding);
+    if (substExpr != null) {
+      if (other instanceof BindingPattern || other instanceof EmptyPattern) {
+        substitution1.add(myBinding, substExpr);
+        return true;
+      } else {
+        errorReporter.report(new PatternUnificationError(myBinding, other, sourceNode));
+        return false;
+      }
+    }
+
     if (!(other instanceof EmptyPattern) && substitution1 != null) {
       substitution1.add(myBinding, other.toExpression());
     }

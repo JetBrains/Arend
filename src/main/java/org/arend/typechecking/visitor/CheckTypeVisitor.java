@@ -14,6 +14,7 @@ import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Clause;
 import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ExtClause;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.*;
 import org.arend.core.expr.type.ExpectedType;
@@ -1837,7 +1838,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    List<Clause> resultClauses = new ArrayList<>();
+    List<ExtClause> resultClauses = new ArrayList<>();
     ElimTree elimTree = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSFunc(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
     if (elimTree == null) {
       return null;

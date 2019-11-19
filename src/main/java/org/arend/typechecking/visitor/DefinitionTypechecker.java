@@ -6,10 +6,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Body;
-import org.arend.core.elimtree.Clause;
-import org.arend.core.elimtree.ElimTree;
-import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
@@ -54,7 +51,7 @@ import java.util.*;
 
 import static org.arend.core.expr.ExpressionFactory.*;
 
-public class DefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, List<Clause>> {
+public class DefinitionTypechecker extends BaseDefinitionTypechecker implements ConcreteDefinitionVisitor<Void, List<ExtClause>> {
   protected CheckTypeVisitor typechecker;
   private GlobalInstancePool myInstancePool;
 
@@ -104,7 +101,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  public List<Clause> typecheckBody(Definition definition, Concrete.Definition def, Set<DataDefinition> dataDefinitions, boolean newDef) {
+  public List<ExtClause> typecheckBody(Definition definition, Concrete.Definition def, Set<DataDefinition> dataDefinitions, boolean newDef) {
     if (definition instanceof FunctionDefinition) {
       try {
         return typecheckFunctionBody((FunctionDefinition) definition, (Concrete.FunctionDefinition) def, newDef);
@@ -127,7 +124,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @Override
-  public List<Clause> visitFunction(Concrete.FunctionDefinition def, Void params) {
+  public List<ExtClause> visitFunction(Concrete.FunctionDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
@@ -144,7 +141,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @Override
-  public List<Clause> visitData(Concrete.DataDefinition def, Void params) {
+  public List<ExtClause> visitData(Concrete.DataDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
@@ -164,7 +161,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @Override
-  public List<Clause> visitClass(Concrete.ClassDefinition def, Void params) {
+  public List<ExtClause> visitClass(Concrete.ClassDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
     if (def.hasErrors()) {
       typechecker.setHasErrors();
@@ -705,7 +702,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return new ConstructorPattern(type, new Patterns(patterns));
   }
 
-  private List<Clause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
+  private List<ExtClause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.FunctionDefinition def, boolean newDef) {
     Expression expectedType = typedDef.getResultType();
 
     Level actualResultTypeLevel;
@@ -739,7 +736,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       goodThisParametersVisitor = null;
     }
 
-    List<Clause> clauses = null;
+    List<ExtClause> clauses = null;
     Concrete.FunctionBody body = def.getBody();
     boolean bodyIsOK = false;
     ClassCallExpression consType = null;
@@ -1120,7 +1117,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
         // Typecheck patterns and compute free bindings
         boolean patternsOK = true;
-        Pair<List<Pattern>, List<Expression>> result = null;
+        PatternTypechecking.PatternResult result = null;
         if (clause.getPatterns() != null) {
           if (def.getEliminatedReferences() == null) {
             originalErrorReporter.report(new TypecheckingError("Expected a constructor without patterns", clause));
@@ -1129,10 +1126,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           if (elimParams != null) {
             ExprSubstitution substitution = new ExprSubstitution();
             result = dataPatternTypechecking.typecheckPatterns(clause.getPatterns(), def.getParameters(), dataDefinition.getParameters(), substitution, elimParams, def);
-            if (instancePool != null && result != null && result.proj2 != null) {
+            if (instancePool != null && result != null && result.expressions != null) {
               typechecker.getInstancePool().setInstancePool(instancePool.subst(substitution));
             }
-            if (result != null && result.proj2 == null) {
+            if (result != null && result.expressions == null) {
               originalErrorReporter.report(new TypecheckingError(TypecheckingError.Kind.REDUNDANT_CLAUSE, clause));
               result = null;
             }
@@ -1181,7 +1178,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           notAllowedConstructors.remove(constructor.getData());
 
           // Typecheck constructors
-          Patterns patterns = result == null ? null : new Patterns(result.proj1);
+          Patterns patterns = result == null ? null : new Patterns(result.patterns);
           Sort conSort = typecheckConstructor(constructor, patterns, dataDefinition, dataDefinitions, def.isTruncated() ? null : userSort, newDef);
           if (conSort == null) {
             dataOk = false;
@@ -1199,7 +1196,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           Patterns patterns1 = dataDefinition.getConstructors().get(i).getPatterns();
           for (int j = i + 1; j < dataDefinition.getConstructors().size(); j++) {
             Patterns patterns2 = dataDefinition.getConstructors().get(j).getPatterns();
-            if (patterns1 == null || patterns2 == null || patterns1.unify(patterns2, null, null)) {
+            if (patterns1 == null || patterns2 == null || patterns1.unify(null, patterns2, null, null, errorReporter, def)) {
               ok = false;
               break;
             }
@@ -1418,7 +1415,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (elimParams != null) {
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
-          List<Clause> clauses = new ArrayList<>();
+          List<ExtClause> clauses = new ArrayList<>();
           Body body = new ElimTypechecking(typechecker, oldConstructor.getDataTypeExpression(Sort.STD), PatternTypechecking.Mode.CONSTRUCTOR).typecheckElim(def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams, clauses);
           if (constructor != null) {
             constructor.setBody(body);
