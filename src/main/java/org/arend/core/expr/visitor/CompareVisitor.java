@@ -876,7 +876,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     throw new IllegalStateException();
   }
 
-  private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
+  public boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
     if (list1.size() != list2.size()) {
       return false;
     }

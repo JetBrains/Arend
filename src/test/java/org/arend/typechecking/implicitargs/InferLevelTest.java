@@ -1,7 +1,12 @@
 package org.arend.typechecking.implicitargs;
 
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ConCallExpression;
+import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class InferLevelTest extends TypeCheckingTestCase {
   @Test
@@ -282,5 +287,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func F => \\Type\n" +
       "\\func f (d : F \\level 1 0) : F \\level 0 0 => d", 1);
+  }
+
+  @Test
+  public void funTest() {
+    Sort sort = ((ConCallExpression) ((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody()).getSortArgument();
+    assertEquals(Sort.STD, sort);
   }
 }
