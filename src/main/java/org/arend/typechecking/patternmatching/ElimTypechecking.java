@@ -46,7 +46,7 @@ import static org.arend.core.expr.ExpressionFactory.Right;
 public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Concrete.FunctionClause> myUnusedClauses;
-  private final EnumSet<PatternTypechecking.Flag> myFlags;
+  private final PatternTypechecking.Mode myMode;
   private final Expression myExpectedType;
   private final Integer myLevel;
   private final Level myActualLevel;
@@ -62,20 +62,20 @@ public class ElimTypechecking {
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, boolean isCase) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, boolean isCase) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myFlags = flags;
+    myMode = mode;
     myLevel = getMinPlus1(level, actualLevel, actualLevelSub);
     myActualLevel = isSFunc ? null : actualLevel;
     myActualLevelSub = isSFunc ? 0 : actualLevelSub;
     myCase = isCase;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, PatternTypechecking.Mode mode) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myFlags = flags;
+    myMode = mode;
     myLevel = null;
     myActualLevel = Level.INFINITY;
     myActualLevelSub = 0;
@@ -124,13 +124,13 @@ public class ElimTypechecking {
   }
 
   public ElimTree typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, DependentLink parameters, List<Clause> resultClauses) {
-    assert !myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL);
+    assert !myMode.allowInterval();
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
   public Body typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor, !myCase);
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myMode, myVisitor, !myCase);
     myOK = true;
     for (Concrete.FunctionClause clause : funClauses) {
       Pair<List<Pattern>, TypecheckingResult> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
@@ -148,7 +148,7 @@ public class ElimTypechecking {
 
     List<ExtClause> intervalClauses = Collections.emptyList();
     List<ExtClause> nonIntervalClauses = clauses;
-    if (myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL)) {
+    if (myMode.allowInterval()) {
       intervalClauses = new ArrayList<>();
       nonIntervalClauses = new ArrayList<>();
       for (ExtClause clause : clauses) {
@@ -225,7 +225,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
+      if (emptyLink == null && myMode.checkCoverage()) {
         if (!reportMissingClauses(null, sourceNode, abstractParameters, parameters, elimParams)) {
           reportNoClauses(sourceNode, abstractParameters, parameters, elimParams);
         }
@@ -631,7 +631,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars) {
+      if (myMode.checkCoverage() && !hasVars) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {

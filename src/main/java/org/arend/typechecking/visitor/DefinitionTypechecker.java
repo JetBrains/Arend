@@ -747,8 +747,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       Concrete.ElimFunctionBody elimBody = (Concrete.ElimFunctionBody) body;
       List<DependentLink> elimParams = ElimTypechecking.getEliminatedParameters(elimBody.getEliminatedReferences(), elimBody.getClauses(), typedDef.getParameters(), typechecker);
       clauses = new ArrayList<>();
-      EnumSet<PatternTypechecking.Flag> flags = EnumSet.of(PatternTypechecking.Flag.CHECK_COVERAGE, PatternTypechecking.Flag.CONTEXT_FREE, PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS);
-      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, flags, resultTypeLevel, actualResultTypeLevel, 0, def.getKind().isSFunc(), false).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
+      Body typedBody = elimParams == null ? null : new ElimTypechecking(typechecker, expectedType, PatternTypechecking.Mode.FUNCTION, resultTypeLevel, actualResultTypeLevel, 0, def.getKind().isSFunc(), false).typecheckElim(elimBody.getClauses(), def, def.getParameters(), typedDef.getParameters(), elimParams, clauses);
       if (typedBody != null) {
         if (newDef) {
           typedDef.setBody(typedBody);
@@ -1105,7 +1104,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     if (!def.getConstructorClauses().isEmpty()) {
       Map<Referable, Binding> context = typechecker.getContext();
       Set<? extends Binding> freeBindings = typechecker.getFreeBindings();
-      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, EnumSet.of(PatternTypechecking.Flag.CONTEXT_FREE), typechecker, true);
+      PatternTypechecking dataPatternTypechecking = new PatternTypechecking(errorReporter, PatternTypechecking.Mode.DATA, typechecker, true);
 
       Set<TCReferable> notAllowedConstructors = new HashSet<>();
       for (Concrete.ConstructorClause clause : def.getConstructorClauses()) {
@@ -1420,7 +1419,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
         try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
           List<Clause> clauses = new ArrayList<>();
-          Body body = new ElimTypechecking(typechecker, oldConstructor.getDataTypeExpression(Sort.STD), EnumSet.of(PatternTypechecking.Flag.ALLOW_INTERVAL, PatternTypechecking.Flag.ALLOW_CONDITIONS)).typecheckElim(def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams, clauses);
+          Body body = new ElimTypechecking(typechecker, oldConstructor.getDataTypeExpression(Sort.STD), PatternTypechecking.Mode.CONSTRUCTOR).typecheckElim(def.getClauses(), def, def.getParameters(), oldConstructor.getParameters(), elimParams, clauses);
           if (constructor != null) {
             constructor.setBody(body);
             constructor.setClauses(clauses);

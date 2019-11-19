@@ -47,25 +47,45 @@ import java.util.*;
 
 public class PatternTypechecking {
   private final ErrorReporter myErrorReporter;
-  private final EnumSet<Flag> myFlags;
+  private final Mode myMode;
   private final CheckTypeVisitor myVisitor;
   private final TypecheckerState myState;
   private Map<Referable, Binding> myContext;
   private final boolean myFinal;
 
-  public enum Flag { ALLOW_INTERVAL, ALLOW_CONDITIONS, CHECK_COVERAGE, CONTEXT_FREE }
+  public enum Mode {
+    DATA {
+      @Override public boolean allowInterval() { return false; }
+      @Override public boolean allowConditions() { return false; }
+      @Override public boolean checkCoverage() { return false; }
+    },
+    FUNCTION,
+    CONSTRUCTOR {
+      @Override public boolean checkCoverage() { return false; }
+      @Override public boolean isContextFree() { return false; }
+    },
+    CASE {
+      @Override public boolean allowInterval() { return false; }
+      @Override public boolean isContextFree() { return false; }
+    };
 
-  public PatternTypechecking(ErrorReporter errorReporter, EnumSet<Flag> flags, CheckTypeVisitor visitor, boolean isFinal) {
+    public boolean allowInterval() { return true; }
+    public boolean allowConditions() { return true; }
+    public boolean checkCoverage() { return true; }
+    public boolean isContextFree() { return true; }
+  }
+
+  public PatternTypechecking(ErrorReporter errorReporter, Mode mode, CheckTypeVisitor visitor, boolean isFinal) {
     myErrorReporter = errorReporter;
-    myFlags = flags;
+    myMode = mode;
     myVisitor = visitor;
     myState = visitor.getTypecheckingState();
     myFinal = isFinal;
   }
 
-  public PatternTypechecking(ErrorReporter errorReporter, EnumSet<Flag> flags, TypecheckerState state) {
+  public PatternTypechecking(ErrorReporter errorReporter, Mode mode, TypecheckerState state) {
     myErrorReporter = errorReporter;
-    myFlags = flags;
+    myMode = mode;
     myVisitor = null;
     myState = state;
     myFinal = true;
@@ -139,7 +159,7 @@ public class PatternTypechecking {
 
   public Pair<List<Pattern>, List<Expression>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, ExprSubstitution substitution, List<DependentLink> elimParams, Concrete.SourceNode sourceNode) {
     myContext = myVisitor.getContext();
-    if (myFlags.contains(Flag.CONTEXT_FREE)) {
+    if (myMode.isContextFree()) {
       myContext.clear();
     }
 
@@ -162,7 +182,7 @@ public class PatternTypechecking {
         }
       }
 
-      if (myFlags.contains(Flag.CONTEXT_FREE)) {
+      if (myMode.isContextFree()) {
         myVisitor.getFreeBindings().clear();
       }
       collectBindings(result.proj1);
@@ -565,7 +585,7 @@ public class PatternTypechecking {
         }
         return null;
       }
-      if (!myFlags.contains(Flag.ALLOW_INTERVAL) && dataCall.getDefinition() == Prelude.INTERVAL) {
+      if (!myMode.allowInterval() && dataCall.getDefinition() == Prelude.INTERVAL) {
         myErrorReporter.report(new TypecheckingError("Pattern matching on the interval is not allowed here", pattern));
         return null;
       }
@@ -624,7 +644,7 @@ public class PatternTypechecking {
       }
       listSubst(result, exprs, conResult.substitution);
 
-      if (!myFlags.contains(Flag.ALLOW_CONDITIONS)) {
+      if (!myMode.allowConditions()) {
         if (conCall.getDefinition().getBody() instanceof IntervalElim) {
           myErrorReporter.report(new TypecheckingError("Pattern matching on a constructor with interval conditions is not allowed here", conPattern));
           return null;
