@@ -1843,7 +1843,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return null;
     }
 
-    ConditionsChecking.check(resultClauses, elimTree, errorReporter);
+    new ConditionsChecking(myEquations, errorReporter).check(resultClauses, elimTree);
     TypecheckingResult result = new TypecheckingResult(new CaseExpression(expr.isSFunc(), list.getFirst(), resultExpr, resultTypeLevel, elimTree, expressions), resultType != null ? resultExpr.subst(substitution) : resultExpr);
     return resultType == null ? result : checkResult(expectedType, result, expr);
   }

@@ -531,9 +531,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.Expression resultType = null;
     Concrete.Expression resultTypeLevel = null;
-    if (hasFlag(Flag.SHOW_CASE_RESULT_TYPE)) {
+    if (hasFlag(Flag.SHOW_CASE_RESULT_TYPE) && expr.getResultType() != null) {
       resultType = expr.getResultType().accept(this, null);
-      if (expr.getResultType() != null) {
+      if (expr.getResultTypeLevel() != null) {
         resultTypeLevel = expr.getResultTypeLevel().accept(this, null);
       }
     }

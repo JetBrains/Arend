@@ -182,6 +182,10 @@ public class ElimTypechecking {
           }
         }
       }
+    } else {
+      if (resultClauses != null) {
+        resultClauses.addAll(clauses);
+      }
     }
 
     List<Pair<Expression, Expression>> cases = intervalClauses.isEmpty() ? null : clausesToIntervalElim(intervalClauses, parameters);
