@@ -64,8 +64,13 @@ public abstract class CachingDoc extends Doc {
   public List<LineDoc> linearize(int indent, boolean indentFirst) {
     List<? extends String> text = getText();
     List<LineDoc> result = new ArrayList<>(text.size());
-    for (int i = 0; i < text.size(); i++) {
-      result.add(getLineDoc(indent == 0 || !indentFirst && i == 0 ? null : HangDoc.getIndent(indent), text.get(i), i == 0));
+    boolean isFirst = true;
+    for (String s : text) {
+      LineDoc doc = getLineDoc(indent == 0 || !indentFirst && isFirst ? null : HangDoc.getIndent(indent), s, isFirst);
+      if (doc != null) {
+        result.add(doc);
+        isFirst = false;
+      }
     }
     return result;
   }
