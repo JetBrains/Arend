@@ -1,6 +1,7 @@
 package org.arend.core.pattern;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
@@ -81,9 +82,11 @@ public class ConstructorPattern implements Pattern {
   public DependentLink getParameters() {
     return myExpression instanceof ClassCallExpression
       ? ((ClassCallExpression) myExpression).getClassFieldParameters()
-      : myExpression instanceof DefCallExpression
-        ? ((DefCallExpression) myExpression).getDefinition().getParameters()
-        : ((SigmaExpression) myExpression).getParameters();
+      : myExpression instanceof FunCallExpression
+        ? EmptyDependentLink.getInstance()
+        : myExpression instanceof DefCallExpression
+          ? ((DefCallExpression) myExpression).getDefinition().getParameters()
+          : ((SigmaExpression) myExpression).getParameters();
   }
 
   public int getLength() {

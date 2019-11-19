@@ -676,8 +676,9 @@ public class ElimTypechecking {
             } else {
               if (constructor instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
-                if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
-                  ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
+                Expression someExpr = someConPattern.getDataExpression();
+                if (someExpr instanceof ClassCallExpression) {
+                  ClassCallExpression classCall = (ClassCallExpression) someExpr;
                   Map<ClassField, Expression> implementations = new HashMap<>();
                   DependentLink link = conParameters;
                   for (ClassField field : classCall.getDefinition().getFields()) {
@@ -687,9 +688,13 @@ public class ElimTypechecking {
                     }
                   }
                   substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
-                } else {
-                  substExpr = new TupleExpression(arguments, (SigmaExpression) someConPattern.getDataExpression());
+                } else if (someExpr instanceof SigmaExpression) {
+                  substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
                   conParameters = DependentLink.Helper.copy(conParameters);
+                } else if (someExpr instanceof FunCallExpression) {
+                  substExpr = someExpr;
+                } else {
+                  throw new IllegalStateException();
                 }
               } else {
                 conParameters = constructor.getParameters();
