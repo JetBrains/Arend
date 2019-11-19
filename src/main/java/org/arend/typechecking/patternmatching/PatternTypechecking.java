@@ -55,12 +55,14 @@ public class PatternTypechecking {
 
   public enum Mode {
     DATA {
+      @Override public boolean allowIdp() { return false; }
       @Override public boolean allowInterval() { return false; }
       @Override public boolean allowConditions() { return false; }
       @Override public boolean checkCoverage() { return false; }
     },
     FUNCTION,
     CONSTRUCTOR {
+      @Override public boolean allowIdp() { return false; }
       @Override public boolean checkCoverage() { return false; }
       @Override public boolean isContextFree() { return false; }
     },
@@ -69,6 +71,7 @@ public class PatternTypechecking {
       @Override public boolean isContextFree() { return false; }
     };
 
+    public boolean allowIdp() { return true; }
     public boolean allowInterval() { return true; }
     public boolean allowConditions() { return true; }
     public boolean checkCoverage() { return true; }
@@ -445,6 +448,11 @@ public class PatternTypechecking {
           List<Expression> args = new ArrayList<>();
 
           if (constructor == Prelude.IDP) {
+            if (!myMode.allowIdp()) {
+              myErrorReporter.report(new TypecheckingError("Pattern matching on idp is not allowed here", pattern));
+              return null;
+            }
+
             DataCallExpression dataCall = expr.cast(DataCallExpression.class);
             LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
             Expression type = typeLam == null ? null : ElimBindingVisitor.elimLamBinding(typeLam);
