@@ -1441,6 +1441,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           getLetClauseName(clause.getPattern(), builder);
           name = Renamer.getValidName(builder.toString(), Renamer.UNNAMED);
         }
+        if (result.expression.isInstance(ErrorExpression.class)) {
+          result.expression = new OfTypeExpression(result.expression, result.type);
+        }
         return new Pair<>(new LetClause(name, null, result.expression), result.type);
       }
     }
