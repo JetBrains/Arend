@@ -146,14 +146,13 @@ public class PatternTypechecking {
           }
         }
 
-        Iterator<Map.Entry<Referable, Binding>> it = myContext.entrySet().iterator();
-        while (it.hasNext()) {
-          Map.Entry<Referable, Binding> entry = it.next();
-          Expression expr = substitution.get(entry.getValue());
+        for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
+          Binding binding = entry.getValue();
+          Expression expr = substitution.get(binding);
           if (expr instanceof ReferenceExpression) {
             entry.setValue(((ReferenceExpression) expr).getBinding());
           } else if (expr != null) {
-            it.remove();
+            entry.setValue(new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr()));
           }
         }
         expectedType = expectedType.subst(substitution);
