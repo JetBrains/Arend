@@ -470,8 +470,7 @@ public class PatternTypechecking {
           }
 
           DConstructor constructor = (DConstructor) def;
-          Sort sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.hasUniverses(), conPattern);
-          LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
+          Sort sortArg;
           DependentLink link = constructor.getParameters();
           ExprSubstitution substitution = new ExprSubstitution();
           List<Expression> args = new ArrayList<>();
@@ -486,9 +485,10 @@ public class PatternTypechecking {
             LamExpression typeLam = dataCall == null || dataCall.getDefinition() != Prelude.PATH ? null : dataCall.getDefCallArguments().get(0).normalize(NormalizeVisitor.Mode.WHNF).cast(LamExpression.class);
             Expression type = typeLam == null ? null : ElimBindingVisitor.elimLamBinding(typeLam);
             if (type == null) {
-              myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution, levelSubst), conPattern));
+              myErrorReporter.report(new TypeMismatchError(expr, constructor.getResultType().subst(substitution), conPattern));
               return null;
             }
+            sortArg = dataCall.getSortArgument();
 
             Expression expr1 = dataCall.getDefCallArguments().get(2).normalize(NormalizeVisitor.Mode.WHNF);
             Expression expr2 = dataCall.getDefCallArguments().get(1).normalize(NormalizeVisitor.Mode.WHNF);
@@ -566,6 +566,9 @@ public class PatternTypechecking {
             }
             listSubst(result, exprs, varSubst);
           } else {
+            sortArg = Sort.generateInferVars(myVisitor.getEquations(), def.hasUniverses(), conPattern);
+            LevelSubstitution levelSubst = sortArg.toLevelSubstitution();
+
             if (constructor.getNumberOfParameters() > 0) {
               Set<Binding> bindings = myVisitor.getAllBindings();
               for (int i = 0; i < constructor.getNumberOfParameters(); i++) {
