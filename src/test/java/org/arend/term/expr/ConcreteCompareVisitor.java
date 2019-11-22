@@ -290,7 +290,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     for (int i = 0; i < expr1.getArguments().size(); i++) {
       Concrete.CaseArgument caseArg1 = expr1.getArguments().get(i);
       Concrete.CaseArgument caseArg2 = case2.getArguments().get(i);
-      if (!(compare(caseArg1.expression, caseArg2.expression) && compare(caseArg1.type, caseArg2.type) && (caseArg1.referable == null) == (caseArg2.referable == null))) {
+      if (caseArg1.isElim != caseArg2.isElim || !(compare(caseArg1.expression, caseArg2.expression) && compare(caseArg1.type, caseArg2.type) && (caseArg1.referable == null) == (caseArg2.referable == null))) {
         return false;
       }
       if (caseArg1.referable != null) {

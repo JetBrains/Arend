@@ -1493,9 +1493,18 @@ public class BuildVisitor extends ArendBaseVisitor {
   public Concrete.Expression visitCase(CaseContext ctx) {
     List<Concrete.CaseArgument> caseArgs = new ArrayList<>();
     for (CaseArgContext caseArgCtx : ctx.caseArg()) {
-      ExprContext typeCtx = caseArgCtx.expr(1);
-      TerminalNode id = caseArgCtx.ID();
-      caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgCtx.expr(0)), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), typeCtx == null ? null : visitExpr(typeCtx)));
+      ExprContext typeCtx = caseArgCtx.expr();
+      Concrete.Expression type = typeCtx == null ? null : visitExpr(typeCtx);
+      CaseArgExprAsContext caseArgExprAs = caseArgCtx.caseArgExprAs();
+      if (caseArgExprAs instanceof CaseArgExprContext) {
+        CaseArgExprContext caseArgExpr = (CaseArgExprContext) caseArgExprAs;
+        TerminalNode id = caseArgExpr.ID();
+        caseArgs.add(new Concrete.CaseArgument(visitExpr(caseArgExpr.expr()), id == null ? null : new ParsedLocalReferable(tokenPosition(id.getSymbol()), id.getText()), type));
+      } else if (caseArgExprAs instanceof CaseArgElimContext) {
+        TerminalNode id = ((CaseArgElimContext) caseArgExprAs).ID();
+        Position position = tokenPosition(id.getSymbol());
+        caseArgs.add(new Concrete.CaseArgument(new Concrete.ReferenceExpression(position, new NamedUnresolvedReference(position, id.getText())), type));
+      }
     }
     List<Concrete.FunctionClause> clauses = new ArrayList<>();
     for (ClauseContext clauseCtx : ctx.clause()) {
