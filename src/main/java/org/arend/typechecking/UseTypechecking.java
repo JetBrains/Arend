@@ -225,8 +225,10 @@ public class UseTypechecking {
             if (dataDef.getSort().isLessOrEquals(newSort)) {
               errorReporter.report(new TypecheckingError(TypecheckingError.Kind.USELESS_LEVEL, def));
             } else {
+              if (!(level == -1 && dataDef.getSort().isSet())) {
+                dataDef.setSquashed(true);
+              }
               dataDef.setSort(newSort);
-              dataDef.setSquashed(true);
             }
           } else {
             dataDef.addParametersLevel(new ParametersLevel(parameters, level));

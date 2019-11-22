@@ -23,7 +23,9 @@ public class UseLevelTest extends TypeCheckingTestCase {
       "      | yes a1, no na2 => absurd (na2 a1)\n" +
       "      | no na1, yes a2 => absurd (na1 a2)\n" +
       "      | no na1, no na2 => path (\\lam i => no (\\lam a => (absurd (na1 a) : na1 a = na2 a) @ i))");
-    assertEquals(Sort.PROP, ((DataDefinition) getDefinition("Dec")).getSort());
+    DataDefinition data = (DataDefinition) getDefinition("Dec");
+    assertEquals(Sort.PROP, data.getSort());
+    assertFalse(data.isSquashed());
     FunctionDefinition def = (FunctionDefinition) getDefinition("Dec.isProp");
     assertNull(def.getBody());
     assertNotNull(def.getActualBody());
