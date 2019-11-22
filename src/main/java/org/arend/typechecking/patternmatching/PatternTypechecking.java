@@ -94,6 +94,14 @@ public class PatternTypechecking {
     myFinal = true;
   }
 
+  private void addBinding(Referable referable, Binding binding) {
+    if (myVisitor != null) {
+      myVisitor.addBinding(referable, binding);
+    } else if (myContext != null && referable != null) {
+      myContext.put(referable, binding);
+    }
+  }
+
   private void collectBindings(List<Pattern> patterns) {
     for (Pattern pattern : patterns) {
       if (pattern instanceof BindingPattern) {
@@ -149,10 +157,14 @@ public class PatternTypechecking {
         for (Map.Entry<Referable, Binding> entry : myContext.entrySet()) {
           Binding binding = entry.getValue();
           Expression expr = substitution.get(binding);
-          if (expr instanceof ReferenceExpression) {
-            entry.setValue(((ReferenceExpression) expr).getBinding());
-          } else if (expr != null) {
-            entry.setValue(new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr()));
+          Binding newBinding = expr instanceof ReferenceExpression
+            ? ((ReferenceExpression) expr).getBinding()
+            : expr != null
+              ? new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr())
+              : null;
+          if (newBinding != null) {
+            entry.setValue(binding);
+            myVisitor.getListener().referableTypechecked(entry.getKey(), newBinding);
           }
         }
         expectedType = expectedType.subst(substitution);
@@ -205,7 +217,7 @@ public class PatternTypechecking {
         for (Concrete.Parameter parameter : abstractParameters) {
           for (Referable referable : parameter.getReferableList()) {
             if (referable != null && !elimParams.contains(link)) {
-              myContext.put(referable, ((BindingPattern) result.patterns.get(i)).getBinding());
+              addBinding(referable, ((BindingPattern) result.patterns.get(i)).getBinding());
             }
             link = link.getNext();
             i++;
@@ -223,7 +235,7 @@ public class PatternTypechecking {
   }
 
   Pair<List<Pattern>, Map<Referable, Binding>> typecheckPatterns(List<? extends Concrete.Pattern> patterns, DependentLink parameters, Concrete.SourceNode sourceNode, @SuppressWarnings("SameParameterValue") boolean withElim) {
-    myContext = new HashMap<>();
+    myContext = myVisitor == null ? new HashMap<>() : myVisitor.getContext();
     Result result = doTypechecking(patterns, parameters, new LinkList(), new ExprSubstitution(), null, sourceNode, withElim);
     if (result == null) {
       return null;
@@ -289,8 +301,8 @@ public class PatternTypechecking {
     expectedType = expectedType.copy();
     for (Concrete.TypedReferable typedReferable : asPatterns) {
       Type type = typecheckType(typedReferable.type, expectedType);
-      if (typedReferable.referable != null && myContext != null) {
-        myContext.put(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
+      if (typedReferable.referable != null) {
+        addBinding(typedReferable.referable, new TypedEvaluatingBinding(typedReferable.referable.textRepresentation(), expression, type == null ? expectedType : type.getExpr()));
       }
     }
   }
@@ -404,11 +416,7 @@ public class PatternTypechecking {
         if (exprs != null) {
           exprs.add(new ReferenceExpression(newParam));
         }
-        if (referable != null && myContext != null) {
-          myContext.put(referable, newParam);
-        } else if (myVisitor != null) {
-          myVisitor.addBinding(null, newParam);
-        }
+        addBinding(referable, newParam);
         parameters = parameters.getNext();
         continue;
       }

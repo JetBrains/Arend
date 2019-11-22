@@ -20,10 +20,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
-import org.arend.typechecking.CancellationIndicator;
-import org.arend.typechecking.ThreadCancellationIndicator;
-import org.arend.typechecking.TypecheckerState;
-import org.arend.typechecking.UseTypechecking;
+import org.arend.typechecking.*;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -54,12 +51,13 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCReferable> myComparator;
+  private final TypecheckingListener myTypecheckingListener;
   private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
   private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, TypecheckingListener typecheckingListener) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
@@ -67,10 +65,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter;
     myComparator = comparator;
+    myTypecheckingListener = typecheckingListener;
   }
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator);
+    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, TypecheckingListener.DEFAULT);
   }
 
   public static void checkCanceled() throws ComputationInterruptedException {
@@ -229,6 +228,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     List<ExtClause> clauses;
     Definition typechecked;
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
+    checkTypeVisitor.setListener(myTypecheckingListener);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -272,6 +272,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
+    visitor.setListener(myTypecheckingListener);
     if (definition.hasErrors()) {
       visitor.setHasErrors();
     }

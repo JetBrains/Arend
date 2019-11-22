@@ -157,7 +157,7 @@ public class PatternTest extends TypeCheckingTestCase {
 
     List<Concrete.Pattern> patternsArgs = funDef.getBody().getClauses().get(0).getPatterns();
     LocalErrorReporter localErrorReporter = new LocalErrorReporter(funDef.getData(), errorReporter);
-    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(localErrorReporter, PatternTypechecking.Mode.DATA, new CheckTypeVisitor(typecheckerState, Collections.emptyMap(), localErrorReporter, null), true).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
+    Pair<List<Pattern>, Map<Referable, Binding>> res = new PatternTypechecking(localErrorReporter, PatternTypechecking.Mode.DATA, new CheckTypeVisitor(typecheckerState, new HashMap<>(), localErrorReporter, null), true).typecheckPatterns(patternsArgs, params(param(null, Nat()), param(null, new DataCallExpression(data, Sort.STD, Collections.emptyList())), param(null, Nat())), funDef.getBody(), false);
     assertNull(res);
     assertEquals(1, errorReporter.getErrorList().size());
   }
