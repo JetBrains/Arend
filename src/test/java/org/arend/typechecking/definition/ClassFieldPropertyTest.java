@@ -31,7 +31,8 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "\\class C {\n" +
       "  | p : 0 = 0\n" +
       "}\n" +
-      "\\func foo (x : 0 = 0) : p {\\new C x} = x => idp");
+      "\\func foo (x : 0 = 0) : p {\\new C x} = x => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
@@ -41,7 +42,8 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
       "  | p : 0 = 0\n" +
       "}\n" +
       "\\func inst : C \\cowith | p => idp\n" +
-      "\\func foo : p {inst} = idp => idp");
+      "\\func foo : p {inst} = idp => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
@@ -63,7 +65,7 @@ public class ClassFieldPropertyTest extends TypeCheckingTestCase {
   public void propertySetLevel() {
     typeCheckModule(
       "\\class A {\n" +
-      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => path (\\lam _ => p))\n" +
+      "  \\property f : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q)\n" +
       "}", 1);
   }
 

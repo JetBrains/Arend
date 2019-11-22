@@ -33,6 +33,11 @@ public class OfTypeExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return myExpression.canBeConstructor();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitOfType(this, params);
   }

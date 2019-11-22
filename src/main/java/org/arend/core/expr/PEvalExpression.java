@@ -51,6 +51,11 @@ public class PEvalExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return false;
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitPEval(this, params);
   }

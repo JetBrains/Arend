@@ -94,6 +94,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return result;
   }
 
+  public int getNumberOfNotImplementedFields() {
+    return getDefinition().getNumberOfNotImplementedFields() - myImplementations.size();
+  }
+
   public DependentLink getClassFieldParameters() {
     Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
     Expression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));

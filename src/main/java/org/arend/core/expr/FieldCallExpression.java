@@ -58,6 +58,11 @@ public class FieldCallExpression extends DefCallExpression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return !getDefinition().isProperty();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFieldCall(this, params);
   }

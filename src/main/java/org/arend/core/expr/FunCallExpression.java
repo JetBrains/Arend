@@ -40,6 +40,11 @@ public class FunCallExpression extends DefCallExpression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return !(getDefinition().isSFunc() || getDefinition().getBody() == null && getDefinition().status().isOK());
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitFunCall(this, params);
   }

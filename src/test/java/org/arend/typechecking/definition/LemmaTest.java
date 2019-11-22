@@ -71,7 +71,8 @@ public class LemmaTest extends TypeCheckingTestCase {
       "\\class C (n : Nat) { \\field x : 0 = 0 }\n" +
       "\\lemma f : C 0 \\cowith\n" +
       "  | x => idp\n" +
-      "\\func g : f.x = idp => idp");
+      "\\func g : f.x = idp => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
@@ -86,6 +87,6 @@ public class LemmaTest extends TypeCheckingTestCase {
 
   @Test
   public void lemmaLevelError() {
-    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => path (\\lam _ => p)) => x", 1);
+    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 1);
   }
 }
