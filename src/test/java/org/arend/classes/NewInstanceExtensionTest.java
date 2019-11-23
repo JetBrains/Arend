@@ -16,7 +16,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   public void extTest() {
     typeCheckModule(
       "\\record R (x y : Nat)\n" +
-      "\\func f (r : R) : \\new r { | y => 2 } = \\new R r.x 2 => path (\\lam _ => \\new R r.x 2)");
+      "\\func f (r : R) : \\new r { | y => 2 } = \\new R r.x 2 => idp");
   }
 
   @Test
@@ -38,7 +38,7 @@ public class NewInstanceExtensionTest extends TypeCheckingTestCase {
   public void extDepTest() {
     typeCheckModule(
       "\\record R (x : Nat) (p : x = x)\n" +
-      "\\func f (r : R) (q : r.x = r.x) : \\new r { | p => q } = \\new R r.x q => path (\\lam _ => \\new R r.x q)");
+      "\\func f (r : R) (q : r.x = r.x) : \\new r { | p => q } = \\new R r.x q => idp");
   }
 
   @Test

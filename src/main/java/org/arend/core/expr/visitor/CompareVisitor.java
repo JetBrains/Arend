@@ -145,21 +145,26 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
 
     boolean onlySolveVars = myOnlySolveVars;
     if (myNormalCompare && !myOnlySolveVars) {
-      Expression normType = type instanceof Expression ? (Expression) type : null;
-      if (normType != null && Sort.PROP.equals(normType.getSortOfType())) {
+      Expression normType = type instanceof Expression ? ((Expression) type).getUnderlyingExpression() : null;
+      boolean allowProp = !expr1.canBeConstructor() && !expr2.canBeConstructor();
+      if (normType instanceof SigmaExpression && !((SigmaExpression) normType).getParameters().hasNext() ||
+          normType instanceof ClassCallExpression && ((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 ||
+          allowProp && normType != null && Sort.PROP.equals(normType.getSortOfType())) {
         myOnlySolveVars = true;
       }
 
-      if (!myOnlySolveVars && (normType == null || normType.getStuckInferenceVariable() != null || normType.isInstance(ClassCallExpression.class))) {
+      if (!myOnlySolveVars && (normType == null || normType.getStuckInferenceVariable() != null || normType instanceof ClassCallExpression)) {
         Expression type1 = expr1.getType();
         if (type1 != null && type1.getStuckInferenceVariable() != null) {
           type1 = null;
         }
         if (type1 != null) {
           type1 = type1.normalize(NormalizeVisitor.Mode.WHNF);
-          Sort sort1 = type1.getSortOfType();
-          if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
-            myOnlySolveVars = true;
+          if (allowProp) {
+            Sort sort1 = type1.getSortOfType();
+            if (sort1 != null && sort1.isProp() && !type1.isInstance(ClassCallExpression.class)) {
+              myOnlySolveVars = true;
+            }
           }
         }
 
@@ -170,9 +175,11 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
           }
           if (type2 != null) {
             type2 = type2.normalize(NormalizeVisitor.Mode.WHNF);
-            Sort sort2 = type2.getSortOfType();
-            if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
-              myOnlySolveVars = true;
+            if (allowProp) {
+              Sort sort2 = type2.getSortOfType();
+              if (sort2 != null && sort2.isProp() && !type2.isInstance(ClassCallExpression.class)) {
+                myOnlySolveVars = true;
+              }
             }
           }
 
@@ -876,7 +883,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     throw new IllegalStateException();
   }
 
-  private boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
+  public boolean compareLists(List<? extends Expression> list1, List<? extends Expression> list2, DependentLink link, Definition definition, ExprSubstitution substitution) {
     if (list1.size() != list2.size()) {
       return false;
     }

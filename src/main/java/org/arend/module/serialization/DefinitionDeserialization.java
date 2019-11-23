@@ -1,6 +1,8 @@
 package org.arend.module.serialization;
 
 import org.arend.core.context.LinkList;
+import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -326,6 +328,9 @@ public class DefinitionDeserialization {
         if (expression instanceof SigmaExpression) {
           return new ConstructorPattern((SigmaExpression) expression, patterns);
         }
+        if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
+          return new ConstructorPattern((FunCallExpression) expression, patterns);
+        }
         throw new DeserializationException("Wrong pattern expression");
       default:
         throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
@@ -379,7 +384,43 @@ public class DefinitionDeserialization {
     fillInFunctionDefinition(defDeserializer, constructorProto.getFunction(), constructorDef);
     constructorDef.setNumberOfParameters(constructorProto.getNumberOfParameters());
     if (constructorProto.hasPattern()) {
-      constructorDef.setPattern(readPattern(defDeserializer, constructorProto.getPattern(), new LinkList()));
+      constructorDef.setPattern(readDPattern(defDeserializer, constructorProto.getPattern()));
+    }
+  }
+
+  private Pattern readDPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DPattern proto) throws DeserializationException {
+    switch (proto.getKindCase()) {
+      case BINDING:
+        Variable param = defDeserializer.readBindingRef(proto.getBinding());
+        if (!(param instanceof DependentLink)) {
+          throw new IllegalStateException();
+        }
+        return new BindingPattern((DependentLink) param);
+      case CONSTRUCTOR:
+        Expression expression = defDeserializer.readExpr(proto.getConstructor().getExpression());
+        List<Pattern> patternList = new ArrayList<>();
+        for (DefinitionProtos.Definition.DPattern pattern : proto.getConstructor().getPatternList()) {
+          patternList.add(readDPattern(defDeserializer, pattern));
+        }
+        Patterns patterns = new Patterns(patternList);
+        if (expression instanceof SmallIntegerExpression && ((SmallIntegerExpression) expression).getInteger() == 0) {
+          return new ConstructorPattern(new ConCallExpression(Prelude.ZERO, Sort.PROP, Collections.emptyList(), Collections.emptyList()), patterns);
+        }
+        if (expression instanceof ConCallExpression) {
+          return new ConstructorPattern((ConCallExpression) expression, patterns);
+        }
+        if (expression instanceof ClassCallExpression) {
+          return new ConstructorPattern((ClassCallExpression) expression, patterns);
+        }
+        if (expression instanceof SigmaExpression) {
+          return new ConstructorPattern((SigmaExpression) expression, patterns);
+        }
+        if (expression instanceof FunCallExpression && ((FunCallExpression) expression).getDefinition() instanceof DConstructor) {
+          return new ConstructorPattern((FunCallExpression) expression, patterns);
+        }
+        throw new DeserializationException("Wrong pattern expression");
+      default:
+        throw new DeserializationException("Unknown Pattern kind: " + proto.getKindCase());
     }
   }
 

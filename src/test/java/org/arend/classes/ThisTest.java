@@ -107,7 +107,6 @@ public class ThisTest extends TypeCheckingTestCase {
   public void thisErrorInferred() {
     typeCheckModule(
       "\\record R (X : \\Type) (f : Nat -> Nat)\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\record S \\extends R | g : (idp : \\this = {R} \\this) = idp", 1);
   }
 

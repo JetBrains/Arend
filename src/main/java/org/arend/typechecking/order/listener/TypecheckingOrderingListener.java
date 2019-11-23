@@ -4,7 +4,7 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.Clause;
+import org.arend.core.elimtree.ExtClause;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.PiExpression;
@@ -20,10 +20,7 @@ import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.group.Group;
-import org.arend.typechecking.CancellationIndicator;
-import org.arend.typechecking.ThreadCancellationIndicator;
-import org.arend.typechecking.TypecheckerState;
-import org.arend.typechecking.UseTypechecking;
+import org.arend.typechecking.*;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.TerminationCheckError;
 import org.arend.typechecking.error.local.LocalErrorReporter;
@@ -54,12 +51,13 @@ public class TypecheckingOrderingListener implements OrderingListener {
   private final ConcreteProvider myConcreteProvider;
   private final ReferableConverter myReferableConverter;
   private final PartialComparator<TCReferable> myComparator;
+  private final TypecheckingListener myTypecheckingListener;
   private List<TCReferable> myCurrentDefinitions = Collections.emptyList();
   private boolean myHeadersAreOK = true;
 
   private static CancellationIndicator CANCELLATION_INDICATOR = ThreadCancellationIndicator.INSTANCE;
 
-  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator) {
+  public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, DependencyListener dependencyListener, PartialComparator<TCReferable> comparator, TypecheckingListener typecheckingListener) {
     myState = state;
     myErrorReporter = errorReporter;
     myDependencyListener = dependencyListener;
@@ -67,10 +65,11 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myConcreteProvider = concreteProvider;
     myReferableConverter = referableConverter;
     myComparator = comparator;
+    myTypecheckingListener = typecheckingListener;
   }
 
   public TypecheckingOrderingListener(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, ReferableConverter referableConverter, ErrorReporter errorReporter, PartialComparator<TCReferable> comparator) {
-    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator);
+    this(instanceProviderSet, state, concreteProvider, referableConverter, errorReporter, DummyDependencyListener.INSTANCE, comparator, TypecheckingListener.DEFAULT);
   }
 
   public static void checkCanceled() throws ComputationInterruptedException {
@@ -226,9 +225,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     definition.setRecursive(recursive);
 
-    List<Clause> clauses;
+    List<ExtClause> clauses;
     Definition typechecked;
     CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), myErrorReporter), null);
+    checkTypeVisitor.setListener(myTypecheckingListener);
     checkTypeVisitor.setInstancePool(new GlobalInstancePool(myState, myInstanceProviderSet.get(definition.getData()), checkTypeVisitor));
     DesugarVisitor.desugar(definition, myConcreteProvider, checkTypeVisitor.getErrorReporter());
     myCurrentDefinitions = Collections.singletonList(definition.getData());
@@ -272,6 +272,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
 
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
+    visitor.setListener(myTypecheckingListener);
     if (definition.hasErrors()) {
       visitor.setHasErrors();
     }
@@ -293,7 +294,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
   @Override
   public void bodiesFound(List<Concrete.Definition> definitions) {
     Map<FunctionDefinition,Concrete.Definition> functionDefinitions = new HashMap<>();
-    Map<FunctionDefinition, List<Clause>> clausesMap = new HashMap<>();
+    Map<FunctionDefinition, List<ExtClause>> clausesMap = new HashMap<>();
     Set<DataDefinition> dataDefinitions = new HashSet<>();
     List<Concrete.Definition> orderedDefinitions = new ArrayList<>(definitions.size());
     List<Concrete.Definition> otherDefs = new ArrayList<>();
@@ -320,7 +321,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
       Pair<CheckTypeVisitor, Boolean> pair = mySuspensions.remove(definition.getData());
       if (myHeadersAreOK && pair != null) {
         typechecking.setTypechecker(pair.proj1);
-        List<Clause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
+        List<ExtClause> clauses = typechecking.typecheckBody(def, definition, dataDefinitions, pair.proj2);
         if (clauses != null) {
           functionDefinitions.put((FunctionDefinition) def, definition);
           clausesMap.put((FunctionDefinition) def, clauses);
@@ -368,10 +369,10 @@ public class TypecheckingOrderingListener implements OrderingListener {
     myCurrentDefinitions = Collections.emptyList();
   }
 
-  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<Clause>> clauses) {
+  private void checkRecursiveFunctions(Map<FunctionDefinition,Concrete.Definition> definitions, Map<FunctionDefinition,List<ExtClause>> clauses) {
     DefinitionCallGraph definitionCallGraph = new DefinitionCallGraph();
     for (Map.Entry<FunctionDefinition, Concrete.Definition> entry : definitions.entrySet()) {
-      List<Clause> functionClauses = clauses.get(entry.getKey());
+      List<ExtClause> functionClauses = clauses.get(entry.getKey());
       if (functionClauses != null) {
         definitionCallGraph.add(entry.getKey(), functionClauses, definitions.keySet());
       }

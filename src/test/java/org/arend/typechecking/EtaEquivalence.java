@@ -62,91 +62,91 @@ public class EtaEquivalence extends TypeCheckingTestCase {
   public void emptyClass() {
     typeCheckModule(
       "\\record Unit\n" +
-      "\\func f (x : Unit) : x = \\new Unit => path (\\lam _ => x)");
+      "\\func f (x : Unit) : x = \\new Unit => idp");
   }
 
   @Test
   public void emptyClass2() {
     typeCheckModule(
       "\\record Unit\n" +
-      "\\func f (x y : Unit) : x = y => path (\\lam _ => x)");
+      "\\func f (x y : Unit) : x = y => idp");
   }
 
   @Test
   public void emptyClass3() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x y : C { | n => 0 }) : x = y => path (\\lam _ => x)");
+      "\\func f (x y : C { | n => 0 }) : x = y => idp");
   }
 
   @Test
   public void emptyClass4a() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C { | n => 0 }) (y : C) : x = y => path (\\lam _ => x)", 1);
+      "\\func f (x : C { | n => 0 }) (y : C) : x = y => idp", 1);
   }
 
   @Test
   public void emptyClass4b() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C) (y : C { | n => 0 }) : x = y => path (\\lam _ => x)", 1);
+      "\\func f (x : C) (y : C { | n => 0 }) : x = y => idp", 1);
   }
 
   @Test
   public void unitClass() {
     typeCheckModule(
       "\\record C { | n : Nat }\n" +
-      "\\func f (x : C) (y : C { | n => x.n }) : x = y => path (\\lam _ => x)");
+      "\\func f (x : C) (y : C { | n => x.n }) : x = y => idp");
   }
 
   @Test
   public void unitClass2() {
     typeCheckModule(
       "\\record C { | n : Nat | m : Nat }\n" +
-      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.m }) : x = y => path (\\lam _ => y)");
+      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.m }) : x = y => idp");
   }
 
   @Test
   public void unitClass3() {
     typeCheckModule(
       "\\record C {| m : Nat | n : Nat  }\n" +
-      "\\func f (x : C) (y : C { | m => x.m }) : x = y => path (\\lam _ => y)", 1);
+      "\\func f (x : C) (y : C { | m => x.m }) : x = y => idp", 1);
   }
 
   @Test
   public void unitClass4() {
     typeCheckModule(
       "\\record C { | n : Nat | m : Nat }\n" +
-      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.n }) : x = y => path (\\lam _ => y)", 1);
+      "\\func f (x : C { | n => 3 }) (y : C { | n => 3 | m => x.n }) : x = y => idp", 1);
   }
 
   @Test
   public void unitClass5() {
     typeCheckModule(
       "\\record C (n : Nat)\n" +
-      "\\func f (x : C 0) (y : C 1) : x = y => path (\\lam _ => x)", 1);
+      "\\func f (x : C 0) (y : C 1) : x = y => idp", 1);
   }
 
   @Test
   public void unitClass6() {
     typeCheckModule(
       "\\record C (n : Nat)\n" +
-      "\\func f (x : C 0) (y : C 1) : x = {C} y => path (\\lam _ => x)", 1);
+      "\\func f (x : C 0) (y : C 1) : x = {C} y => idp", 1);
   }
 
   @Test
   public void unitClass7() {
     typeCheckModule(
       "\\record C (n : Nat)\n" +
-      "\\func f (x : C 0) (y : C 0) : x = {C} y => path (\\lam _ => x)");
+      "\\func f (x : C 0) (y : C 0) : x = {C} y => idp");
   }
 
   @Test
   public void unitClass8() {
     typeCheckModule(
       "\\record C (n m : Nat)\n" +
-      "\\func f (x : C 0) (y : C 0) : x = {C} y => path (\\lam _ => x)", 1);
+      "\\func f (x : C 0) (y : C 0) : x = {C} y => idp", 1);
   }
 
   @Test
@@ -154,7 +154,7 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record C (n : Nat)\n" +
       "\\record D (m : Nat) \\extends C\n" +
-      "\\func f (x : D 0 1) (y : D 0 2) : x = {C} y => path (\\lam _ => x)");
+      "\\func f (x : D 0 1) (y : D 0 2) : x = {C} y => idp");
   }
 
   @Test
@@ -162,17 +162,17 @@ public class EtaEquivalence extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record C (n : Nat)\n" +
       "\\record D (m : Nat) \\extends C\n" +
-      "\\func f (x : C) : \\new D { | C => x | m => 0 } = {C} x => path (\\lam _ => x)\n" +
-      "\\func g (x : C) : x = {C} \\new D { | C => x | m => 0 } => path (\\lam _ => x)");
+      "\\func f (x : C) : \\new D { | C => x | m => 0 } = {C} x => idp\n" +
+      "\\func g (x : C) : x = {C} \\new D { | C => x | m => 0 } => idp");
   }
 
   @Test
   public void sigmaTest() {
-    typeCheckModule("\\func f (x : \\Sigma Nat Nat) : x = (x.1,x.2) => path (\\lam _ => x)");
+    typeCheckModule("\\func f (x : \\Sigma Nat Nat) : x = (x.1,x.2) => idp");
   }
 
   @Test
   public void sigmaUnitTest() {
-    typeCheckModule("\\func f (x y : \\Sigma) : x = y => path (\\lam _ => x)");
+    typeCheckModule("\\func f (x y : \\Sigma) : x = y => idp");
   }
 }

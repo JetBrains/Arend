@@ -4,6 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.error.ErrorReporter;
+import org.arend.term.concrete.Concrete;
 
 import java.util.List;
 
@@ -55,10 +57,10 @@ public class Patterns {
     return matchResult;
   }
 
-  public boolean unify(Patterns other, ExprSubstitution substitution1, ExprSubstitution substitution2) {
+  public boolean unify(ExprSubstitution idpSubst, Patterns other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode) {
     assert myPatterns.size() == other.myPatterns.size();
     for (int i = 0; i < myPatterns.size(); i++) {
-      if (!myPatterns.get(i).unify(other.myPatterns.get(i), substitution1, substitution2)) {
+      if (!myPatterns.get(i).unify(idpSubst, other.myPatterns.get(i), substitution1, substitution2, errorReporter, sourceNode)) {
         return false;
       }
     }

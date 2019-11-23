@@ -56,7 +56,10 @@ public class BranchElimTree extends ElimTree {
     List<Expression> newArguments = null;
     SingleConstructor singleConstructor = getSingleConstructor();
     if (singleConstructor != null) {
-      newArguments = singleConstructor.getMatchedArguments(argument);
+      newArguments = singleConstructor.getMatchedArguments(argument, false);
+      if (newArguments == null) {
+        return null;
+      }
       if (index + 1 < arguments.size()) {
         newArguments = new ArrayList<>(newArguments);
         newArguments.addAll(arguments.subList(index + 1, arguments.size()));

@@ -308,7 +308,26 @@ public class DefinitionSerialization {
     builder.setFunction(writeFunctionDefinition(defSerializer, definition));
     builder.setNumberOfParameters(definition.getNumberOfParameters());
     if (definition.getPattern() != null) {
-      builder.setPattern(writePattern(defSerializer, definition.getPattern()));
+      builder.setPattern(writeDPattern(defSerializer, definition.getPattern()));
+    }
+    return builder.build();
+  }
+
+  private DefinitionProtos.Definition.DPattern writeDPattern(ExpressionSerialization defSerializer, Pattern pattern) {
+    DefinitionProtos.Definition.DPattern.Builder builder = DefinitionProtos.Definition.DPattern.newBuilder();
+    if (pattern instanceof BindingPattern) {
+      builder.setBinding(defSerializer.writeBindingRef(((BindingPattern) pattern).getBinding()));
+    } else if (pattern instanceof EmptyPattern) {
+      throw new IllegalStateException("Empty pattern in defined constructor");
+    } else if (pattern instanceof ConstructorPattern) {
+      DefinitionProtos.Definition.DPattern.Constructor.Builder pBuilder = DefinitionProtos.Definition.DPattern.Constructor.newBuilder();
+      pBuilder.setExpression(defSerializer.writeExpr(((ConstructorPattern) pattern).getDataExpression()));
+      for (Pattern patternArgument : ((ConstructorPattern) pattern).getArguments()) {
+        pBuilder.addPattern(writeDPattern(defSerializer, patternArgument));
+      }
+      builder.setConstructor(pBuilder.build());
+    } else {
+      throw new IllegalArgumentException();
     }
     return builder.build();
   }

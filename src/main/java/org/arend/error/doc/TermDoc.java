@@ -40,6 +40,9 @@ public class TermDoc extends CachingDoc {
 
   @Override
   protected LineDoc getLineDoc(@Nullable String indent, String text, boolean isFirst) {
+    if (isFirst && text.isEmpty()) {
+      return null;
+    }
     TermTextDoc termDoc = new TermTextDoc(text, isFirst);
     return indent == null ? termDoc : hList(text(indent), termDoc);
   }

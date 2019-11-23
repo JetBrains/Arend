@@ -1,6 +1,7 @@
 package org.arend.module.serialization;
 
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
@@ -66,7 +67,7 @@ class ExpressionDeserialization {
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
   }
 
-  private Variable readBindingRef(int index) throws DeserializationException {
+  Variable readBindingRef(int index) throws DeserializationException {
     if (index == 0) {
       return null;
     } else {
@@ -175,6 +176,9 @@ class ExpressionDeserialization {
           ElimTree elimTree = readElimTree(singleClause.getElimTree());
           if (singleClause.hasTuple()) {
             children.put(new TupleConstructor(singleClause.getTuple().getLength()), elimTree);
+          }
+          if (singleClause.hasIdp()) {
+            children.put(new IdpConstructor(), elimTree);
           }
           if (singleClause.hasClass_()) {
             ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class classProto = singleClause.getClass_();

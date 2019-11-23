@@ -423,8 +423,8 @@ public class DynamicTest extends TypeCheckingTestCase {
         "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f x = n)\n" +
-        "  \\func f : D x (\\lam y => y) => con1 {_} {x} {\\lam y => y} (path (\\lam _ => x))\n" +
-        "  \\func g => con2 {_} {x} {\\lam y => y} (path (\\lam _ => x))\n" +
+        "  \\func f : D x (\\lam y => y) => con1 {_} {x} {\\lam y => y} idp\n" +
+        "  \\func g => con2 {_} {x} {\\lam y => y} idp\n" +
         "}\n" +
         "\\func f (a : A) : A.D {a} (a.x) (\\lam y => y) => A.f {a}\n" +
         "\\func f' (a : A) => A.f {a}\n" +
@@ -612,7 +612,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => idp");
   }
 
   @Test
@@ -646,7 +646,7 @@ public class DynamicTest extends TypeCheckingTestCase {
         "    }\n" +
         "  }\n" +
         "}\n" +
-        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => path (\\lam _ => 0)");
+        "\\func y (a : A) : D.E.f {A.B.C.d {a}} = 0 => idp");
   }
 
   @Test
@@ -669,7 +669,7 @@ public class DynamicTest extends TypeCheckingTestCase {
       "\\class A {\n" +
         "  | x : Nat\n" +
         "  \\data Foo | foo (x = 0)\n" +
-        "  \\func y : foo = foo => path (\\lam _ => foo)\n" +
+        "  \\func y : foo = foo => idp\n" +
         "}\n" +
         "\\func test (p : A) => A.y {p}");
     FunctionDefinition testFun = (FunctionDefinition) getDefinition("test");

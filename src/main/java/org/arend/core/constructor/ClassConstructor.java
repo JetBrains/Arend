@@ -40,7 +40,7 @@ public final class ClassConstructor extends SingleConstructor {
   }
 
   @Override
-  public List<Expression> getMatchedArguments(Expression argument) {
+  public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
     List<Expression> args = new ArrayList<>();
     NewExpression newExpr = argument.cast(NewExpression.class);
     for (ClassField field : myClassDef.getFields()) {

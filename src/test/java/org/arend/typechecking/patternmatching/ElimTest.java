@@ -244,7 +244,7 @@ public class ElimTest extends TypeCheckingTestCase {
   @Test
   public void elimFail() {
       typeCheckModule("\\func test (x y : Nat) : y = 0\n" +
-                     "  | _, zero => path (\\lam _ => zero)\n" +
+                     "  | _, zero => idp\n" +
                      "  | zero, suc y' => test zero y'\n" +
                      "  | suc x', suc y' => test (suc x') y'\n" +
                      "\n" +
@@ -410,7 +410,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | zero, _, zero => 1\n" +
       "  | _, zero, suc _ => 2\n" +
       "  | _, _, _ => 0\n" +
-      "\\func g (n : Nat) : f 0 n 0 = 1 => path (\\lam _ => 1)", 1);
+      "\\func g (n : Nat) : f 0 n 0 = 1 => idp", 1);
   }
 
   @Test
@@ -420,7 +420,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | zero, zero, _ => 1\n" +
       "  | _, zero, zero => 2\n" +
       "  | _, _, _ => 0\n" +
-      "\\func g (n : Nat) : f 0 0 n = 1 => path (\\lam _ => 1)", 1);
+      "\\func g (n : Nat) : f 0 0 n = 1 => idp", 1);
   }
 
   @Test
@@ -430,7 +430,7 @@ public class ElimTest extends TypeCheckingTestCase {
       "  | _, zero, zero => 1\n" +
       "  | zero, zero, _ => 2\n" +
       "  | _, _, _ => 0\n" +
-      "\\func g (n : Nat) : f 0 0 n = 2 => path (\\lam _ => 2)", 1);
+      "\\func g (n : Nat) : f 0 0 n = 2 => idp", 1);
   }
 
   @Test

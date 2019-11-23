@@ -1,7 +1,12 @@
 package org.arend.typechecking.implicitargs;
 
+import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.expr.ConCallExpression;
+import org.arend.core.sort.Sort;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class InferLevelTest extends TypeCheckingTestCase {
   @Test
@@ -195,18 +200,16 @@ public class InferLevelTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func f (A : \\Type) (a a' : A) (p : a = a') => p\n" +
       "\\func X : \\oo-Type => Nat\n" +
-      "\\func g : X = X => f \\Type X X (path (\\lam _ => X))");
+      "\\func g : X = X => f \\Type X X idp");
   }
 
   @Test
   public void pLevelTest() {
     typeCheckModule(
-      "\\func idp  {A : \\Type} {a : A} =>\n" +
-      "  path (\\lam _ => a)\n" +
       "\\func squeeze1 (i j : I) : I =>\n" +
-      "  coe (\\lam x => left = x) (path (\\lam _ => left)) j @ i\n" +
+      "  coe (\\lam x => left = x) idp j @ i\n" +
       "\\func squeeze (i j : I) =>\n" +
-      "  coe (\\lam i => Path (\\lam j => left = squeeze1 i j) (path (\\lam _ => left)) (path (\\lam j => squeeze1 i j))) (path (\\lam _ => path (\\lam _ => left))) right @ i @ j\n" +
+      "  coe (\\lam i => Path (\\lam j => left = squeeze1 i j) idp (path (\\lam j => squeeze1 i j))) idp right @ i @ j\n" +
       "\\func psqueeze {A : \\Type} {a a' : A} (p : a = a') (i : I) : a = p @ i =>\n" +
       "  path (\\lam j => p @ squeeze i j)\n" +
       "\\func Jl {A : \\Type} {a : A} (B : \\Pi (a' : A) -> a = a' -> \\Type) (b : B a idp) {a' : A} (p : a = a') : B a' p =>\n" +
@@ -284,5 +287,11 @@ public class InferLevelTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\func F => \\Type\n" +
       "\\func f (d : F \\level 1 0) : F \\level 0 0 => d", 1);
+  }
+
+  @Test
+  public void funTest() {
+    Sort sort = ((ConCallExpression) ((FunctionDefinition) typeCheckDef("\\func pmap {A B : \\Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a' => path (\\lam i => f (p @ i))")).getBody()).getSortArgument();
+    assertEquals(Sort.STD, sort);
   }
 }

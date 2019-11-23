@@ -6,7 +6,7 @@ import org.junit.Test;
 public class IntTest extends TypeCheckingTestCase  {
   @Test
   public void numeral() {
-    typeCheckModule("\\func f : -1 = neg 1 => path (\\lam _ => neg 1)");
+    typeCheckModule("\\func f : -1 = neg 1 => idp");
   }
 
   @Test
@@ -35,7 +35,7 @@ public class IntTest extends TypeCheckingTestCase  {
       "  | -1 => 7\n" +
       "  | neg n => n\n" +
       "  | pos n => n\n" +
-      "\\func test : f -1 = 7 => path (\\lam _ => 7)\n" +
-      "\\func test2 : f -2 = 2 => path (\\lam _ => 2)");
+      "\\func test : f -1 = 7 => idp\n" +
+      "\\func test2 : f -2 = 2 => idp");
   }
 }

@@ -227,6 +227,10 @@ public abstract class Expression implements ExpectedType, Body {
     return result.subst(subst);
   }
 
+  public boolean canBeConstructor() {
+    return true;
+  }
+
   public Expression getUnderlyingExpression() {
     return this;
   }

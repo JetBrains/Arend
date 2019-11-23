@@ -28,7 +28,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "\\class B \\extends A {\n" +
       "  | a => 0\n" +
       "}\n" +
-      "\\func f (b : B) : b.a = 0 => path (\\lam _ => 0)");
+      "\\func f (b : B) : b.a = 0 => idp");
   }
 
   @Test
@@ -64,7 +64,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | A => Nat\n" +
       "  | a => 0\n" +
       "}\n" +
-      "\\func f (b : B) : b.a = 0 => path (\\lam _ => 0)");
+      "\\func f (b : B) : b.a = 0 => idp");
   }
 
   @Test
@@ -77,7 +77,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | a => 0\n" +
       "}\n" +
       "\\func f (x : A) => x.a\n" +
-      "\\func g (b : B) : f b = 0 => path (\\lam _ => 0)");
+      "\\func g (b : B) : f b = 0 => idp");
   }
 
   @Test
@@ -116,7 +116,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | A => Nat\n" +
       "}\n" +
       "\\func f (x : C) => x.a\n" +
-      "\\func g : f (\\new B { | a => 0 }) = 0 => path (\\lam _ => 0)");
+      "\\func g : f (\\new B { | a => 0 }) = 0 => idp");
   }
 
   @Test
@@ -248,7 +248,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | x : Nat\n" +
       "  | y : x = 0\n" +
       "}\n" +
-      "\\func f => A { | x => 0 | y => path (\\lam _ => 0) }");
+      "\\func f => A { | x => 0 | y => idp }");
   }
 
   @Test
@@ -260,7 +260,7 @@ public class ImplementTest extends TypeCheckingTestCase {
       "}\n" +
       "\\class B \\extends A {\n" +
       "  | x => 0\n" +
-      "  | y => path (\\lam _ => 0)\n" +
+      "  | y => idp\n" +
       "}");
   }
 

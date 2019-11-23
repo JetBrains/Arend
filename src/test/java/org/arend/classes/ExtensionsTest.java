@@ -43,7 +43,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | a' : A\n" +
         "  | p : a = a'\n" +
         "}\n" +
-        "\\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => path (\\lam _ => 0) }");
+        "\\func f => \\new B { | A => Nat | a => 0 | a' => 0 | p => idp }");
   }
 
   @Test
@@ -105,7 +105,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
         "  | p : b = c\n" +
         "}\n" +
         "\\func f (d : D { | S => Nat | c => 4 | b => 6 }) : 6 = 4 => d.p\n" +
-        "\\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => path (\\lam _ => 3)}");
+        "\\func g => \\new D { | S => Nat | b => 3 | c => 3 | p => idp }");
   }
 
   @Test

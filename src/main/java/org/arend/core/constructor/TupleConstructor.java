@@ -20,7 +20,7 @@ public final class TupleConstructor extends SingleConstructor {
   }
 
   @Override
-  public List<Expression> getMatchedArguments(Expression argument) {
+  public List<Expression> getMatchedArguments(Expression argument, boolean normalizing) {
     List<Expression> args;
     TupleExpression tuple = argument.cast(TupleExpression.class);
     if (tuple != null) {

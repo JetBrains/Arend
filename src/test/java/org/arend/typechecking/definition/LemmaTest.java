@@ -32,7 +32,7 @@ public class LemmaTest extends TypeCheckingTestCase {
   public void lemmaRecursive() {
     typeCheckModule(
       "\\lemma f (n : Nat) : 0 Nat.+ n = n\n" +
-      "  | 0 => path (\\lam _ => 0)\n" +
+      "  | 0 => idp\n" +
       "  | suc n => path (\\lam i => suc (f n @ i))");
   }
 
@@ -70,8 +70,9 @@ public class LemmaTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\class C (n : Nat) { \\field x : 0 = 0 }\n" +
       "\\lemma f : C 0 \\cowith\n" +
-      "  | x => path (\\lam _ => 0)\n" +
-      "\\func g : f.x = path (\\lam _ => 0) => path (\\lam _ => path (\\lam _ => 0))");
+      "  | x => idp\n" +
+      "\\func g : f.x = idp => idp", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
@@ -86,6 +87,6 @@ public class LemmaTest extends TypeCheckingTestCase {
 
   @Test
   public void lemmaLevelError() {
-    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => path (\\lam _ => p)) => x", 1);
+    typeCheckModule("\\lemma f (x : Nat) : \\level Nat (\\lam (x y : Nat) (p q : x = y) => Path.inProp p q) => x", 1);
   }
 }

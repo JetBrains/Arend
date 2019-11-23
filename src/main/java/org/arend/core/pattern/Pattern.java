@@ -4,6 +4,8 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.error.ErrorReporter;
+import org.arend.term.concrete.Concrete;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,7 @@ public interface Pattern {
   DependentLink getFirstBinding();
   DependentLink getLastBinding();
   MatchResult match(Expression expression, List<Expression> result);
-  boolean unify(Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2);
+  boolean unify(ExprSubstitution idpSubst, Pattern other, ExprSubstitution substitution1, ExprSubstitution substitution2, ErrorReporter errorReporter, Concrete.SourceNode sourceNode);
   Pattern subst(ExprSubstitution exprSubst, LevelSubstitution levelSubst, Map<DependentLink, Pattern> patternSubst);
 
   default Expression toPatternExpression() {

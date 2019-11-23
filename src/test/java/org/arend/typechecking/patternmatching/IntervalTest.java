@@ -12,7 +12,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | suc _, _ => 0\n" +
       "  | _, left => 0\n" +
       "  | _, right => 0\n" +
-      "\\func g (n : Nat) : f n left = 0 => path (\\lam _ => 0)");
+      "\\func g (n : Nat) : f n left = 0 => idp");
   }
 
   @Test
@@ -24,7 +24,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, left => 0\n" +
       "  | _, right => 0\n" +
       "  | _, _ => 0\n" +
-      "\\func g (n : Nat) : f n left = 0 => path (\\lam _ => 0)", 1);
+      "\\func g (n : Nat) : f n left = 0 => idp", 1);
   }
 
   @Test
@@ -56,7 +56,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | suc _, _ => 0\n" +
       "  | _, left => 0\n" +
       "  | _, right => 0\n" +
-      "\\func g (n : Nat) (k : I) : f n k = 0 => path (\\lam _ => 0)", 1);
+      "\\func g (n : Nat) (k : I) : f n k = 0 => idp", 1);
   }
 
   @Test
@@ -83,7 +83,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, left => a\n" +
       "  | _, right => a'\n" +
       "  | path f, i => f i\n" +
-      "\\func g (p : 0 = 1) : at p right = 1 => path (\\lam _ => 1)");
+      "\\func g (p : 0 = 1) : at p right = 1 => idp");
   }
 
   @Test
@@ -104,7 +104,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, suc _, _ => 0\n" +
       "  | _, _, left => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\func g (n : Nat) (i : I) : f zero n i = 0 => path (\\lam _ => 0)", 1);
+      "\\func g (n : Nat) (i : I) : f zero n i = 0 => idp", 1);
   }
 
   @Test
@@ -116,7 +116,7 @@ public class IntervalTest extends TypeCheckingTestCase {
       "  | _, suc _, _ => 0\n" +
       "  | _, _, left => 0\n" +
       "  | _, _, right => 0\n" +
-      "\\func g (n : Nat) (i : I) : f n zero i = 0 => path (\\lam _ => 0)", 1);
+      "\\func g (n : Nat) (i : I) : f n zero i = 0 => idp", 1);
   }
 
   @Test

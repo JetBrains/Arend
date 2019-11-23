@@ -282,7 +282,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
   public void testConditionNormalization() {
     typeCheckModule(
         "\\data Z | neg Nat | pos Nat { zero => neg 0 }\n" +
-        "\\func only-one-zero : pos 0 = neg 0 => path (\\lam _ => pos 0)"
+        "\\func only-one-zero : pos 0 = neg 0 => idp"
     );
   }
 

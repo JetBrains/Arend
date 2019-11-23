@@ -1,6 +1,7 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.core.constructor.ClassConstructor;
+import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.Utils;
@@ -29,7 +30,6 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.*;
 import org.arend.typechecking.implicitargs.equations.Equations;
-import org.arend.typechecking.result.TypecheckingResult;
 import org.arend.typechecking.visitor.CheckTypeVisitor;
 import org.arend.typechecking.visitor.DumbTypechecker;
 import org.arend.util.Pair;
@@ -45,7 +45,7 @@ import static org.arend.core.expr.ExpressionFactory.Right;
 public class ElimTypechecking {
   private final CheckTypeVisitor myVisitor;
   private Set<Concrete.FunctionClause> myUnusedClauses;
-  private final EnumSet<PatternTypechecking.Flag> myFlags;
+  private final PatternTypechecking.Mode myMode;
   private final Expression myExpectedType;
   private final Integer myLevel;
   private final Level myActualLevel;
@@ -61,20 +61,20 @@ public class ElimTypechecking {
     return result == null ? null : result + 1;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, boolean isCase) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, PatternTypechecking.Mode mode, @Nullable Integer level, @Nonnull Level actualLevel, int actualLevelSub, boolean isSFunc, boolean isCase) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myFlags = flags;
+    myMode = mode;
     myLevel = getMinPlus1(level, actualLevel, actualLevelSub);
     myActualLevel = isSFunc ? null : actualLevel;
     myActualLevelSub = isSFunc ? 0 : actualLevelSub;
     myCase = isCase;
   }
 
-  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, EnumSet<PatternTypechecking.Flag> flags) {
+  public ElimTypechecking(CheckTypeVisitor visitor, Expression expectedType, PatternTypechecking.Mode mode) {
     myVisitor = visitor;
     myExpectedType = expectedType;
-    myFlags = flags;
+    myMode = mode;
     myLevel = null;
     myActualLevel = Level.INFINITY;
     myActualLevelSub = 0;
@@ -122,21 +122,21 @@ public class ElimTypechecking {
     return elimParams;
   }
 
-  public ElimTree typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, DependentLink parameters, List<Clause> resultClauses) {
-    assert !myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL);
+  public ElimTree typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, DependentLink parameters, List<ExtClause> resultClauses) {
+    assert !myMode.allowInterval();
     return (ElimTree) typecheckElim(funClauses, sourceNode, null, parameters, Collections.emptyList(), resultClauses);
   }
 
-  public Body typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<Clause> resultClauses) {
+  public Body typecheckElim(List<? extends Concrete.FunctionClause> funClauses, Concrete.SourceNode sourceNode, List<? extends Concrete.Parameter> abstractParameters, DependentLink parameters, List<DependentLink> elimParams, List<ExtClause> resultClauses) {
     List<ExtClause> clauses = new ArrayList<>(funClauses.size());
-    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myFlags, myVisitor, !myCase);
+    PatternTypechecking patternTypechecking = new PatternTypechecking(myVisitor.getErrorReporter(), myMode, myVisitor, !myCase);
     myOK = true;
     for (Concrete.FunctionClause clause : funClauses) {
-      Pair<List<Pattern>, TypecheckingResult> result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
+      PatternTypechecking.ClauseResult result = patternTypechecking.typecheckClause(clause, abstractParameters, parameters, elimParams, myExpectedType);
       if (result == null) {
         myOK = false;
       } else {
-        clauses.add(new ExtClause(result.proj1, result.proj2 == null ? null : result.proj2.expression, new ExprSubstitution(), clause));
+        clauses.add(new ExtClause(result.patterns, result.typecheckingResult == null ? null : result.typecheckingResult.expression, result.substitution, clause));
       }
     }
     if (!myOK) {
@@ -146,10 +146,9 @@ public class ElimTypechecking {
     myUnusedClauses = new LinkedHashSet<>(funClauses);
 
     List<ExtClause> intervalClauses = Collections.emptyList();
-    List<ExtClause> nonIntervalClauses = clauses;
-    if (myFlags.contains(PatternTypechecking.Flag.ALLOW_INTERVAL)) {
+    List<ExtClause> nonIntervalClauses = new ArrayList<>();
+    if (myMode.allowInterval()) {
       intervalClauses = new ArrayList<>();
-      nonIntervalClauses = new ArrayList<>();
       for (ExtClause clause : clauses) {
         boolean hasNonIntervals = false;
         int intervals = 0;
@@ -168,18 +167,25 @@ public class ElimTypechecking {
           break;
         }
         if (hasNonIntervals || intervals == 0) {
-          nonIntervalClauses.add(clause);
+          nonIntervalClauses.add(new ExtClause(clause.patterns, clause.expression, new ExprSubstitution(), clause.clause));
           if (resultClauses != null) {
-            resultClauses.add(new Clause(clause.patterns, clause.expression, clause.clause));
+            resultClauses.add(clause);
           }
         } else {
           if (intervals > 1) {
             myVisitor.getErrorReporter().report(new TypecheckingError("Only a single interval pattern per row is allowed", clause.clause));
             myUnusedClauses.remove(clause.clause);
           } else {
-            intervalClauses.add(clause);
+            intervalClauses.add(new ExtClause(clause.patterns, clause.expression, new ExprSubstitution(), clause.clause));
           }
         }
+      }
+    } else {
+      for (ExtClause clause : clauses) {
+        nonIntervalClauses.add(new ExtClause(clause.patterns, clause.expression, new ExprSubstitution(), clause.clause));
+      }
+      if (resultClauses != null) {
+        resultClauses.addAll(clauses);
       }
     }
 
@@ -224,7 +230,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (emptyLink == null && myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE)) {
+      if (emptyLink == null && myMode.checkCoverage()) {
         if (!reportMissingClauses(null, sourceNode, abstractParameters, parameters, elimParams)) {
           reportNoClauses(sourceNode, abstractParameters, parameters, elimParams);
         }
@@ -407,15 +413,6 @@ public class ElimTypechecking {
     return false;
   }
 
-  private static class ExtClause extends Clause {
-    final ExprSubstitution substitution;
-
-    ExtClause(List<Pattern> patterns, Expression expression, ExprSubstitution substitution, Concrete.FunctionClause clause) {
-      super(patterns, expression, clause);
-      this.substitution = substitution;
-    }
-  }
-
   private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClause> clauseDataList, DependentLink parameters) {
     List<Pair<Expression, Expression>> result = new ArrayList<>(clauseDataList.get(0).patterns.size());
     for (int i = 0; i < clauseDataList.get(0).patterns.size(); i++) {
@@ -565,8 +562,11 @@ public class ElimTypechecking {
         if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
           ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
           constructors = Collections.singletonList(new ClassConstructor(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere().keySet()));
-        } else {
+        } else if (someConPattern.getDataExpression() instanceof SigmaExpression) {
           constructors = Collections.singletonList(new TupleConstructor(someConPattern.getLength()));
+        } else {
+          assert someConPattern.getDefinition() == Prelude.IDP;
+          constructors = Collections.singletonList(new IdpConstructor());
         }
         dataType = null;
       }
@@ -627,7 +627,7 @@ public class ElimTypechecking {
         }
       }
 
-      if (myFlags.contains(PatternTypechecking.Flag.CHECK_COVERAGE) && !hasVars) {
+      if (myMode.checkCoverage() && !hasVars) {
         for (Constructor constructor : constructors) {
           if (!constructorMap.containsKey(constructor)) {
             try (Utils.ContextSaver ignore = new Utils.ContextSaver(myContext)) {
@@ -676,8 +676,9 @@ public class ElimTypechecking {
             } else {
               if (constructor instanceof SingleConstructor) {
                 conParameters = someConPattern.getParameters();
-                if (someConPattern.getDataExpression() instanceof ClassCallExpression) {
-                  ClassCallExpression classCall = (ClassCallExpression) someConPattern.getDataExpression();
+                Expression someExpr = someConPattern.getDataExpression();
+                if (someExpr instanceof ClassCallExpression) {
+                  ClassCallExpression classCall = (ClassCallExpression) someExpr;
                   Map<ClassField, Expression> implementations = new HashMap<>();
                   DependentLink link = conParameters;
                   for (ClassField field : classCall.getDefinition().getFields()) {
@@ -687,13 +688,17 @@ public class ElimTypechecking {
                     }
                   }
                   substExpr = new NewExpression(null, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
-                } else {
-                  substExpr = new TupleExpression(arguments, (SigmaExpression) someConPattern.getDataExpression());
+                } else if (someExpr instanceof SigmaExpression) {
+                  substExpr = new TupleExpression(arguments, (SigmaExpression) someExpr);
                   conParameters = DependentLink.Helper.copy(conParameters);
+                } else if (someExpr instanceof FunCallExpression) {
+                  substExpr = someExpr;
+                } else {
+                  throw new IllegalStateException();
                 }
               } else {
                 conParameters = constructor.getParameters();
-                List<Expression> dataTypesArgs = new ArrayList<>(someConPattern.getDataTypeArguments().size());
+                List<Expression> dataTypesArgs = new ArrayList<>();
                 for (Expression dataTypeArg : someConPattern.getDataTypeArguments()) {
                   dataTypesArgs.add(dataTypeArg.subst(conClauseData.substitution));
                 }

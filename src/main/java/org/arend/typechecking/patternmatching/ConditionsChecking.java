@@ -8,6 +8,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
@@ -26,12 +27,20 @@ import org.arend.util.Pair;
 import java.util.*;
 
 public class ConditionsChecking {
-  public static boolean check(Body body, List<Clause> clauses, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
+  private final Equations myEquations;
+  private final ErrorReporter myErrorReporter;
+
+  public ConditionsChecking(Equations equations, ErrorReporter errorReporter) {
+    myEquations = equations;
+    myErrorReporter = errorReporter;
+  }
+
+  public boolean check(Body body, List<ExtClause> clauses, Definition definition, Concrete.SourceNode def) {
     boolean ok;
     if (body instanceof IntervalElim) {
-      ok = checkIntervals((IntervalElim) body, definition, def, errorReporter);
+      ok = checkIntervals((IntervalElim) body, definition, def);
       for (Clause clause : clauses) {
-        if (clause.expression != null && !checkIntervalClause((IntervalElim) body, clause, definition, errorReporter)) {
+        if (clause.expression != null && !checkIntervalClause((IntervalElim) body, clause, definition)) {
           ok = false;
         }
       }
@@ -39,8 +48,8 @@ public class ConditionsChecking {
       ok = true;
     }
 
-    for (Clause clause : clauses) {
-      if (!checkClause(clause, null, definition, errorReporter)) {
+    for (ExtClause clause : clauses) {
+      if (!checkClause(clause, null, definition)) {
         ok = false;
       }
     }
@@ -48,17 +57,17 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
+  private boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(definition.getParameters(), DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size());
     List<Pair<Expression, Expression>> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
       DependentLink link2 = link.getNext();
       for (int j = i + 1; j < cases.size(); j++) {
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, definition, def, errorReporter) && ok;
-        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, definition, def, errorReporter) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, true, link, link2, definition, def) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), true, false, link, link2, definition, def) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, true, link, link2, definition, def) && ok;
+        ok = checkIntervalCondition(cases.get(i), cases.get(j), false, false, link, link2, definition, def) && ok;
         link2 = link2.getNext();
       }
       link = link.getNext();
@@ -66,7 +75,7 @@ public class ConditionsChecking {
     return ok;
   }
 
-  private static boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, Definition definition, Concrete.SourceNode def, ErrorReporter errorReporter) {
+  private boolean checkIntervalCondition(Pair<Expression, Expression> pair1, Pair<Expression, Expression> pair2, boolean isLeft1, boolean isLeft2, DependentLink link1, DependentLink link2, Definition definition, Concrete.SourceNode def) {
     Expression case1 = isLeft1 ? pair1.proj1 : pair1.proj2;
     Expression case2 = isLeft2 ? pair2.proj1 : pair2.proj2;
     if (case1 == null || case2 == null) {
@@ -77,7 +86,7 @@ public class ConditionsChecking {
     Expression evaluatedExpr1 = case1.subst(substitution1);
     ExprSubstitution substitution2 = new ExprSubstitution(link1, isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right());
     Expression evaluatedExpr2 = case2.subst(substitution2);
-    if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
+    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, def)) {
       List<Expression> defCallArgs1 = new ArrayList<>();
       for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs1.add(link3 == link1 ? (isLeft1 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
@@ -86,25 +95,25 @@ public class ConditionsChecking {
       for (DependentLink link3 = definition.getParameters(); link3.hasNext(); link3 = link3.getNext()) {
         defCallArgs2.add(link3 == link2 ? (isLeft2 ? ExpressionFactory.Left() : ExpressionFactory.Right()) : new ReferenceExpression(link3));
       }
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
+      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, def));
       return false;
     } else {
       return true;
     }
   }
 
-  private static boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition, ErrorReporter errorReporter) {
+  private boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition) {
     boolean ok = true;
     List<Pair<Expression, Expression>> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
-      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, definition, errorReporter) && ok;
-      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, definition, errorReporter) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, definition) && ok;
+      ok = checkIntervalClauseCondition(cases.get(i), false, prefixLength + i, clause, definition) && ok;
     }
     return ok;
   }
 
-  private static boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, Clause clause, Definition definition, ErrorReporter errorReporter) {
+  private boolean checkIntervalClauseCondition(Pair<Expression, Expression> pair, boolean isLeft, int index, Clause clause, Definition definition) {
     Expression expr = isLeft ? pair.proj1 : pair.proj2;
     if (expr == null) {
       return true;
@@ -127,7 +136,7 @@ public class ConditionsChecking {
 
     Expression evaluatedExpr1 = expr.subst(substitution1);
     Expression evaluatedExpr2 = clause.expression.subst(pathSubstitution);
-    if (!Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
+    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
       if (!pathSubstitution.isEmpty()) {
         link = definition.getParameters();
         for (int i = 0; i < clause.patterns.size(); i++) {
@@ -160,7 +169,7 @@ public class ConditionsChecking {
         }
       }
 
-      errorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+      myErrorReporter.report(new ConditionsError(definition.getDefCall(Sort.STD, defCallArgs1), definition.getDefCall(Sort.STD, defCallArgs2), substitution1, substitution2, evaluatedExpr1, evaluatedExpr2, clause.clause));
       return false;
     } else {
       return true;
@@ -184,10 +193,10 @@ public class ConditionsChecking {
     }
   }
 
-  public static boolean check(List<Clause> clauses, ElimTree elimTree, ErrorReporter errorReporter) {
+  public boolean check(List<ExtClause> clauses, ElimTree elimTree) {
     boolean ok = true;
-    for (Clause clause : clauses) {
-      if (!checkClause(clause, elimTree, null, errorReporter)) {
+    for (ExtClause clause : clauses) {
+      if (!checkClause(clause, elimTree, null)) {
         ok = false;
       }
     }
@@ -195,7 +204,7 @@ public class ConditionsChecking {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private static boolean checkClause(Clause clause, ElimTree elimTree, Definition definition, ErrorReporter errorReporter) {
+  private boolean checkClause(ExtClause clause, ElimTree elimTree, Definition definition) {
     if (clause.expression == null) {
       return true;
     }
@@ -208,7 +217,13 @@ public class ConditionsChecking {
     }
 
     boolean ok = true;
-    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns)) {
+    for (Pair<List<Expression>, ExprSubstitution> pair : collectPatterns(clause.patterns, clause.substitution, clause.clause)) {
+      if (!clause.substitution.isEmpty()) {
+        for (int i = 0; i < pair.proj1.size(); i++) {
+          pair.proj1.set(i, pair.proj1.get(i).subst(clause.substitution));
+        }
+      }
+
       Expression evaluatedExpr1;
       if (definition == null) {
         evaluatedExpr1 = NormalizeVisitor.INSTANCE.eval(elimTree, pair.proj1, new ExprSubstitution(), LevelSubstitution.EMPTY);
@@ -216,23 +231,23 @@ public class ConditionsChecking {
         evaluatedExpr1 = definition.getDefCall(Sort.STD, pair.proj1);
       }
       Expression evaluatedExpr2 = clause.expression.subst(pair.proj2);
-      if (evaluatedExpr1 == null || !Expression.compare(evaluatedExpr1, evaluatedExpr2, null, Equations.CMP.EQ)) {
+      if (evaluatedExpr1 == null || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, evaluatedExpr1, evaluatedExpr2, null, clause.clause)) {
         List<Expression> args = new ArrayList<>(clause.patterns.size());
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());
         }
         Expression expr1 = definition == null ? new CaseExpression(false, null, null, null, null, args) : definition.getDefCall(Sort.STD, args);
-        errorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
+        myErrorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }
     }
     return ok;
   }
 
-  private static List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns) {
+  private List<Pair<List<Expression>, ExprSubstitution>> collectPatterns(List<Pattern> patterns, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     List<Pair<List<Expression>, ExprSubstitution>> result = new ArrayList<>();
     for (int i = 0; i < patterns.size(); i++) {
-      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i))) {
+      for (Pair<Expression, ExprSubstitution> pair : collectPatterns(patterns.get(i), idpSubst, sourceNode)) {
         List<Expression> list = new ArrayList<>(patterns.size());
         for (int j = 0; j < patterns.size(); j++) {
           if (i == j) {
@@ -247,12 +262,12 @@ public class ConditionsChecking {
     return result;
   }
 
-  private static List<Pair<Expression, ExprSubstitution>> collectPatterns(Pattern pattern) {
+  private List<Pair<Expression, ExprSubstitution>> collectPatterns(Pattern pattern, ExprSubstitution idpSubst, Concrete.SourceNode sourceNode) {
     if (pattern instanceof BindingPattern) {
       return Collections.emptyList();
     }
     ConstructorPattern conPattern = (ConstructorPattern) pattern;
-    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments());
+    List<Pair<List<Expression>, ExprSubstitution>> collectedPatterns = collectPatterns(conPattern.getArguments(), idpSubst, sourceNode);
     List<Pair<Expression, ExprSubstitution>> result = new ArrayList<>(collectedPatterns.size());
     for (Pair<List<Expression>, ExprSubstitution> pair : collectedPatterns) {
       result.add(new Pair<>(conPattern.toExpression(pair.proj1), pair.proj2));
@@ -309,7 +324,7 @@ public class ConditionsChecking {
     for (ClauseBase clause : constructor.getClauses()) {
       ExprSubstitution substitution1 = new ExprSubstitution();
       ExprSubstitution substitution2 = new ExprSubstitution();
-      if (conPattern.getPatterns().unify(new Patterns(clause.patterns), substitution1, substitution2)) {
+      if (conPattern.getPatterns().unify(idpSubst, new Patterns(clause.patterns), substitution1, substitution2, myErrorReporter, sourceNode)) {
         result.add(new Pair<>(clause.expression.subst(substitution2), substitution1));
       }
     }

@@ -145,8 +145,8 @@ public class DataTest extends TypeCheckingTestCase {
   public void constructorTest() {
     typeCheckModule(
       "\\data D (n : Nat) (f : Nat -> Nat) | con1 (f n = n) | con2 (f 0 = n)\n" +
-      "\\func f (x : Nat) : D x (\\lam y => y) => con1 (path (\\lam _ => x))\n" +
-      "\\func g : D 0 (\\lam y => y) => con2 (path (\\lam _ => 0))");
+      "\\func f (x : Nat) : D x (\\lam y => y) => con1 idp\n" +
+      "\\func g : D 0 (\\lam y => y) => con2 idp");
   }
 
   @Test

@@ -49,7 +49,6 @@ public class HITs extends TypeCheckingTestCase {
   @Test
   public void constructorWithConditions() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\data S1 | base | loop : base = base\n" +
       "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => idp }\n" +
       "\\func f : base' = base' => loop' 0\n" +
@@ -66,7 +65,7 @@ public class HITs extends TypeCheckingTestCase {
   public void constructorWithConditionsError() {
     typeCheckModule(
       "\\data S1 | base | loop : base = base\n" +
-      "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => path (\\lam _ => base') }\n" +
+      "\\data S1' | base' | loop' Nat : base' = base' \\with { | zero => idp }\n" +
       "\\func g (x : S1') : S1\n" +
       "  | base' => base\n" +
       "  | loop' _ => loop", 1);
@@ -75,8 +74,7 @@ public class HITs extends TypeCheckingTestCase {
   @Test
   public void s2Test() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-      "\\func idpe {A : \\Type} (a : A) => path (\\lam _ => a)\n" +
+      "\\func idpe {A : \\Type} (a : A) : a = a => idp\n" +
       "\\data S2 | base | loop : idpe base = idpe base\n" +
       "\\func f : idpe base = idpe base => loop\n" +
       "\\func fLeft : loop @ left = idpe base => idp\n" +
@@ -91,8 +89,7 @@ public class HITs extends TypeCheckingTestCase {
   @Test
   public void mixedS2Test() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
-      "\\func idpe {A : \\Type} (a : A) => path (\\lam _ => a)\n" +
+      "\\func idpe {A : \\Type} (a : A) : a = a => idp\n" +
       "\\data S2 | base | loop I : base = base \\with { | left => idp | right => idp }\n" +
       "\\func f : I -> base = base => loop\n" +
       "\\func f' (i : I) : base = base => loop i\n" +
@@ -147,7 +144,6 @@ public class HITs extends TypeCheckingTestCase {
   public void typed2() {
     typeCheckModule(
       "\\data D | con | con' (p : con = con) : p = p\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func f : idp = idp => con' idp\n" +
       "\\func g (d : D) : Nat | con => 0 | con' p => idp\n" +
       "\\func h (d : D) : Nat | con => 0 | con' p => idp {_} {path (\\lam i => h (p @ i))}");
@@ -156,7 +152,6 @@ public class HITs extends TypeCheckingTestCase {
   @Test
   public void square() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func \\infixr 9 *> {A : \\Type} {a a' a'' : A} (p : a = a') (q : a' = a'') => coe (\\lam i => a = q @ i) p right\n" +
       "\\data Square\n" +
       "  | v00 | v01 | v10 | v11\n" +
@@ -176,7 +171,6 @@ public class HITs extends TypeCheckingTestCase {
   @Test
   public void square2() {
     typeCheckModule(
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\data Square\n" +
       "  | v00 | v01 | v10 | v11\n" +
       "  | v-0 : v00 = v10 | v-1 : v01 = v11 | v0- : v00 = v01 | v1- : v10 = v11\n" +

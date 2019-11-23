@@ -32,7 +32,7 @@ public class Truncations extends TypeCheckingTestCase {
     typeCheckModule(
       "\\truncated \\data TrP (A : \\Type) : \\Prop | inP A\n" +
       "\\func inP-inv (P : \\Prop) (p : TrP P) : P \\elim p | inP p => p\n" +
-      "\\func trunc-eval (P : \\Prop) (p : TrP P) : inP {P} (inP-inv P p) = {TrP P} p => path (\\lam _ => p)");
+      "\\func trunc-eval (P : \\Prop) (p : TrP P) : inP {P} (inP-inv P p) = {TrP P} p => Path.inProp _ _");
   }
 
   @Test

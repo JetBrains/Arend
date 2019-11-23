@@ -39,6 +39,7 @@ public class ConditionsError extends TypecheckingError {
   public Doc getBodyDoc(PrettyPrinterConfig ppConfig) {
     return vList(
       dataToDoc(expr1, substitution1, evaluatedExpr1, ppConfig),
+      text("while the right hand side"),
       dataToDoc(expr2, substitution2, evaluatedExpr2, ppConfig));
   }
 

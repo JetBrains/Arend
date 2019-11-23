@@ -556,8 +556,9 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   private void visitBinOp(Concrete.Expression left, Concrete.ReferenceExpression infix, Precedence infixPrec, List<Concrete.Argument> implicitArgs, Concrete.Expression right, Precedence prec) {
-    if (prec.priority > infixPrec.priority) myBuilder.append('(');
-    left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(infixPrec.associativity, (byte) (infixPrec.priority + 1), infixPrec.isInfix) : infixPrec);
+    boolean needParens = prec.priority > infixPrec.priority || prec.priority == infixPrec.priority && (prec.associativity != infixPrec.associativity || prec.associativity == Precedence.Associativity.NON_ASSOC);
+    if (needParens) myBuilder.append('(');
+    left.accept(this, infixPrec.associativity != Precedence.Associativity.LEFT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
     myBuilder.append(' ');
     myBuilder.append(infix.getReferent().textRepresentation());
     for (Concrete.Argument arg : implicitArgs) {
@@ -566,8 +567,8 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       myBuilder.append('}');
     }
     myBuilder.append(' ');
-    right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(infixPrec.associativity, (byte) (infixPrec.priority + 1), infixPrec.isInfix) : infixPrec);
-    if (prec.priority > infixPrec.priority) myBuilder.append(')');
+    right.accept(this, infixPrec.associativity != Precedence.Associativity.RIGHT_ASSOC ? new Precedence(Precedence.Associativity.NON_ASSOC, infixPrec.priority, infixPrec.isInfix) : infixPrec);
+    if (needParens) myBuilder.append(')');
   }
 
   public void prettyPrintFunctionClause(final Concrete.FunctionClause clause) {

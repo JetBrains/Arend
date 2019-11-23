@@ -29,10 +29,10 @@ public class ProductsTest extends TypeCheckingTestCase {
       "  | (zero , suc _) => 1\n" +
       "  | (suc _, zero ) => 2\n" +
       "  | (suc x, suc _) => x\n" +
-      "\\func g1 : f (0,0) = 0 => path (\\lam _ => 0)\n" +
-      "\\func g2 : f (0,5) = 1 => path (\\lam _ => 1)\n" +
-      "\\func g3 : f (5,0) = 2 => path (\\lam _ => 2)\n" +
-      "\\func g4 : f (7,2) = 6 => path (\\lam _ => 6)");
+      "\\func g1 : f (0,0) = 0 => idp\n" +
+      "\\func g2 : f (0,5) = 1 => idp\n" +
+      "\\func g3 : f (5,0) = 2 => idp\n" +
+      "\\func g4 : f (7,2) = 6 => idp");
   }
 
   @Test
@@ -103,10 +103,10 @@ public class ProductsTest extends TypeCheckingTestCase {
       // "  | \\new A { | m => zero  | n => suc _ } => 1\n" +
       // "  |         {        zero  |      suc _ } => 2\n" +
       // "  | \\new A {        suc _ |      suc y } => y\n" +
-      "\\func g1 : f (\\new A 0 0) = 0 => path (\\lam _ => 0)\n" +
-      "\\func g2 : f (\\new A 0 5) = 2 => path (\\lam _ => 2)\n" +
-      "\\func g3 : f (\\new A 5 0) = 1 => path (\\lam _ => 1)\n" +
-      "\\func g4 : f (\\new A 7 5) = 4 => path (\\lam _ => 4)");
+      "\\func g1 : f (\\new A 0 0) = 0 => idp\n" +
+      "\\func g2 : f (\\new A 0 5) = 2 => idp\n" +
+      "\\func g3 : f (\\new A 5 0) = 1 => idp\n" +
+      "\\func g4 : f (\\new A 7 5) = 4 => idp");
   }
 
   @Test
@@ -120,8 +120,8 @@ public class ProductsTest extends TypeCheckingTestCase {
       // "  | con (\\new A { m => suc y }) => y\n" +
       "  | con (x, _) => x\n" +
       // "  | con (\\new A { n => x }) => x\n" +
-      "\\func g1 : f (con (\\new A 5 0)) = 5 => path (\\lam _ => 5)\n" +
-      "\\func g2 : f (con (\\new A 8 5)) = 4 => path (\\lam _ => 4)");
+      "\\func g1 : f (con (\\new A 5 0)) = 5 => idp\n" +
+      "\\func g2 : f (con (\\new A 8 5)) = 4 => idp");
   }
 
   @Test
@@ -149,7 +149,7 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func f (s : S) : Nat\n" +
       "  | 0 => 0\n" +
       "  | suc n => n\n" +
-      "\\func g : f (\\new S 2) = 1 => path (\\lam _ => 1)");
+      "\\func g : f (\\new S 2) = 1 => idp");
   }
 
   @Test
@@ -171,7 +171,6 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\func swap {A B : \\Type} (p : Pair A B) : Pair B A \\cowith\n" +
       "  | fst => p.snd\n" +
       "  | snd => p.fst\n" +
-      "\\func idp {A : \\Type} {a : A} => path (\\lam _ => a)\n" +
       "\\func swap-involutive {A B : \\Type} (p : Pair A B) : swap (swap p) = p\n" +
       "  | (a,b) => idp");
   }
@@ -182,6 +181,6 @@ public class ProductsTest extends TypeCheckingTestCase {
       "\\record R (x y : Nat)\n" +
       "\\func f (r : R) : Nat\n" +
       "  | (t,_) => t\n" +
-      "\\func g (r : R) : f r = r.x => path (\\lam _ => r.x)");
+      "\\func g (r : R) : f r = r.x => idp");
   }
 }

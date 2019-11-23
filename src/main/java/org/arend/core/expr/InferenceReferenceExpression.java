@@ -56,6 +56,11 @@ public class InferenceReferenceExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return mySubstExpression == null || mySubstExpression.canBeConstructor();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitInferenceReference(this, params);
   }

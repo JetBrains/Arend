@@ -11,7 +11,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
       "\\func f (x : D) : 0 = 0\n" +
-      "  | con1 => path (\\lam _ => 0)");
+      "  | con1 => idp");
   }
 
   @Test
@@ -19,8 +19,8 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
       "\\func f (x : D) : 0 = 0\n" +
-      "  | con1 => path (\\lam _ => 0)\n" +
-      "  | con2 _ => path (\\lam _ => 0)", 1);
+      "  | con1 => idp\n" +
+      "  | con2 _ => idp", 1);
     assertThatErrorsAre(warning());
   }
 
@@ -29,7 +29,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2 I { | left => con1 }\n" +
       "\\func f (x : D) : 0 = 0\n" +
-      "  | con1 => path (\\lam _ => 0)", 1);
+      "  | con1 => idp", 1);
     assertThatErrorsAre(missingClauses(1));
   }
 
@@ -64,7 +64,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2 I I { | left, _ => con1 | right, _ => con1 | _, left => con1 | _, right => con1 }\n" +
       "\\func f (x : D) : x = x\n" +
-      "  | con1 => path (\\lam _ => con1)", 1);
+      "  | con1 => idp", 1);
     assertThatErrorsAre(missingClauses(1));
   }
 
@@ -118,7 +118,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
       "\\func f (x : D) => \\case x \\return 0 = 0 \\with {\n" +
-      "  | con1 => path (\\lam _ => 0)\n" +
+      "  | con1 => idp\n" +
       "}");
   }
 
@@ -128,7 +128,7 @@ public class TruncatedElimTest extends TypeCheckingTestCase {
       "\\data D | con1 | con2 I { | left => con1 | right => con1 }\n" +
       "\\data Maybe (A : \\Type) | just A | nothing\n" +
       "\\func f (x : D) => \\case x \\return (just 0 = just 0 : \\Prop) \\with {\n" +
-      "  | con1 => path (\\lam _ => just 0)\n" +
+      "  | con1 => idp\n" +
       "}");
   }
 

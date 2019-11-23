@@ -188,6 +188,7 @@ message ElimTree {
             oneof kind {
                 Tuple tuple = 1;
                 Class class = 2;
+                Idp idp = 4;
             }
             ElimTree elim_tree = 3;
 
@@ -199,6 +200,9 @@ message ElimTree {
                 int32 class_ref = 1;
                 Sort sort = 2;
                 repeated int32 field = 3;
+            }
+
+            message Idp {
             }
         }
         map<int32, ElimTree> clauses = 1;

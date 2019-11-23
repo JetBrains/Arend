@@ -87,7 +87,7 @@ public class HangDoc extends Doc {
     }
 
     LineDoc lineDoc = result.get(0);
-    if (result.size() == 1 && myBottom.isSingleLine() || lineDoc.getWidth() + (myBottom.isEmpty() ? 0 : 1) <= MAX_INDENT) {
+    if (result.size() == 1 && (myBottom.isSingleLine() || lineDoc.getWidth() + (myBottom.isEmpty() ? 0 : 1) <= MAX_INDENT)) {
       result = myBottom.linearize(lineDoc.getWidth() + 1, false);
       lineDoc = hList(lineDoc, text(" "), result.get(0));
       if (result.size() == 1) {

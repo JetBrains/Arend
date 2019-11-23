@@ -13,6 +13,7 @@ import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
+import org.arend.core.expr.visitor.CompareVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
@@ -25,6 +26,7 @@ import org.arend.typechecking.error.local.TypeMismatchError;
 import org.arend.typechecking.error.local.TypecheckingError;
 import org.arend.typechecking.error.local.inference.ArgInferenceError;
 import org.arend.typechecking.error.local.inference.InstanceInferenceError;
+import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.instance.pool.InstancePool;
 import org.arend.typechecking.instance.pool.RecursiveInstanceHoleExpression;
 import org.arend.typechecking.result.DefCallResult;
@@ -231,7 +233,21 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
           args1.addAll(args.subList(defCallResult.getArguments().size(), args.size()));
           args1 = ((Constructor) defCallResult.getDefinition()).matchDataTypeArguments(args1);
           if (args1 != null) {
-            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), defCallResult.getSortArgument());
+            boolean ok = true;
+            if (dataCall.hasUniverses() && !Sort.compare(defCallResult.getSortArgument(), dataCall.getSortArgument(), Equations.CMP.LE, myVisitor.getEquations(), fun)) {
+              ok = false;
+            }
+
+            if (ok && !defCallResult.getArguments().isEmpty()) {
+              ok = new CompareVisitor(myVisitor.getEquations(), Equations.CMP.LE, fun).compareLists(defCallResult.getArguments(), dataCall.getDefCallArguments().subList(0, defCallResult.getArguments().size()), dataCall.getDefinition().getParameters(), dataCall.getDefinition(), new ExprSubstitution());
+            }
+
+            if (!ok) {
+              myVisitor.getErrorReporter().report(new TypeMismatchError(dataCall, new DataCallExpression(dataCall.getDefinition(), defCallResult.getSortArgument(), args1), fun));
+              return null;
+            }
+
+            result = DefCallResult.makeTResult(defCallResult.getDefCall(), defCallResult.getDefinition(), dataCall.getSortArgument());
             if (!args1.isEmpty()) {
               result = ((DefCallResult) result).applyExpressions(args1);
             }

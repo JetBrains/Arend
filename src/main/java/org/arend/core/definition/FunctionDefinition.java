@@ -2,14 +2,19 @@ package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.elimtree.Body;
-import org.arend.core.expr.ErrorExpression;
-import org.arend.core.expr.Expression;
-import org.arend.core.expr.FunCallExpression;
+import org.arend.core.expr.*;
+import org.arend.core.expr.type.TypeExpression;
+import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.naming.reference.TCReferable;
+import org.arend.prelude.Prelude;
+import org.arend.term.concrete.Concrete;
 
 import java.util.Collections;
 import java.util.List;
@@ -142,7 +147,21 @@ public class FunctionDefinition extends Definition implements Function {
     if (!status().headerIsOK()) {
       return null;
     }
+
     ExprSubstitution subst = new ExprSubstitution();
+    if (this == Prelude.PATH_INFIX && sortArgument.isProp()) {
+      Sort sort = Sort.SetOfLevel(sortArgument.getPLevel());
+      TypedDependentLink param = new TypedDependentLink(false, myParameters.getName(), new UniverseExpression(sort), EmptyDependentLink.getInstance());
+      TypedDependentLink param3 = new TypedDependentLink(true, myParameters.getNext().getNext().getName(), new TypeExpression(new ReferenceExpression(param), sort), EmptyDependentLink.getInstance());
+      UntypedDependentLink param2 = new UntypedDependentLink(myParameters.getNext().getName(), param3);
+      param.setNext(param2);
+
+      params.add(param);
+      params.add(param2);
+      params.add(param3);
+      return new UniverseExpression(Sort.PROP);
+    }
+
     LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     params.addAll(DependentLink.Helper.toList(DependentLink.Helper.subst(myParameters, subst, polySubst)));
     return myResultType.subst(subst, polySubst);

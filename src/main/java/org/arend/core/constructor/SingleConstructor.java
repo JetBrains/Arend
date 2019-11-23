@@ -12,5 +12,5 @@ public abstract class SingleConstructor extends Constructor {
 
   public abstract int getLength();
 
-  public abstract List<Expression> getMatchedArguments(Expression argument);
+  public abstract List<Expression> getMatchedArguments(Expression argument, boolean normalizing);
 }

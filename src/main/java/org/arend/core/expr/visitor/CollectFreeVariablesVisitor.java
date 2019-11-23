@@ -103,13 +103,19 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
     for (Expression arg : expr.getArguments()) {
       arg.accept(this, variables);
     }
-    visitParameters(expr.getParameters(), vars -> {
-      expr.getResultType().accept(this, vars);
-      if (expr.getResultTypeLevel() != null) {
-        expr.getResultTypeLevel().accept(this, vars);
-      }
-    }, variables);
-    visitParameters(expr.getElimTree().getParameters(), vars -> visitElimTree(expr.getElimTree(), vars), variables);
+    if (expr.getParameters() != null) {
+      visitParameters(expr.getParameters(), vars -> {
+        if (expr.getResultType() != null) {
+          expr.getResultType().accept(this, vars);
+          if (expr.getResultTypeLevel() != null) {
+            expr.getResultTypeLevel().accept(this, vars);
+          }
+        }
+      }, variables);
+    }
+    if (expr.getElimTree() != null) {
+      visitParameters(expr.getElimTree().getParameters(), vars -> visitElimTree(expr.getElimTree(), vars), variables);
+    }
     return null;
   }
 

@@ -49,6 +49,11 @@ public class CaseExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return !mySFunc;
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitCase(this, params);
   }

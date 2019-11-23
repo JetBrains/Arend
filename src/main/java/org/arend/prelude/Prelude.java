@@ -5,15 +5,14 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
-import org.arend.core.definition.Constructor;
-import org.arend.core.definition.DataDefinition;
-import org.arend.core.definition.Definition;
-import org.arend.core.definition.FunctionDefinition;
+import org.arend.core.definition.*;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.core.pattern.ConstructorPattern;
+import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.DummyErrorReporter;
@@ -29,10 +28,7 @@ import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.Pair;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.arend.core.expr.ExpressionFactory.Nat;
@@ -62,6 +58,9 @@ public class Prelude {
   public static FunctionDefinition PATH_INFIX;
   public static Constructor PATH_CON;
 
+  public static FunctionDefinition IN_PROP;
+
+  public static DConstructor IDP;
   public static FunctionDefinition AT;
   public static FunctionDefinition ISO;
 
@@ -131,6 +130,16 @@ public class Prelude {
         PATH_INFIX = (FunctionDefinition) definition;
         PATH_INFIX.getParameters().setType(new UniverseExpression(new Sort(new Level(LevelVariable.PVAR), new Level(LevelVariable.HVAR, 1))));
         break;
+      case "idp": {
+        IDP = (DConstructor) definition;
+        List<Expression> args = new ArrayList<>(2);
+        args.add(new ReferenceExpression(IDP.getParameters()));
+        args.add(new ReferenceExpression(IDP.getParameters().getNext()));
+        IDP.setPattern(new ConstructorPattern(new FunCallExpression(IDP, Sort.STD, args), new Patterns(Collections.emptyList())));
+        IDP.setNumberOfParameters(2);
+        IDP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      }
       case "@": {
         AT = (FunctionDefinition) definition;
         DependentLink atParams = DependentLink.Helper.take(AT.getParameters(), 3);
@@ -165,6 +174,10 @@ public class Prelude {
       case "fromNat":
         FROM_NAT = (FunctionDefinition) definition;
         FROM_NAT.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
+        break;
+      case "inProp":
+        IN_PROP = (FunctionDefinition) definition;
+        IN_PROP.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
         break;
       case "<=":
         LESS_OR_EQ = (DataDefinition) definition;
@@ -215,6 +228,8 @@ public class Prelude {
     consumer.accept(PATH);
     consumer.accept(PATH_CON);
     consumer.accept(PATH_INFIX);
+    consumer.accept(IN_PROP);
+    consumer.accept(IDP);
     consumer.accept(AT);
     consumer.accept(COERCE);
     consumer.accept(COERCE2);

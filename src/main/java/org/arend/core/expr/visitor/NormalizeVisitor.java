@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.constructor.IdpConstructor;
 import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
@@ -462,7 +463,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   }
 
   public ElimTree updateStack(Stack<Expression> stack, BranchElimTree branchElimTree) {
-    Expression argument = stack.peek().accept(this, Mode.WHNF);
+    Expression argument = stack.peek().accept(this, Mode.WHNF); // TODO[idp]: Normalize only until idp
     ConCallExpression conCall = argument.cast(ConCallExpression.class);
     Constructor constructor = conCall == null ? null : conCall.getDefinition();
     IntegerExpression intExpr = constructor == null ? argument.cast(IntegerExpression.class) : null;
@@ -471,6 +472,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
 
     ElimTree elimTree = constructor == null ? branchElimTree.getSingleChild() : branchElimTree.getChild(constructor);
+    if (elimTree == null && constructor == Prelude.PATH_CON && branchElimTree.getSingleConstructor() instanceof IdpConstructor) {
+      elimTree = branchElimTree.getSingleChild();
+      constructor = null;
+    }
     if (elimTree != null) {
       stack.pop();
 
@@ -487,7 +492,10 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
           return null;
         }
 
-        args = singleConstructor.getMatchedArguments(argument);
+        args = singleConstructor.getMatchedArguments(argument, true);
+        if (args == null) {
+          return null;
+        }
       }
 
       for (int i = args.size() - 1; i >= 0; i--) {
