@@ -78,6 +78,15 @@ public class Case extends TypeCheckingTestCase {
   }
 
   @Test
+  public void caseElimSubstType() {
+    typeCheckDef(
+      "\\func f (x : Nat) (p : x = 0) : x = 0 => \\case \\elim x, \\elim p : x = 0 \\with {\n" +
+      "  | 0, _ => idp\n" +
+      "  | suc _, p => p\n" +
+      "}");
+  }
+
+  @Test
   public void caseElimTypeError() {
     typeCheckDef(
       "\\func f (x : \\Set0) => \\case \\elim x : \\Set1 \\return Nat \\with {\n" +

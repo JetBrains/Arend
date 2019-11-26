@@ -1751,7 +1751,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
             return null;
           }
-          if (argType == null) {
+          if (argType == null || caseArg.isElim) {
             exprResult.type = exprResult.type.subst(elimSubst);
           }
           Referable asRef = caseArg.isElim ? ((Concrete.ReferenceExpression) caseArg.expression).getReferent() : caseArg.referable;
@@ -1766,10 +1766,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
             origElimBindings.put(asRef, origBinding);
             elimSubst.add(origBinding, new ReferenceExpression(link));
           }
-          if (asRef != null) {
-            addBinding(asRef, link);
-          }
-          myFreeBindings.add(link);
+          addBinding(asRef, link);
           expressions.add(exprResult.expression);
           substitution.add(link, exprResult.expression);
         }
