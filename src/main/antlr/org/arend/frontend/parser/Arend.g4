@@ -128,7 +128,11 @@ newExpr : appPrefix? appExpr (implementStatements argument*)?;
 
 appPrefix : NEW EVAL? | EVAL | PEVAL;
 
-caseArg : expr (AS ID)? (':' expr)?;
+caseArg : caseArgExprAs (':' expr)?;
+
+caseArgExprAs : '\\elim' ID   # caseArgElim
+              | expr (AS ID)? # caseArgExpr
+              ;
 
 appExpr : argumentAppExpr                             # appArgument
         | TRUNCATED_UNIVERSE maybeLevelAtom?          # truncatedUniverse

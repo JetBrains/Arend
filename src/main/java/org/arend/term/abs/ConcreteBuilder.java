@@ -605,7 +605,17 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     List<Concrete.CaseArgument> concreteCaseArgs = new ArrayList<>(caseArgs.size());
     for (Abstract.CaseArgument caseArg : caseArgs) {
       Abstract.Expression type = caseArg.getType();
-      concreteCaseArgs.add(new Concrete.CaseArgument(caseArg.getExpression().accept(this, null), myReferableConverter.toDataReferable(caseArg.getReferable()), type == null ? null : type.accept(this, null)));
+      Abstract.Reference elimRef = caseArg.getEliminatedReference();
+      Concrete.Expression cType = type == null ? null : type.accept(this, null);
+      if (elimRef != null) {
+        concreteCaseArgs.add(new Concrete.CaseArgument(buildReference(elimRef), cType));
+      } else {
+        Abstract.Expression expr = caseArg.getExpression();
+        if (expr == null) {
+          throw new AbstractExpressionError.Exception(AbstractExpressionError.incomplete(data));
+        }
+        concreteCaseArgs.add(new Concrete.CaseArgument(expr.accept(this, null), myReferableConverter.toDataReferable(caseArg.getReferable()), cType));
+      }
     }
 
     reportError(errorData);

@@ -147,9 +147,10 @@ public final class Abstract {
   }
 
   public interface CaseArgument extends SourceNode {
-    @Nonnull Expression getExpression();
+    @Nullable Expression getExpression();
     @Nullable Referable getReferable();
     @Nullable Expression getType();
+    @Nullable Reference getEliminatedReference();
   }
 
   public interface CaseArgumentsHolder extends SourceNode {

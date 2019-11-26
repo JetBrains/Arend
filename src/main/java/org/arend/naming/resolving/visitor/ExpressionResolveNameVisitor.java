@@ -131,6 +131,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     }
   }
 
+  @Override
   protected void visitParameter(Concrete.Parameter parameter, Void params) {
     if (parameter instanceof Concrete.TypeParameter) {
       ((Concrete.TypeParameter) parameter).type = ((Concrete.TypeParameter) parameter).type.accept(this, null);
@@ -186,9 +187,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
 
   @Override
   public Concrete.Expression visitCase(Concrete.CaseExpression expr, Void params) {
+    Set<Referable> eliminatedRefs = new HashSet<>();
     try (Utils.ContextSaver ignored = new Utils.ContextSaver(myContext)) {
       for (Concrete.CaseArgument caseArg : expr.getArguments()) {
         caseArg.expression = caseArg.expression.accept(this, null);
+        if (caseArg.isElim && !(caseArg.expression instanceof Concrete.ReferenceExpression)) {
+          myErrorReporter.report(new NamingError("Expected a variable", caseArg.expression));
+          caseArg.isElim = false;
+        }
+        if (caseArg.isElim) {
+          eliminatedRefs.add(((Concrete.ReferenceExpression) caseArg.expression).getReferent());
+        }
         if (caseArg.type != null) {
           caseArg.type = caseArg.type.accept(this, null);
         }
@@ -201,7 +210,17 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
         expr.setResultTypeLevel(expr.getResultTypeLevel().accept(this, null));
       }
     }
+
+    List<Referable> origContext = eliminatedRefs.isEmpty() ? null : new ArrayList<>(myContext);
+    if (!eliminatedRefs.isEmpty()) {
+      myContext.removeAll(eliminatedRefs);
+    }
     visitClauses(expr.getClauses(), null);
+    if (origContext != null) {
+      myContext.clear();
+      myContext.addAll(origContext);
+    }
+
     return expr;
   }
 

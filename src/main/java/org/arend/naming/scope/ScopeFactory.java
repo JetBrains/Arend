@@ -3,10 +3,8 @@ package org.arend.naming.scope;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.*;
 import org.arend.naming.resolving.visitor.ExpressionResolveNameVisitor;
-import org.arend.naming.scope.local.LetScope;
 import org.arend.naming.scope.local.ListScope;
-import org.arend.naming.scope.local.PatternScope;
-import org.arend.naming.scope.local.TelescopeScope;
+import org.arend.naming.scope.local.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.NamespaceCommand;
 import org.arend.term.abs.Abstract;
@@ -15,10 +13,7 @@ import org.arend.term.group.Group;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class ScopeFactory {
   public static @Nonnull Scope forGroup(@Nullable Group group, @Nonnull ModuleScopeProvider moduleScopeProvider) {
@@ -294,8 +289,8 @@ public class ScopeFactory {
       }
     }
 
-    // Extend the scope with case arguments
-    if (sourceNode instanceof Abstract.Expression && (parentSourceNode instanceof Abstract.CaseArgumentsHolder || parentSourceNode instanceof Abstract.CaseArgument && sourceNode.equals(((Abstract.CaseArgument) parentSourceNode).getType()))) {
+    // Extend the scope with case arguments and remove eliminated variables from case clauses
+    if ((sourceNode instanceof Abstract.Expression || sourceNode instanceof Abstract.Clause) && (parentSourceNode instanceof Abstract.CaseArgumentsHolder || parentSourceNode instanceof Abstract.CaseArgument && sourceNode.equals(((Abstract.CaseArgument) parentSourceNode).getType()))) {
       Abstract.CaseArgumentsHolder caseArgumentsHolder;
       if (parentSourceNode instanceof Abstract.CaseArgumentsHolder) {
         caseArgumentsHolder = (Abstract.CaseArgumentsHolder) parentSourceNode;
@@ -307,18 +302,37 @@ public class ScopeFactory {
         caseArgumentsHolder = (Abstract.CaseArgumentsHolder) parentParent;
       }
 
+      Set<Referable> eliminatedRefs = null;
+      List<Referable> referables = null;
       List<? extends Abstract.CaseArgument> caseArguments = caseArgumentsHolder.getCaseArguments();
-      List<Referable> referables = new ArrayList<>(caseArguments.size());
       for (Abstract.CaseArgument caseArgument : caseArguments) {
         if (parentSourceNode instanceof Abstract.CaseArgument && parentSourceNode.equals(caseArgument)) {
           break;
         }
-        Referable ref = caseArgument.getReferable();
-        if (ref != null) {
-          referables.add(ref);
+
+        if (sourceNode instanceof Abstract.Expression) {
+          Referable ref = caseArgument.getReferable();
+          if (ref != null) {
+            if (referables == null) {
+              referables = new ArrayList<>();
+            }
+            referables.add(ref);
+          }
+        }
+
+        if (sourceNode instanceof Abstract.Clause) {
+          Abstract.Reference elimRef = caseArgument.getEliminatedReference();
+          Referable resolveRef = elimRef == null ? null : ExpressionResolveNameVisitor.resolve(elimRef.getReferent(), parentScope);
+          if (!(resolveRef == null || resolveRef instanceof ErrorReference)) {
+            if (eliminatedRefs == null) {
+              eliminatedRefs = new HashSet<>();
+            }
+            eliminatedRefs.add(resolveRef);
+          }
         }
       }
-      return referables.isEmpty() ? parentScope : new ListScope(parentScope, referables);
+
+      return referables != null ? new ListScope(parentScope, referables) : eliminatedRefs != null ? new ElimScope(parentScope, eliminatedRefs) : parentScope;
     }
 
     // Extend the scope with let clauses

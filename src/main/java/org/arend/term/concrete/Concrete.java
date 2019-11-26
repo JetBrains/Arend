@@ -15,7 +15,10 @@ import org.arend.typechecking.error.local.LocalError;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public final class Concrete {
   private Concrete() {}
@@ -888,11 +891,20 @@ public final class Concrete {
     public @Nonnull Expression expression;
     public final @Nullable Referable referable;
     public @Nullable Expression type;
+    public boolean isElim;
 
     public CaseArgument(@Nonnull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
       this.expression = expression;
       this.referable = referable;
       this.type = type;
+      isElim = false;
+    }
+
+    public CaseArgument(@Nonnull ReferenceExpression expression, @Nullable Expression type) {
+      this.expression = expression;
+      this.referable = null;
+      this.type = type;
+      isElim = true;
     }
   }
 
