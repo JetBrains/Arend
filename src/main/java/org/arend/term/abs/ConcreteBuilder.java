@@ -206,7 +206,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return data;
   }
 
-  public void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  public void buildClassParameters(Collection<? extends Abstract.FieldParameter> absParameters, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> elements) {
     TCFieldReferable coercingField = null;
     boolean isForced = false;
 
@@ -227,7 +227,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
               } else if (coercingField == null && parameter.isExplicit()) {
                 coercingField = (TCFieldReferable) referable;
               }
-              fields.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.isExplicit(), ClassFieldKind.ANY, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
+              elements.add(new Concrete.ClassField((TCFieldReferable) referable, classDef, parameter.isExplicit(), ClassFieldKind.ANY, new ArrayList<>(), ((Concrete.TelescopeParameter) parameter).type, null));
             } else {
               myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Incorrect field parameter", referable));
             }
@@ -252,33 +252,39 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       return null;
     }
 
-    List<Concrete.ClassFieldImpl> implementations = buildImplementationsSafe(def, def.getClassFieldImpls());
-    List<Concrete.ClassField> classFields = new ArrayList<>();
-    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), classFields, implementations);
-    buildClassParameters(def.getParameters(), classDef, classFields);
+    List<Concrete.ClassElement> elements = new ArrayList<>();
+    Concrete.ClassDefinition classDef = new Concrete.ClassDefinition((TCClassReferable) myDefinition, def.isRecord(), buildReferences(def.getSuperClasses()), elements);
+    buildClassParameters(def.getParameters(), classDef, elements);
     setEnclosingClass(classDef, def);
 
-    for (Abstract.ClassField field : def.getClassFields()) {
-      Abstract.Expression resultType = field.getResultType();
-      LocatedReferable fieldRefOrig = field.getReferable();
-      TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
-      if (resultType == null || !(fieldRef instanceof TCFieldReferable)) {
-        if (!reportError(field.getErrorData())) {
-          myErrorReporter.report(fieldRef != null && !(fieldRef instanceof TCFieldReferable)
-            ? new AbstractExpressionError(GeneralError.Level.ERROR, "Incorrect field", fieldRef)
-            : AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
-        }
-      } else {
-        try {
-          List<? extends Abstract.Parameter> parameters = field.getParameters();
-          Concrete.Expression type = resultType.accept(this, null);
-          Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
-          Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
-          classFields.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters), type, typeLevel));
-        } catch (AbstractExpressionError.Exception e) {
-          myErrorReporter.report(e.error);
+    try {
+      for (Abstract.ClassElement element : def.getClassElements()) {
+        if (element instanceof Abstract.ClassField) {
+          Abstract.ClassField field = (Abstract.ClassField) element;
+          Abstract.Expression resultType = field.getResultType();
+          LocatedReferable fieldRefOrig = field.getReferable();
+          TCReferable fieldRef = myReferableConverter.toDataLocatedReferable(fieldRefOrig);
+          if (resultType == null || !(fieldRef instanceof TCFieldReferable)) {
+            if (!reportError(field.getErrorData())) {
+              myErrorReporter.report(fieldRef != null && !(fieldRef instanceof TCFieldReferable)
+                ? new AbstractExpressionError(GeneralError.Level.ERROR, "Incorrect field", fieldRef)
+                : AbstractExpressionError.incomplete(fieldRef == null ? field : fieldRef));
+            }
+          } else {
+            List<? extends Abstract.Parameter> parameters = field.getParameters();
+            Concrete.Expression type = resultType.accept(this, null);
+            Abstract.Expression resultTypeLevel = field.getResultTypeLevel();
+            Concrete.Expression typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
+            elements.add(new Concrete.ClassField((TCFieldReferable) fieldRef, classDef, true, field.getClassFieldKind(), buildTypeParameters(parameters), type, typeLevel));
+          }
+        } else if (element instanceof Abstract.ClassFieldImpl) {
+          buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);
+        } else {
+          myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Unknown class element", element));
         }
       }
+    } catch (AbstractExpressionError.Exception e) {
+      myErrorReporter.report(e.error);
     }
 
     classDef.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
@@ -309,39 +315,34 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
     return elimExpressions;
   }
 
-  public List<Concrete.ClassFieldImpl> buildImplementationsSafe(Object data, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
-    try {
-      return buildImplementations(data, absImplementations);
-    } catch (AbstractExpressionError.Exception e) {
-      myErrorReporter.report(e.error);
-      return new ArrayList<>();
+  private void buildImplementation(Object data, Abstract.ClassFieldImpl implementation, List<? super Concrete.ClassFieldImpl> implementations) {
+    Abstract.Reference implementedField = implementation.getImplementedField();
+    if (implementedField == null) {
+      return;
+    }
+
+    Abstract.Expression impl = implementation.getImplementation();
+    if (impl != null) {
+      List<? extends Abstract.Parameter> parameters = implementation.getParameters();
+      Concrete.Expression term = impl.accept(this, null);
+      if (!parameters.isEmpty()) {
+        term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters), term);
+      }
+
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, Collections.emptyList()));
+    } else {
+      AbstractExpressionError error = implementation.hasImplementation() ? AbstractExpressionError.incomplete(data) : null;
+      if (error != null) {
+        myErrorReporter.report(error);
+      }
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), error != null ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
     }
   }
 
   private List<Concrete.ClassFieldImpl> buildImplementations(Object data, Collection<? extends Abstract.ClassFieldImpl> absImplementations) {
     List<Concrete.ClassFieldImpl> implementations = new ArrayList<>();
     for (Abstract.ClassFieldImpl implementation : absImplementations) {
-      Abstract.Reference implementedField = implementation.getImplementedField();
-      if (implementedField == null) {
-        continue;
-      }
-
-      Abstract.Expression impl = implementation.getImplementation();
-      if (impl != null) {
-        List<? extends Abstract.Parameter> parameters = implementation.getParameters();
-        Concrete.Expression term = impl.accept(this, null);
-        if (!parameters.isEmpty()) {
-          term = new Concrete.LamExpression(parameters.get(0).getData(), buildParameters(parameters), term);
-        }
-
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), term, Collections.emptyList()));
-      } else {
-        AbstractExpressionError error = implementation.hasImplementation() ? AbstractExpressionError.incomplete(data) : null;
-        if (error != null) {
-          myErrorReporter.report(error);
-        }
-        implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), error != null ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
-      }
+      buildImplementation(data, implementation, implementations);
     }
     return implementations;
   }

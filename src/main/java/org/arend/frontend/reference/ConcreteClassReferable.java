@@ -90,10 +90,11 @@ public class ConcreteClassReferable extends ConcreteLocatedReferable implements 
   @Nonnull
   @Override
   public Collection<? extends Referable> getImplementedFields() {
-    List<Concrete.ClassFieldImpl> impls = getDefinition().getImplementations();
-    List<Referable> result = new ArrayList<>(impls.size());
-    for (Concrete.ClassFieldImpl impl : impls) {
-      result.add(impl.getImplementedField());
+    List<Referable> result = new ArrayList<>();
+    for (Concrete.ClassElement element : getDefinition().getElements()) {
+      if (element instanceof Concrete.ClassFieldImpl) {
+        result.add(((Concrete.ClassFieldImpl) element).getImplementedField());
+      }
     }
     return result;
   }

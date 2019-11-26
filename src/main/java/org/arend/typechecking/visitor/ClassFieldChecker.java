@@ -66,7 +66,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
         return expr;
       }
       child = def.enclosingClass;
-      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), def.getFields().get(0).getData()), expr, false);
+      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassField) def.getElements().get(0)).getData()), expr, false);
     }
 
     return expr;

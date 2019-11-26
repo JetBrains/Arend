@@ -1192,18 +1192,16 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   public Void visitClass(Concrete.ClassDefinition def, Void ignored) {
     prettyPrintClassDefinitionHeader(def, def.getSuperClasses());
 
-    Collection<? extends Concrete.ClassField> fields = def.getFields();
-    Collection<? extends Concrete.ClassFieldImpl> implementations = def.getImplementations();
-
-    if (!fields.isEmpty() || !implementations.isEmpty()) {
+    if (!def.getElements().isEmpty()) {
       myBuilder.append(" {");
       myIndent += INDENT;
 
-      if (!fields.isEmpty()) {
+      for (Concrete.ClassElement element : def.getElements()) {
         myBuilder.append('\n');
-        for (Concrete.ClassField field : fields) {
-          printIndent();
-          myBuilder.append("| ");
+        printIndent();
+        myBuilder.append("| ");
+        if (element instanceof Concrete.ClassField) {
+          Concrete.ClassField field = (Concrete.ClassField) element;
           prettyPrintNameWithPrecedence(field.getData());
           if (!field.getParameters().isEmpty()) {
             myBuilder.append(" ");
@@ -1211,16 +1209,15 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           }
           myBuilder.append(" : ");
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
-          myBuilder.append('\n');
+        } else if (element instanceof Concrete.ClassFieldImpl) {
+          visitClassFieldImpl((Concrete.ClassFieldImpl) element);
+        } else {
+          throw new IllegalStateException();
         }
       }
 
       myIndent -= INDENT;
-      if (!implementations.isEmpty()) {
-        visitClassFieldImpls(implementations);
-        myBuilder.append('\n');
-      }
-
+      myBuilder.append('\n');
       printIndent();
       myBuilder.append("}");
     }

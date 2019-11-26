@@ -314,12 +314,16 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return expr2 instanceof Concrete.ProjExpression && expr1.getField() == ((Concrete.ProjExpression) expr2).getField() && compare(expr1.getExpression(), ((Concrete.ProjExpression) expr2).getExpression());
   }
 
+  private boolean compareImplementStatement(Concrete.ClassFieldImpl implStat1, Concrete.ClassFieldImpl implStat2) {
+    return !compareImplementStatements(implStat1.subClassFieldImpls, implStat2.subClassFieldImpls) && (implStat1.implementation == implStat2.implementation || implStat1.implementation != null && implStat2.implementation != null && compare(implStat1.implementation, implStat2.implementation)) && Objects.equals(implStat1.getImplementedField(), implStat2.getImplementedField());
+  }
+
   private boolean compareImplementStatements(List<Concrete.ClassFieldImpl> implStats1, List<Concrete.ClassFieldImpl> implStats2) {
     if (implStats1.size() != implStats2.size()) {
       return false;
     }
     for (int i = 0; i < implStats1.size(); i++) {
-      if (!(compareImplementStatements(implStats1.get(i).subClassFieldImpls, implStats2.get(i).subClassFieldImpls) && (implStats1.get(i).implementation == implStats2.get(i).implementation || implStats1.get(i).implementation != null && implStats2.get(i).implementation != null && compare(implStats1.get(i).implementation, implStats2.get(i).implementation)) && Objects.equals(implStats1.get(i).getImplementedField(), implStats2.get(i).getImplementedField()))) {
+      if (!compareImplementStatement(implStats1.get(i), implStats2.get(i))) {
         return false;
       }
     }
@@ -512,15 +516,25 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (!compareExpressionList(def.getSuperClasses(), class2.getSuperClasses())) {
       return false;
     }
-    if (def.getFields().size() != class2.getFields().size()) {
+    if (def.getElements().size() != class2.getElements().size()) {
       return false;
     }
-    for (int i = 0; i < def.getFields().size(); i++) {
-      if (!compareField(def.getFields().get(i), class2.getFields().get(i))) {
+    for (int i = 0; i < def.getElements().size(); i++) {
+      Concrete.ClassElement element1 = def.getElements().get(i);
+      Concrete.ClassElement element2 = class2.getElements().get(i);
+      if (element1 instanceof Concrete.ClassField && element2 instanceof Concrete.ClassField) {
+        if (!compareField((Concrete.ClassField) element1, (Concrete.ClassField) element2)) {
+          return false;
+        }
+      } else if (element1 instanceof Concrete.ClassFieldImpl && element2 instanceof Concrete.ClassFieldImpl) {
+        if (!compareImplementStatement((Concrete.ClassFieldImpl) element1, (Concrete.ClassFieldImpl) element2)) {
+          return false;
+        }
+      } else {
         return false;
       }
     }
-    return compareImplementStatements(def.getImplementations(), class2.getImplementations()) && Objects.equals(def.getCoercingField(), class2.getCoercingField());
+    return Objects.equals(def.getCoercingField(), class2.getCoercingField());
   }
 
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {

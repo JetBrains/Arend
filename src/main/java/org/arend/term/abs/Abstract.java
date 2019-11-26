@@ -168,7 +168,10 @@ public final class Abstract {
     /* @Nonnull */ @Nullable Expression getExpression();
   }
 
-  public interface ClassFieldImpl extends ParametersHolder, ClassReferenceHolder {
+  public interface ClassElement extends SourceNode {
+  }
+
+  public interface ClassFieldImpl extends ClassElement, ParametersHolder, ClassReferenceHolder {
     @Nullable Object getData();
     @Nullable Reference getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
@@ -235,7 +238,7 @@ public final class Abstract {
     @Override @Nonnull List<? extends FieldParameter> getParameters();
     boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
-    @Nonnull Collection<? extends ClassField> getClassFields();
+    @Nonnull Collection<? extends ClassElement> getClassElements();
     @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();
   }
 
@@ -246,7 +249,7 @@ public final class Abstract {
     @Nullable Expression getResultType();
   }
 
-  public interface ClassField extends ReferableDefinition, ParametersHolder {
+  public interface ClassField extends ClassElement, ReferableDefinition, ParametersHolder {
     ClassFieldKind getClassFieldKind();
     /* @Nonnull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();

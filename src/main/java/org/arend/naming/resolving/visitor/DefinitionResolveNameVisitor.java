@@ -373,8 +373,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     myLocalErrorReporter = new ConcreteProxyErrorReporter(def);
     if (myResolveTypeClassReferences) {
       if (def.getResolved() == Concrete.Resolved.NOT_RESOLVED) {
-        for (Concrete.ClassField field : def.getFields()) {
-          resolveTypeClassReference(field.getParameters(), field.getResultType(), scope, true);
+        for (Concrete.ClassElement element : def.getElements()) {
+          if (element instanceof Concrete.ClassField) {
+            resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scope, true);
+          }
         }
       }
       def.setTypeClassReferencesResolved();
@@ -383,8 +385,15 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     checkPrecedence(def);
 
+    List<Concrete.ClassField> classFields = new ArrayList<>();
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassField) {
+        classFields.add((Concrete.ClassField) element);
+      }
+    }
+
     Map<String, TCReferable> fieldNames = new HashMap<>();
-    for (Concrete.ClassField field : def.getFields()) {
+    for (Concrete.ClassField field : classFields) {
       TCReferable ref = field.getData();
       TCReferable oldRef = fieldNames.putIfAbsent(ref.textRepresentation(), ref);
       if (oldRef != null) {
@@ -405,14 +414,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     }
 
     Concrete.Expression previousType = null;
-    for (int i = 0; i < def.getFields().size(); i++) {
-      Concrete.ClassField field = def.getFields().get(i);
+    for (int i = 0; i < classFields.size(); i++) {
+      Concrete.ClassField field = classFields.get(i);
       checkPrecedence(field);
 
       Concrete.Expression fieldType = field.getResultType();
       if (fieldType == previousType && field.getParameters().isEmpty()) {
-        field.setResultType(def.getFields().get(i - 1).getResultType());
-        field.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
+        field.setResultType(classFields.get(i - 1).getResultType());
+        field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         if (field.getResultTypeLevel() != null && field.getKind() == ClassFieldKind.FIELD) {
           myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.LEVEL_IN_FIELD, field));
@@ -429,7 +438,11 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         }
       }
     }
-    exprVisitor.visitClassFieldImpls(def.getImplementations(), def.getData());
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassFieldImpl) {
+        exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, def.getData());
+      }
+    }
 
     if (def.isRecord() && def.isForcedCoercingField()) {
       myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def));

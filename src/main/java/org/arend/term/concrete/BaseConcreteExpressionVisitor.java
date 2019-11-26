@@ -1,5 +1,6 @@
 package org.arend.term.concrete;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -183,9 +184,11 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
   }
 
-  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, P params) {
-    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
-      visitClassFieldImpl(classFieldImpl, params);
+  protected <T extends Concrete.ClassElement> void visitClassFieldImpls(List<T> elements, P params) {
+    for (Concrete.ClassElement element : elements) {
+      if (element instanceof Concrete.ClassFieldImpl) {
+        visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
+      }
     }
   }
 
@@ -263,13 +266,20 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
 
   @Override
   public Void visitClass(Concrete.ClassDefinition def, P params) {
+    List<Concrete.ClassField> classFields = new ArrayList<>();
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassField) {
+        classFields.add((Concrete.ClassField) element);
+      }
+    }
+
     Concrete.Expression previousType = null;
-    for (int i = 0; i < def.getFields().size(); i++) {
-      Concrete.ClassField field = def.getFields().get(i);
+    for (int i = 0; i < classFields.size(); i++) {
+      Concrete.ClassField field = classFields.get(i);
       Concrete.Expression fieldType = field.getResultType();
       if (fieldType == previousType && field.getParameters().isEmpty()) {
-        field.setResultType(def.getFields().get(i - 1).getResultType());
-        field.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
+        field.setResultType(classFields.get(i - 1).getResultType());
+        field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         previousType = field.getParameters().isEmpty() ? fieldType : null;
         visitParameters(field.getParameters(), params);
@@ -279,7 +289,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
         }
       }
     }
-    visitClassFieldImpls(def.getImplementations(), params);
+    visitClassFieldImpls(def.getElements(), params);
     return null;
   }
 }

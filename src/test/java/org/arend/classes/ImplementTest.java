@@ -455,4 +455,16 @@ public class ImplementTest extends TypeCheckingTestCase {
       "}", 1);
     assertThatErrorsAre(cycle(get("x")));
   }
+
+  @Test
+  public void orderTest() {
+    typeCheckModule(
+      "\\class A (TA : \\Set) | ta : TA\n" +
+      "\\class B (TB : \\Set) | tb : TB\n" +
+      "\\func f (T : A) (t : T.TA) => Nat\n" +
+      "\\class C (TC : \\Set) \\extends A, B\n" +
+      "  | TA => TC\n" +
+      "  | TB => TC\n" +
+      "  | c : f \\this tb");
+  }
 }

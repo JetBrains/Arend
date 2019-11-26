@@ -400,36 +400,40 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return expr;
   }
 
+  void visitClassFieldImpl(Concrete.ClassFieldImpl impl, ClassReferable classDef) {
+    Referable oldField = impl.getImplementedField();
+    while (oldField instanceof RedirectingReferable) {
+      oldField = ((RedirectingReferable) oldField).getOriginalReferable();
+    }
+    if (oldField instanceof UnresolvedReference) {
+      List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
+      Referable field = resolve(oldField, new ClassFieldImplScope(classDef, true), false, resolvedRefs);
+      if (myResolverListener != null) {
+        myResolverListener.coPatternResolved(impl, oldField, field, resolvedRefs);
+      }
+      if (field instanceof ErrorReference) {
+        myErrorReporter.report(((ErrorReference) field).getError());
+      }
+      impl.setImplementedField(field);
+    }
+
+    if (impl.implementation == null) {
+      ClassReferable classRef = impl.getImplementedField() instanceof ClassReferable
+        ? (ClassReferable) impl.getImplementedField()
+        : impl.getImplementedField() instanceof TypedReferable
+        ? ((TypedReferable) impl.getImplementedField()).getTypeClassReference()
+        : null;
+      if (classRef != null) {
+        visitClassFieldImpls(impl.subClassFieldImpls, classRef);
+      }
+    } else {
+      impl.implementation = impl.implementation.accept(this, null);
+    }
+  }
+
   void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, ClassReferable classDef) {
     for (Concrete.ClassFieldImpl impl : classFieldImpls) {
-      Referable oldField = impl.getImplementedField();
-      while (oldField instanceof RedirectingReferable) {
-        oldField = ((RedirectingReferable) oldField).getOriginalReferable();
-      }
-      if (oldField instanceof UnresolvedReference) {
-        List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
-        Referable field = resolve(oldField, new ClassFieldImplScope(classDef, true), false, resolvedRefs);
-        if (myResolverListener != null) {
-          myResolverListener.coPatternResolved(impl, oldField, field, resolvedRefs);
-        }
-        if (field instanceof ErrorReference) {
-          myErrorReporter.report(((ErrorReference) field).getError());
-        }
-        impl.setImplementedField(field);
-      }
-
-      if (impl.implementation == null) {
-        ClassReferable classRef = impl.getImplementedField() instanceof ClassReferable
-          ? (ClassReferable) impl.getImplementedField()
-          : impl.getImplementedField() instanceof TypedReferable
-            ? ((TypedReferable) impl.getImplementedField()).getTypeClassReference()
-            : null;
-        if (classRef != null) {
-          visitClassFieldImpls(impl.subClassFieldImpls, classRef);
-        }
-      } else {
-        impl.implementation = impl.implementation.accept(this, null);
-      }
+      visitClassFieldImpl(impl, classDef);
     }
   }
 
