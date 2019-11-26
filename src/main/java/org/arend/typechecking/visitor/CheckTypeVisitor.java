@@ -1749,6 +1749,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (exprResult == null) return null;
           if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
             errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
+            context.putAll(origElimBindings);
             return null;
           }
           if (argType == null || caseArg.isElim) {
@@ -1760,6 +1761,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (caseArg.isElim) {
             if (argType != null && !CompareVisitor.compare(myEquations, Equations.CMP.EQ, exprResult.type, argType.getExpr(), ExpectedType.OMEGA, caseArg.type)) {
               errorReporter.report(new TypeMismatchError(exprResult.type, argType.getExpr(), caseArg.expression));
+              context.putAll(origElimBindings);
               return null;
             }
             Binding origBinding = ((ReferenceExpression) exprResult.expression).getBinding();
@@ -1775,6 +1777,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           resultType = checkType(expr.getResultType(), ExpectedType.OMEGA);
         }
         if (resultType == null && expectedType == null) {
+          context.putAll(origElimBindings);
           return null;
         }
         resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? ((Expression) expectedType).subst(elimSubst) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
@@ -1789,7 +1792,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
     for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
-      addBinding(entry.getKey(), entry.getValue());
+      context.remove(entry.getKey());
     }
 
     // Check if the level of the result type is specified explicitly
@@ -1857,6 +1860,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     List<ExtClause> resultClauses = new ArrayList<>();
     ElimTree elimTree = new ElimTypechecking(this, resultExpr, PatternTypechecking.Mode.CASE, level, actualLevel, actualLevelSub, expr.isSFunc(), true).typecheckElim(expr.getClauses(), expr, list.getFirst(), resultClauses);
+    for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
+      addBinding(entry.getKey(), entry.getValue());
+    }
     if (elimTree == null) {
       return null;
     }
