@@ -891,7 +891,7 @@ public final class Concrete {
     public @Nonnull Expression expression;
     public final @Nullable Referable referable;
     public @Nullable Expression type;
-    public final boolean isElim;
+    public boolean isElim;
 
     public CaseArgument(@Nonnull Expression expression, @Nullable Referable referable, @Nullable Expression type) {
       this.expression = expression;

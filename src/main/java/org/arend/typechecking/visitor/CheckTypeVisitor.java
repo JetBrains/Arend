@@ -1735,6 +1735,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     Expression resultExpr;
     Integer level = null;
     Expression resultTypeLevel = null;
+    Map<Referable, Binding> origElimBindings = new HashMap<>();
+    ExprSubstitution elimSubst = new ExprSubstitution();
     try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(context)) {
       try (Utils.SetContextSaver ignored1 = new Utils.SetContextSaver<>(myFreeBindings)) {
         for (Concrete.CaseArgument caseArg : caseArgs) {
@@ -1745,10 +1747,27 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
           TypecheckingResult exprResult = checkExpr(caseArg.expression, argType == null ? null : argType.getExpr().subst(substitution));
           if (exprResult == null) return null;
-          DependentLink link = ExpressionFactory.parameter(caseArg.referable == null ? null : caseArg.referable.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
+          if (caseArg.isElim && !(exprResult.expression instanceof ReferenceExpression)) {
+            errorReporter.report(new TypecheckingError("Expected a variable", caseArg.expression));
+            return null;
+          }
+          if (argType == null) {
+            exprResult.type = exprResult.type.subst(elimSubst);
+          }
+          Referable asRef = caseArg.isElim ? ((Concrete.ReferenceExpression) caseArg.expression).getReferent() : caseArg.referable;
+          DependentLink link = ExpressionFactory.parameter(asRef == null ? null : asRef.textRepresentation(), argType != null ? argType : exprResult.type instanceof Type ? (Type) exprResult.type : new TypeExpression(exprResult.type, getSortOfType(exprResult.type, expr)));
           list.append(link);
-          if (caseArg.referable != null) {
-            addBinding(caseArg.referable, link);
+          if (caseArg.isElim) {
+            if (argType != null && !CompareVisitor.compare(myEquations, Equations.CMP.EQ, exprResult.type, argType.getExpr(), ExpectedType.OMEGA, caseArg.type)) {
+              errorReporter.report(new TypeMismatchError(exprResult.type, argType.getExpr(), caseArg.expression));
+              return null;
+            }
+            Binding origBinding = ((ReferenceExpression) exprResult.expression).getBinding();
+            origElimBindings.put(asRef, origBinding);
+            elimSubst.add(origBinding, new ReferenceExpression(link));
+          }
+          if (asRef != null) {
+            addBinding(asRef, link);
           }
           myFreeBindings.add(link);
           expressions.add(exprResult.expression);
@@ -1761,7 +1780,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (resultType == null && expectedType == null) {
           return null;
         }
-        resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? (Expression) expectedType : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
+        resultExpr = resultType != null ? resultType.getExpr() : expectedType instanceof Expression ? ((Expression) expectedType).subst(elimSubst) : new UniverseExpression(Sort.generateInferVars(myEquations, false, expr));
 
         if (expr.getResultTypeLevel() != null) {
           TypecheckingResult levelResult = checkExpr(expr.getResultTypeLevel(), null);
@@ -1771,6 +1790,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           }
         }
       }
+    }
+    for (Map.Entry<Referable, Binding> entry : origElimBindings.entrySet()) {
+      addBinding(entry.getKey(), entry.getValue());
     }
 
     // Check if the level of the result type is specified explicitly
