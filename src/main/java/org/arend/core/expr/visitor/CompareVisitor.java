@@ -1,7 +1,6 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.binding.inference.TypeClassInferenceVariable;
 import org.arend.core.context.param.*;
@@ -431,7 +430,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
           if (!field.getReferable().isParameterField()) {
             break;
           }
-          Expression implementation = classCall1.getImplementationHere(field);
+          Expression implementation = classCall1.getAbsImplementationHere(field);
           if (implementation != null) {
             oldDataArgs.add(implementation);
           } else {
@@ -495,7 +494,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
             if (i < oldDataArgs.size() - args.size()) {
-              implementations.put(field, classCall1.getImplementationHere(field));
+              implementations.put(field, classCall1.getImplementationHere(field, new ReferenceExpression(classCall.getThisBinding())));
               i++;
             } else {
               PiExpression piType = field.getType(classCall1.getSortArgument());
@@ -551,8 +550,8 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
         continue;
       }
 
-      Expression impl1 = classCall1.getImplementationHere(entry.getKey());
-      Binding binding = null;
+      Expression impl1 = classCall1.getAbsImplementationHere(entry.getKey());
+      Binding binding = classCall1.getThisBinding();
       if (impl1 == null) {
         AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
         if (absImpl1 != null) {
@@ -563,13 +562,13 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       if (impl1 == null) {
         return false;
       }
-      if (binding == null) {
-        binding = new TypedBinding("this", classCall2);
-      }
       if (!entry.getKey().isCovariant()) {
         myCMP = Equations.CMP.EQ;
       }
-      if (!compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)))) {
+      mySubstitution.put(classCall2.getThisBinding(), binding);
+      boolean ok = compare(correctOrder ? impl1 : entry.getValue(), correctOrder ? entry.getValue() : impl1, entry.getKey().getType(classCall2.getSortArgument()).applyExpression(new ReferenceExpression(binding)));
+      mySubstitution.remove(classCall2.getThisBinding());
+      if (!ok) {
         return false;
       }
       myCMP = origCMP;
@@ -578,7 +577,16 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
-    ReferenceExpression thisExpr = new ReferenceExpression(new TypedBinding("this", new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), classCall1.getImplementedHere(), classCall1.getSort(), classCall1.hasUniverses())));
+    Binding thisBinding;
+    if (classCall1.getSortArgument().equals(classCall2.getSortArgument())) {
+      thisBinding = classCall1.getThisBinding();
+    } else {
+      ClassCallExpression newClassCall = new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), new HashMap<>(), classCall1.getSort(), classCall1.hasUniverses());
+      newClassCall.copyImplementationsFrom(classCall1);
+      thisBinding = newClassCall.getThisBinding();
+    }
+
+    ReferenceExpression thisExpr = new ReferenceExpression(thisBinding);
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
@@ -599,7 +607,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
         if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
-          Expression type = entry.getValue().getType();
+          Expression type = (thisBinding == classCall1.getThisBinding() ? entry.getValue() : entry.getValue().subst(classCall1.getThisBinding(), thisExpr)).getType();
           if (type == null) {
             ok = false;
             break;

@@ -17,11 +17,11 @@ import java.util.Map;
 public class ReplaceBindingVisitor extends SubstVisitor {
   private final Binding myBinding;
   private final ClassCallExpression myBindingType;
-  private final Map<ClassField, Expression> myImplementations;
+  private final Map<ClassField, AbsExpression> myImplementations;
   private final Expression myRenewExpression;
   private boolean myOK = true;
 
-  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, Expression> implementations, Expression renewExpr) {
+  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, AbsExpression> implementations, Expression renewExpr) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myBinding = binding;
     myBindingType = bindingType;
@@ -30,7 +30,10 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   }
 
   public ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Expression renewExpr) {
-    this(binding, bindingType, new HashMap<>(bindingType.getImplementedHere()), renewExpr);
+    this(binding, bindingType, new HashMap<>(), renewExpr);
+    for (Map.Entry<ClassField, Expression> entry : bindingType.getImplementedHere().entrySet()) {
+      myImplementations.put(entry.getKey(), new AbsExpression(bindingType.getThisBinding(), entry.getValue()));
+    }
   }
 
   public boolean isOK() {
@@ -64,17 +67,19 @@ public class ReplaceBindingVisitor extends SubstVisitor {
         if (fieldOrder == null) {
           return arg.accept(this, null);
         }
+
+        ClassCallExpression resultClassCall = new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false);
         for (ClassField field : fieldOrder) {
-          Expression impl = myImplementations.computeIfAbsent(field, e -> {
+          AbsExpression impl = myImplementations.computeIfAbsent(field, e -> {
             AbsExpression absImpl = myBindingType.getDefinition().getImplementation(field);
             if (absImpl != null) {
               if (absImpl.getBinding() == null) {
-                return absImpl.getExpression();
+                return absImpl;
               } else {
                 ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(absImpl.getBinding(), myBindingType, myImplementations, null);
                 Expression impl1 = absImpl.getExpression().accept(visitor, null);
                 if (visitor.isOK()) {
-                  return impl1;
+                  return new AbsExpression(absImpl.getBinding(), impl1);
                 }
               }
             }
@@ -82,13 +87,13 @@ public class ReplaceBindingVisitor extends SubstVisitor {
           });
 
           if (impl != null) {
-            implementations.put(field, impl);
+            implementations.put(field, impl.apply(new ReferenceExpression(resultClassCall.getThisBinding())));
           } else {
             return arg.accept(this, null);
           }
         }
 
-        return new NewExpression(null, new ClassCallExpression(argType.getDefinition(), myBindingType.getSortArgument(), implementations, Sort.PROP, false));
+        return new NewExpression(null, resultClassCall);
       }
     }
 
@@ -128,10 +133,11 @@ public class ReplaceBindingVisitor extends SubstVisitor {
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
     Map<ClassField, Expression> fieldSet = new HashMap<>();
+    ClassCallExpression result = new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort(), expr.hasUniverses());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      fieldSet.put(entry.getKey(), checkArgument(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain()));
+      fieldSet.put(entry.getKey(), checkArgument(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain()).subst(expr.getThisBinding(), new ReferenceExpression(result.getThisBinding())));
     }
-    return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort(), expr.hasUniverses());
+    return result;
   }
 
   @Override

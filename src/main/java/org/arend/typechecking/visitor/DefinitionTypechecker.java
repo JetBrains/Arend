@@ -885,11 +885,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
               int i = 0;
               ClassDefinition classDef = ((ClassCallExpression) classifyingExpr).getDefinition();
               Iterator<SingleDependentLink> it = params.iterator();
+              Set<Binding> forbiddenBindings = new HashSet<>(params);
+              forbiddenBindings.add(((ClassCallExpression) classifyingExpr).getThisBinding());
               for (ClassField field : classDef.getFields()) {
                 Expression implementation = implemented.get(field);
                 if (implementation != null) {
                   if (i < implemented.size() - params.size()) {
-                    if (implementation.findBinding(params) != null) {
+                    if (implementation.findBinding(forbiddenBindings) != null) {
                       ok = false;
                       break;
                     }
@@ -2161,7 +2163,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       int cmp = 0;
       if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {
         for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) expr1).getImplementedHere().entrySet()) {
-          Expression impl2 = ((ClassCallExpression) expr2).getImplementationHere(entry.getKey());
+          Expression impl2 = ((ClassCallExpression) expr2).getAbsImplementationHere(entry.getKey());
           if (impl2 == null) {
             cmp = 1;
             break;

@@ -1,5 +1,6 @@
 package org.arend.core.definition;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
@@ -76,7 +77,7 @@ public class ClassDefinition extends Definition {
     myParametersLevels.add(parametersLevel);
   }
 
-  public Integer getUseLevel(Map<ClassField,Expression> implemented) {
+  public Integer getUseLevel(Map<ClassField,Expression> implemented, Binding thisBinding) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
       if (parametersLevel.fields.size() != implemented.size()) {
@@ -85,7 +86,7 @@ public class ClassDefinition extends Definition {
       List<Expression> expressions = new ArrayList<>();
       for (ClassField field : parametersLevel.fields) {
         Expression expr = implemented.get(field);
-        if (expr == null) {
+        if (expr == null || expr.findBinding(thisBinding)) {
           continue loop;
         }
         expressions.add(expr);
@@ -98,12 +99,17 @@ public class ClassDefinition extends Definition {
     return null;
   }
 
-  public Sort computeSort(Map<ClassField,Expression> implemented) {
+  public Sort computeSort(Map<ClassField,Expression> implemented, Binding thisBinding) {
+    Integer hLevel = getUseLevel(implemented, thisBinding);
+    if (hLevel != null && hLevel == -1) {
+      return Sort.PROP;
+    }
+
     ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
     Sort sort = Sort.PROP;
 
     for (ClassField field : myFields) {
-      if (myImplemented.containsKey(field) || implemented.containsKey(field)) {
+      if (field.isProperty() || myImplemented.containsKey(field) || implemented.containsKey(field)) {
         continue;
       }
 
@@ -122,12 +128,11 @@ public class ClassDefinition extends Definition {
       }
     }
 
-    Integer hLevel = getUseLevel(implemented);
-    return hLevel == null ? sort : hLevel == -1 ? Sort.PROP : new Sort(sort.getPLevel(), new Level(hLevel));
+    return hLevel == null ? sort : new Sort(sort.getPLevel(), new Level(hLevel));
   }
 
   public void updateSort() {
-    mySort = computeSort(Collections.emptyMap());
+    mySort = computeSort(Collections.emptyMap(), null);
   }
 
   public Sort getSort() {

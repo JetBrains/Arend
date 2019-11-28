@@ -401,8 +401,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression renewExpr, Map<ClassField, Expression> additionalImpls, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
-    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
+    Map<ClassField, Expression> fieldSet = new HashMap<>();
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
+    resultClassCall.copyImplementationsFrom(classCallExpr);
 
     Set<ClassField> defined = renewExpr == null ? null : new HashSet<>();
     List<Pair<Definition,Concrete.ClassFieldImpl>> implementations = new ArrayList<>(classFieldImpls.size());
@@ -450,7 +451,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (implResult != null) {
           Expression oldImpl = null;
           if (!field.isProperty()) {
-            oldImpl = resultClassCall.getImplementationHere(field);
+            oldImpl = resultClassCall.getAbsImplementationHere(field);
             if (oldImpl == null) {
               AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
               oldImpl = absImpl == null ? null : absImpl.getExpression();
@@ -580,7 +581,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
                 Level pLevel = baseRefExpr.getPLevel() == null ? null : baseRefExpr.getPLevel().accept(this, LevelVariable.PVAR);
                 Level hLevel = baseRefExpr.getHLevel() == null ? null : baseRefExpr.getHLevel().accept(this, LevelVariable.HVAR);
                 Sort expectedSort = expectedClassCall.getSortArgument();
-                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), fieldsOK ? expectedClassCall.getImplementedHere() : Collections.emptyMap(), expectedClassCall.getSort(), actualDef.hasUniverses());
+                actualClassCall = new ClassCallExpression((ClassDefinition) actualDef, pLevel == null && hLevel == null ? expectedSort : new Sort(pLevel == null ? expectedSort.getPLevel() : pLevel, hLevel == null ? expectedSort.getHLevel() : hLevel), new HashMap<>(), expectedClassCall.getSort(), actualDef.hasUniverses());
+                if (fieldsOK) {
+                  actualClassCall.copyImplementationsFrom(expectedClassCall);
+                }
               }
             } else {
               ok = false;
@@ -654,7 +658,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       ClassCallExpression classCallType;
       if (renewExpr != null) {
         classCallType = new ClassCallExpression(classCallExpr.getDefinition(), classCallExpr.getSortArgument(), additionalImpls, Sort.PROP, false);
-        additionalImpls.putAll(classCallExpr.getImplementedHere());
+        classCallType.copyImplementationsFrom(classCallExpr);
       } else {
         classCallType = classCallExpr;
       }
@@ -984,7 +988,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public ClassCallExpression fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
-    Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere());
+    Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere(), classCall.getThisBinding());
     List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
     for (ClassField field : classCall.getDefinition().getFields()) {
       if (classCall.isImplemented(field)) continue;
@@ -1001,7 +1005,10 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    return new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), classCall.getImplementedHere(), sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    ClassCallExpression result = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
+    result.copyImplementationsFrom(classCall);
+    return result;
   }
 
   // Parameters

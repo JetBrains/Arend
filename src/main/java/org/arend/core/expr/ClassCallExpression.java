@@ -1,6 +1,7 @@
 package org.arend.core.expr;
 
 import org.arend.core.context.LinkList;
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.TypedDependentLink;
@@ -20,9 +21,22 @@ import java.util.*;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
+  private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
   private final Sort mySort;
   private boolean myHasUniverses;
+
+  private class ClassCallBinding implements Binding {
+    @Override
+    public String getName() {
+      return "this";
+    }
+
+    @Override
+    public ClassCallExpression getTypeExpr() {
+      return ClassCallExpression.this;
+    }
+  }
 
   public ClassCallExpression(ClassDefinition definition, Sort sortArgument) {
     super(definition);
@@ -38,6 +52,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     myImplementations = implementations;
     mySort = sort;
     myHasUniverses = hasUniverses;
+  }
+
+  public Binding getThisBinding() {
+    return myThisBinding;
   }
 
   public void updateHasUniverses() {
@@ -63,14 +81,19 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return myImplementations;
   }
 
-  public Expression getImplementationHere(ClassField field) {
+  public Expression getAbsImplementationHere(ClassField field) {
     return myImplementations.get(field);
+  }
+
+  public Expression getImplementationHere(ClassField field, Expression thisExpr) {
+    Expression expr = myImplementations.get(field);
+    return expr != null ? expr.subst(myThisBinding, thisExpr) : null;
   }
 
   public Expression getImplementation(ClassField field, Expression thisExpr) {
     Expression expr = myImplementations.get(field);
     if (expr != null) {
-      return expr;
+      return expr.subst(myThisBinding, thisExpr);
     }
     AbsExpression impl = getDefinition().getImplementation(field);
     return impl == null ? null : impl.apply(thisExpr);
@@ -98,9 +121,22 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return getDefinition().getNumberOfNotImplementedFields() - myImplementations.size();
   }
 
+  public void copyImplementationsFrom(ClassCallExpression classCall) {
+    if (classCall.myImplementations.isEmpty()) {
+      return;
+    }
+
+    ReferenceExpression thisExpr = new ReferenceExpression(myThisBinding);
+    for (Map.Entry<ClassField, Expression> entry : classCall.myImplementations.entrySet()) {
+      myImplementations.put(entry.getKey(), entry.getValue().subst(classCall.myThisBinding, thisExpr));
+    }
+  }
+
   public DependentLink getClassFieldParameters() {
-    Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
-    Expression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
+    Map<ClassField, Expression> implementations = new HashMap<>();
+    NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
+    newExpr.getClassCall().copyImplementationsFrom(this);
+
     Collection<? extends ClassField> fields = getDefinition().getOrderedFields();
     if (fields.isEmpty()) {
       return EmptyDependentLink.getInstance();
@@ -124,7 +160,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   @Override
   public Integer getUseLevel() {
-    return getDefinition().getUseLevel(myImplementations);
+    return getDefinition().getUseLevel(myImplementations, myThisBinding);
   }
 
   @Override

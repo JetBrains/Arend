@@ -97,7 +97,7 @@ public class GlobalInstancePool implements InstancePool {
           return true;
         }
 
-        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getImplementationHere(classifyingField);
+        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getAbsImplementationHere(classifyingField);
         if (instanceClassifyingExpr != null) {
           instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
         }
