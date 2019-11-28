@@ -2,6 +2,7 @@ package org.arend.core.subst;
 
 import org.arend.core.constructor.ClassConstructor;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
@@ -73,11 +74,19 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     return new ConCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
 
+  private AbsExpression visitAbsExpression(AbsExpression abs) {
+    TypedBinding newBinding = new TypedBinding(abs.getBinding().getName(), abs.getBinding().getTypeExpr().subst(this));
+    myExprSubstitution.add(abs.getBinding(), new ReferenceExpression(newBinding));
+    AbsExpression result = new AbsExpression(newBinding, abs.getExpression().accept(this, null));
+    myExprSubstitution.remove(abs.getBinding());
+    return result;
+  }
+
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      fieldSet.put(entry.getKey(), entry.getValue().accept(this, null));
+    Map<ClassField, AbsExpression> fieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      fieldSet.put(entry.getKey(), visitAbsExpression(entry.getValue()));
     }
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), fieldSet, expr.getSort().subst(myLevelSubstitution), expr.hasUniverses());
   }

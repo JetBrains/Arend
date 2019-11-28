@@ -97,7 +97,11 @@ public class GlobalInstancePool implements InstancePool {
           return true;
         }
 
-        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getImplementationHere(classifyingField);
+        List<Expression> args = new ArrayList<>();
+        for (DependentLink link = instanceDef.getParameters(); link.hasNext(); link = link.getNext()) {
+          args.add(new ReferenceExpression(link));
+        }
+        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getImplementationHere(classifyingField, new FunCallExpression(instanceDef, Sort.STD, args));
         if (instanceClassifyingExpr != null) {
           instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
         }

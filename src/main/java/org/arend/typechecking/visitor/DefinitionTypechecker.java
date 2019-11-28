@@ -2161,13 +2161,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       int cmp = 0;
       if (expr1 instanceof ClassCallExpression && ((ClassCallExpression) expr1).getDefinition() == ((ClassCallExpression) expr2).getDefinition() && ((ClassCallExpression) expr1).getImplementedHere().size() == ((ClassCallExpression) expr2).getImplementedHere().size()) {
         for (Map.Entry<ClassField, Expression> entry : ((ClassCallExpression) expr1).getImplementedHere().entrySet()) {
-          Expression impl2 = ((ClassCallExpression) expr2).getImplementationHere(entry.getKey());
+          AbsExpression impl2 = ((ClassCallExpression) expr2).getAbsImplementationHere(entry.getKey());
           if (impl2 == null) {
             cmp = 1;
             break;
           }
 
-          int argCmp = compareExpressions(entry.getValue(), impl2, null);
+          int argCmp = compareExpressions(entry.getValue(), impl2.getExpression(), null);
           if (argCmp == 1) {
             cmp = 1;
             break;

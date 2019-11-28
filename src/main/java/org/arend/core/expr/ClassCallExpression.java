@@ -20,7 +20,7 @@ import java.util.*;
 
 public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
-  private final Map<ClassField, Expression> myImplementations;
+  private final Map<ClassField, AbsExpression> myImplementations;
   private final Sort mySort;
   private boolean myHasUniverses;
 
@@ -32,7 +32,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     myHasUniverses = definition.hasUniverses();
   }
 
-  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, Expression> implementations, Sort sort, boolean hasUniverses) {
+  public ClassCallExpression(ClassDefinition definition, Sort sortArgument, Map<ClassField, AbsExpression> implementations, Sort sort, boolean hasUniverses) {
     super(definition);
     mySortArgument = sortArgument;
     myImplementations = implementations;
@@ -59,20 +59,26 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     }
   }
 
-  public Map<ClassField, Expression> getImplementedHere() {
+  public Map<ClassField, AbsExpression> getImplementedHere() {
     return myImplementations;
   }
 
-  public Expression getImplementationHere(ClassField field) {
+  public AbsExpression getAbsImplementationHere(ClassField field) {
     return myImplementations.get(field);
   }
 
+  public Expression getImplementationHere(ClassField field, Expression thisExpr) {
+    AbsExpression impl = myImplementations.get(field);
+    return impl == null ? null : impl.apply(thisExpr);
+  }
+
+  public AbsExpression getAbsImplementation(ClassField field) {
+    AbsExpression impl = myImplementations.get(field);
+    return impl == null ? getDefinition().getImplementation(field) : impl;
+  }
+
   public Expression getImplementation(ClassField field, Expression thisExpr) {
-    Expression expr = myImplementations.get(field);
-    if (expr != null) {
-      return expr;
-    }
-    AbsExpression impl = getDefinition().getImplementation(field);
+    AbsExpression impl = getAbsImplementation(field);
     return impl == null ? null : impl.apply(thisExpr);
   }
 
@@ -99,7 +105,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   }
 
   public DependentLink getClassFieldParameters() {
-    Map<ClassField, Expression> implementations = new HashMap<>(myImplementations);
+    Map<ClassField, AbsExpression> implementations = new HashMap<>(myImplementations);
     Expression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
     Collection<? extends ClassField> fields = getDefinition().getOrderedFields();
     if (fields.isEmpty()) {
@@ -115,7 +121,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
       PiExpression piExpr = field.getType(mySortArgument);
       Expression type = piExpr.applyExpression(newExpr);
       DependentLink link = new TypedDependentLink(true, Renamer.getNameFromType(type, field.getName()), type instanceof Type ? (Type) type : new TypeExpression(type, piExpr.getResultSort()), EmptyDependentLink.getInstance());
-      implementations.put(field, new ReferenceExpression(link));
+      implementations.put(field, new AbsExpression(null, new ReferenceExpression(link)));
       list.append(link);
     }
 

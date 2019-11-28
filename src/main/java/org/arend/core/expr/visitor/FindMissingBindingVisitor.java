@@ -59,8 +59,12 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
 
   @Override
   public Variable visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Variable result = entry.getValue().accept(this, null);
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      Variable result = entry.getValue().getExpression().accept(this, null);
+      if (result != null) {
+        return result;
+      }
+      result = entry.getValue().getBinding().getTypeExpr().accept(this, null);
       if (result != null) {
         return result;
       }

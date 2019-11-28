@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
@@ -123,17 +124,26 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
   }
 
   public ClassCallExpression visitClassCall(ClassCallExpression expr, boolean removeImplementations) {
-    Map<ClassField, Expression> newFieldSet = new HashMap<>();
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      Expression newImpl = acceptSelf(entry.getValue(), true);
-      if (newImpl == null) {
+    Map<ClassField, AbsExpression> newFieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      TypedBinding binding = entry.getValue().getBinding();
+      Expression newBindingType = acceptSelf(binding.getTypeExpr(), true);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.getBindings().add(binding);
+      }
+      Expression newImpl = acceptSelf(entry.getValue().getExpression(), true);
+      if (myKeepVisitor != null) {
+        myKeepVisitor.getBindings().remove(binding);
+      }
+      if (newBindingType == null || newImpl == null) {
         if (removeImplementations) {
           continue;
         } else {
           return null;
         }
       }
-      newFieldSet.put(entry.getKey(), newImpl);
+      binding.setTypeExpr(newBindingType);
+      newFieldSet.put(entry.getKey(), new AbsExpression(binding, newImpl));
     }
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), newFieldSet, expr.getSort(), expr.hasUniverses());
   }

@@ -431,9 +431,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
           if (!field.getReferable().isParameterField()) {
             break;
           }
-          Expression implementation = classCall1.getImplementationHere(field);
+          AbsExpression implementation = classCall1.getAbsImplementationHere(field);
           if (implementation != null) {
-            oldDataArgs.add(implementation);
+            oldDataArgs.add(implementation.getExpression());
           } else {
             if (!classCall1.getDefinition().isImplemented(field)) {
               break;
@@ -488,14 +488,14 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
           }
         }
       } else {
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, AbsExpression> implementations = new HashMap<>();
         codSort = classCall1.getSort();
         ClassCallExpression classCall = new ClassCallExpression(classCall1.getDefinition(), classCall1.getSortArgument(), implementations, codSort, classCall1.hasUniverses());
         int i = 0;
         for (ClassField field : classCall1.getDefinition().getFields()) {
           if (!classCall1.getDefinition().isImplemented(field)) {
             if (i < oldDataArgs.size() - args.size()) {
-              implementations.put(field, classCall1.getImplementationHere(field));
+              implementations.put(field, classCall1.getAbsImplementationHere(field));
               i++;
             } else {
               PiExpression piType = field.getType(classCall1.getSortArgument());
@@ -551,21 +551,12 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
         continue;
       }
 
-      Expression impl1 = classCall1.getImplementationHere(entry.getKey());
-      Binding binding = null;
-      if (impl1 == null) {
-        AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
-        if (absImpl1 != null) {
-          impl1 = absImpl1.getExpression();
-          binding = absImpl1.getBinding();
-        }
-      }
-      if (impl1 == null) {
+      AbsExpression absImpl1 = classCall1.getAbsImplementation(entry.getKey());
+      if (absImpl1 == null) {
         return false;
       }
-      if (binding == null) {
-        binding = new TypedBinding("this", classCall2);
-      }
+      Binding binding = absImpl1.getBinding() == null ? new TypedBinding("this", classCall2) : absImpl1.getBinding();
+      Expression impl1 = absImpl1.getExpression();
       if (!entry.getKey().isCovariant()) {
         myCMP = Equations.CMP.EQ;
       }

@@ -57,8 +57,8 @@ public class NormalizingFindBindingVisitor extends BaseExpressionVisitor<Void, B
 
   @Override
   public Boolean visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      if (findBinding(entry.getValue(), true)) {
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      if (findBinding(entry.getValue().getBinding().getTypeExpr(), true) || findBinding(entry.getValue().getExpression(), true)) {
         return true;
       }
     }

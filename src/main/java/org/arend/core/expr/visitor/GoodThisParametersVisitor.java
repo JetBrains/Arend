@@ -150,11 +150,12 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      if (entry.getValue() instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
-        visitDefCall((FieldCallExpression) entry.getValue(), null);
-      } else if (!(entry.getValue() instanceof ReferenceExpression && expr.getDefinition().isGoodField(entry.getKey()))) {
-        entry.getValue().accept(this, null);
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      entry.getValue().getBinding().getTypeExpr().accept(this, null);
+      if (entry.getValue().getExpression() instanceof FieldCallExpression && expr.getDefinition().isGoodField(entry.getKey())) {
+        visitDefCall((FieldCallExpression) entry.getValue().getExpression(), null);
+      } else if (!(entry.getValue().getExpression() instanceof ReferenceExpression && expr.getDefinition().isGoodField(entry.getKey()))) {
+        entry.getValue().getExpression().accept(this, null);
       }
     }
     return null;

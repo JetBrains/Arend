@@ -4,6 +4,7 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
+import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.ClassCallExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
@@ -50,7 +51,7 @@ public class DefCall extends TypeCheckingTestCase {
 
   private ClassCallExpression makeClassCall(Definition definition, Expression impl) {
     ClassDefinition classDef = (ClassDefinition) definition;
-    ClassCallExpression classCall = new ClassCallExpression(classDef, Sort.SET0, Collections.singletonMap(classDef.getFields().iterator().next(), impl), classDef.getSort(), classDef.hasUniverses());
+    ClassCallExpression classCall = new ClassCallExpression(classDef, Sort.SET0, Collections.singletonMap(classDef.getFields().iterator().next(), new AbsExpression(null, impl)), classDef.getSort(), classDef.hasUniverses());
     classCall.updateHasUniverses();
     return classCall;
   }

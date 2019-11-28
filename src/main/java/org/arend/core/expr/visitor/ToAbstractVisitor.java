@@ -2,6 +2,7 @@ package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.param.DependentLink;
@@ -229,8 +230,9 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
   private List<Concrete.ClassFieldImpl> visitClassFieldImpls(ClassCallExpression expr, List<Concrete.Argument> arguments) {
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
     boolean canBeArgument = arguments != null;
+    Expression thisExpr = new ReferenceExpression(new TypedBinding("\\this", new ClassCallExpression(expr.getDefinition(), expr.getSortArgument())));
     for (ClassField field : expr.getDefinition().getFields()) {
-      Expression implementation = expr.getImplementationHere(field);
+      Expression implementation = expr.getImplementationHere(field, thisExpr);
       if (implementation != null) {
         if (canBeArgument && field.getReferable().isParameterField()) {
           visitArgument(implementation, field.getReferable().isExplicitField(), arguments);

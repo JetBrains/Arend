@@ -268,9 +268,9 @@ class ExpressionDeserialization {
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
-      fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
+    Map<ClassField, AbsExpression> fieldSet = new HashMap<>();
+    for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : proto.getFieldSetMap().entrySet()) {
+      fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readAbsExpr(entry.getValue()));
     }
 
     ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);

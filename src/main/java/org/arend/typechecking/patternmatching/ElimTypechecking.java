@@ -679,11 +679,11 @@ public class ElimTypechecking {
                 Expression someExpr = someConPattern.getDataExpression();
                 if (someExpr instanceof ClassCallExpression) {
                   ClassCallExpression classCall = (ClassCallExpression) someExpr;
-                  Map<ClassField, Expression> implementations = new HashMap<>();
+                  Map<ClassField, AbsExpression> implementations = new HashMap<>();
                   DependentLink link = conParameters;
                   for (ClassField field : classCall.getDefinition().getFields()) {
                     if (!classCall.isImplemented(field)) {
-                      implementations.put(field, new ReferenceExpression(link));
+                      implementations.put(field, new AbsExpression(null, new ReferenceExpression(link)));
                       link = link.getNext();
                     }
                   }

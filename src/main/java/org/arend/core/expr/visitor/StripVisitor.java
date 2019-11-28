@@ -1,6 +1,7 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.EvaluatingBinding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -72,8 +73,10 @@ public class StripVisitor implements ExpressionVisitor<Void, Expression> {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      entry.setValue(entry.getValue().accept(this, null));
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      TypedBinding binding = entry.getValue().getBinding();
+      binding.setTypeExpr(binding.getTypeExpr().accept(this, null));
+      entry.setValue(new AbsExpression(binding, entry.getValue().getExpression().accept(this, null)));
     }
     return expr;
   }

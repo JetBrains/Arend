@@ -399,9 +399,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return typecheckClassExt(classFieldImpls, expectedType, null, null, classCallExpr, pseudoImplemented, expr);
   }
 
-  private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression renewExpr, Map<ClassField, Expression> additionalImpls, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
+  private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression renewExpr, Map<ClassField, AbsExpression> additionalImpls, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     ClassDefinition baseClass = classCallExpr.getDefinition();
-    Map<ClassField, Expression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
+    Map<ClassField, AbsExpression> fieldSet = new HashMap<>(classCallExpr.getImplementedHere());
     ClassCallExpression resultClassCall = new ClassCallExpression(baseClass, classCallExpr.getSortArgument(), fieldSet, Sort.PROP, baseClass.hasUniverses());
 
     Set<ClassField> defined = renewExpr == null ? null : new HashSet<>();
@@ -450,11 +450,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         if (implResult != null) {
           Expression oldImpl = null;
           if (!field.isProperty()) {
-            oldImpl = resultClassCall.getImplementationHere(field);
-            if (oldImpl == null) {
-              AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-              oldImpl = absImpl == null ? null : absImpl.getExpression();
-            }
+            AbsExpression absImpl = resultClassCall.getAbsImplementation(field);
+            oldImpl = absImpl == null ? null : absImpl.getExpression();
           }
           if (oldImpl != null) {
             if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
@@ -604,7 +601,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    Map<ClassField, Expression> additionalImpls = null;
+    Map<ClassField, AbsExpression> additionalImpls = null;
     Expression renewExpr = null;
     if (exprResult == null) {
       Concrete.Expression baseClassExpr;

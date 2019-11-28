@@ -38,8 +38,9 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
   @Override
   public Void visitClassCall(ClassCallExpression expr, P params) {
     visitDefCall(expr, params);
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      entry.getValue().accept(this, params);
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      entry.getValue().getBinding().getTypeExpr().accept(this, params);
+      entry.getValue().getExpression().accept(this, params);
     }
     return null;
   }

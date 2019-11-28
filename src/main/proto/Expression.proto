@@ -43,7 +43,7 @@ message Expression {
         int32 class_ref = 1;
         Level pLevel = 2;
         Level hLevel = 4;
-        map<int32, Expression> field_set = 5;
+        map<int32, Expression.Abs> field_set = 8;
         Sort sort = 6;
         bool hasUniverses = 7;
     }

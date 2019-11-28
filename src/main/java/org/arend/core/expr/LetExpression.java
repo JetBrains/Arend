@@ -55,17 +55,17 @@ public class LetExpression extends Expression {
     NewExpression newExpr = expression.cast(NewExpression.class);
     if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
       ClassCallExpression classCall = newExpr.getClassCall();
-      Map<ClassField, Expression> implementations = new HashMap<>();
+      Map<ClassField, AbsExpression> implementations = new HashMap<>();
       boolean someNotImplemented = false;
       for (int i = 0; i < pattern.getPatterns().size(); i++) {
         ClassField classField = pattern.getFields().get(i);
-        Expression impl = classCall.getImplementationHere(classField);
+        Expression impl = classCall.getImplementationHere(classField, newExpr);
         if (impl != null) {
-          implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), impl));
+          implementations.put(classField, new AbsExpression(null, normalizeClauseExpression(pattern.getPatterns().get(i), impl)));
           someNotImplemented = true;
         }
       }
-      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
+      for (Map.Entry<ClassField, AbsExpression> entry : classCall.getImplementedHere().entrySet()) {
         implementations.putIfAbsent(entry.getKey(), entry.getValue());
       }
       Expression renew = newExpr.getRenewExpression();

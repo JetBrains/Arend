@@ -785,16 +785,17 @@ public class TwoStageEquations implements Equations {
       sortArgument = sortArgument.max(lowerBound.getSortArgument());
     }
 
-    Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
+    Map<ClassField, AbsExpression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
     ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations), classDef.hasUniverses());
+    ReferenceExpression thisExpr = new ReferenceExpression(new TypedBinding("this", solution));
     for (ClassCallExpression lowerBound : lowerBounds) {
       for (ClassField field : classDef.getOrderedFields()) {
-        Expression impl1 = implementations.get(field);
+        AbsExpression impl1 = implementations.get(field);
         if (impl1 != null) {
-          Expression impl2 = lowerBound.getImplementationHere(field);
+          Expression impl2 = lowerBound.getImplementationHere(field, thisExpr);
           if (impl2 == null) {
             implementations.remove(field);
-          } else if (!Expression.compare(impl1, impl2, field.getType(Sort.STD).applyExpression(new ReferenceExpression(new TypedBinding("this", solution))), CMP.EQ)) {
+          } else if (!Expression.compare(impl1.apply(thisExpr), impl2, field.getType(Sort.STD).applyExpression(thisExpr), CMP.EQ)) {
             implementations.remove(field);
           }
         }
@@ -806,7 +807,7 @@ public class TwoStageEquations implements Equations {
 
   private ClassCallExpression removeDependencies(ClassCallExpression solution, int originalSize) {
     ClassDefinition classDef = solution.getDefinition();
-    Map<ClassField, Expression> implementations = solution.getImplementedHere();
+    Map<ClassField, AbsExpression> implementations = solution.getImplementedHere();
     Sort sortArgument = solution.getSortArgument();
 
     for (ClassField field : classDef.getOrderedFields()) {

@@ -1,18 +1,18 @@
 package org.arend.core.expr;
 
-import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.subst.ExprSubstitution;
 
 public class AbsExpression {
-  private final Binding myBinding;
+  private final TypedBinding myBinding;
   private final Expression myExpression;
 
-  public AbsExpression(Binding binding, Expression expression) {
+  public AbsExpression(TypedBinding binding, Expression expression) {
     myBinding = binding;
     myExpression = expression;
   }
 
-  public Binding getBinding() {
+  public TypedBinding getBinding() {
     return myBinding;
   }
 
@@ -22,5 +22,9 @@ public class AbsExpression {
 
   public Expression apply(Expression argument) {
     return myBinding == null ? myExpression : myExpression.subst(new ExprSubstitution(myBinding, argument));
+  }
+
+  public boolean isBindingUsed() {
+    return myBinding != null && myExpression.findBinding(myBinding);
   }
 }

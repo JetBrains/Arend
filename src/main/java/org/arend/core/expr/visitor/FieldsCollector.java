@@ -75,8 +75,9 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitClassCall(ClassCallExpression expr, Void params) {
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      checkArgument(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain());
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      entry.getValue().getBinding().getTypeExpr().accept(this, null);
+      checkArgument(entry.getValue().getExpression(), entry.getKey().getType(Sort.STD).getCodomain());
     }
     return super.visitClassCall(expr, params);
   }

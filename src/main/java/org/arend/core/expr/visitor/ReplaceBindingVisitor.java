@@ -1,6 +1,7 @@
 package org.arend.core.expr.visitor;
 
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
@@ -17,11 +18,11 @@ import java.util.Map;
 public class ReplaceBindingVisitor extends SubstVisitor {
   private final Binding myBinding;
   private final ClassCallExpression myBindingType;
-  private final Map<ClassField, Expression> myImplementations;
+  private final Map<ClassField, AbsExpression> myImplementations;
   private final Expression myRenewExpression;
   private boolean myOK = true;
 
-  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, Expression> implementations, Expression renewExpr) {
+  private ReplaceBindingVisitor(Binding binding, ClassCallExpression bindingType, Map<ClassField, AbsExpression> implementations, Expression renewExpr) {
     super(new ExprSubstitution(), LevelSubstitution.EMPTY);
     myBinding = binding;
     myBindingType = bindingType;
@@ -59,22 +60,22 @@ public class ReplaceBindingVisitor extends SubstVisitor {
     if (refArg != null && refArg.getBinding() == myBinding) {
       ClassCallExpression argType = type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
       if (argType != null && argType.getDefinition() != myBindingType.getDefinition()) {
-        Map<ClassField, Expression> implementations = new HashMap<>();
+        Map<ClassField, AbsExpression> implementations = new HashMap<>();
         List<? extends ClassField> fieldOrder = argType.getDefinition().getTypecheckingFieldOrder();
         if (fieldOrder == null) {
           return arg.accept(this, null);
         }
         for (ClassField field : fieldOrder) {
-          Expression impl = myImplementations.computeIfAbsent(field, e -> {
+          AbsExpression impl = myImplementations.computeIfAbsent(field, e -> {
             AbsExpression absImpl = myBindingType.getDefinition().getImplementation(field);
             if (absImpl != null) {
               if (absImpl.getBinding() == null) {
-                return absImpl.getExpression();
+                return new AbsExpression(null, absImpl.getExpression());
               } else {
                 ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(absImpl.getBinding(), myBindingType, myImplementations, null);
                 Expression impl1 = absImpl.getExpression().accept(visitor, null);
                 if (visitor.isOK()) {
-                  return impl1;
+                  return new AbsExpression(null, impl1);
                 }
               }
             }
@@ -127,9 +128,12 @@ public class ReplaceBindingVisitor extends SubstVisitor {
 
   @Override
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Void params) {
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      fieldSet.put(entry.getKey(), checkArgument(entry.getValue(), entry.getKey().getType(Sort.STD).getCodomain()));
+    Map<ClassField, AbsExpression> fieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      TypedBinding newBinding = new TypedBinding(entry.getValue().getBinding().getName(), entry.getValue().getBinding().getTypeExpr().accept(this, null));
+      getExprSubstitution().add(entry.getValue().getBinding(), new ReferenceExpression(newBinding));
+      fieldSet.put(entry.getKey(), new AbsExpression(newBinding, checkArgument(entry.getValue().getExpression(), entry.getKey().getType(Sort.STD).getCodomain())));
+      getExprSubstitution().remove(entry.getValue().getBinding());
     }
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort(), expr.hasUniverses());
   }

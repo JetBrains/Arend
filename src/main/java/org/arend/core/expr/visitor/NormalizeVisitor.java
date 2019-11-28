@@ -548,9 +548,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
   public ClassCallExpression visitClassCall(ClassCallExpression expr, Mode mode) {
     if (mode == Mode.WHNF) return expr;
 
-    Map<ClassField, Expression> fieldSet = new HashMap<>();
-    for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
-      fieldSet.put(entry.getKey(), entry.getValue().accept(this, mode));
+    Map<ClassField, AbsExpression> fieldSet = new HashMap<>();
+    for (Map.Entry<ClassField, AbsExpression> entry : expr.getImplementedHere().entrySet()) {
+      fieldSet.put(entry.getKey(), new AbsExpression(entry.getValue().getBinding(), entry.getValue().getExpression().accept(this, mode)));
     }
     return new ClassCallExpression(expr.getDefinition(), expr.getSortArgument(), fieldSet, expr.getSort(), expr.hasUniverses());
   }

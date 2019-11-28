@@ -76,7 +76,7 @@ public class ClassDefinition extends Definition {
     myParametersLevels.add(parametersLevel);
   }
 
-  public Integer getUseLevel(Map<ClassField,Expression> implemented) {
+  public Integer getUseLevel(Map<ClassField, AbsExpression> implemented) {
     loop:
     for (ParametersLevel parametersLevel : myParametersLevels.getList()) {
       if (parametersLevel.fields.size() != implemented.size()) {
@@ -84,11 +84,11 @@ public class ClassDefinition extends Definition {
       }
       List<Expression> expressions = new ArrayList<>();
       for (ClassField field : parametersLevel.fields) {
-        Expression expr = implemented.get(field);
-        if (expr == null) {
+        AbsExpression impl = implemented.get(field);
+        if (impl == null || impl.isBindingUsed()) {
           continue loop;
         }
-        expressions.add(expr);
+        expressions.add(impl.getExpression());
       }
 
       if (parametersLevel.checkExpressionsTypes(expressions)) {
@@ -98,7 +98,7 @@ public class ClassDefinition extends Definition {
     return null;
   }
 
-  public Sort computeSort(Map<ClassField,Expression> implemented) {
+  public Sort computeSort(Map<ClassField, AbsExpression> implemented) {
     ClassCallExpression thisClass = new ClassCallExpression(this, Sort.STD, Collections.emptyMap(), mySort, hasUniverses());
     Sort sort = Sort.PROP;
 
