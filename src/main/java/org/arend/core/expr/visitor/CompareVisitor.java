@@ -554,10 +554,10 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       Expression impl1 = classCall1.getImplementationHere(entry.getKey());
       Binding binding = null;
       if (impl1 == null) {
-        LamExpression lamImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
-        if (lamImpl1 != null) {
-          impl1 = lamImpl1.getBody();
-          binding = lamImpl1.getParameters();
+        AbsExpression absImpl1 = classCall1.getDefinition().getImplementation(entry.getKey());
+        if (absImpl1 != null) {
+          impl1 = absImpl1.getExpression();
+          binding = absImpl1.getBinding();
         }
       }
       if (impl1 == null) {
@@ -580,9 +580,9 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
     ReferenceExpression thisExpr = new ReferenceExpression(new TypedBinding("this", new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), classCall1.getImplementedHere(), classCall1.getSort(), classCall1.hasUniverses())));
     boolean ok = true;
-    for (Map.Entry<ClassField, LamExpression> entry : classCall1.getDefinition().getImplemented()) {
+    for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
-        Expression type = entry.getValue().substArgument(thisExpr).getType();
+        Expression type = entry.getValue().apply(thisExpr).getType();
         if (type == null) {
           ok = false;
           break;

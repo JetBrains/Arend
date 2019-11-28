@@ -45,18 +45,18 @@ message Definition {
         repeated int32 field_ref = 1;
     }
     message ClassData {
-        repeated int32 super_class_ref = 4;
-        repeated Field personal_field = 10;
-        repeated int32 field_ref = 8;
-        map<int32, Expression> implementations = 12;
-        int32 coercing_field_ref = 11;
-        Sort sort = 7;
-        bool is_record = 13;
-        CoerceData coerce_data = 14;
-        repeated int32 good_field = 16;
-        repeated int32 type_class_field = 17;
-        FieldOrder typechecking_field_order = 18;
-        repeated ClassParametersLevel parameters_level = 19;
+        repeated int32 super_class_ref = 1;
+        repeated Field personal_field = 2;
+        repeated int32 field_ref = 3;
+        map<int32, Expression.Abs> implementations = 4;
+        int32 coercing_field_ref = 5;
+        Sort sort = 6;
+        bool is_record = 7;
+        CoerceData coerce_data = 8;
+        repeated int32 good_field = 9;
+        repeated int32 type_class_field = 10;
+        FieldOrder typechecking_field_order = 11;
+        repeated ClassParametersLevel parameters_level = 12;
 
         message FieldOrder {
             repeated int32 field = 1;

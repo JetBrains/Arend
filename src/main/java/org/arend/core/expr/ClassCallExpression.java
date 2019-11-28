@@ -72,8 +72,8 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     if (expr != null) {
       return expr;
     }
-    LamExpression impl = getDefinition().getImplementation(field);
-    return impl == null ? null : impl.substArgument(thisExpr);
+    AbsExpression impl = getDefinition().getImplementation(field);
+    return impl == null ? null : impl.apply(thisExpr);
   }
 
   public boolean isImplemented(ClassField field) {

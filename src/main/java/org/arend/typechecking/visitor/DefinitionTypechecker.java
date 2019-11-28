@@ -6,7 +6,10 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ExtClause;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
@@ -544,6 +547,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     checkFunctionLevel(def);
 
@@ -1602,7 +1606,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typedDef.addSuperClass(superClass);
       }
 
-      for (Map.Entry<ClassField, LamExpression> entry : superClass.getImplemented()) {
+      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
           classOk = false;
           alreadyImplementedSourceNode = aSuperClass;
@@ -1764,7 +1768,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (newDef) {
-        typedDef.implementField(entry.getKey(), new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        typedDef.implementField(entry.getKey(), new AbsExpression(parameter, result == null ? new ErrorExpression(null, null) : result.expression));
       }
       typechecker.getContext().clear();
       typechecker.getFreeBindings().clear();
@@ -1825,9 +1829,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
         ClassField field = typechecker.referableToClassField(implementation.getImplementedField(), null);
         if (field != null) {
-          LamExpression impl = typedDef.getImplementation(field);
+          AbsExpression impl = typedDef.getImplementation(field);
           if (impl != null) {
-            impl.getBody().accept(visitor, null);
+            impl.getExpression().accept(visitor, null);
           }
         }
       }
@@ -1888,11 +1892,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       Set<ClassField> deps = references.computeIfAbsent(field, f -> {
-        LamExpression impl = classDef.getImplementation(field);
+        AbsExpression impl = classDef.getImplementation(field);
         PiExpression type = field.getType(Sort.STD);
         Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
         if (impl != null) {
-          FieldsCollector.getFields(impl.getBody(), impl.getParameters(), classDef.getFields(), result);
+          FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), classDef.getFields(), result);
         }
         return result;
       });
@@ -2089,10 +2093,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typedDef;
   }
 
-  private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
-    LamExpression oldImpl = classDef.implementField(classField, implementation);
-    ReferenceExpression thisRef = new ReferenceExpression(implementation.getParameters());
-    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.substArgument(thisRef), implementation.getBody(), classField.getType(Sort.STD).applyExpression(thisRef), Equations.CMP.EQ)) {
+  private static boolean implementField(ClassField classField, AbsExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
+    AbsExpression oldImpl = classDef.implementField(classField, implementation);
+    ReferenceExpression thisRef = new ReferenceExpression(classField.getType(Sort.STD).getParameters());
+    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.apply(thisRef), implementation.apply(thisRef), classField.getType(Sort.STD).getCodomain(), Equations.CMP.EQ)) {
       alreadyImplemented.add(classField.getReferable());
       return false;
     } else {
