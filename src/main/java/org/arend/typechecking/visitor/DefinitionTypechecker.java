@@ -3,6 +3,7 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
@@ -1751,14 +1752,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (Map.Entry<ClassField, Concrete.ClassFieldImpl> entry : implementedHere.entrySet()) {
-      SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
+      TypedBinding thisBinding = new TypedBinding("this", new ClassCallExpression(typedDef, Sort.STD));
       Concrete.LamExpression lamImpl = (Concrete.LamExpression) entry.getValue().implementation;
       TypecheckingResult result;
       if (lamImpl != null) {
-        typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), parameter);
+        typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
         PiExpression fieldType = entry.getKey().getType(Sort.STD);
-        setClassLocalInstancePool(localInstances, parameter, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
-        result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
+        setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
+        result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)), false);
         myInstancePool.setInstancePool(null);
       } else {
         result = null;
@@ -1768,14 +1769,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (newDef) {
-        typedDef.implementField(entry.getKey(), new AbsExpression(parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        typedDef.implementField(entry.getKey(), new AbsExpression(thisBinding, result == null ? new ErrorExpression(null, null) : result.expression));
       }
       typechecker.getContext().clear();
       typechecker.getFreeBindings().clear();
 
       if (result != null) {
         if (newDef && entry.getKey() == lastField) {
-          dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
           dfs.setImplementedFields(implementedHere.keySet());
           for (ClassField field : typedDef.getFields()) {
             cycle = dfs.findCycle(field);
@@ -1784,7 +1785,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
         } else {
-          cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
         }
         if (cycle != null) {
           errorReporter.report(CycleError.fromTypechecked(cycle, def));

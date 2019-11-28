@@ -32,9 +32,9 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
     }
   }
 
-  public static Set<ClassField> getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields) {
+  public static Set<ClassField> getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields) {
     Set<ClassField> result = new HashSet<>();
-    getFields(expr, thisParameter, fields, result);
+    getFields(expr, thisBinding, fields, result);
     return result;
   }
 
