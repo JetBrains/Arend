@@ -206,7 +206,8 @@ public class ClassParametersTest extends TypeCheckingTestCase {
     typeCheckModule(
       "\\record R {x : Nat} (p : x = 0) | q : p = p\n" +
       "\\record T {z : Nat} \\extends R { | x => z }\n" +
-      "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 2);
+      "\\func f => \\new T { | p => idp | q => idp | z => 0 }", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test

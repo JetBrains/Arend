@@ -26,7 +26,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   private Sort mySort;
   private boolean myHasUniverses;
 
-  private class ClassCallBinding implements Binding {
+  public class ClassCallBinding implements Binding {
     @Override
     public String getName() {
       return "this";
@@ -35,6 +35,11 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     @Override
     public ClassCallExpression getTypeExpr() {
       return ClassCallExpression.this;
+    }
+
+    @Override
+    public boolean isHidden() {
+      return true;
     }
   }
 
