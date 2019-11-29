@@ -36,6 +36,7 @@ import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.FreeReferablesVisitor;
+import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.local.*;
@@ -1702,7 +1703,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     // Process implementations
     Map<ClassField,Concrete.ClassFieldImpl> implementedHere = new LinkedHashMap<>();
-    ClassField lastField = null;
     for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
       ClassField field = typechecker.referableToClassField(classFieldImpl.getImplementedField(), classFieldImpl);
       if (field == null) {
@@ -1729,15 +1729,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         alreadyImplementedSourceNode = classFieldImpl;
       } else {
         implementedHere.put(field, classFieldImpl);
-        lastField = field;
       }
     }
 
     // Check for cycles in implementations
-    DFS dfs = new DFS(typedDef);
-    List<ClassField> cycle = null;
+    FieldDFS dfs = new FieldDFS(typedDef);
     for (ClassField field : typedDef.getFields()) {
-      cycle = dfs.findCycle(field);
+      List<ClassField> cycle = dfs.findCycle(field);
       if (cycle != null) {
         errorReporter.report(CycleError.fromTypechecked(cycle, def));
         implementedHere.clear();
@@ -1767,29 +1765,24 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         classOk = false;
       }
 
-      if (newDef) {
-        typedDef.implementField(entry.getKey(), new AbsExpression(thisBinding, result == null ? new ErrorExpression(null, null) : result.expression));
-      }
       typechecker.getContext().clear();
       typechecker.getFreeBindings().clear();
 
+      boolean ok = true;
       if (result != null) {
-        if (newDef && entry.getKey() == lastField) {
-          dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
-          for (ClassField field : typedDef.getFields()) {
-            cycle = dfs.findCycle(field);
-            if (cycle != null) {
-              break;
-            }
-          }
-        } else {
-          cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
-        }
+        List<ClassField> cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
         if (cycle != null) {
           errorReporter.report(CycleError.fromTypechecked(cycle, def));
           implementedHere.clear();
-          break;
+          ok = false;
         }
+      }
+
+      if (newDef) {
+        typedDef.implementField(entry.getKey(), new AbsExpression(thisBinding, ok && result != null ? result.expression : new ErrorExpression(null, null)));
+      }
+      if (!ok) {
+        break;
       }
     }
 
@@ -1850,85 +1843,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (!typeClassFields.isEmpty()) {
         typedDef.setTypeClassFields(typeClassFields);
       }
-    }
-  }
-
-  private static class DFS {
-    private final ClassDefinition classDef;
-    private final Map<ClassField, Boolean> state = new HashMap<>();
-    private final Map<ClassField, Set<ClassField>> references = new HashMap<>();
-
-    private DFS(ClassDefinition classDef) {
-      this.classDef = classDef;
-    }
-
-    List<ClassField> findCycle(ClassField field) {
-      List<ClassField> cycle = dfs(field);
-      if (cycle != null) {
-        Collections.reverse(cycle);
-        for (ClassField dep : cycle) {
-          references.remove(dep);
-        }
-      }
-      return cycle;
-    }
-
-    private List<ClassField> dfs(ClassField field) {
-      Boolean prevState = state.putIfAbsent(field, false);
-      if (Boolean.TRUE.equals(prevState)) {
-        return null;
-      }
-      if (Boolean.FALSE.equals(prevState)) {
-        List<ClassField> cycle = new ArrayList<>();
-        cycle.add(field);
-        return cycle;
-      }
-
-      Set<ClassField> deps = references.computeIfAbsent(field, f -> {
-        AbsExpression impl = classDef.getImplementation(field);
-        PiExpression type = field.getType(Sort.STD);
-        Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
-        if (impl != null) {
-          FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), classDef.getFields(), result);
-        }
-        return result;
-      });
-
-      for (ClassField dep : deps) {
-        List<ClassField> cycle = dfs(dep);
-        if (cycle != null) {
-          if (cycle.get(0) != field) {
-            cycle.add(field);
-          }
-          return cycle;
-        }
-      }
-
-      state.put(field, true);
-      return null;
-    }
-
-    List<ClassField> checkDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
-      for (ClassField dependency : dependencies) {
-        if (dependency == field) {
-          return Collections.singletonList(field);
-        }
-
-        state.clear();
-        state.put(field, false);
-        List<ClassField> cycle = dfs(dependency);
-        if (cycle != null) {
-          Collections.reverse(cycle.subList(1, cycle.size()));
-          return cycle;
-        }
-      }
-      references.computeIfAbsent(field, f -> new HashSet<>()).addAll(dependencies);
-      return null;
-    }
-
-    void addDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
-      state.clear();
-      references.computeIfAbsent(field, f -> new HashSet<>()).addAll(dependencies);
     }
   }
 

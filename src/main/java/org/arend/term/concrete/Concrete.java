@@ -424,7 +424,6 @@ public final class Concrete {
       myReferent = referable;
     }
 
-    @Nonnull
     public Referable getReferent() {
       return myReferent;
     }

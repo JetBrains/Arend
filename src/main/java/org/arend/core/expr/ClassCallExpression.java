@@ -59,7 +59,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     myHasUniverses = hasUniverses;
   }
 
-  public Binding getThisBinding() {
+  public ClassCallBinding getThisBinding() {
     return myThisBinding;
   }
 

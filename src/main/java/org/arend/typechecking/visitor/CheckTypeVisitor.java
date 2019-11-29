@@ -20,6 +20,7 @@ import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.core.expr.visitor.FieldsCollector;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
@@ -37,8 +38,10 @@ import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
 import org.arend.term.concrete.ConcreteLevelExpressionVisitor;
+import org.arend.typechecking.FieldDFS;
 import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.TypecheckingListener;
+import org.arend.typechecking.error.CycleError;
 import org.arend.typechecking.error.ErrorReporterCounter;
 import org.arend.typechecking.error.ListErrorReporter;
 import org.arend.typechecking.error.local.*;
@@ -75,6 +78,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   protected Map<Referable, Binding> context;
   protected ErrorReporter errorReporter;
   private TypecheckingListener myListener = TypecheckingListener.DEFAULT;
+  private final List<ClassCallExpression.ClassCallBinding> myClassCallBindings = new ArrayList<>();
 
   private class MyErrorReporter implements ErrorReporter {
     private final ErrorReporter myErrorReporter;
@@ -370,9 +374,48 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   public TypecheckingResult checkArgument(Concrete.Expression expr, ExpectedType expectedType, TResult result) {
-    return expr instanceof Concrete.ThisExpression && result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size())
-      ? tResultToResult(expectedType, getLocalVar(((Concrete.ThisExpression) expr).getReferent(), expr), expr)
-      : checkExpr(expr, expectedType);
+    Concrete.ThisExpression thisExpr = null;
+    Binding binding = null;
+    if (expr instanceof Concrete.ThisExpression) {
+      thisExpr = (Concrete.ThisExpression) expr;
+    } else if (expr instanceof Concrete.TypedExpression) {
+      Concrete.TypedExpression typedExpr = (Concrete.TypedExpression) expr;
+      if (!myClassCallBindings.isEmpty() && typedExpr.expression instanceof Concrete.ThisExpression && ((Concrete.ThisExpression) typedExpr.expression).getReferent() == null && typedExpr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) typedExpr.type).getReferent() instanceof TCReferable) {
+        Definition def = state.getTypechecked((TCReferable) ((Concrete.ReferenceExpression) typedExpr.type).getReferent());
+        if (def instanceof ClassDefinition) {
+          for (int i = myClassCallBindings.size() - 1; i >= 0; i--) {
+            if (myClassCallBindings.get(i).getTypeExpr().getDefinition() == def) {
+              thisExpr = (Concrete.ThisExpression) typedExpr.expression;
+              binding = myClassCallBindings.get(i);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (thisExpr != null && (result == null || result instanceof DefCallResult && ((DefCallResult) result).getDefinition().isGoodParameter(((DefCallResult) result).getArguments().size()))) {
+      boolean ok = true;
+      TResult tResult;
+      if (thisExpr.getReferent() != null) {
+         tResult = getLocalVar(thisExpr.getReferent(), expr);
+      } else {
+        if (myClassCallBindings.isEmpty()) {
+          ok = false;
+          tResult = null;
+        } else {
+          if (binding == null) {
+            binding = myClassCallBindings.get(myClassCallBindings.size() - 1);
+          }
+          tResult = new TypecheckingResult(new ReferenceExpression(binding), binding.getTypeExpr());
+        }
+      }
+      if (ok) {
+        return tResultToResult(expectedType, tResult, expr);
+      }
+    }
+
+    return checkExpr(expr, expectedType);
   }
 
   // Classes
@@ -396,6 +439,14 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   public TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
     return typecheckClassExt(classFieldImpls, expectedType, null, classCallExpr, pseudoImplemented, expr);
+  }
+
+  private void checkImplementationCycle(FieldDFS dfs, ClassField field, Expression implementation, ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
+    List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(implementation, classCall.getThisBinding(), classCall.getDefinition().getFields()));
+    if (cycle != null) {
+      errorReporter.report(CycleError.fromTypechecked(cycle, sourceNode));
+    }
+    classCall.getImplementedHere().put(field, cycle == null ? implementation : new ErrorExpression(null, null));
   }
 
   private TypecheckingResult typecheckClassExt(List<? extends Concrete.ClassFieldImpl> classFieldImpls, ExpectedType expectedType, Expression renewExpr, ClassCallExpression classCallExpr, Set<ClassField> pseudoImplemented, Concrete.Expression expr) {
@@ -443,65 +494,71 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    myFreeBindings.add(resultClassCall.getThisBinding());
-    for (Pair<Definition,Concrete.ClassFieldImpl> pair : implementations) {
-      if (pair.proj1 instanceof ClassField) {
-        ClassField field = (ClassField) pair.proj1;
-        TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
-        if (implResult != null) {
-          Expression oldImpl = null;
-          if (!field.isProperty()) {
-            oldImpl = resultClassCall.getAbsImplementationHere(field);
-            if (oldImpl == null) {
-              AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
-              oldImpl = absImpl == null ? null : absImpl.getExpression();
+    if (!implementations.isEmpty()) {
+      FieldDFS dfs = new FieldDFS(resultClassCall.getDefinition());
+
+      myFreeBindings.add(resultClassCall.getThisBinding());
+      myClassCallBindings.add(resultClassCall.getThisBinding());
+      for (Pair<Definition, Concrete.ClassFieldImpl> pair : implementations) {
+        if (pair.proj1 instanceof ClassField) {
+          ClassField field = (ClassField) pair.proj1;
+          TypecheckingResult implResult = typecheckImplementation(field, pair.proj2.implementation, resultClassCall);
+          if (implResult != null) {
+            Expression oldImpl = null;
+            if (!field.isProperty()) {
+              oldImpl = resultClassCall.getAbsImplementationHere(field);
+              if (oldImpl == null) {
+                AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
+                oldImpl = absImpl == null ? null : absImpl.getExpression();
+              }
             }
-          }
-          if (oldImpl != null) {
-            if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
-              errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+            if (oldImpl != null) {
+              if (!classCallExpr.isImplemented(field) || !CompareVisitor.compare(myEquations, Equations.CMP.EQ, implResult.expression, oldImpl, implResult.type, pair.proj2.implementation)) {
+                errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+              }
+            } else if (!resultClassCall.isImplemented(field)) {
+              checkImplementationCycle(dfs, field, implResult.expression, resultClassCall, pair.proj2.implementation);
             }
+          } else if (pseudoImplemented != null) {
+            pseudoImplemented.add(field);
           } else if (!resultClassCall.isImplemented(field)) {
-            fieldSet.put(field, implResult.expression);
+            fieldSet.put(field, new ErrorExpression(null, null));
           }
-        } else if (pseudoImplemented != null) {
-          pseudoImplemented.add(field);
-        } else if (!resultClassCall.isImplemented(field)) {
-          fieldSet.put(field, new ErrorExpression(null, null));
-        }
-      } else if (pair.proj1 instanceof ClassDefinition) {
-        TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
-        if (result != null) {
-          Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
-          ClassCallExpression classCall = type.cast(ClassCallExpression.class);
-          if (classCall == null) {
-            if (!type.isInstance(ErrorExpression.class)) {
-              InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
-              errorReporter.report(var == null ? new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation) : var.getErrorInfer());
-            }
-          } else {
-            if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
-              errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+        } else if (pair.proj1 instanceof ClassDefinition) {
+          TypecheckingResult result = checkExpr(pair.proj2.implementation, null);
+          if (result != null) {
+            Expression type = result.type.normalize(NormalizeVisitor.Mode.WHNF);
+            ClassCallExpression classCall = type.cast(ClassCallExpression.class);
+            if (classCall == null) {
+              if (!type.isInstance(ErrorExpression.class)) {
+                InferenceVariable var = type instanceof InferenceReferenceExpression ? ((InferenceReferenceExpression) type).getVariable() : null;
+                errorReporter.report(var == null ? new TypeMismatchError(DocFactory.text("a class"), type, pair.proj2.implementation) : var.getErrorInfer());
+              }
             } else {
-              for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
-                Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
-                Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
-                if (oldImpl != null) {
-                  if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
-                    errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+              if (!classCall.getDefinition().isSubClassOf((ClassDefinition) pair.proj1)) {
+                errorReporter.report(new TypeMismatchError(new ClassCallExpression((ClassDefinition) pair.proj1, Sort.PROP), type, pair.proj2.implementation));
+              } else {
+                for (ClassField field : ((ClassDefinition) pair.proj1).getFields()) {
+                  Expression impl = FieldCallExpression.make(field, classCall.getSortArgument(), result.expression);
+                  Expression oldImpl = field.isProperty() ? null : resultClassCall.getImplementation(field, result.expression);
+                  if (oldImpl != null) {
+                    if (!CompareVisitor.compare(myEquations, Equations.CMP.EQ, impl, oldImpl, field.getType(classCall.getSortArgument()).applyExpression(result.expression), pair.proj2.implementation)) {
+                      errorReporter.report(new FieldsImplementationError(true, baseClass.getReferable(), Collections.singletonList(field.getReferable()), pair.proj2));
+                    }
+                  } else if (!resultClassCall.isImplemented(field)) {
+                    checkImplementationCycle(dfs, field, impl, resultClassCall, pair.proj2.implementation);
                   }
-                } else if (!resultClassCall.isImplemented(field)) {
-                  fieldSet.put(field, impl);
                 }
               }
             }
           }
+        } else {
+          errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
         }
-      } else {
-        errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
       }
+      myClassCallBindings.remove(myClassCallBindings.size() - 1);
+      myFreeBindings.remove(resultClassCall.getThisBinding());
     }
-    myFreeBindings.remove(resultClassCall.getThisBinding());
 
     fixClassExtSort(resultClassCall, expr);
     resultClassCall.updateHasUniverses();
@@ -531,9 +588,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       return new TypecheckingResult(result, type);
     }
 
-    TypecheckingResult result = implBody instanceof Concrete.ThisExpression && fieldSetClass.getDefinition().isGoodField(field)
-      ? tResultToResult(type, getLocalVar(((Concrete.ThisExpression) implBody).getReferent(), implBody), implBody)
-      : checkExpr(implBody, type);
+    TypecheckingResult result = fieldSetClass.getDefinition().isGoodField(field) ? checkArgument(implBody, type, null) : checkExpr(implBody, type);
     if (result == null) {
       return null;
     }
