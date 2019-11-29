@@ -577,16 +577,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
   }
 
   private boolean checkClassCallSortArguments(ClassCallExpression classCall1, ClassCallExpression classCall2) {
-    Binding thisBinding;
-    if (classCall1.getSortArgument().equals(classCall2.getSortArgument())) {
-      thisBinding = classCall1.getThisBinding();
-    } else {
-      ClassCallExpression newClassCall = new ClassCallExpression(classCall1.getDefinition(), classCall2.getSortArgument(), new HashMap<>(), classCall1.getSort(), classCall1.hasUniverses());
-      newClassCall.copyImplementationsFrom(classCall1);
-      thisBinding = newClassCall.getThisBinding();
-    }
-
-    ReferenceExpression thisExpr = new ReferenceExpression(thisBinding);
+    ReferenceExpression thisExpr = new ReferenceExpression(classCall1.getThisBinding());
     boolean ok = true;
     for (Map.Entry<ClassField, AbsExpression> entry : classCall1.getDefinition().getImplemented()) {
       if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
@@ -607,7 +598,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     if (ok) {
       for (Map.Entry<ClassField, Expression> entry : classCall1.getImplementedHere().entrySet()) {
         if (entry.getKey().hasUniverses() && !classCall2.isImplemented(entry.getKey())) {
-          Expression type = (thisBinding == classCall1.getThisBinding() ? entry.getValue() : entry.getValue().subst(classCall1.getThisBinding(), thisExpr)).getType();
+          Expression type = entry.getValue().getType();
           if (type == null) {
             ok = false;
             break;
@@ -623,7 +614,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       }
     }
 
-    return ok || Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), myCMP, myNormalCompare ? myEquations : DummyEquations.getInstance(), mySourceNode);
+    return ok || myNormalCompare && Sort.compare(classCall1.getSortArgument(), classCall2.getSortArgument(), Equations.CMP.LE, myEquations, mySourceNode);
   }
 
   @Override
