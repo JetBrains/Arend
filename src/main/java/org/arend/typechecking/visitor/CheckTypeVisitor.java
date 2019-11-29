@@ -444,6 +444,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
+    myFreeBindings.add(resultClassCall.getThisBinding());
     for (Pair<Definition,Concrete.ClassFieldImpl> pair : implementations) {
       if (pair.proj1 instanceof ClassField) {
         ClassField field = (ClassField) pair.proj1;
@@ -501,8 +502,9 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
         errorReporter.report(new WrongReferable("Expected either a field or a class", pair.proj2.getImplementedField(), pair.proj2));
       }
     }
+    myFreeBindings.remove(resultClassCall.getThisBinding());
 
-    resultClassCall = fixClassExtSort(resultClassCall, expr);
+    fixClassExtSort(resultClassCall, expr);
     resultClassCall.updateHasUniverses();
     return checkResult(expectedType, new TypecheckingResult(resultClassCall, new UniverseExpression(resultClassCall.getSort())), expr);
   }
@@ -986,7 +988,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     return sortResult;
   }
 
-  public ClassCallExpression fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
+  public void fixClassExtSort(ClassCallExpression classCall, Concrete.SourceNode sourceNode) {
     Expression thisExpr = new ReferenceExpression(ExpressionFactory.parameter("this", classCall));
     Integer hLevel = classCall.getDefinition().getUseLevel(classCall.getImplementedHere(), classCall.getThisBinding());
     List<Sort> sorts = hLevel != null && hLevel == -1 ? null : new ArrayList<>();
@@ -1005,10 +1007,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       }
     }
 
-    Map<ClassField, Expression> implementations = new HashMap<>();
-    ClassCallExpression result = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()), classCall.hasUniverses());
-    result.copyImplementationsFrom(classCall);
-    return result;
+    classCall.setSort(sorts == null ? Sort.PROP : generateUpperBound(sorts, sourceNode).subst(classCall.getSortArgument().toLevelSubstitution()));
   }
 
   // Parameters

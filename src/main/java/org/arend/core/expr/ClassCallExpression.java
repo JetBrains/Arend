@@ -23,7 +23,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
   private final Sort mySortArgument;
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
-  private final Sort mySort;
+  private Sort mySort;
   private boolean myHasUniverses;
 
   private class ClassCallBinding implements Binding {
@@ -200,6 +200,10 @@ public class ClassCallExpression extends DefCallExpression implements Type {
 
   public Sort getSort() {
     return mySort;
+  }
+
+  public void setSort(Sort sort) {
+    mySort = sort;
   }
 
   @Override
