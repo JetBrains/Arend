@@ -66,12 +66,16 @@ public class ReplaceBindingVisitor extends SubstVisitor {
         }
         for (ClassField field : fieldOrder) {
           Expression impl = myImplementations.computeIfAbsent(field, e -> {
-            LamExpression lamImpl = myBindingType.getDefinition().getImplementation(field);
-            if (lamImpl != null) {
-              ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(lamImpl.getParameters(), myBindingType, myImplementations, null);
-              Expression impl1 = lamImpl.getBody().accept(visitor, null);
-              if (visitor.isOK()) {
-                return impl1;
+            AbsExpression absImpl = myBindingType.getDefinition().getImplementation(field);
+            if (absImpl != null) {
+              if (absImpl.getBinding() == null) {
+                return absImpl.getExpression();
+              } else {
+                ReplaceBindingVisitor visitor = new ReplaceBindingVisitor(absImpl.getBinding(), myBindingType, myImplementations, null);
+                Expression impl1 = absImpl.getExpression().accept(visitor, null);
+                if (visitor.isOK()) {
+                  return impl1;
+                }
               }
             }
             return null;

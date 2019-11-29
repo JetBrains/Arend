@@ -31,39 +31,18 @@ import java.util.Map;
 
 class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProtos.Expression> {
   private final CallTargetIndexProvider myCallTargetIndexProvider;
-  private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
   private final Map<Binding, Integer> myBindingsMap = new HashMap<>();
+  private int myIndex;
 
   ExpressionSerialization(CallTargetIndexProvider callTargetIndexProvider) {
     myCallTargetIndexProvider = callTargetIndexProvider;
   }
 
-
   // Bindings
-
-  private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
-  }
-
-  private class RollbackBindings implements AutoCloseable {
-    private final int myTargetSize;
-
-    private RollbackBindings(int targetSize) {
-      myTargetSize = targetSize;
-    }
-
-    @Override
-    public void close() {
-      for (int i = myBindings.size() - 1; i >= myTargetSize; i--) {
-        myBindingsMap.remove(myBindings.remove(i));
-      }
-    }
-  }
 
   @SuppressWarnings("UnusedReturnValue")
   private int registerBinding(Binding binding) {
-    int index = myBindings.size();
-    myBindings.add(binding);
+    int index = myIndex++;
     myBindingsMap.put(binding, index);
     return index;
   }
@@ -88,7 +67,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
 
   // Sorts and levels
 
-  LevelProtos.Level writeLevel(Level level) {
+  private LevelProtos.Level writeLevel(Level level) {
     // Level.INFINITY should be read with great care
     LevelProtos.Level.Builder builder = LevelProtos.Level.newBuilder();
     if (level.getVar() == null) {
@@ -160,8 +139,24 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return builder.build();
   }
 
+  private ExpressionProtos.TypedBinding writeBinding(Binding binding) {
+    ExpressionProtos.TypedBinding.Builder builder = ExpressionProtos.TypedBinding.newBuilder();
+    builder.setName(binding.getName());
+    builder.setType(writeExpr(binding.getTypeExpr()));
+    registerBinding(binding);
+    return builder.build();
+  }
 
   // Types, Expressions and ElimTrees
+
+  ExpressionProtos.Expression.Abs writeAbsExpr(AbsExpression expr) {
+    ExpressionProtos.Expression.Abs.Builder builder = ExpressionProtos.Expression.Abs.newBuilder();
+    if (expr.getBinding() != null) {
+      builder.setBinding(writeBinding(expr.getBinding()));
+    }
+    builder.setExpression(writeExpr(expr.getExpression()));
+    return builder.build();
+  }
 
   ExpressionProtos.Expression writeExpr(Expression expr) {
     return expr.accept(this, null);

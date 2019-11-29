@@ -452,8 +452,8 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
           if (!field.isProperty()) {
             oldImpl = resultClassCall.getImplementationHere(field);
             if (oldImpl == null) {
-              LamExpression lamImpl = resultClassCall.getDefinition().getImplementation(field);
-              oldImpl = lamImpl == null ? null : lamImpl.getBody();
+              AbsExpression absImpl = resultClassCall.getDefinition().getImplementation(field);
+              oldImpl = absImpl == null ? null : absImpl.getExpression();
             }
           }
           if (oldImpl != null) {

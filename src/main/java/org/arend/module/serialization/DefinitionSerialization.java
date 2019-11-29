@@ -6,8 +6,8 @@ import org.arend.core.elimtree.Body;
 import org.arend.core.elimtree.ClauseBase;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
+import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.Expression;
-import org.arend.core.expr.LamExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.EmptyPattern;
@@ -76,8 +76,8 @@ public class DefinitionSerialization {
     for (ClassField classField : definition.getFields()) {
       builder.addFieldRef(myCallTargetIndexProvider.getDefIndex(classField));
     }
-    for (Map.Entry<ClassField, LamExpression> impl : definition.getImplemented()) {
-      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeExpr(impl.getValue()));
+    for (Map.Entry<ClassField, AbsExpression> impl : definition.getImplemented()) {
+      builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeAbsExpr(impl.getValue()));
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
 

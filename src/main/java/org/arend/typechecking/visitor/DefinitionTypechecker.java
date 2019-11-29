@@ -3,10 +3,14 @@ package org.arend.typechecking.visitor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.Binding;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
-import org.arend.core.elimtree.*;
+import org.arend.core.elimtree.Body;
+import org.arend.core.elimtree.ElimTree;
+import org.arend.core.elimtree.ExtClause;
+import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
@@ -544,6 +548,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   private boolean typecheckFunctionHeader(FunctionDefinition typedDef, Concrete.FunctionDefinition def, LocalInstancePool localInstancePool, boolean newDef) {
     checkFunctionLevel(def);
 
@@ -1602,7 +1607,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         typedDef.addSuperClass(superClass);
       }
 
-      for (Map.Entry<ClassField, LamExpression> entry : superClass.getImplemented()) {
+      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         if (!implementField(entry.getKey(), entry.getValue(), typedDef, alreadyImplementFields)) {
           classOk = false;
           alreadyImplementedSourceNode = aSuperClass;
@@ -1747,14 +1752,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     for (Map.Entry<ClassField, Concrete.ClassFieldImpl> entry : implementedHere.entrySet()) {
-      SingleDependentLink parameter = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
+      TypedBinding thisBinding = new TypedBinding("this", new ClassCallExpression(typedDef, Sort.STD));
       Concrete.LamExpression lamImpl = (Concrete.LamExpression) entry.getValue().implementation;
       TypecheckingResult result;
       if (lamImpl != null) {
-        typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), parameter);
+        typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
         PiExpression fieldType = entry.getKey().getType(Sort.STD);
-        setClassLocalInstancePool(localInstances, parameter, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
-        result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(parameter)), false);
+        setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
+        result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)), false);
         myInstancePool.setInstancePool(null);
       } else {
         result = null;
@@ -1764,14 +1769,14 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       if (newDef) {
-        typedDef.implementField(entry.getKey(), new LamExpression(Sort.STD, parameter, result == null ? new ErrorExpression(null, null) : result.expression));
+        typedDef.implementField(entry.getKey(), new AbsExpression(thisBinding, result == null ? new ErrorExpression(null, null) : result.expression));
       }
       typechecker.getContext().clear();
       typechecker.getFreeBindings().clear();
 
       if (result != null) {
         if (newDef && entry.getKey() == lastField) {
-          dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
           dfs.setImplementedFields(implementedHere.keySet());
           for (ClassField field : typedDef.getFields()) {
             cycle = dfs.findCycle(field);
@@ -1780,7 +1785,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
         } else {
-          cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, parameter, typedDef.getFields()));
+          cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
         }
         if (cycle != null) {
           errorReporter.report(CycleError.fromTypechecked(cycle, def));
@@ -1825,9 +1830,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       for (Concrete.ClassFieldImpl implementation : def.getImplementations()) {
         ClassField field = typechecker.referableToClassField(implementation.getImplementedField(), null);
         if (field != null) {
-          LamExpression impl = typedDef.getImplementation(field);
+          AbsExpression impl = typedDef.getImplementation(field);
           if (impl != null) {
-            impl.getBody().accept(visitor, null);
+            impl.getExpression().accept(visitor, null);
           }
         }
       }
@@ -1888,11 +1893,11 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       Set<ClassField> deps = references.computeIfAbsent(field, f -> {
-        LamExpression impl = classDef.getImplementation(field);
+        AbsExpression impl = classDef.getImplementation(field);
         PiExpression type = field.getType(Sort.STD);
         Set<ClassField> result = FieldsCollector.getFields(type.getCodomain(), type.getParameters(), classDef.getFields());
         if (impl != null) {
-          FieldsCollector.getFields(impl.getBody(), impl.getParameters(), classDef.getFields(), result);
+          FieldsCollector.getFields(impl.getExpression(), impl.getBinding(), classDef.getFields(), result);
         }
         return result;
       });
@@ -2089,10 +2094,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return typedDef;
   }
 
-  private static boolean implementField(ClassField classField, LamExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
-    LamExpression oldImpl = classDef.implementField(classField, implementation);
-    ReferenceExpression thisRef = new ReferenceExpression(implementation.getParameters());
-    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.substArgument(thisRef), implementation.getBody(), classField.getType(Sort.STD).applyExpression(thisRef), Equations.CMP.EQ)) {
+  private static boolean implementField(ClassField classField, AbsExpression implementation, ClassDefinition classDef, List<FieldReferable> alreadyImplemented) {
+    AbsExpression oldImpl = classDef.implementField(classField, implementation);
+    ReferenceExpression thisRef = new ReferenceExpression(classField.getType(Sort.STD).getParameters());
+    if (oldImpl != null && !classField.isProperty() && !Expression.compare(oldImpl.apply(thisRef), implementation.apply(thisRef), classField.getType(Sort.STD).getCodomain(), Equations.CMP.EQ)) {
       alreadyImplemented.add(classField.getReferable());
       return false;
     } else {

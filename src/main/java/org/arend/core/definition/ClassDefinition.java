@@ -13,7 +13,7 @@ public class ClassDefinition extends Definition {
   private final Set<ClassDefinition> mySuperClasses;
   private final LinkedHashSet<ClassField> myFields;
   private final List<ClassField> myPersonalFields;
-  private final Map<ClassField, LamExpression> myImplemented;
+  private final Map<ClassField, AbsExpression> myImplemented;
   private ClassField myCoercingField;
   private Sort mySort;
   private boolean myRecord = false;
@@ -187,7 +187,7 @@ public class ClassDefinition extends Definition {
     return myImplemented.containsKey(field);
   }
 
-  public Set<Map.Entry<ClassField, LamExpression>> getImplemented() {
+  public Set<Map.Entry<ClassField, AbsExpression>> getImplemented() {
     return myImplemented.entrySet();
   }
 
@@ -195,11 +195,11 @@ public class ClassDefinition extends Definition {
     return myImplemented.keySet();
   }
 
-  public LamExpression getImplementation(ClassField field) {
+  public AbsExpression getImplementation(ClassField field) {
     return myImplemented.get(field);
   }
 
-  public LamExpression implementField(ClassField field, LamExpression impl) {
+  public AbsExpression implementField(ClassField field, AbsExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
   }
 
