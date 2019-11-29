@@ -21,7 +21,6 @@ public class ClassDefinition extends Definition {
   private final CoerceData myCoerce = new CoerceData(this);
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
   private Set<ClassField> myTypeClassParameters = Collections.emptySet();
-  private List<ClassField> myTypecheckingFieldOrder;
   private ParametersLevels<ParametersLevel> myParametersLevels = new ParametersLevels<>();
 
   public ClassDefinition(TCClassReferable referable) {
@@ -230,18 +229,6 @@ public class ClassDefinition extends Definition {
 
   public void setTypeClassFields(Set<ClassField> typeClassFields) {
     myTypeClassParameters = typeClassFields;
-  }
-
-  public List<? extends ClassField> getTypecheckingFieldOrder() {
-    return myTypecheckingFieldOrder;
-  }
-
-  public Collection<? extends ClassField> getOrderedFields() {
-    return myTypecheckingFieldOrder == null ? myFields : myTypecheckingFieldOrder;
-  }
-
-  public void setTypecheckingFieldOrder(List<ClassField> fieldOrder) {
-    myTypecheckingFieldOrder = fieldOrder;
   }
 
   @Override

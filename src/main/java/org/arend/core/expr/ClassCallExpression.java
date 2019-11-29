@@ -142,7 +142,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     NewExpression newExpr = new NewExpression(null, new ClassCallExpression(getDefinition(), mySortArgument, implementations, Sort.PROP, false));
     newExpr.getClassCall().copyImplementationsFrom(this);
 
-    Collection<? extends ClassField> fields = getDefinition().getOrderedFields();
+    Collection<? extends ClassField> fields = getDefinition().getFields();
     if (fields.isEmpty()) {
       return EmptyDependentLink.getInstance();
     }

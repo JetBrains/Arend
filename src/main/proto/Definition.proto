@@ -55,12 +55,8 @@ message Definition {
         CoerceData coerce_data = 8;
         repeated int32 good_field = 9;
         repeated int32 type_class_field = 10;
-        FieldOrder typechecking_field_order = 11;
         repeated ClassParametersLevel parameters_level = 12;
 
-        message FieldOrder {
-            repeated int32 field = 1;
-        }
         message Field {
             Referable referable = 1;
             Expression type = 3;

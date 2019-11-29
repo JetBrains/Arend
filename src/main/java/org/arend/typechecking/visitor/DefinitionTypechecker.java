@@ -1735,9 +1735,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     // Check for cycles in implementations
     DFS dfs = new DFS(typedDef);
-    if (implementedHere.isEmpty()) {
-      dfs.setImplementedFields(Collections.emptySet());
-    }
     List<ClassField> cycle = null;
     for (ClassField field : typedDef.getFields()) {
       cycle = dfs.findCycle(field);
@@ -1779,7 +1776,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (result != null) {
         if (newDef && entry.getKey() == lastField) {
           dfs.addDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
-          dfs.setImplementedFields(implementedHere.keySet());
           for (ClassField field : typedDef.getFields()) {
             cycle = dfs.findCycle(field);
             if (cycle != null) {
@@ -1795,10 +1791,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           break;
         }
       }
-    }
-
-    if (cycle == null) {
-      typedDef.setTypecheckingFieldOrder(dfs.getFieldOrder());
     }
 
     if (!alreadyImplementFields.isEmpty()) {
@@ -1865,8 +1857,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     private final ClassDefinition classDef;
     private final Map<ClassField, Boolean> state = new HashMap<>();
     private final Map<ClassField, Set<ClassField>> references = new HashMap<>();
-    private Set<ClassField> implementedFields = null;
-    private List<ClassField> fieldOrder = null;
 
     private DFS(ClassDefinition classDef) {
       this.classDef = classDef;
@@ -1915,9 +1905,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
 
       state.put(field, true);
-      if (fieldOrder != null && !classDef.isImplemented(field) && !implementedFields.contains(field)) {
-        fieldOrder.add(field);
-      }
       return null;
     }
 
@@ -1942,15 +1929,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     void addDependencies(ClassField field, Collection<? extends ClassField> dependencies) {
       state.clear();
       references.computeIfAbsent(field, f -> new HashSet<>()).addAll(dependencies);
-    }
-
-    List<ClassField> getFieldOrder() {
-      return fieldOrder;
-    }
-
-    void setImplementedFields(Set<ClassField> implementedFields) {
-      this.implementedFields = implementedFields;
-      fieldOrder = new ArrayList<>();
     }
   }
 

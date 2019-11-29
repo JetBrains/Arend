@@ -145,14 +145,6 @@ public class DefinitionDeserialization {
       }
       classDef.setTypeClassFields(typeClassFields);
     }
-
-    if (classProto.hasTypecheckingFieldOrder()) {
-      List<ClassField> fieldOrder = new ArrayList<>();
-      for (Integer index : classProto.getTypecheckingFieldOrder().getFieldList()) {
-        fieldOrder.add(myCallTargetProvider.getCallTarget(index, ClassField.class));
-      }
-      classDef.setTypecheckingFieldOrder(fieldOrder);
-    }
   }
 
   private List<Definition.TypeClassParameterKind> readTypeClassParametersKind(List<DefinitionProtos.Definition.TypeClassParameterKind> kinds) {

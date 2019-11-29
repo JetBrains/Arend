@@ -788,7 +788,7 @@ public class TwoStageEquations implements Equations {
     ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations, lowerBounds.get(0).getThisBinding()), classDef.hasUniverses());
     Expression thisExpr = new ReferenceExpression(solution.getThisBinding());
     for (ClassCallExpression lowerBound : lowerBounds) {
-      for (ClassField field : classDef.getOrderedFields()) {
+      for (ClassField field : classDef.getFields()) {
         Expression impl1 = implementations.get(field);
         if (impl1 != null) {
           Expression impl2 = lowerBound.getImplementationHere(field, thisExpr);
@@ -809,7 +809,7 @@ public class TwoStageEquations implements Equations {
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
     Sort sortArgument = solution.getSortArgument();
 
-    for (ClassField field : classDef.getOrderedFields()) {
+    for (ClassField field : classDef.getFields()) {
       if (!implementations.containsKey(field)) {
         continue;
       }
