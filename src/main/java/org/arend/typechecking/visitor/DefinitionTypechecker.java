@@ -1495,23 +1495,31 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     return sort;
   }
 
-  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "RedundantIfStatement"})
   private boolean checkPositiveness(Expression type, int index, List<? extends Concrete.Parameter> parameters, Concrete.Constructor constructor, ErrorReporter errorReporter, Set<? extends Variable> variables) {
-    List<SingleDependentLink> piParams = new ArrayList<>();
-    type = type.getPiParameters(piParams, false);
-    for (DependentLink piParam : piParams) {
-      if (piParam instanceof UntypedDependentLink) {
-        continue;
-      }
-      if (!checkNonPositiveError(piParam.getTypeExpr(), index, parameters, constructor, errorReporter, variables)) {
+    type = type.getUnderlyingExpression();
+    while (type instanceof PiExpression) {
+      if (!checkNonPositiveError(((PiExpression) type).getParameters().getTypeExpr(), index, parameters, constructor, errorReporter, variables)) {
         return false;
       }
+      type = ((PiExpression) type).getCodomain().getUnderlyingExpression();
     }
 
-    DataCallExpression dataCall = type.cast(DataCallExpression.class);
-    if (dataCall != null) {
-      List<? extends Expression> exprs = dataCall.getDefCallArguments();
-      DataDefinition typeDef = dataCall.getDefinition();
+    if (type instanceof FunCallExpression && ((FunCallExpression) type).getDefinition() == Prelude.PATH_INFIX) {
+      List<? extends Expression> exprs = ((FunCallExpression) type).getDefCallArguments();
+      if (!checkPositiveness(exprs.get(0), index, parameters, constructor, errorReporter, variables) || !checkNonPositiveError(exprs.get(1), index, parameters, constructor, errorReporter, variables) || !checkNonPositiveError(exprs.get(2), index, parameters, constructor, errorReporter, variables)) {
+        return false;
+      }
+    } else if (type instanceof SigmaExpression) {
+      for (DependentLink link = ((SigmaExpression) type).getParameters(); link.hasNext(); link = link.getNext()) {
+        link = link.getNextTyped(null);
+        if (!checkPositiveness(link.getTypeExpr(), index, parameters, constructor, errorReporter, variables)) {
+          return false;
+        }
+      }
+    } else if (type instanceof DataCallExpression) {
+      List<? extends Expression> exprs = ((DataCallExpression) type).getDefCallArguments();
+      DataDefinition typeDef = ((DataCallExpression) type).getDefinition();
 
       for (int i = 0; i < exprs.size(); i++) {
         if (typeDef.isCovariant(i)) {
@@ -1529,14 +1537,13 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       }
     } else {
-      for (AppExpression app = type.cast(AppExpression.class); app != null; app = type.cast(AppExpression.class)) {
-        if (!checkNonPositiveError(app.getArgument(), index, parameters, constructor, errorReporter, variables)) {
+      while (type instanceof AppExpression) {
+        if (!checkNonPositiveError(((AppExpression) type).getArgument(), index, parameters, constructor, errorReporter, variables)) {
           return false;
         }
-        type = app.getFunction();
+        type = type.getFunction().getUnderlyingExpression();
       }
-      if (!type.isInstance(ReferenceExpression.class)) {
-        //noinspection RedundantIfStatement
+      if (!(type instanceof ReferenceExpression)) {
         if (!checkNonPositiveError(type, index, parameters, constructor, errorReporter, variables)) {
           return false;
         }
