@@ -1634,11 +1634,23 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    // Check for cycles in implementations from super classes
+    boolean checkImplementations = true;
+    FieldDFS dfs = new FieldDFS(typedDef);
+    for (ClassField field : typedDef.getFields()) {
+      List<ClassField> cycle = dfs.findCycle(field);
+      if (cycle != null) {
+        errorReporter.report(CycleError.fromTypechecked(cycle, def));
+        checkImplementations = false;
+        break;
+      }
+    }
+
     // Process fields and implementations
     Concrete.Expression previousType = null;
     ClassField previousField = null;
     List<LocalInstance> localInstances = new ArrayList<>();
-    Map<ClassField,Concrete.ClassFieldImpl> implementedHere = new LinkedHashMap<>();
+    Set<ClassField> implementedHere = new HashSet<>();
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassField) {
         Concrete.ClassField field = (Concrete.ClassField) element;
@@ -1680,7 +1692,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         boolean isFieldAlreadyImplemented;
         if (newDef) {
           isFieldAlreadyImplemented = typedDef.isImplemented(field);
-        } else if (implementedHere.containsKey(field)) {
+        } else if (implementedHere.contains(field)) {
           isFieldAlreadyImplemented = true;
         } else {
           isFieldAlreadyImplemented = false;
@@ -1696,7 +1708,44 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           alreadyImplementFields.add(field.getReferable());
           alreadyImplementedSourceNode = classFieldImpl;
         } else {
-          implementedHere.put(field, classFieldImpl);
+          implementedHere.add(field);
+        }
+
+        if (isFieldAlreadyImplemented || !checkImplementations) {
+          continue;
+        }
+
+        typedDef.updateSort();
+
+        TypedBinding thisBinding = new TypedBinding("this", new ClassCallExpression(typedDef, Sort.STD));
+        Concrete.LamExpression lamImpl = (Concrete.LamExpression) classFieldImpl.implementation;
+        TypecheckingResult result;
+        if (lamImpl != null) {
+          typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
+          PiExpression fieldType = field.getType(Sort.STD);
+          setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
+          result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)), false);
+          myInstancePool.setInstancePool(null);
+        } else {
+          result = null;
+        }
+        if (result == null) {
+          classOk = false;
+        }
+
+        typechecker.getContext().clear();
+        typechecker.getFreeBindings().clear();
+
+        if (result != null) {
+          List<ClassField> cycle = dfs.checkDependencies(field, FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
+          if (cycle != null) {
+            errorReporter.report(CycleError.fromTypechecked(cycle, def));
+            checkImplementations = false;
+          }
+        }
+
+        if (newDef) {
+          typedDef.implementField(field, new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression(null, null)));
         }
       } else {
         throw new IllegalStateException();
@@ -1734,60 +1783,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     } else {
       if (newDef) {
         typedDef.setRecord();
-      }
-    }
-
-    // Check for cycles in implementations
-    FieldDFS dfs = new FieldDFS(typedDef);
-    for (ClassField field : typedDef.getFields()) {
-      List<ClassField> cycle = dfs.findCycle(field);
-      if (cycle != null) {
-        errorReporter.report(CycleError.fromTypechecked(cycle, def));
-        implementedHere.clear();
-        break;
-      }
-    }
-
-    // Typecheck implementations
-    if (newDef && !implementedHere.isEmpty()) {
-      typedDef.updateSort();
-    }
-
-    for (Map.Entry<ClassField, Concrete.ClassFieldImpl> entry : implementedHere.entrySet()) {
-      TypedBinding thisBinding = new TypedBinding("this", new ClassCallExpression(typedDef, Sort.STD));
-      Concrete.LamExpression lamImpl = (Concrete.LamExpression) entry.getValue().implementation;
-      TypecheckingResult result;
-      if (lamImpl != null) {
-        typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
-        PiExpression fieldType = entry.getKey().getType(Sort.STD);
-        setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
-        result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)), false);
-        myInstancePool.setInstancePool(null);
-      } else {
-        result = null;
-      }
-      if (result == null) {
-        classOk = false;
-      }
-
-      typechecker.getContext().clear();
-      typechecker.getFreeBindings().clear();
-
-      boolean ok = true;
-      if (result != null) {
-        List<ClassField> cycle = dfs.checkDependencies(entry.getKey(), FieldsCollector.getFields(result.expression, thisBinding, typedDef.getFields()));
-        if (cycle != null) {
-          errorReporter.report(CycleError.fromTypechecked(cycle, def));
-          implementedHere.clear();
-          ok = false;
-        }
-      }
-
-      if (newDef) {
-        typedDef.implementField(entry.getKey(), new AbsExpression(thisBinding, ok && result != null ? result.expression : new ErrorExpression(null, null)));
-      }
-      if (!ok) {
-        break;
       }
     }
 
