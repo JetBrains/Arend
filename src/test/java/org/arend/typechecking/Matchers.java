@@ -226,8 +226,8 @@ public class Matchers {
     return new TypeSafeDiagnosingMatcher<GeneralError>() {
       @Override
       protected boolean matchesSafely(GeneralError error, Description description) {
-        if (error instanceof CycleError && ((CycleError) error).cycle.equals(referables)) {
-          description.appendText("Cycle error: " + referables);
+        if (error instanceof CycleError && (referables.isEmpty() || ((CycleError) error).cycle.equals(referables))) {
+          description.appendText("Cycle error: " + ((CycleError) error).cycle);
           return true;
         } else {
           description.appendText(error instanceof CycleError ? "Cycle error: " + ((CycleError) error).cycle : "not a cycle error");

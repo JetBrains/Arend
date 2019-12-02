@@ -23,19 +23,21 @@ public class FieldCallExpression extends DefCallExpression {
       return new FieldCallExpression(definition, sortArgument, thisExpr);
     }
 
-    NewExpression newExpr = thisExpr.cast(NewExpression.class);
-    if (newExpr != null) {
-      Expression impl = newExpr.getImplementation(definition);
+    thisExpr = thisExpr.getUnderlyingExpression();
+    if (thisExpr instanceof NewExpression) {
+      Expression impl = ((NewExpression) thisExpr).getImplementation(definition);
       assert impl != null;
       return impl;
-    } else {
-      ErrorExpression errorExpr = thisExpr.cast(ErrorExpression.class);
-      if (errorExpr != null && errorExpr.getExpression() != null) {
-        return new FieldCallExpression(definition, sortArgument, new ErrorExpression(null, errorExpr.getError()));
-      } else {
-        return new FieldCallExpression(definition, sortArgument, thisExpr);
+    } else if (thisExpr instanceof ReferenceExpression && ((ReferenceExpression) thisExpr).getBinding() instanceof ClassCallExpression.ClassCallBinding) {
+      Expression impl = ((ClassCallExpression.ClassCallBinding) ((ReferenceExpression) thisExpr).getBinding()).getTypeExpr().getImplementation(definition, thisExpr);
+      if (impl != null) {
+        return impl;
       }
+    } else if (thisExpr instanceof ErrorExpression && ((ErrorExpression) thisExpr).getExpression() != null) {
+      return new FieldCallExpression(definition, sortArgument, new ErrorExpression(null, ((ErrorExpression) thisExpr).getError()));
     }
+
+    return new FieldCallExpression(definition, sortArgument, thisExpr);
   }
 
   public Expression getArgument() {

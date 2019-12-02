@@ -97,7 +97,7 @@ public class RecordsTest extends TypeCheckingTestCase {
         "  | x : Nat\n" +
         "  | y : x = x -> Nat\n" +
         "}\n" +
-        "\\func diagonal => Point { | y => \\lam _ => 0 }", 1);
+        "\\func diagonal => Point { | y => \\lam _ => 0 }");
   }
 
   @Test

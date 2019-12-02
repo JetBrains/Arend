@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.definition.Constructor;
@@ -59,7 +60,11 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
 
   @Override
   public Void visitSubst(SubstExpression expr, P params) {
-    return expr.getSubstExpression().accept(this, params);
+    expr.getExpression().accept(this, params);
+    for (Map.Entry<Variable, Expression> entry : expr.getSubstitution().getEntries()) {
+      entry.getValue().accept(this, params);
+    }
+    return null;
   }
 
   public void visitParameters(DependentLink link, P params) {

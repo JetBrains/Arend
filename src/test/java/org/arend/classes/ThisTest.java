@@ -9,6 +9,13 @@ import static org.junit.Assert.assertThat;
 
 public class ThisTest extends TypeCheckingTestCase {
   @Test
+  public void mutualRecursionError() {
+    typeCheckModule(
+      "\\record R (x y : Nat)\n" +
+      "\\record S \\extends R { | x => R.y | y => R.x }", 1);
+  }
+
+  @Test
   public void thisRecursive() {
     typeCheckModule(
       "\\record R (X : \\Type) (x : X -> X) {\n" +

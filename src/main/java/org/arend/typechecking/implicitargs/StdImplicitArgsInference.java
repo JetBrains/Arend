@@ -135,7 +135,11 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
   }
 
   private TResult inferArg(TResult result, Concrete.Expression arg, boolean isExplicit, Concrete.Expression fun) {
-    if (result == null || arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.isError()) {
+    if (result == null) {
+      myVisitor.checkExpr(arg, null);
+      return null;
+    }
+    if (arg == null || result instanceof TypecheckingResult && ((TypecheckingResult) result).expression.isError()) {
       myVisitor.checkArgument(arg, null, result);
       return result;
     }

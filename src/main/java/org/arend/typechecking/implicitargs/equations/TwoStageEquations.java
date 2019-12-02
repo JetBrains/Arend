@@ -2,7 +2,6 @@ package org.arend.typechecking.implicitargs.equations;
 
 import org.arend.core.context.Utils;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.binding.inference.DerivedInferenceVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
@@ -786,15 +785,16 @@ public class TwoStageEquations implements Equations {
     }
 
     Map<ClassField, Expression> implementations = new HashMap<>(lowerBounds.get(0).getImplementedHere());
-    ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations), classDef.hasUniverses());
+    ClassCallExpression solution = new ClassCallExpression(classDef, sortArgument, implementations, classDef.computeSort(implementations, lowerBounds.get(0).getThisBinding()), classDef.hasUniverses());
+    Expression thisExpr = new ReferenceExpression(solution.getThisBinding());
     for (ClassCallExpression lowerBound : lowerBounds) {
-      for (ClassField field : classDef.getOrderedFields()) {
+      for (ClassField field : classDef.getFields()) {
         Expression impl1 = implementations.get(field);
         if (impl1 != null) {
-          Expression impl2 = lowerBound.getImplementationHere(field);
+          Expression impl2 = lowerBound.getImplementationHere(field, thisExpr);
           if (impl2 == null) {
             implementations.remove(field);
-          } else if (!Expression.compare(impl1, impl2, field.getType(Sort.STD).applyExpression(new ReferenceExpression(new TypedBinding("this", solution))), CMP.EQ)) {
+          } else if (!Expression.compare(impl1.subst(lowerBounds.get(0).getThisBinding(), thisExpr), impl2, field.getType(Sort.STD).applyExpression(thisExpr), CMP.EQ)) {
             implementations.remove(field);
           }
         }
@@ -809,7 +809,7 @@ public class TwoStageEquations implements Equations {
     Map<ClassField, Expression> implementations = solution.getImplementedHere();
     Sort sortArgument = solution.getSortArgument();
 
-    for (ClassField field : classDef.getOrderedFields()) {
+    for (ClassField field : classDef.getFields()) {
       if (!implementations.containsKey(field)) {
         continue;
       }
@@ -827,9 +827,12 @@ public class TwoStageEquations implements Equations {
 
     ClassCallExpression sol = solution;
     if (originalSize != implementations.size()) {
-      Sort newSort = classDef.computeSort(implementations);
+      Sort newSort = classDef.computeSort(implementations, solution.getThisBinding());
       if (!newSort.equals(sol.getSort())) {
         sol = new ClassCallExpression(classDef, sortArgument, implementations, newSort, classDef.hasUniverses());
+        for (Map.Entry<ClassField, Expression> entry : implementations.entrySet()) {
+          entry.setValue(entry.getValue().subst(solution.getThisBinding(), new ReferenceExpression(sol.getThisBinding())));
+        }
       }
     }
     sol.updateHasUniverses();

@@ -97,7 +97,7 @@ public class GlobalInstancePool implements InstancePool {
           return true;
         }
 
-        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getImplementationHere(classifyingField);
+        Expression instanceClassifyingExpr = ((ClassCallExpression) instanceDef.getResultType()).getAbsImplementationHere(classifyingField);
         if (instanceClassifyingExpr != null) {
           instanceClassifyingExpr = instanceClassifyingExpr.normalize(NormalizeVisitor.Mode.WHNF);
         }
@@ -130,7 +130,10 @@ public class GlobalInstancePool implements InstancePool {
       instanceExpr = Concrete.AppExpression.make(sourceNode.getData(), instanceExpr, new RecursiveInstanceHoleExpression(recursiveHoleExpression == null ? sourceNode : recursiveHoleExpression.getData(), newRecursiveData), link.isExplicit());
     }
 
-    Expression expectedType = classifyingField == null ? null : myCheckTypeVisitor.fixClassExtSort(new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode)), sourceNode);
+    ClassCallExpression expectedType = classifyingField == null ? null : new ClassCallExpression(classDef, Sort.generateInferVars(myCheckTypeVisitor.getEquations(), classDef.hasUniverses(), sourceNode));
+    if (expectedType != null) {
+      myCheckTypeVisitor.fixClassExtSort(expectedType, sourceNode);
+    }
     TypecheckingResult result = myCheckTypeVisitor.checkExpr(instanceExpr, expectedType);
     return result == null ? new ErrorExpression(null, null) : result.expression;
   }

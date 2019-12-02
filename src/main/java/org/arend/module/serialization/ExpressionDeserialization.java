@@ -6,7 +6,7 @@ import org.arend.core.constructor.TupleConstructor;
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.LevelVariable;
-import org.arend.core.context.binding.Variable;
+import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.*;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.BranchElimTree;
@@ -26,7 +26,7 @@ import java.util.*;
 
 class ExpressionDeserialization {
   private final CallTargetProvider myCallTargetProvider;
-  private final List<Binding> myBindings = new ArrayList<>();  // de Bruijn indices
+  private final List<Binding> myBindings = new ArrayList<>();
 
   private final DependencyListener myDependencyListener;
   private final TCReferable myDefinition;
@@ -39,39 +39,20 @@ class ExpressionDeserialization {
 
   // Bindings
 
-  private RollbackBindings checkpointBindings() {
-    return new RollbackBindings(myBindings.size());
-  }
-
-  private class RollbackBindings implements AutoCloseable {
-    private final int myTargetSize;
-
-    private RollbackBindings(int targetSize) {
-      myTargetSize = targetSize;
-    }
-
-    @Override
-    public void close() {
-      if (myBindings.size() > myTargetSize) {
-        myBindings.subList(myTargetSize, myBindings.size()).clear();
-      }
-    }
-  }
-
   private void registerBinding(Binding binding) {
     myBindings.add(binding);
   }
 
-  Type readType(ExpressionProtos.Type proto) throws DeserializationException {
+  private Type readType(ExpressionProtos.Type proto) throws DeserializationException {
     Expression expr = readExpr(proto.getExpr());
     return expr instanceof Type ? (Type) expr : new TypeExpression(expr, readSort(proto.getSort()));
   }
 
-  Variable readBindingRef(int index) throws DeserializationException {
+  Binding readBindingRef(int index) throws DeserializationException {
     if (index == 0) {
       return null;
     } else {
-      Variable binding = myBindings.get(index - 1);
+      Binding binding = myBindings.get(index - 1);
       if (binding == null) {
         throw new DeserializationException("Trying to read a reference to an unregistered binding");
       }
@@ -81,7 +62,7 @@ class ExpressionDeserialization {
 
   // Sorts and levels
 
-  Level readLevel(LevelProtos.Level proto) throws DeserializationException {
+  private Level readLevel(LevelProtos.Level proto) throws DeserializationException {
     LevelVariable var;
     switch (proto.getVariable()) {
       case NO_VAR:
@@ -130,7 +111,7 @@ class ExpressionDeserialization {
     return list.getFirst();
   }
 
-  SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationException {
+  private SingleDependentLink readSingleParameter(ExpressionProtos.Telescope proto) throws DeserializationException {
     List<String> unfixedNames = new ArrayList<>(proto.getNameList().size());
     for (String name : proto.getNameList()) {
       unfixedNames.add(name.isEmpty() ? null : name);
@@ -156,8 +137,17 @@ class ExpressionDeserialization {
     return link;
   }
 
+  private TypedBinding readBinding(ExpressionProtos.TypedBinding proto) throws DeserializationException {
+    TypedBinding binding = new TypedBinding(proto.getName(), readExpr(proto.getType()));
+    registerBinding(binding);
+    return binding;
+  }
 
   // Expressions and ElimTrees
+
+  AbsExpression readAbsExpr(ExpressionProtos.Expression.Abs proto) throws DeserializationException {
+    return new AbsExpression(proto.hasBinding() ? readBinding(proto.getBinding()) : null, readExpr(proto.getExpression()));
+  }
 
   ElimTree readElimTree(ExpressionProtos.ElimTree proto) throws DeserializationException {
     DependentLink parameters = readParameters(proto.getParamList());
@@ -245,7 +235,7 @@ class ExpressionDeserialization {
     }
   }
 
-  List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationException {
+  private List<Expression> readExprList(List<ExpressionProtos.Expression> protos) throws DeserializationException {
     List<Expression> result = new ArrayList<>(protos.size());
     for (ExpressionProtos.Expression proto : protos) {
       result.add(readExpr(proto));
@@ -278,18 +268,20 @@ class ExpressionDeserialization {
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {
+    ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
+    myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
+
     Map<ClassField, Expression> fieldSet = new HashMap<>();
+    ClassCallExpression classCall = new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
+    registerBinding(classCall.getThisBinding());
     for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
       fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
     }
-
-    ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
-    myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
-    return new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
+    return classCall;
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {
-    return new ReferenceExpression((Binding)readBindingRef(proto.getBindingRef()));
+    return new ReferenceExpression(readBindingRef(proto.getBindingRef()));
   }
 
   private LamExpression readLam(ExpressionProtos.Expression.Lam proto) throws DeserializationException {

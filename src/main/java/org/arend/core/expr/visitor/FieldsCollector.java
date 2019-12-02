@@ -1,5 +1,6 @@
 package org.arend.core.expr.visitor;
 
+import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.*;
@@ -11,12 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class FieldsCollector extends VoidExpressionVisitor<Void> {
-  private final DependentLink myThisParameter;
+  private final Binding myThisBinding;
   private final Set<? extends ClassField> myFields;
   private final Set<ClassField> myResult;
 
-  private FieldsCollector(DependentLink thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
-    myThisParameter = thisParameter;
+  private FieldsCollector(Binding thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
+    myThisBinding = thisParameter;
     myFields = fields;
     myResult = result;
   }
@@ -25,21 +26,21 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
     return myResult;
   }
 
-  public static void getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields, Set<ClassField> result) {
+  public static void getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields, Set<ClassField> result) {
     if (!fields.isEmpty()) {
-      expr.accept(new FieldsCollector(thisParameter, fields, result), null);
+      expr.accept(new FieldsCollector(thisBinding, fields, result), null);
     }
   }
 
-  public static Set<ClassField> getFields(Expression expr, DependentLink thisParameter, Set<? extends ClassField> fields) {
+  public static Set<ClassField> getFields(Expression expr, Binding thisBinding, Set<? extends ClassField> fields) {
     Set<ClassField> result = new HashSet<>();
-    getFields(expr, thisParameter, fields, result);
+    getFields(expr, thisBinding, fields, result);
     return result;
   }
 
   private void checkArgument(Expression argument, Expression type) {
     argument.accept(this, null);
-    if (!(argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() == myThisParameter)) {
+    if (!(argument instanceof ReferenceExpression && ((ReferenceExpression) argument).getBinding() == myThisBinding)) {
       return;
     }
 
@@ -82,7 +83,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitFieldCall(FieldCallExpression expr, Void params) {
-    if (myFields == null || myFields.contains(expr.getDefinition())) {
+    if (expr.getArgument() instanceof ReferenceExpression && ((ReferenceExpression) expr.getArgument()).getBinding() == myThisBinding && (myFields == null || myFields.contains(expr.getDefinition()))) {
       myResult.add(expr.getDefinition());
     }
     expr.getArgument().accept(this, null);

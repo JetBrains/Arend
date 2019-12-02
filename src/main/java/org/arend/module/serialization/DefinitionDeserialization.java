@@ -2,7 +2,6 @@ package org.arend.module.serialization;
 
 import org.arend.core.context.LinkList;
 import org.arend.core.context.binding.Binding;
-import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.*;
 import org.arend.core.elimtree.Body;
@@ -55,19 +54,6 @@ public class DefinitionDeserialization {
     def.setHasUniverses(defProto.getHasUniverses());
   }
 
-  private LamExpression checkImplementation(Expression expr, ClassDefinition classDef) throws DeserializationException {
-    if (expr instanceof LamExpression) {
-      LamExpression lamExpr = (LamExpression) expr;
-      if (!lamExpr.getParameters().getNext().hasNext()) {
-        Expression type = lamExpr.getParameters().getTypeExpr();
-        if (type instanceof ClassCallExpression) {
-          return lamExpr;
-        }
-      }
-    }
-    throw new DeserializationException("Incorrect class field implementation");
-  }
-
   private PiExpression checkFieldType(Expression expr, ClassDefinition classDef) throws DeserializationException {
     if (expr instanceof PiExpression) {
       PiExpression piExpr = (PiExpression) expr;
@@ -105,8 +91,8 @@ public class DefinitionDeserialization {
     for (int classFieldRef : classProto.getFieldRefList()) {
       classDef.addField(myCallTargetProvider.getCallTarget(classFieldRef, ClassField.class));
     }
-    for (Map.Entry<Integer, ExpressionProtos.Expression> entry : classProto.getImplementationsMap().entrySet()) {
-      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkImplementation(defDeserializer.readExpr(entry.getValue()), classDef));
+    for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : classProto.getImplementationsMap().entrySet()) {
+      classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
     }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
 
@@ -119,7 +105,7 @@ public class DefinitionDeserialization {
         ((ClassReferableImpl) classRef).getSuperClassReferences().add(superClass.getReferable());
       }
 
-      for (Map.Entry<ClassField, LamExpression> entry : superClass.getImplemented()) {
+      for (Map.Entry<ClassField, AbsExpression> entry : superClass.getImplemented()) {
         classDef.implementField(entry.getKey(), entry.getValue());
       }
     }
@@ -158,14 +144,6 @@ public class DefinitionDeserialization {
         typeClassFields.add(myCallTargetProvider.getCallTarget(typeClassFieldIndex, ClassField.class));
       }
       classDef.setTypeClassFields(typeClassFields);
-    }
-
-    if (classProto.hasTypecheckingFieldOrder()) {
-      List<ClassField> fieldOrder = new ArrayList<>();
-      for (Integer index : classProto.getTypecheckingFieldOrder().getFieldList()) {
-        fieldOrder.add(myCallTargetProvider.getCallTarget(index, ClassField.class));
-      }
-      classDef.setTypecheckingFieldOrder(fieldOrder);
     }
   }
 
@@ -391,7 +369,7 @@ public class DefinitionDeserialization {
   private Pattern readDPattern(ExpressionDeserialization defDeserializer, DefinitionProtos.Definition.DPattern proto) throws DeserializationException {
     switch (proto.getKindCase()) {
       case BINDING:
-        Variable param = defDeserializer.readBindingRef(proto.getBinding());
+        Binding param = defDeserializer.readBindingRef(proto.getBinding());
         if (!(param instanceof DependentLink)) {
           throw new IllegalStateException();
         }
