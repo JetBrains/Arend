@@ -96,23 +96,30 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   public Void visitClass(Concrete.ClassDefinition def, Void params) {
     Set<LocatedReferable> fields = getClassFields(def.getData());
 
+    List<Concrete.ClassField> classFields = new ArrayList<>();
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassField) {
+        classFields.add((Concrete.ClassField) element);
+      }
+    }
+
     Set<TCReferable> futureFields = new HashSet<>();
-    for (Concrete.ClassField field : def.getFields()) {
+    for (Concrete.ClassField field : classFields) {
       futureFields.add(field.getData());
     }
 
     // Check fields
     ClassFieldChecker classFieldChecker = new ClassFieldChecker(null, def.getData(), myConcreteProvider, fields, futureFields, myErrorReporter);
     Concrete.Expression previousType = null;
-    for (int i = 0; i < def.getFields().size(); i++) {
-      Concrete.ClassField classField = def.getFields().get(i);
+    for (int i = 0; i < classFields.size(); i++) {
+      Concrete.ClassField classField = classFields.get(i);
       Concrete.Expression fieldType = classField.getResultType();
       Referable thisParameter = new HiddenLocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
       if (fieldType == previousType && classField.getParameters().isEmpty()) {
-        classField.getParameters().addAll(def.getFields().get(i - 1).getParameters());
-        classField.setResultType(def.getFields().get(i - 1).getResultType());
-        classField.setResultTypeLevel(def.getFields().get(i - 1).getResultTypeLevel());
+        classField.getParameters().addAll(classFields.get(i - 1).getParameters());
+        classField.setResultType(classFields.get(i - 1).getResultType());
+        classField.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
@@ -129,11 +136,13 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     super.visitClass(def, null);
 
     // Check implementations
-    for (Concrete.ClassFieldImpl classFieldImpl : def.getImplementations()) {
-      Concrete.Expression impl = classFieldImpl.implementation;
-      Referable thisParameter = new HiddenLocalReferable("this");
-      classFieldChecker.setThisParameter(thisParameter);
-      classFieldImpl.implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(impl.getData(), def.getData()))), impl.accept(classFieldChecker, null));
+    for (Concrete.ClassElement element : def.getElements()) {
+      if (element instanceof Concrete.ClassFieldImpl) {
+        Concrete.Expression impl = ((Concrete.ClassFieldImpl) element).implementation;
+        Referable thisParameter = new HiddenLocalReferable("this");
+        classFieldChecker.setThisParameter(thisParameter);
+        ((Concrete.ClassFieldImpl) element).implementation = new Concrete.LamExpression(impl.getData(), Collections.singletonList(new Concrete.TelescopeParameter(impl.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(impl.getData(), def.getData()))), impl.accept(classFieldChecker, null));
+      }
     }
 
     return null;
@@ -269,7 +278,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
     super.visitClause(clause, null);
   }
 
-  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, List<Concrete.ClassFieldImpl> result) {
+  private void visitClassFieldImpl(Concrete.ClassFieldImpl classFieldImpl, List<? super Concrete.ClassFieldImpl> result) {
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, null);
       result.add(classFieldImpl);
@@ -307,14 +316,20 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
-  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, Void params) {
-    if (classFieldImpls.isEmpty()) {
+  protected <T extends Concrete.ClassElement> void visitClassFieldImpls(List<T> elements, Void params) {
+    if (elements.isEmpty()) {
       return;
     }
-    List<Concrete.ClassFieldImpl> originalClassFieldImpls = new ArrayList<>(classFieldImpls);
-    classFieldImpls.clear();
-    for (Concrete.ClassFieldImpl classFieldImpl : originalClassFieldImpls) {
-      visitClassFieldImpl(classFieldImpl, classFieldImpls);
+
+    List<T> originalElements = new ArrayList<>(elements);
+    elements.clear();
+    for (T element : originalElements) {
+      if (element instanceof Concrete.ClassFieldImpl) {
+        //noinspection unchecked
+        visitClassFieldImpl((Concrete.ClassFieldImpl) element, (List) elements);
+      } else {
+        elements.add(element);
+      }
     }
   }
 }

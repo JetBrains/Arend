@@ -83,7 +83,7 @@ public class FieldsCollector extends VoidExpressionVisitor<Void> {
 
   @Override
   public Void visitFieldCall(FieldCallExpression expr, Void params) {
-    if (myFields == null || myFields.contains(expr.getDefinition())) {
+    if (expr.getArgument() instanceof ReferenceExpression && ((ReferenceExpression) expr.getArgument()).getBinding() == myThisBinding && (myFields == null || myFields.contains(expr.getDefinition()))) {
       myResult.add(expr.getDefinition());
     }
     expr.getArgument().accept(this, null);

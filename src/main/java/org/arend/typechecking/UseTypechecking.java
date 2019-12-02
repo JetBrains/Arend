@@ -191,7 +191,7 @@ public class UseTypechecking {
             levelFields = new ArrayList<>();
             Expression thisExpr = new ReferenceExpression(classCallLink);
             for (ClassField classField : classCall.getDefinition().getFields()) {
-              Expression impl = classCall.getImplementationHere(classField);
+              Expression impl = classCall.getImplementationHere(classField, thisExpr);
               if (impl == null) {
                 continue;
               }

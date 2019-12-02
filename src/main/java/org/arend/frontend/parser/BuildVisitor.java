@@ -711,7 +711,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return ClassFieldKind.PROPERTY;
   }
 
-  private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, Concrete.ClassDefinition parentClass) {
+  private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass) {
     if (ctx instanceof ClassFieldContext) {
       ClassFieldContext fieldCtx = (ClassFieldContext) ctx;
       List<TeleContext> teleCtxs = fieldCtx.tele();
@@ -720,20 +720,20 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
       ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
       Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), parameters, returnPair.proj1, returnPair.proj2);
       reference.setDefinition(field);
-      fields.add(field);
+      elements.add(field);
     } else if (ctx instanceof ClassImplContext) {
       Concrete.ClassFieldImpl impl = visitClassImpl((ClassImplContext) ctx);
       if (impl != null) {
-        implementations.add(impl);
+        elements.add(impl);
       }
     }
   }
 
-  private void visitInstanceStatements(List<ClassFieldOrImplContext> ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, Concrete.ClassDefinition parentClass) {
+  private void visitInstanceStatements(List<ClassFieldOrImplContext> ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass) {
     for (ClassFieldOrImplContext statCtx : ctx) {
       if (statCtx != null) {
         try {
-          visitInstanceStatement(statCtx, fields, implementations, parentClass);
+          visitInstanceStatement(statCtx, elements, parentClass);
         } catch (ParseException ignored) {
 
         }
@@ -741,7 +741,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     }
   }
 
-  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassField> fields, List<Concrete.ClassFieldImpl> implementations, List<Group> subgroups, Concrete.ClassDefinition parentClass, ChildGroup parent) {
+  private void visitInstanceStatements(List<ClassStatContext> ctx, List<Concrete.ClassElement> elements, List<Group> subgroups, Concrete.ClassDefinition parentClass, ChildGroup parent) {
     for (ClassStatContext statementCtx : ctx) {
       if (statementCtx == null) {
         continue;
@@ -749,7 +749,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
 
       try {
         if (statementCtx instanceof ClassFieldOrImplStatContext) {
-          visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), fields, implementations, parentClass);
+          visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
         } else if (statementCtx instanceof ClassDefinitionStatContext) {
           subgroups.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
         } else {
@@ -780,7 +780,6 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
   private ClassGroup visitDefClass(DefClassContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     WhereContext where = ctx.where();
 
-    List<Concrete.ClassFieldImpl> implementations = Collections.emptyList();
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
@@ -797,33 +796,32 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     ClassGroup resultGroup = null;
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
-    List<Concrete.ClassField> fields = new ArrayList<>();
     List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
     List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
-    if (!classStatCtxs.isEmpty() || !classFieldOrImplCtxs.isEmpty()) {
-      implementations = new ArrayList<>();
-    }
 
     List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
     reference = parent instanceof FileGroup
       ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
       : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
 
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), fields, implementations);
+    List<Concrete.ClassElement> elements = new ArrayList<>();
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), elements);
     reference.setDefinition(classDefinition);
-    visitFieldTeles(ctx.fieldTele(), classDefinition, fields);
+    visitFieldTeles(ctx.fieldTele(), classDefinition, elements);
 
     List<TCReferable> usedDefinitions = null;
     if (!classStatCtxs.isEmpty()) {
       List<Group> dynamicSubgroups = new ArrayList<>();
       resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
-      visitInstanceStatements(classStatCtxs, fields, implementations, dynamicSubgroups, classDefinition, resultGroup);
+      visitInstanceStatements(classStatCtxs, elements, dynamicSubgroups, classDefinition, resultGroup);
       usedDefinitions = collectUsedDefinitions(dynamicSubgroups, null);
     }
-    visitInstanceStatements(classFieldOrImplCtxs, fields, implementations, classDefinition);
+    visitInstanceStatements(classFieldOrImplCtxs, elements, classDefinition);
 
-    for (Concrete.ClassField field : fields) {
-      fieldReferables1.add((ConcreteClassFieldReferable) field.getData());
+    for (Concrete.ClassElement element : elements) {
+      if (element instanceof Concrete.ClassField) {
+        fieldReferables1.add((ConcreteClassFieldReferable) element.getData());
+      }
     }
     fieldReferables = fieldReferables1;
 
@@ -1303,7 +1301,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     return parameters;
   }
 
-  private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassField> fields) {
+  private void visitFieldTeles(List<FieldTeleContext> teles, Concrete.ClassDefinition classDef, List<Concrete.ClassElement> fields) {
     TCFieldReferable coercingField = null;
     boolean isForced = false;
 

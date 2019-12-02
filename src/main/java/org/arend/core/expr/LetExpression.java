@@ -56,20 +56,20 @@ public class LetExpression extends Expression {
     if (newExpr != null && pattern.getFields() != null && pattern.getFields().size() == pattern.getPatterns().size()) {
       ClassCallExpression classCall = newExpr.getClassCall();
       Map<ClassField, Expression> implementations = new HashMap<>();
+      ClassCallExpression resultClassCall = new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false);
+
       boolean someNotImplemented = false;
       for (int i = 0; i < pattern.getPatterns().size(); i++) {
         ClassField classField = pattern.getFields().get(i);
-        Expression impl = classCall.getImplementationHere(classField);
+        Expression impl = classCall.getImplementationHere(classField, newExpr);
         if (impl != null) {
           implementations.put(classField, normalizeClauseExpression(pattern.getPatterns().get(i), impl));
           someNotImplemented = true;
         }
       }
-      for (Map.Entry<ClassField, Expression> entry : classCall.getImplementedHere().entrySet()) {
-        implementations.putIfAbsent(entry.getKey(), entry.getValue());
-      }
+      resultClassCall.copyImplementationsFrom(classCall);
       Expression renew = newExpr.getRenewExpression();
-      return new NewExpression(renew == null ? null : someNotImplemented ? renew.normalize(NormalizeVisitor.Mode.WHNF) : renew, new ClassCallExpression(classCall.getDefinition(), classCall.getSortArgument(), implementations, Sort.PROP, false));
+      return new NewExpression(renew == null ? null : someNotImplemented ? renew.normalize(NormalizeVisitor.Mode.WHNF) : renew, resultClassCall);
     }
 
     return expression;

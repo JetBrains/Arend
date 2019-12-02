@@ -265,6 +265,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     builder.setClassRef(myCallTargetIndexProvider.getDefIndex(expr.getDefinition()));
     builder.setPLevel(writeLevel(expr.getSortArgument().getPLevel()));
     builder.setHLevel(writeLevel(expr.getSortArgument().getHLevel()));
+    registerBinding(expr.getThisBinding());
     for (Map.Entry<ClassField, Expression> entry : expr.getImplementedHere().entrySet()) {
       builder.putFieldSet(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeExpr(entry.getValue()));
     }

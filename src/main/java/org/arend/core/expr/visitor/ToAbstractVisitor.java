@@ -230,7 +230,7 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
     List<Concrete.ClassFieldImpl> statements = new ArrayList<>();
     boolean canBeArgument = arguments != null;
     for (ClassField field : expr.getDefinition().getFields()) {
-      Expression implementation = expr.getImplementationHere(field);
+      Expression implementation = expr.getAbsImplementationHere(field);
       if (implementation != null) {
         if (canBeArgument && field.getReferable().isParameterField()) {
           visitArgument(implementation, field.getReferable().isExplicitField(), arguments);

@@ -17,6 +17,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   private final Set<? extends LocatedReferable> myFields;
   private final Set<TCReferable> myFutureFields;
   private final ErrorReporter myErrorReporter;
+  private int myClassCallNumber;
 
   ClassFieldChecker(Referable thisParameter, TCClassReferable classReferable, ConcreteProvider concreteProvider, Set<? extends LocatedReferable> fields, Set<TCReferable> futureFields, ErrorReporter errorReporter) {
     myThisParameter = thisParameter;
@@ -66,7 +67,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
         return expr;
       }
       child = def.enclosingClass;
-      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), def.getFields().get(0).getData()), expr, false);
+      expr = Concrete.AppExpression.make(expr.getData(), new Concrete.ReferenceExpression(expr.getData(), ((Concrete.ClassField) def.getElements().get(0)).getData()), expr, false);
     }
 
     return expr;
@@ -100,8 +101,20 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
 
   @Override
   public Concrete.ThisExpression visitThis(Concrete.ThisExpression expr, Void params) {
-    expr.setReferent(myThisParameter);
+    if (myClassCallNumber == 0) {
+      expr.setReferent(myThisParameter);
+    }
     return expr;
+  }
+
+  @Override
+  public Concrete.Expression visitTyped(Concrete.TypedExpression expr, Void params) {
+    if (expr.expression instanceof Concrete.ThisExpression && expr.type instanceof Concrete.ReferenceExpression && ((Concrete.ReferenceExpression) expr.type).getReferent().equals(myClassReferable)) {
+      ((Concrete.ThisExpression) expr.expression).setReferent(myThisParameter);
+      return expr.expression;
+    } else {
+      return super.visitTyped(expr, null);
+    }
   }
 
   @Override
@@ -128,5 +141,14 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
     } else {
       return super.visitApp(expr, params);
     }
+  }
+
+  @Override
+  public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
+    expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, params));
+    myClassCallNumber++;
+    visitClassFieldImpls(expr.getStatements(), params);
+    myClassCallNumber--;
+    return expr;
   }
 }

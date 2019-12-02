@@ -22,7 +22,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, params);
     }
-    visitClassFieldImpls(body.getClassFieldImpls(), params);
+    visitElements(body.getClassFieldImpls(), params);
     visitClauses(body.getClauses(), params);
     return null;
   }
@@ -74,10 +74,7 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
   }
 
   protected R visitClassBody(Concrete.ClassDefinition def, P params) {
-    for (Concrete.ClassField field : def.getFields()) {
-      visitClassField(field, params);
-    }
-    visitClassFieldImpls(def.getImplementations(), params);
+    visitElements(def.getElements(), params);
     return null;
   }
 
@@ -248,19 +245,23 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation.accept(this, params);
     }
-    visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
+    visitElements(classFieldImpl.subClassFieldImpls, params);
   }
 
-  protected void visitClassFieldImpls(List<Concrete.ClassFieldImpl> classFieldImpls, P params) {
-    for (Concrete.ClassFieldImpl classFieldImpl : classFieldImpls) {
-      visitClassFieldImpl(classFieldImpl, params);
+  protected void visitElements(List<? extends Concrete.ClassElement> elements, P params) {
+    for (Concrete.ClassElement element : elements) {
+      if (element instanceof Concrete.ClassField) {
+        visitClassField((Concrete.ClassField) element, params);
+      } else if (element instanceof Concrete.ClassFieldImpl) {
+        visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
+      }
     }
   }
 
   @Override
   public Void visitClassExt(Concrete.ClassExtExpression expr, P params) {
     expr.getBaseClassExpression().accept(this, params);
-    visitClassFieldImpls(expr.getStatements(), params);
+    visitElements(expr.getStatements(), params);
     return null;
   }
 

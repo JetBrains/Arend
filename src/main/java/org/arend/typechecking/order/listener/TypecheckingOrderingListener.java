@@ -193,12 +193,14 @@ public class TypecheckingOrderingListener implements OrderingListener {
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression(null, null));
     } else if (definition instanceof Concrete.ClassDefinition) {
       typechecked = new ClassDefinition((TCClassReferable) definition.getData());
-      for (Concrete.ClassField field : ((Concrete.ClassDefinition) definition).getFields()) {
-        ClassField classField = new ClassField(field.getData(), (ClassDefinition) typechecked);
-        classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression(null, null)));
-        classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
-        ((ClassDefinition) typechecked).addPersonalField(classField);
-        myState.record(classField.getReferable(), classField);
+      for (Concrete.ClassElement element : ((Concrete.ClassDefinition) definition).getElements()) {
+        if (element instanceof Concrete.ClassField) {
+          ClassField classField = new ClassField(((Concrete.ClassField) element).getData(), (ClassDefinition) typechecked);
+          classField.setType(new PiExpression(Sort.PROP, new TypedSingleDependentLink(false, "this", new ClassCallExpression((ClassDefinition) typechecked, Sort.STD), true), new ErrorExpression(null, null)));
+          classField.setStatus(Definition.TypeCheckingStatus.HAS_ERRORS);
+          ((ClassDefinition) typechecked).addPersonalField(classField);
+          myState.record(classField.getReferable(), classField);
+        }
       }
     } else {
       throw new IllegalStateException();

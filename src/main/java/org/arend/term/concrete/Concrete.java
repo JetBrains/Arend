@@ -424,7 +424,6 @@ public final class Concrete {
       myReferent = referable;
     }
 
-    @Nonnull
     public Referable getReferent() {
       return myReferent;
     }
@@ -503,7 +502,10 @@ public final class Concrete {
     }
   }
 
-  public static class ClassFieldImpl extends SourceNodeImpl {
+  public interface ClassElement extends SourceNode {
+  }
+
+  public static class ClassFieldImpl extends SourceNodeImpl implements ClassElement {
     private Referable myImplementedField;
     public Expression implementation;
     public final List<ClassFieldImpl> subClassFieldImpls;
@@ -1173,8 +1175,9 @@ public final class Concrete {
     }
     if (definition instanceof ClassDefinition) {
       List<Concrete.TypeParameter> parameters = new ArrayList<>();
-      for (ClassField field : ((ClassDefinition) definition).getFields()) {
-        if (field.getData().isParameterField()) {
+      for (ClassElement element : ((ClassDefinition) definition).getElements()) {
+        if (element instanceof ClassField && ((ClassField) element).getData().isParameterField()) {
+          ClassField field = (ClassField) element;
           Expression type = field.getResultType();
           List<TypeParameter> fieldParams = field.getParameters();
           if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !definition.isDesugarized()) {
@@ -1312,19 +1315,17 @@ public final class Concrete {
   public static class ClassDefinition extends Definition {
     private final boolean myRecord;
     private final List<ReferenceExpression> mySuperClasses;
-    private final List<ClassField> myFields;
-    private final List<ClassFieldImpl> myImplementations;
+    private final List<ClassElement> myElements;
     private TCFieldReferable myCoercingField;
     private boolean myForcedCoercingField;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassField> fields, List<ClassFieldImpl> implementations) {
+    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable);
       myRecord = isRecord;
       myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
-      myFields = fields;
-      myImplementations = implementations;
+      myElements = elements;
     }
 
     @Nonnull
@@ -1359,13 +1360,8 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<ClassField> getFields() {
-      return myFields;
-    }
-
-    @Nonnull
-    public List<ClassFieldImpl> getImplementations() {
-      return myImplementations;
+    public List<ClassElement> getElements() {
+      return myElements;
     }
 
     @Override
@@ -1383,7 +1379,7 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField extends ReferableDefinition {
+  public static class ClassField extends ReferableDefinition implements ClassElement {
     private final ClassDefinition myParentClass;
     private final boolean myExplicit;
     private final ClassFieldKind myKind;

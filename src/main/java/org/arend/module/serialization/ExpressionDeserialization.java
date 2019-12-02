@@ -268,14 +268,16 @@ class ExpressionDeserialization {
   }
 
   private ClassCallExpression readClassCall(ExpressionProtos.Expression.ClassCall proto) throws DeserializationException {
+    ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
+    myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
+
     Map<ClassField, Expression> fieldSet = new HashMap<>();
+    ClassCallExpression classCall = new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
+    registerBinding(classCall.getThisBinding());
     for (Map.Entry<Integer, ExpressionProtos.Expression> entry : proto.getFieldSetMap().entrySet()) {
       fieldSet.put(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), readExpr(entry.getValue()));
     }
-
-    ClassDefinition classDefinition = myCallTargetProvider.getCallTarget(proto.getClassRef(), ClassDefinition.class);
-    myDependencyListener.dependsOn(myDefinition, classDefinition.getReferable());
-    return new ClassCallExpression(classDefinition, new Sort(readLevel(proto.getPLevel()), readLevel(proto.getHLevel())), fieldSet, readSort(proto.getSort()), proto.getHasUniverses());
+    return classCall;
   }
 
   private ReferenceExpression readReference(ExpressionProtos.Expression.Reference proto) throws DeserializationException {

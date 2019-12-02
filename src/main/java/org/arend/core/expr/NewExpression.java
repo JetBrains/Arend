@@ -13,18 +13,24 @@ public class NewExpression extends Expression {
   private final Expression myRenewExpression;
   private final ClassCallExpression myClassCall;
 
+  private NewExpression(NewExpression renewExpression, ClassCallExpression classCall) {
+    myRenewExpression = renewExpression;
+    myClassCall = classCall;
+  }
+
   public NewExpression(Expression renewExpression, ClassCallExpression classCall) {
     NewExpression newExpr = renewExpression == null ? null : renewExpression.cast(NewExpression.class);
     if (newExpr != null) {
       myRenewExpression = newExpr.myRenewExpression;
       Map<ClassField, Expression> implementations = new HashMap<>();
+      NewExpression myNewExpr = new NewExpression(newExpr, classCall);
       for (ClassField field : classCall.getDefinition().getFields()) {
         if (classCall.getDefinition().isImplemented(field)) {
           continue;
         }
-        Expression impl = classCall.getImplementationHere(field);
+        Expression impl = classCall.getImplementationHere(field, myNewExpr);
         if (impl == null) {
-          impl = newExpr.myClassCall.getImplementationHere(field);
+          impl = newExpr.myClassCall.getImplementationHere(field, newExpr);
         }
         implementations.put(field, impl);
       }
@@ -45,7 +51,7 @@ public class NewExpression extends Expression {
   }
 
   public Expression getImplementationHere(ClassField field) {
-    Expression impl = myClassCall.getImplementationHere(field);
+    Expression impl = myClassCall.getImplementationHere(field, this);
     return impl != null ? impl : FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
   }
 
@@ -80,7 +86,7 @@ public class NewExpression extends Expression {
       if (myClassCall.getDefinition().isImplemented(field)) {
         continue;
       }
-      Expression impl = myClassCall.getImplementationHere(field);
+      Expression impl = myClassCall.getImplementationHere(field, this);
       if (impl == null) {
         impl = FieldCallExpression.make(field, myClassCall.getSortArgument(), myRenewExpression);
       }
