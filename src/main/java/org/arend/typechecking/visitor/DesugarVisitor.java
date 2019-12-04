@@ -116,17 +116,23 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
       Concrete.Expression fieldType = classField.getResultType();
       Referable thisParameter = new HiddenLocalReferable("this");
       classFieldChecker.setThisParameter(thisParameter);
-      if (fieldType == previousType && classField.getParameters().isEmpty()) {
+      if (fieldType == previousType && fieldType != null && classField.getParameters().isEmpty()) {
         classField.getParameters().addAll(classFields.get(i - 1).getParameters());
         classField.setResultType(classFields.get(i - 1).getResultType());
         classField.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         previousType = classField.getParameters().isEmpty() ? fieldType : null;
         classFieldChecker.visitParameters(classField.getParameters(), null);
-        classField.getParameters().add(0, new Concrete.TelescopeParameter(fieldType.getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(fieldType.getData(), def.getData())));
-        classField.setResultType(fieldType.accept(classFieldChecker, null));
+        Object data = fieldType != null ? fieldType.getData() : classField.getData();
+        classField.getParameters().add(0, new Concrete.TelescopeParameter(data, false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(data, def.getData())));
+        if (fieldType != null) {
+          classField.setResultType(fieldType.accept(classFieldChecker, null));
+        }
         if (classField.getResultTypeLevel() != null) {
           classField.setResultTypeLevel(classField.getResultTypeLevel().accept(classFieldChecker, null));
+        }
+        if (classField.getImplementation() != null) {
+          classField.setImplementation(classField.getImplementation().accept(classFieldChecker, null));
         }
       }
       futureFields.remove(classField.getData());

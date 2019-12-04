@@ -419,7 +419,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       checkPrecedence(field);
 
       Concrete.Expression fieldType = field.getResultType();
-      if (fieldType == previousType && field.getParameters().isEmpty()) {
+      if (fieldType == previousType && fieldType != null && field.getParameters().isEmpty()) {
         field.setResultType(classFields.get(i - 1).getResultType());
         field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
@@ -431,9 +431,14 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           previousType = field.getParameters().isEmpty() ? fieldType : null;
           exprVisitor.visitParameters(field.getParameters(), null);
-          field.setResultType(fieldType.accept(exprVisitor, null));
+          if (fieldType != null) {
+            field.setResultType(fieldType.accept(exprVisitor, null));
+          }
           if (field.getResultTypeLevel() != null) {
             field.setResultTypeLevel(field.getResultTypeLevel().accept(exprVisitor, null));
+          }
+          if (field.getImplementation() != null) {
+            field.setImplementation(field.getImplementation().accept(exprVisitor, null));
           }
         }
       }

@@ -1179,6 +1179,9 @@ public final class Concrete {
         if (element instanceof ClassField && ((ClassField) element).getData().isParameterField()) {
           ClassField field = (ClassField) element;
           Expression type = field.getResultType();
+          if (type == null) {
+            break;
+          }
           List<TypeParameter> fieldParams = field.getParameters();
           if (fieldParams.size() > 1 || !fieldParams.isEmpty() && !definition.isDesugarized()) {
             type = new PiExpression(field.getParameters().get(0).getData(), definition.isDesugarized() ? fieldParams.subList(1, fieldParams.size()) : fieldParams, type);
@@ -1386,8 +1389,9 @@ public final class Concrete {
     private final List<TypeParameter> myParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
+    private Expression myImplementation;
 
-    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
+    public ClassField(TCFieldReferable referable, ClassDefinition parentClass, boolean isExplicit, ClassFieldKind kind, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel, Expression implementation) {
       super(referable);
       myParentClass = parentClass;
       myExplicit = isExplicit;
@@ -1395,6 +1399,7 @@ public final class Concrete {
       myParameters = parameters;
       myResultType = resultType;
       myResultTypeLevel = resultTypeLevel;
+      myImplementation = implementation;
     }
 
     @Nonnull
@@ -1416,7 +1421,7 @@ public final class Concrete {
       return myParameters;
     }
 
-    @Nonnull
+    @Nullable
     public Expression getResultType() {
       return myResultType;
     }
@@ -1432,6 +1437,14 @@ public final class Concrete {
 
     public void setResultTypeLevel(Expression resultTypeLevel) {
       myResultTypeLevel = resultTypeLevel;
+    }
+
+    public Expression getImplementation() {
+      return myImplementation;
+    }
+
+    public void setImplementation(Expression expression) {
+      myImplementation = expression;
     }
 
     @Nonnull

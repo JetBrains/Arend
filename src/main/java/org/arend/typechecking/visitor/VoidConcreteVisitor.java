@@ -86,9 +86,14 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
 
   protected void visitClassField(Concrete.ClassField field, P params) {
     visitParameters(field.getParameters(), params);
-    field.getResultType().accept(this, params);
+    if (field.getResultType() != null) {
+      field.getResultType().accept(this, params);
+    }
     if (field.getResultTypeLevel() != null) {
       field.getResultTypeLevel().accept(this, params);
+    }
+    if (field.getImplementation() != null) {
+      field.getImplementation().accept(this, params);
     }
   }
 

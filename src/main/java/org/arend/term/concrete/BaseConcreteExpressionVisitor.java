@@ -277,15 +277,20 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     for (int i = 0; i < classFields.size(); i++) {
       Concrete.ClassField field = classFields.get(i);
       Concrete.Expression fieldType = field.getResultType();
-      if (fieldType == previousType && field.getParameters().isEmpty()) {
+      if (fieldType == previousType && fieldType != null && field.getParameters().isEmpty()) {
         field.setResultType(classFields.get(i - 1).getResultType());
         field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         previousType = field.getParameters().isEmpty() ? fieldType : null;
         visitParameters(field.getParameters(), params);
-        field.setResultType(fieldType.accept(this, params));
+        if (fieldType != null) {
+          field.setResultType(fieldType.accept(this, params));
+        }
         if (field.getResultTypeLevel() != null) {
           field.setResultTypeLevel(field.getResultTypeLevel().accept(this, params));
+        }
+        if (field.getImplementation() != null) {
+          field.setImplementation(field.getImplementation().accept(this, params));
         }
       }
     }

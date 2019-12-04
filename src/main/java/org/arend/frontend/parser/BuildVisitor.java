@@ -472,7 +472,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   private List<Concrete.ClassFieldImpl> visitCoClauses(List<CoClauseContext> coClausesCtx) {
     List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(coClausesCtx.size());
     for (CoClauseContext coClause : coClausesCtx) {
-      Concrete.ClassFieldImpl impl = visitCoClause(coClause);
+      Concrete.ClassFieldImpl impl = visitCoClausePrivate(coClause.coClausePrivate());
       if (impl != null) {
         coClauses.add(impl);
       }
@@ -697,11 +697,6 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
-  public ClassFieldKind visitFieldPipe(FieldPipeContext ctx) {
-    return ClassFieldKind.ANY;
-  }
-
-  @Override
   public ClassFieldKind visitFieldField(FieldFieldContext ctx) {
     return ClassFieldKind.FIELD;
   }
@@ -717,8 +712,19 @@ public class BuildVisitor extends ArendBaseVisitor {
       List<TeleContext> teleCtxs = fieldCtx.tele();
       List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
       Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(fieldCtx.returnExpr());
+      ExprContext exprCtx = fieldCtx.expr();
+      Concrete.Expression term = exprCtx == null ? null : visitExpr(exprCtx);
       ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), parameters, returnPair.proj1, returnPair.proj2);
+      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), parameters, returnPair.proj1, returnPair.proj2, term);
+      reference.setDefinition(field);
+      elements.add(field);
+    } else if (ctx instanceof ClassAnyContext) {
+      ClassAnyContext fieldCtx = (ClassAnyContext) ctx;
+      List<TeleContext> teleCtxs = fieldCtx.tele();
+      List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
+      Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(fieldCtx.returnExpr());
+      ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, ClassFieldKind.ANY, parameters, returnPair.proj1, returnPair.proj2, null);
       reference.setDefinition(field);
       elements.add(field);
     } else if (ctx instanceof ClassImplContext) {
@@ -726,6 +732,8 @@ public class BuildVisitor extends ArendBaseVisitor {
       if (impl != null) {
         elements.add(impl);
       }
+    } else {
+      throw new IllegalStateException();
     }
   }
 
@@ -840,7 +848,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   @Override
   public Concrete.ClassFieldImpl visitClassImpl(ClassImplContext ctx) {
-    return visitCoClause(ctx.coClause());
+    return visitCoClausePrivate(ctx.coClausePrivate());
   }
 
   @Override
@@ -1045,7 +1053,7 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
-  public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
+  public Concrete.ClassFieldImpl visitCoClausePrivate(CoClausePrivateContext ctx) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
@@ -1327,7 +1335,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       Concrete.Expression type = visitExpr(exprCtx);
       for (TerminalNode var : vars) {
         ConcreteClassFieldReferable fieldRef = new ConcreteClassFieldReferable(tokenPosition(var.getSymbol()), var.getText(), Precedence.DEFAULT, false, explicit, true, classDef.getData(), LocatedReferableImpl.Kind.FIELD);
-        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null);
+        Concrete.ClassField field = new Concrete.ClassField(fieldRef, classDef, explicit, ClassFieldKind.ANY, new ArrayList<>(), type, null, null);
         fieldRef.setDefinition(field);
         fields.add(field);
 

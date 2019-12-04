@@ -14,12 +14,12 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldOrImpl : fieldMod precedence ID tele* ':' returnExpr # classField
-                 | coClause                                    # classImpl
+classFieldOrImpl : ('|' | '\\implement') coClausePrivate                        # classImpl
+                 | '|' precedence ID tele* ':' returnExpr                       # classAny
+                 | fieldMod precedence ID tele* (':' returnExpr)? ('=>' expr)?  # classField
                  ;
 
-fieldMod  : '|'           # fieldPipe
-          | '\\field'     # fieldField
+fieldMod  : '\\field'     # fieldField
           | '\\property'  # fieldProperty
           ;
 
@@ -158,7 +158,9 @@ coClauses : coClause*                         # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' longName tele* ('=>' expr | '{' coClause* '}');
+coClausePrivate : longName tele* ('=>' expr | '{' coClause* '}');
+
+coClause : '|' coClausePrivate;
 
 letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 

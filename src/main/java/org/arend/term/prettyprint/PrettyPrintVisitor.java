@@ -1199,17 +1199,29 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       for (Concrete.ClassElement element : def.getElements()) {
         myBuilder.append('\n');
         printIndent();
-        myBuilder.append("| ");
         if (element instanceof Concrete.ClassField) {
           Concrete.ClassField field = (Concrete.ClassField) element;
+          switch (field.getKind()) {
+            case FIELD: myBuilder.append("\\field "); break;
+            case PROPERTY: myBuilder.append("\\property "); break;
+            case ANY: myBuilder.append("| "); break;
+          }
+
           prettyPrintNameWithPrecedence(field.getData());
           if (!field.getParameters().isEmpty()) {
             myBuilder.append(" ");
             prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
           }
-          myBuilder.append(" : ");
-          printTypeLevel(field.getResultType(), field.getResultTypeLevel());
+          if (field.getResultType() != null) {
+            myBuilder.append(" : ");
+            printTypeLevel(field.getResultType(), field.getResultTypeLevel());
+          }
+          if (field.getImplementation() != null) {
+            myBuilder.append(" => ");
+            field.getImplementation().accept(this, new Precedence(Concrete.ReferenceExpression.PREC));
+          }
         } else if (element instanceof Concrete.ClassFieldImpl) {
+          myBuilder.append("| ");
           visitClassFieldImpl((Concrete.ClassFieldImpl) element);
         } else {
           throw new IllegalStateException();

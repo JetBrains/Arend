@@ -467,4 +467,35 @@ public class ImplementTest extends TypeCheckingTestCase {
       "  | TB => TC\n" +
       "  | c : f \\this tb");
   }
+
+  @Test
+  public void implementKeyword() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  | a : Nat\n" +
+      "}\n" +
+      "\\class B \\extends A {\n" +
+      "  \\implement a => 0\n" +
+      "}\n" +
+      "\\func f (b : B) : b.a = 0 => idp");
+  }
+
+  @Test
+  public void newField() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\field a (n : Nat) => n\n" +
+      "  \\field b (n : Nat) (m : Nat) : Nat => suc n Nat.* m\n" +
+      "}\n" +
+      "\\func f (x : A) : a 2 = b 0 2 => idp");
+  }
+
+  @Test
+  public void newProperty() {
+    typeCheckModule(
+      "\\class A {\n" +
+      "  \\property p (n : Nat) : n = n => idp\n" +
+      "}\n" +
+      "\\func f (x : A) : 3 = 3 => p 3");
+  }
 }
