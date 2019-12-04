@@ -237,6 +237,17 @@ public class DataTest extends TypeCheckingTestCase {
   }
 
   @Test
+  public void covariantSigmaTest() {
+    typeCheckModule(
+      "\\data D (A B : \\Type)\n" +
+        "  | con1 (\\Sigma A B)\n" +
+        "  | con2 B");
+    DataDefinition d = (DataDefinition) getDefinition("D");
+    assertTrue(d.isCovariant(0));
+    assertTrue(d.isCovariant(1));
+  }
+
+  @Test
   public void recursiveCovariantTest() {
     typeCheckModule(
       "\\data D (A : \\Type)\n" +

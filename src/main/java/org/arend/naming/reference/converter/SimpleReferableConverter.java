@@ -62,25 +62,17 @@ public class SimpleReferableConverter implements ReferableConverter {
     });
   }
 
-  public TCReferable remove(LocatedReferable referable) {
-    return remove(referable, new FullName(referable));
+  public TCReferable remove(FullName fullName) {
+    return myMap.remove(fullName);
   }
 
-  public TCReferable remove(LocatedReferable referable, FullName fullName) {
-    TCReferable result = myMap.remove(fullName);
-    if (result == null) {
-      return null;
-    }
-
-    // Remove constructors and fields
+  public void removeInternalReferables(LocatedReferable referable, FullName fullName) {
     List<FullName> internalRefs = myInternalReferables.remove(getTypecheckableFullName(referable, fullName));
     if (internalRefs != null) {
       for (FullName name : internalRefs) {
         myMap.remove(name);
       }
     }
-
-    return result;
   }
 
   public void clear() {
