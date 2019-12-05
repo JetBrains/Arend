@@ -900,7 +900,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   @Override
   public TypecheckingResult visitHole(Concrete.HoleExpression expr, ExpectedType expectedType) {
     if (expr.getError() != null) {
-      return null;
+      return expectedType instanceof Expression ? new TypecheckingResult(new ErrorExpression(null, expr.getError()), (Expression) expectedType) : null;
     }
 
     if (expectedType instanceof Expression) {
