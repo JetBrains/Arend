@@ -147,7 +147,7 @@ public class ClassFieldChecker extends BaseConcreteExpressionVisitor<Void> {
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, Void params) {
     expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, params));
     myClassCallNumber++;
-    visitClassFieldImpls(expr.getStatements(), params);
+    visitClassElements(expr.getStatements(), params);
     myClassCallNumber--;
     return expr;
   }

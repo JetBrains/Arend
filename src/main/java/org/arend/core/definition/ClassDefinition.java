@@ -11,12 +11,13 @@ import org.arend.naming.reference.TCClassReferable;
 import java.util.*;
 
 public class ClassDefinition extends Definition {
-  private final Set<ClassDefinition> mySuperClasses;
-  private final LinkedHashSet<ClassField> myFields;
-  private final List<ClassField> myPersonalFields;
-  private final Map<ClassField, AbsExpression> myImplemented;
+  private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
+  private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
+  private final List<ClassField> myPersonalFields = new ArrayList<>();
+  private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
+  private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
   private ClassField myCoercingField;
-  private Sort mySort;
+  private Sort mySort = Sort.PROP;
   private boolean myRecord = false;
   private final CoerceData myCoerce = new CoerceData(this);
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
@@ -25,11 +26,6 @@ public class ClassDefinition extends Definition {
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-    mySuperClasses = new LinkedHashSet<>();
-    myFields = new LinkedHashSet<>();
-    myPersonalFields = new ArrayList<>();
-    myImplemented = new HashMap<>();
-    mySort = Sort.PROP;
   }
 
   @Override

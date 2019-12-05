@@ -697,11 +697,6 @@ public class BuildVisitor extends ArendBaseVisitor {
   }
 
   @Override
-  public ClassFieldKind visitFieldPipe(FieldPipeContext ctx) {
-    return ClassFieldKind.ANY;
-  }
-
-  @Override
   public ClassFieldKind visitFieldField(FieldFieldContext ctx) {
     return ClassFieldKind.FIELD;
   }
@@ -711,16 +706,18 @@ public class BuildVisitor extends ArendBaseVisitor {
     return ClassFieldKind.PROPERTY;
   }
 
+  private Concrete.ClassField visitClassFieldDef(ClassFieldDefContext ctx, ClassFieldKind kind, Concrete.ClassDefinition parentClass) {
+    List<Concrete.TypeParameter> parameters = visitTeles(ctx.tele());
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+    ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
+    Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, kind, parameters, returnPair.proj1, returnPair.proj2);
+    reference.setDefinition(field);
+    return field;
+  }
+
   private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass) {
     if (ctx instanceof ClassFieldContext) {
-      ClassFieldContext fieldCtx = (ClassFieldContext) ctx;
-      List<TeleContext> teleCtxs = fieldCtx.tele();
-      List<Concrete.TypeParameter> parameters = visitTeles(teleCtxs);
-      Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(fieldCtx.returnExpr());
-      ConcreteClassFieldReferable reference = new ConcreteClassFieldReferable(tokenPosition(fieldCtx.start), fieldCtx.ID().getText(), visitPrecedence(fieldCtx.precedence()), true, true, false, parentClass.getData(), LocatedReferableImpl.Kind.FIELD);
-      Concrete.ClassField field = new Concrete.ClassField(reference, parentClass, true, (ClassFieldKind) visit(fieldCtx.fieldMod()), parameters, returnPair.proj1, returnPair.proj2);
-      reference.setDefinition(field);
-      elements.add(field);
+      elements.add(visitClassFieldDef(((ClassFieldContext) ctx).classFieldDef(), ClassFieldKind.ANY, parentClass));
     } else if (ctx instanceof ClassImplContext) {
       Concrete.ClassFieldImpl impl = visitClassImpl((ClassImplContext) ctx);
       if (impl != null) {
@@ -752,8 +749,15 @@ public class BuildVisitor extends ArendBaseVisitor {
           visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
         } else if (statementCtx instanceof ClassDefinitionStatContext) {
           subgroups.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
+        } else if (statementCtx instanceof ClassFieldStatContext) {
+          ClassFieldStatContext fieldStatCtx = (ClassFieldStatContext) statementCtx;
+          elements.add(visitClassFieldDef(fieldStatCtx.classFieldDef(), (ClassFieldKind) visit(fieldStatCtx.fieldMod()), parentClass));
+        } else if (statementCtx instanceof ClassOverrideStatContext) {
+          ClassOverrideStatContext overrideCtx = (ClassOverrideStatContext) statementCtx;
+          LongNameContext longName = overrideCtx.longName();
+          elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele()), visitExpr(overrideCtx.expr())));
         } else {
-          myErrorReporter.report(new ParserError(tokenPosition(statementCtx.start), "Unknown class statement"));
+          throw new IllegalStateException();
         }
       } catch (ParseException ignored) {
 

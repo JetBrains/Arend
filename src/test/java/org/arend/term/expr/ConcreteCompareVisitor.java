@@ -530,11 +530,19 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
         if (!compareImplementStatement((Concrete.ClassFieldImpl) element1, (Concrete.ClassFieldImpl) element2)) {
           return false;
         }
+      } else if (element1 instanceof Concrete.OverriddenField && element2 instanceof Concrete.OverriddenField) {
+        if (!compareOverriddenField((Concrete.OverriddenField) element1, (Concrete.OverriddenField) element2)) {
+          return false;
+        }
       } else {
         return false;
       }
     }
     return Objects.equals(def.getCoercingField(), class2.getCoercingField());
+  }
+
+  private boolean compareOverriddenField(Concrete.OverriddenField field1, Concrete.OverriddenField field2) {
+    return Objects.equals(field1.getOverriddenField(), field2.getOverriddenField()) && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType());
   }
 
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {

@@ -400,8 +400,7 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
     return expr;
   }
 
-  void visitClassFieldImpl(Concrete.ClassFieldImpl impl, ClassReferable classDef) {
-    Referable oldField = impl.getImplementedField();
+  Referable visitClassFieldReference(Concrete.ClassElement element, Referable oldField, ClassReferable classDef) {
     while (oldField instanceof RedirectingReferable) {
       oldField = ((RedirectingReferable) oldField).getOriginalReferable();
     }
@@ -409,13 +408,27 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
       Referable field = resolve(oldField, new ClassFieldImplScope(classDef, true), false, resolvedRefs);
       if (myResolverListener != null) {
-        myResolverListener.coPatternResolved(impl, oldField, field, resolvedRefs);
+        if (element instanceof Concrete.ClassFieldImpl) {
+          myResolverListener.coPatternResolved((Concrete.ClassFieldImpl) element, oldField, field, resolvedRefs);
+        } else if (element instanceof Concrete.OverriddenField) {
+          myResolverListener.overriddenFieldResolved((Concrete.OverriddenField) element, oldField, field, resolvedRefs);
+        }
       }
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
       }
-      impl.setImplementedField(field);
+      if (element instanceof Concrete.ClassFieldImpl) {
+        ((Concrete.ClassFieldImpl) element).setImplementedField(field);
+      } else if (element instanceof Concrete.OverriddenField) {
+        ((Concrete.OverriddenField) element).setOverriddenField(field);
+      }
+      return field;
     }
+    return oldField;
+  }
+
+  void visitClassFieldImpl(Concrete.ClassFieldImpl impl, ClassReferable classDef) {
+    visitClassFieldReference(impl, impl.getImplementedField(), classDef);
 
     if (impl.implementation == null) {
       ClassReferable classRef = impl.getImplementedField() instanceof ClassReferable

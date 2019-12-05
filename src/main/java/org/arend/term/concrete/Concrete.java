@@ -1446,6 +1446,42 @@ public final class Concrete {
     }
   }
 
+  public static class OverriddenField extends SourceNodeImpl implements ClassElement {
+    private Referable myOverriddenField;
+    private final List<TypeParameter> myParameters;
+    private Expression myResultType;
+
+    public OverriddenField(Object data, Referable overriddenField, List<TypeParameter> parameters, Expression resultType) {
+      super(data);
+      myOverriddenField = overriddenField;
+      myParameters = parameters;
+      myResultType = resultType;
+    }
+
+    @Nonnull
+    public Referable getOverriddenField() {
+      return myOverriddenField;
+    }
+
+    public void setOverriddenField(Referable overriddenField) {
+      myOverriddenField = overriddenField;
+    }
+
+    @Nonnull
+    public List<TypeParameter> getParameters() {
+      return myParameters;
+    }
+
+    @Nonnull
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
+    }
+  }
+
   public static abstract class FunctionBody extends SourceNodeImpl {
     FunctionBody(Object data) {
       super(data);

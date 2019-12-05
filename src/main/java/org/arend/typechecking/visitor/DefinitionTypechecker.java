@@ -1754,6 +1754,8 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (newDef) {
           typedDef.implementField(field, new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression(null, null)));
         }
+      } else if (element instanceof Concrete.OverriddenField) {
+        // TODO[overridden]
       } else {
         throw new IllegalStateException();
       }
@@ -1822,11 +1824,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         field.getType(Sort.STD).getCodomain().accept(visitor, null);
       }
       for (Concrete.ClassElement element : def.getElements()) {
-        ClassField field = element instanceof Concrete.ClassFieldImpl ? typechecker.referableToClassField(((Concrete.ClassFieldImpl) element).getImplementedField(), null) : null;
-        if (field != null) {
-          AbsExpression impl = typedDef.getImplementation(field);
-          if (impl != null) {
-            impl.getExpression().accept(visitor, null);
+        if (element instanceof Concrete.ClassFieldImpl) {
+          ClassField field = typechecker.referableToClassField(((Concrete.ClassFieldImpl) element).getImplementedField(), null);
+          if (field != null) {
+            AbsExpression impl = typedDef.getImplementation(field);
+            if (impl != null) {
+              impl.getExpression().accept(visitor, null);
+            }
+          }
+        } else if (element instanceof Concrete.OverriddenField) {
+          ClassField field = typechecker.referableToClassField(((Concrete.OverriddenField) element).getOverriddenField(), null);
+          if (field != null) {
+            field.getType(Sort.STD).getCodomain().accept(visitor, null);
           }
         }
       }

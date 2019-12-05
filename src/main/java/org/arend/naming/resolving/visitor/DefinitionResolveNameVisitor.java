@@ -376,6 +376,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         for (Concrete.ClassElement element : def.getElements()) {
           if (element instanceof Concrete.ClassField) {
             resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scope, true);
+          } else if (element instanceof Concrete.OverriddenField) {
+            resolveTypeClassReference(((Concrete.OverriddenField) element).getParameters(), ((Concrete.OverriddenField) element).getResultType(), scope, true);
           }
         }
       }
@@ -441,6 +443,13 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassFieldImpl) {
         exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, def.getData());
+      } else if (element instanceof Concrete.OverriddenField) {
+        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+        exprVisitor.visitClassFieldReference(field, field.getOverriddenField(), def.getData());
+        try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
+          exprVisitor.visitParameters(field.getParameters(), null);
+          field.setResultType(field.getResultType().accept(exprVisitor, null));
+        }
       }
     }
 
