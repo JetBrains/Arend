@@ -40,8 +40,8 @@ val arendPackage = "org.arend"
 
 task<Jar>("jarDep") {
     manifest.attributes["Main-Class"] = "$arendPackage.frontend.ConsoleMain"
-    from(configurations.runtimeClasspath.map { if (it.isDirectory) it as Any else zipTree(it) })
-    from(java.sourceSets["main"].output)
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it as Any else zipTree(it) })
+    from(sourceSets["main"].output)
     dependsOn("prelude")
 }
 
@@ -51,10 +51,14 @@ tasks.getByName<Jar>("jar") {
 
 val genSrcDir = file("src/gen")
 
-java.sourceSets {
-    getByName("main").java.srcDirs(genSrcDir)
-    if (isTrue("AREND_EXCLUDE_CONSOLE")) {
-        getByName("main").java.exclude("**/frontend/**")
+sourceSets {
+    main {
+        java {
+            srcDirs(genSrcDir)
+            if (isTrue("AREND_EXCLUDE_CONSOLE")) {
+                exclude("**/frontend/**")
+            }
+        }
     }
 }
 
@@ -83,7 +87,7 @@ protobuf.protobuf.run {
 }
 
 tasks.withType<Wrapper> {
-    gradleVersion = "4.9"
+    gradleVersion = "5.5.1"
 }
 
 
@@ -100,7 +104,7 @@ task<JavaExec>("prelude") {
     description = "Builds the prelude cache"
     group = "Build"
     main = "$arendPackage.frontend.PreludeBinaryGenerator"
-    classpath = java.sourceSets["main"].runtimeClasspath
+    classpath = sourceSets["main"].runtimeClasspath
     args = listOf(preludeOutputDir)
     dependsOn("copyPrelude")
 }
