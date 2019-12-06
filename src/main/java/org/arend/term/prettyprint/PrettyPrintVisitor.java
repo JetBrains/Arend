@@ -1199,9 +1199,13 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       for (Concrete.ClassElement element : def.getElements()) {
         myBuilder.append('\n');
         printIndent();
-        myBuilder.append("| ");
         if (element instanceof Concrete.ClassField) {
           Concrete.ClassField field = (Concrete.ClassField) element;
+          switch (field.getKind()) {
+            case FIELD: myBuilder.append("\\field "); break;
+            case PROPERTY: myBuilder.append("\\property "); break;
+            default: myBuilder.append("| ");
+          }
           prettyPrintNameWithPrecedence(field.getData());
           if (!field.getParameters().isEmpty()) {
             myBuilder.append(" ");
@@ -1210,7 +1214,19 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
           myBuilder.append(" : ");
           printTypeLevel(field.getResultType(), field.getResultTypeLevel());
         } else if (element instanceof Concrete.ClassFieldImpl) {
+          myBuilder.append("| ");
           visitClassFieldImpl((Concrete.ClassFieldImpl) element);
+        } else if (element instanceof Concrete.OverriddenField) {
+          Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+          myBuilder
+            .append("\\override ")
+            .append(field.getOverriddenField().textRepresentation());
+          if (!field.getParameters().isEmpty()) {
+            myBuilder.append(" ");
+            prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
+          }
+          myBuilder.append(" : ");
+          printTypeLevel(field.getResultType(), field.getResultTypeLevel());
         } else {
           throw new IllegalStateException();
         }

@@ -279,6 +279,15 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           }
         } else if (element instanceof Abstract.ClassFieldImpl) {
           buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);
+        } else if (element instanceof Abstract.OverriddenField) {
+          Abstract.OverriddenField field = (Abstract.OverriddenField) element;
+          Abstract.Reference ref = field.getOverriddenField();
+          Abstract.Expression type = field.getResultType();
+          if (ref == null || type == null) {
+            continue;
+          }
+          Abstract.Expression typeLevel = field.getResultTypeLevel();
+          elements.add(new Concrete.OverriddenField(field.getData(), ref.getReferent(), buildTypeParameters(field.getParameters()), type.accept(this, null), typeLevel == null ? null : typeLevel.accept(this, null)));
         } else {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Unknown class element", element));
         }

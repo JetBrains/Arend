@@ -14,17 +14,20 @@ nsUsing : USING? '(' nsId? (',' nsId)* ')';
 
 nsId : ID (AS precedence ID)?;
 
-classFieldOrImpl : fieldMod precedence ID tele* ':' returnExpr # classField
-                 | coClause                                    # classImpl
+classFieldDef : precedence ID tele* ':' returnExpr;
+
+classFieldOrImpl : '|' classFieldDef    # classField
+                 | coClause             # classImpl
                  ;
 
-fieldMod  : '|'           # fieldPipe
-          | '\\field'     # fieldField
+fieldMod  : '\\field'     # fieldField
           | '\\property'  # fieldProperty
           ;
 
-classStat : classFieldOrImpl                  # classFieldOrImplStat
-          | definition                        # classDefinitionStat
+classStat : classFieldOrImpl                            # classFieldOrImplStat
+          | definition                                  # classDefinitionStat
+          | fieldMod classFieldDef                      # classFieldStat
+          | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           ;
 
 definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?                              # defFunction

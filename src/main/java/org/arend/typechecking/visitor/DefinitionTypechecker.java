@@ -15,10 +15,7 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.type.ExpectedType;
 import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.expr.visitor.FieldsCollector;
-import org.arend.core.expr.visitor.FreeVariablesCollector;
-import org.arend.core.expr.visitor.GoodThisParametersVisitor;
-import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.core.expr.visitor.*;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.Pattern;
@@ -1754,8 +1751,44 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (newDef) {
           typedDef.implementField(field, new AbsExpression(thisBinding, checkImplementations && result != null ? result.expression : new ErrorExpression(null, null)));
         }
+      } else if (element instanceof Concrete.OverriddenField) {
+        ClassField field = typecheckClassField((Concrete.OverriddenField) element, typedDef, localInstances, newDef, hasClassifyingField);
+        if (field == null) {
+          classOk = false;
+        }
       } else {
         throw new IllegalStateException();
+      }
+    }
+
+    // Set overridden fields
+    if (!typedDef.getSuperClasses().isEmpty()) {
+      for (ClassField field : typedDef.getFields()) {
+        if (!typedDef.isOverridden(field)) {
+          ClassDefinition originalSuperClass = null;
+          PiExpression type = null;
+          for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+            PiExpression superType = superClass.getOverriddenType(field, Sort.STD);
+            if (superType != null) {
+              if (type == null) {
+                originalSuperClass = superClass;
+                TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
+                type = new PiExpression(superType.getResultSort(), thisParam, superType.applyExpression(new ReferenceExpression(thisParam)));
+              } else {
+                if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, type.getCodomain(), superType.applyExpression(new ReferenceExpression(type.getParameters())), ExpectedType.OMEGA, def)) {
+                  if (!type.getCodomain().isError() && !superType.getCodomain().isError()) {
+                    errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
+                  }
+                  type = new PiExpression(type.getResultSort(), type.getParameters(), new ErrorExpression(null, null));
+                  break;
+                }
+              }
+            }
+          }
+          if (type != null) {
+            typedDef.overrideField(field, type);
+          }
+        }
       }
     }
 
@@ -1822,11 +1855,18 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         field.getType(Sort.STD).getCodomain().accept(visitor, null);
       }
       for (Concrete.ClassElement element : def.getElements()) {
-        ClassField field = element instanceof Concrete.ClassFieldImpl ? typechecker.referableToClassField(((Concrete.ClassFieldImpl) element).getImplementedField(), null) : null;
-        if (field != null) {
-          AbsExpression impl = typedDef.getImplementation(field);
-          if (impl != null) {
-            impl.getExpression().accept(visitor, null);
+        if (element instanceof Concrete.ClassFieldImpl) {
+          ClassField field = typechecker.referableToClassField(((Concrete.ClassFieldImpl) element).getImplementedField(), null);
+          if (field != null) {
+            AbsExpression impl = typedDef.getImplementation(field);
+            if (impl != null) {
+              impl.getExpression().accept(visitor, null);
+            }
+          }
+        } else if (element instanceof Concrete.OverriddenField) {
+          ClassField field = typechecker.referableToClassField(((Concrete.OverriddenField) element).getOverriddenField(), null);
+          if (field != null) {
+            field.getType(Sort.STD).getCodomain().accept(visitor, null);
           }
         }
       }
@@ -1853,16 +1893,28 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
   }
 
-  private ClassField typecheckClassField(Concrete.ClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean newDef, boolean hasClassifyingField) {
+  private ClassField typecheckClassField(Concrete.BaseClassField def, ClassDefinition parentClass, List<LocalInstance> localInstances, boolean newDef, boolean hasClassifyingField) {
+    ClassField typedDef = null;
+    if (def instanceof Concrete.OverriddenField) {
+      typedDef = typechecker.referableToClassField(((Concrete.OverriddenField) def).getOverriddenField(), def);
+      if (typedDef == null) {
+        return null;
+      }
+
+      if (typedDef.getParentClass() == parentClass || !parentClass.getFields().contains(typedDef)) {
+        errorReporter.report(new TypecheckingError("Overridden field must belong to a super class", def));
+        return null;
+      }
+    }
+
     if (!def.getParameters().isEmpty()) {
       def.setResultType(new Concrete.PiExpression(def.getParameters().get(0).getData(), new ArrayList<>(def.getParameters()), def.getResultType()));
       def.getParameters().clear();
     }
 
-    boolean isProperty = false;
+    boolean isProperty;
     boolean ok;
     PiExpression piType;
-    ClassField typedDef = null;
     try (Utils.SetContextSaver ignore = new Utils.SetContextSaver<>(typechecker.getFreeBindings())) {
       try (Utils.SetContextSaver ignored = new Utils.SetContextSaver<>(typechecker.getContext())) {
         Concrete.Expression codomain;
@@ -1883,8 +1935,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
         setClassLocalInstancePool(localInstances, thisParam, def, !parentClass.isRecord() && !hasClassifyingField ? parentClass : null);
         Decision propLevel = isPropLevel(codomain);
-        boolean needProp = def.getKind() == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null;
-        Type typeResult = typechecker.checkType(codomain, needProp && propLevel == Decision.NO ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, true);
+        ClassFieldKind kind = def instanceof Concrete.ClassField ? ((Concrete.ClassField) def).getKind() : typedDef == null ? ClassFieldKind.ANY : typedDef.isProperty() ? ClassFieldKind.PROPERTY : ClassFieldKind.FIELD;
+        boolean needProp = kind == ClassFieldKind.PROPERTY && def.getResultTypeLevel() == null;
+        isProperty = needProp && propLevel == Decision.NO;
+        Type typeResult = typechecker.checkType(codomain, isProperty ? new UniverseExpression(Sort.PROP) : ExpectedType.OMEGA, true);
         myInstancePool.setInstancePool(null);
         ok = typeResult != null;
         Expression typeExpr = ok ? typeResult.getExpr() : new ErrorExpression(null, null);
@@ -1892,21 +1946,21 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (ok) {
           if (needProp && propLevel == Decision.YES) {
             isProperty = true;
-          } else if (def.getKind() == ClassFieldKind.ANY || needProp && propLevel == Decision.MAYBE) {
+          } else if (kind == ClassFieldKind.ANY || needProp && propLevel == Decision.MAYBE) {
             isProperty = true;
             Sort sort = typeResult.getSortOfType();
             if (sort == null || !sort.isProp()) {
               DefCallExpression defCall = propLevel == Decision.NO ? null : typeExpr.cast(DefCallExpression.class);
               Integer level = defCall == null ? null : defCall.getUseLevel();
-              if (def.getKind() == ClassFieldKind.PROPERTY && !checkLevel(false, true, level , def) || def.getKind() == ClassFieldKind.ANY && (level == null || level != -1)) {
+              if (kind == ClassFieldKind.PROPERTY && !checkLevel(false, true, level , def) || kind == ClassFieldKind.ANY && (level == null || level != -1)) {
                 isProperty = false;
               }
             }
           }
         }
 
-        if (newDef) {
-          typedDef = addField(def.getData(), parentClass, piType, null);
+        if (newDef && def instanceof Concrete.ClassField) {
+          typedDef = addField(((Concrete.ClassField) def).getData(), parentClass, piType, null);
         }
 
         if (def.getResultTypeLevel() != null) {
@@ -1931,7 +1985,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             }
           }
           if (!link.hasNext() && resultType != null) {
-            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, def.getKind() == ClassFieldKind.PROPERTY, resultType, null, typedDef, newDef);
+            Integer level = typecheckResultTypeLevel(def.getResultTypeLevel(), false, kind == ClassFieldKind.PROPERTY, resultType, null, typedDef, newDef && def instanceof Concrete.ClassField);
             isProperty = level != null && level == -1;
           } else {
             // Just reports an error
@@ -1941,14 +1995,45 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    if (newDef && typedDef == null) {
+      throw new IllegalStateException();
+    }
+
     GoodThisParametersVisitor goodThisParametersVisitor = new GoodThisParametersVisitor(piType.getParameters());
     piType.getCodomain().accept(goodThisParametersVisitor, null);
     List<Boolean> goodThisParams = goodThisParametersVisitor.getGoodParameters();
     if (goodThisParams.isEmpty() || !goodThisParams.get(0)) {
       errorReporter.report(new TypecheckingError("The type of the field contains illegal \\this occurrence", def.getResultType()));
       ok = false;
-      if (newDef) {
+      if (newDef && def instanceof Concrete.ClassField) {
         typedDef.setType(new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression(null, null)));
+      }
+    }
+
+    if (def instanceof Concrete.OverriddenField) {
+      if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, piType.getCodomain(), typedDef.getType(Sort.STD).applyExpression(new ReferenceExpression(piType.getParameters())), ExpectedType.OMEGA, def)) {
+        if (!piType.getCodomain().isError() && !typedDef.getType(Sort.STD).getCodomain().isError()) {
+          errorReporter.report(new TypecheckingError("The type of the overridden field is not compatible with the specified type", def));
+        }
+        ok = false;
+      }
+      for (ClassDefinition superClass : parentClass.getSuperClasses()) {
+        if (!ok) {
+          break;
+        }
+        PiExpression superType = superClass.getOverriddenType(typedDef, Sort.STD);
+        if (superType != null && !CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.LE, piType.getCodomain(), superType.applyExpression(new ReferenceExpression(piType.getParameters())), ExpectedType.OMEGA, def)) {
+          if (!piType.getCodomain().isError() && !superType.getCodomain().isError()) {
+            errorReporter.report(new TypecheckingError("The type of the field in super class '" + superClass.getName() + "' is not compatible with the specified type", def));
+          }
+          ok = false;
+        }
+      }
+      if (newDef) {
+        parentClass.overrideField(typedDef, ok ? piType : new PiExpression(piType.getResultSort(), piType.getParameters(), new ErrorExpression(null, null)));
+      }
+      if (!ok) {
+        return null;
       }
     }
 
@@ -1956,7 +2041,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       return null;
     }
 
-    if (isProperty) {
+    if (isProperty && def instanceof Concrete.ClassField) {
       typedDef.setIsProperty();
     }
     if (!ok) {

@@ -173,7 +173,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
   @Override
   public Concrete.Expression visitClassExt(Concrete.ClassExtExpression expr, P params) {
     expr.setBaseClassExpression(expr.getBaseClassExpression().accept(this, params));
-    visitClassFieldImpls(expr.getStatements(), params);
+    visitClassElements(expr.getStatements(), params);
     return expr;
   }
 
@@ -181,14 +181,27 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     if (classFieldImpl.implementation != null) {
       classFieldImpl.implementation = classFieldImpl.implementation.accept(this, params);
     }
-    visitClassFieldImpls(classFieldImpl.subClassFieldImpls, params);
+    visitClassElements(classFieldImpl.subClassFieldImpls, params);
   }
 
-  protected <T extends Concrete.ClassElement> void visitClassFieldImpls(List<T> elements, P params) {
-    for (Concrete.ClassElement element : elements) {
-      if (element instanceof Concrete.ClassFieldImpl) {
-        visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
+  // except for fields
+  protected void visitClassElement(Concrete.ClassElement element, P params) {
+    if (element instanceof Concrete.ClassFieldImpl) {
+      visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
+    } else if (element instanceof Concrete.OverriddenField) {
+      Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+      visitParameters(field.getParameters(), params);
+      field.setResultType(field.getResultType().accept(this, params));
+      if (field.getResultTypeLevel() != null) {
+        field.setResultTypeLevel(field.getResultTypeLevel().accept(this, params));
       }
+    }
+  }
+
+  // except for fields
+  protected <T extends Concrete.ClassElement> void visitClassElements(List<T> elements, P params) {
+    for (Concrete.ClassElement element : elements) {
+      visitClassElement(element, params);
     }
   }
 
@@ -243,7 +256,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
       ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, params));
     }
     visitClauses(body.getClauses(), params);
-    visitClassFieldImpls(body.getClassFieldImpls(), params);
+    visitClassElements(body.getClassFieldImpls(), params);
 
     return null;
   }
@@ -289,7 +302,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
         }
       }
     }
-    visitClassFieldImpls(def.getElements(), params);
+    visitClassElements(def.getElements(), params);
     return null;
   }
 }

@@ -173,7 +173,7 @@ public final class Abstract {
 
   public interface ClassFieldImpl extends ClassElement, ParametersHolder, ClassReferenceHolder {
     @Nullable Object getData();
-    @Nullable Reference getImplementedField();
+    /* @Nonnull */ @Nullable Reference getImplementedField();
     /* @Nonnull */ @Nullable Expression getImplementation();
     boolean hasImplementation();
   }
@@ -251,6 +251,13 @@ public final class Abstract {
 
   public interface ClassField extends ClassElement, ReferableDefinition, ParametersHolder {
     ClassFieldKind getClassFieldKind();
+    /* @Nonnull */ @Nullable Expression getResultType();
+    @Nullable Expression getResultTypeLevel();
+  }
+
+  public interface OverriddenField extends ClassElement, ParametersHolder {
+    @Nullable Object getData();
+    /* @Nonnull */ @Nullable Reference getOverriddenField();
     /* @Nonnull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
   }

@@ -1379,7 +1379,15 @@ public final class Concrete {
     }
   }
 
-  public static class ClassField extends ReferableDefinition implements ClassElement {
+  public interface BaseClassField extends ClassElement {
+    @Nonnull List<TypeParameter> getParameters();
+    @Nonnull Expression getResultType();
+    void setResultType(Expression resultType);
+    @Nullable Expression getResultTypeLevel();
+    void setResultTypeLevel(Expression resultTypeLevel);
+  }
+
+  public static class ClassField extends ReferableDefinition implements BaseClassField {
     private final ClassDefinition myParentClass;
     private final boolean myExplicit;
     private final ClassFieldKind myKind;
@@ -1412,24 +1420,29 @@ public final class Concrete {
     }
 
     @Nonnull
+    @Override
     public List<TypeParameter> getParameters() {
       return myParameters;
     }
 
     @Nonnull
+    @Override
     public Expression getResultType() {
       return myResultType;
     }
 
+    @Override
     public void setResultType(Expression resultType) {
       myResultType = resultType;
     }
 
     @Nullable
+    @Override
     public Expression getResultTypeLevel() {
       return myResultTypeLevel;
     }
 
+    @Override
     public void setResultTypeLevel(Expression resultTypeLevel) {
       myResultTypeLevel = resultTypeLevel;
     }
@@ -1443,6 +1456,58 @@ public final class Concrete {
     @Override
     public <P, R> R accept(ConcreteReferableDefinitionVisitor<? super P, ? extends R> visitor, P params) {
       return visitor.visitClassField(this, params);
+    }
+  }
+
+  public static class OverriddenField extends SourceNodeImpl implements BaseClassField {
+    private Referable myOverriddenField;
+    private final List<TypeParameter> myParameters;
+    private Expression myResultType;
+    private Expression myResultTypeLevel;
+
+    public OverriddenField(Object data, Referable overriddenField, List<TypeParameter> parameters, Expression resultType, Expression resultTypeLevel) {
+      super(data);
+      myOverriddenField = overriddenField;
+      myParameters = parameters;
+      myResultType = resultType;
+      myResultTypeLevel = resultTypeLevel;
+    }
+
+    @Nonnull
+    public Referable getOverriddenField() {
+      return myOverriddenField;
+    }
+
+    public void setOverriddenField(Referable overriddenField) {
+      myOverriddenField = overriddenField;
+    }
+
+    @Nonnull
+    @Override
+    public List<TypeParameter> getParameters() {
+      return myParameters;
+    }
+
+    @Nonnull
+    @Override
+    public Expression getResultType() {
+      return myResultType;
+    }
+
+    @Override
+    public void setResultType(Expression resultType) {
+      myResultType = resultType;
+    }
+
+    @Nullable
+    @Override
+    public Expression getResultTypeLevel() {
+      return myResultTypeLevel;
+    }
+
+    @Override
+    public void setResultTypeLevel(Expression resultTypeLevel) {
+      myResultTypeLevel = resultTypeLevel;
     }
   }
 

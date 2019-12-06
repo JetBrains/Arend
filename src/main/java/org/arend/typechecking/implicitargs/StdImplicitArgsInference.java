@@ -191,6 +191,20 @@ public class StdImplicitArgsInference implements ImplicitArgsInference {
       return null;
     }
 
+    if (result instanceof DefCallResult && !isExplicit && ((DefCallResult) result).getDefinition() instanceof ClassField) {
+      DefCallResult defCallResult = (DefCallResult) result;
+      ClassField field = (ClassField) defCallResult.getDefinition();
+      ClassCallExpression classCall = argResult.type.normalize(NormalizeVisitor.Mode.WHNF).cast(ClassCallExpression.class);
+      PiExpression piType = null;
+      if (classCall != null) {
+        piType = classCall.getDefinition().getOverriddenType(field, defCallResult.getSortArgument());
+      }
+      if (piType == null) {
+        piType = field.getType(defCallResult.getSortArgument());
+      }
+      return new TypecheckingResult(FieldCallExpression.make(field, defCallResult.getSortArgument(), argResult.expression), piType.applyExpression(argResult.expression));
+    }
+
     return result.applyExpression(argResult.expression, myVisitor.getErrorReporter(), fun);
   }
 

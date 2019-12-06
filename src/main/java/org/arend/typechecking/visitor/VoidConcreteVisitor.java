@@ -254,6 +254,15 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
         visitClassField((Concrete.ClassField) element, params);
       } else if (element instanceof Concrete.ClassFieldImpl) {
         visitClassFieldImpl((Concrete.ClassFieldImpl) element, params);
+      } else if (element instanceof Concrete.OverriddenField) {
+        Concrete.OverriddenField field = (Concrete.OverriddenField) element;
+        visitParameters(field.getParameters(), params);
+        field.getResultType().accept(this, params);
+        if (field.getResultTypeLevel() != null) {
+          field.getResultTypeLevel().accept(this, params);
+        }
+      } else {
+        throw new IllegalStateException();
       }
     }
   }

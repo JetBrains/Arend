@@ -6,17 +6,20 @@ import org.arend.core.expr.*;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
+import org.arend.core.subst.SubstVisitor;
 import org.arend.naming.reference.TCClassReferable;
 
 import java.util.*;
 
 public class ClassDefinition extends Definition {
-  private final Set<ClassDefinition> mySuperClasses;
-  private final LinkedHashSet<ClassField> myFields;
-  private final List<ClassField> myPersonalFields;
-  private final Map<ClassField, AbsExpression> myImplemented;
+  private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
+  private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
+  private final List<ClassField> myPersonalFields = new ArrayList<>();
+  private final Map<ClassField, AbsExpression> myImplemented = new HashMap<>();
+  private final Map<ClassField, PiExpression> myOverridden = new HashMap<>();
   private ClassField myCoercingField;
-  private Sort mySort;
+  private Sort mySort = Sort.PROP;
   private boolean myRecord = false;
   private final CoerceData myCoerce = new CoerceData(this);
   private Set<ClassField> myGoodThisFields = Collections.emptySet();
@@ -25,11 +28,6 @@ public class ClassDefinition extends Definition {
 
   public ClassDefinition(TCClassReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
-    mySuperClasses = new LinkedHashSet<>();
-    myFields = new LinkedHashSet<>();
-    myPersonalFields = new ArrayList<>();
-    myImplemented = new HashMap<>();
-    mySort = Sort.PROP;
   }
 
   @Override
@@ -205,6 +203,23 @@ public class ClassDefinition extends Definition {
 
   public AbsExpression implementField(ClassField field, AbsExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
+  }
+
+  public Set<Map.Entry<ClassField, PiExpression>> getOverriddenFields() {
+    return myOverridden.entrySet();
+  }
+
+  public PiExpression getOverriddenType(ClassField field, Sort sortArg) {
+    PiExpression type = myOverridden.get(field);
+    return type == null || sortArg.equals(Sort.STD) ? type : new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
+  }
+
+  public boolean isOverridden(ClassField field) {
+    return myOverridden.containsKey(field);
+  }
+
+  public PiExpression overrideField(ClassField field, PiExpression type) {
+    return myOverridden.putIfAbsent(field, type);
   }
 
   public Set<? extends ClassField> getGoodThisFields() {

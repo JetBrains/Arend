@@ -305,13 +305,17 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
     return ExpressionProtos.Expression.newBuilder().setLam(builder).build();
   }
 
-  @Override
-  public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
+  ExpressionProtos.Expression.Pi visitPi(PiExpression expr) {
     ExpressionProtos.Expression.Pi.Builder builder = ExpressionProtos.Expression.Pi.newBuilder();
     builder.setResultSort(LevelProtos.Sort.newBuilder(writeSort(expr.getResultSort())));
     builder.setParam(writeSingleParameter(expr.getParameters()));
     builder.setCodomain(expr.getCodomain().accept(this, null));
-    return ExpressionProtos.Expression.newBuilder().setPi(builder).build();
+    return builder.build();
+  }
+
+  @Override
+  public ExpressionProtos.Expression visitPi(PiExpression expr, Void params) {
+    return ExpressionProtos.Expression.newBuilder().setPi(visitPi(expr)).build();
   }
 
   @Override
