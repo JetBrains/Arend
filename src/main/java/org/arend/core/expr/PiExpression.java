@@ -9,6 +9,7 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
 import org.arend.term.concrete.Concrete;
@@ -50,6 +51,23 @@ public class PiExpression extends Expression implements Type {
 
   public Expression getCodomain() {
     return myCodomain;
+  }
+
+  @Override
+  public Expression applyExpression(Expression expression) {
+    SingleDependentLink link = myLink;
+    ExprSubstitution subst = new ExprSubstitution(link, expression);
+    link = link.getNext();
+    Expression result = myCodomain;
+    if (link.hasNext()) {
+      result = new PiExpression(myResultSort, link, result);
+    }
+    return result.subst(subst);
+  }
+
+  @Override
+  public Expression applyExpression(Expression expression, boolean normalizing) {
+    return applyExpression(expression);
   }
 
   @Override

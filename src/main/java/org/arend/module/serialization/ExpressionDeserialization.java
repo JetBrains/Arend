@@ -288,7 +288,7 @@ class ExpressionDeserialization {
     return new LamExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getBody()));
   }
 
-  private PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationException {
+  PiExpression readPi(ExpressionProtos.Expression.Pi proto) throws DeserializationException {
     return new PiExpression(readSort(proto.getResultSort()), readSingleParameter(proto.getParam()), readExpr(proto.getCodomain()));
   }
 

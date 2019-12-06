@@ -1226,7 +1226,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
             prettyPrintParameters(field.getParameters(), Concrete.ReferenceExpression.PREC);
           }
           myBuilder.append(" : ");
-          field.getResultType().accept(this, new Precedence(Expression.PREC));
+          printTypeLevel(field.getResultType(), field.getResultTypeLevel());
         } else {
           throw new IllegalStateException();
         }

@@ -259,5 +259,6 @@ public final class Abstract {
     @Nullable Object getData();
     /* @Nonnull */ @Nullable Reference getOverriddenField();
     /* @Nonnull */ @Nullable Expression getResultType();
+    @Nullable Expression getResultTypeLevel();
   }
 }

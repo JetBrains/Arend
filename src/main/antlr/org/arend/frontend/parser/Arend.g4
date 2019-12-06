@@ -24,10 +24,10 @@ fieldMod  : '\\field'     # fieldField
           | '\\property'  # fieldProperty
           ;
 
-classStat : classFieldOrImpl                        # classFieldOrImplStat
-          | definition                              # classDefinitionStat
-          | fieldMod classFieldDef                  # classFieldStat
-          | '\\override' longName tele* ':' expr    # classOverrideStat
+classStat : classFieldOrImpl                            # classFieldOrImplStat
+          | definition                                  # classDefinitionStat
+          | fieldMod classFieldDef                      # classFieldStat
+          | '\\override' longName tele* ':' returnExpr  # classOverrideStat
           ;
 
 definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?                              # defFunction

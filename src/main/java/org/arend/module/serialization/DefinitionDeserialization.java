@@ -54,14 +54,11 @@ public class DefinitionDeserialization {
     def.setHasUniverses(defProto.getHasUniverses());
   }
 
-  private PiExpression checkFieldType(Expression expr, ClassDefinition classDef) throws DeserializationException {
-    if (expr instanceof PiExpression) {
-      PiExpression piExpr = (PiExpression) expr;
-      if (!piExpr.getParameters().getNext().hasNext()) {
-        Expression type = piExpr.getParameters().getTypeExpr();
-        if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition().equals(classDef)) {
-          return piExpr;
-        }
+  private PiExpression checkFieldType(PiExpression expr, ClassDefinition classDef) throws DeserializationException {
+    if (!expr.getParameters().getNext().hasNext()) {
+      Expression type = expr.getParameters().getTypeExpr();
+      if (type instanceof ClassCallExpression && ((ClassCallExpression) type).getDefinition().equals(classDef)) {
+        return expr;
       }
     }
     throw new DeserializationException("Incorrect class field type");
@@ -73,7 +70,7 @@ public class DefinitionDeserialization {
       if (!fieldProto.hasType()) {
         throw new DeserializationException("Missing class field type");
       }
-      PiExpression fieldType = checkFieldType(defDeserializer.readExpr(fieldProto.getType()), classDef);
+      PiExpression fieldType = checkFieldType(defDeserializer.readPi(fieldProto.getType()), classDef);
       if (fieldProto.getIsProperty()) {
         field.setIsProperty();
       }
@@ -93,6 +90,9 @@ public class DefinitionDeserialization {
     }
     for (Map.Entry<Integer, ExpressionProtos.Expression.Abs> entry : classProto.getImplementationsMap().entrySet()) {
       classDef.implementField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), defDeserializer.readAbsExpr(entry.getValue()));
+    }
+    for (Map.Entry<Integer, ExpressionProtos.Expression.Pi> entry : classProto.getOverriddenFieldMap().entrySet()) {
+      classDef.overrideField(myCallTargetProvider.getCallTarget(entry.getKey(), ClassField.class), checkFieldType(defDeserializer.readPi(entry.getValue()), classDef));
     }
     classDef.setSort(defDeserializer.readSort(classProto.getSort()));
 

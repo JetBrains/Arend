@@ -56,10 +56,11 @@ message Definition {
         repeated int32 good_field = 9;
         repeated int32 type_class_field = 10;
         repeated ClassParametersLevel parameters_level = 12;
+        map<int32, Expression.Pi> overridden_field = 13;
 
         message Field {
             Referable referable = 1;
-            Expression type = 3;
+            Expression.Pi type = 3;
             Expression type_level = 8;
             bool hasTypeClassReference = 4;
             bool isExplicit = 5;

@@ -149,6 +149,9 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
         classFieldChecker.visitParameters(field.getParameters(), null);
         field.getParameters().add(0, new Concrete.TelescopeParameter(field.getResultType().getData(), false, Collections.singletonList(thisParameter), new Concrete.ReferenceExpression(field.getResultType().getData(), def.getData())));
         field.setResultType(field.getResultType().accept(classFieldChecker, null));
+        if (field.getResultTypeLevel() != null) {
+          field.setResultTypeLevel(field.getResultTypeLevel().accept(classFieldChecker, null));
+        }
       }
     }
 

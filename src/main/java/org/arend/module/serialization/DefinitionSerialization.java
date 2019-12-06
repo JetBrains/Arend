@@ -8,6 +8,7 @@ import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.AbsExpression;
 import org.arend.core.expr.Expression;
+import org.arend.core.expr.PiExpression;
 import org.arend.core.pattern.BindingPattern;
 import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.EmptyPattern;
@@ -60,7 +61,7 @@ public class DefinitionSerialization {
       DefinitionProtos.Definition.ClassData.Field.Builder fBuilder = DefinitionProtos.Definition.ClassData.Field.newBuilder();
       fBuilder.setReferable(writeReferable(field));
       fBuilder.setHasTypeClassReference(field.getReferable().getTypeClassReference() != null);
-      fBuilder.setType(defSerializer.writeExpr(field.getType(Sort.STD)));
+      fBuilder.setType(defSerializer.visitPi(field.getType(Sort.STD)));
       if (field.getTypeLevel() != null) {
         fBuilder.setTypeLevel(defSerializer.writeExpr(field.getTypeLevel()));
       }
@@ -78,6 +79,9 @@ public class DefinitionSerialization {
     }
     for (Map.Entry<ClassField, AbsExpression> impl : definition.getImplemented()) {
       builder.putImplementations(myCallTargetIndexProvider.getDefIndex(impl.getKey()), defSerializer.writeAbsExpr(impl.getValue()));
+    }
+    for (Map.Entry<ClassField, PiExpression> entry : definition.getOverriddenFields()) {
+      builder.putOverriddenField(myCallTargetIndexProvider.getDefIndex(entry.getKey()), defSerializer.visitPi(entry.getValue()));
     }
     builder.setSort(defSerializer.writeSort(definition.getSort()));
 

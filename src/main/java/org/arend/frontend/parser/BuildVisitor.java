@@ -755,7 +755,8 @@ public class BuildVisitor extends ArendBaseVisitor {
         } else if (statementCtx instanceof ClassOverrideStatContext) {
           ClassOverrideStatContext overrideCtx = (ClassOverrideStatContext) statementCtx;
           LongNameContext longName = overrideCtx.longName();
-          elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele()), visitExpr(overrideCtx.expr())));
+          Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(overrideCtx.returnExpr());
+          elements.add(new Concrete.OverriddenField(tokenPosition(overrideCtx.start), LongUnresolvedReference.make(tokenPosition(longName.start), visitLongNamePath(longName)), visitTeles(overrideCtx.tele()), pair.proj1, pair.proj2));
         } else {
           throw new IllegalStateException();
         }

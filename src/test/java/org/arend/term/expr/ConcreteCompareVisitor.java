@@ -542,7 +542,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   private boolean compareOverriddenField(Concrete.OverriddenField field1, Concrete.OverriddenField field2) {
-    return Objects.equals(field1.getOverriddenField(), field2.getOverriddenField()) && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType());
+    return Objects.equals(field1.getOverriddenField(), field2.getOverriddenField()) && compareParameters(field1.getParameters(), field2.getParameters()) && compare(field1.getResultType(), field2.getResultType()) && compare(field1.getResultTypeLevel(), field2.getResultTypeLevel());
   }
 
   private boolean compareField(Concrete.ClassField field1, Concrete.ClassField field2) {

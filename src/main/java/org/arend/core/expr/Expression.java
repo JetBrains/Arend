@@ -209,22 +209,7 @@ public abstract class Expression implements ExpectedType, Body {
 
   public Expression applyExpression(Expression expression, boolean normalizing) {
     Expression normExpr = (normalizing ? normalize(NormalizeVisitor.Mode.WHNF) : this).getUnderlyingExpression();
-    if (normExpr instanceof ErrorExpression) {
-      return normExpr;
-    }
-    if (!(normExpr instanceof PiExpression)) {
-      return null;
-    }
-
-    PiExpression piExpr = (PiExpression) normExpr;
-    SingleDependentLink link = piExpr.getParameters();
-    ExprSubstitution subst = new ExprSubstitution(link, expression);
-    link = link.getNext();
-    Expression result = piExpr.getCodomain();
-    if (link.hasNext()) {
-      result = new PiExpression(piExpr.getResultSort(), link, result);
-    }
-    return result.subst(subst);
+    return normExpr instanceof ErrorExpression ? normExpr : normExpr instanceof PiExpression ? normExpr.applyExpression(expression, normalizing) : null;
   }
 
   public boolean canBeConstructor() {

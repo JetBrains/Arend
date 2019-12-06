@@ -192,6 +192,9 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
       Concrete.OverriddenField field = (Concrete.OverriddenField) element;
       visitParameters(field.getParameters(), params);
       field.setResultType(field.getResultType().accept(this, params));
+      if (field.getResultTypeLevel() != null) {
+        field.setResultTypeLevel(field.getResultTypeLevel().accept(this, params));
+      }
     }
   }
 

@@ -286,7 +286,8 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
           if (ref == null || type == null) {
             continue;
           }
-          elements.add(new Concrete.OverriddenField(field.getData(), ref.getReferent(), buildTypeParameters(field.getParameters()), type.accept(this, null)));
+          Abstract.Expression typeLevel = field.getResultTypeLevel();
+          elements.add(new Concrete.OverriddenField(field.getData(), ref.getReferent(), buildTypeParameters(field.getParameters()), type.accept(this, null), typeLevel == null ? null : typeLevel.accept(this, null)));
         } else {
           myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Unknown class element", element));
         }

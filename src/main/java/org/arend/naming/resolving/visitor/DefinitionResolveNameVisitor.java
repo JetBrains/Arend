@@ -449,6 +449,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         try (Utils.ContextSaver ignore = new Utils.ContextSaver(context)) {
           exprVisitor.visitParameters(field.getParameters(), null);
           field.setResultType(field.getResultType().accept(exprVisitor, null));
+          if (field.getResultTypeLevel() != null) {
+            field.setResultTypeLevel(field.getResultTypeLevel().accept(exprVisitor, null));
+          }
         }
       }
     }
