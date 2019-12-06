@@ -126,7 +126,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   @Override
-  public List<ExtClause> visitFunction(Concrete.FunctionDefinition def, Void params) {
+  public List<ExtClause> visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
     LocalInstancePool localInstancePool = new LocalInstancePool(typechecker);
     myInstancePool.setInstancePool(localInstancePool);
@@ -766,7 +766,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       if (def.getResultType() != null) {
         Referable typeRef = def.getResultType().getUnderlyingReferable();
         if (typeRef instanceof ClassReferable) {
-          Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, body.getClassFieldImpls());
+          Pair<ClassCallExpression, ClassCallExpression> result = typecheckCoClauses(typedDef, def, body.getCoClauseElements());
           if (result != null) {
             if (newDef && !def.isRecursive()) {
               typedDef.setResultType(def.getKind() == FunctionKind.CONS ? result.proj1 : result.proj2);
@@ -823,7 +823,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
-    if (!checkElimBody(def)) {
+    if (!checkElimBody(def, def.getBody())) {
       typedDef.setBody(null);
     }
 

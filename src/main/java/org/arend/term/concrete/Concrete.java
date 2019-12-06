@@ -505,7 +505,12 @@ public final class Concrete {
   public interface ClassElement extends SourceNode {
   }
 
-  public static class ClassFieldImpl extends SourceNodeImpl implements ClassElement {
+  public interface CoClauseElement extends ClassElement {
+    Referable getImplementedField();
+    void setImplementedField(Referable newImplementedField);
+  }
+
+  public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement {
     private Referable myImplementedField;
     public Expression implementation;
     public final List<ClassFieldImpl> subClassFieldImpls;
@@ -517,10 +522,12 @@ public final class Concrete {
       this.subClassFieldImpls = subClassFieldImpls;
     }
 
+    @Override
     public Referable getImplementedField() {
       return myImplementedField;
     }
 
+    @Override
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
     }
@@ -1154,7 +1161,7 @@ public final class Concrete {
 
   // Definitions
 
-  public static Collection<? extends TypeParameter> getParameters(ReferableDefinition definition, boolean onlyThisDef) {
+  public static Collection<? extends Parameter> getParameters(ReferableDefinition definition, boolean onlyThisDef) {
     if (definition instanceof FunctionDefinition) {
       return ((FunctionDefinition) definition).getParameters();
     }
@@ -1379,6 +1386,25 @@ public final class Concrete {
     }
   }
 
+  public static class CoClauseFunctionDefinition extends BaseFunctionDefinition implements CoClauseElement {
+    private Referable myImplementedField;
+
+    public CoClauseFunctionDefinition(TCReferable referable, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+      super(referable, parameters, resultType, resultTypeLevel, body);
+      myImplementedField = implementedField;
+    }
+
+    @Override
+    public Referable getImplementedField() {
+      return myImplementedField;
+    }
+
+    @Override
+    public void setImplementedField(Referable newImplementedField) {
+      myImplementedField = newImplementedField;
+    }
+  }
+
   public interface BaseClassField extends ClassElement {
     @Nonnull List<TypeParameter> getParameters();
     @Nonnull Expression getResultType();
@@ -1522,7 +1548,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<ClassFieldImpl> getClassFieldImpls() {
+    public List<CoClauseElement> getCoClauseElements() {
       return Collections.emptyList();
     }
 
@@ -1578,30 +1604,27 @@ public final class Concrete {
   }
 
   public static class CoelimFunctionBody extends FunctionBody {
-    private final List<ClassFieldImpl> myClassFieldImpls;
+    private final List<CoClauseElement> myCoClauseElements;
 
-    public CoelimFunctionBody(Object data, List<ClassFieldImpl> classFieldImpls) {
+    public CoelimFunctionBody(Object data, List<CoClauseElement> coClauseElements) {
       super(data);
-      myClassFieldImpls = classFieldImpls;
+      myCoClauseElements = coClauseElements;
     }
 
     @Nonnull
-    public List<ClassFieldImpl> getClassFieldImpls() {
-      return myClassFieldImpls;
+    public List<CoClauseElement> getCoClauseElements() {
+      return myCoClauseElements;
     }
   }
 
-  public static class FunctionDefinition extends Definition {
-    private final List<TelescopeParameter> myParameters;
+  public static class BaseFunctionDefinition extends Definition {
+    private final List<Parameter> myParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
     private final FunctionBody myBody;
-    private final FunctionKind myKind;
-    private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public FunctionDefinition(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+    public BaseFunctionDefinition(TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable);
-      myKind = kind;
       myResolved = Resolved.NOT_RESOLVED;
       myParameters = parameters;
       myResultType = resultType;
@@ -1609,8 +1632,9 @@ public final class Concrete {
       myBody = body;
     }
 
+    @Nullable
     public FunctionKind getKind() {
-      return myKind;
+      return null;
     }
 
     public TCReferable getUseParent() {
@@ -1618,7 +1642,7 @@ public final class Concrete {
     }
 
     @Nonnull
-    public List<TelescopeParameter> getParameters() {
+    public List<Parameter> getParameters() {
       return myParameters;
     }
 
@@ -1646,6 +1670,28 @@ public final class Concrete {
     }
 
     @Override
+    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
+      return visitor.visitFunction(this, params);
+    }
+  }
+
+  public static class FunctionDefinition extends BaseFunctionDefinition {
+    private final FunctionKind myKind;
+    private List<TCReferable> myUsedDefinitions = Collections.emptyList();
+
+    public FunctionDefinition(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+      super(referable, parameters, resultType, resultTypeLevel, body);
+      myKind = kind;
+      myResolved = Resolved.NOT_RESOLVED;
+    }
+
+    @Override
+    @Nonnull
+    public FunctionKind getKind() {
+      return myKind;
+    }
+
+    @Override
     public List<TCReferable> getUsedDefinitions() {
       return myUsedDefinitions;
     }
@@ -1653,22 +1699,17 @@ public final class Concrete {
     public void setUsedDefinitions(List<TCReferable> usedDefinitions) {
       myUsedDefinitions = usedDefinitions;
     }
-
-    @Override
-    public <P, R> R accept(ConcreteDefinitionVisitor<? super P, ? extends R> visitor, P params) {
-      return visitor.visitFunction(this, params);
-    }
   }
 
   public static class UseDefinition extends FunctionDefinition {
     private final TCReferable myCoerceParent;
 
-    private UseDefinition(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
+    private UseDefinition(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, TCReferable coerceParent) {
       super(kind, referable, parameters, resultType, resultTypeLevel, body);
       myCoerceParent = coerceParent;
     }
 
-    public static FunctionDefinition make(FunctionKind kind, TCReferable referable, List<TelescopeParameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
+    public static FunctionDefinition make(FunctionKind kind, TCReferable referable, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body, LocatedReferable coerceParent) {
       return coerceParent instanceof TCReferable && kind.isUse() ? new UseDefinition(kind, referable, parameters, resultType, resultTypeLevel, body, (TCReferable) coerceParent) : new FunctionDefinition(kind.isUse() ? FunctionKind.FUNC : kind, referable, parameters, resultType, resultTypeLevel, body);
     }
 

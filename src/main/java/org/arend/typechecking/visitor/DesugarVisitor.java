@@ -55,7 +55,7 @@ public class DesugarVisitor extends BaseConcreteExpressionVisitor<Void> {
   }
 
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Void params) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, Void params) {
     // Process expressions
     super.visitFunction(def, null);
 

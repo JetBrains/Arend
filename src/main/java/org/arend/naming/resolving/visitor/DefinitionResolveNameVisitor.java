@@ -161,7 +161,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
@@ -206,15 +206,19 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
           myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
-          body.getClassFieldImpls().clear();
+          body.getCoClauseElements().clear();
         } else {
-          exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
+          for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
+            if (element instanceof Concrete.ClassFieldImpl) {
+              exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) typeRef);
+            }
+          }
         }
       } else {
         if (!(typeRef instanceof ErrorReference)) {
           myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
         }
-        body.getClassFieldImpls().clear();
+        body.getCoClauseElements().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
@@ -227,7 +231,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       exprVisitor.visitClauses(body.getClauses(), null);
     }
 
-    if (def.getKind().isUse()) {
+    if (def.getKind() != null && def.getKind().isUse()) {
       TCReferable useParent = def.getUseParent();
       boolean isFunc = myConcreteProvider.isFunction(useParent);
       if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {

@@ -24,14 +24,14 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
-  public void visitFunctionHeader(Concrete.FunctionDefinition def, Void params) {
+  public void visitFunctionHeader(Concrete.BaseFunctionDefinition def, Void params) {
     myDefinition = def;
     super.visitFunctionHeader(def, null);
     myTypechecker.checkFunctionLevel(def);
   }
 
   @Override
-  public Void visitFunctionBody(Concrete.FunctionDefinition def, Void params) {
+  public Void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
     checkClauses(def.getBody().getClauses(), def.getBody().getEliminatedReferences(), def.getParameters());
     super.visitFunctionBody(def, null);
     myTypechecker.checkElimBody(def);
