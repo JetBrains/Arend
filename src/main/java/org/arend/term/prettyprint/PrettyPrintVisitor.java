@@ -899,16 +899,13 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   @Override
   public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
     printIndent();
-    if (def.getKind() != null) {
-      switch (def.getKind()) {
-        case FUNC: myBuilder.append("\\func "); break;
-        case LEMMA: myBuilder.append("\\lemma "); break;
-        case LEVEL: myBuilder.append("\\use \\level "); break;
-        case COERCE: myBuilder.append("\\use \\coerce "); break;
-        case INSTANCE: myBuilder.append("\\instance "); break;
-      }
-    } else {
-      myBuilder.append("| ");
+    switch (def.getKind()) {
+      case FUNC: myBuilder.append("\\func "); break;
+      case COCLAUSE_FUNC: myBuilder.append("| "); break;
+      case LEMMA: myBuilder.append("\\lemma "); break;
+      case LEVEL: myBuilder.append("\\use \\level "); break;
+      case COERCE: myBuilder.append("\\use \\coerce "); break;
+      case INSTANCE: myBuilder.append("\\instance "); break;
     }
 
     prettyPrintNameWithPrecedence(def.getData());
@@ -944,7 +941,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        pp.prettyPrintBody(def.getBody(), def instanceof Concrete.FunctionDefinition && ((Concrete.FunctionDefinition) def).getKind() != FunctionKind.INSTANCE);
+        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.COCLAUSE_FUNC && def.getKind() != FunctionKind.INSTANCE);
       }
 
       @Override

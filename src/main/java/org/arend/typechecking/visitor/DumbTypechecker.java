@@ -27,7 +27,7 @@ public class DumbTypechecker extends VoidConcreteVisitor<Void, Void> {
   public void visitFunctionHeader(Concrete.BaseFunctionDefinition def, Void params) {
     myDefinition = def;
     super.visitFunctionHeader(def, null);
-    myTypechecker.checkFunctionLevel(def);
+    myTypechecker.checkFunctionLevel(def, def.getKind());
   }
 
   @Override

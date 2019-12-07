@@ -107,7 +107,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         Object data = term.getData();
         body = new Concrete.TermFunctionBody(data, term.accept(this, null));
       } else if (def.isCowith()) {
-        body = new Concrete.CoelimFunctionBody(myDefinition, buildImplementations(def, def.getClassFieldImpls()));
+        List<Concrete.CoClauseElement> elements = new ArrayList<>();
+        for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
+          buildImplementation(def, classFieldImpl, elements);
+        }
+        body = new Concrete.CoelimFunctionBody(myDefinition, elements);
       } else {
         body = new Concrete.ElimFunctionBody(myDefinition, buildReferences(def.getEliminatedExpressions()), buildClauses(def.getClauses()));
       }
@@ -117,7 +121,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
-    List<Concrete.TelescopeParameter> parameters = buildTelescopeParameters(def.getParameters());
+    List<Concrete.Parameter> parameters = buildParameters(def.getParameters());
     Concrete.Expression type;
     Concrete.Expression typeLevel;
     try {

@@ -189,8 +189,25 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
-    exprVisitor.visitParameters(def.getParameters(), null);
 
+    if (def instanceof Concrete.CoClauseFunctionDefinition) {
+      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      Referable classRef = null;
+      Concrete.Definition enclosingDef = function.getEnclosingDefinition();
+      if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+        Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
+        if (enclosingFunction.getResultType() != null) {
+          enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
+          classRef = enclosingFunction.getResultType().getUnderlyingReferable();
+        }
+      }
+
+      if (classRef instanceof ClassReferable) {
+        exprVisitor.visitClassFieldReference(function, function.getImplementedField(), (ClassReferable) classRef);
+      }
+    }
+
+    exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getResultType() != null) {
       def.setResultType(def.getResultType().accept(exprVisitor, null));
     }
@@ -222,7 +239,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
-      if (def.getResultType() == null) {
+      if (def.getResultType() == null && !(def instanceof Concrete.CoClauseFunctionDefinition)) {
         myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
@@ -231,7 +248,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       exprVisitor.visitClauses(body.getClauses(), null);
     }
 
-    if (def.getKind() != null && def.getKind().isUse()) {
+    if (def.getKind().isUse()) {
       TCReferable useParent = def.getUseParent();
       boolean isFunc = myConcreteProvider.isFunction(useParent);
       if (isFunc || useParent instanceof ClassReferable || myConcreteProvider.isData(useParent)) {

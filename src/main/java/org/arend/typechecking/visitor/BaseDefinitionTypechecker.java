@@ -12,8 +12,8 @@ public class BaseDefinitionTypechecker {
     this.errorReporter = errorReporter;
   }
 
-  protected void checkFunctionLevel(Concrete.BaseFunctionDefinition def) {
-    if (def.getResultTypeLevel() != null && !(def.getKind() == FunctionKind.LEMMA || def.getKind() == null || def.getBody() instanceof Concrete.ElimFunctionBody)) {
+  protected void checkFunctionLevel(Concrete.BaseFunctionDefinition def, FunctionKind kind) {
+    if (def.getResultTypeLevel() != null && !(kind == FunctionKind.LEMMA || kind == FunctionKind.COCLAUSE_FUNC || def.getBody() instanceof Concrete.ElimFunctionBody)) {
       errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IN_FUNCTION, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }

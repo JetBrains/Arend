@@ -408,8 +408,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
       Referable field = resolve(oldField, new ClassFieldImplScope(classDef, true), false, resolvedRefs);
       if (myResolverListener != null) {
-        if (element instanceof Concrete.ClassFieldImpl) {
-          myResolverListener.coPatternResolved((Concrete.ClassFieldImpl) element, oldField, field, resolvedRefs);
+        if (element instanceof Concrete.CoClauseElement) {
+          myResolverListener.coPatternResolved((Concrete.CoClauseElement) element, oldField, field, resolvedRefs);
         } else if (element instanceof Concrete.OverriddenField) {
           myResolverListener.overriddenFieldResolved((Concrete.OverriddenField) element, oldField, field, resolvedRefs);
         }
@@ -417,8 +417,8 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
       if (field instanceof ErrorReference) {
         myErrorReporter.report(((ErrorReference) field).getError());
       }
-      if (element instanceof Concrete.ClassFieldImpl) {
-        ((Concrete.ClassFieldImpl) element).setImplementedField(field);
+      if (element instanceof Concrete.CoClauseElement) {
+        ((Concrete.CoClauseElement) element).setImplementedField(field);
       } else if (element instanceof Concrete.OverriddenField) {
         ((Concrete.OverriddenField) element).setOverriddenField(field);
       }

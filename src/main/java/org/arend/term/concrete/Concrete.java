@@ -1162,8 +1162,8 @@ public final class Concrete {
   // Definitions
 
   public static Collection<? extends Parameter> getParameters(ReferableDefinition definition, boolean onlyThisDef) {
-    if (definition instanceof FunctionDefinition) {
-      return ((FunctionDefinition) definition).getParameters();
+    if (definition instanceof BaseFunctionDefinition) {
+      return ((BaseFunctionDefinition) definition).getParameters();
     }
     if (definition instanceof DataDefinition) {
       return ((DataDefinition) definition).getParameters();
@@ -1387,11 +1387,24 @@ public final class Concrete {
   }
 
   public static class CoClauseFunctionDefinition extends BaseFunctionDefinition implements CoClauseElement {
+    private final Definition myEnclosingDefinition;
     private Referable myImplementedField;
 
-    public CoClauseFunctionDefinition(TCReferable referable, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+    public CoClauseFunctionDefinition(TCReferable referable, Definition enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, parameters, resultType, resultTypeLevel, body);
+      myEnclosingDefinition = enclosingDefinition;
       myImplementedField = implementedField;
+    }
+
+    @Nonnull
+    @Override
+    public FunctionKind getKind() {
+      return FunctionKind.COCLAUSE_FUNC;
+    }
+
+    @Nonnull
+    public Definition getEnclosingDefinition() {
+      return myEnclosingDefinition;
     }
 
     @Override
@@ -1617,7 +1630,7 @@ public final class Concrete {
     }
   }
 
-  public static class BaseFunctionDefinition extends Definition {
+  public static abstract class BaseFunctionDefinition extends Definition {
     private final List<Parameter> myParameters;
     private Expression myResultType;
     private Expression myResultTypeLevel;
@@ -1632,10 +1645,8 @@ public final class Concrete {
       myBody = body;
     }
 
-    @Nullable
-    public FunctionKind getKind() {
-      return null;
-    }
+    @Nonnull
+    public abstract FunctionKind getKind();
 
     public TCReferable getUseParent() {
       return null;

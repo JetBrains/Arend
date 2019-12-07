@@ -17,7 +17,7 @@ nsId : ID (AS precedence ID)?;
 classFieldDef : precedence ID tele* ':' returnExpr;
 
 classFieldOrImpl : '|' classFieldDef    # classField
-                 | coClause             # classImpl
+                 | localCoClause        # classImpl
                  ;
 
 fieldMod  : '\\field'     # fieldField
@@ -163,9 +163,9 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : '|' precedence longName tele* coClauseBody;
 
-coClauseBody : '=>' expr              # coClauseExpr
-             | elim clauses           # coClauseWith
-             | '{' localCoClause* '}' # coClauseCowith
+coClauseBody : '=>' expr                # coClauseExpr
+             | (':' returnExpr)? elim clauses  # coClauseWith
+             | '{' localCoClause* '}'   # coClauseCowith
              ;
 
 localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
