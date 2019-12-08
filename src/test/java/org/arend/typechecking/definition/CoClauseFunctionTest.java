@@ -4,6 +4,9 @@ import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.arend.typechecking.Matchers.notInScope;
+import static org.arend.typechecking.Matchers.typeMismatchError;
+
 public class CoClauseFunctionTest extends TypeCheckingTestCase {
   @Test
   public void functionTest() {
@@ -80,6 +83,7 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | 0 => a\n" +
       "    | suc n => f n\n" +
       "  }", 1);
+    assertThatErrorsAre(notInScope("a"));
   }
 
   @Test
@@ -95,18 +99,19 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void parameterSubtypeTest() {
+  public void parameterSubtypeError() {
     typeCheckModule(
       "\\record C (f : \\Pi (A : \\Prop) (x : Nat) -> A -> A)\n" +
       "\\func test : C \\cowith\n" +
       "  | f (A : \\Set0) x a \\elim x {\n" +
       "    | 0 => a\n" +
       "    | suc n => a\n" +
-      "  }");
+      "  }", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Test
-  public void parameterSubtypeError() {
+  public void parameterSubtypeError2() {
     typeCheckModule(
       "\\record C (f : \\Pi (A : \\Set0) (x : Nat) -> A -> A)\n" +
       "\\func test : C \\cowith\n" +
@@ -114,6 +119,30 @@ public class CoClauseFunctionTest extends TypeCheckingTestCase {
       "    | 0 => a\n" +
       "    | suc n => a\n" +
       "  }", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void resultSubtypeTest() {
+    typeCheckModule(
+      "\\record C (f : \\Prop -> Nat -> \\Set0)\n" +
+      "\\func test : C \\cowith\n" +
+      "  | f A x : \\Prop \\elim x {\n" +
+      "    | 0 => A\n" +
+      "    | suc n => A\n" +
+      "  }");
+  }
+
+  @Test
+  public void resultSubtypeError() {
+    typeCheckModule(
+      "\\record C (f : \\Prop -> Nat -> \\Prop)\n" +
+      "\\func test : C \\cowith\n" +
+      "  | f A x : \\Set0 \\elim x {\n" +
+      "    | 0 => A\n" +
+      "    | suc n => A\n" +
+      "  }", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 
   @Ignore

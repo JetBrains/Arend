@@ -1,5 +1,6 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -261,8 +262,9 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
         if (field.getResultTypeLevel() != null) {
           field.getResultTypeLevel().accept(this, params);
         }
-      } else if (element instanceof Concrete.CoClauseFunctionDefinition) {
-        visitReference(new Concrete.ReferenceExpression(element.getData(), ((Concrete.CoClauseFunctionDefinition) element).getData()), params);
+      } else if (element instanceof Concrete.CoClauseFunctionReference) {
+        TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
+        visitReference(new Concrete.ReferenceExpression(ref.getData(), ref), params);
       } else {
         throw new IllegalStateException();
       }

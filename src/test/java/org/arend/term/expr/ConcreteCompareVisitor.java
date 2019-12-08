@@ -334,8 +334,10 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     if (element1 instanceof Concrete.ClassFieldImpl && element2 instanceof Concrete.ClassFieldImpl) {
       return compareImplementStatement((Concrete.ClassFieldImpl) element1, (Concrete.ClassFieldImpl) element2);
     }
-    if (element1 instanceof Concrete.CoClauseFunctionDefinition && element2 instanceof Concrete.CoClauseFunctionDefinition) {
-      return visitFunction((Concrete.CoClauseFunctionDefinition) element1, (Concrete.CoClauseFunctionDefinition) element2);
+    if (element1 instanceof Concrete.CoClauseFunctionReference && element2 instanceof Concrete.CoClauseFunctionReference) {
+      Concrete.CoClauseFunctionReference coClauseRef1 = (Concrete.CoClauseFunctionReference) element1;
+      Concrete.CoClauseFunctionReference coClauseRef2 = (Concrete.CoClauseFunctionReference) element2;
+      return coClauseRef1.getFunctionReference().equals(coClauseRef2.getFunctionReference()) && coClauseRef1.getImplementedField().equals(coClauseRef2.getImplementedField());
     }
     return false;
   }

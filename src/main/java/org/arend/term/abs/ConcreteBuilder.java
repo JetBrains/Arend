@@ -1,14 +1,12 @@
 package org.arend.term.abs;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
-import org.arend.error.CountingErrorReporter;
-import org.arend.error.DummyErrorReporter;
-import org.arend.error.ErrorReporter;
-import org.arend.error.GeneralError;
+import org.arend.error.*;
 import org.arend.naming.reference.*;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
+import org.arend.term.FunctionKind;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.LocalErrorReporter;
 
@@ -94,7 +92,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   @Override
-  public Concrete.FunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
+  public Concrete.BaseFunctionDefinition visitFunction(Abstract.FunctionDefinition def) {
     reportError(def.getErrorData());
 
     Concrete.FunctionBody body;
@@ -108,8 +106,22 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
         body = new Concrete.TermFunctionBody(data, term.accept(this, null));
       } else if (def.isCowith()) {
         List<Concrete.CoClauseElement> elements = new ArrayList<>();
-        for (Abstract.ClassFieldImpl classFieldImpl : def.getClassFieldImpls()) {
-          buildImplementation(def, classFieldImpl, elements);
+        for (Abstract.CoClauseElement element : def.getCoClauseElements()) {
+          if (element instanceof Abstract.CoClauseFunctionReference) {
+            LocatedReferable functionRef = ((Abstract.CoClauseFunctionReference) element).getFunctionReference();
+            if (functionRef != null) {
+              Abstract.Reference implementedField = element.getImplementedField();
+              if (implementedField != null) {
+                elements.add(new Concrete.CoClauseFunctionReference(implementedField.getReferent(), myReferableConverter.toDataLocatedReferable(functionRef)));
+              }
+              continue;
+            }
+          }
+          if (element instanceof Abstract.ClassFieldImpl) {
+            buildImplementation(def, (Abstract.ClassFieldImpl) element, elements);
+          } else {
+            myErrorReporter.report(new AbstractExpressionError(GeneralError.Level.ERROR, "Unknown coclause element", element));
+          }
         }
         body = new Concrete.CoelimFunctionBody(myDefinition, elements);
       } else {
@@ -135,9 +147,20 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       typeLevel = null;
     }
 
-    Concrete.FunctionDefinition result = Concrete.UseDefinition.make(def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent()));
+    FunctionKind kind = def.getFunctionKind();
+
+    TCReferable parentRef = myReferableConverter.toDataLocatedReferable(def.getReferable().getLocatedReferableParent());
+    Concrete.BaseFunctionDefinition result;
+    if (kind == FunctionKind.COCLAUSE_FUNC) {
+      Abstract.Reference implementedField = def.getImplementedField();
+      result = new Concrete.CoClauseFunctionDefinition(myDefinition, parentRef, implementedField == null ? null : implementedField.getReferent(), parameters, type, typeLevel, body);
+    } else {
+      result = Concrete.UseDefinition.make(def.getFunctionKind(), myDefinition, parameters, type, typeLevel, body, parentRef);
+    }
     setEnclosingClass(result, def);
-    result.setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
+    if (result instanceof Concrete.FunctionDefinition) {
+      ((Concrete.FunctionDefinition) result).setUsedDefinitions(visitUsedDefinitions(def.getUsedDefinitions()));
+    }
     return result;
   }
 
@@ -329,6 +352,11 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
   }
 
   private void buildImplementation(Object data, Abstract.ClassFieldImpl implementation, List<? super Concrete.ClassFieldImpl> implementations) {
+    Object prec = implementation.getPrec();
+    if (prec != null) {
+      myErrorReporter.report(new ParsingError(ParsingError.Kind.PRECEDENCE_IGNORED, prec));
+    }
+
     Abstract.Reference implementedField = implementation.getImplementedField();
     if (implementedField == null) {
       return;
@@ -348,7 +376,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       if (error != null) {
         myErrorReporter.report(error);
       }
-      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), error != null ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getClassFieldImpls())));
+      implementations.add(new Concrete.ClassFieldImpl(implementation.getData(), implementedField.getReferent(), error != null ? new Concrete.ErrorHoleExpression(data, error) : null, buildImplementations(implementation.getData(), implementation.getCoClauseElements())));
     }
   }
 

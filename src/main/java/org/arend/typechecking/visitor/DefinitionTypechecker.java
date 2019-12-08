@@ -29,7 +29,6 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.naming.reference.*;
-import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.FunctionKind;
@@ -664,30 +663,9 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     for (Concrete.CoClauseElement element : elements) {
       if (element instanceof Concrete.ClassFieldImpl) {
         classFieldImpls.add((Concrete.ClassFieldImpl) element);
-      } else if (element instanceof Concrete.CoClauseFunctionDefinition) {
-        Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) element;
-        Concrete.Expression impl = new Concrete.ReferenceExpression(function.getData().getData(), function.getData());
-        List<Concrete.Parameter> lamParameters = new ArrayList<>(function.getParameters().size());
-        int i = 0;
-        for (Concrete.Parameter parameter : function.getParameters()) {
-          if (parameter instanceof Concrete.TypeParameter) {
-            for (Referable referable : parameter.getReferableList()) {
-              lamParameters.add(new Concrete.NameParameter(parameter.getData(), parameter.isExplicit(), referable != null ? referable : new LocalReferable(Renamer.UNNAMED + i)));
-              i++;
-            }
-          } else {
-            lamParameters.add(parameter);
-            i++;
-          }
-        }
-        if (!lamParameters.isEmpty()) {
-          List<Concrete.Argument> arguments = new ArrayList<>(lamParameters.size());
-          for (Concrete.Parameter parameter : lamParameters) {
-            arguments.add(new Concrete.Argument(new Concrete.ReferenceExpression(impl.getData(), parameter.getReferableList().get(0)), parameter.isExplicit()));
-          }
-          impl = new Concrete.LamExpression(element.getData(), lamParameters, Concrete.AppExpression.make(impl.getData(), impl, arguments));
-        }
-        classFieldImpls.add(new Concrete.ClassFieldImpl(element.getData(), element.getImplementedField(), impl, Collections.emptyList()));
+      } else if (element instanceof Concrete.CoClauseFunctionReference) {
+        TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
+        classFieldImpls.add(new Concrete.ClassFieldImpl(element.getData(), element.getImplementedField(), new Concrete.ReferenceExpression(ref.getData(), ref), Collections.emptyList()));
       } else {
         throw new IllegalStateException();
       }
@@ -800,7 +778,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   }
 
   private List<ExtClause> typecheckFunctionBody(FunctionDefinition typedDef, Concrete.BaseFunctionDefinition def, boolean newDef) {
-    FunctionKind kind = def.getKind(); // implementedField.isProperty() ? FunctionKind.LEMMA : FunctionKind.FUNC;
+    FunctionKind kind = def.getKind();
     if (def instanceof Concrete.CoClauseFunctionDefinition) {
       Referable ref = ((Concrete.CoClauseFunctionDefinition) def).getImplementedField();
       if (ref instanceof TCReferable) {

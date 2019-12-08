@@ -401,9 +401,6 @@ public class ExpressionResolveNameVisitor extends BaseConcreteExpressionVisitor<
   }
 
   Referable visitClassFieldReference(Concrete.ClassElement element, Referable oldField, ClassReferable classDef) {
-    while (oldField instanceof RedirectingReferable) {
-      oldField = ((RedirectingReferable) oldField).getOriginalReferable();
-    }
     if (oldField instanceof UnresolvedReference) {
       List<Referable> resolvedRefs = myResolverListener == null ? null : new ArrayList<>();
       Referable field = resolve(oldField, new ClassFieldImplScope(classDef, true), false, resolvedRefs);

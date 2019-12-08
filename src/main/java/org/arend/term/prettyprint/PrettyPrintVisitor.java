@@ -4,6 +4,7 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
@@ -873,8 +874,10 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
         if (element instanceof Concrete.ClassFieldImpl) {
           myBuilder.append("| ");
           visitClassFieldImpl((Concrete.ClassFieldImpl) element);
-        } else if (element instanceof Concrete.CoClauseFunctionDefinition) {
-          visitFunction((Concrete.CoClauseFunctionDefinition) element, null);
+        } else if (element instanceof Concrete.CoClauseFunctionReference) {
+          TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
+          prettyPrintNameWithPrecedence(ref);
+          myBuilder.append(" => ").append(ref.textRepresentation());
         }
       }
       myIndent -= INDENT;

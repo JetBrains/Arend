@@ -6,7 +6,7 @@ import javax.annotation.Nonnull;
 
 public class TypecheckingError extends LocalError {
   public enum Kind {
-    LEVEL_IN_FUNCTION(Level.WEAK_WARNING, "\\level is allowed only for lemmas and functions defined by pattern matching"),
+    LEVEL_IGNORED(Level.WEAK_WARNING, "\\level is ignored"),
     BODY_IGNORED(Level.WEAK_WARNING, "Body is ignored"),
     AS_PATTERN_IGNORED(Level.WEAK_WARNING, "As-pattern is ignored"),
     PATTERN_IGNORED(Level.WEAK_WARNING, "Pattern is ignored"),

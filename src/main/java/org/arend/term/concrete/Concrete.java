@@ -510,6 +510,35 @@ public final class Concrete {
     void setImplementedField(Referable newImplementedField);
   }
 
+  public static class CoClauseFunctionReference extends SourceNodeImpl implements CoClauseElement {
+    private Referable myImplementedField;
+    private final TCReferable myFunctionReference;
+
+    public CoClauseFunctionReference(Object data, Referable implementedField, TCReferable functionReference) {
+      super(data);
+      myImplementedField = implementedField;
+      myFunctionReference = functionReference;
+    }
+
+    public CoClauseFunctionReference(Referable implementedField, TCReferable functionReference) {
+      this(functionReference.getData(), implementedField, functionReference);
+    }
+
+    @Override
+    public Referable getImplementedField() {
+      return myImplementedField;
+    }
+
+    @Override
+    public void setImplementedField(Referable newImplementedField) {
+      myImplementedField = newImplementedField;
+    }
+
+    public TCReferable getFunctionReference() {
+      return myFunctionReference;
+    }
+  }
+
   public static class ClassFieldImpl extends SourceNodeImpl implements CoClauseElement {
     private Referable myImplementedField;
     public Expression implementation;
@@ -1386,11 +1415,11 @@ public final class Concrete {
     }
   }
 
-  public static class CoClauseFunctionDefinition extends BaseFunctionDefinition implements CoClauseElement {
-    private final Definition myEnclosingDefinition;
+  public static class CoClauseFunctionDefinition extends BaseFunctionDefinition {
+    private final TCReferable myEnclosingDefinition;
     private Referable myImplementedField;
 
-    public CoClauseFunctionDefinition(TCReferable referable, Definition enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
+    public CoClauseFunctionDefinition(TCReferable referable, TCReferable enclosingDefinition, Referable implementedField, List<Parameter> parameters, Expression resultType, Expression resultTypeLevel, FunctionBody body) {
       super(referable, parameters, resultType, resultTypeLevel, body);
       myEnclosingDefinition = enclosingDefinition;
       myImplementedField = implementedField;
@@ -1403,16 +1432,14 @@ public final class Concrete {
     }
 
     @Nonnull
-    public Definition getEnclosingDefinition() {
+    public TCReferable getEnclosingDefinition() {
       return myEnclosingDefinition;
     }
 
-    @Override
     public Referable getImplementedField() {
       return myImplementedField;
     }
 
-    @Override
     public void setImplementedField(Referable newImplementedField) {
       myImplementedField = newImplementedField;
     }
