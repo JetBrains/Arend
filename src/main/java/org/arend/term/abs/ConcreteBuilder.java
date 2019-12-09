@@ -133,16 +133,18 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       body = new Concrete.TermFunctionBody(data, new Concrete.ErrorHoleExpression(data, e.error));
     }
 
-    List<Concrete.Parameter> parameters = buildParameters(def.getParameters());
+    List<Concrete.Parameter> parameters;
     Concrete.Expression type;
     Concrete.Expression typeLevel;
     try {
+      parameters = buildParameters(def.getParameters());
       Abstract.Expression resultType = def.getResultType();
       Abstract.Expression resultTypeLevel = checkResultTypeLevel(resultType, def.getResultTypeLevel());
       type = resultType == null ? null : resultType.accept(this, null);
       typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
+      parameters = Collections.emptyList();
       type = null;
       typeLevel = null;
     }
