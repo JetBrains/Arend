@@ -163,7 +163,7 @@ public class PatternTypechecking {
               ? new TypedEvaluatingBinding(binding.getName(), expr, binding.getTypeExpr())
               : null;
           if (newBinding != null) {
-            entry.setValue(binding);
+            entry.setValue(newBinding);
             myVisitor.getListener().referableTypechecked(entry.getKey(), newBinding);
           }
         }
