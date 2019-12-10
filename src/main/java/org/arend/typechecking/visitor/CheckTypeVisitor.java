@@ -788,6 +788,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     if (definition == null) {
       return null;
     }
+    myListener.referenceTypechecked(resolvedDefinition, definition);
 
     Sort sortArgument;
     boolean isMin = definition instanceof DataDefinition && !definition.getParameters().hasNext();
@@ -859,6 +860,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       errorReporter.report(new IncorrectReferenceError(ref, sourceNode));
       return null;
     }
+    myListener.referenceTypechecked(ref, def);
     Expression type = def.getTypeExpr();
     if (type == null) {
       errorReporter.report(new ReferenceTypeError(ref));

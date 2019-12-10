@@ -22,12 +22,15 @@ import org.arend.naming.reference.TCReferable;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.scope.Scope;
 import org.arend.typechecking.TypecheckerState;
+import org.arend.typechecking.TypecheckingListener;
 import org.arend.typechecking.instance.provider.InstanceProviderSet;
 import org.arend.typechecking.order.PartialComparator;
+import org.arend.typechecking.order.dependency.DummyDependencyListener;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.typechecking.provider.ConcreteProvider;
 import org.arend.util.Pair;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -268,12 +271,12 @@ public class Prelude {
 
   public static class PreludeTypechecking extends TypecheckingOrderingListener {
     public PreludeTypechecking(InstanceProviderSet instanceProviderSet, TypecheckerState state, ConcreteProvider concreteProvider, PartialComparator<TCReferable> comparator) {
-      super(instanceProviderSet, state, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, comparator);
-    }
-
-    @Override
-    public void typecheckingUnitFinished(TCReferable referable, Definition definition) {
-      update(definition);
+      super(instanceProviderSet, state, concreteProvider, IdReferableConverter.INSTANCE, DummyErrorReporter.INSTANCE, DummyDependencyListener.INSTANCE, comparator, new TypecheckingListener() {
+        @Override
+        public void typecheckingUnitFinished(@Nonnull TCReferable referable, @Nonnull Definition definition) {
+          update(definition);
+        }
+      });
     }
   }
 }

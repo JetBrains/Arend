@@ -1415,6 +1415,7 @@ public final class Concrete {
        return myExplicit;
     }
 
+    @Nonnull
     public ClassFieldKind getKind() {
       return myKind;
     }

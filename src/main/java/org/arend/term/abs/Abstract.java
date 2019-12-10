@@ -250,7 +250,7 @@ public final class Abstract {
   }
 
   public interface ClassField extends ClassElement, ReferableDefinition, ParametersHolder {
-    ClassFieldKind getClassFieldKind();
+    @Nonnull ClassFieldKind getClassFieldKind();
     /* @Nonnull */ @Nullable Expression getResultType();
     @Nullable Expression getResultTypeLevel();
   }

@@ -15,6 +15,6 @@ public interface ResolverListener {
   void namespaceResolved(NamespaceCommand namespaceCommand, List<Referable> resolvedRefs);
   void renamingResolved(NameRenaming renaming, Referable originalRef, Referable resolvedRef);
 
-  void beforeDefinitionResolved(Concrete.Definition definition);
-  void definitionResolved(Concrete.Definition definition);
+  void beforeDefinitionResolved(Concrete.ReferableDefinition definition);
+  void definitionResolved(Concrete.ReferableDefinition definition);
 }
