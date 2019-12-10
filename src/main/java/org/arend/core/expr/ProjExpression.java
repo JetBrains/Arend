@@ -26,6 +26,11 @@ public class ProjExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return myExpression.canBeConstructor();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitProj(this, params);
   }
