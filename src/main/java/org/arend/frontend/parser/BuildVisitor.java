@@ -1042,7 +1042,11 @@ public class BuildVisitor extends ArendBaseVisitor {
       subgroups.add(new EmptyGroup(reference, parentGroup));
       Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(withBody.returnExpr());
       Referable fieldRef = LongUnresolvedReference.make(position, path);
-      Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), visitClauses(withBody.clauses())));
+      List<Concrete.FunctionClause> clauses = new ArrayList<>();
+      for (ClauseContext clauseCtx : withBody.clause()) {
+        clauses.add(visitClause(clauseCtx));
+      }
+      Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), clauses));
       def.enclosingClass = enclosingClass;
       reference.setDefinition(def);
       return new Concrete.CoClauseFunctionReference(fieldRef, reference);

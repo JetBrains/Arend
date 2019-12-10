@@ -163,9 +163,9 @@ clause : pattern (',' pattern)* ('=>' expr)?;
 
 coClause : '|' precedence longName tele* coClauseBody;
 
-coClauseBody : '=>' expr                # coClauseExpr
-             | (':' returnExpr)? elim clauses  # coClauseWith
-             | '{' localCoClause* '}'   # coClauseCowith
+coClauseBody : '=>' expr                                            # coClauseExpr
+             | (':' returnExpr)? elim '{' clause? ('|' clause)* '}' # coClauseWith
+             | '{' localCoClause* '}'                               # coClauseCowith
              ;
 
 localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
