@@ -123,7 +123,7 @@ public final class Abstract {
 
   public interface ClassReferenceHolder extends SourceNode {
     @Nullable ClassReferable getClassReference();
-    @Nonnull Collection<? extends ClassFieldImpl> getClassFieldImpls();
+    @Nonnull Collection<? extends CoClauseElement> getCoClauseElements();
   }
 
   public interface NamespaceCommandHolder extends SourceNode, NamespaceCommand {
@@ -171,11 +171,20 @@ public final class Abstract {
   public interface ClassElement extends SourceNode {
   }
 
-  public interface ClassFieldImpl extends ClassElement, ParametersHolder, ClassReferenceHolder {
-    @Nullable Object getData();
+  public interface CoClauseElement extends ClassElement {
     /* @Nonnull */ @Nullable Reference getImplementedField();
+  }
+
+  public interface ClassFieldImpl extends CoClauseElement, ParametersHolder, ClassReferenceHolder {
+    @Override @Nonnull Collection<? extends ClassFieldImpl> getCoClauseElements();
+    @Nullable Object getData();
+    @Nullable Object getPrec();
     /* @Nonnull */ @Nullable Expression getImplementation();
     boolean hasImplementation();
+  }
+
+  public interface CoClauseFunctionReference extends ClassFieldImpl {
+    @Nullable LocatedReferable getFunctionReference();
   }
 
   public interface LetClausePattern extends SourceNode {
@@ -224,6 +233,7 @@ public final class Abstract {
     boolean withTerm();
     boolean isCowith();
     FunctionKind getFunctionKind();
+    @Nullable Reference getImplementedField();
   }
 
   public interface DataDefinition extends Definition, EliminatedExpressionsHolder {
@@ -236,6 +246,7 @@ public final class Abstract {
   public interface ClassDefinition extends Definition, ParametersHolder, ClassReferenceHolder  {
     @Override @Nonnull ClassReferable getReferable();
     @Override @Nonnull List<? extends FieldParameter> getParameters();
+    @Override @Nonnull Collection<? extends ClassFieldImpl> getCoClauseElements();
     boolean isRecord();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassElement> getClassElements();

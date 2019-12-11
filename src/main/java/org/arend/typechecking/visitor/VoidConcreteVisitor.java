@@ -1,5 +1,6 @@
 package org.arend.typechecking.visitor;
 
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.concrete.ConcreteDefinitionVisitor;
 import org.arend.term.concrete.ConcreteExpressionVisitor;
@@ -7,7 +8,7 @@ import org.arend.term.concrete.ConcreteExpressionVisitor;
 import java.util.List;
 
 public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Void>, ConcreteDefinitionVisitor<P,R> {
-  protected void visitFunctionHeader(Concrete.FunctionDefinition def, P params) {
+  protected void visitFunctionHeader(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
     if (def.getResultType() != null) {
       def.getResultType().accept(this, params);
@@ -17,18 +18,18 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
     }
   }
 
-  protected R visitFunctionBody(Concrete.FunctionDefinition def, P params) {
+  protected R visitFunctionBody(Concrete.BaseFunctionDefinition def, P params) {
     Concrete.FunctionBody body = def.getBody();
     if (body instanceof Concrete.TermFunctionBody) {
       ((Concrete.TermFunctionBody) body).getTerm().accept(this, params);
     }
-    visitElements(body.getClassFieldImpls(), params);
+    visitElements(body.getCoClauseElements(), params);
     visitClauses(body.getClauses(), params);
     return null;
   }
 
   @Override
-  public R visitFunction(Concrete.FunctionDefinition def, P params) {
+  public R visitFunction(Concrete.BaseFunctionDefinition def, P params) {
     visitFunctionHeader(def, params);
     return visitFunctionBody(def, params);
   }
@@ -261,6 +262,9 @@ public class VoidConcreteVisitor<P, R> implements ConcreteExpressionVisitor<P,Vo
         if (field.getResultTypeLevel() != null) {
           field.getResultTypeLevel().accept(this, params);
         }
+      } else if (element instanceof Concrete.CoClauseFunctionReference) {
+        TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
+        visitReference(new Concrete.ReferenceExpression(ref.getData(), ref), params);
       } else {
         throw new IllegalStateException();
       }

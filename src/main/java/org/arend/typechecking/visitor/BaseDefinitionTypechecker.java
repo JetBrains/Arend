@@ -12,14 +12,14 @@ public class BaseDefinitionTypechecker {
     this.errorReporter = errorReporter;
   }
 
-  protected void checkFunctionLevel(Concrete.FunctionDefinition def) {
-    if (def.getResultTypeLevel() != null && !(def.getKind() == FunctionKind.LEMMA || def.getBody() instanceof Concrete.ElimFunctionBody)) {
-      errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IN_FUNCTION, def.getResultTypeLevel()));
+  protected void checkFunctionLevel(Concrete.BaseFunctionDefinition def, FunctionKind kind) {
+    if (def.getResultTypeLevel() != null && !(kind == FunctionKind.LEMMA || kind == FunctionKind.COCLAUSE_FUNC || def.getBody() instanceof Concrete.ElimFunctionBody)) {
+      errorReporter.report(new TypecheckingError(TypecheckingError.Kind.LEVEL_IGNORED, def.getResultTypeLevel()));
       def.setResultTypeLevel(null);
     }
   }
 
-  protected boolean checkElimBody(Concrete.FunctionDefinition def) {
+  protected boolean checkElimBody(Concrete.BaseFunctionDefinition def) {
     if (def.isRecursive() && !(def.getBody() instanceof Concrete.ElimFunctionBody)) {
       errorReporter.report(new TypecheckingError("Recursive functions must be defined by pattern matching", def));
       return false;

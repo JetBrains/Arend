@@ -63,13 +63,13 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
           }
         }
 
-        Collection<? extends Concrete.TypeParameter> parameters = Concrete.getParameters(definition, false);
+        Collection<? extends Concrete.Parameter> parameters = Concrete.getParameters(definition, false);
         if (parameters != null) {
-          for (Concrete.TypeParameter parameter : parameters) {
+          for (Concrete.Parameter parameter : parameters) {
             if (ignoreFirstParameter) {
               ignoreFirstParameter = false;
             } else if (!parameter.isExplicit()) {
-              TCClassReferable classRef = parameter.getType().getUnderlyingTypeClass();
+              TCClassReferable classRef = parameter.getType() == null ? null : parameter.getType().getUnderlyingTypeClass();
               if (classRef != null) {
                 addClassInstances(classRef);
               }
@@ -88,7 +88,7 @@ public class CollectDefCallsVisitor extends VoidConcreteVisitor<Void, Void> {
   }
 
   @Override
-  protected Void visitFunctionBody(Concrete.FunctionDefinition def, Void params) {
+  protected Void visitFunctionBody(Concrete.BaseFunctionDefinition def, Void params) {
     if (myWithBodies) {
       super.visitFunctionBody(def, params);
     }
