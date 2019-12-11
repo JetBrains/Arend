@@ -114,7 +114,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return compareLevel(expr1.getPLevel(), uni2.getPLevel()) && compareLevel(expr1.getHLevel(), uni2.getHLevel());
   }
 
-  public boolean compareLevel(Concrete.LevelExpression level1, Concrete.LevelExpression level2) {
+  private boolean compareLevel(Concrete.LevelExpression level1, Concrete.LevelExpression level2) {
     if (level1 == null) {
       return level2 == null || level2 instanceof Concrete.PLevelExpression || level2 instanceof Concrete.HLevelExpression;
     }
@@ -330,6 +330,30 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
     return true;
   }
 
+  private boolean compareCoClauseElement(Concrete.CoClauseElement element1, Concrete.CoClauseElement element2) {
+    if (element1 instanceof Concrete.ClassFieldImpl && element2 instanceof Concrete.ClassFieldImpl) {
+      return compareImplementStatement((Concrete.ClassFieldImpl) element1, (Concrete.ClassFieldImpl) element2);
+    }
+    if (element1 instanceof Concrete.CoClauseFunctionReference && element2 instanceof Concrete.CoClauseFunctionReference) {
+      Concrete.CoClauseFunctionReference coClauseRef1 = (Concrete.CoClauseFunctionReference) element1;
+      Concrete.CoClauseFunctionReference coClauseRef2 = (Concrete.CoClauseFunctionReference) element2;
+      return coClauseRef1.getFunctionReference().equals(coClauseRef2.getFunctionReference()) && coClauseRef1.getImplementedField().equals(coClauseRef2.getImplementedField());
+    }
+    return false;
+  }
+
+  private boolean compareCoClauseElements(List<Concrete.CoClauseElement> elements1, List<Concrete.CoClauseElement> elements2) {
+    if (elements1.size() != elements2.size()) {
+      return false;
+    }
+    for (int i = 0; i < elements1.size(); i++) {
+      if (!compareCoClauseElement(elements1.get(i), elements2.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @Override
   public Boolean visitClassExt(Concrete.ClassExtExpression expr1, Concrete.Expression expr2) {
     if (!(expr2 instanceof Concrete.ClassExtExpression)) return false;
@@ -418,11 +442,11 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
   }
 
   @Override
-  public Boolean visitFunction(Concrete.FunctionDefinition def, Concrete.Definition def2) {
-    if (!(def2 instanceof Concrete.FunctionDefinition)) {
+  public Boolean visitFunction(Concrete.BaseFunctionDefinition def, Concrete.Definition def2) {
+    if (!(def2 instanceof Concrete.BaseFunctionDefinition)) {
       return false;
     }
-    Concrete.FunctionDefinition fun2 = (Concrete.FunctionDefinition) def2;
+    Concrete.BaseFunctionDefinition fun2 = (Concrete.BaseFunctionDefinition) def2;
 
     if (def.getKind() != fun2.getKind()) {
       return false;
@@ -440,7 +464,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
       return fun2.getBody() instanceof Concrete.TermFunctionBody && compare(((Concrete.TermFunctionBody) def.getBody()).getTerm(), ((Concrete.TermFunctionBody) fun2.getBody()).getTerm());
     }
     if (def.getBody() instanceof Concrete.CoelimFunctionBody) {
-      return fun2.getBody() instanceof Concrete.CoelimFunctionBody && compareImplementStatements(def.getBody().getClassFieldImpls(), fun2.getBody().getClassFieldImpls());
+      return fun2.getBody() instanceof Concrete.CoelimFunctionBody && compareCoClauseElements(def.getBody().getCoClauseElements(), fun2.getBody().getCoClauseElements());
     }
     if (def.getBody() instanceof Concrete.ElimFunctionBody) {
       if (!(fun2.getBody() instanceof Concrete.ElimFunctionBody)) {

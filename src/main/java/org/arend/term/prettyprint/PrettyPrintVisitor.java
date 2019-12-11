@@ -4,6 +4,7 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.Referable;
+import org.arend.naming.reference.TCReferable;
 import org.arend.term.Fixity;
 import org.arend.term.FunctionKind;
 import org.arend.term.Precedence;
@@ -865,7 +866,21 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
       if (isFunction) {
         myBuilder.append("\\cowith");
       }
-      visitClassFieldImpls(body.getClassFieldImpls());
+
+      myIndent += INDENT;
+      for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
+        myBuilder.append("\n");
+        printIndent();
+        if (element instanceof Concrete.ClassFieldImpl) {
+          myBuilder.append("| ");
+          visitClassFieldImpl((Concrete.ClassFieldImpl) element);
+        } else if (element instanceof Concrete.CoClauseFunctionReference) {
+          TCReferable ref = ((Concrete.CoClauseFunctionReference) element).getFunctionReference();
+          prettyPrintNameWithPrecedence(ref);
+          myBuilder.append(" => ").append(ref.textRepresentation());
+        }
+      }
+      myIndent -= INDENT;
     } else {
       prettyPrintEliminatedReferences(body.getEliminatedReferences(), !isFunction);
       prettyPrintClauses(Collections.emptyList(), body.getClauses(), false);
@@ -885,16 +900,17 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
   }
 
   @Override
-  public Void visitFunction(final Concrete.FunctionDefinition def, Void ignored) {
+  public Void visitFunction(final Concrete.BaseFunctionDefinition def, Void ignored) {
+    printIndent();
     switch (def.getKind()) {
       case FUNC: myBuilder.append("\\func "); break;
+      case COCLAUSE_FUNC: myBuilder.append("| "); break;
       case LEMMA: myBuilder.append("\\lemma "); break;
       case LEVEL: myBuilder.append("\\use \\level "); break;
       case COERCE: myBuilder.append("\\use \\coerce "); break;
       case INSTANCE: myBuilder.append("\\instance "); break;
     }
 
-    printIndent();
     prettyPrintNameWithPrecedence(def.getData());
     myBuilder.append(" ");
 
@@ -928,7 +944,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
       @Override
       void printRight(PrettyPrintVisitor pp) {
-        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.INSTANCE);
+        pp.prettyPrintBody(def.getBody(), def.getKind() != FunctionKind.COCLAUSE_FUNC && def.getKind() != FunctionKind.INSTANCE);
       }
 
       @Override

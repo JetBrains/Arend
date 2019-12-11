@@ -161,7 +161,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
   }
 
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, Scope scope) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, Scope scope) {
     if (def.getResolved() == Concrete.Resolved.RESOLVED) {
       return null;
     }
@@ -189,8 +189,33 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
     Concrete.FunctionBody body = def.getBody();
     List<Referable> context = new ArrayList<>();
     ExpressionResolveNameVisitor exprVisitor = new ExpressionResolveNameVisitor(myConcreteProvider, scope, context, myLocalErrorReporter, myResolverListener);
-    exprVisitor.visitParameters(def.getParameters(), null);
 
+    if (def instanceof Concrete.CoClauseFunctionDefinition && ((Concrete.CoClauseFunctionDefinition) def).getImplementedField() instanceof UnresolvedReference) {
+      Concrete.CoClauseFunctionDefinition function = (Concrete.CoClauseFunctionDefinition) def;
+      TCReferable enclosingRef = function.getEnclosingDefinition();
+      Concrete.ReferableDefinition enclosingDef = myConcreteProvider.getConcrete(enclosingRef);
+      if (enclosingDef instanceof Concrete.BaseFunctionDefinition) {
+        Concrete.BaseFunctionDefinition enclosingFunction = (Concrete.BaseFunctionDefinition) enclosingDef;
+        if (enclosingFunction.getResultType() != null) {
+          if (enclosingFunction.getResolved() != Concrete.Resolved.RESOLVED) {
+            enclosingFunction.setResultType(enclosingFunction.getResultType().accept(exprVisitor, null));
+          }
+          Referable classRef = enclosingFunction.getResultType().getUnderlyingReferable();
+          if (classRef instanceof ClassReferable) {
+            Concrete.CoClauseFunctionReference functionRef = null;
+            for (Concrete.CoClauseElement element : enclosingFunction.getBody().getCoClauseElements()) {
+              if (element instanceof Concrete.CoClauseFunctionReference && ((Concrete.CoClauseFunctionReference) element).getFunctionReference().equals(def.getData())) {
+                functionRef = (Concrete.CoClauseFunctionReference) element;
+                break;
+              }
+            }
+            function.setImplementedField(exprVisitor.visitClassFieldReference(functionRef, function.getImplementedField(), (ClassReferable) classRef));
+          }
+        }
+      }
+    }
+
+    exprVisitor.visitParameters(def.getParameters(), null);
     if (def.getResultType() != null) {
       def.setResultType(def.getResultType().accept(exprVisitor, null));
     }
@@ -206,19 +231,33 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       if (typeRef instanceof ClassReferable) {
         if (def.getKind() == FunctionKind.INSTANCE && ((ClassReferable) typeRef).isRecord()) {
           myLocalErrorReporter.report(new NamingError("Expected a class, got a record", def));
-          body.getClassFieldImpls().clear();
+          body.getCoClauseElements().clear();
         } else {
-          exprVisitor.visitClassFieldImpls(body.getClassFieldImpls(), (ClassReferable) typeRef);
+          for (Concrete.CoClauseElement element : body.getCoClauseElements()) {
+            if (element instanceof Concrete.ClassFieldImpl) {
+              exprVisitor.visitClassFieldImpl((Concrete.ClassFieldImpl) element, (ClassReferable) typeRef);
+            } else if (element instanceof Concrete.CoClauseFunctionReference && element.getImplementedField() instanceof UnresolvedReference) {
+              Referable resolved = exprVisitor.visitClassFieldReference(element, element.getImplementedField(), (ClassReferable) typeRef);
+              if (resolved != element.getImplementedField()) {
+                Concrete.ReferableDefinition definition = myConcreteProvider.getConcrete(((Concrete.CoClauseFunctionReference) element).getFunctionReference());
+                if (definition instanceof Concrete.CoClauseFunctionDefinition) {
+                  ((Concrete.CoClauseFunctionDefinition) definition).setImplementedField(resolved);
+                }
+              }
+            } else {
+              throw new IllegalStateException();
+            }
+          }
         }
       } else {
         if (!(typeRef instanceof ErrorReference)) {
           myLocalErrorReporter.report(def.getResultType() != null ? new NamingError("Expected a class", def.getResultType()) : new NamingError("The type of a function defined by copattern matching must be specified explicitly", def));
         }
-        body.getClassFieldImpls().clear();
+        body.getCoClauseElements().clear();
       }
     }
     if (body instanceof Concrete.ElimFunctionBody) {
-      if (def.getResultType() == null) {
+      if (def.getResultType() == null && !(def instanceof Concrete.CoClauseFunctionDefinition)) {
         myLocalErrorReporter.report(new NamingError("The type of a function defined by pattern matching must be specified explicitly", def));
       }
       visitEliminatedReferences(exprVisitor, body.getEliminatedReferences());
@@ -376,8 +415,8 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         for (Concrete.ClassElement element : def.getElements()) {
           if (element instanceof Concrete.ClassField) {
             resolveTypeClassReference(((Concrete.ClassField) element).getParameters(), ((Concrete.ClassField) element).getResultType(), scope, true);
-          } else if (element instanceof Concrete.OverriddenField) {
-            resolveTypeClassReference(((Concrete.OverriddenField) element).getParameters(), ((Concrete.OverriddenField) element).getResultType(), scope, true);
+          } else if (element instanceof Concrete.CoClauseFunctionDefinition) {
+            resolveTypeClassReference(((Concrete.CoClauseFunctionDefinition) element).getParameters(), ((Concrete.CoClauseFunctionDefinition) element).getResultType(), scope, true);
           }
         }
       }
@@ -426,7 +465,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
         field.setResultTypeLevel(classFields.get(i - 1).getResultTypeLevel());
       } else {
         if (field.getResultTypeLevel() != null && field.getKind() == ClassFieldKind.FIELD) {
-          myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.LEVEL_IN_FIELD, field));
+          myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.LEVEL_IGNORED, field));
           field.setResultTypeLevel(null);
         }
 

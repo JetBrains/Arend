@@ -37,7 +37,7 @@ public class UniverseExpression extends Expression implements Type {
 
   @Override
   public UniverseExpression subst(SubstVisitor substVisitor) {
-    return new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
+    return substVisitor.getLevelSubstitution().isEmpty() ? this : new UniverseExpression(mySort.subst(substVisitor.getLevelSubstitution()));
   }
 
   @Override

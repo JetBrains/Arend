@@ -17,7 +17,7 @@ nsId : ID (AS precedence ID)?;
 classFieldDef : precedence ID tele* ':' returnExpr;
 
 classFieldOrImpl : '|' classFieldDef    # classField
-                 | coClause             # classImpl
+                 | localCoClause        # classImpl
                  ;
 
 fieldMod  : '\\field'     # fieldField
@@ -161,7 +161,14 @@ coClauses : coClause*                         # coClausesWithoutBraces
 
 clause : pattern (',' pattern)* ('=>' expr)?;
 
-coClause : '|' longName tele* ('=>' expr | '{' coClause* '}');
+coClause : '|' precedence longName tele* coClauseBody;
+
+coClauseBody : '=>' expr                                            # coClauseExpr
+             | (':' returnExpr)? elim '{' clause? ('|' clause)* '}' # coClauseWith
+             | '{' localCoClause* '}'                               # coClauseCowith
+             ;
+
+localCoClause : '|' longName tele* ('=>' expr | '{' localCoClause* '}');
 
 letClause : (ID tele* typeAnnotation? | tuplePattern) '=>' expr;
 
@@ -211,7 +218,7 @@ atom  : literal                               # atomLiteral
 
 atomFieldsAcc : atom ('.' NUMBER)*;
 
-implementStatements : '{' coClause* '}';
+implementStatements : '{' localCoClause* '}';
 
 longName : ID ('.' ID)*;
 

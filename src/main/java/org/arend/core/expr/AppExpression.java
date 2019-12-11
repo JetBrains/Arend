@@ -50,6 +50,11 @@ public class AppExpression extends Expression {
   }
 
   @Override
+  public boolean canBeConstructor() {
+    return myFunction.canBeConstructor();
+  }
+
+  @Override
   public <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params) {
     return visitor.visitApp(this, params);
   }

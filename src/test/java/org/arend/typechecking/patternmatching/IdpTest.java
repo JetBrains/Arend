@@ -141,4 +141,12 @@ public class IdpTest extends TypeCheckingTestCase {
       "\\func f {x : Nat} (t : \\Sigma (x = 0) (x = 1)) : 1 = 0\n" +
       "  | (q,idp) => q");
   }
+
+  @Test
+  public void varTest() {
+    typeCheckModule(
+      "\\func f {A : \\Type} {a a' : A} (q : a' = a) (p : a = a') : \\Sigma (x y : A) (x = y) \\elim p\n" +
+      "  | idp => (a,a',q)\n" +
+      "\\func test {A : \\Type} {a : A} (q : a = a) : f q idp = (a,a,q) => idp");
+  }
 }

@@ -45,7 +45,7 @@ public class SigmaExpression extends Expression implements Type {
 
   @Override
   public SigmaExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.visitSigma(this, null);
+    return substVisitor.isEmpty() ? this : substVisitor.visitSigma(this, null);
   }
 
   @Override

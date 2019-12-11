@@ -50,7 +50,15 @@ public class CaseExpression extends Expression {
 
   @Override
   public boolean canBeConstructor() {
-    return !mySFunc;
+    if (mySFunc) {
+      return false;
+    }
+    for (Expression argument : myArguments) {
+      if (argument.canBeConstructor()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

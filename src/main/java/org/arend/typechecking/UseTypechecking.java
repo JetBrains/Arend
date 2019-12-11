@@ -107,7 +107,8 @@ public class UseTypechecking {
   private static void typecheckCoerce(Concrete.UseDefinition def, FunctionDefinition typedDef, TypecheckerState state, ErrorReporter errorReporter, Map<Definition, List<Pair<Definition,FunctionDefinition>>> fromMap, Map<Definition, List<Pair<Definition,FunctionDefinition>>> toMap) {
     Definition useParent = state.getTypechecked(def.getUseParent());
     if ((useParent instanceof DataDefinition || useParent instanceof ClassDefinition) && !def.getParameters().isEmpty()) {
-      Referable paramRef = def.getParameters().get(def.getParameters().size() - 1).getType().getUnderlyingReferable();
+      Concrete.Expression type = def.getParameters().get(def.getParameters().size() - 1).getType();
+      Referable paramRef = type == null ? null : type.getUnderlyingReferable();
       Definition paramDef = paramRef instanceof TCReferable ? state.getTypechecked((TCReferable) paramRef) : null;
       DefCallExpression resultDefCall = typedDef.getResultType() == null ? null : typedDef.getResultType().cast(DefCallExpression.class);
       Definition resultDef = resultDefCall == null ? null : resultDefCall.getDefinition();
