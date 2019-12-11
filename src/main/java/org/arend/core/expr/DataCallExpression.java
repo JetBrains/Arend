@@ -56,7 +56,7 @@ public class DataCallExpression extends DefCallExpression implements Type {
 
   @Override
   public DataCallExpression subst(SubstVisitor substVisitor) {
-    return substVisitor.visitDataCall(this, null);
+    return substVisitor.isEmpty() ? this : substVisitor.visitDataCall(this, null);
   }
 
   @Override

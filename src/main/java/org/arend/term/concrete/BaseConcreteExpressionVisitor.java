@@ -211,7 +211,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
-  protected void visitLetClause(Concrete.LetClause clause, P params) {
+  private void visitLetClause(Concrete.LetClause clause, P params) {
     visitParameters(clause.getParameters(), params);
     if (clause.resultType != null) {
       clause.resultType = clause.resultType.accept(this, params);
@@ -240,8 +240,16 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
     return expr;
   }
 
+  private void visitFunctionBody(Concrete.FunctionBody body, P params) {
+    if (body instanceof Concrete.TermFunctionBody) {
+      ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, params));
+    }
+    visitClauses(body.getClauses(), params);
+    visitClassElements(body.getCoClauseElements(), params);
+  }
+
   @Override
-  public Void visitFunction(Concrete.FunctionDefinition def, P params) {
+  public Void visitFunction(Concrete.BaseFunctionDefinition def, P params) {
     visitParameters(def.getParameters(), params);
 
     if (def.getResultType() != null) {
@@ -251,13 +259,7 @@ public class BaseConcreteExpressionVisitor<P> implements ConcreteExpressionVisit
       def.setResultTypeLevel(def.getResultTypeLevel().accept(this, params));
     }
 
-    Concrete.FunctionBody body = def.getBody();
-    if (body instanceof Concrete.TermFunctionBody) {
-      ((Concrete.TermFunctionBody) body).setTerm(((Concrete.TermFunctionBody) body).getTerm().accept(this, params));
-    }
-    visitClauses(body.getClauses(), params);
-    visitClassElements(body.getClassFieldImpls(), params);
-
+    visitFunctionBody(def.getBody(), params);
     return null;
   }
 

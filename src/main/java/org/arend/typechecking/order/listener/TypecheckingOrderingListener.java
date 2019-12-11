@@ -159,8 +159,8 @@ public class TypecheckingOrderingListener implements OrderingListener {
           myState.record(constructor.getData(), tcConstructor);
         }
       }
-    } else if (definition instanceof Concrete.FunctionDefinition) {
-      typechecked = ((Concrete.FunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
+    } else if (definition instanceof Concrete.BaseFunctionDefinition) {
+      typechecked = ((Concrete.BaseFunctionDefinition) definition).getKind() == FunctionKind.CONS ? new DConstructor(definition.getData()) : new FunctionDefinition(definition.getData());
       ((FunctionDefinition) typechecked).setResultType(new ErrorExpression(null, null));
     } else if (definition instanceof Concrete.ClassDefinition) {
       typechecked = new ClassDefinition((TCClassReferable) definition.getData());

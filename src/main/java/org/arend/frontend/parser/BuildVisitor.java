@@ -3,6 +3,7 @@ package org.arend.frontend.parser;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.arend.error.ErrorReporter;
+import org.arend.error.ParsingError;
 import org.arend.frontend.group.SimpleNamespaceCommand;
 import org.arend.frontend.reference.*;
 import org.arend.module.ModulePath;
@@ -430,64 +431,56 @@ public class BuildVisitor extends ArendBaseVisitor {
 
   private StaticGroup visitDefInstance(DefInstanceContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     boolean isInstance = ctx.instanceKw() instanceof FuncKwInstanceContext;
-    List<Concrete.TelescopeParameter> parameters = visitFunctionParameters(ctx.tele());
+    List<Concrete.Parameter> parameters = visitLamTeles(ctx.tele());
     ConcreteLocatedReferable reference = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), Precedence.DEFAULT, parent, isInstance ? LocatedReferableImpl.Kind.TYPECHECKABLE : GlobalReferable.Kind.DEFINED_CONSTRUCTOR);
     Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
 
+    List<Group> subgroups = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
+    StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
+
     Concrete.FunctionBody body;
     InstanceBodyContext bodyCtx = ctx.instanceBody();
+    List<CoClauseContext> coClauses = null;
     if (bodyCtx instanceof InstanceWithElimContext) {
       InstanceWithElimContext elimCtx = (InstanceWithElimContext) bodyCtx;
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
     } else if (bodyCtx instanceof InstanceWithoutElimContext) {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((InstanceWithoutElimContext) bodyCtx).expr()));
     } else if (bodyCtx instanceof InstanceCowithElimContext) {
-      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), visitCoClauses(((InstanceCowithElimContext) bodyCtx).coClauses()));
+      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), new ArrayList<>());
+      coClauses = getCoClauses(((InstanceCowithElimContext) bodyCtx).coClauses());
     } else if (bodyCtx instanceof InstanceCoclausesContext) {
-      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), visitCoClauses(((InstanceCoclausesContext) bodyCtx).coClause()));
+      body = new Concrete.CoelimFunctionBody(tokenPosition(bodyCtx.start), new ArrayList<>());
+      coClauses = ((InstanceCoclausesContext) bodyCtx).coClause();
     } else {
       throw new IllegalStateException();
     }
 
     Concrete.FunctionDefinition funcDef = new Concrete.FunctionDefinition(isInstance ? FunctionKind.INSTANCE : FunctionKind.CONS, reference, parameters, returnPair.proj1, returnPair.proj2, body);
+    if (coClauses != null) {
+      visitCoClauses(coClauses, subgroups, resultGroup, reference, body.getCoClauseElements());
+    }
     funcDef.enclosingClass = enclosingClass;
     reference.setDefinition(funcDef);
-    List<Group> subgroups = new ArrayList<>();
-    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
-    StaticGroup resultGroup = new StaticGroup(reference, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
     return resultGroup;
   }
 
-  private List<Concrete.ClassFieldImpl> visitCoClauses(CoClausesContext ctx) {
+  private List<CoClauseContext> getCoClauses(CoClausesContext ctx) {
     if (ctx instanceof CoClausesWithBracesContext) {
-      return visitCoClausesWithBraces((CoClausesWithBracesContext) ctx);
+      return ((CoClausesWithBracesContext) ctx).coClause();
     }
     if (ctx instanceof CoClausesWithoutBracesContext) {
-      return visitCoClausesWithoutBraces((CoClausesWithoutBracesContext) ctx);
+      return ((CoClausesWithoutBracesContext) ctx).coClause();
     }
     throw new IllegalStateException();
   }
 
-  private List<Concrete.ClassFieldImpl> visitCoClauses(List<CoClauseContext> coClausesCtx) {
-    List<Concrete.ClassFieldImpl> coClauses = new ArrayList<>(coClausesCtx.size());
+  private void visitCoClauses(List<CoClauseContext> coClausesCtx, List<Group> subgroups, ChildGroup parentGroup, TCReferable enclosingDefinition, List<Concrete.CoClauseElement> result) {
     for (CoClauseContext coClause : coClausesCtx) {
-      Concrete.ClassFieldImpl impl = visitCoClause(coClause);
-      if (impl != null) {
-        coClauses.add(impl);
-      }
+      result.add(visitCoClause(coClause, subgroups, parentGroup, null, enclosingDefinition));
     }
-    return coClauses;
-  }
-
-  @Override
-  public List<Concrete.ClassFieldImpl> visitCoClausesWithoutBraces(CoClausesWithoutBracesContext ctx) {
-    return visitCoClauses(ctx.coClause());
-  }
-
-  @Override
-  public List<Concrete.ClassFieldImpl> visitCoClausesWithBraces(CoClausesWithBracesContext ctx) {
-    return visitCoClauses(ctx.coClause());
   }
 
   private void visitWhere(WhereContext ctx, List<Group> subgroups, List<ChildNamespaceCommand> namespaceCommands, ChildGroup parent, TCClassReferable enclosingClass) {
@@ -529,22 +522,25 @@ public class BuildVisitor extends ArendBaseVisitor {
   private StaticGroup visitDefFunction(DefFunctionContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
     Concrete.FunctionBody body;
     FunctionBodyContext functionBodyCtx = ctx.functionBody();
+    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, GlobalReferable.Kind.TYPECHECKABLE);
+    List<Group> subgroups = new ArrayList<>();
+    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
+    StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
+    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
+
+    List<CoClauseContext> coClauses = null;
     if (functionBodyCtx instanceof WithElimContext) {
       WithElimContext elimCtx = (WithElimContext) functionBodyCtx;
       body = new Concrete.ElimFunctionBody(tokenPosition(elimCtx.start), visitElim(elimCtx.elim()), visitClauses(elimCtx.clauses()));
     } else if (functionBodyCtx instanceof CowithElimContext) {
-      CowithElimContext elimCtx = (CowithElimContext) functionBodyCtx;
-      body = new Concrete.CoelimFunctionBody(tokenPosition(elimCtx.start), visitCoClauses(elimCtx.coClauses()));
+      coClauses = getCoClauses(((CowithElimContext) functionBodyCtx).coClauses());
+      body = new Concrete.CoelimFunctionBody(tokenPosition(functionBodyCtx.start), new ArrayList<>());
     } else {
       body = new Concrete.TermFunctionBody(tokenPosition(ctx.start), visitExpr(((WithoutElimContext) functionBodyCtx).expr()));
     }
 
-    List<Group> subgroups = new ArrayList<>();
-    List<ChildNamespaceCommand> namespaceCommands = new ArrayList<>();
     FuncKwContext funcKw = ctx.funcKw();
-    ConcreteLocatedReferable referable = makeReferable(tokenPosition(ctx.start), ctx.ID().getText(), visitPrecedence(ctx.precedence()), parent, GlobalReferable.Kind.TYPECHECKABLE);
     boolean isUse = funcKw instanceof FuncKwUseContext;
-    Pair<Concrete.Expression,Concrete.Expression> returnPair = visitReturnExpr(ctx.returnExpr());
     Concrete.FunctionDefinition funDef = Concrete.UseDefinition.make(
       isUse ? (((FuncKwUseContext) funcKw).useMod() instanceof UseCoerceContext
               ? FunctionKind.COERCE
@@ -554,14 +550,16 @@ public class BuildVisitor extends ArendBaseVisitor {
               : funcKw instanceof FuncKwSFuncContext
                 ? FunctionKind.SFUNC
                 : FunctionKind.FUNC,
-      referable, visitFunctionParameters(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
+      referable, visitLamTeles(ctx.tele()), returnPair.proj1, returnPair.proj2, body, parent.getReferable());
+    if (coClauses != null) {
+      visitCoClauses(coClauses, subgroups, resultGroup, referable, body.getCoClauseElements());
+    }
     if (isUse && !funDef.getKind().isUse()) {
       myErrorReporter.report(new ParserError(tokenPosition(ctx.funcKw().start), "\\use is not allowed on the top level"));
     }
 
     funDef.enclosingClass = enclosingClass;
     referable.setDefinition(funDef);
-    StaticGroup resultGroup = new StaticGroup(referable, subgroups, namespaceCommands, parent);
     visitWhere(ctx.where(), subgroups, namespaceCommands, resultGroup, enclosingClass);
 
     List<TCReferable> usedDefinitions = collectUsedDefinitions(subgroups, null);
@@ -570,19 +568,6 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
 
     return resultGroup;
-  }
-
-  private List<Concrete.TelescopeParameter> visitFunctionParameters(List<TeleContext> teleCtx) {
-    List<Concrete.TelescopeParameter> arguments = new ArrayList<>();
-    for (TeleContext tele : teleCtx) {
-      List<Concrete.Parameter> args = visitLamTele(tele);
-      if (args.get(0) instanceof Concrete.TelescopeParameter) {
-        arguments.add((Concrete.TelescopeParameter) args.get(0));
-      } else {
-        myErrorReporter.report(new ParserError(tokenPosition(tele.getStart()), "Expected a typed variable"));
-      }
-    }
-    return arguments;
   }
 
   private StaticGroup visitDefData(DefDataContext ctx, ChildGroup parent, TCClassReferable enclosingClass) {
@@ -715,22 +700,19 @@ public class BuildVisitor extends ArendBaseVisitor {
     return field;
   }
 
-  private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass) {
+  private void visitInstanceStatement(ClassFieldOrImplContext ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass, List<Group> subgroups, ChildGroup parentGroup) {
     if (ctx instanceof ClassFieldContext) {
       elements.add(visitClassFieldDef(((ClassFieldContext) ctx).classFieldDef(), ClassFieldKind.ANY, parentClass));
     } else if (ctx instanceof ClassImplContext) {
-      Concrete.ClassFieldImpl impl = visitClassImpl((ClassImplContext) ctx);
-      if (impl != null) {
-        elements.add(impl);
-      }
+      elements.add(visitLocalCoClause(((ClassImplContext) ctx).localCoClause()));
     }
   }
 
-  private void visitInstanceStatements(List<ClassFieldOrImplContext> ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass) {
+  private void visitInstanceStatements(List<ClassFieldOrImplContext> ctx, List<Concrete.ClassElement> elements, Concrete.ClassDefinition parentClass, List<Group> subgroups, ChildGroup parentGroup) {
     for (ClassFieldOrImplContext statCtx : ctx) {
       if (statCtx != null) {
         try {
-          visitInstanceStatement(statCtx, elements, parentClass);
+          visitInstanceStatement(statCtx, elements, parentClass, subgroups, parentGroup);
         } catch (ParseException ignored) {
 
         }
@@ -746,7 +728,7 @@ public class BuildVisitor extends ArendBaseVisitor {
 
       try {
         if (statementCtx instanceof ClassFieldOrImplStatContext) {
-          visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass);
+          visitInstanceStatement(((ClassFieldOrImplStatContext) statementCtx).classFieldOrImpl(), elements, parentClass, subgroups, parent);
         } else if (statementCtx instanceof ClassDefinitionStatContext) {
           subgroups.add(visitDefinition(((ClassDefinitionStatContext) statementCtx).definition(), parent, parentClass.getData()));
         } else if (statementCtx instanceof ClassFieldStatContext) {
@@ -786,6 +768,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     WhereContext where = ctx.where();
 
     List<Group> staticSubgroups = where == null ? Collections.emptyList() : new ArrayList<>();
+    List<Group> dynamicSubgroups = new ArrayList<>();
     List<ChildNamespaceCommand> namespaceCommands = where == null ? Collections.emptyList() : new ArrayList<>();
 
     List<Concrete.ReferenceExpression> superClasses = new ArrayList<>();
@@ -793,21 +776,19 @@ public class BuildVisitor extends ArendBaseVisitor {
       superClasses.add(visitLongNameRef(longNameCtx, null, null));
     }
 
-    List<? extends InternalConcreteLocatedReferable> fieldReferables;
     Position pos = tokenPosition(ctx.start);
     String name = ctx.ID().getText();
     Precedence prec = visitPrecedence(ctx.precedence());
     ConcreteClassReferable reference;
-    ClassGroup resultGroup = null;
+    List<ConcreteClassFieldReferable> fieldReferables = new ArrayList<>();
+    reference = parent instanceof FileGroup
+      ? new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, parent, myModule)
+      : new ConcreteClassReferable(pos, name, prec, fieldReferables, superClasses, parent, (TCReferable) parent.getReferable());
+    ClassGroup resultGroup = new ClassGroup(reference, fieldReferables, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
     boolean isRecord = ctx.classKw() instanceof ClassKwRecordContext;
     ClassBodyContext classBodyCtx = ctx.classBody();
     List<ClassStatContext> classStatCtxs = classBodyCtx instanceof ClassBodyStatsContext ? ((ClassBodyStatsContext) classBodyCtx).classStat() : Collections.emptyList();
     List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
-
-    List<ConcreteClassFieldReferable> fieldReferables1 = new ArrayList<>();
-    reference = parent instanceof FileGroup
-      ? new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, myModule)
-      : new ConcreteClassReferable(pos, name, prec, fieldReferables1, superClasses, parent, (TCReferable) parent.getReferable());
 
     List<Concrete.ClassElement> elements = new ArrayList<>();
     Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), elements);
@@ -816,23 +797,17 @@ public class BuildVisitor extends ArendBaseVisitor {
 
     List<TCReferable> usedDefinitions = null;
     if (!classStatCtxs.isEmpty()) {
-      List<Group> dynamicSubgroups = new ArrayList<>();
-      resultGroup = new ClassGroup(reference, fieldReferables1, dynamicSubgroups, staticSubgroups, namespaceCommands, parent);
       visitInstanceStatements(classStatCtxs, elements, dynamicSubgroups, classDefinition, resultGroup);
       usedDefinitions = collectUsedDefinitions(dynamicSubgroups, null);
     }
-    visitInstanceStatements(classFieldOrImplCtxs, elements, classDefinition);
+    visitInstanceStatements(classFieldOrImplCtxs, elements, classDefinition, dynamicSubgroups, resultGroup);
 
     for (Concrete.ClassElement element : elements) {
       if (element instanceof Concrete.ClassField) {
-        fieldReferables1.add((ConcreteClassFieldReferable) element.getData());
+        fieldReferables.add((ConcreteClassFieldReferable) element.getData());
       }
     }
-    fieldReferables = fieldReferables1;
 
-    if (resultGroup == null) {
-      resultGroup = new ClassGroup(reference, fieldReferables, Collections.emptyList(), staticSubgroups, namespaceCommands, parent);
-    }
     visitWhere(where, staticSubgroups, namespaceCommands, resultGroup, enclosingClass);
 
     usedDefinitions = collectUsedDefinitions(staticSubgroups, usedDefinitions);
@@ -841,11 +816,6 @@ public class BuildVisitor extends ArendBaseVisitor {
     }
 
     return resultGroup;
-  }
-
-  @Override
-  public Concrete.ClassFieldImpl visitClassImpl(ClassImplContext ctx) {
-    return visitCoClause(ctx.coClause());
   }
 
   @Override
@@ -1049,8 +1019,63 @@ public class BuildVisitor extends ArendBaseVisitor {
     return new Concrete.BinOpSequenceElem(visitExpr(ctx.expr()), Fixity.NONFIX, false);
   }
 
+  private Concrete.CoClauseElement visitCoClause(CoClauseContext ctx, List<Group> subgroups, ChildGroup parentGroup, TCClassReferable enclosingClass, TCReferable enclosingDefinition) {
+    List<String> path = visitLongNamePath(ctx.longName());
+    Position position = tokenPosition(ctx.start);
+    List<TeleContext> teleCtxs = ctx.tele();
+    List<Concrete.Parameter> parameters = visitLamTeles(teleCtxs);
+    Concrete.Expression term = null;
+    List<Concrete.ClassFieldImpl> subClassFieldImpls = Collections.emptyList();
+    CoClauseBodyContext body = ctx.coClauseBody();
+    if (!(body instanceof CoClauseWithContext) && ctx.precedence() instanceof WithPrecedenceContext) {
+      myErrorReporter.report(new ParsingError(ParsingError.Kind.PRECEDENCE_IGNORED, tokenPosition(ctx.precedence().start)));
+    }
+
+    if (body instanceof CoClauseExprContext) {
+      term = visitExpr(((CoClauseExprContext) body).expr());
+      if (!parameters.isEmpty()) {
+        term = new Concrete.LamExpression(tokenPosition(teleCtxs.get(0).start), parameters, term);
+      }
+    } else if (body instanceof CoClauseWithContext) {
+      CoClauseWithContext withBody = (CoClauseWithContext) body;
+      ConcreteLocatedReferable reference = makeReferable(position, path.get(path.size() - 1), visitPrecedence(ctx.precedence()), parentGroup, LocatedReferableImpl.Kind.TYPECHECKABLE);
+      subgroups.add(new EmptyGroup(reference, parentGroup));
+      Pair<Concrete.Expression, Concrete.Expression> pair = visitReturnExpr(withBody.returnExpr());
+      Referable fieldRef = LongUnresolvedReference.make(position, path);
+      List<Concrete.FunctionClause> clauses = new ArrayList<>();
+      for (ClauseContext clauseCtx : withBody.clause()) {
+        clauses.add(visitClause(clauseCtx));
+      }
+      Concrete.CoClauseFunctionDefinition def = new Concrete.CoClauseFunctionDefinition(reference, enclosingDefinition, fieldRef, parameters, pair.proj1, pair.proj2, new Concrete.ElimFunctionBody(tokenPosition(withBody.elim().start), visitElim(withBody.elim()), clauses));
+      def.enclosingClass = enclosingClass;
+      reference.setDefinition(def);
+      return new Concrete.CoClauseFunctionReference(fieldRef, reference);
+    } else if (body instanceof CoClauseCowithContext) {
+      if (!parameters.isEmpty()) {
+        myErrorReporter.report(new ParserError(tokenPosition(teleCtxs.get(0).start), "Parameters are not allowed for fields implemented by copattern matching"));
+      }
+      subClassFieldImpls = visitLocalCoClauses(((CoClauseCowithContext) body).localCoClause());
+    } else {
+      throw new IllegalStateException();
+    }
+
+    if (ctx.precedence() instanceof WithPrecedenceContext) {
+      myErrorReporter.report(new ParserError(tokenPosition(ctx.precedence().start), "Precedence is ignored"));
+    }
+
+    return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
+  }
+
+  private List<Concrete.ClassFieldImpl> visitLocalCoClauses(List<LocalCoClauseContext> contexts) {
+    List<Concrete.ClassFieldImpl> result = new ArrayList<>();
+    for (LocalCoClauseContext context : contexts) {
+      result.add(visitLocalCoClause(context));
+    }
+    return result;
+  }
+
   @Override
-  public Concrete.ClassFieldImpl visitCoClause(CoClauseContext ctx) {
+  public Concrete.ClassFieldImpl visitLocalCoClause(LocalCoClauseContext ctx) {
     List<String> path = visitLongNamePath(ctx.longName());
     Position position = tokenPosition(ctx.start);
     List<TeleContext> teleCtxs = ctx.tele();
@@ -1067,7 +1092,7 @@ public class BuildVisitor extends ArendBaseVisitor {
       if (!parameters.isEmpty()) {
         myErrorReporter.report(new ParserError(tokenPosition(teleCtxs.get(0).start), "Parameters are allowed only before '=> <expression>'"));
       }
-      subClassFieldImpls = visitCoClauses(ctx.coClause());
+      subClassFieldImpls = visitLocalCoClauses(ctx.localCoClause());
     }
 
     return new Concrete.ClassFieldImpl(position, LongUnresolvedReference.make(position, path), term, subClassFieldImpls);
@@ -1408,7 +1433,7 @@ public class BuildVisitor extends ArendBaseVisitor {
     Concrete.Expression expr = visitAppExpr(appCtx);
 
     if (implCtx != null) {
-      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitCoClauses(implCtx.coClause()));
+      expr = Concrete.ClassExtExpression.make(tokenPosition(appCtx.start), expr, visitLocalCoClauses(implCtx.localCoClause()));
     }
 
     if (prefixCtx != null) {
