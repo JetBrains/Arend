@@ -144,7 +144,7 @@ public class ConcreteBuilder implements AbstractDefinitionVisitor<Concrete.Defin
       typeLevel = resultTypeLevel == null ? null : resultTypeLevel.accept(this, null);
     } catch (AbstractExpressionError.Exception e) {
       myErrorReporter.report(e.error);
-      parameters = Collections.emptyList();
+      parameters = new ArrayList<>();
       type = null;
       typeLevel = null;
     }
