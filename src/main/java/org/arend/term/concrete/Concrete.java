@@ -1350,15 +1350,17 @@ public final class Concrete {
 
   public static class ClassDefinition extends Definition {
     private final boolean myRecord;
+    private final boolean myWithoutClassifying;
     private final List<ReferenceExpression> mySuperClasses;
     private final List<ClassElement> myElements;
     private TCFieldReferable myCoercingField;
     private boolean myForcedCoercingField;
     private List<TCReferable> myUsedDefinitions = Collections.emptyList();
 
-    public ClassDefinition(TCClassReferable referable, boolean isRecord, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
+    public ClassDefinition(TCClassReferable referable, boolean isRecord, boolean withoutClassifying, List<ReferenceExpression> superClasses, List<ClassElement> elements) {
       super(referable);
       myRecord = isRecord;
+      myWithoutClassifying = withoutClassifying;
       myResolved = Resolved.NOT_RESOLVED;
       mySuperClasses = superClasses;
       myElements = elements;
@@ -1372,6 +1374,10 @@ public final class Concrete {
 
     public boolean isRecord() {
       return myRecord;
+    }
+
+    public boolean withoutClassifying() {
+      return myWithoutClassifying;
     }
 
     @Nullable
