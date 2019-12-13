@@ -1390,10 +1390,8 @@ public final class Concrete {
     }
 
     public void setCoercingField(TCFieldReferable coercingField, boolean isForced) {
-      if (myCoercingField == null) {
-        myCoercingField = coercingField;
-        myForcedCoercingField = isForced;
-      }
+      myCoercingField = coercingField;
+      myForcedCoercingField = isForced;
     }
 
     @Nonnull

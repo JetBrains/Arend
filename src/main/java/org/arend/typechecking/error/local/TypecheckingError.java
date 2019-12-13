@@ -23,7 +23,8 @@ public class TypecheckingError extends LocalError {
     CASE_RESULT_TYPE("Cannot infer the result type"),
     LEMMA_LEVEL("The level of a lemma must be \\Prop"),
     PROPERTY_LEVEL("The level of a property must be \\Prop"),
-    REDUNDANT_COCLAUSE(Level.WEAK_WARNING, "Coclause is redundant");
+    REDUNDANT_COCLAUSE(Level.WEAK_WARNING, "Coclause is redundant"),
+    NO_CLASSIFYING_IGNORED(Level.WEAK_WARNING, "\\noclassifying is ignored");
 
     private final Level level;
     private final String message;

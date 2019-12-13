@@ -9,6 +9,7 @@ public class ParsingError extends GeneralError {
     COERCE_WITHOUT_PARAMETERS("\\coerce must have at least one parameter"),
     LEVEL_IGNORED(Level.WEAK_WARNING, "\\level is ignored"),
     CLASSIFYING_FIELD_IN_RECORD(Level.WEAK_WARNING, "Records cannot have classifying fields"),
+    CLASSIFYING_IGNORED(Level.WEAK_WARNING, "\\classifying is ignored"),
     INVALID_PRIORITY("The priority must be between 0 and 10"),
     PRECEDENCE_IGNORED(Level.WEAK_WARNING, "Precedence is ignored"),
     MISPLACED_IMPORT("\\import is allowed only on the top level");

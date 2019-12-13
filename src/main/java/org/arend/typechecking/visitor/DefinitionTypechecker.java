@@ -1707,7 +1707,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     boolean hasClassifyingField = false;
-    if (!def.isRecord()) {
+    if (!def.isRecord() && !def.withoutClassifying()) {
       if (def.getCoercingField() != null) {
         hasClassifyingField = true;
       } else {
@@ -1894,11 +1894,20 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           errorReporter.report(new TypecheckingError("Internal error: coercing field must be a field belonging to the class", def));
         }
       }
+      if (def.withoutClassifying()) {
+        if (classifyingField == null) {
+          errorReporter.report(new TypecheckingError(TypecheckingError.Kind.NO_CLASSIFYING_IGNORED, def));
+        } else {
+          classifyingField = null;
+        }
+      }
       if (newDef) {
         typedDef.setClassifyingField(classifyingField);
         if (classifyingField != null) {
-          classifyingField.setHideable(true);
-          classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
+          if (classifyingField.getParentClass() == typedDef) {
+            classifyingField.setHideable(true);
+            classifyingField.setType(classifyingField.getType(Sort.STD).normalize(NormalizeVisitor.Mode.WHNF));
+          }
           typedDef.getCoerceData().addCoercingField(classifyingField);
         }
       }

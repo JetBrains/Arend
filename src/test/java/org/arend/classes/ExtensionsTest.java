@@ -401,7 +401,7 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\class C\n" +
       "\\func f {c : C} => 0\n" +
       "\\class D (X : \\Type) \\extends C\n" +
-      "  | g : f = f", 1);
+      "  | g : f = f", 2);
   }
 
   @Test
