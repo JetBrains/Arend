@@ -394,4 +394,42 @@ public class ExtensionsTest extends TypeCheckingTestCase {
       "\\func f (c : C (\\lam _ => \\Type4)) : C (\\lam _ => \\Type5) => c", 1);
     assertThatErrorsAre(typeMismatchError());
   }
+
+  @Test
+  public void extensionParameterError() {
+    typeCheckModule(
+      "\\class C\n" +
+      "\\func f {c : C} => 0\n" +
+      "\\class D (X : \\Type) \\extends C\n" +
+      "  | g : f = f", 2);
+  }
+
+  @Test
+  public void extensionParameterTest() {
+    typeCheckModule(
+      "\\class C\n" +
+      "\\func f {c : C} => 0\n" +
+      "\\class D \\noclassifying (X : \\Type) \\extends C\n" +
+      "  | g : f = f\n" +
+      "");
+  }
+
+  @Test
+  public void extensionParameterError2() {
+    typeCheckModule(
+      "\\class C (X : \\Type)\n" +
+      "\\class D \\extends C\n" +
+      "  | x : X\n" +
+      "\\func test (d : D) => x", 1);
+  }
+
+  @Test
+  public void extensionParameterTest2() {
+    typeCheckModule(
+      "\\class C (X : \\Type)\n" +
+      "  | x : X\n" +
+      "\\class D \\noclassifying \\extends C\n" +
+      "  | y : X\n" +
+      "\\func test (d : D) => x = y");
+  }
 }

@@ -248,6 +248,7 @@ public final class Abstract {
     @Override @Nonnull List<? extends FieldParameter> getParameters();
     @Override @Nonnull Collection<? extends ClassFieldImpl> getCoClauseElements();
     boolean isRecord();
+    boolean withoutClassifying();
     @Nonnull Collection<? extends Reference> getSuperClasses();
     @Nonnull Collection<? extends ClassElement> getClassElements();
     @Nonnull Collection<? extends LocatedReferable> getUsedDefinitions();

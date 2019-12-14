@@ -546,7 +546,11 @@ public class PatternTypechecking {
             substitution.add(link, otherExpr);
             link = link.getNext();
 
-            varSubst = new ExprSubstitution(substVar, otherExpr);
+            if (varSubst == null) {
+              varSubst = new ExprSubstitution(substVar, otherExpr);
+            } else {
+              varSubst.addSubst(substVar, otherExpr);
+            }
             if (totalSubst != null) {
               totalSubst.addSubst(substVar, otherExpr);
             }

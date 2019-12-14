@@ -791,7 +791,7 @@ public class BuildVisitor extends ArendBaseVisitor<Object> {
     List<ClassFieldOrImplContext> classFieldOrImplCtxs = classBodyCtx instanceof ClassBodyFieldOrImplContext ? ((ClassBodyFieldOrImplContext) classBodyCtx).classFieldOrImpl() : Collections.emptyList();
 
     List<Concrete.ClassElement> elements = new ArrayList<>();
-    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, new ArrayList<>(superClasses), elements);
+    Concrete.ClassDefinition classDefinition = new Concrete.ClassDefinition(reference, isRecord, ctx.NO_CLASSIFYING() != null, new ArrayList<>(superClasses), elements);
     reference.setDefinition(classDefinition);
     visitFieldTeles(ctx.fieldTele(), classDefinition, elements);
 

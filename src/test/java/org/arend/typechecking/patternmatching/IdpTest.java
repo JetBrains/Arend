@@ -1,7 +1,10 @@
 package org.arend.typechecking.patternmatching;
 
 import org.arend.typechecking.TypeCheckingTestCase;
+import org.arend.typechecking.error.local.IdpPatternError;
 import org.junit.Test;
+
+import static org.arend.typechecking.Matchers.typecheckingError;
 
 public class IdpTest extends TypeCheckingTestCase {
   @Test
@@ -148,5 +151,80 @@ public class IdpTest extends TypeCheckingTestCase {
       "\\func f {A : \\Type} {a a' : A} (q : a' = a) (p : a = a') : \\Sigma (x y : A) (x = y) \\elim p\n" +
       "  | idp => (a,a',q)\n" +
       "\\func test {A : \\Type} {a : A} (q : a = a) : f q idp = (a,a,q) => idp");
+  }
+
+  @Test
+  public void twoIdpData() {
+    typeCheckModule(
+      "\\data D {A B C : \\Type} (f : A -> B) (g : B -> C) (a : A) (b : B) (c : C)\n" +
+      "  | con (f a = b) (g b = c)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : D f g a b c) : t = t \\elim t\n" +
+      "  | con idp idp => idp {D f g a (f a) (g (f a))} {con idp idp}");
+  }
+
+  @Test
+  public void twoIdpData2() {
+    typeCheckModule(
+      "\\data D {A B C : \\Type} (f : A -> B) (g : B -> C) (a : A) (b : B) (c : C)\n" +
+      "  | con (g b = c) (f a = b)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : D f g a b c) : t = t \\elim t\n" +
+      "  | con idp idp => idp {D f g a (f a) (g (f a))} {con idp idp}");
+  }
+
+  @Test
+  public void twoIdpDataError() {
+    typeCheckModule(
+      "\\data D {A B C : \\Type} (f : A -> B) (g : B -> C) (b : B) (c : C)\n" +
+      "  | con (a : A) (f a = b) (g b = c)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : D f g b c) : t = t \\elim t\n" +
+      "  | con a idp idp => idp {D f g (f a) (g (f a))} {con a idp idp}", 1);
+    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
+  }
+
+  @Test
+  public void twoIdpRecord() {
+    typeCheckModule(
+      "\\record R {A B C : \\Type} (f : A -> B) (g : B -> C) (a : A) (b : B) (c : C) (p : f a = b) (q : g b = c)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : R f g a b c) : t = t \\elim t\n" +
+      "  | (idp,idp) => idp {R f g a (f a) (g (f a))} {\\new R f g a (f a) (g (f a)) idp idp}");
+  }
+
+  @Test
+  public void twoIdpRecord2() {
+    typeCheckModule(
+      "\\record R {A B C : \\Type} (f : A -> B) (g : B -> C) (a : A) (b : B) (c : C) (p : g b = c) (q : f a = b)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : R f g a b c) : t = t \\elim t\n" +
+      "  | (idp,idp) => idp {R f g a (f a) (g (f a))} {\\new R f g a (f a) (g (f a)) idp idp}");
+  }
+
+  @Test
+  public void twoIdpRecordError() {
+    typeCheckModule(
+      "\\record R {A B C : \\Type} (f : A -> B) (g : B -> C) (b : B) (c : C) (a : A) (p : f a = b) (q : g b = c)\n" +
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : R f g b c) : t = t \\elim t\n" +
+      "  | (a,idp,idp) => idp {R f g (f a) (g (f a))} {\\new R f g (f a) (g (f a)) a idp idp}", 1);
+    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
+  }
+
+  @Test
+  public void twoIdpSigma() {
+    typeCheckModule(
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : \\Sigma (f a = b) (g b = c)) : t = t \\elim t\n" +
+      "  | (idp,idp) => idp {\\Sigma (f a = f a) (g (f a) = g (f a))} {(idp,idp)}");
+  }
+
+  @Test
+  public void twoIdpSigma2() {
+    typeCheckModule(
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {a : A} {b : B} {c : C} (t : \\Sigma (g b = c) (f a = b)) : t = t \\elim t\n" +
+      "  | (idp,idp) => idp {\\Sigma (g (f a) = g (f a)) (f a = f a)} {(idp,idp)}");
+  }
+
+  @Test
+  public void twoIdpSigmaError() {
+    typeCheckModule(
+      "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : \\Sigma (a : A) (f a = b) (g b = c)) : t = t \\elim t\n" +
+      "  | (a,idp,idp) => idp {\\Sigma (a : A) (f a = f a) (g (f a) = g (f a))} {(a,idp,idp)}", 1);
+    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
   }
 }

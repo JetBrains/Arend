@@ -426,6 +426,10 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     checkPrecedence(def);
 
+    if (def.isRecord() && def.withoutClassifying()) {
+      myErrorReporter.report(new ParsingError(ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def));
+    }
+
     List<Concrete.ClassField> classFields = new ArrayList<>();
     for (Concrete.ClassElement element : def.getElements()) {
       if (element instanceof Concrete.ClassField) {
@@ -495,8 +499,9 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
       }
     }
 
-    if (def.isRecord() && def.isForcedCoercingField()) {
-      myLocalErrorReporter.report(new ParsingError(ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD, def));
+    if ((def.isRecord() || def.withoutClassifying()) && def.isForcedCoercingField()) {
+      myLocalErrorReporter.report(new ParsingError(def.isRecord() ? ParsingError.Kind.CLASSIFYING_FIELD_IN_RECORD : ParsingError.Kind.CLASSIFYING_IGNORED, def));
+      def.setCoercingField(def.getCoercingField(), false);
     }
 
     def.setResolved();
