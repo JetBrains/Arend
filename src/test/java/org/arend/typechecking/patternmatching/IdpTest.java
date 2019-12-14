@@ -172,13 +172,23 @@ public class IdpTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void twoIdpDataError() {
+  public void twoIdpData3() {
     typeCheckModule(
       "\\data D {A B C : \\Type} (f : A -> B) (g : B -> C) (b : B) (c : C)\n" +
       "  | con (a : A) (f a = b) (g b = c)\n" +
       "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : D f g b c) : t = t \\elim t\n" +
-      "  | con a idp idp => idp {D f g (f a) (g (f a))} {con a idp idp}", 1);
-    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
+      "  | con a idp idp => idp {D f g (f a) (g (f a))} {con a idp idp}");
+  }
+
+  @Test
+  public void twoIdpData4() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\data D {B C : \\Type} (f : Bool -> B) (g : B -> C) (b : B) (c : C)\n" +
+      "  | con (a : Bool) (f a = b) (g b = c)\n" +
+      "\\func f {B C : \\Type} (f : Bool -> B) (g : B -> C) {b : B} {c : C} (t : D f g b c) : t = t \\elim t\n" +
+      "  | con true idp idp => idp {D f g (f true) (g (f true))} {con true idp idp}\n" +
+      "  | con false idp idp => idp {D f g (f false) (g (f false))} {con false idp idp}");
   }
 
   @Test
@@ -198,12 +208,21 @@ public class IdpTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void twoIdpRecordError() {
+  public void twoIdpRecord3() {
     typeCheckModule(
       "\\record R {A B C : \\Type} (f : A -> B) (g : B -> C) (b : B) (c : C) (a : A) (p : f a = b) (q : g b = c)\n" +
       "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : R f g b c) : t = t \\elim t\n" +
-      "  | (a,idp,idp) => idp {R f g (f a) (g (f a))} {\\new R f g (f a) (g (f a)) a idp idp}", 1);
-    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
+      "  | (a,idp,idp) => idp {R f g (f a) (g (f a))} {\\new R f g (f a) (g (f a)) a idp idp}");
+  }
+
+  @Test
+  public void twoIdpRecord4() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\record R {B C : \\Type} (f : Bool -> B) (g : B -> C) (b : B) (c : C) (a : Bool) (p : f a = b) (q : g b = c)\n" +
+      "\\func f {B C : \\Type} (f : Bool -> B) (g : B -> C) {b : B} {c : C} (t : R f g b c) : t = t \\elim t\n" +
+      "  | (true,idp,idp) => idp {R f g (f true) (g (f true))} {\\new R f g (f true) (g (f true)) true idp idp}\n" +
+      "  | (false,idp,idp) => idp {R f g (f false) (g (f false))} {\\new R f g (f false) (g (f false)) false idp idp}");
   }
 
   @Test
@@ -221,10 +240,18 @@ public class IdpTest extends TypeCheckingTestCase {
   }
 
   @Test
-  public void twoIdpSigmaError() {
+  public void twoIdpSigma3() {
     typeCheckModule(
       "\\func f {A B C : \\Type} (f : A -> B) (g : B -> C) {b : B} {c : C} (t : \\Sigma (a : A) (f a = b) (g b = c)) : t = t \\elim t\n" +
-      "  | (a,idp,idp) => idp {\\Sigma (a : A) (f a = f a) (g (f a) = g (f a))} {(a,idp,idp)}", 1);
-    assertThatErrorsAre(typecheckingError(IdpPatternError.class));
+      "  | (a,idp,idp) => idp {\\Sigma (a' : A) (f a' = f a) (g (f a) = g (f a))} {(a,idp,idp)}");
+  }
+
+  @Test
+  public void twoIdpSigma4() {
+    typeCheckModule(
+      "\\data Bool | true | false\n" +
+      "\\func f {B C : \\Type} (f : Bool -> B) (g : B -> C) {b : B} {c : C} (t : \\Sigma (a : Bool) (f a = b) (g b = c)) : t = t \\elim t\n" +
+      "  | (true,idp,idp) => idp {\\Sigma (a : Bool) (f a = f true) (g (f true) = g (f true))} {(true,idp,idp)}\n" +
+      "  | (false,idp,idp) => idp {\\Sigma (a : Bool) (f a = f false) (g (f false) = g (f false))} {(false,idp,idp)}");
   }
 }
