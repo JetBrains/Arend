@@ -145,7 +145,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
     boolean onlySolveVars = myOnlySolveVars;
     if (myNormalCompare && !myOnlySolveVars) {
       Expression normType = type instanceof Expression ? ((Expression) type).getUnderlyingExpression() : null;
-      boolean allowProp = !expr1.canBeConstructor() && !expr2.canBeConstructor();
+      boolean allowProp = normType instanceof DataCallExpression && ((DataCallExpression) normType).getDefinition().getConstructors().isEmpty() || !expr1.canBeConstructor() && !expr2.canBeConstructor();
       if (normType instanceof SigmaExpression && !((SigmaExpression) normType).getParameters().hasNext() ||
           normType instanceof ClassCallExpression && ((ClassCallExpression) normType).getNumberOfNotImplementedFields() == 0 ||
           allowProp && normType != null && Sort.PROP.equals(normType.getSortOfType())) {

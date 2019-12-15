@@ -73,4 +73,11 @@ public class StrictPropTest extends TypeCheckingTestCase {
       "\\lemma f (x : Nat) : 0 = 0 => idp\n" +
       "\\func test : f 0 = f 1 => idp");
   }
+
+  @Test
+  public void emptyDataTest() {
+    typeCheckModule(
+      "\\data Empty\n" +
+      "\\func test (x y : Empty) : x = y => idp");
+  }
 }
