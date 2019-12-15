@@ -2,6 +2,8 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.error.doc.Doc;
+import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.*;
 import org.arend.term.ClassFieldKind;
 import org.arend.term.Fixity;
@@ -1578,6 +1580,11 @@ public final class Concrete {
     @Override
     public void setResultTypeLevel(Expression resultTypeLevel) {
       myResultTypeLevel = resultTypeLevel;
+    }
+
+    @Override
+    public Doc prettyPrint(PrettyPrinterConfig ppConfig) {
+      return DocFactory.refDoc(myOverriddenField);
     }
   }
 

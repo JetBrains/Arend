@@ -1732,6 +1732,50 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       }
     }
 
+    // Set overridden fields from super classes
+    if (!typedDef.getSuperClasses().isEmpty()) {
+      // Collect overridden fields
+      Set<ClassField> overriddenHere = new HashSet<>();
+      for (Concrete.ClassElement element : def.getElements()) {
+        if (element instanceof Concrete.OverriddenField) {
+          ClassField field = typechecker.referableToClassField(((Concrete.OverriddenField) element).getOverriddenField(), null);
+          if (field != null) {
+            overriddenHere.add(field);
+          }
+        }
+      }
+
+      for (ClassField field : typedDef.getFields()) {
+        if (overriddenHere.contains(field)) {
+          continue;
+        }
+
+        ClassDefinition originalSuperClass = null;
+        PiExpression type = null;
+        for (ClassDefinition superClass : typedDef.getSuperClasses()) {
+          PiExpression superType = superClass.getOverriddenType(field, Sort.STD);
+          if (superType != null) {
+            if (type == null) {
+              originalSuperClass = superClass;
+              TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
+              type = new PiExpression(superType.getResultSort(), thisParam, superType.applyExpression(new ReferenceExpression(thisParam)));
+            } else {
+              if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, type.getCodomain(), superType.applyExpression(new ReferenceExpression(type.getParameters())), ExpectedType.OMEGA, def)) {
+                if (!type.getCodomain().isError() && !superType.getCodomain().isError()) {
+                  errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
+                }
+                type = new PiExpression(type.getResultSort(), type.getParameters(), new ErrorExpression(null, null));
+                break;
+              }
+            }
+          }
+        }
+        if (newDef && type != null) {
+          typedDef.overrideField(field, type);
+        }
+      }
+    }
+
     // Process fields and implementations
     Concrete.Expression previousType = null;
     ClassField previousField = null;
@@ -1808,7 +1852,10 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         TypecheckingResult result;
         if (lamImpl != null) {
           typechecker.addBinding(lamImpl.getParameters().get(0).getReferableList().get(0), thisBinding);
-          PiExpression fieldType = field.getType(Sort.STD);
+          PiExpression fieldType = typedDef.getOverriddenType(field, Sort.STD);
+          if (fieldType == null) {
+            fieldType = field.getType(Sort.STD);
+          }
           setClassLocalInstancePool(localInstances, thisBinding, lamImpl, !typedDef.isRecord() && typedDef.getClassifyingField() == null ? typedDef : null);
           result = typechecker.finalCheckExpr(lamImpl.body, fieldType.getCodomain().subst(fieldType.getParameters(), new ReferenceExpression(thisBinding)), false);
           myInstancePool.setInstancePool(null);
@@ -1840,37 +1887,6 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         }
       } else {
         throw new IllegalStateException();
-      }
-    }
-
-    // Set overridden fields
-    if (!typedDef.getSuperClasses().isEmpty()) {
-      for (ClassField field : typedDef.getFields()) {
-        if (!typedDef.isOverridden(field)) {
-          ClassDefinition originalSuperClass = null;
-          PiExpression type = null;
-          for (ClassDefinition superClass : typedDef.getSuperClasses()) {
-            PiExpression superType = superClass.getOverriddenType(field, Sort.STD);
-            if (superType != null) {
-              if (type == null) {
-                originalSuperClass = superClass;
-                TypedSingleDependentLink thisParam = new TypedSingleDependentLink(false, "this", new ClassCallExpression(typedDef, Sort.STD), true);
-                type = new PiExpression(superType.getResultSort(), thisParam, superType.applyExpression(new ReferenceExpression(thisParam)));
-              } else {
-                if (!CompareVisitor.compare(DummyEquations.getInstance(), Equations.CMP.EQ, type.getCodomain(), superType.applyExpression(new ReferenceExpression(type.getParameters())), ExpectedType.OMEGA, def)) {
-                  if (!type.getCodomain().isError() && !superType.getCodomain().isError()) {
-                    errorReporter.report(new TypecheckingError("The types of the field '" + field.getName() + "' differ in super classes '" + originalSuperClass.getName() + "' and '" + superClass.getName() + "'", def));
-                  }
-                  type = new PiExpression(type.getResultSort(), type.getParameters(), new ErrorExpression(null, null));
-                  break;
-                }
-              }
-            }
-          }
-          if (type != null) {
-            typedDef.overrideField(field, type);
-          }
-        }
       }
     }
 

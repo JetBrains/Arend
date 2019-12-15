@@ -566,9 +566,13 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
   }
 
   private TypecheckingResult typecheckImplementation(ClassField field, Concrete.Expression implBody, ClassCallExpression fieldSetClass) {
-    PiExpression piType = field.getType(fieldSetClass.getSortArgument());
-    Expression type = piType.getCodomain().subst(piType.getParameters(), new ReferenceExpression(fieldSetClass.getThisBinding()));
+    PiExpression piType = fieldSetClass.getDefinition().getOverriddenType(field, Sort.STD);
+    if (piType == null) {
+      piType = field.getType(Sort.STD);
+    }
+    Expression type = piType.getCodomain().subst(new ExprSubstitution(piType.getParameters(), new ReferenceExpression(fieldSetClass.getThisBinding())), fieldSetClass.getSortArgument().toLevelSubstitution());
 
+    // Expression type = FieldCallExpression.make(field, fieldSetClass.getSortArgument(), new ReferenceExpression(fieldSetClass.getThisBinding())).getType();
     if (implBody instanceof Concrete.HoleExpression && field.getReferable().isParameterField() && !field.getReferable().isExplicitField() && field.isTypeClass() && type instanceof ClassCallExpression && !((ClassCallExpression) type).getDefinition().isRecord()) {
       Expression result;
       ClassDefinition classDef = ((ClassCallExpression) type).getDefinition();
