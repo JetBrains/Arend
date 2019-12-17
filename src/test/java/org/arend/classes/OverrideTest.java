@@ -3,6 +3,8 @@ package org.arend.classes;
 import org.arend.typechecking.TypeCheckingTestCase;
 import org.junit.Test;
 
+import static org.arend.typechecking.Matchers.typeMismatchError;
+
 public class OverrideTest extends TypeCheckingTestCase {
   @Test
   public void subtypeTest() {
@@ -142,5 +144,33 @@ public class OverrideTest extends TypeCheckingTestCase {
       "  | g : f.a = B.b {f}\n" +
       "  \\override f : B\n" +
       "}", 1);
+  }
+
+  @Test
+  public void newTest() {
+    typeCheckModule(
+      "\\record R\n" +
+      "\\record S \\extends R\n" +
+      "\\record A | foo : R\n" +
+      "\\record B \\extends A {\n" +
+      "  \\override foo : S\n" +
+      "}\n" +
+      "\\func test => B (\\new R)", 1);
+    assertThatErrorsAre(typeMismatchError());
+  }
+
+  @Test
+  public void implementTest() {
+    typeCheckModule(
+      "\\record R\n" +
+      "\\record S \\extends R\n" +
+      "\\record S' \\extends R\n" +
+      "\\record A | foo : R\n" +
+      "\\record B \\extends A {\n" +
+      "  \\override foo : S\n" +
+      "}\n" +
+      "\\record C \\extends B\n" +
+      "  | foo => \\new R", 1);
+    assertThatErrorsAre(typeMismatchError());
   }
 }
