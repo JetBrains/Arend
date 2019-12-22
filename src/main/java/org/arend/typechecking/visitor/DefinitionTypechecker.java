@@ -167,9 +167,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
   @Override
   public List<ExtClause> visitClass(Concrete.ClassDefinition def, Void params) {
     Definition typechecked = typechecker.getTypechecked(def.getData());
-    if (def.hasErrors()) {
-      typechecker.setHasErrors();
-    }
+    typechecker.setStatus(def.getStatus().getTypecheckingStatus());
 
     if (def.isRecursive()) {
       errorReporter.report(new TypecheckingError("A class cannot be recursive", def));
@@ -1106,9 +1104,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
     }
 
     if (newDef) {
-      if (def.hasErrors()) {
-        typechecker.setHasErrors();
-      }
+      typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       typedDef.addStatus(typechecker.getStatus().max(!bodyIsOK && typedDef.getActualBody() == null ? Definition.TypeCheckingStatus.HAS_ERRORS : Definition.TypeCheckingStatus.NO_ERRORS));
     }
 
@@ -1366,9 +1362,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
 
     if (newDef) {
       dataDefinition.setSort(countingErrorReporter.getErrorsNumber() == 0 && userSort != null ? userSort : inferredSort);
-      if (def.hasErrors()) {
-        typechecker.setHasErrors();
-      }
+      typechecker.setStatus(def.getStatus().getTypecheckingStatus());
       dataDefinition.addStatus(typechecker.getStatus());
 
       boolean hasUniverses = checkForUniverses(dataDefinition.getParameters());

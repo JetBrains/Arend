@@ -146,7 +146,7 @@ public class ConcreteCompareVisitor implements ConcreteExpressionVisitor<Concret
 
   @Override
   public Boolean visitHole(Concrete.HoleExpression expr1, Concrete.Expression expr2) {
-    return expr2 instanceof Concrete.HoleExpression && (expr1.getError() == null) == (((Concrete.HoleExpression) expr2).getError() == null);
+    return expr2 instanceof Concrete.HoleExpression && expr1.isErrorHole() == ((Concrete.HoleExpression) expr2).isErrorHole();
   }
 
   @Override

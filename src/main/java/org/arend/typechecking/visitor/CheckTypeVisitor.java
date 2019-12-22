@@ -98,8 +98,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
     }
   }
 
-  @SuppressWarnings("SameParameterValue")
-  private void setStatus(Definition.TypeCheckingStatus status) {
+  public void setStatus(Definition.TypeCheckingStatus status) {
     myStatus = myStatus.max(status);
   }
 
@@ -124,10 +123,6 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
       context.put(referable, binding);
       myListener.referableTypechecked(referable, binding);
     }
-  }
-
-  public void setHasErrors() {
-    myStatus = myStatus.max(Definition.TypeCheckingStatus.HAS_ERRORS);
   }
 
   public TypecheckerState getTypecheckingState() {
@@ -903,7 +898,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
   @Override
   public TypecheckingResult visitHole(Concrete.HoleExpression expr, ExpectedType expectedType) {
-    if (expr.getError() != null) {
+    if (expr.isErrorHole()) {
       return expectedType instanceof Expression ? new TypecheckingResult(new ErrorExpression(null, expr.getError()), (Expression) expectedType) : null;
     }
 

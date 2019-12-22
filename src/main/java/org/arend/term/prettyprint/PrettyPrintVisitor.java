@@ -419,7 +419,7 @@ public class PrettyPrintVisitor implements ConcreteExpressionVisitor<Precedence,
 
   @Override
   public Void visitHole(Concrete.HoleExpression expr, Precedence prec) {
-    myBuilder.append(expr.getError() == null ? "_" : "{?}");
+    myBuilder.append(expr.isErrorHole() ? "{?}" : "_");
     return null;
   }
 
