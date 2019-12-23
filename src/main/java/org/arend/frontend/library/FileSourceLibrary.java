@@ -22,6 +22,8 @@ import java.util.Set;
 public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   protected Path mySourceBasePath;
   protected Path myBinaryBasePath;
+  protected Path myExtBasePath;
+  protected String myExtMainClass;
   protected Set<ModulePath> myModules;
   protected List<LibraryDependency> myDependencies;
   protected Range<String> myLanguageVersion;
@@ -33,16 +35,20 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
    * @param name              the name of this library.
    * @param sourceBasePath    a path to the directory with raw source files.
    * @param binaryBasePath    a path to the directory with binary source files.
+   * @param extBasePath       a path to the directory with language extensions.
+   * @param extMainClass      the main class of the language extension.
    * @param modules           the list of modules of this library.
    * @param isComplete        true if {@code modules} contains all modules of this library, false otherwise.
    * @param dependencies      the list of dependencies of this library.
    * @param languageVersion   language versions appropriate for this library.
    * @param typecheckerState  a typechecker state in which the result of loading of cached modules will be stored.
    */
-  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<String> languageVersion, TypecheckerState typecheckerState) {
+  public FileSourceLibrary(String name, Path sourceBasePath, Path binaryBasePath, Path extBasePath, String extMainClass, Set<ModulePath> modules, boolean isComplete, List<LibraryDependency> dependencies, Range<String> languageVersion, TypecheckerState typecheckerState) {
     super(name, typecheckerState);
     mySourceBasePath = sourceBasePath;
     myBinaryBasePath = binaryBasePath;
+    myExtBasePath = extBasePath;
+    myExtMainClass = extMainClass;
     myModules = modules;
     myComplete = isComplete;
     myLanguageVersion = languageVersion;
@@ -72,7 +78,7 @@ public class FileSourceLibrary extends UnmodifiableSourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(myModules, myDependencies, myLanguageVersion);
+    return new LibraryHeader(myModules, myDependencies, myLanguageVersion, myExtBasePath, myExtMainClass);
   }
 
   @Override

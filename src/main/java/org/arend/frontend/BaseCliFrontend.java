@@ -106,8 +106,10 @@ public abstract class BaseCliFrontend {
       cmdOptions.addOption("h", "help", false, "print this message");
       cmdOptions.addOption(Option.builder("L").longOpt("libdir").hasArg().argName("dir").desc("directory containing libraries").build());
       cmdOptions.addOption(Option.builder("l").longOpt("lib").hasArg().argName("library").desc("project dependency (a name of a library or a path to it)").build());
-      cmdOptions.addOption(Option.builder("s").longOpt("source").hasArg().argName("srcdir").desc("project source directory").build());
-      cmdOptions.addOption(Option.builder("o").longOpt("output").hasArg().argName("outdir").desc("project output directory").build());
+      cmdOptions.addOption(Option.builder("s").longOpt("sources").hasArg().argName("dir").desc("project source directory").build());
+      cmdOptions.addOption(Option.builder("b").longOpt("binaries").hasArg().argName("dir").desc("project output directory").build());
+      cmdOptions.addOption(Option.builder("e").longOpt("extensions").hasArg().argName("dir").desc("language extensions directory").build());
+      cmdOptions.addOption(Option.builder("m").longOpt("extension-main").hasArg().argName("class").desc("main extension class").build());
       cmdOptions.addOption(Option.builder().longOpt("recompile").desc("recompile files").build());
       cmdOptions.addOption("v", "version", false, "print language version");
       addCommandOptions(cmdOptions);
@@ -172,8 +174,12 @@ public abstract class BaseCliFrontend {
     String sourceDirStr = cmdLine.getOptionValue("s");
     Path sourceDir = sourceDirStr == null ? FileUtils.getCurrentDirectory() : Paths.get(sourceDirStr);
 
-    String binaryDirStr = cmdLine.getOptionValue("o");
+    String binaryDirStr = cmdLine.getOptionValue("b");
     Path outDir = binaryDirStr != null ? Paths.get(binaryDirStr) : sourceDir.resolve(".bin");
+
+    String extDirStr = cmdLine.getOptionValue("e");
+    Path extDir = extDirStr != null ? Paths.get(extDirStr) : null;
+    String extMainClass = cmdLine.getOptionValue("m");
 
     // Collect modules and libraries for which typechecking was requested
     Collection<String> argFiles = cmdLine.getArgList();
@@ -218,7 +224,7 @@ public abstract class BaseCliFrontend {
         e.printStackTrace();
         outDir = null;
       }
-      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound(), myTypecheckerState));
+      requestedLibraries.add(new FileSourceLibrary("\\default", sourceDir, outDir, extDir, extMainClass, requestedModules, argFiles.isEmpty(), libraryDependencies, Range.unbound(), myTypecheckerState));
     }
 
     // Load and typecheck libraries

@@ -45,9 +45,6 @@ public class FileLibraryResolver implements LibraryResolver {
       if (config.getSourcesDir() == null) {
         config.setSourcesDir(headerFile.getParent().toString());
       }
-      if (config.getBinariesDir() == null) {
-        config.setBinariesDir(headerFile.getParent().resolve(".bin").toString());
-      }
       return new FileLoadableHeaderLibrary(config, headerFile, myTypecheckerState);
     } catch (IOException e) {
       myErrorReporter.report(new LibraryIOError(headerFile.toString(), "Failed to read header file", e.getLocalizedMessage()));

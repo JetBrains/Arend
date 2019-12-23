@@ -21,7 +21,7 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
   private final Path myHeaderFile;
 
   public FileLoadableHeaderLibrary(LibraryConfig config, Path headerFile, TypecheckerState typecheckerState) {
-    super(config.getName(), null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound(), typecheckerState);
+    super(config.getName(), null, null, null, null, Collections.emptySet(), config.getModules() != null, Collections.emptyList(), Range.unbound(), typecheckerState);
     myConfig = config;
     myHeaderFile = headerFile;
   }
@@ -40,6 +40,11 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
     if (myConfig.getBinariesDir() != null) {
       myBinaryBasePath = myHeaderFile.getParent().resolve(myConfig.getBinariesDir());
     }
+
+    if (myConfig.getExtensionsDir() != null) {
+      myExtBasePath = myHeaderFile.getParent().resolve(myConfig.getExtensionsDir());
+    }
+    myExtMainClass = myConfig.getExtensionMainClass();
 
     myModules = new LinkedHashSet<>();
     if (myConfig.getModules() != null) {
@@ -78,6 +83,6 @@ public class FileLoadableHeaderLibrary extends FileSourceLibrary {
       }
     }
 
-    return new LibraryHeader(myModules, myDependencies, myLanguageVersion);
+    return new LibraryHeader(myModules, myDependencies, myLanguageVersion, myExtBasePath, myExtMainClass);
   }
 }

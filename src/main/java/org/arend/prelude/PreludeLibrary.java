@@ -1,6 +1,7 @@
 package org.arend.prelude;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.ArendExtension;
 import org.arend.library.LibraryDependency;
 import org.arend.library.LibraryHeader;
 import org.arend.library.SourceLibrary;
@@ -58,7 +59,7 @@ public abstract class PreludeLibrary extends SourceLibrary {
   @Nullable
   @Override
   protected LibraryHeader loadHeader(ErrorReporter errorReporter) {
-    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList(), Range.unbound());
+    return new LibraryHeader(Collections.singletonList(Prelude.MODULE_PATH), Collections.emptyList(), Range.unbound(), null, null);
   }
 
   @Override

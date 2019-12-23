@@ -13,6 +13,8 @@ public class LibraryConfig {
   private String myName;
   private String mySourcesDirectory;
   private String myBinariesDirectory;
+  private String myExtensionsDirectory;
+  private String myExtensionMainClass;
   private List<String> myModules;
   private List<String> myDependencies;
   private String myLangVersion;
@@ -39,6 +41,22 @@ public class LibraryConfig {
 
   public void setBinariesDir(String binariesDirectory) {
     myBinariesDirectory = binariesDirectory;
+  }
+
+  public String getExtensionsDir() {
+    return myExtensionsDirectory;
+  }
+
+  public void setExtensionsDir(String extensionsDirectory) {
+    myExtensionsDirectory = extensionsDirectory;
+  }
+
+  public String getExtensionMainClass() {
+    return myExtensionMainClass;
+  }
+
+  public void setExtensionMainClass(String extensionMainClass) {
+    myExtensionMainClass = extensionMainClass;
   }
 
   public List<String> getModules() {
@@ -76,6 +94,12 @@ public class LibraryConfig {
     }
     if (myBinariesDirectory != null) {
       docs.add(text("binariesDir: " + myBinariesDirectory));
+    }
+    if (myExtensionsDirectory != null) {
+      docs.add(text("extensionsDir: " + myExtensionsDirectory));
+    }
+    if (myExtensionMainClass != null) {
+      docs.add(text("extensionMainClass: " + myExtensionMainClass));
     }
     if (myModules != null) {
       docs.add(hList(text("modules: ["), hSep(text(", "), myModules.stream().map(DocFactory::text).collect(Collectors.toList())), text("]")));

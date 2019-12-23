@@ -1,5 +1,6 @@
 package org.arend.library;
 
+import org.arend.ext.ArendExtension;
 import org.arend.module.ModulePath;
 import org.arend.module.scopeprovider.ModuleScopeProvider;
 import org.arend.naming.reference.LocatedReferable;
@@ -10,6 +11,7 @@ import org.arend.typechecking.TypecheckerState;
 import org.arend.typechecking.order.Ordering;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,6 +85,12 @@ public abstract class BaseLibrary implements Library {
   @Override
   public boolean isLoaded() {
     return myLoaded;
+  }
+
+  @Nullable
+  @Override
+  public ArendExtension getArendExtension() {
+    return null;
   }
 
   @Nonnull

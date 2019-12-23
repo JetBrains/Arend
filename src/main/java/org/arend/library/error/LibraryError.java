@@ -3,6 +3,7 @@ package org.arend.library.error;
 import org.arend.error.GeneralError;
 import org.arend.error.doc.DocFactory;
 import org.arend.error.doc.LineDoc;
+import org.arend.ext.ArendExtension;
 import org.arend.module.ModulePath;
 import org.arend.prelude.Prelude;
 import org.arend.term.prettyprint.PrettyPrinterConfig;
@@ -53,6 +54,10 @@ public class LibraryError extends GeneralError {
 
   public static LibraryError incorrectVersion(Range<String> range) {
     return new LibraryError("Library supports language version " + range.checkRange(Prelude.VERSION) + ", but current language version is " + Prelude.VERSION, Stream.empty());
+  }
+
+  public static LibraryError incorrectExtensionClass(String libraryName) {
+    return new LibraryError("Extension main class does not implement " + ArendExtension.class.toString(), Stream.of(libraryName));
   }
 
   @Override

@@ -1,8 +1,12 @@
 package org.arend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.ArendExtension;
+import org.arend.ext.DefaultArendExtension;
+import org.arend.ext.FileClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
+import org.arend.module.error.ExceptionError;
 import org.arend.naming.reference.converter.IdReferableConverter;
 import org.arend.naming.reference.converter.ReferableConverter;
 import org.arend.prelude.Prelude;
@@ -17,7 +21,11 @@ import org.arend.typechecking.order.dependency.DummyDependencyListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Represents a library which can load modules in the binary format (see {@link #getBinarySource})
@@ -26,6 +34,7 @@ import java.util.EnumSet;
 public abstract class SourceLibrary extends BaseLibrary {
   public enum Flag { RECOMPILE }
   private final EnumSet<Flag> myFlags = EnumSet.noneOf(Flag.class);
+  private ArendExtension myExtension;
 
   /**
    * Creates a new {@code SourceLibrary}
@@ -69,6 +78,12 @@ public abstract class SourceLibrary extends BaseLibrary {
    */
   @Nullable
   public abstract BinarySource getBinarySource(ModulePath modulePath);
+
+  @Nullable
+  @Override
+  public ArendExtension getArendExtension() {
+    return myExtension;
+  }
 
   /**
    * Loads the header of this library.
@@ -157,12 +172,44 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
     }
 
+    Map<String, ArendExtension> dependenciesExtensions = new LinkedHashMap<>();
     for (LibraryDependency dependency : header.dependencies) {
       Library loadedDependency = libraryManager.loadDependency(this, dependency.name);
       if (loadedDependency == null && !mustBeLoaded()) {
         return false;
       }
       libraryManager.registerDependency(this, loadedDependency);
+
+      if (loadedDependency != null) {
+        ArendExtension extension = loadedDependency.getArendExtension();
+        if (extension != null) {
+          dependenciesExtensions.put(dependency.name, extension);
+        }
+      }
+    }
+
+    try {
+      Class<?> extMainClass = null;
+      if (header.extBasePath != null && header.extMainClass != null) {
+        extMainClass = new FileClassLoader(header.extBasePath).loadClass(header.extMainClass);
+        if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
+          libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
+          extMainClass = null;
+        }
+      }
+
+      if (extMainClass != null){
+        myExtension = (ArendExtension) extMainClass.newInstance();
+      }
+    } catch (Exception e) {
+      libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading library " + getName()));
+    }
+    if (myExtension == null && !dependenciesExtensions.isEmpty()) {
+      myExtension = new DefaultArendExtension();
+    }
+    if (myExtension != null) {
+      myExtension.setDependencies(dependenciesExtensions);
+      myExtension.initialize();
     }
 
     SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
