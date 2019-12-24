@@ -1,4 +1,4 @@
-package org.arend.ext;
+package org.arend.library;
 
 import javax.annotation.Nonnull;
 import java.io.File;

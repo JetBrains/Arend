@@ -17,7 +17,7 @@ public class ExceptionError extends GeneralError {
   public final GlobalReferable affectedReferable;
 
   public ExceptionError(Exception exception, String action, GlobalReferable affectedReferable) {
-    super(Level.ERROR, "An exception happened during " + action + (affectedReferable == null ? "" : " module: " + affectedReferable.textRepresentation()));
+    super(Level.ERROR, "An exception happened during " + action + (affectedReferable == null ? "" : " of module: " + affectedReferable.textRepresentation()));
     this.exception = exception;
     this.affectedReferable = affectedReferable;
   }

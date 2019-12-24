@@ -3,7 +3,6 @@ package org.arend.library;
 import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
-import org.arend.ext.FileClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
@@ -21,8 +20,6 @@ import org.arend.typechecking.order.dependency.DummyDependencyListener;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -202,7 +199,7 @@ public abstract class SourceLibrary extends BaseLibrary {
         myExtension = (ArendExtension) extMainClass.newInstance();
       }
     } catch (Exception e) {
-      libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading library " + getName()));
+      libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
     }
     if (myExtension == null && !dependenciesExtensions.isEmpty()) {
       myExtension = new DefaultArendExtension();

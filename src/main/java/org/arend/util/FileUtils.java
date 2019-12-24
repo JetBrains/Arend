@@ -1,7 +1,7 @@
 package org.arend.util;
 
-import org.arend.error.GeneralError;
 import org.arend.error.ErrorReporter;
+import org.arend.error.GeneralError;
 import org.arend.library.error.LibraryIOError;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
@@ -105,7 +105,7 @@ public class FileUtils {
     } catch (NoSuchFileException e) {
       errorReporter.report(new LibraryIOError(e.getFile(), "No such file"));
     } catch (IOException e) {
-      errorReporter.report(new ExceptionError(e, "processing directory " + path));
+      errorReporter.report(new ExceptionError(e, "processing of directory " + path));
     }
   }
 }
