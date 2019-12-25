@@ -188,7 +188,7 @@ public abstract class SourceLibrary extends BaseLibrary {
     try {
       Class<?> extMainClass = null;
       if (header.extBasePath != null && header.extMainClass != null) {
-        extMainClass = new FileClassLoader(header.extBasePath).loadClass(header.extMainClass);
+        extMainClass = new FileClassLoader(ArendExtension.class.getClassLoader(), header.extBasePath).loadClass(header.extMainClass);
         if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
           libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
           extMainClass = null;

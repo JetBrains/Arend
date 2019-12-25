@@ -9,7 +9,8 @@ import java.nio.file.Path;
 public class FileClassLoader extends ClassLoader {
   private final Path myRoot;
 
-  public FileClassLoader(@Nonnull Path root) {
+  public FileClassLoader(ClassLoader parent, @Nonnull Path root) {
+    super(parent);
     myRoot = root;
   }
 
