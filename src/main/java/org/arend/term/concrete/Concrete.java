@@ -2,6 +2,8 @@ package org.arend.term.concrete;
 
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.context.binding.inference.InferenceVariable;
+import org.arend.core.definition.Definition;
+import org.arend.error.GeneralError;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
 import org.arend.naming.reference.*;
@@ -621,6 +623,10 @@ public final class Concrete {
       return visitor.visitHole(this, params);
     }
 
+    public boolean isErrorHole() {
+      return false;
+    }
+
     public LocalError getError() {
       return null;
     }
@@ -632,6 +638,11 @@ public final class Concrete {
     public ErrorHoleExpression(Object data, LocalError error) {
       super(data);
       myError = error;
+    }
+
+    @Override
+    public boolean isErrorHole() {
+      return true;
     }
 
     @Override
@@ -1277,10 +1288,22 @@ public final class Concrete {
 
   public enum Resolved { NOT_RESOLVED, TYPE_CLASS_REFERENCES_RESOLVED, RESOLVED }
 
+  public enum Status {
+    NO_ERRORS { @Override public org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus() { return org.arend.core.definition.Definition.TypeCheckingStatus.NO_ERRORS; } },
+    HAS_WARNINGS { @Override public org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus() { return org.arend.core.definition.Definition.TypeCheckingStatus.HAS_WARNINGS; } },
+    HAS_ERRORS { @Override public org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus() { return org.arend.core.definition.Definition.TypeCheckingStatus.HAS_ERRORS; } };
+
+    public abstract org.arend.core.definition.Definition.TypeCheckingStatus getTypecheckingStatus();
+
+    Status max(Status another) {
+      return ordinal() >= another.ordinal() ? this : another;
+    }
+  }
+
   public static abstract class Definition extends ReferableDefinition {
     Resolved myResolved = Resolved.TYPE_CLASS_REFERENCES_RESOLVED;
     public TCClassReferable enclosingClass;
-    private boolean myHasErrors = false;
+    private Status myStatus = Status.NO_ERRORS;
     private boolean myDesugarized = false;
     private boolean myRecursive = false;
 
@@ -1288,12 +1311,20 @@ public final class Concrete {
       super(referable);
     }
 
-    public boolean hasErrors() {
-      return myHasErrors;
+    public Status getStatus() {
+      return myStatus;
     }
 
-    public void setHasErrors() {
-      myHasErrors = true;
+    public void setStatus(Status status) {
+      myStatus = myStatus.max(status);
+    }
+
+    public void setStatus(GeneralError.Level level) {
+      if (level == GeneralError.Level.ERROR) {
+        myStatus = myStatus.max(Concrete.Status.HAS_ERRORS);
+      } else if (level.ordinal() >= GeneralError.Level.WEAK_WARNING.ordinal()) {
+        myStatus = myStatus.max(Concrete.Status.HAS_WARNINGS);
+      }
     }
 
     public boolean isRecursive() {

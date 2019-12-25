@@ -15,20 +15,9 @@ import java.util.List;
 public final class Abstract {
   private Abstract() {}
 
-  public static class ErrorData {
-    public final Object cause;
-    public final String message;
-
-    public ErrorData(Object cause, String message) {
-      this.cause = cause;
-      this.message = message;
-    }
-  }
-
   public interface SourceNode {
     @Nonnull SourceNode getTopmostEquivalentSourceNode();
     @Nullable SourceNode getParentSourceNode();
-    @Nullable ErrorData getErrorData();
 
     default boolean isLocal() {
       return true;
@@ -45,12 +34,6 @@ public final class Abstract {
     @Nullable
     @Override
     public SourceNode getParentSourceNode() {
-      return null;
-    }
-
-    @Nullable
-    @Override
-    public ErrorData getErrorData() {
       return null;
     }
   }

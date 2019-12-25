@@ -275,9 +275,7 @@ public class TypecheckingOrderingListener implements OrderingListener {
     CountingErrorReporter countingErrorReporter = new CountingErrorReporter();
     CheckTypeVisitor visitor = new CheckTypeVisitor(myState, new LinkedHashMap<>(), new LocalErrorReporter(definition.getData(), new CompositeErrorReporter(myErrorReporter, countingErrorReporter)), null);
     visitor.setListener(myTypecheckingListener);
-    if (definition.hasErrors()) {
-      visitor.setHasErrors();
-    }
+    visitor.setStatus(definition.getStatus().getTypecheckingStatus());
     DesugarVisitor.desugar(definition, myConcreteProvider, visitor.getErrorReporter());
     Definition oldTypechecked = visitor.getTypecheckingState().getTypechecked(definition.getData());
     definition.setRecursive(true);

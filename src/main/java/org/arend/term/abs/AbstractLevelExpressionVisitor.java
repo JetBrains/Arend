@@ -1,8 +1,5 @@
 package org.arend.term.abs;
 
-import org.arend.core.context.binding.inference.InferenceLevelVariable;
-
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public interface AbstractLevelExpressionVisitor<P, R> {
@@ -12,5 +9,5 @@ public interface AbstractLevelExpressionVisitor<P, R> {
   R visitNumber(@Nullable Object data, int number, P param);
   R visitSuc(@Nullable Object data, /* @Nonnull */ @Nullable Abstract.LevelExpression expr, P param);
   R visitMax(@Nullable Object data, /* @Nonnull */ @Nullable Abstract.LevelExpression left, /* @Nonnull */ @Nullable Abstract.LevelExpression right, P param);
-  R visitVar(@Nullable Object data, @Nonnull InferenceLevelVariable var, P param);
+  R visitError(@Nullable Object data);
 }

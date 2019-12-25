@@ -12,22 +12,9 @@ public class AbstractExpressionError extends LocalError {
     myCause = cause;
   }
 
-  public static AbstractExpressionError incomplete(Object cause) {
-    return new IncompleteExpressionError(cause);
-  }
-
   @Override
   public Object getCause() {
     return myCause;
-  }
-
-  public static class Exception extends RuntimeException {
-    public final AbstractExpressionError error;
-
-    public Exception(AbstractExpressionError error) {
-      super(error.message);
-      this.error = error;
-    }
   }
 
   @Override

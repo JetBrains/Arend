@@ -148,7 +148,7 @@ public class DefinitionResolveNameVisitor implements ConcreteDefinitionVisitor<S
 
     @Override
     public void report(GeneralError error) {
-      definition.setHasErrors();
+      definition.setStatus(error.level);
       myErrorReporter.report(error);
     }
   }
