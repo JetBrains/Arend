@@ -178,12 +178,10 @@ public class LibraryManager {
     }
 
     myLoadingLibraries.add(library);
-    beforeLibraryLoading(library);
-    boolean result = false;
 
     try {
       myReverseDependencies.put(library, new HashSet<>());
-      result = library.load(this);
+      boolean result = library.load(this);
       if (!result) {
         myReverseDependencies.remove(library);
         myFailedLibraries.add(library);
@@ -191,7 +189,6 @@ public class LibraryManager {
       return result;
     } finally {
       myLoadingLibraries.remove(library);
-      afterLibraryLoading(library, result);
     }
   }
 
