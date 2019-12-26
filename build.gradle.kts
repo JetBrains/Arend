@@ -13,12 +13,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.protobuf:protobuf-java:3.7.1")
+    implementation("com.google.protobuf:protobuf-java:3.11.1")
     implementation("com.google.code.findbugs:jsr305:3.0.2")
 
     implementation("commons-cli:commons-cli:1.4")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.9.9.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.1")
 
     testImplementation("junit:junit:4.12")
     testImplementation("org.hamcrest:hamcrest-library:1.3")
