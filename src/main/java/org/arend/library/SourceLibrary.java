@@ -3,6 +3,7 @@ package org.arend.library;
 import org.arend.error.ErrorReporter;
 import org.arend.ext.ArendExtension;
 import org.arend.ext.DefaultArendExtension;
+import org.arend.library.classLoader.FileClassLoaderDelegate;
 import org.arend.library.error.LibraryError;
 import org.arend.module.ModulePath;
 import org.arend.module.error.ExceptionError;
@@ -169,15 +170,20 @@ public abstract class SourceLibrary extends BaseLibrary {
       }
     }
 
+    if (header.extBasePath != null && header.extMainClass != null) {
+      libraryManager.getClassLoader().addDelegate(this, new FileClassLoaderDelegate(header.extBasePath));
+    }
+
     Map<String, ArendExtension> dependenciesExtensions = new LinkedHashMap<>();
     for (LibraryDependency dependency : header.dependencies) {
       Library loadedDependency = libraryManager.loadDependency(this, dependency.name);
       if (loadedDependency == null && !mustBeLoaded()) {
+        libraryManager.getClassLoader().removeDelegate(this);
         return false;
       }
-      libraryManager.registerDependency(this, loadedDependency);
 
       if (loadedDependency != null) {
+        libraryManager.registerDependency(this, loadedDependency);
         ArendExtension extension = loadedDependency.getArendExtension();
         if (extension != null) {
           dependenciesExtensions.put(dependency.name, extension);
@@ -188,17 +194,18 @@ public abstract class SourceLibrary extends BaseLibrary {
     try {
       Class<?> extMainClass = null;
       if (header.extBasePath != null && header.extMainClass != null) {
-        extMainClass = new FileClassLoader(ArendExtension.class.getClassLoader(), header.extBasePath).loadClass(header.extMainClass);
+        extMainClass = libraryManager.getClassLoader().loadClass(header.extMainClass);
         if (!ArendExtension.class.isAssignableFrom(extMainClass)) {
           libraryManager.getLibraryErrorReporter().report(LibraryError.incorrectExtensionClass(getName()));
           extMainClass = null;
         }
       }
 
-      if (extMainClass != null){
+      if (extMainClass != null) {
         myExtension = (ArendExtension) extMainClass.newInstance();
       }
     } catch (Exception e) {
+      libraryManager.getClassLoader().removeDelegate(this);
       libraryManager.getLibraryErrorReporter().report(new ExceptionError(e, "loading of library " + getName()));
     }
     if (myExtension == null && !dependenciesExtensions.isEmpty()) {

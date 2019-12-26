@@ -1,6 +1,8 @@
 package org.arend.library;
 
 import org.arend.error.ErrorReporter;
+import org.arend.ext.ArendExtension;
+import org.arend.library.classLoader.MultiClassLoader;
 import org.arend.library.error.LibraryError;
 import org.arend.library.resolver.LibraryResolver;
 import org.arend.module.scopeprovider.CachingModuleScopeProvider;
@@ -25,6 +27,7 @@ public class LibraryManager {
   private final Map<Library, Set<Library>> myReverseDependencies = new LinkedHashMap<>();
   private final Set<Library> myLoadingLibraries = new HashSet<>();
   private final Set<Library> myFailedLibraries = new HashSet<>();
+  private final MultiClassLoader<Library> myClassLoader = new MultiClassLoader<>(ArendExtension.class.getClassLoader());
 
   /**
    * Constructs new {@code LibraryManager}.
@@ -84,6 +87,10 @@ public class LibraryManager {
 
   public ErrorReporter getLibraryErrorReporter() {
     return myLibraryErrorReporter;
+  }
+
+  public MultiClassLoader<Library> getClassLoader() {
+    return myClassLoader;
   }
 
   /**
@@ -245,6 +252,7 @@ public class LibraryManager {
    * @param library the library to unload.
    */
   public void unloadLibrary(Library library) {
+    myClassLoader.removeDelegate(library);
     myFailedLibraries.remove(library);
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
