@@ -165,19 +165,28 @@ public abstract class SourceLibrary extends BaseLibrary {
       libraryManager.registerDependency(this, loadedDependency);
     }
 
-    SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
-    if (hasRawSources()) {
-      for (ModulePath module : header.modules) {
-        sourceLoader.preloadRaw(module);
+    libraryManager.beforeLibraryLoading(this);
+
+    try {
+      SourceLoader sourceLoader = new SourceLoader(this, libraryManager);
+      if (hasRawSources()) {
+        for (ModulePath module : header.modules) {
+          sourceLoader.preloadRaw(module);
+        }
+        sourceLoader.loadRawSources();
       }
-      sourceLoader.loadRawSources();
+
+      if (!myFlags.contains(Flag.RECOMPILE)) {
+        for (ModulePath module : header.modules) {
+          sourceLoader.loadBinary(module);
+        }
+      }
+    } catch (Throwable e) {
+      libraryManager.afterLibraryLoading(this, false);
+      throw e;
     }
 
-    if (!myFlags.contains(Flag.RECOMPILE)) {
-      for (ModulePath module : header.modules) {
-        sourceLoader.loadBinary(module);
-      }
-    }
+    libraryManager.afterLibraryLoading(this, true);
 
     return super.load(libraryManager);
   }

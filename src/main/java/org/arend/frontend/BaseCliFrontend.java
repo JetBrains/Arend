@@ -54,7 +54,7 @@ public abstract class BaseCliFrontend {
   }
 
   private class MyLibraryManager extends LibraryManager {
-    private long time;
+    private final Stack<Long> times = new Stack<>();
 
     MyLibraryManager() {
       super(myLibraryResolver, new InstanceProviderSet(), myErrorReporter, System.err::println);
@@ -63,12 +63,12 @@ public abstract class BaseCliFrontend {
     @Override
     protected void beforeLibraryLoading(Library library) {
       System.out.println("[INFO] Loading library " + library.getName());
-      time = System.currentTimeMillis();
+      times.push(System.currentTimeMillis());
     }
 
     @Override
     protected void afterLibraryLoading(Library library, boolean successful) {
-      time = System.currentTimeMillis() - time;
+      long time = System.currentTimeMillis() - times.pop();
       flushErrors();
       System.err.flush();
       System.out.println("[INFO] " + (successful ? "Loaded " : "Failed loading ") + "library " + library.getName() + (successful ? " (" + timeToString(time) + ")" : ""));
