@@ -114,12 +114,7 @@ public class LibraryManager {
    * @return the library with the given name.
    */
   public Library getRegisteredLibrary(String libraryName) {
-    for (Library library : getRegisteredLibraries()) {
-      if (library.getName().equals(libraryName)) {
-        return library;
-      }
-    }
-    return null;
+    return getRegisteredLibrary(library -> library.getName().equals(libraryName));
   }
 
   /**
@@ -259,12 +254,12 @@ public class LibraryManager {
   /**
    * Unloads all libraries.
    */
-  public void unload() {
+  public boolean unload() {
     myFailedLibraries.clear();
     if (!myLoadingLibraries.isEmpty()) {
       myLibraryErrorReporter.report(LibraryError.unloadDuringLoading(myLoadingLibraries.stream().map(Library::getName)));
     }
 
-    myReverseDependencies.keySet().removeIf(Library::unload);
+    return myReverseDependencies.keySet().removeIf(Library::unload);
   }
 }

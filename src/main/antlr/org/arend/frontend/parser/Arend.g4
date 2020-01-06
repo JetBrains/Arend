@@ -32,7 +32,8 @@ classStat : classFieldOrImpl                            # classFieldOrImplStat
 
 definition  : funcKw precedence ID tele* (':' returnExpr)? functionBody where?                              # defFunction
             | TRUNCATED? '\\data' precedence ID tele* (':' expr)? dataBody where?                           # defData
-            | classKw precedence ID NO_CLASSIFYING? fieldTele* ('\\extends' longName (',' longName)*)? classBody where? # defClass
+            | classKw precedence ID NO_CLASSIFYING? fieldTele*
+                ('\\extends' longName (',' longName)*)? classBody where?                                    # defClass
             | '\\module' ID where?                                                                          # defModule
             | instanceKw precedence ID tele* (':' returnExpr)? instanceBody where?                          # defInstance
             ;

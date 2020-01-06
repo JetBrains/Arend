@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
   private final ExprSubstitution myExprSubstitution;
@@ -60,15 +61,15 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
 
   @Override
   public ConCallExpression visitConCall(ConCallExpression expr, Void params) {
-    List<Expression> dataTypeArgs = new ArrayList<>(expr.getDataTypeArguments().size());
-    for (Expression parameter : expr.getDataTypeArguments()) {
-      dataTypeArgs.add(parameter.accept(this, null));
-    }
+    final List<Expression> dataTypeArgs = expr.getDataTypeArguments()
+            .stream()
+            .map(parameter -> parameter.accept(this, null))
+            .collect(Collectors.toList());
 
-    List<Expression> args = new ArrayList<>(expr.getDefCallArguments().size());
-    for (Expression arg : expr.getDefCallArguments()) {
-      args.add(arg.accept(this, null));
-    }
+    final List<Expression> args = expr.getDefCallArguments()
+            .stream()
+            .map(arg -> arg.accept(this, null))
+            .collect(Collectors.toList());
 
     return new ConCallExpression(expr.getDefinition(), expr.getSortArgument().subst(myLevelSubstitution), dataTypeArgs, args);
   }
