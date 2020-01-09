@@ -18,6 +18,7 @@ import org.arend.core.expr.type.Type;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.naming.reference.TCReferable;
 import org.arend.typechecking.order.dependency.DependencyListener;
 
@@ -154,7 +155,7 @@ class ExpressionDeserialization {
     switch (proto.getKindCase()) {
       case BRANCH: {
         ExpressionProtos.ElimTree.Branch branchProto = proto.getBranch();
-        Map<Constructor, ElimTree> children = new HashMap<>();
+        Map<CoreBranchKey, ElimTree> children = new HashMap<>();
         for (Map.Entry<Integer, ExpressionProtos.ElimTree> entry : branchProto.getClausesMap().entrySet()) {
           children.put(myCallTargetProvider.getCallTarget(entry.getKey(), Constructor.class), readElimTree(entry.getValue()));
         }

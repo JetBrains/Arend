@@ -3,12 +3,14 @@ package org.arend.core.expr;
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.expr.CoreConCallExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
-public class ConCallExpression extends DefCallExpression {
+public class ConCallExpression extends DefCallExpression implements CoreConCallExpression {
   private final Sort mySortArgument;
   private final List<Expression> myDataTypeArguments;
   private final List<Expression> myArguments;
@@ -34,20 +36,25 @@ public class ConCallExpression extends DefCallExpression {
     return new ConCallExpression(constructor, sortArgument, dataTypeArguments, arguments);
   }
 
+  @Nonnull
+  @Override
   public List<Expression> getDataTypeArguments() {
     return myDataTypeArguments;
   }
 
+  @Nonnull
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
   }
 
+  @Nonnull
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return myArguments;
   }
 
+  @Nonnull
   @Override
   public Constructor getDefinition() {
     return (Constructor) super.getDefinition();

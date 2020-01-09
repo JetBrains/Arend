@@ -4,12 +4,13 @@ import org.arend.core.context.binding.LevelVariable;
 import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.level.CoreLevel;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
-public class Level {
+public class Level implements CoreLevel {
   private final int myConstant;
   private final LevelVariable myVar;
   private final int myMaxConstant;
@@ -54,10 +55,12 @@ public class Level {
     return myVar;
   }
 
+  @Override
   public int getConstant() {
     return myConstant;
   }
 
+  @Override
   public int getMaxConstant() {
     return myMaxConstant;
   }
@@ -66,10 +69,12 @@ public class Level {
     return myConstant + myMaxConstant;
   }
 
+  @Override
   public boolean isInfinity() {
     return this == INFINITY;
   }
 
+  @Override
   public boolean isClosed() {
     return myVar == null;
   }

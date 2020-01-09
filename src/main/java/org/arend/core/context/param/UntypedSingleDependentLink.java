@@ -3,6 +3,7 @@ package org.arend.core.context.param;
 import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.subst.SubstVisitor;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class UntypedSingleDependentLink extends UntypedDependentLink implements SingleDependentLink {
@@ -14,6 +15,7 @@ public class UntypedSingleDependentLink extends UntypedDependentLink implements 
     super(name);
   }
 
+  @Nonnull
   @Override
   public SingleDependentLink getNext() {
     return (SingleDependentLink) myNext;

@@ -6,18 +6,22 @@ import org.arend.core.elimtree.Body;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.expr.CorePEvalExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class PEvalExpression extends Expression {
+public class PEvalExpression extends Expression implements CorePEvalExpression {
   private final Expression myExpression;
 
   public PEvalExpression(Expression expression) {
     myExpression = expression;
   }
 
+  @Nonnull
+  @Override
   public Expression getExpression() {
     return myExpression;
   }

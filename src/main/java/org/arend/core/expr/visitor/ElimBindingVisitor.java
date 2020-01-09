@@ -6,7 +6,6 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
@@ -16,6 +15,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.*;
 
@@ -364,7 +364,7 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
     if (myKeepVisitor != null) {
       myKeepVisitor.freeParameters(parameters);
     }
-    return newElimTree == null ? null : new CaseExpression(expr.isSFunc(), parameters, newType, newTypeLevel, newElimTree, newArgs);
+    return newElimTree == null ? null : new CaseExpression(expr.isSCase(), parameters, newType, newTypeLevel, newElimTree, newArgs);
   }
 
   private ElimTree findBindingInElimTree(ElimTree elimTree) {
@@ -381,9 +381,9 @@ public class ElimBindingVisitor extends BaseExpressionVisitor<Void, Expression> 
       }
       return newExpr == null ? null : new LeafElimTree(parameters, newExpr);
     } else {
-      Map<Constructor, ElimTree> newChildren = new HashMap<>();
+      Map<CoreBranchKey, ElimTree> newChildren = new HashMap<>();
       SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         ElimTree newElimTree = findBindingInElimTree(visitor.substElimTree(entry.getValue()));
         if (newElimTree == null) {
           if (myKeepVisitor != null) {

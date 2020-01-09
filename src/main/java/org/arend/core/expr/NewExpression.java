@@ -3,13 +3,15 @@ package org.arend.core.expr;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.expr.CoreNewExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NewExpression extends Expression {
+public class NewExpression extends Expression implements CoreNewExpression {
   private final Expression myRenewExpression;
   private final ClassCallExpression myClassCall;
 
@@ -46,6 +48,8 @@ public class NewExpression extends Expression {
     return myRenewExpression;
   }
 
+  @Nonnull
+  @Override
   public ClassCallExpression getClassCall() {
     return myClassCall;
   }
@@ -75,6 +79,7 @@ public class NewExpression extends Expression {
     return null;
   }
 
+  @Nonnull
   @Override
   public ClassCallExpression getType() {
     if (myRenewExpression == null) {

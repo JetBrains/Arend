@@ -16,6 +16,7 @@ import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.Doc;
 import org.arend.error.doc.DocFactory;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.term.Precedence;
 import org.arend.term.concrete.Concrete;
 import org.arend.term.prettyprint.PrettyPrintVisitor;
@@ -24,11 +25,12 @@ import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Expression implements ExpectedType, Body {
+public abstract class Expression implements ExpectedType, Body, CoreExpression {
   public abstract <P, R> R accept(ExpressionVisitor<? super P, ? extends R> visitor, P params);
 
   @Override
@@ -91,6 +93,7 @@ public abstract class Expression implements ExpectedType, Body {
     }
   }
 
+  @Override
   public Expression getType() {
     return getType(true);
   }
@@ -216,6 +219,8 @@ public abstract class Expression implements ExpectedType, Body {
     return true;
   }
 
+  @Nonnull
+  @Override
   public Expression getUnderlyingExpression() {
     return this;
   }

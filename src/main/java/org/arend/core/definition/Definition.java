@@ -5,12 +5,14 @@ import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.expr.Expression;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.definition.CoreDefinition;
 import org.arend.naming.reference.TCReferable;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class Definition implements Variable {
+public abstract class Definition implements Variable, CoreDefinition {
   private TCReferable myReferable;
   private TypeCheckingStatus myStatus;
   private boolean myHasUniverses;
@@ -20,6 +22,7 @@ public abstract class Definition implements Variable {
     myStatus = status;
   }
 
+  @Nonnull
   @Override
   public String getName() {
     return myReferable.textRepresentation();

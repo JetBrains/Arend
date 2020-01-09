@@ -3,12 +3,12 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -103,19 +103,13 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
     for (Expression arg : expr.getArguments()) {
       arg.accept(this, variables);
     }
-    if (expr.getParameters() != null) {
-      visitParameters(expr.getParameters(), vars -> {
-        if (expr.getResultType() != null) {
-          expr.getResultType().accept(this, vars);
-          if (expr.getResultTypeLevel() != null) {
-            expr.getResultTypeLevel().accept(this, vars);
-          }
-        }
-      }, variables);
-    }
-    if (expr.getElimTree() != null) {
-      visitParameters(expr.getElimTree().getParameters(), vars -> visitElimTree(expr.getElimTree(), vars), variables);
-    }
+    visitParameters(expr.getParameters(), vars -> {
+      expr.getResultType().accept(this, vars);
+      if (expr.getResultTypeLevel() != null) {
+        expr.getResultTypeLevel().accept(this, vars);
+      }
+    }, variables);
+    visitParameters(expr.getElimTree().getParameters(), vars -> visitElimTree(expr.getElimTree(), vars), variables);
     return null;
   }
 
@@ -124,7 +118,7 @@ public class CollectFreeVariablesVisitor extends VoidExpressionVisitor<Set<Varia
     if (elimTree instanceof LeafElimTree) {
       ((LeafElimTree) elimTree).getExpression().accept(this, variables);
     } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         visitParameters(entry.getValue().getParameters(), vars -> visitElimTree(entry.getValue(), vars), variables);
       }
     }

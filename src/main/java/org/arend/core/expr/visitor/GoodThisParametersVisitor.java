@@ -1,13 +1,12 @@
 package org.arend.core.expr.visitor;
 
-import org.arend.core.constructor.SingleConstructor;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.*;
 
@@ -85,11 +84,8 @@ public class GoodThisParametersVisitor extends VoidExpressionVisitor<Void> {
         skip--;
       }
 
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        int toSkip = entry.getKey() == null ? 1 :
-          entry.getKey() instanceof SingleConstructor
-            ? ((SingleConstructor) entry.getKey()).getLength()
-            : DependentLink.Helper.size(entry.getKey().getParameters());
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        int toSkip = entry.getKey() == null ? 1 : entry.getKey().getNumberOfParameters();
         checkElimTree(entry.getValue(), index, skip + toSkip);
       }
     }

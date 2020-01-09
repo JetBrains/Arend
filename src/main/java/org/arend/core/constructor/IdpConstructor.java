@@ -6,14 +6,15 @@ import org.arend.core.expr.FunCallExpression;
 import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.NormalizingFindBindingVisitor;
+import org.arend.ext.core.elimtree.CoreIdpBranchKey;
 import org.arend.prelude.Prelude;
 
 import java.util.Collections;
 import java.util.List;
 
-public class IdpConstructor extends SingleConstructor {
+public class IdpConstructor extends SingleConstructor implements CoreIdpBranchKey {
   @Override
-  public int getLength() {
+  public int getNumberOfParameters() {
     return 0;
   }
 

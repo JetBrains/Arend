@@ -12,11 +12,15 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreAbsExpression;
+import org.arend.ext.core.expr.CorePiExpression;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
-public class PiExpression extends Expression implements Type {
+import javax.annotation.Nonnull;
+
+public class PiExpression extends Expression implements Type, CorePiExpression, CoreAbsExpression {
   private final Sort myResultSort;
   private final SingleDependentLink myLink;
   private final Expression myCodomain;
@@ -45,10 +49,14 @@ public class PiExpression extends Expression implements Type {
     return myResultSort;
   }
 
+  @Nonnull
+  @Override
   public SingleDependentLink getParameters() {
     return myLink;
   }
 
+  @Nonnull
+  @Override
   public Expression getCodomain() {
     return myCodomain;
   }
@@ -108,5 +116,17 @@ public class PiExpression extends Expression implements Type {
   @Override
   public Expression getStuckExpression() {
     return null;
+  }
+
+  @Nonnull
+  @Override
+  public SingleDependentLink getBinding() {
+    return myLink;
+  }
+
+  @Nonnull
+  @Override
+  public Expression getExpression() {
+    return myCodomain;
   }
 }

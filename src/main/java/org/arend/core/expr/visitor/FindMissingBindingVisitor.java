@@ -4,12 +4,12 @@ import org.arend.core.context.binding.Binding;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -227,7 +227,7 @@ public class FindMissingBindingVisitor extends BaseExpressionVisitor<Void, Varia
     if (elimTree instanceof LeafElimTree) {
       result = ((LeafElimTree) elimTree).getExpression().accept(this, null);
     } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         result = findBindingInElimTree(entry.getValue());
         if (result != null) {
           freeParameters(elimTree.getParameters());

@@ -4,27 +4,52 @@ import org.arend.core.expr.ConCallExpression;
 import org.arend.core.expr.ErrorExpression;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
+import org.arend.ext.core.elimtree.CoreIntervalElim;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 import org.arend.util.Pair;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
-public class IntervalElim implements Body {
+public class IntervalElim implements Body, CoreIntervalElim {
   private final int myNumberOfParameters;
-  private final List<Pair<Expression, Expression>> myCases;
+  private final List<CasePair> myCases;
   private final ElimTree myOtherwise;
 
-  public IntervalElim(int numberOfParameters, List<Pair<Expression, Expression>> cases, ElimTree otherwise) {
+  public IntervalElim(int numberOfParameters, List<CasePair> cases, ElimTree otherwise) {
     myNumberOfParameters = numberOfParameters;
     myCases = cases;
     myOtherwise = otherwise;
   }
 
-  public List<Pair<Expression, Expression>> getCases() {
+  public static class CasePair extends Pair<Expression, Expression> implements CoreIntervalElim.CasePair {
+    public CasePair(Expression proj1, Expression proj2) {
+      super(proj1, proj2);
+    }
+
+    @Nullable
+    @Override
+    public CoreExpression getLeftCase() {
+      return proj1;
+    }
+
+    @Nullable
+    @Override
+    public CoreExpression getRightCase() {
+      return proj2;
+    }
+  }
+
+  @Nonnull
+  @Override
+  public List<CasePair> getCases() {
     return myCases;
   }
 
+  @Override
   public ElimTree getOtherwise() {
     return myOtherwise;
   }

@@ -23,6 +23,7 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.error.GeneralError;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -174,31 +175,33 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
       BranchElimTree branchElimTree = (BranchElimTree) elimTree;
       ExpressionProtos.ElimTree.Branch.Builder branchBuilder = ExpressionProtos.ElimTree.Branch.newBuilder();
 
-      for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree.getChildren()) {
         if (entry.getKey() == null) {
           branchBuilder.setNullClause(writeElimTree(entry.getValue()));
         } else if (entry.getKey() instanceof SingleConstructor) {
           ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Builder singleClauseBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.newBuilder();
           if (entry.getKey() instanceof TupleConstructor) {
-            singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(((TupleConstructor) entry.getKey()).getLength()).build());
+            singleClauseBuilder.setTuple(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Tuple.newBuilder().setLength(entry.getKey().getNumberOfParameters()).build());
           } else if (entry.getKey() instanceof IdpConstructor) {
             singleClauseBuilder.setIdp(ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Idp.newBuilder());
           } else if (entry.getKey() instanceof ClassConstructor) {
             ClassConstructor classCon = (ClassConstructor) entry.getKey();
             ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.Builder conBuilder = ExpressionProtos.ElimTree.Branch.SingleConstructorClause.Class.newBuilder();
-            conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDef()));
+            conBuilder.setClassRef(myCallTargetIndexProvider.getDefIndex(classCon.getClassDefinition()));
             conBuilder.setSort(writeSort(classCon.getSort()));
             for (ClassField field : classCon.getImplementedFields()) {
               conBuilder.addField(myCallTargetIndexProvider.getDefIndex(field));
             }
             singleClauseBuilder.setClass_(conBuilder.build());
           } else {
-            throw new IllegalStateException("Unknown SingleConstructor type");
+            throw new IllegalStateException("Unknown SingleConstructor type: " + entry.getKey().getClass());
           }
           singleClauseBuilder.setElimTree(writeElimTree(entry.getValue()));
           branchBuilder.setSingleClause(singleClauseBuilder.build());
+        } else if (entry.getKey() instanceof Constructor) {
+          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex((Constructor) entry.getKey()), writeElimTree(entry.getValue()));
         } else {
-          branchBuilder.putClauses(myCallTargetIndexProvider.getDefIndex(entry.getKey()), writeElimTree(entry.getValue()));
+          throw new IllegalStateException("Unknown CoreBranchKey type: " + entry.getKey().getClass());
         }
       }
 
@@ -427,7 +430,7 @@ class ExpressionSerialization implements ExpressionVisitor<Void, ExpressionProto
   @Override
   public ExpressionProtos.Expression visitCase(CaseExpression expr, Void params) {
     ExpressionProtos.Expression.Case.Builder builder = ExpressionProtos.Expression.Case.newBuilder();
-    builder.setIsSFunc(expr.isSFunc());
+    builder.setIsSFunc(expr.isSCase());
     builder.setElimTree(writeElimTree(expr.getElimTree()));
     builder.addAllParam(writeParameters(expr.getParameters()));
     builder.setResultType(writeExpr(expr.getResultType()));

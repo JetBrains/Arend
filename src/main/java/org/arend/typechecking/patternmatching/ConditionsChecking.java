@@ -18,6 +18,7 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.ConditionsError;
@@ -60,7 +61,7 @@ public class ConditionsChecking {
   private boolean checkIntervals(IntervalElim elim, Definition definition, Concrete.SourceNode def) {
     boolean ok = true;
     DependentLink link = DependentLink.Helper.get(definition.getParameters(), DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size());
-    List<Pair<Expression, Expression>> cases = elim.getCases();
+    List<IntervalElim.CasePair> cases = elim.getCases();
     for (int i = 0; i < cases.size(); i++) {
       DependentLink link2 = link.getNext();
       for (int j = i + 1; j < cases.size(); j++) {
@@ -104,7 +105,7 @@ public class ConditionsChecking {
 
   private boolean checkIntervalClause(IntervalElim elim, Clause clause, Definition definition) {
     boolean ok = true;
-    List<Pair<Expression, Expression>> cases = elim.getCases();
+    List<IntervalElim.CasePair> cases = elim.getCases();
     int prefixLength = DependentLink.Helper.size(definition.getParameters()) - elim.getCases().size();
     for (int i = 0; i < cases.size(); i++) {
       ok = checkIntervalClauseCondition(cases.get(i), true, prefixLength + i, clause, definition) && ok;
@@ -183,7 +184,7 @@ public class ConditionsChecking {
         if (conPattern.getDefinition() == Prelude.PATH_CON) {
           SingleDependentLink lamParam = new TypedSingleDependentLink(true, "i", ExpressionFactory.Interval());
           Expression lamRef = new ReferenceExpression(lamParam);
-          Map<Constructor, ElimTree> children = new HashMap<>();
+          Map<CoreBranchKey, ElimTree> children = new HashMap<>();
           children.put(Prelude.LEFT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(1)));
           children.put(Prelude.RIGHT, new LeafElimTree(EmptyDependentLink.getInstance(), conPattern.getDataTypeArguments().get(2)));
           children.put(null, new LeafElimTree(lamParam, AppExpression.make(conPattern.getArguments().get(0).toExpression(), lamRef)));
@@ -236,7 +237,7 @@ public class ConditionsChecking {
         for (Pattern pattern : clause.patterns) {
           args.add(pattern.toExpression());
         }
-        Expression expr1 = definition == null ? new CaseExpression(false, null, null, null, null, args) : definition.getDefCall(Sort.STD, args);
+        Expression expr1 = definition == null ? new CaseExpression(false, EmptyDependentLink.getInstance(), new ErrorExpression(null, null), null, new BranchElimTree(EmptyDependentLink.getInstance(), Collections.emptyMap()), args) : definition.getDefCall(Sort.STD, args);
         myErrorReporter.report(new ConditionsError(expr1, clause.expression, pair.proj2, pair.proj2, evaluatedExpr1, evaluatedExpr2, clause.clause));
         ok = false;
       }

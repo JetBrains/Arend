@@ -11,13 +11,13 @@ import org.arend.core.elimtree.IntervalElim;
 import org.arend.core.expr.*;
 import org.arend.core.pattern.*;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.ClassReferableImpl;
 import org.arend.naming.reference.DataLocatedReferableImpl;
 import org.arend.naming.reference.TCClassReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.dependency.DependencyListener;
-import org.arend.util.Pair;
 
 import java.util.*;
 
@@ -259,9 +259,9 @@ public class DefinitionDeserialization {
       case ELIM_TREE:
         return defDeserializer.readElimTree(proto.getElimTree());
       case INTERVAL_ELIM:
-        List<Pair<Expression, Expression>> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
+        List<IntervalElim.CasePair> cases = new ArrayList<>(proto.getIntervalElim().getCaseCount());
         for (DefinitionProtos.Body.ExpressionPair pairProto : proto.getIntervalElim().getCaseList()) {
-          cases.add(new Pair<>(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
+          cases.add(new IntervalElim.CasePair(pairProto.hasLeft() ? defDeserializer.readExpr(pairProto.getLeft()) : null, pairProto.hasRight() ? defDeserializer.readExpr(pairProto.getRight()) : null));
         }
         ElimTree elimTree = null;
         if (proto.getIntervalElim().hasOtherwise()) {
@@ -342,13 +342,13 @@ public class DefinitionDeserialization {
     FunctionDefinition.Kind kind;
     switch (functionProto.getKind()) {
       case LEMMA:
-        kind = FunctionDefinition.Kind.LEMMA;
+        kind = CoreFunctionDefinition.Kind.LEMMA;
         break;
       case SFUNC:
-        kind = FunctionDefinition.Kind.SFUNC;
+        kind = CoreFunctionDefinition.Kind.SFUNC;
         break;
       default:
-        kind = FunctionDefinition.Kind.FUNC;
+        kind = CoreFunctionDefinition.Kind.FUNC;
     }
     functionDef.setKind(kind);
     functionDef.setVisibleParameter(functionProto.getVisibleParameter());

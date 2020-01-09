@@ -1,10 +1,10 @@
 package org.arend.typechecking.visitor;
 
-import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.DefCallExpression;
 import org.arend.core.expr.Expression;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.util.Pair;
 
 import java.util.HashSet;
@@ -60,7 +60,7 @@ public class FindDefCallVisitor<T extends Definition> extends ProcessDefCallsVis
     } else if (body instanceof LeafElimTree) {
       ((LeafElimTree) body).getExpression().accept(this, null);
     } else if (body instanceof BranchElimTree) {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) body).getChildren()) {
         findDefinition(entry.getValue());
         if (!myFindAll && !myFoundDefinitions.isEmpty()) {
           return;

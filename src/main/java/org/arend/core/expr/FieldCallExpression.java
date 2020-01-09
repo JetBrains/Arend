@@ -3,12 +3,14 @@ package org.arend.core.expr;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.expr.CoreFieldCallExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class FieldCallExpression extends DefCallExpression {
+public class FieldCallExpression extends DefCallExpression implements CoreFieldCallExpression {
   private final Sort mySortArgument;
   private final Expression myArgument;
 
@@ -40,6 +42,8 @@ public class FieldCallExpression extends DefCallExpression {
     return new FieldCallExpression(definition, sortArgument, thisExpr);
   }
 
+  @Nonnull
+  @Override
   public Expression getArgument() {
     return myArgument;
   }
@@ -49,11 +53,13 @@ public class FieldCallExpression extends DefCallExpression {
     return Collections.singletonList(myArgument);
   }
 
+  @Nonnull
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
   }
 
+  @Nonnull
   @Override
   public ClassField getDefinition() {
     return (ClassField) super.getDefinition();

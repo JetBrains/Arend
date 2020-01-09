@@ -4,6 +4,7 @@ import org.arend.core.expr.ReferenceExpression;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.SubstVisitor;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class TypedDependentLink implements DependentLink {
@@ -46,6 +47,7 @@ public class TypedDependentLink implements DependentLink {
     myType = type;
   }
 
+  @Nonnull
   @Override
   public DependentLink getNext() {
     return myNext;

@@ -8,9 +8,12 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreSigmaExpression;
 import org.arend.util.Decision;
 
-public class SigmaExpression extends Expression implements Type {
+import javax.annotation.Nonnull;
+
+public class SigmaExpression extends Expression implements Type, CoreSigmaExpression {
   private final DependentLink myLink;
   private final Sort mySort;
 
@@ -20,6 +23,8 @@ public class SigmaExpression extends Expression implements Type {
     mySort = sort;
   }
 
+  @Nonnull
+  @Override
   public DependentLink getParameters() {
     return myLink;
   }

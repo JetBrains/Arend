@@ -4,6 +4,8 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
+
 public class SubstExpression extends Expression {
   private final Expression myExpression;
   private final ExprSubstitution mySubstitution;
@@ -43,6 +45,7 @@ public class SubstExpression extends Expression {
     return visitor.visitSubst(this, params);
   }
 
+  @Nonnull
   @Override
   public Expression getUnderlyingExpression() {
     return getSubstExpression().getUnderlyingExpression();

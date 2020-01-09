@@ -14,6 +14,7 @@ import org.arend.core.pattern.ConstructorPattern;
 import org.arend.core.pattern.Pattern;
 import org.arend.core.pattern.Patterns;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -90,15 +91,12 @@ public class Util {
         myStack.push(new PatternClauseElem(new BindingPattern(link)));
       }
       if (elimTree instanceof LeafElimTree) {
-        Expression expression = ((LeafElimTree) elimTree).getExpression();
-        if (expression != null) {
-          myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), expression);
-        }
+        myConsumer.accept(unflattenClauses(new ArrayList<>(myStack)), ((LeafElimTree) elimTree).getExpression());
       } else {
         BranchElimTree branchElimTree = (BranchElimTree) elimTree;
-        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree.getChildren()) {
-          if (entry.getKey() != null) {
-            myStack.push(entry.getKey() instanceof SingleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem(entry.getKey()));
+        for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree.getChildren()) {
+          if (entry.getKey() instanceof Constructor) {
+            myStack.push(entry.getKey() instanceof SingleConstructor ? new TupleClauseElem(new ConstructorPattern(new SigmaExpression(Sort.STD, entry.getValue().getParameters()), new Patterns(Collections.emptyList()))) : new ConstructorClauseElem((Constructor) entry.getKey()));
             walk(entry.getValue());
             myStack.pop();
           }

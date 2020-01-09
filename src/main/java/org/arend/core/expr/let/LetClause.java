@@ -5,6 +5,8 @@ import org.arend.core.context.binding.NamedBinding;
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.SubstVisitor;
 
+import javax.annotation.Nonnull;
+
 public class LetClause extends NamedBinding implements EvaluatingBinding {
   private LetClausePattern myPattern;
   private Expression myExpression;
@@ -23,6 +25,7 @@ public class LetClause extends NamedBinding implements EvaluatingBinding {
     myPattern = pattern;
   }
 
+  @Nonnull
   @Override
   public Expression getExpression() {
     return myExpression;

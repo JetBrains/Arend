@@ -531,14 +531,14 @@ public class ToAbstractVisitor extends BaseExpressionVisitor<Void, Concrete.Expr
 
     Concrete.Expression resultType = null;
     Concrete.Expression resultTypeLevel = null;
-    if (hasFlag(Flag.SHOW_CASE_RESULT_TYPE) && expr.getResultType() != null) {
+    if (hasFlag(Flag.SHOW_CASE_RESULT_TYPE) && !(expr.getResultType() instanceof ErrorExpression)) {
       resultType = expr.getResultType().accept(this, null);
       if (expr.getResultTypeLevel() != null) {
         resultTypeLevel = expr.getResultTypeLevel().accept(this, null);
       }
     }
 
-    return cCase(expr.isSFunc(), arguments, resultType, resultTypeLevel, expr.getElimTree() != null ? visitElimTree(expr.getElimTree()) : Collections.emptyList());
+    return cCase(expr.isSCase(), arguments, resultType, resultTypeLevel, visitElimTree(expr.getElimTree()));
   }
 
   private List<Concrete.FunctionClause> visitElimTree(ElimTree elimTree) {

@@ -8,11 +8,15 @@ import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.definition.CoreClassDefinition;
+import org.arend.ext.core.definition.CoreClassField;
 import org.arend.naming.reference.TCClassReferable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
-public class ClassDefinition extends Definition {
+public class ClassDefinition extends Definition implements CoreClassDefinition {
   private final Set<ClassDefinition> mySuperClasses = new LinkedHashSet<>();
   private final LinkedHashSet<ClassField> myFields = new LinkedHashSet<>();
   private final List<ClassField> myPersonalFields = new ArrayList<>();
@@ -35,6 +39,7 @@ public class ClassDefinition extends Definition {
     return (TCClassReferable) super.getReferable();
   }
 
+  @Override
   public boolean isRecord() {
     return myRecord;
   }
@@ -43,6 +48,7 @@ public class ClassDefinition extends Definition {
     myRecord = true;
   }
 
+  @Override
   public ClassField getClassifyingField() {
     return myCoercingField;
   }
@@ -132,6 +138,8 @@ public class ClassDefinition extends Definition {
     mySort = computeSort(Collections.emptyMap(), null);
   }
 
+  @Nonnull
+  @Override
   public Sort getSort() {
     return mySort;
   }
@@ -145,7 +153,8 @@ public class ClassDefinition extends Definition {
     return myCoerce;
   }
 
-  public boolean isSubClassOf(ClassDefinition classDefinition) {
+  @Override
+  public boolean isSubClassOf(@Nonnull CoreClassDefinition classDefinition) {
     if (this.equals(classDefinition)) return true;
     for (ClassDefinition superClass : mySuperClasses) {
       if (superClass.isSubClassOf(classDefinition)) return true;
@@ -153,6 +162,8 @@ public class ClassDefinition extends Definition {
     return false;
   }
 
+  @Nonnull
+  @Override
   public Set<? extends ClassDefinition> getSuperClasses() {
     return mySuperClasses;
   }
@@ -161,10 +172,13 @@ public class ClassDefinition extends Definition {
     mySuperClasses.add(superClass);
   }
 
+  @Nonnull
   public Set<? extends ClassField> getFields() {
     return myFields;
   }
 
+  @Nonnull
+  @Override
   public List<? extends ClassField> getPersonalFields() {
     return myPersonalFields;
   }
@@ -185,10 +199,13 @@ public class ClassDefinition extends Definition {
     myFields.addAll(fields);
   }
 
-  public boolean isImplemented(ClassField field) {
-    return myImplemented.containsKey(field);
+  @Override
+  public boolean isImplemented(@Nonnull CoreClassField field) {
+    return field instanceof ClassField && myImplemented.containsKey(field);
   }
 
+  @Nonnull
+  @Override
   public Set<Map.Entry<ClassField, AbsExpression>> getImplemented() {
     return myImplemented.entrySet();
   }
@@ -197,14 +214,17 @@ public class ClassDefinition extends Definition {
     return myImplemented.keySet();
   }
 
-  public AbsExpression getImplementation(ClassField field) {
-    return myImplemented.get(field);
+  @Override
+  public AbsExpression getImplementation(@Nonnull CoreClassField field) {
+    return field instanceof ClassField ? myImplemented.get(field) : null;
   }
 
   public AbsExpression implementField(ClassField field, AbsExpression impl) {
     return myImplemented.putIfAbsent(field, impl);
   }
 
+  @Nonnull
+  @Override
   public Set<Map.Entry<ClassField, PiExpression>> getOverriddenFields() {
     return myOverridden.entrySet();
   }
@@ -214,8 +234,15 @@ public class ClassDefinition extends Definition {
     return type == null || sortArg.equals(Sort.STD) ? type : new SubstVisitor(new ExprSubstitution(), sortArg.toLevelSubstitution()).visitPi(type, null);
   }
 
-  public boolean isOverridden(ClassField field) {
-    return myOverridden.containsKey(field);
+  @Nullable
+  @Override
+  public PiExpression getOverriddenType(@Nonnull CoreClassField field) {
+    return field instanceof ClassField ? myOverridden.get(field) : null;
+  }
+
+  @Override
+  public boolean isOverridden(@Nonnull CoreClassField field) {
+    return field instanceof ClassField && myOverridden.containsKey(field);
   }
 
   public PiExpression overrideField(ClassField field, PiExpression type) {
@@ -261,6 +288,7 @@ public class ClassDefinition extends Definition {
     myFields.clear();
     myPersonalFields.clear();
     myImplemented.clear();
+    myOverridden.clear();
     myCoercingField = null;
   }
 

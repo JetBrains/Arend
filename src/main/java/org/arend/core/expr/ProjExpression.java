@@ -1,9 +1,12 @@
 package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreProjExpression;
 import org.arend.util.Decision;
 
-public class ProjExpression extends Expression {
+import javax.annotation.Nonnull;
+
+public class ProjExpression extends Expression implements CoreProjExpression {
   private final Expression myExpression;
   private final int myField;
 
@@ -17,10 +20,13 @@ public class ProjExpression extends Expression {
     return tuple != null ? tuple.getFields().get(field) : new ProjExpression(expression, field);
   }
 
+  @Nonnull
+  @Override
   public Expression getExpression() {
     return myExpression;
   }
 
+  @Override
   public int getField() {
     return myField;
   }

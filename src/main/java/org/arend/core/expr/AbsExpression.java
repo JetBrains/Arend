@@ -2,8 +2,12 @@ package org.arend.core.expr;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.expr.CoreAbsExpression;
 
-public class AbsExpression {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public class AbsExpression implements CoreAbsExpression {
   private final Binding myBinding;
   private final Expression myExpression;
 
@@ -12,10 +16,14 @@ public class AbsExpression {
     myExpression = expression;
   }
 
+  @Nullable
+  @Override
   public Binding getBinding() {
     return myBinding;
   }
 
+  @Nonnull
+  @Override
   public Expression getExpression() {
     return myExpression;
   }

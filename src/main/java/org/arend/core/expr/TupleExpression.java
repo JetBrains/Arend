@@ -1,11 +1,13 @@
 package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreTupleExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
-public class TupleExpression extends Expression {
+public class TupleExpression extends Expression implements CoreTupleExpression {
   private final List<Expression> myFields;
   private final SigmaExpression myType;
 
@@ -14,10 +16,14 @@ public class TupleExpression extends Expression {
     myType = type;
   }
 
+  @Nonnull
+  @Override
   public List<Expression> getFields() {
     return myFields;
   }
 
+  @Nonnull
+  @Override
   public SigmaExpression getSigmaType() {
     return myType;
   }

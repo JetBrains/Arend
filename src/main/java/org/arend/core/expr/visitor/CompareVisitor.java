@@ -19,6 +19,7 @@ import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.GoalError;
@@ -69,7 +70,7 @@ public class CompareVisitor extends BaseExpressionVisitor<Pair<Expression,Expect
       BranchElimTree branchElimTree2 = (BranchElimTree) elimTree2;
       if (branchElimTree1.getChildren().size() == branchElimTree2.getChildren().size()) {
         ok = true;
-        for (Map.Entry<Constructor, ElimTree> entry : branchElimTree1.getChildren()) {
+        for (Map.Entry<CoreBranchKey, ElimTree> entry : branchElimTree1.getChildren()) {
           ElimTree elimTree = branchElimTree2.getChild(entry.getKey());
           if (elimTree == null) {
             ok = false;

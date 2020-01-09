@@ -7,14 +7,16 @@ import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.expr.CoreLetExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class LetExpression extends Expression {
+public class LetExpression extends Expression implements CoreLetExpression {
   private final boolean myStrict;
   private final List<LetClause> myClauses;
   private final Expression myExpression;
@@ -29,6 +31,8 @@ public class LetExpression extends Expression {
     return myStrict;
   }
 
+  @Nonnull
+  @Override
   public List<LetClause> getClauses() {
     return myClauses;
   }
@@ -83,6 +87,8 @@ public class LetExpression extends Expression {
     return substitution;
   }
 
+  @Nonnull
+  @Override
   public Expression getExpression() {
     return myExpression;
   }

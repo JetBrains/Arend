@@ -2,13 +2,13 @@ package org.arend.typechecking.visitor;
 
 import org.arend.core.context.binding.Binding;
 import org.arend.core.context.param.DependentLink;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 
 import java.util.Collection;
@@ -194,7 +194,7 @@ public class FreeVariablesClassifier implements ExpressionVisitor<Boolean, FreeV
       }
     }
     if (elimTree instanceof BranchElimTree) {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         result = visitElimTree(entry.getValue());
         if (result != Result.NONE) {
           return result;

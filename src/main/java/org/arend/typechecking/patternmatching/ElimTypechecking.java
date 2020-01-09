@@ -25,6 +25,7 @@ import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.naming.reference.Referable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -189,7 +190,7 @@ public class ElimTypechecking {
       }
     }
 
-    List<Pair<Expression, Expression>> cases = intervalClauses.isEmpty() ? null : clausesToIntervalElim(intervalClauses, parameters);
+    List<IntervalElim.CasePair> cases = intervalClauses.isEmpty() ? null : clausesToIntervalElim(intervalClauses, parameters);
     if (cases != null) {
       int i = 0;
       for (; i < cases.size(); i++) {
@@ -413,8 +414,8 @@ public class ElimTypechecking {
     return false;
   }
 
-  private List<Pair<Expression, Expression>> clausesToIntervalElim(List<ExtClause> clauseDataList, DependentLink parameters) {
-    List<Pair<Expression, Expression>> result = new ArrayList<>(clauseDataList.get(0).patterns.size());
+  private List<IntervalElim.CasePair> clausesToIntervalElim(List<ExtClause> clauseDataList, DependentLink parameters) {
+    List<IntervalElim.CasePair> result = new ArrayList<>(clauseDataList.get(0).patterns.size());
     for (int i = 0; i < clauseDataList.get(0).patterns.size(); i++) {
       Expression left = null;
       Expression right = null;
@@ -473,7 +474,7 @@ public class ElimTypechecking {
         addMissingClause(missingClause, true);
       }
 
-      result.add(new Pair<>(left, right));
+      result.add(new IntervalElim.CasePair(left, right));
     }
     return result;
   }
@@ -641,7 +642,7 @@ public class ElimTypechecking {
         }
       }
 
-      Map<Constructor, ElimTree> children = new HashMap<>();
+      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
       for (Constructor constructor : constructors) {
         List<ExtClause> conClauseDataList = constructorMap.get(constructor);
         if (conClauseDataList == null) {

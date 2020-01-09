@@ -14,13 +14,16 @@ import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.definition.CoreConstructor;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.naming.reference.TCReferable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Constructor extends Definition implements Function {
+public class Constructor extends Definition implements Function, CoreBranchKey, CoreConstructor {
   private final DataDefinition myDataType;
   private DependentLink myParameters;
   private Patterns myPatterns;
@@ -34,7 +37,7 @@ public class Constructor extends Definition implements Function {
   public Constructor(TCReferable referable, DataDefinition dataType) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myDataType = dataType;
-    myParameters = null;
+    myParameters = EmptyDependentLink.getInstance();
     myClauses = Collections.emptyList();
   }
 
@@ -63,10 +66,15 @@ public class Constructor extends Definition implements Function {
     return myConditions;
   }
 
+  @Nonnull
   @Override
   public DependentLink getParameters() {
-    assert myParameters != null;
     return myParameters;
+  }
+
+  @Override
+  public int getNumberOfParameters() {
+    return DependentLink.Helper.size(myParameters);
   }
 
   public void setParameters(DependentLink parameters) {
@@ -82,6 +90,8 @@ public class Constructor extends Definition implements Function {
     myNumberOfIntervalParameters = numberOfIntervalParameters;
   }
 
+  @Nonnull
+  @Override
   public DataDefinition getDataType() {
     return myDataType;
   }
@@ -183,10 +193,6 @@ public class Constructor extends Definition implements Function {
 
   @Override
   public DataCallExpression getTypeWithParams(List<? super DependentLink> params, Sort sortArgument) {
-    if (myParameters == null) {
-      return null;
-    }
-
     LevelSubstitution polySubst = sortArgument.toLevelSubstitution();
     DataCallExpression resultType = getDataTypeExpression(sortArgument);
     DependentLink parameters = getDataTypeParameters();

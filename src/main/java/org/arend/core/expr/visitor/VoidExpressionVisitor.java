@@ -3,10 +3,10 @@ package org.arend.core.expr.visitor;
 import org.arend.core.context.binding.Variable;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.*;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.util.Pair;
 
 import java.util.Map;
@@ -151,7 +151,7 @@ public class VoidExpressionVisitor<P> extends BaseExpressionVisitor<P,Void> {
     if (elimTree instanceof LeafElimTree) {
       ((LeafElimTree) elimTree).getExpression().accept(this, params);
     } else {
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         visitElimTree(entry.getValue(), params);
       }
     }

@@ -1,10 +1,11 @@
 package org.arend.core.expr;
 
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreErrorExpression;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.util.Decision;
 
-public class ErrorExpression extends Expression {
+public class ErrorExpression extends Expression implements CoreErrorExpression {
   private final Expression myExpression;
   private final LocalError myError;
 

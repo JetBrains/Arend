@@ -2,6 +2,7 @@ package org.arend.core.expr;
 
 import org.arend.prelude.Prelude;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class BigIntegerExpression extends IntegerExpression {
     myInteger = integer;
   }
 
+  @Nonnull
   @Override
   public BigInteger getBigInteger() {
     return myInteger;

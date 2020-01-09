@@ -4,10 +4,13 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.definition.ClassField;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.expr.visitor.NormalizeVisitor;
+import org.arend.ext.core.expr.CoreInferenceReferenceExpression;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.util.Decision;
 
-public class InferenceReferenceExpression extends Expression {
+import javax.annotation.Nonnull;
+
+public class InferenceReferenceExpression extends Expression implements CoreInferenceReferenceExpression {
   private final InferenceVariable myVar;
   private Expression mySubstExpression;
 
@@ -39,6 +42,7 @@ public class InferenceReferenceExpression extends Expression {
     mySubstExpression = substExpression;
   }
 
+  @Override
   public InferenceVariable getVariable() {
     return mySubstExpression == null ? myVar : null;
   }
@@ -47,6 +51,7 @@ public class InferenceReferenceExpression extends Expression {
     return myVar;
   }
 
+  @Override
   public Expression getSubstExpression() {
     return mySubstExpression;
   }
@@ -65,6 +70,7 @@ public class InferenceReferenceExpression extends Expression {
     return visitor.visitInferenceReference(this, params);
   }
 
+  @Nonnull
   @Override
   public Expression getUnderlyingExpression() {
     return mySubstExpression == null ? this : mySubstExpression.getUnderlyingExpression();

@@ -2,14 +2,11 @@ package org.arend.core.expr;
 
 import org.arend.core.definition.Constructor;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreIntegerExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
-import java.math.BigInteger;
-
-public abstract class IntegerExpression extends Expression {
-  public abstract BigInteger getBigInteger();
-
+public abstract class IntegerExpression extends Expression implements CoreIntegerExpression {
   public abstract int getSmallInteger();
 
   public abstract IntegerExpression suc();

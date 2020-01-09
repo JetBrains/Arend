@@ -3,11 +3,13 @@ package org.arend.core.expr;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreCaseExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
-public class CaseExpression extends Expression {
+public class CaseExpression extends Expression implements CoreCaseExpression {
   private final boolean mySFunc;
   private final DependentLink myParameters;
   private final Expression myResultType;
@@ -24,26 +26,36 @@ public class CaseExpression extends Expression {
     myArguments = arguments;
   }
 
-  public boolean isSFunc() {
+  @Override
+  public boolean isSCase() {
     return mySFunc;
   }
 
+  @Nonnull
+  @Override
   public DependentLink getParameters() {
     return myParameters;
   }
 
+  @Nonnull
+  @Override
   public Expression getResultType() {
     return myResultType;
   }
 
+  @Override
   public Expression getResultTypeLevel() {
     return myResultTypeLevel;
   }
 
+  @Nonnull
+  @Override
   public ElimTree getElimTree() {
     return myElimTree;
   }
 
+  @Nonnull
+  @Override
   public List<Expression> getArguments() {
     return myArguments;
   }

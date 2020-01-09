@@ -2,12 +2,14 @@ package org.arend.core.expr;
 
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreAppExpression;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class AppExpression extends Expression {
+public class AppExpression extends Expression implements CoreAppExpression {
   private final Expression myFunction;
   private final Expression myArgument;
 
@@ -27,11 +29,14 @@ public class AppExpression extends Expression {
     }
   }
 
+  @Nonnull
   @Override
   public Expression getFunction() {
     return myFunction;
   }
 
+  @Nonnull
+  @Override
   public Expression getArgument() {
     return myArgument;
   }

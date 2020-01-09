@@ -6,12 +6,14 @@ import org.arend.core.expr.Expression;
 import org.arend.core.expr.FieldCallExpression;
 import org.arend.core.expr.NewExpression;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.elimtree.CoreClassBranchKey;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public final class ClassConstructor extends SingleConstructor {
+public final class ClassConstructor extends SingleConstructor implements CoreClassBranchKey {
   private final ClassDefinition myClassDef;
   private final Sort mySort;
   private final Set<? extends ClassField> myImplementedFields;
@@ -22,7 +24,9 @@ public final class ClassConstructor extends SingleConstructor {
     myImplementedFields = implementedFields;
   }
 
-  public ClassDefinition getClassDef() {
+  @Nonnull
+  @Override
+  public ClassDefinition getClassDefinition() {
     return myClassDef;
   }
 
@@ -35,7 +39,7 @@ public final class ClassConstructor extends SingleConstructor {
   }
 
   @Override
-  public int getLength() {
+  public int getNumberOfParameters() {
     return myClassDef.getNumberOfNotImplementedFields() - myImplementedFields.size();
   }
 

@@ -5,13 +5,13 @@ import org.arend.core.context.binding.EvaluatingBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.definition.ClassField;
-import org.arend.core.definition.Constructor;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
 import org.arend.core.elimtree.LeafElimTree;
 import org.arend.core.expr.*;
 import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.BaseExpressionVisitor;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -214,7 +214,7 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     Expression type = expr.getResultType().accept(this, null);
     Expression typeLevel = expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().accept(this, null);
     DependentLink.Helper.freeSubsts(expr.getParameters(), myExprSubstitution);
-    return new CaseExpression(expr.isSFunc(), parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
+    return new CaseExpression(expr.isSCase(), parameters, type, typeLevel, substElimTree(expr.getElimTree()), arguments);
   }
 
   public ElimTree substElimTree(ElimTree elimTree) {
@@ -222,16 +222,16 @@ public class SubstVisitor extends BaseExpressionVisitor<Void, Expression> {
     if (elimTree instanceof LeafElimTree) {
       elimTree = new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().accept(this, null));
     } else {
-      Map<Constructor, ElimTree> children = new HashMap<>();
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
-        Constructor constructor;
+      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+        CoreBranchKey key;
         if (!myLevelSubstitution.isEmpty() && entry.getKey() instanceof ClassConstructor) {
           ClassConstructor classCon = (ClassConstructor) entry.getKey();
-          constructor = new ClassConstructor(classCon.getClassDef(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
+          key = new ClassConstructor(classCon.getClassDefinition(), classCon.getSort().subst(myLevelSubstitution), classCon.getImplementedFields());
         } else {
-          constructor = entry.getKey();
+          key = entry.getKey();
         }
-        children.put(constructor, substElimTree(entry.getValue()));
+        children.put(key, substElimTree(entry.getValue()));
       }
       elimTree = new BranchElimTree(vars, children);
     }

@@ -10,11 +10,13 @@ import org.arend.core.pattern.Pattern;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreDataCallExpression;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DataCallExpression extends DefCallExpression implements Type {
+public class DataCallExpression extends DefCallExpression implements Type, CoreDataCallExpression {
   private final Sort mySortArgument;
   private final List<Expression> myArguments;
 
@@ -24,16 +26,19 @@ public class DataCallExpression extends DefCallExpression implements Type {
     myArguments = arguments;
   }
 
+  @Nonnull
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
   }
 
+  @Nonnull
   @Override
   public List<Expression> getDefCallArguments() {
     return myArguments;
   }
 
+  @Nonnull
   @Override
   public DataDefinition getDefinition() {
     return (DataDefinition) super.getDefinition();

@@ -5,17 +5,19 @@ import org.arend.core.context.binding.Variable;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.InferenceReferenceExpression;
 import org.arend.core.subst.ExprSubstitution;
+import org.arend.ext.core.context.CoreInferenceVariable;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.error.local.LocalError;
 import org.arend.typechecking.implicitargs.equations.Equations;
 import org.arend.typechecking.implicitargs.equations.InferenceVariableListener;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public abstract class InferenceVariable implements Variable {
+public abstract class InferenceVariable implements Variable, CoreInferenceVariable {
   private final String myName;
   private final Concrete.SourceNode mySourceNode;
   private Expression myType;
@@ -70,6 +72,7 @@ public abstract class InferenceVariable implements Variable {
     return myReference == null ? null : myReference.getSubstExpression();
   }
 
+  @Nonnull
   @Override
   public String getName() {
     return myName;

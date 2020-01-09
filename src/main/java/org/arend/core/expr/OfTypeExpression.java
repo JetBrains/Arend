@@ -3,6 +3,8 @@ package org.arend.core.expr;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
+
 public class OfTypeExpression extends Expression {
   private final Expression myExpression;
   private final Expression myType;
@@ -46,6 +48,7 @@ public class OfTypeExpression extends Expression {
     return myType;
   }
 
+  @Nonnull
   @Override
   public Expression getUnderlyingExpression() {
     return myExpression.getUnderlyingExpression();

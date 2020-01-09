@@ -1,17 +1,20 @@
 package org.arend.core.definition;
 
 import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.definition.CoreClassField;
 import org.arend.naming.reference.TCFieldReferable;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class ClassField extends Definition {
+public class ClassField extends Definition implements CoreClassField {
   private final ClassDefinition myParentClass;
   private boolean myProperty;
   private PiExpression myType;
@@ -36,6 +39,8 @@ public class ClassField extends Definition {
     return (TCFieldReferable) super.getReferable();
   }
 
+  @Nonnull
+  @Override
   public ClassDefinition getParentClass() {
     return myParentClass;
   }
@@ -48,6 +53,19 @@ public class ClassField extends Definition {
     return sortArgument == Sort.STD ? myType : new SubstVisitor(new ExprSubstitution(), sortArgument.toLevelSubstitution()).visitPi(myType, null);
   }
 
+  @Nonnull
+  @Override
+  public SingleDependentLink getThisParameter() {
+    return myType.getParameters();
+  }
+
+  @Nonnull
+  @Override
+  public Expression getResultType() {
+    return myType.getCodomain();
+  }
+
+  @Override
   public Expression getTypeLevel() {
     return myTypeLevel;
   }
@@ -56,6 +74,7 @@ public class ClassField extends Definition {
     myTypeLevel = typeLevel;
   }
 
+  @Override
   public boolean isProperty() {
     return myProperty;
   }
@@ -110,6 +129,7 @@ public class ClassField extends Definition {
     return index == 0 && !myParentClass.isRecord() ? TypeClassParameterKind.YES : TypeClassParameterKind.NO;
   }
 
+  @Nonnull
   @Override
   public DependentLink getParameters() {
     return myType.getParameters();

@@ -5,11 +5,14 @@ import org.arend.core.context.binding.inference.InferenceLevelVariable;
 import org.arend.core.expr.UniverseExpression;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.StdLevelSubstitution;
+import org.arend.ext.core.level.CoreSort;
 import org.arend.term.concrete.Concrete;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 import org.arend.typechecking.implicitargs.equations.Equations;
 
-public class Sort {
+import javax.annotation.Nonnull;
+
+public class Sort implements CoreSort {
   private final Level myPLevel;
   private final Level myHLevel;
 
@@ -46,10 +49,14 @@ public class Sort {
     myHLevel = hLevel;
   }
 
+  @Nonnull
+  @Override
   public Level getPLevel() {
     return myPLevel;
   }
 
+  @Nonnull
+  @Override
   public Level getHLevel() {
     return myHLevel;
   }
@@ -77,10 +84,12 @@ public class Sort {
     }
   }
 
+  @Override
   public boolean isProp() {
     return myHLevel.isProp();
   }
 
+  @Override
   public boolean isSet() {
     return myHLevel.isClosed() && myHLevel.getConstant() == 0;
   }

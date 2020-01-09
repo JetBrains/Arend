@@ -6,7 +6,6 @@ import org.arend.core.context.binding.TypedBinding;
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
-import org.arend.core.definition.Constructor;
 import org.arend.core.definition.Definition;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.BranchElimTree;
@@ -17,6 +16,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.naming.reference.LocalReferable;
 import org.arend.prelude.Prelude;
 import org.arend.term.concrete.Concrete;
@@ -54,7 +54,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     plus.setResultType(Nat());
     plus.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
 
-    Map<Constructor, ElimTree> plusChildren = new HashMap<>();
+    Map<CoreBranchKey, ElimTree> plusChildren = new HashMap<>();
     plusChildren.put(Prelude.ZERO, new LeafElimTree(yPlus, Ref(yPlus)));
     plusChildren.put(Prelude.SUC, new LeafElimTree(xPlus, Suc(FunCall(plus, Sort.SET0, Ref(xPlus), Ref(yPlus)))));
     plus.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), plusChildren));
@@ -66,7 +66,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     mul.setParameters(params(xMul, yMul));
     mul.setResultType(Nat());
     mul.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    Map<Constructor, ElimTree> mulChildren = new HashMap<>();
+    Map<CoreBranchKey, ElimTree> mulChildren = new HashMap<>();
     mulChildren.put(Prelude.ZERO, new LeafElimTree(yMul, Zero()));
     mulChildren.put(Prelude.SUC, new LeafElimTree(xMul, FunCall(plus, Sort.SET0, Ref(yMul), FunCall(mul, Sort.SET0, Ref(xMul), Ref(yMul)))));
     mul.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), mulChildren));
@@ -77,7 +77,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     fac.setParameters(xFac);
     fac.setResultType(Nat());
     fac.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
-    Map<Constructor, ElimTree> facChildren = new HashMap<>();
+    Map<CoreBranchKey, ElimTree> facChildren = new HashMap<>();
     facChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Suc(Zero())));
     facChildren.put(Prelude.SUC, new LeafElimTree(xFac, FunCall(mul, Sort.SET0, Suc(Ref(xFac)), FunCall(fac, Sort.SET0, Ref(xFac)))));
     fac.setBody(new BranchElimTree(EmptyDependentLink.getInstance(), facChildren));
@@ -91,7 +91,7 @@ public class NormalizationTest extends TypeCheckingTestCase {
     nelim.setResultType(Nat());
     nelim.setStatus(Definition.TypeCheckingStatus.NO_ERRORS);
     DependentLink nelimParams = DependentLink.Helper.take(zNElim, 2);
-    Map<Constructor, ElimTree> nelimChildren = new HashMap<>();
+    Map<CoreBranchKey, ElimTree> nelimChildren = new HashMap<>();
     nelimChildren.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Ref(nelimParams)));
     nelimChildren.put(Prelude.SUC, new LeafElimTree(xNElim, Apps(Ref(nelimParams.getNext()), Ref(xNElim), FunCall(nelim, Sort.SET0, Ref(nelimParams), Ref(nelimParams.getNext()), Ref(xNElim)))));
     nelim.setBody(new BranchElimTree(nelimParams, nelimChildren));

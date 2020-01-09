@@ -1,18 +1,23 @@
 package org.arend.core.definition;
 
-import org.arend.core.context.param.*;
+import org.arend.core.context.param.DependentLink;
+import org.arend.core.context.param.EmptyDependentLink;
+import org.arend.core.context.param.TypedDependentLink;
+import org.arend.core.context.param.TypedSingleDependentLink;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.TypeExpression;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
+import org.arend.ext.core.definition.CoreDataDefinition;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
-public class DataDefinition extends Definition {
+public class DataDefinition extends Definition implements CoreDataDefinition {
   private final List<Constructor> myConstructors;
   private DependentLink myParameters;
   private Sort mySort;
@@ -29,8 +34,10 @@ public class DataDefinition extends Definition {
   public DataDefinition(TCReferable referable) {
     super(referable, TypeCheckingStatus.HEADER_NEEDS_TYPE_CHECKING);
     myConstructors = new ArrayList<>();
+    myParameters = EmptyDependentLink.getInstance();
   }
 
+  @Override
   public Sort getSort() {
     return mySort;
   }
@@ -56,6 +63,7 @@ public class DataDefinition extends Definition {
     }
   }
 
+  @Override
   public boolean isTruncated() {
     return myTruncated;
   }
@@ -72,6 +80,7 @@ public class DataDefinition extends Definition {
     mySquashed = value;
   }
 
+  @Nonnull
   @Override
   public DependentLink getParameters() {
     return myParameters;
@@ -81,6 +90,8 @@ public class DataDefinition extends Definition {
     myParameters = parameters;
   }
 
+  @Nonnull
+  @Override
   public List<Constructor> getConstructors() {
     return myConstructors;
   }

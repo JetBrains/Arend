@@ -7,21 +7,18 @@ import org.arend.core.context.param.UntypedDependentLink;
 import org.arend.core.elimtree.Body;
 import org.arend.core.expr.*;
 import org.arend.core.expr.type.TypeExpression;
-import org.arend.core.sort.Level;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
-import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.TCReferable;
 import org.arend.prelude.Prelude;
-import org.arend.term.concrete.Concrete;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 
-public class FunctionDefinition extends Definition implements Function {
-  public enum Kind { FUNC, SFUNC, LEMMA }
-
+public class FunctionDefinition extends Definition implements Function, CoreFunctionDefinition {
   private DependentLink myParameters;
   private Expression myResultType;
   private Expression myResultTypeLevel;
@@ -43,6 +40,7 @@ public class FunctionDefinition extends Definition implements Function {
     return myKind == Kind.FUNC ? myBody : null;
   }
 
+  @Override
   public Body getActualBody() {
     return myBody;
   }
@@ -55,6 +53,8 @@ public class FunctionDefinition extends Definition implements Function {
     return myKind != Kind.FUNC;
   }
 
+  @Nonnull
+  @Override
   public Kind getKind() {
     return myKind;
   }
@@ -63,6 +63,7 @@ public class FunctionDefinition extends Definition implements Function {
     myKind = kind;
   }
 
+  @Nonnull
   @Override
   public DependentLink getParameters() {
     return myParameters;
@@ -72,6 +73,7 @@ public class FunctionDefinition extends Definition implements Function {
     myParameters = parameters;
   }
 
+  @Override
   public Expression getResultType() {
     return myResultType;
   }
@@ -80,6 +82,7 @@ public class FunctionDefinition extends Definition implements Function {
     myResultType = resultType;
   }
 
+  @Override
   public Expression getResultTypeLevel() {
     return myResultTypeLevel;
   }

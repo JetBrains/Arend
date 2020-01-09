@@ -13,6 +13,7 @@ import org.arend.core.expr.let.LetClause;
 import org.arend.core.subst.ExprSubstitution;
 import org.arend.core.subst.LevelSubstitution;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.prelude.Prelude;
 import org.arend.typechecking.order.listener.TypecheckingOrderingListener;
 import org.arend.util.Pair;
@@ -471,9 +472,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
       constructor = intExpr.isZero() ? Prelude.ZERO : Prelude.SUC;
     }
 
-    ElimTree elimTree = constructor == null ? branchElimTree.getSingleChild() : branchElimTree.getChild(constructor);
-    if (elimTree == null && constructor == Prelude.PATH_CON && branchElimTree.getSingleConstructor() instanceof IdpConstructor) {
-      elimTree = branchElimTree.getSingleChild();
+    ElimTree elimTree = constructor == null ? branchElimTree.getSingleConstructorChild() : branchElimTree.getChild(constructor);
+    if (elimTree == null && constructor == Prelude.PATH_CON && branchElimTree.getSingleConstructorKey() instanceof IdpConstructor) {
+      elimTree = branchElimTree.getSingleConstructorChild();
       constructor = null;
     }
     if (elimTree != null) {
@@ -487,7 +488,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
             ? Collections.emptyList()
             : Collections.singletonList(intExpr.pred());
       } else {
-        SingleConstructor singleConstructor = branchElimTree.getSingleConstructor();
+        SingleConstructor singleConstructor = branchElimTree.getSingleConstructorKey();
         if (singleConstructor == null) {
           return null;
         }
@@ -684,7 +685,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
 
   @Override
   public Expression visitCase(CaseExpression expr, Mode mode) {
-    if (!expr.isSFunc()) {
+    if (!expr.isSCase()) {
       Expression result = eval(expr.getElimTree(), expr.getArguments(), new ExprSubstitution(), LevelSubstitution.EMPTY);
       if (result != null) {
         return result.accept(this, mode);
@@ -700,7 +701,7 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     }
     ExprSubstitution substitution = new ExprSubstitution();
     DependentLink parameters = normalizeParameters(expr.getParameters(), mode, substitution);
-    return new CaseExpression(expr.isSFunc(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
+    return new CaseExpression(expr.isSCase(), parameters, expr.getResultType().subst(substitution).accept(this, mode), expr.getResultTypeLevel() == null ? null : expr.getResultTypeLevel().subst(substitution).accept(this, mode), normalizeElimTree(expr.getElimTree(), mode), args);
   }
 
   private ElimTree normalizeElimTree(ElimTree elimTree, Mode mode) {
@@ -709,9 +710,9 @@ public class NormalizeVisitor extends BaseExpressionVisitor<NormalizeVisitor.Mod
     if (elimTree instanceof LeafElimTree) {
       return new LeafElimTree(vars, ((LeafElimTree) elimTree).getExpression().subst(substitution).accept(this, mode));
     } else {
-      Map<Constructor, ElimTree> children = new HashMap<>();
+      Map<CoreBranchKey, ElimTree> children = new HashMap<>();
       SubstVisitor visitor = new SubstVisitor(substitution, LevelSubstitution.EMPTY);
-      for (Map.Entry<Constructor, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
+      for (Map.Entry<CoreBranchKey, ElimTree> entry : ((BranchElimTree) elimTree).getChildren()) {
         children.put(entry.getKey(), visitor.substElimTree(normalizeElimTree(entry.getValue(), mode)));
       }
       return new BranchElimTree(vars, children);

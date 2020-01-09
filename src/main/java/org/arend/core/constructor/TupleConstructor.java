@@ -3,11 +3,12 @@ package org.arend.core.constructor;
 import org.arend.core.expr.Expression;
 import org.arend.core.expr.ProjExpression;
 import org.arend.core.expr.TupleExpression;
+import org.arend.ext.core.elimtree.CoreTupleBranchKey;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class TupleConstructor extends SingleConstructor {
+public final class TupleConstructor extends SingleConstructor implements CoreTupleBranchKey {
   private final int myLength;
 
   public TupleConstructor(int length) {
@@ -15,7 +16,7 @@ public final class TupleConstructor extends SingleConstructor {
   }
 
   @Override
-  public int getLength() {
+  public int getNumberOfParameters() {
     return myLength;
   }
 

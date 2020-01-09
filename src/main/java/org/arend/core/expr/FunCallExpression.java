@@ -4,12 +4,14 @@ import org.arend.core.definition.DConstructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.expr.CoreFunCallExpression;
 import org.arend.prelude.Prelude;
 import org.arend.util.Decision;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
-public class FunCallExpression extends DefCallExpression {
+public class FunCallExpression extends DefCallExpression implements CoreFunCallExpression {
   private final Sort mySortArgument;
   private final List<Expression> myArguments;
 
@@ -19,11 +21,13 @@ public class FunCallExpression extends DefCallExpression {
     myArguments = arguments;
   }
 
+  @Nonnull
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
   }
 
+  @Nonnull
   @Override
   public List<? extends Expression> getDefCallArguments() {
     return myArguments;
@@ -34,6 +38,7 @@ public class FunCallExpression extends DefCallExpression {
     return getDefinition() instanceof DConstructor ? myArguments.subList(((DConstructor) getDefinition()).getNumberOfParameters(), myArguments.size()) : myArguments;
   }
 
+  @Nonnull
   @Override
   public FunctionDefinition getDefinition() {
     return (FunctionDefinition) super.getDefinition();

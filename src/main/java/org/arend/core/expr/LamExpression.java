@@ -3,9 +3,12 @@ package org.arend.core.expr;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.expr.visitor.ExpressionVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.expr.CoreLamExpression;
 import org.arend.util.Decision;
 
-public class LamExpression extends Expression {
+import javax.annotation.Nonnull;
+
+public class LamExpression extends Expression implements CoreLamExpression {
   private final Sort myResultSort;
   private final SingleDependentLink myLink;
   private final Expression myBody;
@@ -20,10 +23,14 @@ public class LamExpression extends Expression {
     return myResultSort;
   }
 
+  @Nonnull
+  @Override
   public SingleDependentLink getParameters() {
     return myLink;
   }
 
+  @Nonnull
+  @Override
   public Expression getBody() {
     return myBody;
   }

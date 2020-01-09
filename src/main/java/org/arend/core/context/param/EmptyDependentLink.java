@@ -3,6 +3,7 @@ package org.arend.core.context.param;
 import org.arend.core.expr.type.Type;
 import org.arend.core.subst.SubstVisitor;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class EmptyDependentLink implements SingleDependentLink {
@@ -29,6 +30,7 @@ public class EmptyDependentLink implements SingleDependentLink {
     throw new IllegalStateException();
   }
 
+  @Nonnull
   @Override
   public SingleDependentLink getNext() {
     throw new IllegalStateException();

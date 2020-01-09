@@ -6,9 +6,12 @@ import org.arend.core.context.binding.inference.InferenceVariable;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.definition.Definition;
 import org.arend.core.expr.visitor.ExpressionVisitor;
+import org.arend.ext.core.expr.CoreReferenceExpression;
 import org.arend.util.Decision;
 
-public class ReferenceExpression extends Expression {
+import javax.annotation.Nonnull;
+
+public class ReferenceExpression extends Expression implements CoreReferenceExpression {
   private final Binding myBinding;
 
   public ReferenceExpression(Binding binding) {
@@ -19,6 +22,8 @@ public class ReferenceExpression extends Expression {
     myBinding = binding;
   }
 
+  @Nonnull
+  @Override
   public Binding getBinding() {
     return myBinding;
   }

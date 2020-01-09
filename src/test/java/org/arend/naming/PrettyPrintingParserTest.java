@@ -3,7 +3,6 @@ package org.arend.naming;
 import org.arend.core.context.param.EmptyDependentLink;
 import org.arend.core.context.param.SingleDependentLink;
 import org.arend.core.context.param.TypedSingleDependentLink;
-import org.arend.core.definition.Constructor;
 import org.arend.core.definition.FunctionDefinition;
 import org.arend.core.elimtree.BranchElimTree;
 import org.arend.core.elimtree.ElimTree;
@@ -14,6 +13,7 @@ import org.arend.core.expr.LamExpression;
 import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.expr.visitor.ToAbstractVisitor;
 import org.arend.core.sort.Sort;
+import org.arend.ext.core.elimtree.CoreBranchKey;
 import org.arend.frontend.reference.ConcreteLocatedReferable;
 import org.arend.naming.reference.GlobalReferable;
 import org.arend.naming.reference.LocalReferable;
@@ -180,7 +180,7 @@ public class PrettyPrintingParserTest extends TypeCheckingTestCase {
   @Test
   public void prettyPrintCase() {
     TypedSingleDependentLink x = singleParam("x", Nat());
-    HashMap<Constructor, ElimTree> myMap = new LinkedHashMap<>();
+    HashMap<CoreBranchKey, ElimTree> myMap = new LinkedHashMap<>();
     myMap.put(Prelude.ZERO, new LeafElimTree(EmptyDependentLink.getInstance(), Zero()));
     TypedSingleDependentLink y = singleParam("y", Nat());
     myMap.put(Prelude.SUC, new LeafElimTree(y, Ref(y)));

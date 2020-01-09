@@ -32,6 +32,7 @@ import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
 import org.arend.error.doc.DocFactory;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.*;
 import org.arend.naming.renamer.Renamer;
 import org.arend.prelude.Prelude;
@@ -1924,7 +1925,7 @@ public class CheckTypeVisitor implements ConcreteExpressionVisitor<ExpectedType,
 
     FunCallExpression funCall = result.expression instanceof FunCallExpression ? (FunCallExpression) result.expression : null;
     CaseExpression caseExpr = funCall != null ? null : result.expression instanceof CaseExpression ? (CaseExpression) result.expression : null;
-    if ((caseExpr == null || !caseExpr.isSFunc()) && (funCall == null || funCall.getDefinition().getKind() != FunctionDefinition.Kind.SFUNC)) {
+    if ((caseExpr == null || !caseExpr.isSCase()) && (funCall == null || funCall.getDefinition().getKind() != CoreFunctionDefinition.Kind.SFUNC)) {
       errorReporter.report(new TypecheckingError(
         funCall != null ? "Expected a function (defined as \\sfunc) applied to arguments" :
         caseExpr != null ? "Expected an \\scase expression" :

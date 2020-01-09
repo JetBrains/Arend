@@ -2,8 +2,11 @@ package org.arend.core.context.binding;
 
 import org.arend.core.expr.Expression;
 import org.arend.core.subst.SubstVisitor;
+import org.arend.ext.core.context.CoreEvaluatingBinding;
 
-public interface EvaluatingBinding extends Binding {
-  Expression getExpression();
+import javax.annotation.Nonnull;
+
+public interface EvaluatingBinding extends Binding, CoreEvaluatingBinding {
+  @Nonnull @Override Expression getExpression();
   void subst(SubstVisitor visitor);
 }

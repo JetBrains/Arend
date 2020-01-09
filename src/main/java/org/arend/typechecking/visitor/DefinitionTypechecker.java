@@ -28,6 +28,7 @@ import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
 import org.arend.error.GeneralError;
 import org.arend.error.IncorrectExpressionException;
+import org.arend.ext.core.definition.CoreFunctionDefinition;
 import org.arend.naming.reference.*;
 import org.arend.prelude.Prelude;
 import org.arend.term.ClassFieldKind;
@@ -336,7 +337,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         if (level != null) {
           if (!checkLevel(isLemma, isProperty, level, resultTypeLevel)) {
             if (newDef && funDef != null) {
-              funDef.setKind(FunctionDefinition.Kind.FUNC);
+              funDef.setKind(CoreFunctionDefinition.Kind.FUNC);
             }
             if (isProperty) {
               return null;
@@ -643,7 +644,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
       typedDef.setParameters(list.getFirst());
       typedDef.setResultType(expectedType);
       typedDef.setStatus(Definition.TypeCheckingStatus.BODY_NEEDS_TYPE_CHECKING);
-      typedDef.setKind(isSFunc ? (kind == FunctionKind.SFUNC ? FunctionDefinition.Kind.SFUNC : FunctionDefinition.Kind.LEMMA) : FunctionDefinition.Kind.FUNC);
+      typedDef.setKind(isSFunc ? (kind == FunctionKind.SFUNC ? CoreFunctionDefinition.Kind.SFUNC : CoreFunctionDefinition.Kind.LEMMA) : CoreFunctionDefinition.Kind.FUNC);
     }
 
     if (newDef) {
@@ -893,7 +894,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
             Sort sort = typeType == null ? null : typeType.toSort();
             if (sort == null || !sort.isProp()) {
               if (newDef) {
-                typedDef.setKind(FunctionDefinition.Kind.FUNC);
+                typedDef.setKind(CoreFunctionDefinition.Kind.FUNC);
               }
               errorReporter.report(new TypeMismatchError(new UniverseExpression(Sort.PROP), typeType == null ? new ErrorExpression(null, null) : typeType, def));
             }
@@ -1533,12 +1534,12 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
         constructor.setParameters(list.getFirst());
         constructor.setNumberOfIntervalParameters(numberOfNewParameters);
 
-        List<Pair<Expression,Expression>> pairs;
+        List<IntervalElim.CasePair> pairs;
         ElimTree elimTree;
         if (constructor.getBody() instanceof IntervalElim) {
           pairs = ((IntervalElim) constructor.getBody()).getCases();
           for (int i = 0; i < pairs.size(); i++) {
-            pairs.set(i, new Pair<>(addAts(pairs.get(i).proj1, newParam, constructorType), addAts(pairs.get(i).proj2, newParam, constructorType)));
+            pairs.set(i, new IntervalElim.CasePair(addAts(pairs.get(i).proj1, newParam, constructorType), addAts(pairs.get(i).proj2, newParam, constructorType)));
           }
           elimTree = ((IntervalElim) constructor.getBody()).getOtherwise();
         } else {
@@ -1550,7 +1551,7 @@ public class DefinitionTypechecker extends BaseDefinitionTypechecker implements 
           List<Expression> pathArgs = ((DataCallExpression) constructorType).getDefCallArguments();
           LamExpression lamExpr = (LamExpression) pathArgs.get(0);
           constructorType = lamExpr.getBody();
-          pairs.add(new Pair<>(addAts(pathArgs.get(1), newParam, constructorType.subst(lamExpr.getParameters(), Left())), addAts(pathArgs.get(2), newParam, constructorType.subst(lamExpr.getParameters(), Right()))));
+          pairs.add(new IntervalElim.CasePair(addAts(pathArgs.get(1), newParam, constructorType.subst(lamExpr.getParameters(), Left())), addAts(pathArgs.get(2), newParam, constructorType.subst(lamExpr.getParameters(), Right()))));
           constructorType = constructorType.subst(lamExpr.getParameters(), new ReferenceExpression(newParam));
           newParam = newParam.getNext();
         }

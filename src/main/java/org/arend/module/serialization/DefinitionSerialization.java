@@ -261,15 +261,13 @@ public class DefinitionSerialization {
   private DefinitionProtos.Definition.FunctionData writeFunctionDefinition(ExpressionSerialization defSerializer, FunctionDefinition definition) {
     DefinitionProtos.Definition.FunctionData.Builder builder = DefinitionProtos.Definition.FunctionData.newBuilder();
 
-    if (definition.getParameters() != null) {
-      builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
-      if (definition.getParametersTypecheckingOrder() != null) {
-        builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
-      }
-      builder.addAllGoodThisParameters(definition.getGoodThisParameters());
-      for (Definition.TypeClassParameterKind kind : definition.getTypeClassParameters()) {
-        builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
-      }
+    builder.addAllParam(defSerializer.writeParameters(definition.getParameters()));
+    if (definition.getParametersTypecheckingOrder() != null) {
+      builder.addAllParametersTypecheckingOrder(definition.getParametersTypecheckingOrder());
+    }
+    builder.addAllGoodThisParameters(definition.getGoodThisParameters());
+    for (Definition.TypeClassParameterKind kind : definition.getTypeClassParameters()) {
+      builder.addTypeClassParameters(writeTypeClassParameterKind(kind));
     }
     builder.addAllParametersLevels(writeParametersLevels(defSerializer, definition.getParametersLevels()));
     if (definition.getResultType() != null) {

@@ -2,15 +2,20 @@ package org.arend.core.elimtree;
 
 import org.arend.core.context.param.DependentLink;
 import org.arend.core.expr.visitor.CompareVisitor;
+import org.arend.ext.core.elimtree.CoreElimTree;
 import org.arend.typechecking.implicitargs.equations.DummyEquations;
 
-public abstract class ElimTree implements Body {
+import javax.annotation.Nonnull;
+
+public abstract class ElimTree implements Body, CoreElimTree {
   private final DependentLink myParameters;
 
   ElimTree(DependentLink parameters) {
     myParameters = parameters;
   }
 
+  @Nonnull
+  @Override
   public DependentLink getParameters() {
     return myParameters;
   }

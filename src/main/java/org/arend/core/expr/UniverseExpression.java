@@ -6,9 +6,12 @@ import org.arend.core.expr.visitor.NormalizeVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.expr.CoreUniverseExpression;
 import org.arend.util.Decision;
 
-public class UniverseExpression extends Expression implements Type {
+import javax.annotation.Nonnull;
+
+public class UniverseExpression extends Expression implements Type, CoreUniverseExpression {
   private final Sort mySort;
 
   public UniverseExpression(Sort sort) {
@@ -16,6 +19,8 @@ public class UniverseExpression extends Expression implements Type {
     mySort = sort;
   }
 
+  @Nonnull
+  @Override
   public Sort getSort() {
     return mySort;
   }

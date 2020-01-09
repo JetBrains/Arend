@@ -15,11 +15,15 @@ import org.arend.core.expr.visitor.StripVisitor;
 import org.arend.core.sort.Sort;
 import org.arend.core.subst.SubstVisitor;
 import org.arend.error.ErrorReporter;
+import org.arend.ext.core.definition.CoreClassField;
+import org.arend.ext.core.expr.CoreClassCallExpression;
+import org.arend.ext.core.expr.CoreExpression;
 import org.arend.naming.renamer.Renamer;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
-public class ClassCallExpression extends DefCallExpression implements Type {
+public class ClassCallExpression extends DefCallExpression implements Type, CoreClassCallExpression {
   private final Sort mySortArgument;
   private final ClassCallBinding myThisBinding = new ClassCallBinding();
   private final Map<ClassField, Expression> myImplementations;
@@ -32,6 +36,7 @@ public class ClassCallExpression extends DefCallExpression implements Type {
       return "this";
     }
 
+    @Nonnull
     @Override
     public ClassCallExpression getTypeExpr() {
       return ClassCallExpression.this;
@@ -59,6 +64,8 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     myHasUniverses = hasUniverses;
   }
 
+  @Nonnull
+  @Override
   public ClassCallBinding getThisBinding() {
     return myThisBinding;
   }
@@ -86,12 +93,19 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return myImplementations;
   }
 
-  public Expression getAbsImplementationHere(ClassField field) {
-    return myImplementations.get(field);
+  @Nonnull
+  @Override
+  public Collection<? extends Map.Entry<? extends CoreClassField, ? extends CoreExpression>> getImplementations() {
+    return myImplementations.entrySet();
   }
 
-  public Expression getImplementationHere(ClassField field, Expression thisExpr) {
-    Expression expr = myImplementations.get(field);
+  @Override
+  public Expression getAbsImplementationHere(@Nonnull CoreClassField field) {
+    return field instanceof ClassField ? myImplementations.get(field) : null;
+  }
+
+  public Expression getImplementationHere(CoreClassField field, Expression thisExpr) {
+    Expression expr = field instanceof ClassField ? myImplementations.get(field) : null;
     return expr != null ? expr.subst(myThisBinding, thisExpr) : null;
   }
 
@@ -104,8 +118,14 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return impl == null ? null : impl.apply(thisExpr);
   }
 
-  public boolean isImplemented(ClassField field) {
-    return myImplementations.containsKey(field) || getDefinition().isImplemented(field);
+  @Override
+  public boolean isImplementedHere(@Nonnull CoreClassField field) {
+    return field instanceof ClassField && myImplementations.containsKey(field);
+  }
+
+  @Override
+  public boolean isImplemented(@Nonnull CoreClassField field) {
+    return field instanceof ClassField && (myImplementations.containsKey(field) || getDefinition().isImplemented(field));
   }
 
   public boolean isUnit() {
@@ -168,11 +188,13 @@ public class ClassCallExpression extends DefCallExpression implements Type {
     return getDefinition().getUseLevel(myImplementations, myThisBinding);
   }
 
+  @Nonnull
   @Override
   public ClassDefinition getDefinition() {
     return (ClassDefinition) super.getDefinition();
   }
 
+  @Nonnull
   @Override
   public Sort getSortArgument() {
     return mySortArgument;
